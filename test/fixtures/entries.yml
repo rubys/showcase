@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  count: 1
+  dance: one
+  lead: one
+  follow: one
+
+two:
+  count: 1
+  dance: two
+  lead: two
+  follow: two

@@ -1,0 +1,27 @@
+<div id="<%= dom_id entry %>">
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Count:</strong>
+    <%= entry.count %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Dance:</strong>
+    <%= entry.dance_id %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Lead:</strong>
+    <%= entry.lead_id %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Follow:</strong>
+    <%= entry.follow_id %>
+  </p>
+
+  <% if action_name != "show" %>
+    <%= link_to "Show this entry", entry, class: "rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+    <%= link_to 'Edit this entry', edit_entry_path(entry), class: "rounded-lg py-3 ml-2 px-5 bg-gray-100 inline-block font-medium" %>
+    <hr class="mt-6">
+  <% end %>
+</div>

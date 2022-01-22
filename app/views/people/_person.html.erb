@@ -1,0 +1,57 @@
+<div id="<%= dom_id person %>">
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Name:</strong>
+    <%= person.name %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Studio:</strong>
+    <%= person.studio.name %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Type:</strong>
+    <%= person.type %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Back:</strong>
+    <%= person.back %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Level:</strong>
+    <%= person.level %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Category:</strong>
+    <%= person.category %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Role:</strong>
+    <%= person.role %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Friday dinner:</strong>
+    <%= person.friday_dinner %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Saturday lunch:</strong>
+    <%= person.saturday_lunch %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Saturday dinner:</strong>
+    <%= person.saturday_dinner %>
+  </p>
+
+  <% if action_name != "show" %>
+    <%= link_to "Show this person", person, class: "rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+    <%= link_to 'Edit this person', edit_person_path(person), class: "rounded-lg py-3 ml-2 px-5 bg-gray-100 inline-block font-medium" %>
+    <hr class="mt-6">
+  <% end %>
+</div>
