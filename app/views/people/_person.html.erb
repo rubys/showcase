@@ -1,53 +1,51 @@
 <div id="<%= dom_id person %>">
-  <p class="my-5">
-    <strong class="block font-medium mb-1">Name:</strong>
-    <%= person.name %>
-  </p>
+  <h1 class="font-bold text-4xl pb-5"><%= person.name.split(', ').rotate.join(' ') %></h1>
 
-  <p class="my-5">
-    <strong class="block font-medium mb-1">Studio:</strong>
-    <%= person.studio.name %>
-  </p>
+  <table>
+    <tbody>
+      <tr>
+        <td class="row">Studio</td>
+        <td class="row-main"><%= link_to person.studio.name, person.studio %></td>
+      </tr>
 
-  <p class="my-5">
-    <strong class="block font-medium mb-1">Type:</strong>
-    <%= person.type %>
-  </p>
+      <tr>
+        <td class="row">Type</td>
+        <td class="row-main"><%= person.type %></td>
+      </tr>
 
-  <p class="my-5">
-    <strong class="block font-medium mb-1">Back:</strong>
-    <%= person.back %>
-  </p>
+      <tr>
+        <td class="row">Back #</td>
+        <td class="row-main"><%= person.back %></td>
+      </tr>
 
-  <p class="my-5">
-    <strong class="block font-medium mb-1">Level:</strong>
-    <%= person.level %>
-  </p>
+      <tr>
+        <td class="row">Level</td>
+        <td class="row-main"><%= person.level %></td>
+      </tr>
 
-  <p class="my-5">
-    <strong class="block font-medium mb-1">Category:</strong>
-    <%= person.category %>
-  </p>
+      <tr>
+        <td class="row">Category</td>
+        <td class="row-main"><%= person.category %></td>
+      </tr>
 
-  <p class="my-5">
-    <strong class="block font-medium mb-1">Role:</strong>
-    <%= person.role %>
-  </p>
+      <tr>
+        <td class="row">Role</td>
+        <td class="row-main"><%= person.role %></td>
+      </tr>
 
-  <p class="my-5">
-    <strong class="block font-medium mb-1">Friday dinner:</strong>
-    <%= person.friday_dinner %>
-  </p>
+      <tr>
+        <td class="row">Meals</td>
+        <td class="row-main">
+          <ul>
+             <li>Friday dinner: <%= !!person.friday_dinner %>
+             <li>Saturday lunch: <%= !!person.saturday_lunch %>
+             <li>Saturday dinner: <%= !!person.saturday_dinner %>
+          </ul>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 
-  <p class="my-5">
-    <strong class="block font-medium mb-1">Saturday lunch:</strong>
-    <%= person.saturday_lunch %>
-  </p>
-
-  <p class="my-5">
-    <strong class="block font-medium mb-1">Saturday dinner:</strong>
-    <%= person.saturday_dinner %>
-  </p>
 
   <% if action_name != "show" %>
     <%= link_to "Show this person", person, class: "rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>

@@ -212,13 +212,9 @@ people = people.map do |name, person|
 end.to_h
 
 Entry.delete_all
-exit
 entries = entries.map do |entry|
   entry[:dance] = dances[entry[:dance]]
-  entry[:lead] = dances[people[:lead]]
-  entry[:follow] = dances[people[:follow]]
-  STDERR.puts entry
-  STDERR.flush
-  exit
+  entry[:lead] = people[entry[:lead]]
+  entry[:follow] = people[entry[:follow]]
   Entry.create! entry
-end.to_h
+end

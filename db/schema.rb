@@ -21,6 +21,7 @@ ActiveRecord::Schema.define(version: 2022_01_22_173243) do
 
   create_table "entries", force: :cascade do |t|
     t.integer "count"
+    t.string "category"
     t.integer "dance_id", null: false
     t.integer "lead_id", null: false
     t.integer "follow_id", null: false
