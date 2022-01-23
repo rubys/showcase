@@ -6,6 +6,12 @@ class PeopleController < ApplicationController
     @people = Person.all
   end
 
+  # GET /people/backs or /people.json
+  def backs
+    @people = Person.where(role: %w(Leader Both)).
+      sort_by {|person| person.back.to_s}
+  end
+
   # GET /people/1 or /people/1.json
   def show
     @entries = @person.lead_entries + @person.follow_entries

@@ -1,0 +1,34 @@
+<div class="mx-auto md:w-2/3 w-full flex">
+  <div class="mx-auto">
+  <% if notice.present? %>
+    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+  <% end %>
+
+  <div class="flex justify-between items-center">
+  <h1 class="mx-auto font-bold text-4xl mb-4">Back Numbers</h1>
+  </div>
+
+  <table class="table-fixed mx-auto">
+    <thead>
+      <tr>
+        <th class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Number
+        <th class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Person
+        <th class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Studio
+      </tr>
+    </thead>
+    <tbody>
+      <% @people.each do |person| %>
+      <tr>
+        <td class="text-right px-2"><%= person.back %>
+        <td class="px-2"><%= link_to person.name, person %>
+        <td class="px-2"><%= link_to person.studio.name, person.studio %>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <div class="mt-4 flex justify-between items-center">
+    <%= link_to 'Back to event', root_path, class: "mx-auto btn-green" %>
+  </div>
+  </div>
+</div>

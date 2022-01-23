@@ -1,0 +1,26 @@
+<div class="mx-auto">
+  <h1 class="font-bold text-4xl">The Greatest Show 2022</h1>
+
+  <p class="mt-4 text-center">Prestonwood Country Club</p>
+  <p class="mt-2 text-center">January 14-15</p>
+
+  <h2 class="font-bold text-2xl mt-4 mb-2">Judges</h2>
+
+  <ul class="list-disc list-inside">
+    <% @judges.each do |judge| %>
+      <li><%= link_to judge.name, judge %></li>
+    <% end %>
+  </u>
+  
+  <h2 class="font-bold text-2xl mt-4 mb-2">Emcee</h2>
+  <ul class="list-disc list-inside">
+    <% @emcees.each do |emcee| %>
+      <li><%= link_to emcee.name, emcee %></li>
+    <% end %>
+  </ul>
+
+  <div class="mt-4">
+    <%= link_to "Studios", studios_path, class: "btn-green" %>
+    <%= link_to "Backs", backs_people_path, class: "btn-green" %>
+  </div>
+</div>
