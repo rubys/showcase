@@ -8,15 +8,36 @@ class PeopleController < ApplicationController
 
   # GET /people/1 or /people/1.json
   def show
+    @entries = @person.lead_entries + @person.follow_entries
+    @partners = (@entries.map(&:follow) + @entries.map(&:lead)).uniq
+    @partners.delete @person
+    @partners = @partners.sort_by {|person| person.name.split(/,\s*/).last}.
+      map {|partner| [partner, @entries.select {|entry|
+        entry.lead == partner || entry.follow == partner
+      }]}.to_h
+    @dances = Dance.all
+    @entries = @dances.map {|dance|
+      [dance, @partners.map {|partner, entries|
+        [partner, entries.select {|entry| entry.dance == dance}.sum(&:count)]
+      }.to_h]
+    }.to_h
+    @partners = @partners.keys
   end
 
   # GET /people/new
   def new
     @person = Person.new
+
+    selections
+
+    if params[:studio]
+      @person.studio_id = params[:studio]
+    end
   end
 
   # GET /people/1/edit
   def edit
+    selections
   end
 
   # POST /people or /people.json
@@ -66,5 +87,19 @@ class PeopleController < ApplicationController
     # Only allow a list of trusted parameters through.
     def person_params
       params.require(:person).permit(:name, :studio_id, :type, :back, :level, :category, :role, :friday_dinner, :saturday_lunch, :saturday_dinner)
+    end
+
+    def selections
+      @studios = Studio.all.map{|studio| [studio.name, studio.id]}.to_h
+      @types = %w[Student Guest Professional Judge Emcee]
+      @roles = %w[Follower Leader Both]
+      @levels = [
+        'Assoc. Bronze',
+        'Full Bronze',
+        'Assoc. Silver',
+        'Full Silver',
+        'Assoc. Gold',
+        'Full Gold',
+      ]
     end
 end

@@ -3,6 +3,9 @@
 
   <%= render "form", studio: @studio %>
 
+  <div class="inline-block ml-2">
+    <%= button_to 'Remove this studio', studio_path(@studio), method: :delete, class: "mt-2 rounded-lg py-3 px-5 bg-gray-100 font-medium" %>
+  </div>
   <%= link_to "Show this studio", @studio, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
-  <%= link_to "Back to studios", studios_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  <%= link_to "Back to studios", studios_path, class: "btn-green" %>
 </div>

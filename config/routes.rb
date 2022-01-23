@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  root 'event#root'
   resources :entries
   resources :dances
   resources :people

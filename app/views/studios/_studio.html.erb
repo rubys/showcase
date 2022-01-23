@@ -1,7 +1,9 @@
 <div id="<%= dom_id studio %>">
-    <h1 class="font-bold text-4xl pb-5"><%= studio.name %></h1>
+    <div class="flex justify-between items-center">
+      <h1 class="mx-auto font-bold text-4xl pb-5"><%= studio.name %></h1>
+    </div>
 
-    <table class="table-fixed">
+    <table class="table-fixed mx-auto">
     <thead>
       <tr>
         <td class="row-head">Name
@@ -13,7 +15,7 @@
     <tbody>
     <% @studio.people.sort_by {|person| person.name}.each do |person| %>
       <tr>
-        <td class=row-main""><%= link_to person.name, person %></td>
+        <td class="row-main"><%= link_to person.name, person %></td>
         <td class="row"><%= person.type %></td>
         <td class="row"><%= person.role %></td>
         <td class="row"><%= person.level %></td>

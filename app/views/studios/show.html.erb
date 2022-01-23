@@ -6,10 +6,10 @@
 
     <%= render @studio %>
 
-    <%= link_to 'Edit this studio', edit_studio_path(@studio), class: "mt-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
-    <div class="inline-block ml-2">
-      <%= button_to 'Destroy this studio', studio_path(@studio), method: :delete, class: "mt-2 rounded-lg py-3 px-5 bg-gray-100 font-medium" %>
+    <div class="mt-4 flex justify-between items-center">
+      <%= link_to 'Add Person', new_person_path(studio: @studio), class: "btn-blue" %>
+      <%= link_to 'Edit this studio', edit_studio_path(@studio), class: "mt-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+      <%= link_to 'Back to studios', studios_path, class: "btn-green" %>
     </div>
-    <%= link_to 'Back to studios', studios_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
   </div>
 </div>

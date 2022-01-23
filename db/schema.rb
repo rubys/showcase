@@ -34,7 +34,7 @@ ActiveRecord::Schema.define(version: 2022_01_22_173243) do
 
   create_table "people", force: :cascade do |t|
     t.string "name"
-    t.integer "studio_id", null: false
+    t.integer "studio_id"
     t.string "type"
     t.integer "back"
     t.string "level"

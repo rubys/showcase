@@ -3,10 +3,12 @@
 
   <table>
     <tbody>
+      <% if person.studio %>
       <tr>
         <td class="row">Studio</td>
         <td class="row-main"><%= link_to person.studio.name, person.studio %></td>
       </tr>
+      <% end %>
 
       <tr>
         <td class="row">Type</td>

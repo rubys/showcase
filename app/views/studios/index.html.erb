@@ -1,15 +1,14 @@
-<div class="w-full">
+<div class="mx-auto">
   <% if notice.present? %>
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
   <div class="flex justify-between items-center">
-    <h1 class="font-bold text-4xl pb-5">Studios</h1>
-    <%= link_to 'New studio', new_studio_path, class: "rounded-lg py-3 px-5 bg-blue-600 text-white block font-medium" %>
+    <h1 class="mx-auto font-bold text-4xl pb-5">Studios</h1>
   </div>
 
   <div id="studios" class="min-w-full">
-    <table class="table-fixed">
+    <table class="table-fixed mx-auto">
     <thead>
       <tr>
         <td class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Location
@@ -25,5 +24,10 @@
     <% end %>
     </tbody>
     </table>
+  </div>
+
+  <div class="mt-4 flex justify-between items-center">
+    <%= link_to 'New studio', new_studio_path, class: "btn-blue" %>
+    <%= link_to "Back to Event", root_path, class: "btn-green" %>
   </div>
 </div>

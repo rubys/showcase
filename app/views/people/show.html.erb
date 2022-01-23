@@ -6,6 +6,32 @@
 
     <%= render @person %>
 
+    <% if %w(Student Professional).include? @person.type %>
+    <h2 class="font-bold pt-8 text-3xl pb-5">Entries</h2>
+
+    <table>
+      <thead>
+      <td></td>
+      <% @partners.each do |partner| %>
+        <td class="row-head-main">
+          <%= link_to partner.name.split(/,\s*/).last, partner %>
+        </td>
+      <% end %>
+      </thead>
+
+      <tbody>
+      <% @dances.each do |dance| %>
+      <tr>
+        <td><%= dance.name %></td>
+        <% @partners.each do |partner| %>
+          <td class="text-center"><%= @entries[dance][partner] %></td>
+        <% end %>
+      </tr>
+      <% end %>
+      </tbody>
+    </table>
+    <% end %>
+
     <%= link_to 'Edit this person', edit_person_path(@person), class: "mt-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
     <div class="inline-block ml-2">
       <%= button_to 'Destroy this person', person_path(@person), method: :delete, class: "mt-2 rounded-lg py-3 px-5 bg-gray-100 font-medium" %>

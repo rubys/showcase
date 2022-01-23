@@ -40,8 +40,12 @@ participants.each do |participant|
       when 'P' then person[:type] = 'Professional'
       when 'S' then person[:type] = 'Student'
       when 'G' then person[:type] = 'Guest'
-      when 'J' then person[:type] = 'Judge'
-      when 'MC' then person[:type] = 'Emcee'
+      when 'J'
+        person[:type] = 'Judge'
+        person.delete :studio
+      when 'MC'
+        person[:type] = 'Emcee'
+        person.delete :studio
     end
 
     case participant[4]
