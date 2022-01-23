@@ -35,16 +35,12 @@
         <td class="row-main"><%= person.role %></td>
       </tr>
 
+      <% if @meals %>
       <tr>
         <td class="row">Meals</td>
-        <td class="row-main">
-          <ul>
-             <li>Friday dinner: <%= !!person.friday_dinner %>
-             <li>Saturday lunch: <%= !!person.saturday_lunch %>
-             <li>Saturday dinner: <%= !!person.saturday_dinner %>
-          </ul>
-        </td>
+        <td class="row-main"><%= @meals %></td>
       </tr>
+      <% end %>
     </tbody>
   </table>
 

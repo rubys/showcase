@@ -22,6 +22,13 @@ class PeopleController < ApplicationController
       }.to_h]
     }.to_h
     @partners = @partners.keys
+
+    @meals = []
+    @meals << 'Friday dinner' if @person.friday_dinner
+    @meals << 'Saturday lunch' if @person.saturday_lunch
+    @meals << 'Saturday dinner' if @person.saturday_dinner
+    @meals << 'none' if @meals.empty?
+    @meals = @meals.join(', ')
   end
 
   # GET /people/new
