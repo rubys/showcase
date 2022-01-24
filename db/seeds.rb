@@ -136,18 +136,20 @@ people.each do |name, person|
   next unless level
   level = level.to_a.compact
 
-  select = nil
   if level.size > 1
     STDERR.puts "#{name} has multiple levels on the entry page:"
     STDERR.puts '  ' + level.to_a.inspect
-    select = level
+   
+    gold = level.select {|level| level.include? 'Gold'}
+    silver = level.select {|level| level.include? 'Silver'}
+    full = level.select {|level| level.include? 'Full'}
+
+    level = full if full.size == 1
+    level = silver if silver.size == 1
+    level = gold if gold.size == 1
   end
 
-  level = level.select {|level| level.include? 'Gold'} || level unless level.size == 1
-  level = level.select {|level| level.include? 'Silver'} || level unless level.size == 1
-  level = level.select {|level| level.include? 'Full'} || level unless level.size == 1
   person[:level] = level.first
-  STDERR.puts level if select
 end
 
 people.each do |name, person|
