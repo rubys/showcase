@@ -11,15 +11,17 @@
     <table class="table-fixed mx-auto">
     <thead>
       <tr>
-        <td class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Location
-        <td class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Count
+        <td class="row-head">Location
+        <td class="row-head">Count
+        <td class="row-head">Tables
       </tr>
     </thead>
     <tbody>
     <% @studios.each do |studio| %>
       <tr>
-        <td><%= link_to studio.name, studio %></td>
+        <td class="text-black font-medium"><%= link_to studio.name, studio %></td>
         <td class="text-right"><%= studio.people.count %></td>
+        <td class="text-right"><%= studio.tables %></td>
       </tr>
     <% end %>
     </tbody>

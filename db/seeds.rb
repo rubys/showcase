@@ -27,12 +27,12 @@ dances = Set.new
 
 participants.each do |participant|
   if participant[0]
-    studios << participant[0]
+    studios << participant[0].split('/').first
   else
     person = {
-      studio: participant[5],
+      studio: participant[5].split('/').first,
       type: participant[3],
-      name: participant[2]
+      name: participant[2].strip
    }
     person[:back] = participant[1] if participant[1]
 
@@ -58,7 +58,7 @@ participants.each do |participant|
         person[:role] = person[:back] ? 'Both' : 'Follower'
     end
 
-    unless studios.include? participant[5]
+    if person[:studio] and not studios.include? person[:studio]
       STDERR.puts "studio not found:"
       STDERR.puts participant.inspect
       exit
@@ -73,6 +73,8 @@ participants.each do |participant|
     people[name] = person
   end
 end
+
+studios.uniq!
 
 entries = IO.read(Dir["#{source}/Total Entries-*.csv"].first)
 entries = CSV.parse(entries.gsub("\r", ""))
@@ -199,6 +201,17 @@ entries = entries.group_by {|entry| entry}.map do |entry, list|
   {count: list.size}.merge(entry)
 end
 
+studios = studios.map {|studio| [studio, {name: studio}]}.to_h
+
+tables = IO.read(Dir["#{source}/Tables*.csv"].first)
+tables = CSV.parse(tables.gsub("\r", ""))
+tables.shift
+
+tables.each do |table|
+  next unless table[1]
+  studios[table[1].sub 'DT', 'Downtown'][:tables] = table[0].to_i
+end
+
 ###
 
 Dance.delete_all
@@ -207,8 +220,8 @@ dances = dances.to_a.sort.map do |dance|
 end.to_h
 
 Studio.delete_all
-studios = studios.sort.map do |studio|
-  [studio, Studio.create!(name: studio)]
+studios = studios.sort.map do |name, studio|
+  [name, Studio.create!(studio)]
 end.to_h
 
 Person.delete_all
