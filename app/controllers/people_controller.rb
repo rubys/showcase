@@ -35,6 +35,11 @@ class PeopleController < ApplicationController
     @meals << 'Saturday dinner' if @person.saturday_dinner
     @meals << 'none' if @meals.empty?
     @meals = @meals.join(', ')
+
+    @heats = Heat.joins(:entry).
+      where(entry: {lead: @person}).
+      or(Heat.where(entry: {follow: @person})).
+      order(:number).to_a
   end
 
   # GET /people/new
