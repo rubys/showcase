@@ -1,0 +1,43 @@
+<div class="w-full">
+  <% if notice.present? %>
+    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+  <% end %>
+
+  <div class="flex justify-between items-center">
+    <h1 class="mx-auto font-bold text-4xl">Heats</h1>
+<!--
+    <%= link_to 'New heat', new_heat_path, class: "rounded-lg py-3 px-5 bg-blue-600 text-white block font-medium" %>
+-->
+  </div>
+
+  <div id="heats" class="min-w-full">
+    <table class="mt-4 table-fixed mx-auto">
+    <thead>
+      <th class="row-head">Heat
+      <th class="row-head">Category
+      <th class="row-head">Dance
+      <th class="row-head">#
+      <th class="row-head">Lead
+      <th class="row-head">Follow
+      <th class="row-head">Level
+      <th class="row-head">Category
+      <th class="row-head">Studio
+    </thead>
+    <% @heats.each do |number, entries| %>
+      <% entries.each do |(entry, category, subject)| %>
+         <tr>
+           <td class="row"><%= number %>
+           <td class="row"><%= entry.category %>
+           <td class="row"><%= entry.dance.name %>
+           <td class="row"><%= entry.lead.back %>
+           <td class="row"><%= entry.lead.display_name %>
+           <td class="row"><%= entry.follow.display_name %>
+           <td class="row"><%= subject.level %>
+           <td class="row"><%= category %>
+           <td class="row"><%= subject.studio.name %>
+         </tr>
+      <% end %>
+      <tr class="mt-2"><td class="mt-2">&nbsp;</td></tr>
+    <% end %>
+  </div>
+</div>

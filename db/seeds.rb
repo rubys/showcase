@@ -190,15 +190,22 @@ heats.each do |heat|
   end
 
   entries << {
+    heat: heat[0],
     category: heat[1],
     dance: heat[2],
     lead: heat[4],
     follow: heat[5],
+    hash: [heat[1..2] + heat[4..5]].inspect
   }
 end
 
-entries = entries.group_by {|entry| entry}.map do |entry, list|
-  {count: list.size}.merge(entry)
+entries = entries.group_by {|entry| entry[:hash]}.map do |hash, list|
+  entry = list.first
+  entry[:count] = list.size
+  entry[:heats] = list.map {|entry| entry[:heat]}
+  entry.delete :hash
+  entry.delete :heat
+  entry
 end
 
 studios = studios.map {|studio| [studio, {name: studio}]}.to_h
@@ -232,8 +239,13 @@ end.to_h
 
 Entry.delete_all
 entries = entries.map do |entry|
+  heats = entry.delete :heats
   entry[:dance] = dances[entry[:dance]]
   entry[:lead] = people[entry[:lead]]
   entry[:follow] = people[entry[:follow]]
-  Entry.create! entry
+  entry = Entry.create! entry
+
+  heats.each do |heat|
+    Heat.create!({number: heat, entry: entry})
+  end
 end

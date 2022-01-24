@@ -32,10 +32,14 @@
     </table>
     <% end %>
 
-    <%= link_to 'Edit this person', edit_person_path(@person), class: "mt-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+    <div class="mt-4 mx-auto">
+    <%= link_to 'Edit this person', edit_person_path(@person), class: "btn-blue" %>
+<!--
     <div class="inline-block ml-2">
       <%= button_to 'Destroy this person', person_path(@person), method: :delete, class: "mt-2 rounded-lg py-3 px-5 bg-gray-100 font-medium" %>
     </div>
-    <%= link_to 'Back to people', people_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+-->
+    <%= link_to 'Back to studio', @person.studio, class: "btn-green" %>
+    </div>
   </div>
 </div>

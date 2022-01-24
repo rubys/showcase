@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :heats
   get 'event/root'
   root 'event#root'
   resources :entries
