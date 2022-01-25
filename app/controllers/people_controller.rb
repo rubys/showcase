@@ -12,6 +12,23 @@ class PeopleController < ApplicationController
       sort_by {|person| person.back.to_s}
   end
 
+  # GET /people/backs or /people.json
+  def couples
+    @couples = Entry.preload(:lead, :follow).joins(:lead, :follow).
+      where(lead: {type: 'Student'}, follow: {type: 'Student'}).
+      group_by {|entry| [entry.lead, entry.follow]}.
+      map do |(lead, follow), entries| 
+        [lead, follow, entries.sum {|entry| entry.count}]
+      end.
+      sort_by do |(lead, follow), count|
+        level = lead.level.to_s
+        (level.include?('Gold') ? 5 : 0) +
+          (level.include?('Silver') ? 3 : 0) +
+          (level.include?('Bronze') ? 1 : 0) +
+          (level.include?('Full') ? 1 : 0)
+      end
+  end
+
   # GET /people/1 or /people/1.json
   def show
     @entries = @person.lead_entries + @person.follow_entries

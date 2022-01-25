@@ -6,6 +6,7 @@ Rails.application.routes.draw do
   resources :dances
   resources :people do
     get 'backs', on: :collection
+    get 'couples', on: :collection
   end
   resources :studios
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
