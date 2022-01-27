@@ -70,6 +70,7 @@ Rails.application.configure do
 
   # allow access
   config.hosts << "rubymini"
+  config.hosts << "rubix.local"
   config.hosts << "rubix.intertwingly.net"
 
   if ENV['RAILS_RELATIVE_URL_ROOT']
