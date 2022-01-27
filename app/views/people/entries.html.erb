@@ -1,0 +1,206 @@
+<div class="mx-auto w-full">
+<h1 class="font-bold text-4xl pb-5 text-center"><%= @person.display_name %></h1>
+
+<div class="mx-auto w-full mb-8 text-center">
+<div>Role: <%= @person.role %></div>
+<div>Category: <%= @person.category %></div>
+<div>Level: <%= @person.level %></div>
+</div>
+
+<div class="mx-auto w-full flex flex-wrap">
+<%= form_with(class: "contents") do |form| %>
+
+<div class="mx-auto flex flex-wrap">
+
+<h1 class="w-full text-center bg-yellow-400 mb-4">CLOSED CATEGORY</h1>
+
+<div class="mx-auto">
+  <h2 class="italic text-lg font-bold">American Style</h2>
+  <% [
+    'Waltz',
+    'Tango',
+    'Foxtrot',
+    'Vienese Waltz',
+    'Cha Cha',
+    'Rumba',
+    'Swing',
+    'Bolero',
+    'Hustle',
+    'Samba',
+    'Merengue',
+   ].each do |dance| %>
+    <% field = "closed_american_#{dance.downcase.gsub(' ', '_')}" %>
+    <div class="my-5">
+      <%= form.text_field field, class: "entry-count" %>
+      <%= form.label field, dance %>
+    </div>
+  <% end %>
+
+  <h2 class="italic text-lg font-bold">International Style</h2>
+  <% [
+    'Waltz',
+    'Tango',
+    'Vienese Waltz',
+    'Foxtrot',
+    'Quickstep',
+    'Cha Cha',
+    'Samba',
+    'Rumba',
+    'Paso Doble',
+    'Jive',
+   ].each do |dance| %>
+    <% field = "closed_international_#{dance.downcase.gsub(' ', '_')}" %>
+    <div class="my-5">
+      <%= form.text_field field, class: "entry-count" %>
+      <%= form.label field, dance %>
+    </div>
+  <% end %>
+<% end %>
+</div>
+
+<div class="mx-auto">
+<%= form_with(class: "contents") do |form| %>
+  <h2 class="italic text-lg font-bold">Country Western</h2>
+  <% [
+    'Two Step',
+    'Swing',
+    'Cha Cha',
+    'Three Step',
+    'Shuffle',
+    'Waltz',
+   ].each do |dance| %>
+    <% field = "closed_country_#{dance.downcase.gsub(' ', '_')}" %>
+    <div class="my-5">
+      <%= form.text_field field, class: "entry-count" %>
+      <%= form.label field, "C/W #{dance}", class: 'normal-case' %>
+    </div>
+  <% end %>
+
+  <h2 class="italic text-lg font-bold mt-20">Specialty Dances</h2>
+  <% [
+    'Argentine Tango',
+    'Milongo',
+    'Tango Vals',
+    'Peabody',
+    'Polka',
+    'West Coast Swing',
+    'Lindy Hop',
+    'Salsa',
+    'Bachata',
+    'Night Club Two Step',
+    'Zouk',
+   ].each do |dance| %>
+    <% field = "closed_specialty_#{dance.downcase.gsub(' ', '_')}" %>
+    <div class="my-5">
+      <%= form.text_field field, class: "entry-count" %>
+      <%= form.label dance %>
+    </div>
+  <% end %>
+<% end %>
+</div>
+
+</div>
+
+<div class="mx-auto flex flex-wrap">
+<h1 class="w-full text-center bg-yellow-400 mb-4">OPEN CATEGORY</h1>
+
+<div class="mx-auto">
+
+<%= form_with(class: "contents") do |form| %>
+  <h2 class="italic text-lg font-bold">American Style</h2>
+  <% [
+    'Waltz',
+    'Tango',
+    'Foxtrot',
+    'Vienese Waltz',
+    'Cha Cha',
+    'Rumba',
+    'Swing',
+    'Bolero',
+    'Hustle',
+    'Samba',
+    'Merengue',
+   ].each do |dance| %>
+    <% field = "open_american_#{dance.downcase.gsub(' ', '_')}" %>
+    <div class="my-5">
+      <%= form.text_field field, class: "entry-count" %>
+      <%= form.label field, dance %>
+    </div>
+  <% end %>
+
+  <h2 class="italic text-lg font-bold">International Style</h2>
+  <% [
+    'Waltz',
+    'Tango',
+    'Vienese Waltz',
+    'Foxtrot',
+    'Quickstep',
+    'Cha Cha',
+    'Samba',
+    'Rumba',
+    'Paso Doble',
+    'Jive',
+   ].each do |dance| %>
+    <% field = "open_international_#{dance.downcase.gsub(' ', '_')}" %>
+    <div class="my-5">
+      <%= form.text_field field, class: "entry-count" %>
+      <%= form.label field, dance %>
+    </div>
+  <% end %>
+<% end %>
+</div>
+
+<div class="mx-auto">
+
+<%= form_with(class: "contents") do |form| %>
+  <h2 class="italic text-lg font-bold">Country Western</h2>
+  <% [
+    'Two Step',
+    'Swing',
+    'Cha Cha',
+    'Three Step',
+    'Shuffle',
+    'Waltz',
+   ].each do |dance| %>
+    <% field = "open_country_#{dance.downcase.gsub(' ', '_')}" %>
+    <div class="my-5">
+      <%= form.text_field field, class: "entry-count" %>
+      <%= form.label field, "C/W #{dance}", class: 'normal-case' %>
+    </div>
+  <% end %>
+
+  <h2 class="italic text-lg font-bold mt-20">Specialty Dances</h2>
+  <% [
+    'Argentine Tango',
+    'Milongo',
+    'Tango Vals',
+    'Peabody',
+    'Polka',
+    'West Coast Swing',
+    'Lindy Hop',
+    'Salsa',
+    'Bachata',
+    'Night Club Two Step',
+    'Zouk',
+   ].each do |dance| %>
+    <% field = "open_specialty_#{dance.downcase.gsub(' ', '_')}" %>
+    <div class="my-5">
+      <%= form.text_field field, class: "entry-count" %>
+      <%= form.label dance %>
+    </div>
+  <% end %>
+</div>
+
+</div>
+
+<% end %>
+</div>
+
+<div class="mx-auto w-full flex">
+  <div class="mx-auto">
+  <%= link_to 'Back to person', @person, class: "btn-green" %>
+  <%= link_to 'Back to studio', @person.studio, class: "btn-green" %>
+  </div>
+</div>
+
+</div>

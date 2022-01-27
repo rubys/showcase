@@ -7,6 +7,8 @@ Rails.application.routes.draw do
   resources :people do
     get 'backs', on: :collection
     get 'couples', on: :collection
+    get 'entries', on: :member
+    post 'entries', on: :member
   end
   resources :studios
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

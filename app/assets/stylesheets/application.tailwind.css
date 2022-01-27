@@ -13,6 +13,11 @@
 */
 
 @layer components {
+  .entry-count { @apply
+    shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-12
+     ml-4 mr-2
+  }
+
   .btn-blue { @apply
      mx-2 rounded-lg py-3 px-5 text-white bg-blue-600 inline-block font-medium
   }
