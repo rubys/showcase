@@ -14,7 +14,6 @@
     <table class="mt-4 table-fixed mx-auto">
     <thead>
       <th class="row-head">Heat
-      <th class="row-head">Category
       <th class="row-head">Dance
       <th class="row-head">#
       <th class="row-head">Lead
@@ -23,18 +22,17 @@
       <th class="row-head">Category
       <th class="row-head">Studio
     </thead>
-    <% @heats.each do |number, entries| %>
-      <% entries.each do |(entry, category, subject)| %>
+    <% @heats.each do |number, heats| %>
+      <% heats.each do |heat| %>
          <tr>
            <td class="row"><%= number %>
-           <td class="row"><%= entry.category %>
-           <td class="row"><%= entry.dance.name %>
-           <td class="row"><%= entry.lead.back %>
-           <td class="row"><%= entry.lead.display_name %>
-           <td class="row"><%= entry.follow.display_name %>
-           <td class="row"><%= subject.level %>
-           <td class="row"><%= category %>
-           <td class="row"><%= subject.studio.name %>
+           <td class="row"><%= heat.dance.name %>
+           <td class="row"><%= heat.back %>
+           <td class="row"><%= heat.lead.display_name %>
+           <td class="row"><%= heat.follow.display_name %>
+           <td class="row"><%= heat.level %>
+           <td class="row"><%= heat.category %>
+           <td class="row"><%= heat.studio.name %>
          </tr>
       <% end %>
       <tr class="mt-2"><td class="mt-2">&nbsp;</td></tr>

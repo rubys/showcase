@@ -4,27 +4,28 @@ class HeatsController < ApplicationController
   # GET /heats or /heats.json
   def index
     @heats = Heat.order(:number).eager_load({entry: [:dance, :lead, :follow]}).
-      group_by {|heat| heat[:number]}.map do |number, heats|
-      [number, heats.sort_by {|heat| heat.entry.lead.back}.map do |heat|
-        entry = heat.entry
-        if entry.lead.type == 'Professional'
-          subject = entry.follow
-          category = "L - #{subject.category}"
-        elsif entry.follow.type == 'Professional'
-          subject = entry.lead
-          category = "G - #{subject.category}"
-        else
-          subject = entry.lead
-          category = "AC - #{subject.category}"
-        end
-
-        [entry, category, subject]
-      end]
-    end
+      group_by {|heat| heat.number}.map do |number, heats|
+        [number, heats.sort_by { |heat| heat.back } ]
+      end
   end
 
   # GET /heats/1 or /heats/1.json
   def show
+  end
+
+  # GET /heats/knobs
+  def knobs
+    @categories = Person.distinct.pluck(:category).compact.length
+    @levels = Person.distinct.pluck(:level).compact.length
+  end
+
+  # POST /heats/redo
+  def redo
+    @heats = Heat.eager_load({entry: [:dance, :lead, :follow]}).
+      group_by {|heat| heat.number}.map do |number, heats|
+        [number, heats.sort_by { |heat| heat.back } ]
+      end
+    render :index
   end
 
   # GET /heats/new

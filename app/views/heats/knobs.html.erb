@@ -1,0 +1,20 @@
+<%= form_with url: redo_heats_path, local: true, data: {turbo: false} do |form| %>
+  <div class="my-5">
+    <%= form.label :category, 'open/closed' %>
+    <%= form.range_field :category, min: 0, max: 1, value: 0, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :level, 'level' %>
+    <%= form.range_field :level, min: 0, max: @levels, value: @levels/2, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :age, 'age' %>
+    <%= form.range_field :age, min: 0, max: @categories, value: @categories, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="inline">
+    <%= form.submit value: 'Redo', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  </div>
+<% end %>
