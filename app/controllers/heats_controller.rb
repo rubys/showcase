@@ -1,4 +1,6 @@
 class HeatsController < ApplicationController
+  include HeatScheduler
+  
   before_action :set_heat, only: %i[ show edit update destroy ]
 
   # GET /heats or /heats.json
@@ -21,10 +23,7 @@ class HeatsController < ApplicationController
 
   # POST /heats/redo
   def redo
-    @heats = Heat.eager_load({entry: [:dance, :lead, :follow]}).
-      group_by {|heat| heat.number}.map do |number, heats|
-        [number, heats.sort_by { |heat| heat.back } ]
-      end
+    schedule_heats
     render :index
   end
 

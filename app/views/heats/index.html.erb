@@ -5,6 +5,7 @@
 
   <div class="flex justify-between items-center">
     <h1 class="mx-auto font-bold text-4xl">Heats</h1>
+    <%= link_to 'Redo', knobs_heats_path, class: "btn-blue" %>
 <!--
     <%= link_to 'New heat', new_heat_path, class: "rounded-lg py-3 px-5 bg-blue-600 text-white block font-medium" %>
 -->
@@ -14,6 +15,7 @@
     <table class="mt-4 table-fixed mx-auto">
     <thead>
       <th class="row-head">Heat
+      <th class="row-head">Category
       <th class="row-head">Dance
       <th class="row-head">#
       <th class="row-head">Lead
@@ -26,12 +28,13 @@
       <% heats.each do |heat| %>
          <tr>
            <td class="row"><%= number %>
+           <td class="row"><%= heat.category %>
            <td class="row"><%= heat.dance.name %>
            <td class="row"><%= heat.back %>
            <td class="row"><%= heat.lead.display_name %>
            <td class="row"><%= heat.follow.display_name %>
            <td class="row"><%= heat.level %>
-           <td class="row"><%= heat.category %>
+           <td class="row"><%= heat.entry.subject_category %>
            <td class="row"><%= heat.studio.name %>
          </tr>
       <% end %>

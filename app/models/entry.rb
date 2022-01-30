@@ -11,7 +11,7 @@ class Entry < ApplicationRecord
     end   
   end
 
-  def category
+  def subject_category
     if follow.type == 'Professional'
       "G - #{lead.category}"
     elsif lead.type == 'Professional'
