@@ -1,3 +1,25 @@
+<div class="mx-auto md:w-2/3 w-full">
+<h1 class="font-bold text-4xl mb-6">Adjust the number of heats</h1>
+
+<p class="mb-2">
+You can indirectly control the number of heats by adjusting who can be
+on the floor at the same time.
+</p>
+
+<p class="mb-2">
+With the sliders all the way to the left, Open and Closed heats are never
+on the floor at the same time, Full Bronze students can only be on the floor
+with other Full Bronze students.  And people in age category B1 can only
+be on the floor with others in the same age category.
+</p>
+
+<p class="mb-2">
+With the sliders all the way to the right, Open and Closed heats can be 
+on the floor at the same time, Newcomers can be on the dance floor at the
+same time as Full Gold students.  And people in any age category can be
+on the floor at the same time.
+</p>
+
 <%= form_with url: redo_heats_path, local: true, data: {turbo: false} do |form| %>
   <div class="my-5">
     <%= form.label :category, 'open/closed' %>
@@ -18,3 +40,4 @@
     <%= form.submit value: 'Redo', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
   </div>
 <% end %>
+</div>

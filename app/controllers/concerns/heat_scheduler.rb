@@ -32,20 +32,35 @@ module HeatScheduler
 
     # convert relevant data to numbers
     groups = []
+    assignments = {}
+    subgroups = []
+    lastgroup = nil
     while not heats.empty?
+      if lastgroup and not lastgroup.match? *heats.first
+        rebalance(assignments, subgroups) unless subgroups.empty?
+
+        assignments = {}
+        subgroups = []
+      end
+
       group = Group.new(*heats.shift)
 
-      assignment = []
-      for entry in heats
-        break unless entry[0] == group.dance
+      subgroups.unshift group
 
+      for entry in heats
         if group.add? *entry
           heats.delete entry
+          assignments[entry] = group
+        elsif not group.match? *entry
+          break
         end
       end
 
       groups << group
+      lastgroup = group
     end
+
+    rebalance(assignments, subgroups) unless subgroups.empty?
 
     groups.each_with_index do |group, index|
       group.each do |heat|
@@ -57,6 +72,23 @@ module HeatScheduler
       group_by {|heat| heat.number}.map do |number, heats|
         [number, heats.sort_by { |heat| heat.back } ]
       end.sort
+  end
+
+  def rebalance(assignments, subgroups)
+    ceiling = (assignments.length.to_f / subgroups.length).ceil + 1
+
+    assignments.to_a.reverse.each do |(entry, source)|
+      subgroups.each do |target|
+        break if target == source
+        next if target.size >= ceiling
+        next if target.size >= source.size - 1
+
+        if target.add? *entry
+          source.remove *entry
+          break
+        end
+      end
+    end
   end
 
   class Group
@@ -79,18 +111,26 @@ module HeatScheduler
       
       @group = [heat]
       @dance = dance
+      @dcat = dcat
+    end
+
+    def match?(dance, dcat, level, age, heat)
+      return false unless @dance == dance
+      return false unless @dcat == dcat or @@category > 0
+      return true
     end
 
     def add?(dance, dcat, level, age, heat)
       return if @participants.include? heat.lead
       return if @participants.include? heat.follow
 
-      return unless (dcat-@max_dcat).abs <= @@category
-      return unless (dcat-@min_dcat).abs <= @@category
-      return unless (level-@max_level).abs <= @@level
-      return unless (level-@min_level).abs <= @@level
-      return unless (age-@max_age).abs <= @@age
-      return unless (age-@min_age).abs <= @@age
+      return false unless @dance == dance
+      return false unless (dcat-@max_dcat).abs <= @@category
+      return false unless (dcat-@min_dcat).abs <= @@category
+      return false unless (level-@max_level).abs <= @@level
+      return false unless (level-@min_level).abs <= @@level
+      return false unless (age-@max_age).abs <= @@age
+      return false unless (age-@min_age).abs <= @@age
 
       @participants.add heat.lead
       @participants.add heat.follow
@@ -105,8 +145,18 @@ module HeatScheduler
       @group << heat
     end
 
+    def remove(dance, dcat, level, age, heat)
+      @group.delete heat
+      @participants.delete heat.lead
+      @participants.delete heat.follow
+    end
+
     def each(&block)
       @group.each(&block)
+    end
+
+    def size
+      @group.size
     end
   end
 end
