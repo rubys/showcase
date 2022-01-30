@@ -68,6 +68,12 @@ module HeatScheduler
       end
     end
 
+    @stats = groups.each_with_index.
+      map {|group, index| [group, index+1]}.
+      group_by {|group, heat| group.size}.
+      map {|size, entries| [size, entries.map(&:last)]}.
+      sort
+
     @heats = @heats.
       group_by {|heat| heat.number}.map do |number, heats|
         [number, heats.sort_by { |heat| heat.back } ]
