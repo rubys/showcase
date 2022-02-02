@@ -47,8 +47,9 @@
       <th class="row-head">Studio
     </thead>
     <% @heats.each do |number, heats| %>
+      <tr id="heat-<%= number %>"><td>&nbsp;</td></tr>
       <% heats.each do |heat| %>
-         <tr id="heat-<%= number %>">
+         <tr id="<%= dom_id heat %>">
            <td class="row"><%= number %>
            <td class="row"><%= heat.category %>
            <td class="row"><%= heat.dance.name %>
@@ -60,7 +61,6 @@
            <td class="row"><%= heat.studio.name %>
          </tr>
       <% end %>
-      <tr class="mt-2"><td class="mt-2">&nbsp;</td></tr>
     <% end %>
   </div>
 </div>
