@@ -26,6 +26,10 @@
      mx-2 rounded-lg py-3 px-5 text-white bg-green-600 inline-block font-medium
   }
 
+  .btn-grey { @apply
+     mx-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium
+  }
+
   .row-head-main { @apply
      border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3
      text-black dark:text-black text-center

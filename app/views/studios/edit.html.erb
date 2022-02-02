@@ -3,8 +3,18 @@
 
   <%= render "form", studio: @studio %>
 
-  <div class="inline-block ml-2">
-    <%= button_to 'Remove this studio', studio_path(@studio), method: :delete, class: "mt-2 rounded-lg py-3 px-5 bg-gray-100 font-medium" %>
-  </div>
+  <%= link_to 'Remove this studio', studio_path(@studio), class: "btn-grey",
+    data: { turbo_method: :delete, turbo_confirm: 'Are you sure?' } %>
+
   <%= link_to "Back to studios", studios_path, class: "btn-green" %>
+
+  <% if @pairs %>
+  <h2 class="mt-8 font-bold text-2xl">Associated studios</h1>
+  <ul>
+  <% @pairs.sort_by {|studio| studio.name}.each do |pair| %>
+  <li><%= pair.name %></li>
+  <% end %>
+  </ul>
+  <% end %>
+
 </div>

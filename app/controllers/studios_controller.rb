@@ -13,18 +13,23 @@ class StudiosController < ApplicationController
   # GET /studios/new
   def new
     @studio = Studio.new
+    @pairs = @studio.pairs
+    @avail = [nil] + Studio.all.map {|studio| studio.name}
   end
 
   # GET /studios/1/edit
   def edit
+    @pairs = @studio.pairs
+    @avail = [nil] + (Studio.all - @pairs).map {|studio| studio.name}
   end
 
   # POST /studios or /studios.json
   def create
-    @studio = Studio.new(studio_params)
+    @studio = Studio.new(studio_params.except(:pair))
 
     respond_to do |format|
       if @studio.save
+        add_pair
         format.html { redirect_to studio_url(@studio), notice: "Studio was successfully created." }
         format.json { render :show, status: :created, location: @studio }
       else
@@ -37,7 +42,9 @@ class StudiosController < ApplicationController
   # PATCH/PUT /studios/1 or /studios/1.json
   def update
     respond_to do |format|
-      if @studio.update(studio_params)
+      add_pair
+
+      if @studio.update(studio_params.except(:pair))
         format.html { redirect_to studio_url(@studio), notice: "Studio was successfully updated." }
         format.json { render :show, status: :ok, location: @studio }
       else
@@ -65,6 +72,17 @@ class StudiosController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def studio_params
-      params.require(:studio).permit(:name)
+      params.require(:studio).permit(:name, :tables, :pair)
+    end
+
+    def add_pair
+      pair = studio_params.delete :pair
+      if pair
+        pair = Studio.find_by(name: pair)
+        if pair and not @studio.pairs.include? pair
+          pair = StudioPair.new(studio1: @studio, studio2: pair)
+          pair.save!
+        end
+      end
     end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_01_24_133957) do
+ActiveRecord::Schema.define(version: 2022_02_02_153834) do
 
   create_table "dances", force: :cascade do |t|
     t.string "name"
@@ -56,6 +56,15 @@ ActiveRecord::Schema.define(version: 2022_01_24_133957) do
     t.index ["studio_id"], name: "index_people_on_studio_id"
   end
 
+  create_table "studio_pairs", force: :cascade do |t|
+    t.integer "studio1_id", null: false
+    t.integer "studio2_id", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["studio1_id"], name: "index_studio_pairs_on_studio1_id"
+    t.index ["studio2_id"], name: "index_studio_pairs_on_studio2_id"
+  end
+
   create_table "studios", force: :cascade do |t|
     t.string "name"
     t.integer "tables"
@@ -68,4 +77,6 @@ ActiveRecord::Schema.define(version: 2022_01_24_133957) do
   add_foreign_key "entries", "people", column: "lead_id"
   add_foreign_key "heats", "entries"
   add_foreign_key "people", "studios"
+  add_foreign_key "studio_pairs", "studios", column: "studio1_id"
+  add_foreign_key "studio_pairs", "studios", column: "studio2_id"
 end
