@@ -17,5 +17,7 @@ Rails.application.routes.draw do
     post 'entries', on: :member
   end
 
-  resources :studios
+  resources :studios do
+    post 'unpair', on: :member
+  end
 end

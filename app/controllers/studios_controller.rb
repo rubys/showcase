@@ -1,5 +1,5 @@
 class StudiosController < ApplicationController
-  before_action :set_studio, only: %i[ show edit update destroy ]
+  before_action :set_studio, only: %i[ show edit update unpair destroy ]
 
   # GET /studios or /studios.json
   def index
@@ -54,12 +54,25 @@ class StudiosController < ApplicationController
     end
   end
 
+  def unpair
+    pair = params.require(:pair)
+    if pair
+      pair = Studio.find_by(name: pair)
+      if pair and @studio.pairs.include? pair
+        StudioPair.destroy_by(studio1: @studio, studio2: pair)
+        StudioPair.destroy_by(studio1: @studio, studio2: pair)
+        redirect_to edit_studio_url(@studio), notice: "#{pair.name} was successfully unpaired."
+      end
+    end
+  end
+
   # DELETE /studios/1 or /studios/1.json
   def destroy
     @studio.destroy
 
     respond_to do |format|
-      format.html { redirect_to studios_url, notice: "Studio was successfully destroyed." }
+      format.html { redirect_to studios_url, status: 303,
+         notice: "#{@studio.name} was successfully removed." }
       format.json { head :no_content }
     end
   end

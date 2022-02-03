@@ -8,11 +8,17 @@
 
   <%= link_to "Back to studios", studios_path, class: "btn-green" %>
 
-  <% if @pairs %>
+  <% if @pairs and @pairs.size > 0 %>
   <h2 class="mt-8 font-bold text-2xl">Associated studios</h1>
-  <ul>
+  <ul class="list-disc list-inside">
   <% @pairs.sort_by {|studio| studio.name}.each do |pair| %>
-  <li><%= pair.name %></li>
+  <li class="group flex">
+    <span class="leading-8 mr-4">&bull;&nbsp;<%= pair.name %></span>
+    <form method="post" action="<%= unpair_studio_path(@studio) %>">
+    <input type="hidden" name="pair" value="<%= pair.name %>">
+    <button type="submit" class='group-hover:inline hidden x-2 rounded-lg py-1 px-2 text-white bg-red-600 font-medium'>Unpair</button>
+    </form>
+  </li>
   <% end %>
   </ul>
   <% end %>

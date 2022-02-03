@@ -108,10 +108,12 @@ class PeopleController < ApplicationController
 
   # DELETE /people/1 or /people/1.json
   def destroy
+    studio = @person.studio
     @person.destroy
 
     respond_to do |format|
-      format.html { redirect_to people_url, notice: "Person was successfully destroyed." }
+      format.html { redirect_to (studio ? studio_url(studio) : root_url),
+         status: 303, notice: "#{@person.name} was successfully removed." }
       format.json { head :no_content }
     end
   end

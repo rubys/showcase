@@ -3,6 +3,8 @@ class Entry < ApplicationRecord
   belongs_to :lead, class_name: 'Person'
   belongs_to :follow, class_name: 'Person'
 
+  has_many :heats, dependent: :destroy
+
   def subject
     if lead.type == 'Professional'
       follow
