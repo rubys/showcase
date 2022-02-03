@@ -1,15 +1,15 @@
 <div class="mx-auto w-full">
 <h1 class="font-bold text-4xl pb-5 text-center"><%= @person.display_name %></h1>
 
+<%= form_with(class: "contents") do |form| %>
+
 <div class="mx-auto w-full mb-8 text-center">
-<div>Role: <%= @person.role %></div>
+<div><%= form.select :studio_id, @avail, {} %></div>
 <div>Category: <%= @person.category %></div>
 <div>Level: <%= @person.level %></div>
 </div>
 
 <div class="mx-auto w-full flex flex-wrap">
-<%= form_with(class: "contents") do |form| %>
-
 <div class="mx-auto flex flex-wrap">
 
 <h1 class="w-full text-center bg-yellow-400 mb-4">CLOSED CATEGORY</h1>
@@ -193,8 +193,8 @@
 
 </div>
 
-<% end %>
 </div>
+<% end %>
 
 <div class="mx-auto w-full flex">
   <div class="mx-auto">

@@ -75,6 +75,25 @@ class PeopleController < ApplicationController
     selections
   end
 
+  def entries
+    entries = @person.lead_entries + @person.follow_entries
+    partners = (entries.map(&:follow) + entries.map(&:lead)).uniq
+    studios = [@person.studio] + @person.studio.pairs
+
+    seeking = @person.role == 'Leader' ? 'Follower' : 'Leader'
+    teacher = Person.where(type: 'Professional', studio: studios, 
+      role: [seeking, 'Both']).order(:name)
+    student = Person.where(type: 'Student', studio: @person.studio, 
+      role: [seeking, 'Both']).order(:name)
+
+    @avail = teacher + student - partners
+    surname = @person.name.split(',').first + ','
+    spouse = @avail.find {|person| person.name.start_with? surname}
+    @avail = ([spouse] + @avail).uniq if spouse
+
+    @avail = @avail.map {|person| [person.display_name, person.name]}.to_h
+  end
+
   # POST /people or /people.json
   def create
     @person = Person.new(person_params)

@@ -59,7 +59,11 @@
 
     <div class="mt-4 mx-auto">
     <%= link_to 'Edit this person', edit_person_path(@person), class: "btn-blue" %>
+
+    <% if @person.type == 'Student' %>
     <%= link_to 'Add entries', entries_person_path(@person), class: "btn-blue" %>
+    <% end %>
+
     <%= link_to 'Back to studio', @person.studio, class: "btn-green" %>
     </div>
   </div>
