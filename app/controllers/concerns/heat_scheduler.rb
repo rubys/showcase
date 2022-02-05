@@ -62,9 +62,12 @@ module HeatScheduler
 
     rebalance(assignments, subgroups) unless subgroups.empty?
 
-    groups.each_with_index do |group, index|
-      group.each do |heat|
-        heat.number = index + 1
+    ActiveRecord::Base.transaction do
+      groups.each_with_index do |group, index|
+        group.each do |heat|
+          heat.number = index + 1
+          heat.save!
+        end
       end
     end
 
