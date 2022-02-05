@@ -7,7 +7,7 @@ class HeatsController < ApplicationController
   def index
     @heats = Heat.order(:number).eager_load({entry: [:dance, :lead, :follow]}).
       group_by {|heat| heat.number}.map do |number, heats|
-        [number, heats.sort_by { |heat| heat.back } ]
+        [number, heats.sort_by { |heat| heat.back || 0 } ]
       end
   end
 
