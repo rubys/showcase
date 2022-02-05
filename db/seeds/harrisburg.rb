@@ -139,7 +139,7 @@ followers.each do |name|
     }
   end
 
-  people[name][:role] ||= 'Follow'
+  people[name][:role] ||= 'Follower'
 end
 
 ###

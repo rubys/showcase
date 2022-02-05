@@ -1,5 +1,6 @@
 class PeopleController < ApplicationController
-  before_action :set_person, only: %i[ show edit update destroy entries ]
+  before_action :set_person, only: 
+    %i[ show edit update destroy get_entries post_entries ]
 
   # GET /people or /people.json
   def index
@@ -75,10 +76,21 @@ class PeopleController < ApplicationController
     selections
   end
 
-  def entries
+  def get_entries
     entries = @person.lead_entries + @person.follow_entries
     partners = (entries.map(&:follow) + entries.map(&:lead)).uniq
     studios = [@person.studio] + @person.studio.pairs
+
+    dances = Dance.all.to_a
+    @dances = dances.map(&:name)
+
+    @entries = %w(Open Closed).map do |cat|
+      [cat, dances.map do |dance|
+        [dance.name, entries.find do |entry|
+          entry.category == cat && entry.dance == dance
+        end&.count || 0]
+      end.to_h]
+    end.to_h
 
     seeking = @person.role == 'Leader' ? 'Follower' : 'Leader'
     teacher = Person.where(type: 'Professional', studio: studios, 
@@ -92,6 +104,44 @@ class PeopleController < ApplicationController
     @avail = ([spouse] + @avail).uniq if spouse
 
     @avail = @avail.map {|person| [person.display_name, person.name]}.to_h
+
+    render :entries
+  end
+
+  def post_entries
+    if @person.role = "Follower"
+      lead = Person.find_by(name: params[:partner])
+      follow = @person
+    else
+      lead = @person
+      follow = Person.find_by(name: params[:partner])
+    end
+
+    total = 0
+    %w(Closed Open).each do |category|
+      Dance.all.each do |dance|
+        count = params[:entries][category][dance.name].to_i
+        if count > 0
+          total += count
+
+          entry = {
+            category: category,
+            dance: dance, 
+            lead: lead, 
+            follow: follow, 
+            count: count
+          }
+
+          entry = Entry.create! entry
+
+          (count..1).each do |heat|
+            Heat.create!({number: 0, entry: entry})
+          end
+        end
+      end
+    end
+
+    redirect_to person_url(@person), notice: "#{total} heats successfully created."
   end
 
   # POST /people or /people.json

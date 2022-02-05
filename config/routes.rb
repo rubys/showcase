@@ -13,8 +13,8 @@ Rails.application.routes.draw do
   resources :people do
     get 'backs', on: :collection
     get 'couples', on: :collection
-    get 'entries', on: :member
-    post 'entries', on: :member
+    get 'entries', on: :member, action: 'get_entries'
+    post 'entries', on: :member, action: 'post_entries'
   end
 
   resources :studios do
