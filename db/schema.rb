@@ -30,13 +30,17 @@ ActiveRecord::Schema.define(version: 2022_02_06_193854) do
     t.integer "count"
     t.string "category"
     t.integer "dance_id", null: false
+    t.integer "age_id", null: false
+    t.integer "level_id", null: false
     t.integer "lead_id", null: false
     t.integer "follow_id", null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.index ["age_id"], name: "index_entries_on_age_id"
     t.index ["dance_id"], name: "index_entries_on_dance_id"
     t.index ["follow_id"], name: "index_entries_on_follow_id"
     t.index ["lead_id"], name: "index_entries_on_lead_id"
+    t.index ["level_id"], name: "index_entries_on_level_id"
   end
 
   create_table "events", force: :cascade do |t|
@@ -95,7 +99,9 @@ ActiveRecord::Schema.define(version: 2022_02_06_193854) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
+  add_foreign_key "entries", "ages"
   add_foreign_key "entries", "dances"
+  add_foreign_key "entries", "levels"
   add_foreign_key "entries", "people", column: "follow_id"
   add_foreign_key "entries", "people", column: "lead_id"
   add_foreign_key "heats", "entries"

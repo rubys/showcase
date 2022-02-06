@@ -196,15 +196,31 @@ people = people.map do |name, person|
   [name, Person.create!(person)]
 end.to_h
 
+ActiveRecord::Base.transaction do
 Entry.delete_all
 entries = entries.map do |entry|
   heats = entry.delete :heats
   entry[:dance] = dances[entry[:dance]]
   entry[:lead] = people[entry[:lead]]
   entry[:follow] = people[entry[:follow]]
+
+  if entry[:follow].type == 'Professional'
+    entry[:age] = entry[:lead].age
+    entry[:level] = entry[:lead].level
+  elsif entry[:lead].type == 'Professional'
+    entry[:age] = entry[:follow].age
+    entry[:level] = entry[:follow].level
+  else
+    entry[:age] = (entry[:lead].age_id > entry[:follow].age_id ?
+      entry[:lead].age : entry[:follow].age)
+    entry[:level] = (entry[:lead].level_id > entry[:follow].level_id ?
+      entry[:lead].level : entry[:follow].level)
+  end
+
   entry = Entry.create! entry
 
   (entry[:count]..1).each do |heat|
     Heat.create!({number: heat, entry: entry})
   end
+end
 end

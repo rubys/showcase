@@ -13,8 +13,8 @@ module HeatScheduler
     heats = @heats.map {|heat|
       [heat.entry.dance_id,
        heat_categories[heat.category],
-       heat.entry.subject.level_id,
-       heat.entry.subject.age_id,
+       heat.entry.level_id,
+       heat.entry.age_id,
        heat
       ]}.sort
 
