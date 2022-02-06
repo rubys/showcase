@@ -1,8 +1,8 @@
 Rails.application.routes.draw do
   root 'event#root'
 
-  namespace 'event' do
-    get 'settings'
+  resources 'event', only: [:update] do
+    get 'settings', on: :collection
   end
 
   resources :heats do

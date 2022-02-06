@@ -1,8 +1,8 @@
 <div class="mx-auto">
-  <h1 class="font-bold text-4xl">The Greatest Show 2022</h1>
+  <h1 class="font-bold text-center text-4xl"><%= @event.name %></h1>
 
-  <p class="mt-4 text-center">Prestonwood Country Club</p>
-  <p class="mt-2 text-center">January 14-15</p>
+  <p class="mt-4 text-center"><%= @event.location %></p>
+  <p class="mt-2 text-center"><%= @event.date %></p>
 
   <h2 class="font-bold text-2xl mt-4 mb-2">Judges</h2>
   <ul class="list-disc list-inside">
@@ -25,6 +25,6 @@
 
     <%= link_to "Couples", couples_people_path, class: "btn-grey" %>
     <%= link_to "Backs", backs_people_path, class: "btn-grey" %>
-    <%= link_to "Settings", event_settings_path, class: "btn-grey" %>
+    <%= link_to "Settings", settings_event_index_path , class: "btn-grey" %>
   </div>
 </div>

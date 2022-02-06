@@ -7,13 +7,15 @@ require 'yaml'
 
 source = '/Users/rubys/Documents/Showcase 2022 Direct'
 
+config = YAML.load(IO.read "#{__dir__}/harrisburg.yaml")
+
 listing = IO.read(Dir["#{source}/Initial Listing*.csv"].first)
 listing = CSV.parse(listing.gsub("\r", ""))
 listing.shift
 
 studios = Set.new
 people = {}
-dances = Set.new(YAML.load(IO.read "#{__dir__}/harrisburg.yaml")[:dances])
+dances = Set.new(config[:dances])
 entries = []
 
 lead = nil
@@ -143,6 +145,16 @@ followers.each do |name|
 end
 
 ###
+
+Event.delete_all
+Event.create!(
+  name: config[:settings][:event][:name],
+  location: config[:settings][:event][:location],
+  date: config[:settings][:event][:date],
+  heat_range_cat: config[:settings][:heat][:category],
+  heat_range_level: config[:settings][:heat][:level],
+  heat_range_age: config[:settings][:heat][:age],
+)
 
 Dance.delete_all
 dances = dances.to_a.map do |dance|

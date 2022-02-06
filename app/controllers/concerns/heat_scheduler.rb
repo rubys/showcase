@@ -1,6 +1,6 @@
 module HeatScheduler
   def schedule_heats
-    Group.set_knobs(params)
+    Group.set_knobs
 
     # extract heats
     @heats = Heat.eager_load({
@@ -101,10 +101,11 @@ module HeatScheduler
   end
 
   class Group
-    def self.set_knobs(params)
-      @@category = params[:category].to_i
-      @@level = params[:level].to_i
-      @@age = params[:age].to_i
+    def self.set_knobs
+      event = Event.last
+      @@category = event.heat_range_cat
+      @@level = event.heat_range_level
+      @@age = event.heat_range_age
     end
 
     attr_reader :dance

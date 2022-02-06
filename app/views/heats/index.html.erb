@@ -5,7 +5,8 @@
 
   <div class="flex justify-between items-center">
     <h1 class="mx-auto font-bold text-4xl">Heats</h1>
-    <%= link_to 'Redo', knobs_heats_path, class: "btn-blue" %>
+    <%= link_to 'Redo', redo_heats_path, class: "btn-blue", data: { turbo_method: :post } %>
+    
 <!--
     <%= link_to 'New heat', new_heat_path, class: "rounded-lg py-3 px-5 bg-blue-600 text-white block font-medium" %>
 -->
