@@ -1,0 +1,2 @@
+class Age < ApplicationRecord
+end

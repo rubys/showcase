@@ -1,0 +1,2 @@
+class Level < ApplicationRecord
+end
