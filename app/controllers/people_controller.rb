@@ -4,11 +4,7 @@ class PeopleController < ApplicationController
 
   # GET /people or /people.json
   def index
-    order = params[:sort] || 'name'
-    order = 'studios.name' if order == 'studio'
-    order = 'age_id' if order == 'age'
-
-    @people = Person.includes(:studio).order(order)
+    @people = Person.includes(:studio).order(sort_order)
   end
 
   # GET /people/backs or /people.json
@@ -34,11 +30,7 @@ class PeopleController < ApplicationController
 
   # GET /people/students or /students.json
   def students
-    order = params[:sort] || 'name'
-    order = 'studios.name' if order == 'studio'
-    order = 'age_id' if order == 'age'
-
-    @people = Person.includes(:studio).where(type: 'Student').order(order)
+    @people = Person.includes(:studio).where(type: 'Student').order(sort_order)
 
     @title = 'Students'
     render :index
@@ -243,5 +235,13 @@ class PeopleController < ApplicationController
       ]
 
       @ages = Age.all.order(:id).map {|age| [age.description, age.id]}
+    end
+
+    def sort_order
+      order = params[:sort] || 'name'
+      order = 'studios.name' if order == 'studio'
+      order = 'age_id' if order == 'age'
+      order = 'level_id' if order == 'level'
+      order
     end
 end

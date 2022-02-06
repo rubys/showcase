@@ -18,7 +18,7 @@
         <td class="row-main"><%= link_to person.name, person %></td>
         <td class="row"><%= person.type %></td>
         <td class="row"><%= person.role %></td>
-        <td class="row"><%= person.level %></td>
+        <td class="row"><%= person.level&.name %></td>
       </tr>
     <% end %>
     </tbody>

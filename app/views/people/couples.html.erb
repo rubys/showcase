@@ -26,8 +26,12 @@
         <td class="px-2"><%= link_to lead.display_name, lead %>
         <td class="px-2"><%= link_to follow.display_name, follow %>
         <td class="px-2"><%= link_to lead.studio.name, lead.studio %>
-        <td class="px-2"><%= lead.level %>
-        <td class="text-center px-2"><%= [lead.category, follow.category].max %>
+        <td class="px-2">
+          <%= lead.level_id > follow.level_id ? lead.level.name : follow.level.name %>
+        </td>
+        <td class="text-center px-2">
+          <%= lead.age_id > follow.age_id ? lead.age.description : follow.age.description %>
+        </td>
       </tr>
       <% end %>
     </tbody>

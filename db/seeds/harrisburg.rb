@@ -188,6 +188,10 @@ people = people.map do |name, person|
     person[:age] = ages[person.delete(:age).max]
   end
 
+  if person[:level]
+    person[:level] = levels[person[:level]]
+  end
+
   person[:studio] = studios[person[:studio]]
   [name, Person.create!(person)]
 end.to_h

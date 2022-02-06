@@ -69,12 +69,13 @@ ActiveRecord::Schema.define(version: 2022_02_06_193854) do
     t.integer "studio_id"
     t.string "type"
     t.integer "back"
-    t.string "level"
+    t.integer "level_id"
     t.integer "age_id"
     t.string "role"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.index ["age_id"], name: "index_people_on_age_id"
+    t.index ["level_id"], name: "index_people_on_level_id"
     t.index ["studio_id"], name: "index_people_on_studio_id"
   end
 
@@ -99,6 +100,7 @@ ActiveRecord::Schema.define(version: 2022_02_06_193854) do
   add_foreign_key "entries", "people", column: "lead_id"
   add_foreign_key "heats", "entries"
   add_foreign_key "people", "ages"
+  add_foreign_key "people", "levels"
   add_foreign_key "people", "studios"
   add_foreign_key "studio_pairs", "studios", column: "studio1_id"
   add_foreign_key "studio_pairs", "studios", column: "studio2_id"

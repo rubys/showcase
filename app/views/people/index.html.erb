@@ -27,7 +27,7 @@
       <td class="row"><%= person.type %></td>
       <% end %>
       <td class="row"><%= person.role %></td>
-      <td class="row"><%= person.level %></td>
+      <td class="row"><%= person.level&.name %></td>
       <td class="row text-center"><%= person.age.description %></td>
       <td class="row"><%= link_to person.studio.name, person.studio %></td>
     </tr>

@@ -18,14 +18,14 @@
       <% if person.type == 'Student' %>
       <tr>
         <td class="row">Level</td>
-        <td class="row-main"><%= person.level %></td>
+        <td class="row-main"><%= person.level&.name %></td>
       </tr>
 
       <tr>
         <td class="row">Category</td>
         <td class="row-main">
-          <%= person.age.category %>
-          (<%= person.age.description %>)
+          <%= person.age&.category %>
+          (<%= person.age&.description %>)
         </td>
       </tr>
       <% end %>

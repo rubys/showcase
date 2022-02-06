@@ -10,19 +10,10 @@ module HeatScheduler
     # convert relevant data to numbers
     heat_categories = {'Closed' => 0, 'Open' => 1}
 
-    levels = Person.distinct.pluck(:level).compact.map {|level| 
-      rank = 0
-      rank += 1 if level.include? 'Bronze'
-      rank += 3 if level.include? 'Silver'
-      rank += 5 if level.include? 'Gold'
-      rank += 1 if level.include? 'Full'
-      [rank, level]
-    }.sort.to_h.invert
-
     heats = @heats.map {|heat|
       [heat.entry.dance_id,
        heat_categories[heat.category],
-       levels[heat.level],
+       heat.entry.subject.level_id,
        heat.entry.subject.age_id,
        heat
       ]}.sort

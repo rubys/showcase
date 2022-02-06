@@ -5,7 +5,7 @@ class CreatePeople < ActiveRecord::Migration[7.0]
       t.references :studio, null: true, foreign_key: true
       t.string :type
       t.integer :back
-      t.string :level
+      t.references :level, foreign_key: true
       t.references :age, foreign_key: true
       t.string :role
 
