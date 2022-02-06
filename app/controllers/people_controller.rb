@@ -45,6 +45,9 @@ class PeopleController < ApplicationController
 
   # GET /people/1 or /people/1.json
   def show
+    Dance.all
+    Person.all
+
     @entries = @person.lead_entries + @person.follow_entries
     @partners = (@entries.map(&:follow) + @entries.map(&:lead)).uniq
     @partners.delete @person
@@ -68,6 +71,7 @@ class PeopleController < ApplicationController
     @meals = @meals.join(', ')
 
     @heats = Heat.joins(:entry).
+      includes(entry: [:dance, :lead, :follow]).
       where(entry: {lead: @person}).
       or(Heat.where(entry: {follow: @person})).
       order(:number).to_a
@@ -80,7 +84,10 @@ class PeopleController < ApplicationController
     selections
 
     if params[:studio]
+      @types = %w[Student Professional Guest]
       @person.studio_id = params[:studio]
+    else
+      @types = %w[Judge Emcee]
     end
   end
 

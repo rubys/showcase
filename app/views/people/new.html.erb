@@ -1,5 +1,9 @@
 <div class="mx-auto md:w-2/3 w-full">
+  <% if @person.studio %>
   <h1 class="font-bold text-4xl">New Participant/Guest</h1>
+  <% else %>
+  <h1 class="font-bold text-4xl">New Event Staff Member</h1>
+  <% end %>
 
   <%= render "form", person: @person %>
 

@@ -16,20 +16,18 @@
     <%= form.text_field :name, placeholder: 'last, first', class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <% if @person.studio %>
   <div class="my-5">
     <%= form.label :studio_id %>
     <%= form.select :studio_id, @studios, {}, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+  <% end %>
 
   <div class="my-5">
     <%= form.label :type %>
     <%= form.select :type, @types, {}, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
-  <div class="my-5">
-    <%= form.label :back %>
-    <%= form.number_field :back, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
-  </div>
 
   <div class="my-5">
     <%= form.label :level %>
@@ -46,24 +44,12 @@
     <%= form.select :role, @roles, {}, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <% if @person.studio %>
   <div class="my-5">
-    <p>Meals</p>
-
-    <div class="mx-4">
-      <%= form.check_box :friday_dinner, class: "mt-2 h-6 w-6" %>
-      <%= form.label :friday_dinner, class: 'inline-block align-bottom' %>
-    </div>
-
-    <div class="mx-4">
-      <%= form.check_box :saturday_lunch, class: "mt-2 h-6 w-6" %>
-      <%= form.label :saturday_lunch, class: 'inline-block align-bottom' %>
-    </div>
-
-    <div class="mx-4">
-      <%= form.check_box :saturday_dinner, class: "mt-2 h-6 w-6" %>
-      <%= form.label :saturday_dinner, class: 'inline-block align-bottom' %>
-    </div>
+    <%= form.label :back, 'Back Number' %>
+    <%= form.number_field :back, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+  <% end %>
 
   <div class="inline">
     <%= form.submit class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>

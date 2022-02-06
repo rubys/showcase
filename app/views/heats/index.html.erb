@@ -3,28 +3,6 @@
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
-  <% if @stats %>
-  <h1 class="mx-auto font-bold text-4xl">Summary</h1>
-  <div id="stats" class="min-w-full">
-    <table class="mt-4 table-fixed mx-auto">
-      <thead>
-        <th class="row-head">Couples
-        <th class="row-head">Heats
-      </thead>
-      <% @stats.each do |size, heats| %>
-      <tr>
-        <td class="row"><%= size %>
-        <td>
-        <% heats.each do |heat| %>
-        <a href="#heat-<%= heat %>"><%= heat %></a>
-        <% end %>
-        </td>
-      </tr>
-      <% end %>
-    </table>
-  </div>
-  <% end %>
-
   <div class="flex justify-between items-center">
     <h1 class="mx-auto font-bold text-4xl">Heats</h1>
     <%= link_to 'Redo', knobs_heats_path, class: "btn-blue" %>
@@ -62,5 +40,30 @@
          </tr>
       <% end %>
     <% end %>
+    </table>
   </div>
+
+  <% if @stats %>
+  <div>
+  <h1 class="mt-12 mx-auto font-bold text-4xl">Summary</h1>
+  <div id="stats" class="min-w-full">
+    <table class="mt-4 table-fixed mx-auto">
+      <thead>
+        <th class="row-head">Couples
+        <th class="row-head">Heats
+      </thead>
+      <% @stats.each do |size, heats| %>
+      <tr>
+        <td class="row"><%= size %>
+        <td>
+        <% heats.each do |heat| %>
+        <a href="#heat-<%= heat %>"><%= heat %></a>
+        <% end %>
+        </td>
+      </tr>
+      <% end %>
+    </table>
+  </div>
+  </div>
+  <% end %>
 </div>

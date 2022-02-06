@@ -9,6 +9,10 @@ class HeatsController < ApplicationController
       group_by {|heat| heat.number}.map do |number, heats|
         [number, heats.sort_by { |heat| heat.back || 0 } ]
       end
+
+    @stats = @heats.group_by {|number, heats| heats.length}.
+      map {|size, entries| [size, entries.map(&:first)]}.
+      sort
   end
 
   # GET /heats/1 or /heats/1.json
@@ -24,7 +28,7 @@ class HeatsController < ApplicationController
   # POST /heats/redo
   def redo
     schedule_heats
-    render :index
+    redirect_to heats_url
   end
 
   # GET /heats/new

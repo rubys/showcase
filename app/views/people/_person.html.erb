@@ -15,11 +15,7 @@
         <td class="row-main"><%= person.type %></td>
       </tr>
 
-      <tr>
-        <td class="row">Back #</td>
-        <td class="row-main"><%= person.back %></td>
-      </tr>
-
+      <% if person.type == 'Student' %>
       <tr>
         <td class="row">Level</td>
         <td class="row-main"><%= person.level %></td>
@@ -29,16 +25,19 @@
         <td class="row">Category</td>
         <td class="row-main"><%= person.category %></td>
       </tr>
+      <% end %>
 
+      <% if %w(Student Professional).include? person.type %>
       <tr>
         <td class="row">Role</td>
         <td class="row-main"><%= person.role %></td>
       </tr>
+      <% end %>
 
-      <% if @meals %>
+      <% if %w(Leader Both).include? person.role %>
       <tr>
-        <td class="row">Meals</td>
-        <td class="row-main"><%= @meals %></td>
+        <td class="row">Back #</td>
+        <td class="row-main"><%= person.back %></td>
       </tr>
       <% end %>
     </tbody>
