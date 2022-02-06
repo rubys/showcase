@@ -10,7 +10,14 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_02_06_180026) do
+ActiveRecord::Schema.define(version: 2022_02_06_193854) do
+
+  create_table "ages", force: :cascade do |t|
+    t.string "category"
+    t.string "description"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+  end
 
   create_table "dances", force: :cascade do |t|
     t.string "name"
@@ -51,19 +58,23 @@ ActiveRecord::Schema.define(version: 2022_02_06_180026) do
     t.index ["entry_id"], name: "index_heats_on_entry_id"
   end
 
+  create_table "levels", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+  end
+
   create_table "people", force: :cascade do |t|
     t.string "name"
     t.integer "studio_id"
     t.string "type"
     t.integer "back"
     t.string "level"
-    t.string "category"
+    t.integer "age_id"
     t.string "role"
-    t.boolean "friday_dinner"
-    t.boolean "saturday_lunch"
-    t.boolean "saturday_dinner"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.index ["age_id"], name: "index_people_on_age_id"
     t.index ["studio_id"], name: "index_people_on_studio_id"
   end
 
@@ -87,6 +98,7 @@ ActiveRecord::Schema.define(version: 2022_02_06_180026) do
   add_foreign_key "entries", "people", column: "follow_id"
   add_foreign_key "entries", "people", column: "lead_id"
   add_foreign_key "heats", "entries"
+  add_foreign_key "people", "ages"
   add_foreign_key "people", "studios"
   add_foreign_key "studio_pairs", "studios", column: "studio1_id"
   add_foreign_key "studio_pairs", "studios", column: "studio2_id"

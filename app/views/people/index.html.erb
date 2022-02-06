@@ -14,7 +14,7 @@
       <% end %>
       <td class="row-head"><a href="?sort=role">Role
       <td class="row-head"><a href="?sort=level">Level
-      <td class="row-head"><a href="?sort=category">Category
+      <td class="row-head"><a href="?sort=age">Age
       <td class="row-head"><a href="?sort=studio">Studio
     </tr>
   </thead>
@@ -28,7 +28,7 @@
       <% end %>
       <td class="row"><%= person.role %></td>
       <td class="row"><%= person.level %></td>
-      <td class="row text-center"><%= person.category %></td>
+      <td class="row text-center"><%= person.age.description %></td>
       <td class="row"><%= link_to person.studio.name, person.studio %></td>
     </tr>
   <% end %>

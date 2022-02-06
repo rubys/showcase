@@ -6,6 +6,7 @@ class PeopleController < ApplicationController
   def index
     order = params[:sort] || 'name'
     order = 'studios.name' if order == 'studio'
+    order = 'age_id' if order == 'age'
 
     @people = Person.includes(:studio).order(order)
   end
@@ -35,6 +36,7 @@ class PeopleController < ApplicationController
   def students
     order = params[:sort] || 'name'
     order = 'studios.name' if order == 'studio'
+    order = 'age_id' if order == 'age'
 
     @people = Person.includes(:studio).where(type: 'Student').order(order)
 
@@ -78,13 +80,6 @@ class PeopleController < ApplicationController
       }.to_h]
     }.to_h
     @partners = @partners.keys
-
-    @meals = []
-    @meals << 'Friday dinner' if @person.friday_dinner
-    @meals << 'Saturday lunch' if @person.saturday_lunch
-    @meals << 'Saturday dinner' if @person.saturday_dinner
-    @meals << 'none' if @meals.empty?
-    @meals = @meals.join(', ')
 
     @heats = Heat.joins(:entry).
       includes(entry: [:dance, :lead, :follow]).
@@ -246,5 +241,7 @@ class PeopleController < ApplicationController
         'Assoc. Gold',
         'Full Gold',
       ]
+
+      @ages = Age.all.order(:id).map {|age| [age.description, age.id]}
     end
 end

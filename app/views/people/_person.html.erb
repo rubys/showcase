@@ -23,7 +23,10 @@
 
       <tr>
         <td class="row">Category</td>
-        <td class="row-main"><%= person.category %></td>
+        <td class="row-main">
+          <%= person.age.category %>
+          (<%= person.age.description %>)
+        </td>
       </tr>
       <% end %>
 

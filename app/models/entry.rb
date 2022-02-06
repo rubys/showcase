@@ -14,12 +14,14 @@ class Entry < ApplicationRecord
   end
 
   def subject_category
-    if follow.type == 'Professional'
-      "G - #{lead.category}"
-    elsif lead.type == 'Professional'
-      "L - #{follow.category}"
+    if follow.type == 'Professional' or not follow.age_id
+      "G - #{lead.age.category}"
+    elsif lead.type == 'Professional' or not lead.age_id
+      "L - #{follow.age.category}"
+    elsif lead.age_id > follow.age_id
+      "AC - #{lead.age.category}"
     else
-      "AC - #{[lead.category, follow.category].max}"
+      "AC - #{follow.age.category}"
     end
   end
 end

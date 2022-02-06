@@ -156,6 +156,16 @@ Event.create!(
   heat_range_age: config[:settings][:heat][:age],
 )
 
+Age.delete_all
+ages = config[:ages].map do |category, description|
+  [category, Age.create!(category: category, description: description)]
+end.to_h
+
+Level.delete_all
+levels = config[:levels].map do |name|
+  [name, Level.create!(name: name)]
+end.to_h
+
 Dance.delete_all
 dances = dances.to_a.map do |dance|
   [dance, Dance.create!(name: dance)]
@@ -175,7 +185,7 @@ people = people.map do |name, person|
   end
 
   if person[:age]
-    person[:category] = person.delete(:age).max
+    person[:age] = ages[person.delete(:age).max]
   end
 
   person[:studio] = studios[person[:studio]]

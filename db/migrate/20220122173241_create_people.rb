@@ -6,11 +6,8 @@ class CreatePeople < ActiveRecord::Migration[7.0]
       t.string :type
       t.integer :back
       t.string :level
-      t.string :category
+      t.references :age, foreign_key: true
       t.string :role
-      t.boolean :friday_dinner
-      t.boolean :saturday_lunch
-      t.boolean :saturday_dinner
 
       t.timestamps
     end
