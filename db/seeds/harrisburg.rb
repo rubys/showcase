@@ -20,6 +20,9 @@ entries = []
 
 lead = nil
 follow = nil
+level = nil
+age = nil
+
 listing.each do |entry|
   if entry[0]
     name = entry[0]
@@ -46,6 +49,8 @@ listing.each do |entry|
       else
         level = 'Newcomer'
     end
+
+    age = entry[8]
     
     unless name.include? '&'
       people[name] ||= {
@@ -57,7 +62,7 @@ listing.each do |entry|
        role: role
       }
 
-      people[name][:age] << entry[8]
+      people[name][:age] << age
       people[name][:level] << level
     end
 
@@ -84,7 +89,9 @@ listing.each do |entry|
       count: 1,
       dance: dance,
       lead: lead,
-      follow: follow
+      follow: follow,
+      level: level,
+      age: age
     }
   end
 end
@@ -204,23 +211,26 @@ entries = entries.map do |entry|
   entry[:lead] = people[entry[:lead]]
   entry[:follow] = people[entry[:follow]]
 
+  entry[:age] &&= ages[entry[:age]]
+  entry[:level] &&= levels[entry[:level]]
+
   if entry[:follow].type == 'Professional'
-    entry[:age] = entry[:lead].age
-    entry[:level] = entry[:lead].level
+    entry[:age] ||= entry[:lead].age
+    entry[:level] ||= entry[:lead].level
   elsif entry[:lead].type == 'Professional'
-    entry[:age] = entry[:follow].age
-    entry[:level] = entry[:follow].level
+    entry[:age] ||= entry[:follow].age
+    entry[:level] ||= entry[:follow].level
   else
-    entry[:age] = (entry[:lead].age_id > entry[:follow].age_id ?
+    entry[:age] ||= (entry[:lead].age_id > entry[:follow].age_id ?
       entry[:lead].age : entry[:follow].age)
-    entry[:level] = (entry[:lead].level_id > entry[:follow].level_id ?
+    entry[:level] ||= (entry[:lead].level_id > entry[:follow].level_id ?
       entry[:lead].level : entry[:follow].level)
   end
 
   entry = Entry.create! entry
 
   (entry[:count]..1).each do |heat|
-    Heat.create!({number: heat, entry: entry})
+    Heat.create!({number: 0, entry: entry})
   end
 end
 end

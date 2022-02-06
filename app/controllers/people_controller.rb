@@ -58,20 +58,25 @@ class PeopleController < ApplicationController
     Dance.all
     Person.all
 
-    @entries = @person.lead_entries + @person.follow_entries
-    @partners = (@entries.map(&:follow) + @entries.map(&:lead)).uniq
-    @partners.delete @person
-    @partners = @partners.sort_by {|person| person.name.split(/,\s*/).last}.
-      map {|partner| [partner, @entries.select {|entry|
+    entries = @person.lead_entries + @person.follow_entries
+    partners = (entries.map(&:follow) + entries.map(&:lead)).uniq
+    partners.delete @person
+    partners = partners.sort_by {|person| person.name.split(/,\s*/).last}.
+      map {|partner| [partner, entries.select {|entry|
         entry.lead == partner || entry.follow == partner
       }]}.to_h
-    @dances = Dance.all
-    @entries = @dances.map {|dance|
-      [dance, @partners.map {|partner, entries|
+
+    @dances = Dance.all.map {|dance|
+      [dance, partners.map {|partner, entries|
         [partner, entries.select {|entry| entry.dance == dance}.sum(&:count)]
       }.to_h]
-    }.to_h
-    @partners = @partners.keys
+    }.select {|dance, partners| partners.values.any? {|count| count > 0}}.to_h
+
+    @partners = partners.keys
+
+    @entries = partners.map do |partner, entries|
+      [partner, entries&.group_by {|entry| [entry.level_id, entry.age_id]}]
+    end
 
     @heats = Heat.joins(:entry).
       includes(entry: [:dance, :lead, :follow]).
@@ -100,8 +105,9 @@ class PeopleController < ApplicationController
   end
 
   def get_entries
+    selections
+
     entries = @person.lead_entries + @person.follow_entries
-    partners = (entries.map(&:follow) + entries.map(&:lead)).uniq
     studios = [@person.studio] + @person.studio.pairs
 
     dances = Dance.all.to_a
@@ -121,7 +127,7 @@ class PeopleController < ApplicationController
     student = Person.where(type: 'Student', studio: @person.studio, 
       role: [seeking, 'Both']).order(:name)
 
-    @avail = teacher + student - partners
+    @avail = teacher + student
     surname = @person.name.split(',').first + ','
     spouse = @avail.find {|person| person.name.start_with? surname}
     @avail = ([spouse] + @avail).uniq if spouse

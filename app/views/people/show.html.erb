@@ -7,6 +7,32 @@
     <%= render @person %>
 
     <% if %w(Student Professional).include? @person.type %>
+
+    <h2 class="font-bold pt-8 text-3xl pb-5">Entries</h2>
+
+    <table>
+      <thead>
+        <th>count
+        <th>partner
+        <th>level
+        <th>age
+      </thead>
+
+      <tbody>
+        <% @entries.each do |partner, entries| %>
+          <% entries.each do |stats, dances| %>
+            <tr>
+              <td class="row text-right"><%= dances.length %>
+              <td class="row"><%= partner.display_name %>
+              <td class="row"><%= dances.first.level.name %>
+              <td class="row"><%= dances.first.age.category %>
+            </tr>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table>
+
+
     <h2 class="font-bold pt-8 text-3xl pb-5">Dances</h2>
 
     <table>
@@ -20,11 +46,11 @@
       </thead>
 
       <tbody>
-      <% @dances.each do |dance| %>
+      <% @dances.each do |dance, partners| %>
       <tr>
         <td><%= dance.name %></td>
         <% @partners.each do |partner| %>
-          <td class="text-center"><%= @entries[dance][partner] %></td>
+          <td class="row text-center"><%= partners[partner] %></td>
         <% end %>
       </tr>
       <% end %>

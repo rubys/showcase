@@ -4,9 +4,13 @@
 <%= form_with(url: "entries", class: "contents") do |form| %>
 
 <div class="mx-auto w-full mb-8 text-center">
-<div><%= form.select :partner, @avail, {} %></div>
-<div>Category: <%= @person.category %></div>
-<div>Level: <%= @person.level %></div>
+<div><%= form.select :partner, @avail, {},
+  class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>
+<div><%= form.select :age, @ages, {selected: @person.age_id},
+  class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>
+<div><%= form.select :level, @levels, {selected: @person.level_id},
+  class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>
+
 </div>
 
 <div class="mx-auto w-full flex flex-wrap">
