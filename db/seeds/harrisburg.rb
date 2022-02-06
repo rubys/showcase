@@ -168,6 +168,12 @@ end.to_h
 
 Person.delete_all
 people = people.map do |name, person|
+  unless name.include? ','
+    parts = name.split(' ').rotate(-1)
+    parts[0] += ','
+    person[:name] = parts.join(' ')
+  end
+
   if person[:age]
     person[:category] = person.delete(:age).max
   end
