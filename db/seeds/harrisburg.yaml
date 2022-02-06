@@ -1,4 +1,14 @@
 ---
+:settings:                                                             
+  :event:                                                              
+    :title: Showcase
+    :location: Harrisburg, PA
+    :date: March 2022
+  :heat:                                                               
+    :category: 0  
+    :level: 3
+    :age: 7
+    
 :dances:
 - Waltz
 - Fox Trot
@@ -30,6 +40,7 @@
 - Swing
 - 4 Count
 - Polka
+
 :ages:
   J: "< 17"
   A: 18-35
@@ -39,3 +50,12 @@
   C: 66-75
   C1: 76-85
   D: 86+
+
+:levels:
+- Newcomer
+- Assoc. Bronze
+- Full Bronze
+- Assoc. Silver
+- Full Silver
+- Assoc. Gold
+- Full Gold

@@ -54,11 +54,11 @@
            <td class="row"><%= heat.category %>
            <td class="row"><%= heat.dance.name %>
            <td class="row"><%= heat.back %>
-           <td class="row"><%= heat.lead.display_name %>
-           <td class="row"><%= heat.follow.display_name %>
+           <td class="row"><%= link_to heat.lead.display_name, polymorphic_path(heat.lead, anchor: 'heats') %>
+           <td class="row"><%= link_to heat.follow.display_name, polymorphic_path(heat.follow, anchor: 'heats') %>
            <td class="row"><%= heat.level %>
            <td class="row"><%= heat.entry.subject_category %>
-           <td class="row"><%= heat.studio.name %>
+           <td class="row"><%= link_to heat.studio.name, heat.studio %>
          </tr>
       <% end %>
     <% end %>

@@ -3,27 +3,33 @@
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
-  <h1 class="text-center font-bold text-4xl mb-8">Students</h1>
+  <h1 class="text-center font-bold text-4xl mb-8"><%= @title || 'People' %></h1>
   
   <table class="table-fixed mx-auto">
   <thead>
     <tr>
       <td class="row-head"><a href="?sort=name">Name
+      <% unless @title == 'Students' %>
+      <td class="row-head"><a href="?sort=type">Type
+      <% end %>
       <td class="row-head"><a href="?sort=role">Role
       <td class="row-head"><a href="?sort=level">Level
       <td class="row-head"><a href="?sort=category">Category
       <td class="row-head"><a href="?sort=studio">Studio
     </tr>
   </thead>
-  
+
   <tbody>
   <% @people.each do |person| %>
     <tr>
       <td class="row-main"><%= link_to person.name, person %></td>
+      <% unless @title == 'Students' %>
+      <td class="row"><%= person.type %></td>
+      <% end %>
       <td class="row"><%= person.role %></td>
       <td class="row"><%= person.level %></td>
       <td class="row text-center"><%= person.category %></td>
-      <td class="row"><%= person.studio.name %></td>
+      <td class="row"><%= link_to person.studio.name, person.studio %></td>
     </tr>
   <% end %>
   </tbody>

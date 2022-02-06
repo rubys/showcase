@@ -4,7 +4,10 @@ class PeopleController < ApplicationController
 
   # GET /people or /people.json
   def index
-    @people = Person.order(:name)
+    order = params[:sort] || 'name'
+    order = 'studios.name' if order == 'studio'
+
+    @people = Person.includes(:studio).order(order)
   end
 
   # GET /people/backs or /people.json
@@ -19,6 +22,7 @@ class PeopleController < ApplicationController
 
     @people = Person.includes(:studio).where(type: 'Student').order(order)
 
+    @title = 'Students'
     render :index
   end
 
