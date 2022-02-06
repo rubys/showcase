@@ -1,14 +1,31 @@
-<div class="w-full">
+<div class="w-full mx-auto">
   <% if notice.present? %>
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
-  <div class="flex justify-between items-center">
-    <h1 class="font-bold text-4xl">People</h1>
-    <%= link_to 'New person', new_person_path, class: "rounded-lg py-3 px-5 bg-blue-600 text-white block font-medium" %>
-  </div>
-
-  <div id="people" class="min-w-full">
-    <%= render @people %>
-  </div>
+  <h1 class="text-center font-bold text-4xl mb-8">Students</h1>
+  
+  <table class="table-fixed mx-auto">
+  <thead>
+    <tr>
+      <td class="row-head"><a href="?sort=name">Name
+      <td class="row-head"><a href="?sort=role">Role
+      <td class="row-head"><a href="?sort=level">Level
+      <td class="row-head"><a href="?sort=category">Category
+      <td class="row-head"><a href="?sort=studio">Studio
+    </tr>
+  </thead>
+  
+  <tbody>
+  <% @people.each do |person| %>
+    <tr>
+      <td class="row-main"><%= link_to person.name, person %></td>
+      <td class="row"><%= person.role %></td>
+      <td class="row"><%= person.level %></td>
+      <td class="row text-center"><%= person.category %></td>
+      <td class="row"><%= person.studio.name %></td>
+    </tr>
+  <% end %>
+  </tbody>
+  </table>
 </div>

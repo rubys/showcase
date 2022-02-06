@@ -19,14 +19,13 @@
     <% end %>
   </ul>
 
-  <div class="mt-4">
+  <div class="grid grid-cols-3 gap-4">
     <%= link_to "Studios", studios_path, class: "btn-green" %>
-    <%= link_to "Backs", backs_people_path, class: "btn-green" %>
+    <%= link_to "Students", students_people_path, class: "btn-blue" %>
     <%= link_to "Heats", heats_path, class: "btn-green" %>
-  </div>
 
-  <div class="mt-4">
-    <%= link_to "Couples", couples_people_path, class: 
-      "rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+    <%= link_to "Couples", couples_people_path, class: "btn-grey" %>
+    <%= link_to "Backs", backs_people_path, class: "btn-grey" %>
+    <%= link_to "Settings", event_settings_path, class: "btn-grey" %>
   </div>
 </div>

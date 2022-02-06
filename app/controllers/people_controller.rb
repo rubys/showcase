@@ -4,16 +4,25 @@ class PeopleController < ApplicationController
 
   # GET /people or /people.json
   def index
-    @people = Person.all
+    @people = Person.order(:name)
   end
 
   # GET /people/backs or /people.json
   def backs
-    @people = Person.where(role: %w(Leader Both)).
-      sort_by {|person| person.back.to_s}
+    @people = Person.where(role: %w(Leader Both)).order(:back)
   end
 
-  # GET /people/backs or /people.json
+  # GET /people/students or /students.json
+  def students
+    order = params[:sort] || 'name'
+    order = 'studios.name' if order == 'studio'
+
+    @people = Person.includes(:studio).where(type: 'Student').order(order)
+
+    render :index
+  end
+
+  # GET /people/couples or /couples.json
   def couples
     @couples = Entry.preload(:lead, :follow).joins(:lead, :follow).
       where(lead: {type: 'Student'}, follow: {type: 'Student'}).
