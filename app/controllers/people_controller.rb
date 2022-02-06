@@ -15,6 +15,22 @@ class PeopleController < ApplicationController
     @people = Person.where(role: %w(Leader Both)).order(:back)
   end
 
+  def assign_backs
+    @people = Person.where(role: %w(Leader Both)).order(:type, :name)
+
+    number = 101
+    ActiveRecord::Base.transaction do
+      @people.each do |person|
+        number = 201 if number < 200 and person.type == "Student"
+        person.back = number
+        person.save!
+        number += 1
+      end
+    end
+
+    redirect_to backs_people_path 
+  end
+
   # GET /people/students or /students.json
   def students
     order = params[:sort] || 'name'

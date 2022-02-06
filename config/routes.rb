@@ -6,7 +6,6 @@ Rails.application.routes.draw do
   end
 
   resources :heats do
-    get 'knobs', on: :collection
     post 'redo', on: :collection
   end
 
@@ -16,6 +15,7 @@ Rails.application.routes.draw do
 
   resources :people do
     get 'backs', on: :collection
+    post 'backs', on: :collection, action: 'assign_backs'
     get 'couples', on: :collection
     get 'students', on: :collection
     get 'entries', on: :member, action: 'get_entries'

@@ -1,0 +1,91 @@
+<div class="mx-auto md:w-2/3 w-full">
+
+<% if notice.present? %>
+<p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+<% end %>
+
+<h1 class="font-bold text-4xl mb-6">Event Description</h1>
+
+<%= form_with model: @event, local: true, data: {turbo: false} do |form| %>
+  <div class="my-5">
+  <%= form.label :name %>
+  <%= form.text_field :name, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+  <%= form.label :location %>
+  <%= form.text_field :location, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+  <%= form.label :date %>
+  <%= form.text_field :date, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="inline">
+    <%= form.submit value: 'Save', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  </div>
+<% end %>
+
+
+<h1 class="mt-16 font-bold text-4xl mb-6">Event Staff</h1>
+
+<h2 class="font-bold text-2xl mt-4 mb-2">Judges</h2>
+<ul class="list-disc list-inside">
+  <% @judges.each do |judge| %>
+    <li><%= link_to judge.display_name, judge %></li>
+  <% end %>
+</u>
+
+<h2 class="font-bold text-2xl mt-4 mb-2">Emcee</h2>
+<ul class="list-disc list-inside mb-8">
+  <% @emcees.each do |emcee| %>
+    <li><%= link_to emcee.name, emcee %></li>
+  <% end %>
+</ul>
+
+<%= link_to "Add person", new_person_path, class: "btn-blue" %>
+
+
+<h1 class="mt-16 font-bold text-4xl mb-6">Adjust the number of heats</h1>
+
+<p class="mb-2">
+You can indirectly control the number of heats by adjusting who can be
+on the floor at the same time.
+</p>
+
+<p class="mb-2">
+With the sliders all the way to the left, Open and Closed heats are never
+on the floor at the same time, Full Bronze students can only be on the floor
+with other Full Bronze students.  And people in age category B1 can only
+be on the floor with others in the same age category.
+</p>
+
+<p class="mb-2">
+With the sliders all the way to the right, Open and Closed heats can be 
+on the floor at the same time, Newcomers can be on the dance floor at the
+same time as Full Gold students.  And people in any age category can be
+on the floor at the same time.
+</p>
+
+<%= form_with model: @event, local: true, data: {turbo: false} do |form| %>
+  <div class="my-5">
+    <%= form.label :heat_range_cat, 'open/closed' %>
+    <%= form.range_field :heat_range_cat, min: 0, max: 1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :heat_range_level, 'level' %>
+    <%= form.range_field :heat_range_level, min: 0, max: @levels, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :heat_range_age, 'age' %>
+    <%= form.range_field :heat_range_age, min: 0, max: @categories, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="inline">
+    <%= form.submit value: 'Save', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  </div>
+<% end %>
+</div>
