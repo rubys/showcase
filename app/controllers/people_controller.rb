@@ -178,7 +178,17 @@ class PeopleController < ApplicationController
 
   # POST /people or /people.json
   def create
-    @person = Person.new(person_params)
+    person = params[:person]
+
+    @person = Person.new(
+      name: person[:name],
+      studio_id: person[:studio_id],
+      type: person[:type],
+      level: Level.find_by(name: person[:level]),
+      age_id: person[:age_id],
+      role: person[:role],
+      back: person[:back]
+    )
     selections
 
     respond_to do |format|
@@ -186,6 +196,7 @@ class PeopleController < ApplicationController
         format.html { redirect_to person_url(@person), notice: "Person was successfully created." }
         format.json { render :show, status: :created, location: @person }
       else
+        @studio = person[:studio_id]
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @person.errors, status: :unprocessable_entity }
       end

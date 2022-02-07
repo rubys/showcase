@@ -62,20 +62,22 @@
       <thead>
         <tr>
           <td class="row-head">Heat
-          <td class="row-head">Category
           <td class="row-head">Dance
           <td class="row-head">Lead
           <td class="row-head">Follow
+          <td class="row-head">Level
+          <td class="row-head">Category
         </tr>
       </thead>
       <tbody>
         <% @heats.each do |heat| %>
         <tr>
           <td class="row"><%= heat.number %>
-          <td class="row"><%= heat.entry.age.category %>
           <td class="row"><%= heat.dance.name %>
           <td class="row"><%= link_to heat.entry.lead.display_name, heat.entry.lead %>
           <td class="row"><%= link_to heat.entry.follow.display_name, heat.entry.follow %>
+          <td class="row"><%= heat.entry.level.name %>
+          <td class="row"><%= heat.entry.age.category %>
         </tr>
         <% end %>
       </tbody>
@@ -86,7 +88,7 @@
     <%= link_to 'Edit this person', edit_person_path(@person), class: "btn-blue" %>
 
     <% if @person.type == 'Student' %>
-    <%= link_to 'Add entries', entries_person_path(@person), class: "btn-blue" %>
+    <%= link_to 'Add heats', new_entry_path(primary: @person), class: "btn-blue" %>
     <% end %>
 
     <%= link_to 'Back to studio', @person.studio, class: "btn-green" %>
