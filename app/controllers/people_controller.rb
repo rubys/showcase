@@ -180,15 +180,8 @@ class PeopleController < ApplicationController
   def create
     person = params[:person]
 
-    @person = Person.new(
-      name: person[:name],
-      studio_id: person[:studio_id],
-      type: person[:type],
-      level: Level.find_by(name: person[:level]),
-      age_id: person[:age_id],
-      role: person[:role],
-      back: person[:back]
-    )
+    @person = Person.new(filtered_params(person))
+
     selections
 
     respond_to do |format|
@@ -208,7 +201,7 @@ class PeopleController < ApplicationController
     selections
 
     respond_to do |format|
-      if @person.update(person_params)
+      if @person.update(filtered_params(person_params))
         format.html { redirect_to person_url(@person), notice: "Person was successfully updated." }
         format.json { render :show, status: :ok, location: @person }
       else
@@ -238,23 +231,44 @@ class PeopleController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def person_params
-      params.require(:person).permit(:name, :studio_id, :type, :back, :level, :category, :role, :friday_dinner, :saturday_lunch, :saturday_dinner)
+      params.require(:person).permit(:name, :studio_id, :type, :back, :level, :age_id, :category, :role)
+    end
+
+    def filtered_params(person)
+      base = {
+        name: person[:name],
+        studio_id: person[:studio_id],
+        type: person[:type],
+        level: Level.find_by(name: person[:level]),
+        age_id: person[:age_id],
+        role: person[:role],
+        back: person[:back]
+      }
+
+      unless %w(Professional Student Guest).include? base[:type]
+        base.delete :studio_id
+      end
+
+      unless %w(Student).include? base[:type]
+        base.delete :level
+        base.delete :age_id
+      end
+
+      unless %w(Professional Student).include? base[:type]
+        base.delete :role
+        base.delete :back
+      end
+
+      base
     end
 
     def selections
       @studios = Studio.all.map{|studio| [studio.name, studio.id]}.to_h
       @types = %w[Student Guest Professional Judge Emcee]
       @roles = %w[Follower Leader Both]
-      @levels = [
-        'Assoc. Bronze',
-        'Full Bronze',
-        'Assoc. Silver',
-        'Full Silver',
-        'Assoc. Gold',
-        'Full Gold',
-      ]
 
       @ages = Age.all.order(:id).map {|age| [age.description, age.id]}
+      @levels = Level.all.order(:id).map {|level| [level.name, level.id]}
     end
 
     def sort_order
