@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
   root 'event#root'
+  get '/instructions', to: 'event#instructions'
 
   resources 'event', only: [:update] do
     get 'settings', on: :collection
