@@ -21,11 +21,17 @@
       <tbody>
         <% @entries.each do |partner, entries| %>
           <% entries.each do |entry| %>
-            <tr>
+            <tr class="group">
               <td class="row text-right"><%= entry.heats.length %>
               <td class="row"><%= partner.display_name %>
               <td class="row"><%= entry.level.name %>
               <td class="row"><%= entry.age.category %>
+              <td>
+              <form method="get" action="<%= edit_entry_path(entry) %>">
+              <input type="hidden" name="primary" value="<%= @person.id %>">
+              <button type="submit" class='group-hover:inline hidden x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium'>Edit</button>
+              </form>
+              </td>
             </tr>
           <% end %>
         <% end %>
@@ -62,17 +68,19 @@
       <thead>
         <tr>
           <td class="row-head">Heat
+          <td class="row-head">Category
           <td class="row-head">Dance
           <td class="row-head">Lead
           <td class="row-head">Follow
           <td class="row-head">Level
-          <td class="row-head">Category
+          <td class="row-head">Age
         </tr>
       </thead>
       <tbody>
         <% @heats.each do |heat| %>
         <tr>
           <td class="row"><%= heat.number %>
+          <td class="row"><%= heat.category %>
           <td class="row"><%= heat.dance.name %>
           <td class="row"><%= link_to heat.entry.lead.display_name, heat.entry.lead %>
           <td class="row"><%= link_to heat.entry.follow.display_name, heat.entry.follow %>

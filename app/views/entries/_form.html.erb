@@ -11,14 +11,13 @@
     </div>
   <% end %>
 
-
 <div class="mx-auto w-full mb-8 text-center">
 <%= form.hidden_field :primary, value: @person.id %>
-<div><%= form.select :partner, @avail, {},
+<div><%= form.select :partner, @avail, {selected: @partner},
   class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>
-<div><%= form.select :age, @ages, {selected: @person.age_id},
+<div><%= form.select :age, @ages, {selected: @age},
   class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>
-<div><%= form.select :level, @levels, {selected: @person.level_id},
+<div><%= form.select :level, @levels, {selected: @level},
   class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>
 
 </div>
@@ -31,7 +30,7 @@
       <% @dances.each do |dance| %>
 	<% field = "entries[Closed][#{dance}]" %>
 	<div class="my-5">
-	  <%= form.text_field field, class: "entry-count" %>
+	  <%= form.text_field field, class: "entry-count", value: @entries['Closed'][dance]&.length %>
 	  <%= form.label field, dance %>
 	</div>
       <% end %>
@@ -47,7 +46,7 @@
       <% @dances.each do |dance| %>
 	<% field = "entries[Open][#{dance}]" %>
 	<div class="my-5">
-	  <%= form.text_field field, class: "entry-count" %>
+	  <%= form.text_field field, class: "entry-count", value: @entries['Open'][dance]&.length %>
 	  <%= form.label field, dance %>
 	</div>
       <% end %>
