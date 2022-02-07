@@ -1,4 +1,5 @@
 class Heat < ApplicationRecord
+  belongs_to :dance
   belongs_to :entry
 
   def lead
@@ -13,20 +14,12 @@ class Heat < ApplicationRecord
     entry.subject
   end
 
-  def dance
-    entry.dance
-  end
-
   def level
     subject.level
   end
 
   def studio
     subject.studio
-  end
-
-  def category
-    entry.category
   end
 
   def back

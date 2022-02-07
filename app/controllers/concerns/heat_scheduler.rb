@@ -3,15 +3,15 @@ module HeatScheduler
     Group.set_knobs
 
     # extract heats
-    @heats = Heat.eager_load({
-      entry: [:dance, {lead: :studio}, {follow: :studio}]
-    })
+    @heats = Heat.eager_load(
+      :dance, {entry: [{lead: :studio}, {follow: :studio}]}
+    )
 
     # convert relevant data to numbers
     heat_categories = {'Closed' => 0, 'Open' => 1}
 
     heats = @heats.map {|heat|
-      [heat.entry.dance_id,
+      [heat.dance_id,
        heat_categories[heat.category],
        heat.entry.level_id,
        heat.entry.age_id,

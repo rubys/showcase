@@ -205,32 +205,29 @@ end.to_h
 
 ActiveRecord::Base.transaction do
 Entry.delete_all
-entries = entries.map do |entry|
-  heats = entry.delete :heats
-  entry[:dance] = dances[entry[:dance]]
-  entry[:lead] = people[entry[:lead]]
-  entry[:follow] = people[entry[:follow]]
+Heat.delete_all
 
-  entry[:age] &&= ages[entry[:age]]
-  entry[:level] &&= levels[entry[:level]]
+entries = entries.group_by {|entry|
+  [entry[:lead], entry[:follow], entry[:age], entry[:level]]
+}
 
-  if entry[:follow].type == 'Professional'
-    entry[:age] ||= entry[:lead].age
-    entry[:level] ||= entry[:lead].level
-  elsif entry[:lead].type == 'Professional'
-    entry[:age] ||= entry[:follow].age
-    entry[:level] ||= entry[:follow].level
-  else
-    entry[:age] ||= (entry[:lead].age_id > entry[:follow].age_id ?
-      entry[:lead].age : entry[:follow].age)
-    entry[:level] ||= (entry[:lead].level_id > entry[:follow].level_id ?
-      entry[:lead].level : entry[:follow].level)
-  end
+entries = entries.map do |(lead, follow, age, level), heats|
+  entry = {
+    lead: people[lead],
+    follow: people[follow],
+    age: ages[age],
+    level: levels[level]
+  }
 
   entry = Entry.create! entry
 
-  (entry[:count]..1).each do |heat|
-    Heat.create!({number: 0, entry: entry})
+  heats.each do |heat|
+    Heat.create!({
+      number: 0,
+      entry: entry,
+      category: heat[:category],
+      dance: dances[heat[:dance]]
+    })
   end
 end
 end

@@ -20,18 +20,17 @@
 
       <tbody>
         <% @entries.each do |partner, entries| %>
-          <% entries.each do |stats, dances| %>
+          <% entries.each do |entry| %>
             <tr>
-              <td class="row text-right"><%= dances.length %>
+              <td class="row text-right"><%= entry.heats.length %>
               <td class="row"><%= partner.display_name %>
-              <td class="row"><%= dances.first.level.name %>
-              <td class="row"><%= dances.first.age.category %>
+              <td class="row"><%= entry.level.name %>
+              <td class="row"><%= entry.age.category %>
             </tr>
           <% end %>
         <% end %>
       </tbody>
     </table>
-
 
     <h2 class="font-bold pt-8 text-3xl pb-5">Dances</h2>
 
@@ -73,8 +72,8 @@
         <% @heats.each do |heat| %>
         <tr>
           <td class="row"><%= heat.number %>
-          <td class="row"><%= heat.entry.category %>
-          <td class="row"><%= heat.entry.dance.name %>
+          <td class="row"><%= heat.entry.age.category %>
+          <td class="row"><%= heat.dance.name %>
           <td class="row"><%= link_to heat.entry.lead.display_name, heat.entry.lead %>
           <td class="row"><%= link_to heat.entry.follow.display_name, heat.entry.follow %>
         </tr>

@@ -5,7 +5,7 @@ class HeatsController < ApplicationController
 
   # GET /heats or /heats.json
   def index
-    @heats = Heat.order(:number).eager_load({entry: [:dance, :lead, :follow]}).
+    @heats = Heat.order(:number).eager_load(:dance, {entry: [:lead, :follow]}).
       group_by {|heat| heat.number}.map do |number, heats|
         [number, heats.sort_by { |heat| heat.back || 0 } ]
       end
