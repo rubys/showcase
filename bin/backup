@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+require 'fileutils'
+require 'date'
+
+db_dir = File.expand_path('../db', __dir__)
+backup_dir = File.join(db_dir, 'backup')
+FileUtils.mkdir_p backup_dir
+
+date = Date.today.to_s
+
+system "/usr/bin/sqlite3 #{db_dir}/development.sqlite3 .dump | gzip > #{backup_dir}/#{date}.sqlite3.gz"
+
+# gzcat db/backup/2022-02-08.sqlite3.gz
