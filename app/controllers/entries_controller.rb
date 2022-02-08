@@ -62,7 +62,7 @@ class EntriesController < ApplicationController
 
     respond_to do |format|
       if @entry.save
-        format.html { redirect_to @person, notice: "#{@total} heats successfully created." }
+        format.html { redirect_to @person, notice: "#{helpers.pluralize @total, 'heat'} successfully created." }
         format.json { render :show, status: :created, location: @entry }
       else
         @primary = @person
@@ -101,10 +101,13 @@ class EntriesController < ApplicationController
 
   # DELETE /entries/1 or /entries/1.json
   def destroy
+    person = Person.find(params[:primary])
+    heats = @entry.heats.length
+
     @entry.destroy
 
     respond_to do |format|
-      format.html { redirect_to entries_url, notice: "Entry was successfully destroyed." }
+      format.html { redirect_to person_path(person), status: 303, notice: "#{helpers.pluralize heats, 'heat'} successfully removed." }
       format.json { head :no_content }
     end
   end

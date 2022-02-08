@@ -173,7 +173,7 @@ class PeopleController < ApplicationController
       end
     end
 
-    redirect_to person_url(@person), notice: "#{total} heats successfully created."
+    redirect_to person_url(@person), notice: "#{helpers.pluralize total, 'heat'} successfully created."
   end
 
   # POST /people or /people.json

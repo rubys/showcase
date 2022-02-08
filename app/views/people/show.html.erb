@@ -8,6 +8,7 @@
 
     <% if %w(Student Professional).include? @person.type %>
 
+    <% unless @heats.empty? %>
     <h2 class="font-bold pt-8 text-3xl pb-5">Entries</h2>
 
     <table>
@@ -90,6 +91,7 @@
         <% end %>
       </tbody>
     </table>
+    <% end %>
     <% end %>
 
     <div class="mt-4 mx-auto">
