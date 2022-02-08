@@ -88,6 +88,27 @@ class EntriesController < ApplicationController
 
     update_heats(entry)
 
+    replace = Entry.find_by(
+      lead: lead,
+      follow: follow,
+      age_id: entry[:age],
+      level_id: entry[:level]
+    )
+
+    if not replace
+      @entry.lead = lead
+      @entry.follow = follow
+      @entry.age_id = entry[:age]
+      @entry.level_id = entry[:level]
+      @total = @entry.heats.length
+    elsif replace != @entry
+      @total = @entry.heats.length
+      @entry.heats.to_a.each {|heat| heat.entry = replace; heat.save!; STDERR.puts heat}
+      @entry.reload
+      @entry.destroy!
+      @entry = replace
+    end
+
     respond_to do |format|
       if @entry.update(entry_params)
         format.html { redirect_to @person, notice: "#{@total} heats changed." }
