@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 // Connects to data-controller="person"
 export default class extends Controller {
-  static targets = [ "level", "age", "back" ];
+  static targets = [ "level", "age", "role", "back" ];
 
   connect() {
     for (let select of [...document.querySelectorAll('select')]) {
@@ -15,9 +15,16 @@ export default class extends Controller {
     if (event.target.value == 'Student') {
       this.levelTarget.style.display = 'block';
       this.ageTarget.style.display = 'block';
+      this.roleTarget.style.role = 'block';
     } else {
       this.levelTarget.style.display = 'none';
       this.ageTarget.style.display = 'none';
+
+      if (event.target.value == 'Guest') {
+        this.roleTarget.style.display = 'none';
+      } else {
+        this.roleTarget.style.display = 'block';
+      }
     }
   }
 

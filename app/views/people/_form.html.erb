@@ -40,7 +40,7 @@
     <%= form.select :age_id, @ages, {}, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
-  <div class="my-5">
+  <div class="my-5" data-person-target="role">
     <%= form.label :role %>
     <%= form.select :role, @roles, {}, 'data-action' => 'person#setRole',
      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
