@@ -80,7 +80,7 @@
       <tbody>
         <% @heats.each do |heat| %>
         <tr>
-          <td class="row"><%= heat.number %>
+          <td class="row"><%= link_to heat.number, heats_path(anchor: "heat-#{heat.number}")  %>
           <td class="row"><%= heat.category %>
           <td class="row"><%= heat.dance.name %>
           <td class="row"><%= link_to heat.entry.lead.display_name, heat.entry.lead %>
