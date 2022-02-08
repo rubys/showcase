@@ -16,7 +16,9 @@ module HeatScheduler
        heat.entry.level_id,
        heat.entry.age_id,
        heat
-      ]}.sort
+      ]}
+
+    heats = Group.sort(heats)
 
     # convert relevant data to numbers
     groups = []
@@ -94,6 +96,14 @@ module HeatScheduler
       @@category = event.heat_range_cat
       @@level = event.heat_range_level
       @@age = event.heat_range_age
+    end
+
+    def self.sort(heats)
+      if @@category == 0
+        heats.sort_by {|heat| heat[0..1].reverse + heat[2..-1]}
+      else
+        heats.sort
+      end
     end
 
     attr_reader :dance
