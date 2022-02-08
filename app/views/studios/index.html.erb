@@ -21,7 +21,7 @@
       <tr>
         <td class="text-black font-medium"><%= link_to studio.name, studio %></td>
         <td class="text-right"><%= studio.people.count %></td>
-        <td class="text-right"><%= studio.tables %></td>
+        <td class="text-right"><%= studio.tables.to_i %></td>
       </tr>
     <% end %>
     </tbody>
