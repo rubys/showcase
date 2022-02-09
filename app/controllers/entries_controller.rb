@@ -155,6 +155,8 @@ class EntriesController < ApplicationController
       teacher = Person.where(type: 'Professional', studio: studios, 
         role: [seeking, 'Both']).order(:name)
       student = Person.where(type: 'Student', studio: @person.studio, 
+        role: [seeking, 'Both']).order(:name) +
+        Person.where(type: 'Student', studio: @person.studio.pairs,
         role: [seeking, 'Both']).order(:name)
   
       @avail = teacher + student
