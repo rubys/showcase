@@ -3,7 +3,7 @@ class StudiosController < ApplicationController
 
   # GET /studios or /studios.json
   def index
-    @studios = Studio.all
+    @studios = Studio.all.order(:name)
   end
 
   # GET /studios/1 or /studios/1.json
