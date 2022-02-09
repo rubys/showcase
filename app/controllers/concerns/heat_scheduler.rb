@@ -37,7 +37,7 @@ module HeatScheduler
 
       subgroups.unshift group
 
-      for entry in heats
+      for entry in heats.dup
         if group.add? *entry
           heats.delete entry
           assignments[entry] = group
