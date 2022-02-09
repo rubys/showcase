@@ -12,8 +12,8 @@ class EventController < ApplicationController
 
     @event = Event.last
     
-    @categories = Person.distinct.pluck(:category).compact.length
-    @levels = Person.distinct.pluck(:level).compact.length
+    @ages = Age.all.size
+    @levels = Level.all.size
   end
 
   def update

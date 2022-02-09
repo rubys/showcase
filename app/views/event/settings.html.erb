@@ -76,12 +76,12 @@ on the floor at the same time.
 
   <div class="my-5">
     <%= form.label :heat_range_level, 'level' %>
-    <%= form.range_field :heat_range_level, min: 0, max: @levels, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+    <%= form.range_field :heat_range_level, min: 0, max: @levels-1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
   <div class="my-5">
     <%= form.label :heat_range_age, 'age' %>
-    <%= form.range_field :heat_range_age, min: 0, max: @categories, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+    <%= form.range_field :heat_range_age, min: 0, max: @ages-1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
   <div class="inline">
