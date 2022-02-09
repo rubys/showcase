@@ -29,9 +29,9 @@
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <% @dances.each do |dance| %>
 	<% field = "entries[Closed][#{dance}]" %>
-	<div class="my-5">
+	<div class="my-5 flex flex-row">
 	  <%= form.text_field field, class: "entry-count", value: @entries['Closed'][dance]&.length %>
-	  <%= form.label field, dance %>
+	  <%= form.label field, dance, class: 'mt-2 flex items-center justify-center' %>
 	</div>
       <% end %>
     </div>
@@ -45,9 +45,9 @@
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <% @dances.each do |dance| %>
 	<% field = "entries[Open][#{dance}]" %>
-	<div class="my-5">
+	<div class="my-5 flex flex-row">
 	  <%= form.text_field field, class: "entry-count", value: @entries['Open'][dance]&.length %>
-	  <%= form.label field, dance %>
+	  <%= form.label field, dance, class: 'mt-2 flex items-center justify-center' %>
 	</div>
       <% end %>
     </div>

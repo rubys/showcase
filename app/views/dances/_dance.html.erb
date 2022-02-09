@@ -5,8 +5,13 @@
   </p>
 
   <p class="my-5">
-    <strong class="block font-medium mb-1">Category:</strong>
-    <%= dance.category %>
+    <strong class="block font-medium mb-1">Open Category:</strong>
+    <%= dance.open_category&.name %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Closed Category:</strong>
+    <%= dance.closed_category&.name %>
   </p>
 
   <% if action_name != "show" %>

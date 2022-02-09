@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_02_06_193854) do
+ActiveRecord::Schema.define(version: 2022_02_08_221606) do
 
   create_table "ages", force: :cascade do |t|
     t.string "category"
@@ -19,11 +19,23 @@ ActiveRecord::Schema.define(version: 2022_02_06_193854) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "dances", force: :cascade do |t|
+  create_table "categories", force: :cascade do |t|
     t.string "name"
-    t.string "category"
+    t.integer "order"
+    t.string "day"
+    t.string "time"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+  end
+
+  create_table "dances", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.integer "open_category_id"
+    t.integer "closed_category_id"
+    t.index ["closed_category_id"], name: "index_dances_on_closed_category_id"
+    t.index ["open_category_id"], name: "index_dances_on_open_category_id"
   end
 
   create_table "entries", force: :cascade do |t|
@@ -98,6 +110,8 @@ ActiveRecord::Schema.define(version: 2022_02_06_193854) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
+  add_foreign_key "dances", "categories", column: "closed_category_id"
+  add_foreign_key "dances", "categories", column: "open_category_id"
   add_foreign_key "entries", "ages"
   add_foreign_key "entries", "levels"
   add_foreign_key "entries", "people", column: "follow_id"

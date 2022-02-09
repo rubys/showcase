@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :categories
   root 'event#root'
   get '/instructions', to: 'event#instructions'
 

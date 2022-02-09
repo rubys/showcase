@@ -1,0 +1,69 @@
+<%= form_with(model: category, class: "contents") do |form| %>
+  <% if category.errors.any? %>
+    <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
+      <h2><%= pluralize(category.errors.count, "error") %> prohibited this category from being saved:</h2>
+
+      <ul>
+        <% category.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="my-5">
+    <%= form.label :name %>
+    <%= form.text_field :name, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :order %>
+    <%= form.number_field :order, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :day %>
+    <%= form.text_field :day, placeholder: 'Saturday', class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :time %>
+    <%= form.text_field :time, placeholder: '1 pm', class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+<div class="mx-auto w-full flex flex-wrap">
+  <div class="mx-auto flex flex-wrap">
+    <h1 class="w-full text-center bg-yellow-400 mb-4">CLOSED CATEGORY</h1>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <% @dances.each do |dance| %>
+	<% field = "include[Closed][#{dance}]" %>
+	<div class="my-5 flex flex-row">
+	  <%= form.check_box field, class: "entry-count h-10", value: @entries['Closed'][dance] %>
+	  <%= form.label field, dance, class: 'mt-1 flex items-center justify-center' %>
+	</div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<div class="mx-auto w-full flex flex-wrap">
+  <div class="mx-auto flex flex-wrap">
+    <h1 class="w-full text-center bg-yellow-400 mb-4">OPEN CATEGORY</h1>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <% @dances.each do |dance| %>
+	<% field = "include[Open][#{dance}]" %>
+	<div class="my-5 flex flex-row">
+	  <%= form.check_box field, class: "entry-count h-10", value: @entries['Open'][dance] %>
+	  <%= form.label field, dance, class: 'mt-1 flex items-center justify-center' %>
+	</div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+  <div class="inline">
+    <%= form.submit class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  </div>
+<% end %>
