@@ -52,6 +52,8 @@ module HeatScheduler
 
     rebalance(assignments, subgroups) unless subgroups.empty?
 
+    groups = reorder(groups)
+
     ActiveRecord::Base.transaction do
       groups.each_with_index do |group, index|
         group.each do |heat|
@@ -90,6 +92,35 @@ module HeatScheduler
     end
   end
 
+  def reorder(groups)
+    cats = (Category.all.map {|cat| [cat, []]} + [[nil, []]]).to_h
+
+    groups.each do |group|
+      if group.dcat == 'Open'
+        cats[group.dance.open_category] << group
+      else
+        cats[group.dance.closed_category] << group
+      end
+    end
+
+    new_order = []
+    cats.each do |cat, groups|
+      dances = groups.group_by {|group| [group.dcat, group.dance.id]}
+      candidates = []
+
+      dances.each do |id, groups|
+        denominator = groups.length.to_f + 1
+        groups.each_with_index do |group, index|
+          candidates << [(index+1)/denominator] + id + [group]
+        end
+      end
+
+      new_order += candidates.sort_by {|candidate| candidate[0..2]}.map(&:last)
+    end
+
+    new_order
+  end
+
   class Group
     def self.set_knobs
       event = Event.last
@@ -106,7 +137,13 @@ module HeatScheduler
       end
     end
 
-    attr_reader :dance
+    def dance
+      @group.first.dance
+    end
+
+    def dcat
+      @min_dcat == 0 ? 'Closed' : 'Open'
+    end
 
     def initialize(dance, dcat, level, age, heat)
       @participants = Set.new
