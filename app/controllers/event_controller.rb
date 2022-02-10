@@ -14,6 +14,9 @@ class EventController < ApplicationController
     
     @ages = Age.all.size
     @levels = Level.all.size
+
+    @dances = Dance.all
+    @categories = Category.all
   end
 
   def update

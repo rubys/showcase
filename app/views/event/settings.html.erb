@@ -46,6 +46,39 @@
 
 <%= link_to "Add person", new_person_path, class: "btn-blue" %>
 
+<h1 id="categories" class="mt-16 font-bold text-4xl mb-6">Agenda</h1>
+
+<div class="min-w-full">
+  <table class="table-fixed">
+    <tbody>
+    <% @categories.each do |category| %>
+      <tr>
+        <td class="text-black font-medium"><%= link_to category.name, edit_category_path(category) %></td>
+        <td><%= category.day %></td>
+        <td><%= category.time %></td>
+      </tr>
+    <% end %>
+    </tbody>
+  </table>
+</div>
+
+<%= link_to "Categories", categories_path, class: "mt-4 btn-green" %>
+
+<h1 class="mt-16 font-bold text-4xl mb-6">Dances</h1>
+
+<div id="dances" class="min-w-full">
+  <table class="table-fixed">
+    <tbody>
+    <% @dances.each do |dance| %>
+      <tr>
+        <td class="text-black font-medium"><%= link_to dance.name, edit_dance_path(dance) %></td>
+      </tr>
+    <% end %>
+    </tbody>
+  </table>
+</div>
+
+<%= link_to "Dances", dances_path, class: "mt-4 btn-green" %>
 
 <h1 class="mt-16 font-bold text-4xl mb-6">Adjust the number of heats</h1>
 

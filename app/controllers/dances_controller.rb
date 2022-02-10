@@ -17,6 +17,7 @@ class DancesController < ApplicationController
 
   # GET /dances/1/edit
   def edit
+    @categories = [nil] + Category.order(:order).pluck(:name, :id)
   end
 
   # POST /dances or /dances.json
