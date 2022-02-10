@@ -4,6 +4,8 @@ class EventController < ApplicationController
     @emcees = Person.where(type: 'Emcee')
 
     @event = Event.last
+
+    @heats = Heat.distinct.count(:number)
   end
 
   def settings

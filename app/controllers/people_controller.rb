@@ -32,6 +32,13 @@ class PeopleController < ApplicationController
   def students
     @people = Person.includes(:studio).where(type: 'Student').order(sort_order)
 
+    @heats = (Heat.joins(:entry).group('entries.follow_id').count).merge(
+      Heat.joins(:entry).group('entries.lead_id').count)
+
+    if params[:sort] == 'heats'
+      @people = @people.to_a.sort_by! {|person| @heats[person.id] || 0}
+    end
+
     @title = 'Students'
     render :index
   end
@@ -270,6 +277,7 @@ class PeopleController < ApplicationController
       order = 'studios.name' if order == 'studio'
       order = 'age_id' if order == 'age'
       order = 'level_id' if order == 'level'
+      order = 'name' if order == 'heats'
       order
     end
 end

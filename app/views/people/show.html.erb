@@ -40,6 +40,10 @@
             </tr>
           <% end %>
         <% end %>
+        <tr>
+          <td class="border-t-2 border-gray-200 row text-right"d><%= @entries.values.flatten.map {|entry| entry.heats.length}.sum %>
+          <th colspan="3" class="border-t-2 border-gray-200 row text-center font-bold">total
+        </tr>
       </tbody>
     </table>
 

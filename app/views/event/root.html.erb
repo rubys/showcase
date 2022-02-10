@@ -3,6 +3,7 @@
 
   <p class="mt-4 text-center"><%= @event.location %></p>
   <p class="mt-2 text-center"><%= @event.date %></p>
+  <p class="mt-2 text-center"><%= pluralize(@heats, 'heat') %></p>
 
   <h2 class="font-bold text-2xl mt-4 mb-2">Judges</h2>
   <ul class="list-disc list-inside">

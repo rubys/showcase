@@ -16,6 +16,7 @@
       <td class="row-head"><a href="?sort=level">Level
       <td class="row-head"><a href="?sort=age">Age
       <td class="row-head"><a href="?sort=studio">Studio
+      <td class="row-head"><a href="?sort=heats">Heats
     </tr>
   </thead>
 
@@ -30,6 +31,7 @@
       <td class="row"><%= person.level&.name %></td>
       <td class="row text-center"><%= person.age&.description %></td>
       <td class="row"><%= link_to person.studio&.name || '', person.studio %></td>
+      <td class="row text-right"><%= @heats[person.id] %></td>
     </tr>
   <% end %>
   </tbody>
