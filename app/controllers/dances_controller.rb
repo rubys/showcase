@@ -4,6 +4,8 @@ class DancesController < ApplicationController
   # GET /dances or /dances.json
   def index
     @dances = Dance.all
+    @heats = Heat.group(:dance_id).distinct.count(:number)
+    @entries = Heat.group(:dance_id).count
   end
 
   # GET /dances/1 or /dances/1.json

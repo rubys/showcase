@@ -1,14 +1,39 @@
-<div class="w-full">
+<div class="mx-auto">
   <% if notice.present? %>
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
-  <div class="flex justify-between items-center">
-    <h1 class="font-bold text-4xl">Dances</h1>
-    <%= link_to 'New dance', new_dance_path, class: "rounded-lg py-3 px-5 bg-blue-600 text-white block font-medium" %>
-  </div>
+  <h1 class="text-center font-bold text-4xl mb-8">Dances</h1>
 
-  <div id="dances" class="min-w-full">
-    <%= render @dances %>
-  </div>
+  <div class="min-w-full">
+  <table class="mx-auto table-fixed">
+    <thead>
+      <tr>
+        <th>Dance
+        <th>Categories
+        <th>Heats
+        <th>Entries
+      </tr>
+    </thead>
+    <tbody>
+    <% @dances.each do |dance| %>
+      <tr>
+        <td class="text-black font-medium"><%= link_to dance.name, edit_dance_path(dance) %></td>
+        <td class="grid grid-cols-1">
+          <%= link_to dance.closed_category&.name, edit_category_path(dance.closed_category) if dance.closed_category %>
+          <%= link_to dance.open_category&.name, edit_category_path(dance.open_category) if dance.open_category %>
+        </td>
+        <td class="row text-right"><%= @heats[dance.id] %></td>
+        <td class="row text-right"><%= @entries[dance.id] %></td>
+      </tr>
+    <% end %>
+    </tbody>
+  </table>
+
+</div>
+
+<div class="mt-4 flex justify-between items-center">
+  <%= link_to 'New dance', new_dance_path, class: "btn-blue" %>
+  <%= link_to 'Back to Settings', settings_event_index_path, class: "btn-green" %>
+</div>
 </div>
