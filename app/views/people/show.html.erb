@@ -4,6 +4,10 @@
       <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
     <% end %>
 
+    <% if @person.type == 'Student' %>
+    <%= link_to 'Add heats', new_entry_path(primary: @person), class: "btn-blue float-right" %>
+    <% end %>
+
     <%= render @person %>
 
     <% if %w(Student Professional).include? @person.type %>
