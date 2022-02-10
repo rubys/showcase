@@ -53,6 +53,7 @@
     <tbody>
     <% @categories.each do |category| %>
       <tr>
+        <td class="row text-right"><%= link_to @heat[category], heats_path(anchor: "heat-#{@heat[category]}")  %>
         <td class="text-black font-medium"><%= link_to category.name, edit_category_path(category) %></td>
         <td><%= category.day %></td>
         <td><%= category.time %></td>

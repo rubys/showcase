@@ -6,6 +6,7 @@ class EventController < ApplicationController
     @event = Event.last
 
     @heats = Heat.distinct.count(:number)
+
   end
 
   def settings
@@ -19,6 +20,12 @@ class EventController < ApplicationController
 
     @dances = Dance.all
     @categories = Category.all
+
+    dances = @dances.map {|dance| [dance.id, dance]}.to_h
+    @heat = Heat.group(:dance_id, :category).minimum(:number).
+      group_by {|(dance_id, category), heat|
+        category == 'Open' ? dances[dance_id].open_category : dances[dance_id].closed_category
+      }.map {|category, heats| [category, heats.map(&:last).min]}.to_h  
   end
 
   def update
