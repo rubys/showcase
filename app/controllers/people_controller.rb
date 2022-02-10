@@ -42,15 +42,9 @@ class PeopleController < ApplicationController
       where(lead: {type: 'Student'}, follow: {type: 'Student'}).
       group_by {|entry| [entry.lead, entry.follow]}.
       map do |(lead, follow), entries| 
-        [lead, follow, entries.sum {|entry| entry.count}]
+        [lead, follow, entries.sum {|entry| entry.heats.count}]
       end.
-      sort_by do |(lead, follow), count|
-        level = lead.level.to_s
-        (level.include?('Gold') ? 5 : 0) +
-          (level.include?('Silver') ? 3 : 0) +
-          (level.include?('Bronze') ? 1 : 0) +
-          (level.include?('Full') ? 1 : 0)
-      end
+      sort_by {|(lead, follow), count| level = lead.level_id}
   end
 
   # GET /people/1 or /people/1.json
