@@ -18,8 +18,8 @@
     <tbody>
     <% @dances.each do |dance| %>
       <tr>
-        <td class="text-black font-medium"><%= link_to dance.name, edit_dance_path(dance) %></td>
-        <td class="grid grid-cols-1">
+        <td class="row text-black font-medium"><%= link_to dance.name, edit_dance_path(dance) %></td>
+        <td class="row grid grid-cols-1">
           <%= link_to dance.closed_category&.name, edit_category_path(dance.closed_category) if dance.closed_category %>
           <%= link_to dance.open_category&.name, edit_category_path(dance.open_category) if dance.open_category %>
         </td>
