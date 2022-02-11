@@ -5,7 +5,7 @@
 
   <div class="flex justify-between items-center">
     <h1 class="mx-auto font-bold text-4xl">Heats</h1>
-    <%= link_to 'Redo', redo_heats_path, class: "btn-blue", data: { turbo_method: :post } %>
+    <%= link_to 'Redo', redo_heats_path, class: "btn-blue print:hidden", data: { turbo_method: :post } %>
     
 <!--
     <%= link_to 'New heat', new_heat_path, class: "rounded-lg py-3 px-5 bg-blue-600 text-white block font-medium" %>
@@ -15,6 +15,7 @@
   <div id="heats" class="min-w-full">
     <table class="mt-4 table-fixed mx-auto">
     <thead>
+      <td>
       <th class="row-head">Heat
       <th class="row-head">Category
       <th class="row-head">Dance
@@ -29,6 +30,9 @@
       <tr id="heat-<%= number %>"><td>&nbsp;</td></tr>
       <% heats.each do |heat| %>
          <tr id="<%= dom_id heat %>">
+           <td>
+             <div class="hidden print:block w-32 border-b-2 border-black"></div>
+           </td>
            <td class="row"><%= number %>
            <td class="row"><%= heat.category %>
            <td class="row"><%= heat.dance.name %>
@@ -46,8 +50,8 @@
 
   <% if @stats %>
   <div>
-  <h1 class="mt-12 mx-auto font-bold text-4xl">Summary</h1>
-  <div id="stats" class="min-w-full">
+  <h1 class="mt-12 mx-auto font-bold text-4xl print:hidden">Summary</h1>
+  <div id="stats" class="min-w-full print:hidden">
     <table class="mt-4 table-fixed mx-auto">
       <thead>
         <th class="row-head">Couples
