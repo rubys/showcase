@@ -1,4 +1,19 @@
-<div class="w-full">
+<style>
+tbody {
+    page-break-inside: avoid;
+    page-break-before: avoid;
+    page-break-after: avoid;
+}
+tbody::after {
+  content: '';
+  display: block;
+  margin-bottom: 1.5em;
+  page-break-before: auto;
+  page-break-after: auto;
+}
+</style>
+
+<div class="">
   <% if notice.present? %>
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
@@ -6,16 +21,13 @@
   <div class="flex justify-between items-center">
     <h1 class="mx-auto font-bold text-4xl">Heats</h1>
     <%= link_to 'Redo', redo_heats_path, class: "btn-blue print:hidden", data: { turbo_method: :post } %>
-    
-<!--
-    <%= link_to 'New heat', new_heat_path, class: "rounded-lg py-3 px-5 bg-blue-600 text-white block font-medium" %>
--->
   </div>
 
   <div id="heats" class="min-w-full">
     <table class="mt-4 table-fixed mx-auto">
     <thead>
       <td>
+        <div class="row-head hidden print:block">Score</div>
       <th class="row-head">Heat
       <th class="row-head">Category
       <th class="row-head">Dance
@@ -27,11 +39,11 @@
       <th class="row-head">Studio
     </thead>
     <% @heats.each do |number, heats| %>
-      <tr id="heat-<%= number %>"><td>&nbsp;</td></tr>
+      <tbody id="heat-<%= number %>">
       <% heats.each do |heat| %>
          <tr id="<%= dom_id heat %>">
            <td>
-             <div class="hidden print:block w-32 border-b-2 border-black"></div>
+             <div class="hidden print:block w-32 border-b-2 border-black">&nbsp;</div>
            </td>
            <td class="row"><%= number %>
            <td class="row"><%= heat.category %>
@@ -44,6 +56,7 @@
            <td class="row"><%= link_to heat.studio.name, heat.studio %>
          </tr>
       <% end %>
+      </tbody>
     <% end %>
     </table>
   </div>
