@@ -24,13 +24,17 @@ tbody::after {
   </div>
 
   <div id="heats" class="min-w-full">
-    <table class="mt-4 table-fixed mx-auto">
+    <table class="mt-4 table-auto mx-auto">
     <thead>
       <td>
         <div class="row-head hidden print:block">Score</div>
+      <% if @heats.first.first != 0 %>
+      <th width="5">
+      <% else %>
       <th class="row-head">Heat
       <th class="row-head">Category
       <th class="row-head">Dance
+      <% end %>
       <th class="row-head">#
       <th class="row-head">Lead
       <th class="row-head">Follow
@@ -40,14 +44,36 @@ tbody::after {
     </thead>
     <% @heats.each do |number, heats| %>
       <tbody id="heat-<%= number %>">
+      <tr>
+        <td>
+        <td colspan="9" class="text-2xl pt-4">Heat <%= number %>: <%= heats.first.category %> <%= heats.first.dance.name %></td>
+      </tr>
+      <tr>
+        <td>
+        <td>
+        <td colspan="8" class="text-xl pt-2">Ballroom A</td>
+      </tr>
+      <% last_back = 100 %>
       <% heats.each do |heat| %>
+         <% if last_back < 200 && heat.back >= 200 %>
+         <tr>
+           <td>
+           <td>
+           <td colspan="8" class="text-xl pt-2">Ballroom B</td>
+         </tr>
+         <% end %>
+         <% last_back = heat.back %>
          <tr id="<%= dom_id heat %>">
            <td>
              <div class="hidden print:block w-32 border-b-2 border-black">&nbsp;</div>
            </td>
+           <% if number != 0 %>
+           <td class="row">
+           <% else %>
            <td class="row"><%= number %>
            <td class="row"><%= heat.category %>
            <td class="row"><%= heat.dance.name %>
+           <% end %>
            <td class="row"><%= heat.back %>
            <td class="row"><%= link_to heat.lead.display_name, polymorphic_path(heat.lead, anchor: 'heats') %>
            <td class="row"><%= link_to heat.follow.display_name, polymorphic_path(heat.follow, anchor: 'heats') %>
@@ -65,7 +91,7 @@ tbody::after {
   <div>
   <h1 class="mt-12 mx-auto font-bold text-4xl print:hidden">Summary</h1>
   <div id="stats" class="min-w-full print:hidden">
-    <table class="mt-4 table-fixed mx-auto">
+    <table class="mt-4 table-auto mx-auto">
       <thead>
         <th class="row-head">Couples
         <th class="row-head">Heats
