@@ -30,7 +30,12 @@
       <% @dances.each do |dance| %>
 	<% field = "entries[Closed][#{dance}]" %>
 	<div class="my-5 flex flex-row">
-	  <%= form.text_field field, class: "entry-count", value: @entries['Closed'][dance]&.length %>
+	  <% value = @entries['Closed'][dance]&.length || 0 %>
+          <% if value <= 1 %>
+          <%= form.check_box field, class: "entry-count h-10", checked: value > 0 %>
+          <% else %>
+	  <%= form.text_field field, class: "entry-count", value: value %>
+          <% end %>
 	  <%= form.label field, dance, class: 'mt-2 flex items-center justify-center' %>
 	</div>
       <% end %>
@@ -46,7 +51,12 @@
       <% @dances.each do |dance| %>
 	<% field = "entries[Open][#{dance}]" %>
 	<div class="my-5 flex flex-row">
-	  <%= form.text_field field, class: "entry-count", value: @entries['Open'][dance]&.length %>
+	  <% value = @entries['Open'][dance]&.length || 0 %>
+          <% if value <= 1 %>
+          <%= form.check_box field, class: "entry-count h-10", checked: value > 0 %>
+          <% else %>
+	  <%= form.text_field field, class: "entry-count", value: value %>
+          <% end %>
 	  <%= form.label field, dance, class: 'mt-2 flex items-center justify-center' %>
 	</div>
       <% end %>

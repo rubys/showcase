@@ -111,7 +111,7 @@ class EntriesController < ApplicationController
 
     respond_to do |format|
       if @entry.update(entry_params)
-        format.html { redirect_to @person, notice: "#{@total} heats changed." }
+        format.html { redirect_to @person, notice: "#{helpers.pluralize @total, 'heat'} changed." }
         format.json { render :show, status: :ok, location: @entry }
       else
         format.html { render :edit, status: :unprocessable_entity }
