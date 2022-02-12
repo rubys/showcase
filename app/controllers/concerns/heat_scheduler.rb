@@ -4,7 +4,8 @@ module HeatScheduler
 
     # extract heats
     @heats = Heat.eager_load(
-      :dance, {entry: [{lead: :studio}, {follow: :studio}]}
+      dance: [:open_category, :closed_category],
+      entry: [{lead: :studio}, {follow: :studio}]
     )
 
     # convert relevant data to numbers

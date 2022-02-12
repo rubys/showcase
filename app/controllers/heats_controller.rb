@@ -5,10 +5,12 @@ class HeatsController < ApplicationController
 
   # GET /heats or /heats.json
   def index
-    @heats = Heat.order(:number).eager_load(:dance, {entry: [:lead, :follow]}).
-      group_by {|heat| heat.number}.map do |number, heats|
-        [number, heats.sort_by { |heat| heat.back || 0 } ]
-      end
+    @heats = Heat.order(:number).includes(
+      dance: [:open_category, :closed_category], 
+      entry: [:age, :level, lead: [:studio], follow: [:studio]]
+    ).group_by {|heat| heat.number}.map do |number, heats|
+      [number, heats.sort_by { |heat| heat.back || 0 } ]
+    end
 
     @stats = @heats.group_by {|number, heats| heats.length}.
       map {|size, entries| [size, entries.map(&:first)]}.
