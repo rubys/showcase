@@ -18,8 +18,8 @@ class EventController < ApplicationController
     @ages = Age.all.size
     @levels = Level.all.size
 
-    @dances = Dance.all
-    @categories = Category.all
+    @dances = Dance.order(:order).all
+    @categories = Category.order(:order).all
 
     dances = @dances.map {|dance| [dance.id, dance]}.to_h
     @heat = Heat.group(:dance_id, :category).minimum(:number).
