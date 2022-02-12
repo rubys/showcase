@@ -56,11 +56,13 @@ tbody::after {
         <td>
         <td colspan="9" class="text-2xl pt-4">Heat <%= number %>: <%= heats.first.category %> <%= heats.first.dance.name %></td>
       </tr>
+      <% if heats.first.back < 200 %>
       <tr>
         <td>
         <td>
         <td colspan="8" class="text-xl pt-2">Ballroom A</td>
       </tr>
+      <% end %>
       <% last_back = 100 %>
       <% heats.each do |heat| %>
          <% if last_back < 200 && heat.back >= 200 %>
