@@ -24,16 +24,18 @@ tbody::after {
 </div>
 
   <table class="table-auto ml-6 mb-8">
-    <% @cats.each do |cat, heats| %>
+    <% @agenda.each do |cat, heats| %>
       <tr>
         <td class="row"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a>
         <td class="row text-right"><a href="#heat-<%= heats.first.first %>"><%= heats.first.first %></a>
         <td class="row text-right"><a href="#heat-<%= heats.last.first %>"><%= heats.last.first %></a>
+        <td class="row"><%= @categories[cat]&.day %>
+        <td class="row"><%= @categories[cat]&.time %>
       </tr>
     <% end %>
   </table>
 
-  <% @cats.each do |cat, heats| %>
+  <% @agenda.each do |cat, heats| %>
   <div style="page-break-after: always"></div>
 
   <div class="mt-8 flex justify-between items-center" id="cat-<%= cat.downcase.gsub(' ', '-') %>">

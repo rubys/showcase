@@ -16,12 +16,14 @@ class HeatsController < ApplicationController
       map {|size, entries| [size, entries.map(&:first)]}.
       sort
 
-    @cats = {}
+    @categories = Category.all.map {|category| [category.name, category]}.to_h
+
+    @agenda = {}
 
     @heats.each do |number, heats|
       if number == 0
-        @cats['Unscheduled'] ||= []
-        @cats['Unscheduled'] << [number, heats]
+        @agenda['Unscheduled'] ||= []
+        @agenda['Unscheduled'] << [number, heats]
       else
         if heats.first.category == 'Open'
           cat = heats.first.dance.open_category
@@ -31,8 +33,8 @@ class HeatsController < ApplicationController
 
         cat = cat&.name || 'Uncategorieed'
 
-        @cats[cat] ||= []
-        @cats[cat] << [number, heats]
+        @agenda[cat] ||= []
+        @agenda[cat] << [number, heats]
       end
     end
   end
