@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_02_12_001802) do
+ActiveRecord::Schema.define(version: 2022_02_12_171521) do
 
   create_table "ages", force: :cascade do |t|
     t.string "category"
@@ -34,6 +34,7 @@ ActiveRecord::Schema.define(version: 2022_02_12_001802) do
     t.datetime "updated_at", precision: 6, null: false
     t.integer "open_category_id"
     t.integer "closed_category_id"
+    t.integer "order"
     t.index ["closed_category_id"], name: "index_dances_on_closed_category_id"
     t.index ["open_category_id"], name: "index_dances_on_open_category_id"
   end

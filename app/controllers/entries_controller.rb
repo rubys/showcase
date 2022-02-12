@@ -149,7 +149,7 @@ class EntriesController < ApplicationController
       entries = @person.lead_entries + @person.follow_entries
       studios = [@person.studio] + @person.studio.pairs
   
-      @dances = Dance.all.map(&:name)
+      @dances = Dance.order(:order).all.map(&:name)
   
       seeking = @person.role == 'Leader' ? 'Follower' : 'Leader'
       teacher = Person.where(type: 'Professional', studio: studios, 

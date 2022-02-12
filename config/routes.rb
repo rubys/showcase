@@ -12,12 +12,13 @@ Rails.application.routes.draw do
 
   resources :entries
 
-  resources :dances
+  resources :dances do
+    post 'drop', on: :collection
+  end
 
   resources :categories do
     post 'drop', on: :collection
   end
-
 
   resources :people do
     get 'backs', on: :collection

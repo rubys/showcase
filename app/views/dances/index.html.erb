@@ -1,4 +1,4 @@
-<div class="mx-auto">
+<div class="mx-auto" id="dances">
   <% if notice.present? %>
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
@@ -15,9 +15,9 @@
         <th>Entries
       </tr>
     </thead>
-    <tbody>
+    <tbody data-controller="drop" data-drop-action="<%= drop_dances_path %>">
     <% @dances.each do |dance| %>
-      <tr>
+      <tr draggable="true" data-drag-id="<%= dance.id %>">
         <td class="row text-black font-medium"><%= link_to dance.name, edit_dance_path(dance) %></td>
         <td class="row grid grid-cols-1">
           <%= link_to dance.closed_category&.name, edit_category_path(dance.closed_category) if dance.closed_category %>

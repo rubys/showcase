@@ -3,7 +3,7 @@ class DancesController < ApplicationController
 
   # GET /dances or /dances.json
   def index
-    @dances = Dance.all
+    @dances = Dance.includes(:open_category, :closed_category).order(:order).all
     @heats = Heat.group(:dance_id).distinct.count(:number)
     @entries = Heat.group(:dance_id).count
   end
@@ -47,6 +47,38 @@ class DancesController < ApplicationController
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @dance.errors, status: :unprocessable_entity }
       end
+    end
+  end
+
+  # POST /dances/drop
+  def drop
+    source = Dance.find(params[:source].to_i)
+    target = Dance.find(params[:target].to_i)
+
+    if source.order > target.order
+      dances = Dance.where(order: target.order..source.order).order(:order)
+      new_order = dances.map(&:order).rotate(1)
+    else
+      dances = Dance.where(order: source.order..target.order).order(:order)
+      new_order = dances.map(&:order).rotate(-1)
+    end
+
+    ActiveRecord::Base.transaction do
+      dances.zip(new_order).each do |dance, order|
+        dance.order = order
+        dance.save!
+      end
+    end
+
+    @dances = Dance.includes(:open_category, :closed_category).order(:order).all
+    @heats = Heat.group(:dance_id).distinct.count(:number)
+    @entries = Heat.group(:dance_id).count
+    flash.now.notice = "#{source.name} was successfully moved."
+
+    respond_to do |format|
+      format.turbo_stream { render turbo_stream: turbo_stream.replace('dances', 
+        render_to_string(:index, layout: false))}
+      format.html { redirect_to dances_url }
     end
   end
 

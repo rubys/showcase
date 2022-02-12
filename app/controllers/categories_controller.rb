@@ -60,9 +60,6 @@ class CategoriesController < ApplicationController
     source = Category.find(params[:source].to_i)
     target = Category.find(params[:target].to_i)
 
-    categories = Category.where(order: [source, target].min..[source, target].max).order(:order)
-    new_order = categories.map(&:order)
-
     if source.order > target.order
       categories = Category.where(order: target.order..source.order).order(:order)
       new_order = categories.map(&:order).rotate(1)
@@ -74,12 +71,12 @@ class CategoriesController < ApplicationController
     ActiveRecord::Base.transaction do
       categories.zip(new_order).each do |category, order|
         category.order = order
-        category.save
+        category.save!
       end
     end
 
     @categories = Category.order(:order)
-    flash[:notice] = "#{source.name} was successfully moved."
+    flash.now.notice = "#{source.name} was successfully moved."
 
     respond_to do |format|
       format.turbo_stream { render turbo_stream: turbo_stream.replace('categories', 
@@ -110,7 +107,7 @@ class CategoriesController < ApplicationController
     end
 
     def form_init
-      dances = Dance.all
+      dances = Dance.order(:order).all
       @dances = dances.map(&:name)
       @entries = {'Closed' => {}, 'Open' => {}}
 
