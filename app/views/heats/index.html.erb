@@ -28,6 +28,7 @@ tbody::after {
       <tr>
         <td class="row"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a>
         <td class="row text-right"><a href="#heat-<%= heats.first.first %>"><%= heats.first.first %></a>
+        <td class="row text-right"><a href="#heat-<%= heats.last.first %>"><%= heats.last.first %></a>
       </tr>
     <% end %>
   </table>
