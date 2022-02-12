@@ -18,12 +18,20 @@ tbody::after {
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
+  <% @cats.each_with_index do |(cat, heats), index| %>
+
+  <% if index != 0 %>
+    <div style="page-break-after: always"></div>
+  <% end %>
+
   <div class="flex justify-between items-center">
-    <h1 class="mx-auto font-bold text-4xl">Heats</h1>
-    <%= link_to 'Redo', redo_heats_path, class: "btn-blue print:hidden", data: { turbo_method: :post } %>
+    <h1 class="mx-auto font-bold text-4xl"><%= cat %></h1>
+    <% if index == 0 %>
+    <%= link_to 'Redo', redo_heats_path, float: 'right', class: "btn-blue print:hidden", data: { turbo_method: :post } %>
+    <% end %>
   </div>
 
-  <div id="heats" class="min-w-full">
+  <div class="min-w-full">
     <table class="mt-4 table-auto mx-auto">
     <thead>
       <td>
@@ -42,7 +50,7 @@ tbody::after {
       <th class="row-head">Category
       <th class="row-head">Studio
     </thead>
-    <% @heats.each do |number, heats| %>
+    <% heats.each do |number, heats| %>
       <tbody id="heat-<%= number %>">
       <tr>
         <td>
@@ -86,6 +94,7 @@ tbody::after {
     <% end %>
     </table>
   </div>
+  <% end %>
 
   <% if @stats %>
   <div>

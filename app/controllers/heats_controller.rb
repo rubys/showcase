@@ -13,6 +13,26 @@ class HeatsController < ApplicationController
     @stats = @heats.group_by {|number, heats| heats.length}.
       map {|size, entries| [size, entries.map(&:first)]}.
       sort
+
+    @cats = {}
+
+    @heats.each do |number, heats|
+      if number == 0
+        @cats['Unscheduled'] ||= []
+        @cats['Unscheduled'] << [number, heats]
+      else
+        if heats.first.category == 'Open'
+          cat = heats.first.dance.open_category
+        else
+          cat = heats.first.dance.closed_category
+        end
+
+        cat = cat&.name || 'Uncategorieed'
+
+        @cats[cat] ||= []
+        @cats[cat] << [number, heats]
+      end
+    end
   end
 
   # GET /heats/1 or /heats/1.json
