@@ -93,7 +93,7 @@ module HeatScheduler
   end
 
   def reorder(groups)
-    cats = (Category.all.map {|cat| [cat, []]} + [[nil, []]]).to_h
+    cats = (Category.order(:order).map {|cat| [cat, []]} + [[nil, []]]).to_h
 
     groups.each do |group|
       if group.dcat == 'Open'

@@ -1,5 +1,4 @@
 Rails.application.routes.draw do
-  resources :categories
   root 'event#root'
   get '/instructions', to: 'event#instructions'
 
@@ -14,6 +13,11 @@ Rails.application.routes.draw do
   resources :entries
 
   resources :dances
+
+  resources :categories do
+    post 'drop', on: :collection
+  end
+
 
   resources :people do
     get 'backs', on: :collection

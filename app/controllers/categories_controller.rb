@@ -3,7 +3,7 @@ class CategoriesController < ApplicationController
 
   # GET /categories or /categories.json
   def index
-    @categories = Category.all
+    @categories = Category.order(:order)
   end
 
   # GET /categories/1 or /categories/1.json
@@ -52,6 +52,39 @@ class CategoriesController < ApplicationController
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @category.errors, status: :unprocessable_entity }
       end
+    end
+  end
+
+  # POST /categories/drop
+  def drop
+    source = Category.find(params[:source].to_i)
+    target = Category.find(params[:target].to_i)
+
+    categories = Category.where(order: [source, target].min..[source, target].max).order(:order)
+    new_order = categories.map(&:order)
+
+    if source.order > target.order
+      categories = Category.where(order: target.order..source.order).order(:order)
+      new_order = categories.map(&:order).rotate(1)
+    else
+      categories = Category.where(order: source.order..target.order).order(:order)
+      new_order = categories.map(&:order).rotate(-1)
+    end
+
+    ActiveRecord::Base.transaction do
+      categories.zip(new_order).each do |category, order|
+        category.order = order
+        category.save
+      end
+    end
+
+    @categories = Category.order(:order)
+    flash[:notice] = "#{source.name} was successfully moved."
+
+    respond_to do |format|
+      format.turbo_stream { render turbo_stream: turbo_stream.replace('categories', 
+        render_to_string(:index, layout: false))}
+      format.html { redirect_to categories_url }
     end
   end
 

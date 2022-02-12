@@ -1,4 +1,4 @@
-<div class="mx-auto">
+<div class="mx-auto" id="categories">
   <% if notice.present? %>
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
@@ -7,21 +7,20 @@
 
   <div class="min-w-full">
   <table class="mx-auto table-fixed">
-    <tbody>
+    <tbody data-controller="drop" data-drop-action="<%= drop_categories_path %>">
     <% @categories.each do |category| %>
-      <tr>
-        <td class="text-black font-medium"><%= link_to category.name, edit_category_path(category) %></td>
+      <tr draggable="true" data-drag-id="<%= category.id %>">
+        <td class="row text-black font-medium"><%= link_to category.name, edit_category_path(category) %></td>
         <td><%= category.day %></td>
         <td><%= category.time %></td>
       </tr>
     <% end %>
     </tbody>
   </table>
+  </div>
 
-</div>
-
-<div class="mt-4 flex justify-between items-center">
-  <%= link_to 'New category', new_category_path, class: "btn-blue" %>
-  <%= link_to 'Back to Settings', settings_event_index_path, class: "btn-green" %>
-</div>
+  <div class="mt-4 flex justify-between items-center">
+    <%= link_to 'New category', new_category_path, class: "btn-blue" %>
+    <%= link_to 'Back to Settings', settings_event_index_path, class: "btn-green" %>
+  </div>
 </div>
