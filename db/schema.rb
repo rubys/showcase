@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_02_08_221606) do
+ActiveRecord::Schema.define(version: 2022_02_12_001802) do
 
   create_table "ages", force: :cascade do |t|
     t.string "category"
@@ -60,6 +60,7 @@ ActiveRecord::Schema.define(version: 2022_02_08_221606) do
     t.integer "heat_range_age"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.boolean "intermix", default: true
   end
 
   create_table "heats", force: :cascade do |t|

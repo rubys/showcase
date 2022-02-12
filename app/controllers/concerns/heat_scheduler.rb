@@ -103,19 +103,23 @@ module HeatScheduler
       end
     end
 
-    new_order = []
-    cats.each do |cat, groups|
-      dances = groups.group_by {|group| [group.dcat, group.dance.id]}
-      candidates = []
+    if Event.last.intermix
+      new_order = []
+      cats.each do |cat, groups|
+        dances = groups.group_by {|group| [group.dcat, group.dance.id]}
+        candidates = []
 
-      dances.each do |id, groups|
-        denominator = groups.length.to_f + 1
-        groups.each_with_index do |group, index|
-          candidates << [(index+1)/denominator] + id + [group]
+        dances.each do |id, groups|
+          denominator = groups.length.to_f + 1
+          groups.each_with_index do |group, index|
+            candidates << [(index+1)/denominator] + id + [group]
+          end
         end
-      end
 
-      new_order += candidates.sort_by {|candidate| candidate[0..2]}.map(&:last)
+        new_order += candidates.sort_by {|candidate| candidate[0..2]}.map(&:last)
+      end
+    else
+      new_order = cats.values.flatten
     end
 
     new_order

@@ -118,8 +118,13 @@ on the floor at the same time.
     <%= form.range_field :heat_range_age, min: 0, max: @ages-1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <div class="my-5">
+    <%= form.label :intermix, 'Intermix dances within category:' %>
+    <%= form.check_box :intermix, class: 'entry-count h-10' %>
+  </div>
+
   <div class="inline">
     <%= form.submit value: 'Save', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
-  </div>
+  </div>  
 <% end %>
 </div>
