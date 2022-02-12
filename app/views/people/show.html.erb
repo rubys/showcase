@@ -28,7 +28,7 @@
           <% entries.each do |entry| %>
             <tr class="group">
               <td class="row text-right"><%= entry.heats.length %>
-              <td class="row"><%= partner.display_name %>
+              <td class="row"><%= link_to partner.display_name, partner %>
               <td class="row"><%= entry.level.name %>
               <td class="row"><%= entry.age.category %>
               <td>
@@ -54,7 +54,7 @@
       <td></td>
       <% @partners.each do |partner| %>
         <td class="row-head-main">
-          <%= link_to partner.name.split(/,\s*/).last, partner %>
+          <%= link_to partner.first_name, partner %>
         </td>
       <% end %>
       </thead>

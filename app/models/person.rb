@@ -16,4 +16,8 @@ class Person < ApplicationRecord
   def display_name
     name.split(/,\s*/).rotate.join(' ')
   end
+
+  def first_name
+    name.split(/,\s*/).last
+  end
 end
