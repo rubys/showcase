@@ -18,17 +18,25 @@ tbody::after {
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
-  <% @cats.each_with_index do |(cat, heats), index| %>
+<div class="flex justify-between items-center">
+  <h1 class="font-bold text-4xl">Agenda</h1>
+  <%= link_to 'Redo', redo_heats_path, float: 'right', class: "btn-blue print:hidden", data: { turbo_method: :post } %>
+</div>
 
-  <% if index != 0 %>
-    <div style="page-break-after: always"></div>
-  <% end %>
-
-  <div class="flex justify-between items-center">
-    <h1 class="mx-auto font-bold text-4xl"><%= cat %></h1>
-    <% if index == 0 %>
-    <%= link_to 'Redo', redo_heats_path, float: 'right', class: "btn-blue print:hidden", data: { turbo_method: :post } %>
+  <table class="table-auto ml-6 mb-8">
+    <% @cats.each do |cat, heats| %>
+      <tr>
+        <td class="row"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a>
+        <td class="row text-right"><a href="#heat-<%= heats.first.first %>"><%= heats.first.first %></a>
+      </tr>
     <% end %>
+  </table>
+
+  <% @cats.each do |cat, heats| %>
+  <div style="page-break-after: always"></div>
+
+  <div class="mt-8 flex justify-between items-center" id="cat-<%= cat.downcase.gsub(' ', '-') %>">
+    <h1 class="mx-auto font-bold text-4xl"><%= cat %></h1>
   </div>
 
   <div class="min-w-full">
@@ -36,10 +44,9 @@ tbody::after {
     <thead>
       <td>
         <div class="row-head hidden print:block">Score</div>
-      <% if @heats.first.first != 0 %>
+      <% if heats.first.first != 0 %>
       <th width="5">
       <% else %>
-      <th class="row-head">Heat
       <th class="row-head">Category
       <th class="row-head">Dance
       <% end %>
@@ -52,6 +59,7 @@ tbody::after {
     </thead>
     <% heats.each do |number, heats| %>
       <tbody id="heat-<%= number %>">
+      <% if number > 0 %>
       <tr>
         <td>
         <td colspan="9" class="text-2xl pt-4">Heat <%= number %>: <%= heats.first.category %> <%= heats.first.dance.name %></td>
@@ -64,6 +72,10 @@ tbody::after {
       </tr>
       <% end %>
       <% last_back = 100 %>
+      <% else %>
+      <% last_back = 200 %>
+      <% end %>
+
       <% heats.each do |heat| %>
          <% if last_back < 200 && heat.back >= 200 %>
          <tr>
@@ -80,7 +92,6 @@ tbody::after {
            <% if number != 0 %>
            <td class="row">
            <% else %>
-           <td class="row"><%= number %>
            <td class="row"><%= heat.category %>
            <td class="row"><%= heat.dance.name %>
            <% end %>

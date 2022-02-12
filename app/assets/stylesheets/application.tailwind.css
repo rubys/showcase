@@ -23,8 +23,18 @@
      text-center
   }
 
+  .btn-pale-blue { @apply
+     mx-2 rounded-lg py-3 px-5 text-white bg-blue-400 inline-block font-medium
+     text-center
+  }
+
   .btn-green { @apply
      mx-2 rounded-lg py-3 px-5 text-white bg-green-600 inline-block font-medium
+     text-center
+  }
+
+  .btn-pale-green { @apply
+     mx-2 rounded-lg py-3 px-5 text-white bg-green-400 inline-block font-medium
      text-center
   }
 
