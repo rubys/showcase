@@ -68,6 +68,14 @@
         <% end %>
       </tr>
       <% end %>
+      <tr>
+        <th class="border-t-2 border-gray-200 row text-center font-bold">total
+        <% @partners.each do |partner| %>
+          <td class="border-t-2 border-gray-200 row text-center">
+            <%= @entries[partner].map {|entries| entries.heats.size}.sum %>
+          </td>
+        <% end %>
+      </tr>
       </tbody>
     </table>
 

@@ -69,18 +69,14 @@ class PeopleController < ApplicationController
 
     heats = entries.map {|entry| entry.heats}.flatten
 
-    @dances = Dance.all.map {|dance|
+    @dances = Dance.order(:order).all.map {|dance|
       [dance, partners.map {|partner, entries|
         [partner, entries.map {|entry| entry.heats.count {|heat| heat.dance == dance}}.sum]
       }.to_h]
     }.select {|dance, partners| partners.values.any? {|count| count > 0}}.to_h
 
-    @partners = partners.keys
-
-    @entries = partners.map do |partner, entries|
-      [partner, entries&.group_by {|entry| [entry.level_id, entry.age_id]}]
-    end
     @entries = partners
+    @partners = partners.keys
 
     @heats = Heat.joins(:entry).
       includes(:dance, entry: [:lead, :follow]).
