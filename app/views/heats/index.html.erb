@@ -102,7 +102,7 @@ tbody::after {
            <td class="row"><%= link_to heat.lead.display_name, polymorphic_path(heat.lead, anchor: 'heats') %>
            <td class="row"><%= link_to heat.follow.display_name, polymorphic_path(heat.follow, anchor: 'heats') %>
            <td class="row"><%= heat.entry.level.name %>
-           <td class="row"><%= heat.entry.age.category %>
+           <td class="row text-center"><%= heat.entry.subject_category %>
            <td class="row"><%= link_to heat.studio.name, heat.studio %>
          </tr>
       <% end %>

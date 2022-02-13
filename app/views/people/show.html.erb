@@ -85,12 +85,12 @@
       <thead>
         <tr>
           <td class="row-head">Heat
-          <td class="row-head">Category
+          <td class="row-head">Type
           <td class="row-head">Dance
           <td class="row-head">Lead
           <td class="row-head">Follow
           <td class="row-head">Level
-          <td class="row-head">Age
+          <td class="row-head">Category
         </tr>
       </thead>
       <tbody>
@@ -102,7 +102,7 @@
           <td class="row"><%= link_to heat.entry.lead.display_name, heat.entry.lead %>
           <td class="row"><%= link_to heat.entry.follow.display_name, heat.entry.follow %>
           <td class="row"><%= heat.entry.level.name %>
-          <td class="row"><%= heat.entry.age.category %>
+          <td class="row text-center"><%= heat.entry.subject_category %>
         </tr>
         <% end %>
       </tbody>
