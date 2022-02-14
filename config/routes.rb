@@ -25,6 +25,7 @@ Rails.application.routes.draw do
     post 'backs', on: :collection, action: 'assign_backs'
     get 'couples', on: :collection
     get 'students', on: :collection
+    get 'heats', on: :collection
     get 'entries', on: :member, action: 'get_entries'
     post 'entries', on: :member, action: 'post_entries'
   end

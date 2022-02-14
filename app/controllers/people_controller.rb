@@ -2,6 +2,11 @@ class PeopleController < ApplicationController
   before_action :set_person, only: 
     %i[ show edit update destroy get_entries post_entries ]
 
+  def heats
+    @people = Person.all.order(:name)
+    @heats = Heat.includes(:dance, entry: [:lead, :follow]).all.order(:number)
+  end
+
   # GET /people or /people.json
   def index
     @people = Person.includes(:studio).order(sort_order)
