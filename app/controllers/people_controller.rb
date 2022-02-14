@@ -5,6 +5,8 @@ class PeopleController < ApplicationController
   def heats
     @people = Person.all.order(:name)
     @heats = Heat.includes(:dance, entry: [:lead, :follow]).all.order(:number)
+    @layout = 'mx-0'
+    @nologo = true
   end
 
   # GET /people or /people.json

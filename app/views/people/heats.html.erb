@@ -1,8 +1,8 @@
-<div class="w-full mx-0">
+<div class="w-screen">
   <% @people.each do |person| %>
-    <h2 style="break-before: page" class="font-bold pt-8 text-3xl pb-5"><%= person.name %></h2>
+    <h2 class="font-bold pt-8 text-3xl pb-5"><%= person.name %></h2>
 
-    <table class="w-screen">
+    <table class="" style="break-after: page">
       <thead>
         <tr>
           <td class="row-head">Heat
@@ -18,7 +18,7 @@
         <% next unless [heat.entry.lead, heat.entry.follow].include? person %>
         <tr class="text-sm">
           <td class="text-center"><%= heat.number %>
-          <td><%= heat.category %>
+          <td><div class="mx-4"><%= heat.category %>
           <td><div class="mx-4"><%= heat.dance.name %></div>
           <% if heat.entry.lead != person %>
           <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div>
