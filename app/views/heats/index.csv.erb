@@ -1,0 +1,35 @@
+<%= raw begin
+
+  headers = [
+    'Number',
+    'Student',
+    'Open or Closed',
+    'Dance',
+    'Lead',
+    'Follow',
+    'Level',
+    'Category',
+    'Studio',
+  ]
+
+  CSV.generate(write_headers: true, headers: headers) do |csv|
+    @agenda.values.each do |heat_group|
+      heat_group.map do |number, heats|
+	heats.map do |heat|
+	  csv << [
+	    heat.number,
+	    heat.entry.subject.name,
+	    heat.category,
+	    heat.dance.name,
+	    heat.entry.lead.name,
+	    heat.entry.follow.name,
+	    heat.entry.level.name,
+	    heat.entry.subject_category,
+	    heat.entry.subject.studio.name,
+	  ]
+	end
+      end
+    end
+  end
+
+end %>
