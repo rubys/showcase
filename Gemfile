@@ -71,3 +71,5 @@ group :test do
   gem "selenium-webdriver"
   gem "webdrivers"
 end
+
+gem "fast_excel", "~> 0.4.0"

@@ -89,6 +89,9 @@ GEM
       reline (>= 0.2.7)
     digest (3.1.0)
     erubi (1.10.0)
+    fast_excel (0.4.0)
+      ffi (> 1.9, < 2)
+    ffi (1.15.5)
     globalid (1.0.0)
       activesupport (>= 5.0)
     i18n (1.8.11)
@@ -223,6 +226,7 @@ DEPENDENCIES
   bootsnap
   capybara
   debug
+  fast_excel (~> 0.4.0)
   importmap-rails
   jbuilder
   puma (~> 5.0)

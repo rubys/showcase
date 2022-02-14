@@ -1,0 +1,42 @@
+<%= raw begin
+
+  workbook = FastExcel.open(constant_memory: true)
+
+  worksheet = workbook.add_worksheet("Heats")
+
+  headers = [
+    'Number',
+    'Student',
+    'Open or Closed',
+    'Dance',
+    'Lead',
+    'Follow',
+    'Level',
+    'Category',
+    'Studio',
+  ]
+
+  bold = workbook.bold_format
+  worksheet.append_row(headers, bold)
+
+  @agenda.values.each do |heat_group|
+    heat_group.map do |number, heats|
+      heats.map do |heat|
+	worksheet.append_row [
+	  heat.number,
+	  heat.entry.subject.name,
+	  heat.category,
+	  heat.dance.name,
+	  heat.entry.lead.name,
+	  heat.entry.follow.name,
+	  heat.entry.level.name,
+	  heat.entry.subject_category,
+	  heat.entry.subject.studio.name,
+	]
+      end
+    end
+  end
+
+  workbook.read_string
+
+end %>
