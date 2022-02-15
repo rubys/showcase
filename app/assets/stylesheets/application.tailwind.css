@@ -38,6 +38,11 @@
      text-center
   }
 
+  .btn-orange { @apply
+   mx-2 rounded-lg py-3 px-5 bg-yellow-400 inline-block font-medium
+   text-center
+  }
+
   .btn-grey { @apply
      mx-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium text-center
   }

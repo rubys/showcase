@@ -13,6 +13,8 @@ class Person < ApplicationRecord
   has_many :follow_entries, class_name: 'Entry', foreign_key: :follow_id,
     dependent: :destroy
 
+  has_many :scores, dependent: :destroy, foreign_key: :judge_id
+
   def display_name
     name.split(/,\s*/).rotate.join(' ')
   end

@@ -33,4 +33,9 @@ Rails.application.routes.draw do
   resources :studios do
     post 'unpair', on: :member
   end
+
+  get '/scores/:judge/heatlist', to: 'scores#heatlist', as: 'judge_heatlist'
+  get '/scores/:judge/heat/:heat', to: 'scores#heat', as: 'judge_heat'
+  post '/scores/:judge/post', to: 'scores#post', as: 'post_score'
+  resources :scores
 end

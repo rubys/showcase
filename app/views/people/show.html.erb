@@ -115,9 +115,15 @@
 
     <% if @person.type == 'Student' %>
     <%= link_to 'Add heats', new_entry_path(primary: @person), class: "btn-blue" %>
+    <% elsif @person.type == 'Judge' %>
+    <%= link_to 'Score heats',  judge_heatlist_path(judge: @person), class: "btn-orange" %>
     <% end %>
 
+    <% if @person.studio %>
     <%= link_to 'Back to studio', @person.studio, class: "btn-green" %>
+    <% else %>
+    <%= link_to 'Back to settings', settings_event_index_path , class: "btn-green" %>
+    <% end %>
     </div>
   </div>
 </div>

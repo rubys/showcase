@@ -1,0 +1,19 @@
+<div class="">
+  <% if notice.present? %>
+    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+  <% end %>
+
+  <h1 class="font-bold text-4xl pb-5"><%= @judge.display_name %></h1>
+
+  <table>
+    <tbody>
+      <% @heats.each do |heat| %>
+        <% next if heat.number == 0 %>
+        <tr>
+          <td><%= link_to heat.number, judge_heat_path(judge: @judge, heat: heat.number) %>
+          <td><%= link_to heat.dance.name, judge_heat_path(judge: @judge, heat: heat.number) %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -2,6 +2,8 @@ class Heat < ApplicationRecord
   belongs_to :dance
   belongs_to :entry
 
+  has_many :scores, dependent: :destroy
+
   def lead
     entry.lead
   end

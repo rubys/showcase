@@ -243,7 +243,7 @@ class PeopleController < ApplicationController
         name: person[:name],
         studio_id: person[:studio_id],
         type: person[:type],
-        level: Level.find(person[:level]),
+        level: person[:level] && Level.find(person[:level]),
         age_id: person[:age_id],
         role: person[:role],
         back: person[:back]

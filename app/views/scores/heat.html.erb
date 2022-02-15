@@ -1,0 +1,44 @@
+<div class="flex flex-col h-screen w-full">
+  <% if notice.present? %>
+    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+  <% end %>
+
+  <h1 class="font-bold text-4xl pt-1 pb-3 text-center">
+    <%= @judge.display_name %>
+  </h1>
+
+  <div class="grow flex flex-col border-2 border-slate-400" data-controller="score"  data-drop-action="<%=  post_score_path(judge: @judge) %>">
+    <% @scores.reverse.each do |score| %>
+    <div class="border-2 h-full flex" data-score="<%= score %>">
+      <span class="order-2 ml-auto p-2"><%= score %></span>
+
+      <% @results[score]&.each do |subject| %>
+        <div class='w-20 mx-1 my-1 py-1 border-2 rounded-lg bg-sky-200 text-center' draggable="true" id="<%= dom_id subject %>">
+          <span class="font-bold text-xl"><%= subject.entry.lead.back %></span>
+          <span class="hidden md:block"><br>
+          <%= subject.entry.subject_category %><br>
+          <%= subject.entry.level.initials %></span>
+        </div>  
+    <% end %>
+    </div>
+    <% end %>
+  </div>
+
+  <div class="mt-2 flex flex-row">
+    <div class="align-middle">
+      <% if @prev %>
+      <%= link_to '<<', judge_heat_path(judge: @judge, heat: @prev) %>
+      <% end %>
+    </div>
+
+    <h1 class="grow font-bold text-2xl pt-1 pb-3 text-center">
+      Heat <%= @number %>: <%= @dance %>
+    </h1>
+
+    <div class="align-middle">
+      <% if @next %>
+      <%= link_to '>>', judge_heat_path(judge: @judge, heat: @next) %>
+      <% end %>
+  </div>
+  </div>
+</div>
