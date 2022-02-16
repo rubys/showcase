@@ -9,9 +9,10 @@
     <tbody>
       <% @heats.each do |heat| %>
         <% next if heat.number == 0 %>
-        <tr>
+        <tr class="text-<%= @scored.include?(heat.number) ? 'slate-400' : 'black' %>">
           <td><%= link_to heat.number, judge_heat_path(judge: @judge, heat: heat.number) %>
-          <td><%= link_to heat.dance.name, judge_heat_path(judge: @judge, heat: heat.number) %>
+          <td><%= link_to "#{heat.category} #{heat.dance.name}", 
+            judge_heat_path(judge: @judge, heat: heat.number) %>
         </tr>
       <% end %>
     </tbody>

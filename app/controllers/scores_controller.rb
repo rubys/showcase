@@ -6,6 +6,8 @@ class ScoresController < ApplicationController
     @judge = Person.find(params[:judge].to_i)
 
     @heats = Heat.all.order(:number).group(:number).includes(:dance)
+
+    @scored = Score.includes(:heat).where(judge: @judge).group_by {|score| score.heat.number}.keys
   end
 
   # GET /scores or /scores.json
@@ -19,7 +21,7 @@ class ScoresController < ApplicationController
     ).sort_by {|heat| heat.entry.lead.back || 0}
 
     if @subjects.first&.category == 'Closed'
-      @scores = %w(B S G GH)
+      @scores = %w(B S G GH).reverse
     else
       @scores = %w(1 2 3 F)
     end
@@ -39,7 +41,7 @@ class ScoresController < ApplicationController
       @results[score] << subject
     end
 
-    @scores.unshift ''
+    @scores << ''
  
     @next = Heat.where(number: @number+1...).minimum(:number)
     @prev = Heat.where(number: ...@number).maximum(:number)
