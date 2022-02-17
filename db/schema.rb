@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_02_14_194448) do
+ActiveRecord::Schema[7.0].define(version: 2022_02_17_003153) do
   create_table "ages", force: :cascade do |t|
     t.string "category"
     t.string "description"
@@ -105,6 +105,16 @@ ActiveRecord::Schema[7.0].define(version: 2022_02_14_194448) do
     t.index ["judge_id"], name: "index_scores_on_judge_id"
   end
 
+  create_table "solos", force: :cascade do |t|
+    t.integer "heat_id", null: false
+    t.integer "combo_dance_id"
+    t.integer "order"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["combo_dance_id"], name: "index_solos_on_combo_dance_id"
+    t.index ["heat_id"], name: "index_solos_on_heat_id"
+  end
+
   create_table "studio_pairs", force: :cascade do |t|
     t.integer "studio1_id", null: false
     t.integer "studio2_id", null: false
@@ -134,6 +144,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_02_14_194448) do
   add_foreign_key "people", "studios"
   add_foreign_key "scores", "heats"
   add_foreign_key "scores", "people", column: "judge_id"
+  add_foreign_key "solos", "dances", column: "combo_dance_id"
+  add_foreign_key "solos", "heats"
   add_foreign_key "studio_pairs", "studios", column: "studio1_id"
   add_foreign_key "studio_pairs", "studios", column: "studio2_id"
 end

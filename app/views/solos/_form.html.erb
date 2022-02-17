@@ -1,0 +1,49 @@
+<%= form_with(model: solo, class: "contents") do |form| %>
+  <% if solo.errors.any? %>
+    <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
+      <h2><%= pluralize(solo.errors.count, "error") %> prohibited this solo from being saved:</h2>
+
+      <ul>
+        <% solo.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+<div class="mx-auto w-full mb-8 text-center">
+<%= form.hidden_field :primary, value: @person.id %>
+
+<div>
+<%= form.select :partner, @avail, {selected: @partner},
+  class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>
+<div><%= form.select :age, @ages, {selected: @age},
+  class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>
+<div><%= form.select :level, @levels, {selected: @level},
+  class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>
+</div>
+
+  <div class="my-5">
+    <%= form.label :dance_id %>
+    <%= form.select :dance_id, @dances, {selected: @dance},
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :combo_dance_id %>
+    <%= form.select :combo_dance_id, @dances, {include_blank: true},
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="mx-auto flex">
+  <div class="mx-auto">
+  <%= form.submit class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  <% if solo.id %>
+  <%= link_to 'Remove this solo', solo_path(solo, primary: @person), class: 'btn-grey',
+    data: { turbo_method: :delete, turbo_confirm: 'Are you sure?' } %>
+  <% end %>
+  <%= link_to 'Back to person', @person, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  </div>
+</div>
+</div>
+<% end %>

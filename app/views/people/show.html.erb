@@ -4,15 +4,18 @@
       <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
     <% end %>
 
-    <% if @person.type == 'Student' %>
     <%= link_to 'Add heats', new_entry_path(primary: @person), class: "btn-blue float-right" %>
-    <% end %>
-
+    <%= link_to 'Add solo', new_solo_path(primary: @person), class: "btn-blue float-right" %>
     <%= render @person %>
 
     <% if %w(Student Professional).include? @person.type %>
 
-    <% unless @heats.empty? %>
+    <% unless @heats.empty? and @solos.empty? %>
+
+    <% if @person.type == 'Student' %>
+
+    <% end %>
+
     <h2 class="font-bold pt-8 text-3xl pb-5">Entries</h2>
 
     <table>
@@ -27,7 +30,7 @@
         <% @entries.each do |partner, entries| %>
           <% entries.each do |entry| %>
             <tr class="group">
-              <td class="row text-right"><%= entry.heats.length %>
+              <td class="row text-right"><%= (entry.heats - @solos).length %>
               <td class="row"><%= link_to partner.display_name, partner %>
               <td class="row"><%= entry.level.name %>
               <td class="row"><%= entry.age.category %>
@@ -41,11 +44,47 @@
           <% end %>
         <% end %>
         <tr>
-          <td class="border-t-2 border-gray-200 row text-right"d><%= @entries.values.flatten.map {|entry| entry.heats.length}.sum %>
+          <td class="border-t-2 border-gray-200 row text-right"d><%= @entries.values.flatten.map {|entry| (entry.heats - @solos).length}.sum %>
           <th colspan="3" class="border-t-2 border-gray-200 row text-center font-bold">total
         </tr>
       </tbody>
     </table>
+
+    <% if @solos.length > 0 %>
+    <h2 class="font-bold pt-8 text-3xl pb-5">Solos</h2>
+
+    <table>
+    <thead>
+      <th>dance
+      <th>partner
+      <th>level
+      <th>age
+    </thead>
+
+    <tbody>
+      <% @solos.each do |heat| %>
+        <% entry = heat.entry %>
+          <tr class="group">
+            <% if heat.solo.combo_dance %>
+            <td class="row"><%= heat.dance.name %> / <%= heat.solo.combo_dance.name %>
+            <% else %>
+            <td class="row"><%= heat.dance.name %>
+            <% end %>
+            <td class="row"><%= link_to entry.lead.display_name, entry.lead %>
+            <td class="row"><%= entry.level.name %>
+            <td class="row"><%= entry.age.category %>
+            <td>
+            <form method="get" action="<%= edit_solo_path(heat.solo) %>">
+            <input type="hidden" name="primary" value="<%= @person.id %>">
+            <button type="submit" class='group-hover:inline hidden x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium'>Edit</button>
+            </form>
+            </td>
+          </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+    <% end %>
 
     <h2 class="font-bold pt-8 text-3xl pb-5">Dances</h2>
 
@@ -98,7 +137,11 @@
         <tr>
           <td class="row"><%= link_to heat.number, heats_path(anchor: "heat-#{heat.number}")  %>
           <td class="row"><%= heat.category %>
+          <% if heat.category == 'Solo' and heat.solo.combo_dance %>
+          <td class="row"><%= heat.dance.name %> / <%= heat.solo.combo_dance.name %>
+          <% else %>
           <td class="row"><%= heat.dance.name %>
+          <% end %>
           <td class="row"><%= link_to heat.entry.lead.display_name, heat.entry.lead %>
           <td class="row"><%= link_to heat.entry.follow.display_name, heat.entry.follow %>
           <td class="row"><%= heat.entry.level.name %>
@@ -115,6 +158,7 @@
 
     <% if @person.type == 'Student' %>
     <%= link_to 'Add heats', new_entry_path(primary: @person), class: "btn-blue" %>
+    <%= link_to 'Add solo', new_solo_path(primary: @person), class: "btn-blue" %>
     <% elsif @person.type == 'Judge' %>
     <%= link_to 'Score heats',  judge_heatlist_path(judge: @person), class: "btn-orange" %>
     <% end %>

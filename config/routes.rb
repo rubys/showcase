@@ -40,4 +40,8 @@ Rails.application.routes.draw do
   resources :scores do
     get 'by-level', on: :collection, action: :by_level
   end
+
+  resources :solos do
+    post 'drop', on: :collection
+  end
 end

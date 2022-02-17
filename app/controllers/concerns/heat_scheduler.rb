@@ -9,7 +9,7 @@ module HeatScheduler
     )
 
     # convert relevant data to numbers
-    heat_categories = {'Closed' => 0, 'Open' => 1}
+    heat_categories = {'Closed' => 0, 'Open' => 1, 'Solo' => 2}
 
     heats = @heats.map {|heat|
       [heat.dance_id,
@@ -94,11 +94,15 @@ module HeatScheduler
   end
 
   def reorder(groups)
-    cats = (Category.order(:order).map {|cat| [cat, []]} + [[nil, []]]).to_h
+    categories = Category.order(:order).all
+    cats = (categories.map {|cat| [cat, []]} + [[nil, []]]).to_h
+    solos = (categories.map {|cat| [cat, []]} + [[nil, []]]).to_h
 
     groups.each do |group|
       if group.dcat == 'Open'
         cats[group.dance.open_category] << group
+      elsif group.dcat == 'Solo'
+        solos[group.dance.closed_category] << group
       else
         cats[group.dance.closed_category] << group
       end
@@ -117,7 +121,8 @@ module HeatScheduler
           end
         end
 
-        new_order += candidates.sort_by {|candidate| candidate[0..2]}.map(&:last)
+        new_order += candidates.sort_by {|candidate| candidate[0..2]}.map(&:last) +
+          solos[cat].sort_by {|group| group.first.solo.order}
       end
     else
       new_order = cats.values.flatten
@@ -147,7 +152,16 @@ module HeatScheduler
     end
 
     def dcat
-      @min_dcat == 0 ? 'Closed' : 'Open'
+      case @min_dcat
+      when 0
+        'Closed'
+      when 1
+        'Open'
+      when 2
+        'Solo'
+      else
+        '?'
+      end
     end
 
     def initialize(dance, dcat, level, age, heat)
@@ -203,6 +217,10 @@ module HeatScheduler
 
     def each(&block)
       @group.each(&block)
+    end
+
+    def first
+      @group.first
     end
 
     def size

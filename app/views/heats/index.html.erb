@@ -20,7 +20,10 @@ tbody::after {
 
 <div class="flex justify-between items-center">
   <h1 class="font-bold text-4xl">Agenda</h1>
-  <%= link_to 'Redo', redo_heats_path, float: 'right', class: "btn-blue print:hidden", data: { turbo_method: :post } %>
+  <div>
+  <%= link_to 'Solos', solos_path, class: "btn-green print:hidden" %>
+  <%= link_to 'Redo', redo_heats_path, class: "btn-blue print:hidden", data: { turbo_method: :post } %>
+  </div>
 </div>
 
   <table class="table-auto ml-6 mb-8">
@@ -65,7 +68,12 @@ tbody::after {
       <% if number > 0 %>
       <tr>
         <td>
-        <td colspan="9" class="text-2xl pt-4">Heat <%= number %>: <%= heats.first.category %> <%= heats.first.dance.name %></td>
+        <td colspan="9" class="text-2xl pt-4">Heat <%= number %>: 
+          <%= heats.first.category %> <%= heats.first.dance.name %>
+          <% if heats.first.category == 'Solo' and heats.first.solo.combo_dance%>
+          / <%= heats.first.solo.combo_dance.name %>
+          <% end %>
+        </td>
       </tr>
       <% if heats.first.back < 200 %>
       <tr>
@@ -76,6 +84,10 @@ tbody::after {
       <% end %>
       <% last_back = 100 %>
       <% else %>
+      <% last_back = 200 %>
+      <% end %>
+
+      <% if heats.first.category == 'Solo' %>
       <% last_back = 200 %>
       <% end %>
 
@@ -96,7 +108,11 @@ tbody::after {
            <td class="row">
            <% else %>
            <td class="row"><%= heat.category %>
+           <% if heat.category == 'Solo' and heat.solo.combo_dance %>
+           <td class="row"><%= heat.dance.name %> / <%= heat.solo.combo_dance.name %>
+           <% else %>
            <td class="row"><%= heat.dance.name %>
+           <% end %>
            <% end %>
            <td class="row"><%= heat.back %>
            <td class="row"><%= link_to heat.lead.display_name, polymorphic_path(heat.lead, anchor: 'heats') %>

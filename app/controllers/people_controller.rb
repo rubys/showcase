@@ -90,6 +90,8 @@ class PeopleController < ApplicationController
       where(entry: {lead: @person}).
       or(Heat.where(entry: {follow: @person})).
       order(:number).to_a
+
+    @solos = Solo.includes(:heat).all.map(&:heat) & @heats
   end
 
   # GET /people/new

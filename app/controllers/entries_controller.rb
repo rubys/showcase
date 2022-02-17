@@ -66,6 +66,7 @@ class EntriesController < ApplicationController
         format.json { render :show, status: :created, location: @entry }
       else
         @primary = @person
+        form_init
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @entry.errors, status: :unprocessable_entity }
       end
@@ -103,7 +104,7 @@ class EntriesController < ApplicationController
       @total = @entry.heats.length
     elsif replace != @entry
       @total = @entry.heats.length
-      @entry.heats.to_a.each {|heat| heat.entry = replace; heat.save!; STDERR.puts heat}
+      @entry.heats.to_a.each {|heat| heat.entry = replace; heat.save!}
       @entry.reload
       @entry.destroy!
       @entry = replace
@@ -145,7 +146,7 @@ class EntriesController < ApplicationController
     end
 
     def form_init
-      @person = Person.find(params[:primary])
+      @person ||= Person.find(params[:primary])
       entries = @person.lead_entries + @person.follow_entries
       studios = [@person.studio] + @person.studio.pairs
   

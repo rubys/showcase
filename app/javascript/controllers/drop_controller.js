@@ -3,20 +3,28 @@ import { Controller } from "@hotwired/stimulus"
 // Connects to data-controller="drop"
 export default class extends Controller {
   connect() {
+    let targets = [...this.element.querySelectorAll(':scope > *[data-drag-id]')].map (node => node.dataset.dragId);
+
     for (let child of this.element.children) {
       if (child.draggable) {
         child.addEventListener('dragstart', event => {
-          event.dataTransfer.setData('application/drag-id', child.getAttribute('data-drag-id'));
+          event.dataTransfer.setData('application/drag-id', child.dataset.dragId);
           event.dataTransfer.effectAllowed = "move";
         });
 
         child.addEventListener('dragover', event => {
-          event.preventDefault();
-          return true;
+          let source = event.dataTransfer.getData("application/drag-id");
+          if (targets.includes(source)) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "move";
+            return true;
+          }
+          return false;
         });
 
         child.addEventListener('dragenter', event => {
-          event.preventDefault();
+          let source = event.dataTransfer.getData("application/drag-id");
+          if (targets.includes(source)) event.preventDefault();
         });
 
         child.addEventListener('drop', event => {
@@ -24,6 +32,8 @@ export default class extends Controller {
 
           let source = event.dataTransfer.getData("application/drag-id");
           let target = child.getAttribute("data-drag-id");
+
+          if (!targets.includes(source)) return;
 
           fetch(this.element.getAttribute('data-drop-action'), {
             method: 'POST',

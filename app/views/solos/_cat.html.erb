@@ -1,0 +1,17 @@
+<tbody data-controller="drop" data-drop-action="<%= drop_solos_path %>" id="<%= id %>">
+  <% heats.each do |heat| %>
+    <tr draggable="true" id="<%= dom_id heat.solo %>" data-drag-id="<%= heat.solo.id %>">
+       <td>
+       <% if heat.category == 'Solo' and heat.solo.combo_dance %>
+       <td class="row"><%= heat.dance.name %> / <%= heat.solo.combo_dance.name %>
+       <% else %>
+       <td class="row"><%= heat.dance.name %>
+       <% end %>
+       <td class="row"><%= link_to heat.lead.display_name, polymorphic_path(heat.lead, anchor: 'heats') %>
+       <td class="row"><%= link_to heat.follow.display_name, polymorphic_path(heat.follow, anchor: 'heats') %>
+       <td class="row"><%= heat.entry.level.name %>
+       <td class="row text-center"><%= heat.entry.subject_category %>
+       <td class="row"><%= link_to heat.studio.name, heat.studio %>
+    </tr>
+  <% end %>
+</tbody>

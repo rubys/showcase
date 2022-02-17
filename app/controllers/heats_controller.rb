@@ -37,6 +37,8 @@ class HeatsController < ApplicationController
         @agenda[cat] << [number, heats]
       end
     end
+
+    @solos = Set.new(Solo.includes(:heat).all.map(&:heat))
   end
 
   # GET /heats/1 or /heats/1.json

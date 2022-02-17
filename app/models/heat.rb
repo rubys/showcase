@@ -3,6 +3,7 @@ class Heat < ApplicationRecord
   belongs_to :entry
 
   has_many :scores, dependent: :destroy
+  has_one :solo, dependent: :destroy
 
   def lead
     entry.lead
