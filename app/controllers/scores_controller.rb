@@ -1,6 +1,11 @@
 class ScoresController < ApplicationController
   before_action :set_score, only: %i[ show edit update destroy ]
 
+  SCORES = {
+    "Open" => %w(1 2 3 F),
+    "Closed" => %w(B S G GH).reverse
+  }
+
   # GET /scores or /scores.json
   def heatlist
     @judge = Person.find(params[:judge].to_i)
@@ -30,16 +35,12 @@ class ScoresController < ApplicationController
       entry: [:age, :level, :lead, :follow]
     ).sort_by {|heat| heat.entry.lead.back || 0}
 
-    if @subjects.first&.category == 'Closed'
-      @scores = %w(B S G GH).reverse
-    else
-      @scores = %w(1 2 3 F)
-    end
-
     if @subjects.empty?
       @dance = '-'
+      @scores = []
     else
       @dance = "#{@subjects.first.category} #{@subjects.first.dance.name}"
+      @scores = SCORES[@subjects.first.category].dup
     end
 
     results = Score.where(judge: @judge, heat: @subjects).map {|score| [score.heat, score.value]}.to_h
@@ -83,6 +84,51 @@ class ScoresController < ApplicationController
   # GET /scores or /scores.json
   def index
     @scores = Score.all
+  end
+
+  def by_level
+    levels = Level.order(:id).all
+
+    template1 = ->() {levels.map {|level| [level, {}]}.to_h}
+
+    template2 = -> () {{
+      'Followers' => template1[],
+      'Leaders' => template1[],
+      'Couples' => template1[]
+    }}
+
+    @scores = {
+      'Closed' => template2[],
+      'Open' => template2[] 
+    }
+
+    scores = Score.includes(heat: {entry: [:lead, :follow]}).all
+
+    scores.each do |score|
+      category = score.heat.category
+      value = SCORES[category].index score.value
+      next unless value
+
+      tally = []
+
+      entry = score.heat.entry
+      level = entry.level
+
+      if entry.lead.type == 'Professional'
+        tally << ['Followers', entry.follow]
+      elsif entry.follow.type == 'Professional'
+        tally << ['Leaders', entry.lead]
+      else
+        tally << ['Followers', entry.follow]
+        tally << ['Leaders', entry.lead]
+        tally << ['Couples', [entry.lead, entry.follow]]
+      end
+
+      tally.each do |group, students|
+        @scores[category][group][level][students] ||= SCORES[category].map {0}
+        @scores[category][group][level][students][value] += 1
+      end
+    end
   end
 
   # GET /scores/1 or /scores/1.json
