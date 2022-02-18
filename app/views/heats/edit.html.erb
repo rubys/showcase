@@ -1,8 +1,9 @@
 <div class="mx-auto md:w-2/3 w-full">
-  <h1 class="font-bold text-4xl">Editing heat</h1>
+  <h1 class="text-center font-bold text-4xl"><%= @person.display_name %></h1>
 
   <%= render "form", heat: @heat %>
 
-  <%= link_to "Show this heat", @heat, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
-  <%= link_to "Back to heats", heats_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  <%= link_to 'Remove this heat', heat_path(@heat), class: 'btn-grey',
+    data: { turbo_method: :delete, turbo_confirm: 'Are you sure?' } %>
+  <%= link_to "Back to student", person_path(@person), class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
 </div>

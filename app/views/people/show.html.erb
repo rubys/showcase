@@ -8,7 +8,7 @@
     <%= link_to 'Add heats', new_entry_path(primary: @person), class: "btn-blue float-right" %>
     <%= link_to 'Add solo', new_solo_path(primary: @person), class: "btn-blue float-right" %>
     <% end %>
-    
+
     <%= render @person %>
 
     <% if %w(Student Professional).include? @person.type %>
@@ -137,7 +137,7 @@
       </thead>
       <tbody>
         <% @heats.each do |heat| %>
-        <tr>
+        <tr class="group">
           <td class="row"><%= link_to heat.number, heats_path(anchor: "heat-#{heat.number}")  %>
           <td class="row"><%= heat.category %>
           <% if heat.category == 'Solo' and heat.solo.combo_dance %>
@@ -149,6 +149,16 @@
           <td class="row"><%= link_to heat.entry.follow.display_name, heat.entry.follow %>
           <td class="row"><%= heat.entry.level.name %>
           <td class="row text-center"><%= heat.entry.subject_category %>
+          <td>
+          <% if heat.category == 'Solo' %>
+          <form method="get" action="<%= edit_solo_path(heat.solo) %>">
+          <% else %>
+          <form method="get" action="<%= edit_heat_path(heat) %>">
+          <% end %>
+          <input type="hidden" name="primary" value="<%= @person.id %>">
+          <button type="submit" class='group-hover:inline hidden x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium'>Edit</button>
+          </form>
+          </td>
         </tr>
         <% end %>
       </tbody>

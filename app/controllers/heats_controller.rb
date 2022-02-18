@@ -1,5 +1,6 @@
 class HeatsController < ApplicationController
   include HeatScheduler
+  include EntryForm
   
   before_action :set_heat, only: %i[ show edit update destroy ]
 
@@ -64,6 +65,12 @@ class HeatsController < ApplicationController
 
   # GET /heats/1/edit
   def edit
+    form_init(params[:primary])
+
+    @dances = Dance.order(:name).pluck(:name, :id).to_h
+    
+    @age = @heat.entry.age_id
+    @level = @heat.entry.level_id
   end
 
   # POST /heats or /heats.json
@@ -83,14 +90,27 @@ class HeatsController < ApplicationController
 
   # PATCH/PUT /heats/1 or /heats/1.json
   def update
+    heat = params[:heat]
+
+    entry = @heat.entry
+    replace = find_or_create_entry(heat)
+
+    @heat.entry = replace
+    @heat.number = 0
+
     respond_to do |format|
       if @heat.update(heat_params)
-        format.html { redirect_to heat_url(@heat), notice: "Heat was successfully updated." }
+        format.html { redirect_to person_path(@person), notice: "Heat was successfully updated." }
         format.json { render :show, status: :ok, location: @heat }
       else
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @heat.errors, status: :unprocessable_entity }
       end
+    end
+
+    if replace != entry
+      entry.reload
+      entry.destroy if entry.heats.empty?
     end
   end
 
@@ -112,6 +132,6 @@ class HeatsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def heat_params
-      params.require(:heat).permit(:number, :entry_id)
+      params.require(:heat).permit(:number, :entry_id, :category, :dance_id)
     end
 end

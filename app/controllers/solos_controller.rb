@@ -138,7 +138,7 @@ class SolosController < ApplicationController
 
     if replace != entry
       entry.reload
-      entry.destory if entry.heats.empty?
+      entry.destroy if entry.heats.empty?
     end
   end
 
@@ -181,6 +181,8 @@ class SolosController < ApplicationController
 
   # DELETE /solos/1 or /solos/1.json
   def destroy
+    person = Person.find(params[:primary])
+
     entry = @solo.heat.entry
     @solo.heat.destroy
     entry.reload
