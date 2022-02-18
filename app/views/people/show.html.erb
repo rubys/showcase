@@ -4,8 +4,11 @@
       <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
     <% end %>
 
+    <% if @person.type == "Student" %>
     <%= link_to 'Add heats', new_entry_path(primary: @person), class: "btn-blue float-right" %>
     <%= link_to 'Add solo', new_solo_path(primary: @person), class: "btn-blue float-right" %>
+    <% end %>
+    
     <%= render @person %>
 
     <% if %w(Student Professional).include? @person.type %>
@@ -153,14 +156,21 @@
     <% end %>
     <% end %>
 
+    <% if @person.type == 'Judge' %>
+    <div class="mt-4 mx-auto">
+    <%= link_to 'Score heats',  judge_heatlist_path(judge: @person), class: "btn-orange" %>
+    <%= link_to 'Scores by level',   by_level_scores_path , class: "btn-grey" %>
+    <%= link_to 'Scores by age',   by_age_scores_path , class: "btn-grey" %>
+    </div>
+    <% end %>
+
+
     <div class="mt-4 mx-auto">
     <%= link_to 'Edit this person', edit_person_path(@person), class: "btn-blue" %>
 
     <% if @person.type == 'Student' %>
     <%= link_to 'Add heats', new_entry_path(primary: @person), class: "btn-blue" %>
     <%= link_to 'Add solo', new_solo_path(primary: @person), class: "btn-blue" %>
-    <% elsif @person.type == 'Judge' %>
-    <%= link_to 'Score heats',  judge_heatlist_path(judge: @person), class: "btn-orange" %>
     <% end %>
 
     <% if @person.studio %>
