@@ -237,7 +237,7 @@ class PeopleController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def person_params
-      params.require(:person).permit(:name, :studio_id, :type, :back, :level, :age_id, :category, :role)
+      params.require(:person).permit(:name, :studio_id, :type, :back, :level_id, :age_id, :category, :role)
     end
 
     def filtered_params(person)
@@ -245,7 +245,7 @@ class PeopleController < ApplicationController
         name: person[:name],
         studio_id: person[:studio_id],
         type: person[:type],
-        level: person[:level] && Level.find(person[:level]),
+        level: person[:level_id] && Level.find(person[:level_id]),
         age_id: person[:age_id],
         role: person[:role],
         back: person[:back]
