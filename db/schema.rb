@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_02_17_003153) do
+ActiveRecord::Schema[7.0].define(version: 2022_02_18_152002) do
   create_table "ages", force: :cascade do |t|
     t.string "category"
     t.string "description"
@@ -111,6 +111,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_02_17_003153) do
     t.integer "order"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "song"
+    t.string "artist"
     t.index ["combo_dance_id"], name: "index_solos_on_combo_dance_id"
     t.index ["heat_id"], name: "index_solos_on_heat_id"
   end

@@ -79,7 +79,7 @@ class SolosController < ApplicationController
     @solo.order = (Solo.maximum(:order) || 0) + 1
 
     respond_to do |format|
-      if @solo.save
+      if @solo.update(solo_params)
         format.html { redirect_to @person, notice: "Solo was successfully created." }
         format.json { render :show, status: :created, location: @solo }
       else
@@ -127,7 +127,7 @@ class SolosController < ApplicationController
     end
 
     respond_to do |format|
-      if @solo.save
+      if @solo.update(solo_params)
         format.html { redirect_to @person, notice: "Solo was successfully updated." }
         format.json { render :show, status: :ok, location: @solo }
       else
@@ -202,7 +202,7 @@ class SolosController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def solo_params
-      params.require(:solo).permit(:heat_id, :combo_dance_id, :order)
+      params.require(:solo).permit(:heat_id, :combo_dance_id, :order, :song, :artist)
     end
 
     def form_init
