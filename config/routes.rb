@@ -39,6 +39,7 @@ Rails.application.routes.draw do
   post '/scores/:judge/post', to: 'scores#post', as: 'post_score'
   resources :scores do
     get 'by-level', on: :collection, action: :by_level
+    get 'by-age', on: :collection, action: :by_age
   end
 
   resources :solos do

@@ -131,6 +131,52 @@ class ScoresController < ApplicationController
     end
   end
 
+
+  def by_age
+    ages = Age.order(:id).all
+
+    template1 = ->() {ages.map {|age| [age, {}]}.to_h}
+
+    template2 = -> () {{
+      'Followers' => template1[],
+      'Leaders' => template1[],
+      'Couples' => template1[]
+    }}
+
+    @scores = {
+      'Closed' => template2[],
+      'Open' => template2[] 
+    }
+
+    scores = Score.includes(heat: {entry: [:lead, :follow]}).all
+
+    scores.each do |score|
+      category = score.heat.category
+      value = SCORES[category].index score.value
+      next unless value
+
+      tally = []
+
+      entry = score.heat.entry
+      age = entry.age
+
+      if entry.lead.type == 'Professional'
+        tally << ['Followers', entry.follow]
+      elsif entry.follow.type == 'Professional'
+        tally << ['Leaders', entry.lead]
+      else
+        tally << ['Followers', entry.follow]
+        tally << ['Leaders', entry.lead]
+        tally << ['Couples', [entry.lead, entry.follow]]
+      end
+
+      tally.each do |group, students|
+        @scores[category][group][age][students] ||= SCORES[category].map {0}
+        @scores[category][group][age][students][value] += 1
+      end
+    end
+  end
+
   # GET /scores/1 or /scores/1.json
   def show
   end
