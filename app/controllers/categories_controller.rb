@@ -126,7 +126,6 @@ class CategoriesController < ApplicationController
       @total = 0
 
       Dance.all.each do |dance|
-        STDERR.puts [dance.name, include['Open'][dance.name], include['Closed'][dance.name]].inspect
         if dance.open_category == @category
           if include['Open'][dance.name].to_i == 0
             dance.open_category = nil

@@ -8,6 +8,6 @@ waltz:
 
 tango:
   name: Tango
-  closed_category: two
-  open_category: one
+  closed_category: one
+  open_category: two
   order: 2
