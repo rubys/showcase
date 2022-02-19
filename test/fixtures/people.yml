@@ -1,25 +1,22 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-one:
-  name: MyString
+Arthur:
+  name: Murray, Arthur
   studio: one
-  type: 
+  type: Professional
   back: 1
-  level: MyString
-  category: MyString
-  role: MyString
-  friday_dinner: false
-  saturday_lunch: false
-  saturday_dinner: false
+  role: Leader
 
-two:
-  name: MyString
+Kathryn:
+  name: Murray, Kathryn
   studio: two
-  type: 
-  back: 1
-  level: MyString
-  category: MyString
-  role: MyString
-  friday_dinner: false
-  saturday_lunch: false
-  saturday_dinner: false
+  type: Student
+  level: FS
+  age: C
+  role: Follower
+
+Judy:
+  name: Sheindlin, Judy
+  studio: two
+  type: Judge
+  level: FS

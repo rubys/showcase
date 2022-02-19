@@ -1,11 +1,6 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  heat: one
-  combo_dance: one
-  order: 1
-
-two:
-  heat: two
-  combo_dance: two
+  heat: three
+  combo_dance: tango
   order: 1

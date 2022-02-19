@@ -1,11 +1,11 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  judge: one
-  entry: one
-  value: MyString
+  judge: Judy
+  heat: one
+  value: G
 
 two:
-  judge: two
-  entry: two
-  value: MyString
+  judge: Judy
+  heat: two
+  value: "2"

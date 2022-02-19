@@ -1,13 +1,13 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  count: 1
-  dance: one
-  lead: one
-  follow: one
+  age: B
+  level: AS
+  lead: Arthur
+  follow: Kathryn
 
 two:
-  count: 1
-  dance: two
-  lead: two
-  follow: two
+  age: B1
+  level: FS
+  lead: Arthur
+  follow: Kathryn

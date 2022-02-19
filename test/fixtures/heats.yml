@@ -1,9 +1,19 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  number: MyString
+  number: 1
   entry: one
+  category: Closed
+  dance: waltz
 
 two:
-  number: MyString
+  number: 2
   entry: two
+  category: Open
+  dance: tango
+
+three:
+  number: 3
+  entry: one
+  category: Solo
+  dance: waltz

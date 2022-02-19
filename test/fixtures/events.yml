@@ -1,17 +1,9 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  name: MyString
-  location: MyString
-  date: MyString
-  heat_range_cat: 1
-  heat_range_level: 1
-  heat_range_age: 1
-
-two:
-  name: MyString
-  location: MyString
-  date: MyString
-  heat_range_cat: 1
-  heat_range_level: 1
-  heat_range_age: 1
+  name: Showcase
+  location: Ballroom
+  date: Soon
+  heat_range_cat: 0
+  heat_range_level: 6
+  heat_range_age: 7

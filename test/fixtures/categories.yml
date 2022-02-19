@@ -1,11 +1,13 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  name: MyString
+  name: Closed American Smooth
   order: 1
-  time: MyString
+  day: Friday
+  time: 10 a.m.
 
 two:
-  name: MyString
-  order: 1
-  time: MyString
+  name: Open American Smooth
+  order: 2
+  day: Saturday
+  time: 10 a.m.

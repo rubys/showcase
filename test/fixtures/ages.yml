@@ -1,9 +1,33 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-one:
-  category: MyString
-  description: MyString
+J:
+  category: J
+  description: "< 17"
 
-two:
-  category: MyString
-  description: MyString
+A:
+  category: A
+  description: "18-35"
+
+A1:
+  category: A1
+  description: "36-45"
+
+B:
+  category: B
+  description: "46-54"
+
+B1:
+  category: B
+  description: "55-65"
+
+C:
+  category: C
+  description: "66-75"
+
+C1:
+  category: C1
+  description: "76-85"
+
+D:
+  category: D
+  description: "86+"

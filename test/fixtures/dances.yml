@@ -1,9 +1,13 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-one:
-  name: MyString
-  category: MyString
+waltz:
+  name: Waltz
+  closed_category: one
+  open_category: two
+  order: 1
 
-two:
-  name: MyString
-  category: MyString
+tango:
+  name: Tango
+  closed_category: two
+  open_category: one
+  order: 2
