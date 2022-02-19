@@ -27,6 +27,8 @@ class CategoriesController < ApplicationController
   def create
     @category = Category.new(category_params)
 
+    @category.order = (Category.maximum(:order) || 0) + 1
+
     respond_to do |format|
       if @category.save
         update_dances(params[:category][:include])

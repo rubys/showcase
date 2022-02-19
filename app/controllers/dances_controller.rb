@@ -28,6 +28,8 @@ class DancesController < ApplicationController
   def create
     @dance = Dance.new(dance_params)
 
+    @dance.order = (Dance.maximum(:order) || 0) + 1
+
     respond_to do |format|
       if @dance.save
         format.html { redirect_to dances_url, notice: "Dance was successfully created." }
