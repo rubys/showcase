@@ -38,7 +38,8 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal categories(:one), tango.closed_category
     assert_equal newcat, tango.open_category
 
-    assert_redirected_to controller: 'categories', action: 'index'
+    assert_redirected_to categories_url
+    assert_equal flash[:notice], 'Closed American Smooth was successfully created.'
   end
 
   test "should show category" do
@@ -49,6 +50,7 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
   test "should get edit" do
     get edit_category_url(@category)
     assert_response :success
+    assert_select 'a[data-turbo-method=delete]', 'Remove this category'
   end
 
   test "should update category" do
@@ -70,7 +72,8 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
     assert_nil tango.closed_category
     assert_equal categories(:one), tango.open_category
 
-    assert_redirected_to controller: 'categories', action: 'index'
+    assert_redirected_to categories_url
+    assert_equal flash[:notice], 'Closed American Smooth was successfully updated.'
   end
 
   test "should destroy category" do
@@ -78,7 +81,8 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
       delete category_url(@category)
     end
 
-    assert_redirected_to controller: 'categories', action: 'index',
-      notice: 'Category was successfully destroyed.', status: 303
+    assert_response 303
+    assert_redirected_to categories_url
+    assert_equal flash[:notice], 'Closed American Smooth was successfully removed.'
   end
 end

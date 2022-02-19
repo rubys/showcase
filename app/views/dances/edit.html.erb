@@ -3,6 +3,7 @@
 
   <%= render "form", dance: @dance %>
 
-  <%= link_to "Show this dance", @dance, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  <%= link_to 'Remove this dance', dance_path(@dance), class: 'btn-grey',
+    data: { turbo_method: :delete, turbo_confirm: 'Are you sure?' } %>  
   <%= link_to "Back to dances", dances_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
 </div>

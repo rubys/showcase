@@ -24,7 +24,7 @@ class DancesControllerTest < ActionDispatch::IntegrationTest
        } }
     end
 
-    assert_redirected_to dance_url(Dance.last)
+    assert_redirected_to controller: 'dances', action: 'index'
   end
 
   test "should show dance" do
@@ -35,6 +35,7 @@ class DancesControllerTest < ActionDispatch::IntegrationTest
   test "should get edit" do
     get edit_dance_url(@dance)
     assert_response :success
+    assert_select 'a[data-turbo-method=delete]', 'Remove this dance'
   end
 
   test "should update dance" do
@@ -43,7 +44,9 @@ class DancesControllerTest < ActionDispatch::IntegrationTest
       closed_category: @dance.closed_category,
       name: @dance.name
     } }
-    assert_redirected_to dance_url(@dance)
+
+    assert_redirected_to dances_url
+    assert_equal flash[:notice], 'Waltz was successfully updated.'
   end
 
   test "should destroy dance" do
@@ -51,6 +54,8 @@ class DancesControllerTest < ActionDispatch::IntegrationTest
       delete dance_url(@dance)
     end
 
+    assert_response 303
     assert_redirected_to dances_url
+    assert_equal flash[:notice], 'Waltz was successfully removed.'
   end
 end

@@ -31,7 +31,7 @@ class CategoriesController < ApplicationController
       if @category.save
         update_dances(params[:category][:include])
 
-        format.html { redirect_to categories_url, notice: "Category was successfully created." }
+        format.html { redirect_to categories_url, notice: "#{@category.name} was successfully created." }
         format.json { render :show, status: :created, location: @category }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -46,7 +46,7 @@ class CategoriesController < ApplicationController
       if @category.update(category_params)
         update_dances(params[:category][:include])
 
-        format.html { redirect_to categories_url, notice: "Category was successfully updated." }
+        format.html { redirect_to categories_url, notice: "#{@category.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @category }
       else
         format.html { render :edit, status: :unprocessable_entity }
@@ -90,7 +90,7 @@ class CategoriesController < ApplicationController
     @category.destroy
 
     respond_to do |format|
-      format.html { redirect_to categories_url status: 303, notice: "Category was successfully destroyed." }
+      format.html { redirect_to categories_url, status: 303, notice: "#{@category.name} was successfully removed." }
       format.json { head :no_content }
     end
   end

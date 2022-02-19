@@ -30,7 +30,7 @@ class DancesController < ApplicationController
 
     respond_to do |format|
       if @dance.save
-        format.html { redirect_to dance_url(@dance), notice: "Dance was successfully created." }
+        format.html { redirect_to dances_url, notice: "Dance was successfully created." }
         format.json { render :show, status: :created, location: @dance }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -43,7 +43,7 @@ class DancesController < ApplicationController
   def update
     respond_to do |format|
       if @dance.update(dance_params)
-        format.html { redirect_to dance_url(@dance), notice: "Dance was successfully updated." }
+        format.html { redirect_to dances_url, notice: "#{@dance.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @dance }
       else
         format.html { render :edit, status: :unprocessable_entity }
@@ -89,7 +89,7 @@ class DancesController < ApplicationController
     @dance.destroy
 
     respond_to do |format|
-      format.html { redirect_to dances_url, notice: "Dance was successfully destroyed." }
+      format.html { redirect_to dances_url, status: 303, notice: "#{@dance.name} was successfully removed." }
       format.json { head :no_content }
     end
   end
