@@ -25,6 +25,7 @@ class DancesControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to controller: 'dances', action: 'index'
+    assert_equal flash[:notice], 'Waltz was successfully created.'
   end
 
   test "should show dance" do

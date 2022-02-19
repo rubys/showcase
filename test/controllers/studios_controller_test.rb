@@ -17,10 +17,11 @@ class StudiosControllerTest < ActionDispatch::IntegrationTest
 
   test "should create studio" do
     assert_difference("Studio.count") do
-      post studios_url, params: { studio: { name: @studio.name } }
+      post studios_url, params: { studio: { name: 'Mars' } }
     end
 
     assert_redirected_to studio_url(Studio.last)
+    assert_equal flash[:notice], 'Mars was successfully created.'
   end
 
   test "should show studio" do
@@ -36,6 +37,7 @@ class StudiosControllerTest < ActionDispatch::IntegrationTest
   test "should update studio" do
     patch studio_url(@studio), params: { studio: { name: @studio.name } }
     assert_redirected_to studio_url(@studio)
+    assert_equal flash[:notice], 'One was successfully updated.'
   end
 
   test "should destroy studio" do
@@ -43,6 +45,8 @@ class StudiosControllerTest < ActionDispatch::IntegrationTest
       delete studio_url(@studio)
     end
 
+    assert_response 303
     assert_redirected_to studios_url
+    assert_equal flash[:notice], 'One was successfully removed.'
   end
 end

@@ -32,7 +32,7 @@ class DancesController < ApplicationController
 
     respond_to do |format|
       if @dance.save
-        format.html { redirect_to dances_url, notice: "Dance was successfully created." }
+        format.html { redirect_to dances_url, notice: "#{@dance.name} was successfully created." }
         format.json { render :show, status: :created, location: @dance }
       else
         format.html { render :new, status: :unprocessable_entity }

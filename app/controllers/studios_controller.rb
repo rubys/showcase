@@ -14,13 +14,13 @@ class StudiosController < ApplicationController
   def new
     @studio = Studio.new
     @pairs = @studio.pairs
-    @avail = [nil] + Studio.all.map {|studio| studio.name}
+    @avail = Studio.all.map {|studio| studio.name}
   end
 
   # GET /studios/1/edit
   def edit
     @pairs = @studio.pairs
-    @avail = [nil] + (Studio.all - @pairs).map {|studio| studio.name}
+    @avail = (Studio.all - @pairs).map {|studio| studio.name}
   end
 
   # POST /studios or /studios.json
@@ -30,9 +30,10 @@ class StudiosController < ApplicationController
     respond_to do |format|
       if @studio.save
         add_pair
-        format.html { redirect_to studio_url(@studio), notice: "Studio was successfully created." }
+        format.html { redirect_to studio_url(@studio), notice: "#{@studio.name} was successfully created." }
         format.json { render :show, status: :created, location: @studio }
       else
+        @avail = Studio.all.map {|studio| studio.name}
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @studio.errors, status: :unprocessable_entity }
       end
@@ -45,7 +46,7 @@ class StudiosController < ApplicationController
       add_pair
 
       if @studio.update(studio_params.except(:pair))
-        format.html { redirect_to studio_url(@studio), notice: "Studio was successfully updated." }
+        format.html { redirect_to studio_url(@studio), notice: "#{@studio.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @studio }
       else
         format.html { render :edit, status: :unprocessable_entity }
