@@ -70,11 +70,13 @@ class CategoriesController < ApplicationController
       new_order = categories.map(&:order).rotate(-1)
     end
 
-    ActiveRecord::Base.transaction do
+    Category.transaction do
       categories.zip(new_order).each do |category, order|
         category.order = order
-        category.save!
+        category.save! validate: false
       end
+
+      raise ActiveRecord::Rollback unless categories.all? {|category| category.valid?}
     end
 
     @categories = Category.order(:order)

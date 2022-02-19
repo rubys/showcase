@@ -67,11 +67,13 @@ class DancesController < ApplicationController
       new_order = dances.map(&:order).rotate(-1)
     end
 
-    ActiveRecord::Base.transaction do
+    Dance.transaction do
       dances.zip(new_order).each do |dance, order|
         dance.order = order
-        dance.save!
+        dance.save! validate: false
       end
+
+      raise ActiveRecord::Rollback unless dances.all? {|dance| dance.valid?}
     end
 
     @dances = Dance.includes(:open_category, :closed_category).order(:order).all

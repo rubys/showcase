@@ -76,6 +76,24 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal flash[:notice], 'Closed American Smooth was successfully updated.'
   end
 
+
+  test "should reorder categories" do
+    post drop_categories_url, as: :turbo_stream, params: {
+      source: categories(:two).id,
+      target: categories(:one).id
+    }
+      
+    assert_response :success
+
+    assert_select 'tr td:first-child a' do |links|
+      assert_equal ["Open American Smooth", "Closed American Smooth"], links.map(&:text)
+    end
+
+    assert_equal 2, categories(:two).order
+    categories(:two).reload
+    assert_equal 1, categories(:two).order
+  end
+
   test "should destroy category" do
     assert_difference("Category.count", -1) do
       delete category_url(@category)

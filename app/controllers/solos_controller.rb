@@ -158,11 +158,13 @@ class SolosController < ApplicationController
       new_order = slice.map(&:order).rotate(-1)
     end
 
-    ActiveRecord::Base.transaction do
+    Solo.transaction do
       slice.zip(new_order).each do |solo, order|
         solo.order = order
-        solo.save!
+        solo.save! validate: false
       end
+
+      raise ActiveRecord::Rollback unless solos.all? {|solo| solo.valid?}
     end
 
     respond_to do |format|

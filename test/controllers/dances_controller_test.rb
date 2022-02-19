@@ -49,6 +49,23 @@ class DancesControllerTest < ActionDispatch::IntegrationTest
     assert_equal flash[:notice], 'Waltz was successfully updated.'
   end
 
+  test "should reorder dances" do
+    post drop_dances_url, as: :turbo_stream, params: {
+      source: dances(:tango).id,
+      target: dances(:waltz).id
+    }
+      
+    assert_response :success
+
+    assert_select 'tr td:first-child a' do |links|
+      assert_equal %w(Tango Waltz), links.map(&:text)
+    end
+
+    assert_equal 2, dances(:tango).order
+    dances(:tango).reload
+    assert_equal 1, dances(:tango).order
+  end
+
   test "should destroy dance" do
     assert_difference("Dance.count", -1) do
       delete dance_url(@dance)
