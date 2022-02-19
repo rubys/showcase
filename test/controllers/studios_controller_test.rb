@@ -40,6 +40,37 @@ class StudiosControllerTest < ActionDispatch::IntegrationTest
     assert_equal flash[:notice], 'One was successfully updated.'
   end
 
+  test "shoudl pair studio" do
+    three = studios(:three)
+
+    patch studio_url(@studio), params: { studio: { pair: three.name } }
+    assert_redirected_to studio_url(@studio)
+
+    assert_equal [@studio], three.pairs
+    assert_equal 2, @studio.pairs.length
+    assert_includes @studio.pairs, three
+  end
+
+  test "shoudl unpair studio - left" do
+    two = studios(:two)
+
+    post unpair_studio_url(@studio), params: { pair: two.name }
+    assert_redirected_to edit_studio_url(@studio)
+
+    assert_empty two.pairs
+    assert_empty @studio.pairs
+  end
+
+  test "shoudl unpair studio - right" do
+    two = studios(:two)
+
+    post unpair_studio_url(two), params: { pair: @studio.name }
+    assert_redirected_to edit_studio_url(two)
+
+    assert_empty two.pairs
+    assert_empty @studio.pairs
+  end
+
   test "should destroy studio" do
     assert_difference("Studio.count", -1) do
       delete studio_url(@studio)

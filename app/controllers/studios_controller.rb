@@ -61,7 +61,7 @@ class StudiosController < ApplicationController
       pair = Studio.find_by(name: pair)
       if pair and @studio.pairs.include? pair
         StudioPair.destroy_by(studio1: @studio, studio2: pair)
-        StudioPair.destroy_by(studio1: @studio, studio2: pair)
+        StudioPair.destroy_by(studio2: @studio, studio1: pair)
         redirect_to edit_studio_url(@studio), notice: "#{pair.name} was successfully unpaired."
       end
     end
