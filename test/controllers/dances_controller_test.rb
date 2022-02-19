@@ -2,7 +2,7 @@ require "test_helper"
 
 class DancesControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @dance = dances(:one)
+    @dance = dances(:waltz)
   end
 
   test "should get index" do
@@ -17,7 +17,11 @@ class DancesControllerTest < ActionDispatch::IntegrationTest
 
   test "should create dance" do
     assert_difference("Dance.count") do
-      post dances_url, params: { dance: { category: @dance.category, name: @dance.name } }
+      post dances_url, params: { dance: {
+        open_category: @dance.open_category,
+        closed_category: @dance.closed_category,
+        name: @dance.name
+       } }
     end
 
     assert_redirected_to dance_url(Dance.last)
@@ -34,7 +38,11 @@ class DancesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should update dance" do
-    patch dance_url(@dance), params: { dance: { category: @dance.category, name: @dance.name } }
+    patch dance_url(@dance), params: { dance: {
+      open_category: @dance.open_category,
+      closed_category: @dance.closed_category,
+      name: @dance.name
+    } }
     assert_redirected_to dance_url(@dance)
   end
 
