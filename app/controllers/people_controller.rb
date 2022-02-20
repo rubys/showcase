@@ -11,7 +11,16 @@ class PeopleController < ApplicationController
 
   # GET /people or /people.json
   def index
-    @people = Person.includes(:studio).order(sort_order)
+    @people ||= Person.includes(:studio).order(sort_order)
+
+    @heats = (Heat.joins(:entry).group('entries.follow_id').count).merge(
+      Heat.joins(:entry).group('entries.lead_id').count)
+
+    if params[:sort] == 'heats'
+      @people = @people.to_a.sort_by! {|person| @heats[person.id] || 0}
+    end
+
+    render :index
   end
 
   # GET /people/backs or /people.json
@@ -23,13 +32,15 @@ class PeopleController < ApplicationController
     @people = Person.where(role: %w(Leader Both)).order(:type, :name)
 
     number = 101
-    ActiveRecord::Base.transaction do
+    Person.transaction do
       @people.each do |person|
         number = 201 if number < 200 and person.type == "Student"
         person.back = number
-        person.save!
+        person.save! validate: false
         number += 1
       end
+
+      raise ActiveRecord::Rollback unless @people.all? {|person| person.valid?}
     end
 
     redirect_to backs_people_path 
@@ -38,16 +49,9 @@ class PeopleController < ApplicationController
   # GET /people/students or /students.json
   def students
     @people = Person.includes(:studio).where(type: 'Student').order(sort_order)
-
-    @heats = (Heat.joins(:entry).group('entries.follow_id').count).merge(
-      Heat.joins(:entry).group('entries.lead_id').count)
-
-    if params[:sort] == 'heats'
-      @people = @people.to_a.sort_by! {|person| @heats[person.id] || 0}
-    end
-
     @title = 'Students'
-    render :index
+
+    index
   end
 
   # GET /people/couples or /couples.json
@@ -224,7 +228,7 @@ class PeopleController < ApplicationController
 
     respond_to do |format|
       format.html { redirect_to (studio ? studio_url(studio) : root_url),
-         status: 303, notice: "#{@person.name} was successfully removed." }
+         status: 303, notice: "#{@person.display_name} was successfully removed." }
       format.json { head :no_content }
     end
   end

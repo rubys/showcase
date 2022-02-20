@@ -2,7 +2,7 @@ require "test_helper"
 
 class PeopleControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @person = people(:one)
+    @person = people(:Arthur)
   end
 
   test "should get index" do
@@ -17,7 +17,7 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
 
   test "should create person" do
     assert_difference("Person.count") do
-      post people_url, params: { person: { back: @person.back, category: @person.category, friday_dinner: @person.friday_dinner, level: @person.level, name: @person.name, role: @person.role, saturday_dinner: @person.saturday_dinner, saturday_lunch: @person.saturday_lunch, studio_id: @person.studio_id, type: @person.type } }
+      post people_url, params: { person: { age_id: @person.age_id, back: 301, level_id: @person.level_id, name: 'Fred Astaire', role: @person.role, studio_id: @person.studio_id, type: @person.type } }
     end
 
     assert_redirected_to person_url(Person.last)
@@ -34,7 +34,7 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should update person" do
-    patch person_url(@person), params: { person: { back: @person.back, category: @person.category, friday_dinner: @person.friday_dinner, level: @person.level, name: @person.name, role: @person.role, saturday_dinner: @person.saturday_dinner, saturday_lunch: @person.saturday_lunch, studio_id: @person.studio_id, type: @person.type } }
+    patch person_url(@person), params: { person: { age_id: @person.age_id, back: @person.back, level_id: @person.level_id, name: @person.name, role: @person.role, studio_id: @person.studio_id, type: @person.type } }
     assert_redirected_to person_url(@person)
   end
 
@@ -43,6 +43,8 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
       delete person_url(@person)
     end
 
-    assert_redirected_to people_url
+    assert_response 303
+    assert_redirected_to studio_url(@person.studio)
+    assert_equal flash[:notice], 'Arthur Murray was successfully removed.'
   end
 end
