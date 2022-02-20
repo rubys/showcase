@@ -199,6 +199,7 @@ class ScoresController < ApplicationController
         format.html { redirect_to score_url(@score), notice: "Score was successfully created." }
         format.json { render :show, status: :created, location: @score }
       else
+        STDERR.puts @score.errors.inspect
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @score.errors, status: :unprocessable_entity }
       end
@@ -236,6 +237,6 @@ class ScoresController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def score_params
-      params.require(:score).permit(:judge_id, :entry_id, :value)
+      params.require(:score).permit(:judge_id, :heat_id, :value)
     end
 end
