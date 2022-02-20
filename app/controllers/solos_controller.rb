@@ -56,21 +56,22 @@ class SolosController < ApplicationController
 
     dance = Dance.find(solo[:dance_id].to_i)
 
-    @entry = Entry.find_or_create_by(
+    @entry = Entry.find_or_create_by!(
       lead: lead,
       follow: follow,
       age_id: solo[:age],
       level_id: solo[:level]
     )
 
-    @heat = Heat.new({
+    @heat = Heat.create!({
       number: 0, 
       entry: @entry,
       category: "Solo",
       dance: dance
     })
 
-    @solo = Solo.new(heat: @heat)
+    @solo = Solo.new(solo_params)
+    @solo.heat = @heat
 
     if solo[:combo_dance_id] != ''
       @solo.combo_dance = Dance.find(solo[:combo_dance_id].to_i)
@@ -79,7 +80,7 @@ class SolosController < ApplicationController
     @solo.order = (Solo.maximum(:order) || 0) + 1
 
     respond_to do |format|
-      if @solo.update(solo_params)
+      if @solo.save
         format.html { redirect_to @person, notice: "Solo was successfully created." }
         format.json { render :show, status: :created, location: @solo }
       else
@@ -106,7 +107,7 @@ class SolosController < ApplicationController
     end
 
     entry = @solo.heat.entry
-    replace = Entry.find_or_create_by(
+    replace = Entry.find_or_create_by!(
       lead: lead,
       follow: follow,
       age_id: solo[:age],
