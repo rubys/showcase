@@ -10,6 +10,20 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "should get scores by age" do
+    get by_age_scores_url
+    assert_response :success
+    assert_select 'h2', 'B (46-54)'
+    assert_select 'h2', 'B (55-65)'
+  end
+
+  test "should get scores by level" do
+    get by_level_scores_url
+    assert_response :success
+    assert_select 'h2', 'Assoc. Silver'
+    assert_select 'h2', 'Full Silver'
+  end
+
   test "should get new" do
     get new_score_url
     assert_response :success
