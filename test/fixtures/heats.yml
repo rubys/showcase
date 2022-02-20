@@ -17,3 +17,9 @@ three:
   entry: one
   category: Solo
   dance: waltz
+
+four:
+  number: 4
+  entry: two
+  category: Solo
+  dance: tango

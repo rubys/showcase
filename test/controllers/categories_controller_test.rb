@@ -76,7 +76,6 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal flash[:notice], 'Closed American Smooth was successfully updated.'
   end
 
-
   test "should reorder categories" do
     post drop_categories_url, as: :turbo_stream, params: {
       source: categories(:two).id,

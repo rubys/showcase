@@ -4,3 +4,7 @@ one:
   heat: three
   combo_dance: tango
   order: 1
+
+two:
+  heat: four
+  order: 2

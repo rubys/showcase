@@ -60,6 +60,19 @@ class SolosControllerTest < ActionDispatch::IntegrationTest
     assert_equal flash[:notice], 'Solo was successfully updated.'
   end
 
+  test "should reorder solos" do
+    post drop_solos_url, as: :turbo_stream, params: {
+      source: solos(:two).id,
+      target: solos(:one).id
+    }
+      
+    assert_response :success
+
+    assert_equal 2, solos(:two).order
+    solos(:two).reload
+    assert_equal 1, solos(:two).order
+  end
+
   test "should destroy solo" do
     assert_difference("Solo.count", -1) do
       delete solo_url(@solo, primary: @primary.id)
