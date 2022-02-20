@@ -59,6 +59,11 @@ class HeatsController < ApplicationController
   # GET /heats/new
   def new
     @heat = Heat.new
+    @leads = Person.where(role: %w(Leader Both)).order(:name).pluck(:name, :id).to_h
+    @followers = Person.where(role: %w(Follower Both)).order(:name).pluck(:name, :id).to_h
+    @ages = Age.pluck(:description, :id).to_h
+    @levels = Level.pluck(:name, :id).to_h
+    @dances = Dance.order(:name).pluck(:name, :id).to_h
   end
 
   # GET /heats/1/edit
@@ -74,12 +79,15 @@ class HeatsController < ApplicationController
   # POST /heats or /heats.json
   def create
     @heat = Heat.new(heat_params)
+    @heat.entry = find_or_create_entry(params[:heat])
+    @heat.number = 0
 
     respond_to do |format|
       if @heat.save
         format.html { redirect_to heat_url(@heat), notice: "Heat was successfully created." }
         format.json { render :show, status: :created, location: @heat }
       else
+        new
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @heat.errors, status: :unprocessable_entity }
       end
@@ -101,6 +109,7 @@ class HeatsController < ApplicationController
         format.html { redirect_to person_path(@person), notice: "Heat was successfully updated." }
         format.json { render :show, status: :ok, location: @heat }
       else
+        edit
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @heat.errors, status: :unprocessable_entity }
       end
@@ -117,7 +126,7 @@ class HeatsController < ApplicationController
     @heat.destroy
 
     respond_to do |format|
-      format.html { redirect_to heats_url, notice: "Heat was successfully destroyed." }
+      format.html { redirect_to heats_url, status: 303, notice: "Heat was successfully destroyed." }
       format.json { head :no_content }
     end
   end
@@ -130,6 +139,6 @@ class HeatsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def heat_params
-      params.require(:heat).permit(:number, :entry_id, :category, :dance_id)
+      params.require(:heat).permit(:number, :category, :dance_id)
     end
 end

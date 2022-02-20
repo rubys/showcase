@@ -3,6 +3,7 @@ require "test_helper"
 class HeatsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @heat = heats(:one)
+    @primary = people(:Kathryn)
   end
 
   test "should get index" do
@@ -17,7 +18,7 @@ class HeatsControllerTest < ActionDispatch::IntegrationTest
 
   test "should create heat" do
     assert_difference("Heat.count") do
-      post heats_url, params: { heat: { entry_id: @heat.entry_id, number: @heat.number } }
+      post heats_url, params: { heat: { primary: @primary.id, partner: people(:Arthur).id, age: @heat.entry.age_id, level: @heat.entry.level_id, category: @heat.category, dance_id: @heat.dance_id } }
     end
 
     assert_redirected_to heat_url(Heat.last)
@@ -29,13 +30,15 @@ class HeatsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should get edit" do
-    get edit_heat_url(@heat)
+    get edit_heat_url(@heat, primary: @primary.id)
     assert_response :success
   end
 
   test "should update heat" do
-    patch heat_url(@heat), params: { heat: { entry_id: @heat.entry_id, number: @heat.number } }
-    assert_redirected_to heat_url(@heat)
+    patch heat_url(@heat), params: { heat: { primary: @primary.id, partner: people(:Arthur).id, age: @heat.entry.age_id, level: @heat.entry.level_id, category: @heat.category, dance_id: @heat.dance_id } }
+
+    assert_redirected_to person_url(@primary)
+    assert_equal flash[:notice], 'Heat was successfully updated.'
   end
 
   test "should destroy heat" do
@@ -43,6 +46,7 @@ class HeatsControllerTest < ActionDispatch::IntegrationTest
       delete heat_url(@heat)
     end
 
+    assert_response 303
     assert_redirected_to heats_url
   end
 end

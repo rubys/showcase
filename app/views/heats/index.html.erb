@@ -65,7 +65,7 @@ tbody::after {
     </thead>
     <% heats.each do |number, heats| %>
       <tbody id="heat-<%= number %>">
-      <% if number > 0 %>
+      <% if number and number > 0 %>
       <tr>
         <td>
         <td colspan="9" class="text-2xl pt-4">Heat <%= number %>: 
@@ -92,14 +92,14 @@ tbody::after {
       <% end %>
 
       <% heats.each do |heat| %>
-         <% if last_back < 200 && heat.back >= 200 %>
+         <% if heat.back && last_back < 200 && heat.back >= 200 %>
          <tr>
            <td>
            <td>
            <td colspan="8" class="text-xl pt-2">Ballroom B</td>
          </tr>
          <% end %>
-         <% last_back = heat.back %>
+         <% last_back = heat.back if heat.back %>
          <tr id="<%= dom_id heat %>">
            <td>
              <div class="hidden print:block w-32 border-b-2 border-black">&nbsp;</div>

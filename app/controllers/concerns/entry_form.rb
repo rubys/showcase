@@ -29,14 +29,14 @@ module EntryForm
     @person = Person.find(params[:primary])
 
     if @person.role == "Follower"
-      lead = Person.find_by(name: params[:partner])
+      lead = Person.find_by(name: params[:partner]) || Person.find(params[:partner])
       follow = @person
     else
       lead = @person
-      follow = Person.find_by(name: params[:partner])
+      follow = Person.find_by(name: params[:partner]) || Person.find(params[:partner])
     end
 
-    Entry.find_or_create_by(
+    Entry.find_or_create_by!(
       lead: lead,
       follow: follow,
       age_id: params[:age],

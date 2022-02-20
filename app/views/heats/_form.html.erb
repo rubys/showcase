@@ -12,11 +12,20 @@
   <% end %>
 
   <div class="mx-auto w-full mb-8 text-center">
-  <%= form.hidden_field :primary, value: @person.id %>
   
   <div>
+  <% if @person %>
+  <%= form.hidden_field :primary, value: @person.id %>
   <%= form.select :partner, @avail, {selected: @partner},
-    class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>
+    class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %>
+  <% else %>
+  <%= form.select :primary, @followers, {selected: @partner},
+  class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %>
+  <%= form.select :partner, @leads, {selected: @partner},
+  class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %>
+  <% end %>
+  </div>
+
   <div><%= form.select :age, @ages, {selected: @age},
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>
   <div><%= form.select :level, @levels, {selected: @level},
