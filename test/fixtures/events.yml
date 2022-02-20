@@ -7,3 +7,4 @@ one:
   heat_range_cat: 0
   heat_range_level: 6
   heat_range_age: 7
+  intermix: true
