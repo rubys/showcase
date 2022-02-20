@@ -58,7 +58,7 @@ class EntriesController < ApplicationController
       level_id: entry[:level]
     )
 
-    update_heats(entry)
+    update_heats(entry, new: true)
 
     respond_to do |format|
       if @entry.save
@@ -87,6 +87,8 @@ class EntriesController < ApplicationController
       follow = Person.find_by(name: entry[:partner])
     end
 
+    previous = @entry.heats.length
+
     update_heats(entry)
 
     replace = Entry.find_by(
@@ -101,20 +103,37 @@ class EntriesController < ApplicationController
       @entry.follow = follow
       @entry.age_id = entry[:age]
       @entry.level_id = entry[:level]
-      @total = @entry.heats.length
     elsif replace != @entry
-      @total = @entry.heats.length
-      @entry.heats.to_a.each {|heat| heat.entry = replace; heat.save!}
+      @entry.reload
+      @total = 0
+      @entry.heats.to_a.each do |heat|
+        if heat.category != 'Solo'
+          heat.entry = replace
+          heat.save!
+          @total += 1
+        end
+      end
       @entry.reload
       @entry.destroy!
       @entry = replace
     end
 
     respond_to do |format|
+      @entry.reload
+      case @entry.heats.length - previous
+      when @total
+        operation = 'added'
+      when -@total
+        operation = 'removed'
+      else
+        operation = 'changed'
+      end
+
       if @entry.update(entry_params)
-        format.html { redirect_to @person, notice: "#{helpers.pluralize @total, 'heat'} changed." }
+        format.html { redirect_to @person, notice: "#{helpers.pluralize @total, 'heat'} #{operation}." }
         format.json { render :show, status: :ok, location: @entry }
       else
+        form_init
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @entry.errors, status: :unprocessable_entity }
       end
@@ -176,18 +195,20 @@ class EntriesController < ApplicationController
     def tally_entry
       @entries = {'Closed' => {}, 'Open' => {}}
 
-      @entries.merge!(@entry.heats.group_by {|heat| heat.category}.map do |category, heats|
+      @entries.merge!(@entry.heats.
+        select {|heat| heat.category != 'Solo'}.
+        group_by {|heat| heat.category}.map do |category, heats|
         [category, heats.group_by {|heat| heat.dance.name}]
       end.to_h)
     end
 
-    def update_heats(entry)
+    def update_heats(entry, new: false)
       tally_entry
 
       @total = 0
       %w(Closed Open).each do |category|
         Dance.all.each do |dance|
-          was = @entries[category][dance.name]&.length || 0
+          was = new ? 0 : @entries[category][dance.name]&.length || 0
           wants = entry[:entries][category][dance.name].to_i
           if wants != was
             @total += (wants - was).abs
