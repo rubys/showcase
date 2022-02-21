@@ -5,43 +5,91 @@ class EntriesTest < ApplicationSystemTestCase
     @entry = entries(:one)
   end
 
-  test "visiting the index" do
-    visit entries_url
-    assert_selector "h1", text: "Entries"
-  end
-
   test "should create entry" do
-    visit entries_url
-    click_on "New entry"
+    visit person_url(people(:Kathryn))
+    click_on "Add heats", match: :first
 
-    fill_in "Count", with: @entry.count
-    fill_in "Dance", with: @entry.dance_id
-    fill_in "Follow", with: @entry.follow_id
-    fill_in "Lead", with: @entry.lead_id
+    within page.find('h2', text: 'CLOSED CATEGORY').sibling('div') do
+      check "Tango"
+      check "Rumba"
+    end
+
     click_on "Create Entry"
 
-    assert_text "Entry was successfully created"
+    assert_text "2 heats successfully created"
     click_on "Back"
   end
 
-  test "should update Entry" do
-    visit entry_url(@entry)
-    click_on "Edit this entry", match: :first
+  test "should update Entry - addition" do
+    visit person_url(people(:Kathryn))
 
-    fill_in "Count", with: @entry.count
-    fill_in "Dance", with: @entry.dance_id
-    fill_in "Follow", with: @entry.follow_id
-    fill_in "Lead", with: @entry.lead_id
+    within find('caption', text: 'Entries').sibling('tbody') do
+      find('td', text: 'Full Silver').hover
+      click_on "Edit"
+    end
+
+    within page.find('h2', text: 'CLOSED CATEGORY').sibling('div') do
+      check "Tango"
+      check "Rumba"
+    end
+
     click_on "Update Entry"
 
-    assert_text "Entry was successfully updated"
+    assert_text "2 heats added"
+    click_on "Back"
+  end
+
+  test "should update Entry - modification" do
+    visit person_url(people(:Kathryn))
+
+    within find('caption', text: 'Entries').sibling('tbody') do
+      find('td', text: 'Full Silver').hover
+      click_on "Edit"
+    end
+
+    within page.find('h2', text: 'CLOSED CATEGORY').sibling('div') do
+      check "Tango"
+    end
+
+    within page.find('h2', text: 'OPEN CATEGORY').sibling('div') do
+      uncheck "Tango"
+    end
+
+    click_on "Update Entry"
+
+    assert_text "2 heats changed"
+    click_on "Back"
+  end
+
+  test "should update Entry - deletion" do
+    visit person_url(people(:Kathryn))
+
+    within find('caption', text: 'Entries').sibling('tbody') do
+      find('td', text: 'Full Silver').hover
+      click_on "Edit"
+    end
+
+    within page.find('h2', text: 'OPEN CATEGORY').sibling('div') do
+      uncheck "Tango"
+    end
+
+    click_on "Update Entry"
+
+    assert_text "1 heat removed"
     click_on "Back"
   end
 
   test "should destroy Entry" do
-    visit entry_url(@entry)
-    click_on "Destroy this entry", match: :first
+    visit person_url(people(:Kathryn))
 
-    assert_text "Entry was successfully destroyed"
+    within find('caption', text: 'Entries').sibling('tbody') do
+      find('td', text: 'Full Silver').hover
+      click_on "Edit"
+    end
+
+    click_on "Remove this entry", match: :first
+    page.accept_alert
+
+    assert_text "2 heats successfully removed"
   end
 end

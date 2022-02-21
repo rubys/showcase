@@ -11,3 +11,15 @@ two:
   order: 2
   day: Saturday
   time: 10 a.m.
+
+three:
+  name: Closed American Rhythm
+  order: 3
+  day: Friday
+  time: 1 p.m.
+
+four:
+  name: Open American Rhythm
+  order: 4
+  day: Saturday
+  time: 1 p.m.

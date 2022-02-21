@@ -19,9 +19,9 @@
 
     <% end %>
 
-    <h2 class="font-bold pt-8 text-3xl pb-5">Entries</h2>
-
     <table>
+      <caption class="text-left font-bold pt-8 text-3xl pb-5">Entries</caption>
+
       <thead>
         <th>count
         <th>partner
@@ -54,9 +54,10 @@
     </table>
 
     <% if @solos.length > 0 %>
-    <h2 class="font-bold pt-8 text-3xl pb-5">Solos</h2>
 
     <table>
+    <caption class="text-left font-bold pt-8 text-3xl pb-5">Solos</caption>
+
     <thead>
       <th>dance
       <th>partner
@@ -89,9 +90,9 @@
 
     <% end %>
 
-    <h2 class="font-bold pt-8 text-3xl pb-5">Dances</h2>
-
     <table>
+      <caption class="text-left font-bold pt-8 text-3xl pb-5">Dances</caption>
+
       <thead>
       <td></td>
       <% @partners.each do |partner| %>
@@ -121,9 +122,9 @@
       </tbody>
     </table>
 
-    <h2 class="font-bold pt-8 text-3xl pb-5" id="heats">Heats</h2>
-
     <table>
+      <caption class="text-left font-bold pt-8 text-3xl pb-5" id="heats">Heats</caption>
+
       <thead>
         <tr>
           <td class="row-head">Heat

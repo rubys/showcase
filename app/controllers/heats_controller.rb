@@ -126,7 +126,7 @@ class HeatsController < ApplicationController
     @heat.destroy
 
     respond_to do |format|
-      format.html { redirect_to heats_url, status: 303, notice: "Heat was successfully destroyed." }
+      format.html { redirect_to heats_url, status: 303, notice: "Heat was successfully removed." }
       format.json { head :no_content }
     end
   end

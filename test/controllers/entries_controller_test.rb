@@ -30,7 +30,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to person_url(@primary)
-    assert_equal flash[:notice], '4 heats successfully created.'
+    assert_equal flash[:notice], '8 heats successfully created.'
   end
 
   test "should merge entry" do
@@ -47,7 +47,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to person_url(@primary)
-    assert_equal flash[:notice], '4 heats successfully created.'
+    assert_equal flash[:notice], '8 heats successfully created.'
   end
 
   test "should show entry" do
@@ -69,7 +69,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
 
     patch entry_url(@entry), params: { entry: { primary: @primary.id, entries: entries, age: @entry.age_id, follow_id: @entry.follow_id, lead_id: @entry.lead_id, level: @entry.level_id } }
     assert_redirected_to person_url(@primary)
-    assert_equal flash[:notice], '3 heats added.'
+    assert_equal flash[:notice], '7 heats added.'
   end
 
   test "should destroy entry" do

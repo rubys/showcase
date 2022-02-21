@@ -8,15 +8,14 @@ class SolosTest < ApplicationSystemTestCase
   test "visiting the index" do
     visit solos_url
     assert_selector "h1", text: "Solos"
+    assert_selector "td", text: "Closed American Smooth"
   end
 
   test "should create solo" do
-    visit solos_url
-    click_on "New solo"
+    visit person_url(people(:Kathryn))
+    click_on "Add solo", match: :first
 
-    fill_in "Combo dance", with: @solo.combo_dance_id
-    fill_in "Heat", with: @solo.heat_id
-    fill_in "Order", with: @solo.order
+    select "Rumba", from: "Dance"
     click_on "Create Solo"
 
     assert_text "Solo was successfully created"
@@ -24,12 +23,14 @@ class SolosTest < ApplicationSystemTestCase
   end
 
   test "should update Solo" do
-    visit solo_url(@solo)
-    click_on "Edit this solo", match: :first
+    visit person_url(people(:Kathryn))
 
-    fill_in "Combo dance", with: @solo.combo_dance_id
-    fill_in "Heat", with: @solo.heat_id
-    fill_in "Order", with: @solo.order
+    within find('caption', text: 'Solos').sibling('tbody') do
+      find('td', text: 'Full Silver').hover
+      click_on "Edit"
+    end
+
+    fill_in "Song", with: "Por Una Cabeza"
     click_on "Update Solo"
 
     assert_text "Solo was successfully updated"
@@ -37,9 +38,16 @@ class SolosTest < ApplicationSystemTestCase
   end
 
   test "should destroy Solo" do
-    visit solo_url(@solo)
-    click_on "Destroy this solo", match: :first
+    visit person_url(people(:Kathryn))
 
-    assert_text "Solo was successfully destroyed"
+    within find('caption', text: 'Solos').sibling('tbody') do
+      find('td', text: 'Assoc. Silver').hover
+      click_on "Edit"
+    end
+
+    click_on "Remove this solo"
+    page.accept_alert
+
+    assert_text "Solo was successfully removed"
   end
 end

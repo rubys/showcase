@@ -10,34 +10,26 @@ class HeatsTest < ApplicationSystemTestCase
     assert_selector "h1", text: "Agenda"
   end
 
-  test "should create heat" do
-    visit heats_url
-    click_on "New heat"
-
-    fill_in "Entry", with: @heat.entry_id
-    fill_in "Number", with: @heat.number
-    click_on "Create Heat"
-
-    assert_text "Heat was successfully created"
-    click_on "Back"
-  end
-
   test "should update Heat" do
-    visit heat_url(@heat)
-    click_on "Edit this heat", match: :first
+    visit person_url(people(:Kathryn))
+    page.find('td', text: 'Open').hover
+    click_on "Edit"
 
-    fill_in "Entry", with: @heat.entry_id
-    fill_in "Number", with: @heat.number
+    select "Full Gold", from: "heat_level"
     click_on "Update Heat"
 
     assert_text "Heat was successfully updated"
     click_on "Back"
   end
 
-  test "should destroy Heat" do
-    visit heat_url(@heat)
-    click_on "Destroy this heat", match: :first
+  test "should remove Heat" do
+    visit person_url(people(:Kathryn))
+    page.find('td', text: 'Closed').hover
+    click_on "Edit"
 
-    assert_text "Heat was successfully destroyed"
+    click_on "Remove this heat"
+    page.accept_alert
+
+    assert_text "Heat was successfully removed"
   end
 end

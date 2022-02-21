@@ -11,3 +11,15 @@ tango:
   closed_category: one
   open_category: two
   order: 2
+
+rumba:
+  name: Rumba
+  closed_category: three
+  open_category: four
+  order: 3
+
+chacha:
+  name: Cha Cha
+  closed_category: three
+  open_category: four
+  order: 4

@@ -52,19 +52,19 @@ class DancesControllerTest < ActionDispatch::IntegrationTest
 
   test "should reorder dances" do
     post drop_dances_url, as: :turbo_stream, params: {
-      source: dances(:tango).id,
+      source: dances(:rumba).id,
       target: dances(:waltz).id
     }
       
     assert_response :success
 
     assert_select 'tr td:first-child a' do |links|
-      assert_equal %w(Tango Waltz), links.map(&:text)
+      assert_equal ["Rumba", "Waltz", "Tango", "Cha Cha"], links.map(&:text)
     end
 
-    assert_equal 2, dances(:tango).order
-    dances(:tango).reload
-    assert_equal 1, dances(:tango).order
+    assert_equal 3, dances(:rumba).order
+    dances(:rumba).reload
+    assert_equal 1, dances(:rumba).order
   end
 
   test "should destroy dance" do
