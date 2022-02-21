@@ -15,6 +15,7 @@ class ScoresTest < ApplicationSystemTestCase
     target = page.find('div[data-score=G]')
     source.drag_to(target)
 
+    if false
     # this also doesn't work
     page.driver.browser.action.drag_and_drop(source.native, target.native).perform
 
@@ -25,6 +26,7 @@ class ScoresTest < ApplicationSystemTestCase
       release.
       click(target.native).
       perform
+    end
 
     visit by_level_scores_path
 
