@@ -5,41 +5,16 @@ class ScoresTest < ApplicationSystemTestCase
     @score = scores(:one)
   end
 
-  test "visiting the index" do
-    visit scores_url
-    assert_selector "h1", text: "Scores"
-  end
+  test "should update score" do
+    visit person_url(people(:Judy))
+    click_on "Score heats"
+    click_on "Solo Waltz"
 
-  test "should create score" do
-    visit scores_url
-    click_on "New score"
+    source = page.find('div[draggable=true]')
+    target = page.find('div[data-score=G]')
+    source.drag_to(target)
 
-    fill_in "Entry", with: @score.entry_id
-    fill_in "Judge", with: @score.judge_id
-    fill_in "Value", with: @score.value
-    click_on "Create Score"
-
-    assert_text "Score was successfully created"
-    click_on "Back"
-  end
-
-  test "should update Score" do
-    visit score_url(@score)
-    click_on "Edit this score", match: :first
-
-    fill_in "Entry", with: @score.entry_id
-    fill_in "Judge", with: @score.judge_id
-    fill_in "Value", with: @score.value
-    click_on "Update Score"
-
-    assert_text "Score was successfully updated"
-    click_on "Back"
-  end
-
-  test "should destroy Score" do
-    visit score_url(@score)
-    click_on "Destroy this score", match: :first
-
-    assert_text "Score was successfully destroyed"
+    visit by_level_scores_path
+    # doesn't appear to work yet
   end
 end

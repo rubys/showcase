@@ -3,7 +3,8 @@ class ScoresController < ApplicationController
 
   SCORES = {
     "Open" => %w(1 2 3 F),
-    "Closed" => %w(B S G GH).reverse
+    "Closed" => %w(B S G GH).reverse,
+    "Solo" => %w(B S G GH).reverse
   }
 
   # GET /scores or /scores.json
