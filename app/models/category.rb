@@ -4,5 +4,6 @@ class Category < ApplicationRecord
   has_many :closed_dances, dependent: :nullify,
     class_name: 'Dance', foreign_key: :closed_category_id
 
-  validates :order, uniqueness: true
+  validates :name, presence: true, uniqueness: true
+  validates :order, presence: true, uniqueness: true
 end

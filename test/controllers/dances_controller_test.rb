@@ -20,12 +20,12 @@ class DancesControllerTest < ActionDispatch::IntegrationTest
       post dances_url, params: { dance: {
         open_category: @dance.open_category,
         closed_category: @dance.closed_category,
-        name: @dance.name
+        name: "Zouk"
        } }
     end
 
     assert_redirected_to controller: 'dances', action: 'index'
-    assert_equal flash[:notice], 'Waltz was successfully created.'
+    assert_equal flash[:notice], 'Zouk was successfully created.'
   end
 
   test "should show dance" do

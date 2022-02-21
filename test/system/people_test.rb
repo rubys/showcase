@@ -2,7 +2,7 @@ require "application_system_test_case"
 
 class PeopleTest < ApplicationSystemTestCase
   setup do
-    @person = people(:one)
+    @person = people(:Kathryn)
   end
 
   test "visiting the index" do
@@ -11,22 +11,37 @@ class PeopleTest < ApplicationSystemTestCase
   end
 
   test "should create person" do
-    visit people_url
-    click_on "New person"
+    visit studio_url(studios(:one))
+    click_on "Add Person"
 
-    fill_in "Back", with: @person.back
-    fill_in "Category", with: @person.category
-    check "Friday dinner" if @person.friday_dinner
-    fill_in "Level", with: @person.level
-    fill_in "Name", with: @person.name
-    fill_in "Role", with: @person.role
-    check "Saturday dinner" if @person.saturday_dinner
-    check "Saturday lunch" if @person.saturday_lunch
-    fill_in "Studio", with: @person.studio_id
-    fill_in "Type", with: @person.type
+    fill_in "Name", with: 'Doe, Jane'
+    select 'Guest', from: 'Type'
+
+    assert_no_selector "#person_level_id"
+    assert_no_selector "#person_age_id"
+    assert_no_selector "#person_role"
+    assert_no_selector "#person_back"
+
+    select 'Professional', from: 'Type'
+    assert_selector "#person_role"
+    select 'Follower', from: 'Role'
+    assert_no_selector "#person_level_id"
+    assert_no_selector "#person_age_id"
+    assert_no_selector "#person_back"
+
+    select 'Student', from: 'Type'
+    assert_selector "#person_role"
+    select 'Follower', from: 'Role'
+    assert_selector "#person_level_id"
+    assert_selector "#person_age_id"
+    assert_no_selector "#person_back"
+
+    select 'Leader', from: 'Role'
+    assert_selector "#person_back"
+    fill_in "Back", with: '123'
     click_on "Create Person"
 
-    assert_text "Person was successfully created"
+    assert_text "Jane Doe was successfully added"
     click_on "Back"
   end
 
@@ -34,26 +49,19 @@ class PeopleTest < ApplicationSystemTestCase
     visit person_url(@person)
     click_on "Edit this person", match: :first
 
-    fill_in "Back", with: @person.back
-    fill_in "Category", with: @person.category
-    check "Friday dinner" if @person.friday_dinner
-    fill_in "Level", with: @person.level
-    fill_in "Name", with: @person.name
-    fill_in "Role", with: @person.role
-    check "Saturday dinner" if @person.saturday_dinner
-    check "Saturday lunch" if @person.saturday_lunch
-    fill_in "Studio", with: @person.studio_id
-    fill_in "Type", with: @person.type
+    select 'Both', from: 'Role'
     click_on "Update Person"
 
-    assert_text "Person was successfully updated"
+    assert_text "Kathryn Murray was successfully updated"
     click_on "Back"
   end
 
   test "should destroy Person" do
     visit person_url(@person)
-    click_on "Destroy this person", match: :first
+    click_on "Edit this person", match: :first
+    click_on "Remove this person", match: :first
+    page.accept_alert
 
-    assert_text "Person was successfully destroyed"
+    assert_text "Kathryn Murray was successfully removed"
   end
 end

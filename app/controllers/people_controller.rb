@@ -100,7 +100,7 @@ class PeopleController < ApplicationController
 
   # GET /people/new
   def new
-    @person = Person.new
+    @person ||= Person.new
 
     selections
 
@@ -183,7 +183,7 @@ class PeopleController < ApplicationController
       end
     end
 
-    redirect_to person_url(@person), notice: "#{helpers.pluralize total, 'heat'} successfully created."
+    redirect_to person_url(@person), notice: "#{helpers.pluralize total, 'heat'} successfully added."
   end
 
   # POST /people or /people.json
@@ -196,10 +196,10 @@ class PeopleController < ApplicationController
 
     respond_to do |format|
       if @person.save
-        format.html { redirect_to person_url(@person), notice: "Person was successfully created." }
+        format.html { redirect_to person_url(@person), notice: "#{@person.display_name} was successfully added." }
         format.json { render :show, status: :created, location: @person }
       else
-        @studio = person[:studio_id]
+        new
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @person.errors, status: :unprocessable_entity }
       end
@@ -212,9 +212,10 @@ class PeopleController < ApplicationController
 
     respond_to do |format|
       if @person.update(filtered_params(person_params))
-        format.html { redirect_to person_url(@person), notice: "Person was successfully updated." }
+        format.html { redirect_to person_url(@person), notice: "#{@person.display_name} was successfully updated." }
         format.json { render :show, status: :ok, location: @person }
       else
+        edit
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @person.errors, status: :unprocessable_entity }
       end

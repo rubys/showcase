@@ -12,8 +12,8 @@ class CategoriesController < ApplicationController
 
   # GET /categories/new
   def new
-    @category = Category.new
-    @category.order = Category.pluck(:order).max.to_i + 1
+    @category ||= Category.new
+    @category.order ||= Category.pluck(:order).max.to_i + 1
 
     form_init
   end
@@ -36,6 +36,7 @@ class CategoriesController < ApplicationController
         format.html { redirect_to categories_url, notice: "#{@category.name} was successfully created." }
         format.json { render :show, status: :created, location: @category }
       else
+        new
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @category.errors, status: :unprocessable_entity }
       end
@@ -51,6 +52,7 @@ class CategoriesController < ApplicationController
         format.html { redirect_to categories_url, notice: "#{@category.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @category }
       else
+        edit
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @category.errors, status: :unprocessable_entity }
       end

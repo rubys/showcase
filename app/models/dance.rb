@@ -4,5 +4,6 @@ class Dance < ApplicationRecord
 
   has_many :heats, dependent: :destroy
 
-  validates :order, uniqueness: true
+  validates :name, presence: true, uniqueness: true
+  validates :order, presence: true, uniqueness: true
 end

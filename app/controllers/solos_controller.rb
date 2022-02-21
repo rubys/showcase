@@ -22,7 +22,7 @@ class SolosController < ApplicationController
 
   # GET /solos/new
   def new
-    @solo = Solo.new
+    @solo ||= Solo.new
 
     form_init
 
@@ -84,8 +84,7 @@ class SolosController < ApplicationController
         format.html { redirect_to @person, notice: "Solo was successfully created." }
         format.json { render :show, status: :created, location: @solo }
       else
-        @primary = @person
-        form_init
+        new
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @solo.errors, status: :unprocessable_entity }
       end
@@ -132,6 +131,7 @@ class SolosController < ApplicationController
         format.html { redirect_to @person, notice: "Solo was successfully updated." }
         format.json { render :show, status: :ok, location: @solo }
       else
+        edit
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @solo.errors, status: :unprocessable_entity }
       end

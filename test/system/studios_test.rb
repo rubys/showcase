@@ -14,10 +14,10 @@ class StudiosTest < ApplicationSystemTestCase
     visit studios_url
     click_on "New studio"
 
-    fill_in "Name", with: @studio.name
+    fill_in "Name", with: "Four"
     click_on "Create Studio"
 
-    assert_text "Studio was successfully created"
+    assert_text "Four was successfully created"
     click_on "Back"
   end
 
@@ -28,14 +28,16 @@ class StudiosTest < ApplicationSystemTestCase
     fill_in "Name", with: @studio.name
     click_on "Update Studio"
 
-    assert_text "Studio was successfully updated"
+    assert_text "One was successfully updated"
     click_on "Back"
   end
 
   test "should destroy Studio" do
     visit studio_url(@studio)
-    click_on "Destroy this studio", match: :first
+    click_on "Edit this studio", match: :first
+    click_on "Remove this studio", match: :first
+    page.accept_alert
 
-    assert_text "Studio was successfully destroyed"
+    assert_text "One was successfully removed"
   end
 end

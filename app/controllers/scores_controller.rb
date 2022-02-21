@@ -183,7 +183,7 @@ class ScoresController < ApplicationController
 
   # GET /scores/new
   def new
-    @score = Score.new
+    @score ||= Score.new
   end
 
   # GET /scores/1/edit
@@ -199,7 +199,7 @@ class ScoresController < ApplicationController
         format.html { redirect_to score_url(@score), notice: "Score was successfully created." }
         format.json { render :show, status: :created, location: @score }
       else
-        STDERR.puts @score.errors.inspect
+        new
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @score.errors, status: :unprocessable_entity }
       end
@@ -213,6 +213,7 @@ class ScoresController < ApplicationController
         format.html { redirect_to score_url(@score), notice: "Score was successfully updated." }
         format.json { render :show, status: :ok, location: @score }
       else
+        edit
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @score.errors, status: :unprocessable_entity }
       end

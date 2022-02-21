@@ -58,7 +58,7 @@ class HeatsController < ApplicationController
 
   # GET /heats/new
   def new
-    @heat = Heat.new
+    @heat ||= Heat.new
     @leads = Person.where(role: %w(Leader Both)).order(:name).pluck(:name, :id).to_h
     @followers = Person.where(role: %w(Follower Both)).order(:name).pluck(:name, :id).to_h
     @ages = Age.pluck(:description, :id).to_h

@@ -18,7 +18,7 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
   test "should create category" do
     assert_difference("Category.count") do
       post categories_url, params: { category: { 
-        name: @category.name,
+        name: @category.name + " Part II",
         order: @category.order,
         time: @category.time,
         include: {
@@ -39,7 +39,7 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal newcat, tango.open_category
 
     assert_redirected_to categories_url
-    assert_equal flash[:notice], 'Closed American Smooth was successfully created.'
+    assert_equal flash[:notice], 'Closed American Smooth Part II was successfully created.'
   end
 
   test "should show category" do

@@ -12,7 +12,7 @@ class StudiosController < ApplicationController
 
   # GET /studios/new
   def new
-    @studio = Studio.new
+    @studio ||= Studio.new
     @pairs = @studio.pairs
     @avail = Studio.all.map {|studio| studio.name}
   end
@@ -33,7 +33,7 @@ class StudiosController < ApplicationController
         format.html { redirect_to studio_url(@studio), notice: "#{@studio.name} was successfully created." }
         format.json { render :show, status: :created, location: @studio }
       else
-        @avail = Studio.all.map {|studio| studio.name}
+        new
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @studio.errors, status: :unprocessable_entity }
       end
@@ -49,6 +49,7 @@ class StudiosController < ApplicationController
         format.html { redirect_to studio_url(@studio), notice: "#{@studio.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @studio }
       else
+        edit
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @studio.errors, status: :unprocessable_entity }
       end

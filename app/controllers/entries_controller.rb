@@ -12,7 +12,7 @@ class EntriesController < ApplicationController
 
   # GET /entries/new
   def new
-    @entry = Entry.new
+    @entry ||= Entry.new
 
     form_init
 
@@ -65,8 +65,7 @@ class EntriesController < ApplicationController
         format.html { redirect_to @person, notice: "#{helpers.pluralize @total, 'heat'} successfully created." }
         format.json { render :show, status: :created, location: @entry }
       else
-        @primary = @person
-        form_init
+        new
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @entry.errors, status: :unprocessable_entity }
       end
@@ -133,7 +132,7 @@ class EntriesController < ApplicationController
         format.html { redirect_to @person, notice: "#{helpers.pluralize @total, 'heat'} #{operation}." }
         format.json { render :show, status: :ok, location: @entry }
       else
-        form_init
+        edit
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @entry.errors, status: :unprocessable_entity }
       end

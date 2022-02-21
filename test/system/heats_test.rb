@@ -7,7 +7,7 @@ class HeatsTest < ApplicationSystemTestCase
 
   test "visiting the index" do
     visit heats_url
-    assert_selector "h1", text: "Heats"
+    assert_selector "h1", text: "Agenda"
   end
 
   test "should create heat" do

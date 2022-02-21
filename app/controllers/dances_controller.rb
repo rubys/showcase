@@ -14,7 +14,7 @@ class DancesController < ApplicationController
 
   # GET /dances/new
   def new
-    @dance = Dance.new
+    @dance ||= Dance.new
 
     @categories = Category.order(:order).pluck(:name, :id)
   end
@@ -35,6 +35,7 @@ class DancesController < ApplicationController
         format.html { redirect_to dances_url, notice: "#{@dance.name} was successfully created." }
         format.json { render :show, status: :created, location: @dance }
       else
+        new
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @dance.errors, status: :unprocessable_entity }
       end
@@ -48,6 +49,7 @@ class DancesController < ApplicationController
         format.html { redirect_to dances_url, notice: "#{@dance.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @dance }
       else
+        edit
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @dance.errors, status: :unprocessable_entity }
       end

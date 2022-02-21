@@ -2,7 +2,7 @@ require "application_system_test_case"
 
 class DancesTest < ApplicationSystemTestCase
   setup do
-    @dance = dances(:one)
+    @dance = dances(:waltz)
   end
 
   test "visiting the index" do
@@ -14,11 +14,12 @@ class DancesTest < ApplicationSystemTestCase
     visit dances_url
     click_on "New dance"
 
-    fill_in "Category", with: @dance.category
-    fill_in "Name", with: @dance.name
+    fill_in "Name", with: "Zouk"
+    select @dance.closed_category.name, from: "Closed category"
+    select @dance.open_category.name, from: "Open category"
     click_on "Create Dance"
 
-    assert_text "Dance was successfully created"
+    assert_text "Zouk was successfully created"
     click_on "Back"
   end
 
@@ -26,11 +27,12 @@ class DancesTest < ApplicationSystemTestCase
     visit dance_url(@dance)
     click_on "Edit this dance", match: :first
 
-    fill_in "Category", with: @dance.category
     fill_in "Name", with: @dance.name
+    select @dance.closed_category.name, from: "Closed category"
+    select @dance.open_category.name, from: "Open category"
     click_on "Update Dance"
 
-    assert_text "Dance was successfully updated"
+    assert_text "Waltz was successfully updated"
     click_on "Back"
   end
 
@@ -38,6 +40,6 @@ class DancesTest < ApplicationSystemTestCase
     visit dance_url(@dance)
     click_on "Destroy this dance", match: :first
 
-    assert_text "Dance was successfully destroyed"
+    assert_text "Waltz was successfully removed"
   end
 end

@@ -14,12 +14,11 @@ class CategoriesTest < ApplicationSystemTestCase
     visit categories_url
     click_on "New category"
 
-    fill_in "Name", with: @category.name
-    fill_in "Order", with: @category.order
+    fill_in "Name", with: @category.name + ' Part II'
     fill_in "Time", with: @category.time
     click_on "Create Category"
 
-    assert_text "Category was successfully created"
+    assert_text "Closed American Smooth Part II was successfully created"
     click_on "Back"
   end
 
@@ -28,11 +27,10 @@ class CategoriesTest < ApplicationSystemTestCase
     click_on "Edit this category", match: :first
 
     fill_in "Name", with: @category.name
-    fill_in "Order", with: @category.order
     fill_in "Time", with: @category.time
     click_on "Update Category"
 
-    assert_text "Category was successfully updated"
+    assert_text "Closed American Smooth was successfully updated"
     click_on "Back"
   end
 
@@ -40,6 +38,6 @@ class CategoriesTest < ApplicationSystemTestCase
     visit category_url(@category)
     click_on "Destroy this category", match: :first
 
-    assert_text "Category was successfully destroyed"
+    assert_text "Closed American Smooth was successfully removed"
   end
 end
