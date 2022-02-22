@@ -4,6 +4,24 @@ class CategoriesController < ApplicationController
   # GET /categories or /categories.json
   def index
     @categories = Category.order(:order)
+
+    counts = Heat.group(:number, :category, :dance_id).count(:number)
+
+    @heats = @categories.map {|category| [category, 0]}.to_h
+
+    @heats.merge!(counts.map do |(heat, category, dance), count|
+      dance = Dance.find(dance);
+      [category == "Open" ? dance.open_category : dance.closed_category, 1]
+    end.group_by {|category, counts| category}.
+    map {|category, counts| [category, counts.map(&:last).sum]}.to_h)
+
+    @entries = @categories.map {|category| [category, 0]}.to_h
+
+    @entries.merge!(counts.map do |(heat, category, dance), count|
+      dance = Dance.find(dance);
+      [category == "Open" ? dance.open_category : dance.closed_category, count]
+    end.group_by {|category, counts| category}.
+    map {|category, counts| [category, counts.map(&:last).sum]}.to_h)
   end
 
   # GET /categories/1 or /categories/1.json
@@ -81,7 +99,7 @@ class CategoriesController < ApplicationController
       raise ActiveRecord::Rollback unless categories.all? {|category| category.valid?}
     end
 
-    @categories = Category.order(:order)
+    index
     flash.now.notice = "#{source.name} was successfully moved."
 
     respond_to do |format|

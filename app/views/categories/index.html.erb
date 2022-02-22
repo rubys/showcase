@@ -7,12 +7,31 @@
 
   <div class="min-w-full">
   <table class="mx-auto table-fixed">
+    <thead>
+      <tr>
+        <th class="row-head">Category
+        <th class="row-head">Entries
+        <th class="row-head">Heats
+        <% if @categories.any? {|category| category.day and not category.day.empty?} %>
+        <th class="row-head">Day
+        <% if @categories.any? {|category| category.time and not category.time.empty?} %>
+        <th class="row-head">Time
+        <% end %>
+        <% end %>
+      </tr>
+    </thead>
     <tbody data-controller="drop" data-drop-action="<%= drop_categories_path %>">
     <% @categories.each do |category| %>
       <tr draggable="true" data-drag-id="<%= category.id %>">
         <td class="row text-black font-medium"><%= link_to category.name, edit_category_path(category) %></td>
-        <td><%= category.day %></td>
-        <td><%= category.time %></td>
+        <td class="row text-right"><%= @entries[category] %>
+        <td class="row text-right"><%= @heats[category] %>
+        <% if category.day and not category.day.empty? %>
+        <td class="row"><%= category.day %></td>
+        <% if category.time and not category.time.empty? %>
+        <td class="row"><%= category.time %></td>
+        <% end %>
+        <% end %>
       </tr>
     <% end %>
     </tbody>

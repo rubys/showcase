@@ -5,6 +5,14 @@ class Heat < ApplicationRecord
   has_many :scores, dependent: :destroy
   has_one :solo, dependent: :destroy
 
+  def dance_category
+    if category == "Open"
+      dance.open_category
+    else
+      dance.closed_category
+    end
+  end
+
   def lead
     entry.lead
   end
