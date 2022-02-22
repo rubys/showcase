@@ -4,6 +4,13 @@ class EventControllerTest < ActionDispatch::IntegrationTest
   test "should get root" do
     get root_url
     assert_response :success
+    assert_select 'h1', text: 'Showcase'
+  end
+
+  test "should get summary" do
+    get summary_event_index_path
+    assert_response :success
+    assert_select 'h1', text: 'Event Summary'
   end
 
   test "should get settings" do
