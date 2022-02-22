@@ -4,6 +4,7 @@
       <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
     <% end %>
 
+    <% empty = true %>
     <% @scores.each do |category, groups| %>
       <% groups.each do |group, levels| %>
         <% next if levels.values.all? {|students| students.empty?} %>
@@ -12,6 +13,7 @@
 
         <% levels.each do |level, students| %>
           <% next if students.empty? %>
+          <% empty = false %>
           <h2 class="font-bold pt-4 text-2xl pb-5"><%= level.name %></h1>
           <table class="mb-8">
             <thead>
@@ -30,6 +32,10 @@
           </table>
         <% end %>
       <% end %>
+    <% end %>
+
+    <% if empty %>
+    <p class="my-8">No scores entered yet.</p>
     <% end %>
 
     <%= link_to 'Back to scores', scores_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
