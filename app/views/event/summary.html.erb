@@ -1,0 +1,46 @@
+<div class="mx-auto">
+
+<h1 class="font-bold text-center text-4xl mb-6">Event Summary</h1>
+
+<h2 class="font-bold text-2xl my-4">People</h2>
+
+<ul class="list-disc list-inside">
+  <% @people.sort.each do |type, people| %>
+    <li><%= type %>: <%= people.length %></li>
+
+    <% if %w(Professional Student).include? type %>
+    <ul class="ml-4 list-disc list-inside">
+      <% people.group_by {|person| person.role}.sort.each do |role, people| %>
+        <li><%= role %>: <%= people.length %></li>
+      <% end %>
+    </ul>
+    <% end %>
+  <% end %>
+</ul>
+
+<h2 class="font-bold text-2xl my-4">Students, by level</h2>
+
+<ul class="list-disc list-inside">
+  <% @people['Student'].group_by {|person| person.level}.sort.each do |level, people| %>
+    <li><%= level.name %>: <%= people.length %></li>
+  <% end %>
+</ul>
+
+<h2 class="font-bold text-2xl my-4">Students, by age</h2>
+
+<ul class="list-disc list-inside">
+  <% @people['Student'].group_by {|person| person.age}.sort.each do |age, people| %>
+    <li><%= age.category %> (<%= age.description %>): <%= people.length %></li>
+  <% end %>
+</ul>
+
+<h2 class="font-bold text-2xl my-4">See also</h2>
+
+<div>
+<%= link_to "Dances", dances_path, class: "btn-pale-blue" %>
+<%= link_to 'Scores by level',   by_level_scores_path , class: "btn-pale-green" %>
+<%= link_to 'Scores by age',   by_age_scores_path , class: "btn-pale-green" %>
+</div>
+
+
+</div>

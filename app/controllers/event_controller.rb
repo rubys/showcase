@@ -18,6 +18,10 @@ class EventController < ApplicationController
     @levels = Level.all.size
   end
 
+  def summary
+    @people = Person.all.group_by {|person| person.type}
+  end
+
   def update
     @event = Event.last
     @event.update! params.require(:event).permit(:name, :location, :date, :heat_range_cat, :heat_range_level, :heat_range_age, :intermix)

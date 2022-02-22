@@ -5,6 +5,7 @@ Rails.application.routes.draw do
 
   resources 'event', only: [:update] do
     get 'settings', on: :collection
+    get 'summary', on: :collection
   end
 
   resources :heats do
