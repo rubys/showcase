@@ -5,7 +5,7 @@
     <% end %>
 
     <% empty = true %>
-    <% @scores.each do |category, groups| %>
+    <% @points.each do |category, groups| %>
       <% groups.each do |group, ages| %>
         <% next if ages.values.all? {|students| students.empty?} %>
 
@@ -18,15 +18,17 @@
           <table class="mb-8">
             <thead>
               <th class="row-head">Name
+              <th class="row-head">Points
               <% ScoresController::SCORES[category].each do |score| %>
-              <th class="row-heat"><%= score %>
+              <th class="row-head"><%= score %>
               <% end %>
             </thead>
-          <% students.sort_by {|students, scores| scores}.reverse.each do |students, scores| %>
+          <% students.sort_by {|students, points| points}.reverse.each do |students, points| %>
             <tr>
               <td class="row"><%= Array(students).map {|student| student.display_name}.join(' and ') %></td>
-              <% scores.each do |score| %>
-              <td class="text-center px-4"><%= score == 0 ? '' : score %></td>
+              <td class="row text-right"><%= points %>
+              <% @scores[category][group][age][students].each do |score| %>
+              <td class="text-right px-4"><%= score == 0 ? '' : score %></td>
               <% end %>
           <% end %>
           </table>

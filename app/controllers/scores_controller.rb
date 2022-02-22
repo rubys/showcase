@@ -130,6 +130,26 @@ class ScoresController < ApplicationController
         @scores[category][group][level][students][value] += 1
       end
     end
+
+    @points = {}
+    @scores.each do |category, groups|
+      @points[category] = {}
+      groups.each do |group, levels|
+        @points[category][group] = {}
+        levels.each do |level, students|
+          @points[category][group][level] = {}
+          students.each do |student, values|
+            points = 0
+            weight = 1
+            values.reverse.each do |value|
+              points += value*weight
+              weight += 2
+            end
+            @points[category][group][level][student] = points
+          end
+        end
+      end
+    end
   end
 
 
@@ -174,6 +194,26 @@ class ScoresController < ApplicationController
       tally.each do |group, students|
         @scores[category][group][age][students] ||= SCORES[category].map {0}
         @scores[category][group][age][students][value] += 1
+      end
+    end
+
+    @points = {}
+    @scores.each do |category, groups|
+      @points[category] = {}
+      groups.each do |group, ages|
+        @points[category][group] = {}
+        ages.each do |age, students|
+          @points[category][group][age] = {}
+          students.each do |student, values|
+            points = 0
+            weight = 1
+            values.reverse.each do |value|
+              points += value*weight
+              weight += 2
+            end
+            @points[category][group][age][student] = points
+          end
+        end
       end
     end
   end
