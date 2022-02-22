@@ -78,9 +78,7 @@ class DancesController < ApplicationController
       raise ActiveRecord::Rollback unless dances.all? {|dance| dance.valid?}
     end
 
-    @dances = Dance.includes(:open_category, :closed_category).order(:order).all
-    @heats = Heat.group(:dance_id).distinct.count(:number)
-    @entries = Heat.group(:dance_id).count
+    index
     flash.now.notice = "#{source.name} was successfully moved."
 
     respond_to do |format|
