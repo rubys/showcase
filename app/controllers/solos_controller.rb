@@ -1,5 +1,6 @@
 class SolosController < ApplicationController
   before_action :set_solo, only: %i[ show edit update destroy ]
+  include EntryForm
 
   # GET /solos or /solos.json
   def index
@@ -24,7 +25,9 @@ class SolosController < ApplicationController
   def new
     @solo ||= Solo.new
 
-    form_init
+    form_init(params[:primary])
+
+    @dances = Dance.order(:name).all.map {|dance| [dance.name, dance.id]}
 
     @partner = nil
     @age = @person.age_id
@@ -33,8 +36,13 @@ class SolosController < ApplicationController
 
   # GET /solos/1/edit
   def edit
-    form_init
+    form_init(params[:primary])
 
+    @partner = @solo.heat.entry.partner(@person).id
+
+    @dances = Dance.order(:name).all.map {|dance| [dance.name, dance.id]}
+
+    @instructor = @solo.heat.entry.instructor
     @age = @solo.heat.entry.age_id
     @level = @solo.heat.entry.level_id
     @dance = @solo.heat.dance.id
@@ -44,30 +52,11 @@ class SolosController < ApplicationController
   def create
     solo = params[:solo]
 
-    @person = Person.find(solo[:primary])
-
-    if @person.role == "Follower"
-      lead = Person.find_by(name: solo[:partner])
-      follow = @person
-    else
-      lead = @person
-      follow = Person.find_by(name: solo[:partner])
-    end
-
-    dance = Dance.find(solo[:dance_id].to_i)
-
-    @entry = Entry.find_or_create_by!(
-      lead: lead,
-      follow: follow,
-      age_id: solo[:age],
-      level_id: solo[:level]
-    )
-
     @heat = Heat.create!({
       number: 0, 
-      entry: @entry,
+      entry: find_or_create_entry(solo),
       category: "Solo",
-      dance: dance
+      dance: Dance.find(solo[:dance_id].to_i)
     })
 
     @solo = Solo.new(solo_params)
@@ -95,23 +84,8 @@ class SolosController < ApplicationController
   def update
     solo = params[:solo]
 
-    @person = Person.find(solo[:primary])
-
-    if @person.role == "Follower"
-      lead = Person.find_by(name: solo[:partner])
-      follow = @person
-    else
-      lead = @person
-      follow = Person.find_by(name: solo[:partner])
-    end
-
     entry = @solo.heat.entry
-    replace = Entry.find_or_create_by!(
-      lead: lead,
-      follow: follow,
-      age_id: solo[:age],
-      level_id: solo[:level]
-    )
+    replace = find_or_create_entry(solo)
 
     if replace != entry
       @solo.heat.entry = replace
@@ -207,32 +181,4 @@ class SolosController < ApplicationController
     def solo_params
       params.require(:solo).permit(:heat_id, :combo_dance_id, :order, :song, :artist)
     end
-
-    def form_init
-      @person ||= Person.find(params[:primary])
-      entries = @person.lead_entries + @person.follow_entries
-      studios = [@person.studio] + @person.studio.pairs
-  
-      @dances = Dance.order(:name).all.map {|dance| [dance.name, dance.id]}
-  
-      seeking = @person.role == 'Leader' ? 'Follower' : 'Leader'
-      teacher = Person.where(type: 'Professional', studio: studios, 
-        role: [seeking, 'Both']).order(:name)
-      student = Person.where(type: 'Student', studio: @person.studio, 
-        role: [seeking, 'Both']).order(:name) +
-        Person.where(type: 'Student', studio: @person.studio.pairs,
-        role: [seeking, 'Both']).order(:name)
-  
-      @avail = teacher + student
-      surname = @person.name.split(',').first + ','
-      spouse = @avail.find {|person| person.name.start_with? surname}
-      @avail = ([spouse] + @avail).uniq if spouse
-  
-      @avail = @avail.map {|person| [person.display_name, person.name]}.to_h
-  
-      @ages = Age.all.order(:id).map {|age| [age.description, age.id]}
-      @levels = Level.all.order(:id).map {|level| [level.name, level.id]}
-
-      @entries = {'Closed' => {}, 'Open' => {}}
-    end
-end
+  end

@@ -5,19 +5,20 @@ module EntryForm
     studios = [@person.studio] + @person.studio.pairs
 
     seeking = @person.role == 'Leader' ? 'Follower' : 'Leader'
-    teacher = Person.where(type: 'Professional', studio: studios, 
+    @instructors = Person.where(type: 'Professional', studio: studios, 
       role: [seeking, 'Both']).order(:name)
-    student = Person.where(type: 'Student', studio: @person.studio, 
+    students = Person.where(type: 'Student', studio: @person.studio, 
       role: [seeking, 'Both']).order(:name) +
       Person.where(type: 'Student', studio: @person.studio.pairs,
       role: [seeking, 'Both']).order(:name)
 
-    @avail = teacher + student
+    @avail = @instructors + students
     surname = @person.name.split(',').first + ','
     spouse = @avail.find {|person| person.name.start_with? surname}
     @avail = ([spouse] + @avail).uniq if spouse
 
-    @avail = @avail.map {|person| [person.display_name, person.name]}.to_h
+    @avail = @avail.map {|person| [person.display_name, person.id]}.to_h
+    @instructors = @instructors.map {|person| [person.display_name, person.id]}.to_h
 
     @ages = Age.all.order(:id).map {|age| [age.description, age.id]}
     @levels = Level.all.order(:id).map {|level| [level.name, level.id]}
@@ -29,18 +30,25 @@ module EntryForm
     @person = Person.find(params[:primary])
 
     if @person.role == "Follower"
-      lead = Person.find_by(name: params[:partner]) || Person.find(params[:partner])
+      lead = Person.find(params[:partner])
       follow = @person
     else
       lead = @person
-      follow = Person.find_by(name: params[:partner]) || Person.find(params[:partner])
+      follow = Person.find(params[:partner])
+    end
+
+    if lead.type == 'Professional' or follow.type == 'Professional'
+      instructor = nil
+    else
+      instructor = params[:instructor]
     end
 
     Entry.find_or_create_by!(
       lead: lead,
       follow: follow,
       age_id: params[:age],
-      level_id: params[:level]
+      level_id: params[:level],
+      instructor_id: instructor
     )
   end
 end

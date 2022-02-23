@@ -59,10 +59,7 @@ class HeatsController < ApplicationController
   # GET /heats/new
   def new
     @heat ||= Heat.new
-    @leads = Person.where(role: %w(Leader Both)).order(:name).pluck(:name, :id).to_h
-    @followers = Person.where(role: %w(Follower Both)).order(:name).pluck(:name, :id).to_h
-    @ages = Age.pluck(:description, :id).to_h
-    @levels = Level.pluck(:name, :id).to_h
+    form_init(params[:primary])
     @dances = Dance.order(:name).pluck(:name, :id).to_h
   end
 
@@ -72,8 +69,10 @@ class HeatsController < ApplicationController
 
     @dances = Dance.order(:name).pluck(:name, :id).to_h
     
+    @partner = @heat.entry.partner(@person).id
     @age = @heat.entry.age_id
     @level = @heat.entry.level_id
+    @instructor = @heat.entry.instructor_id
   end
 
   # POST /heats or /heats.json
@@ -96,10 +95,8 @@ class HeatsController < ApplicationController
 
   # PATCH/PUT /heats/1 or /heats/1.json
   def update
-    heat = params[:heat]
-
     entry = @heat.entry
-    replace = find_or_create_entry(heat)
+    replace = find_or_create_entry(params[:heat])
 
     @heat.entry = replace
     @heat.number = 0

@@ -26,7 +26,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     end.to_h
 
     assert_difference("Entry.count") do
-      post entries_url, params: { entry: { primary: @primary.id, partner: partner.name, entries: entries, age: ages(:B1).id, follow_id: @entry.follow_id, lead_id: @entry.lead_id, level: @entry.level_id } }
+      post entries_url, params: { entry: { primary: @primary.id, partner: partner.id, entries: entries, age: ages(:B1).id, follow_id: @entry.follow_id, lead_id: @entry.lead_id, level: @entry.level_id } }
     end
 
     assert_redirected_to person_url(@primary)
@@ -43,7 +43,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     end.to_h
 
     assert_difference("Entry.count", 0) do
-      post entries_url, params: { entry: { primary: @primary.id, partner: partner.name, entries: entries, age: @entry.age_id, follow_id: @entry.follow_id, lead_id: @entry.lead_id, level: @entry.level_id } }
+      post entries_url, params: { entry: { primary: @primary.id, partner: partner.id, entries: entries, age: @entry.age_id, follow_id: @entry.follow_id, lead_id: @entry.lead_id, level: @entry.level_id } }
     end
 
     assert_redirected_to person_url(@primary)
@@ -61,13 +61,15 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should update entry" do
+    partner = people(:Arthur)
+
     entries = %w(Closed Open).map do |category|
       [category, Dance.all.map do |dance|
         [dance.name, 1]
       end.to_h]
     end.to_h
 
-    patch entry_url(@entry), params: { entry: { primary: @primary.id, entries: entries, age: @entry.age_id, follow_id: @entry.follow_id, lead_id: @entry.lead_id, level: @entry.level_id } }
+    patch entry_url(@entry), params: { entry: { primary: @primary.id, partner: partner.id, entries: entries, age: @entry.age_id, follow_id: @entry.follow_id, lead_id: @entry.lead_id, level: @entry.level_id } }
     assert_redirected_to person_url(@primary)
     assert_equal flash[:notice], '7 heats added.'
   end

@@ -12,6 +12,8 @@ class Person < ApplicationRecord
     dependent: :destroy
   has_many :follow_entries, class_name: 'Entry', foreign_key: :follow_id,
     dependent: :destroy
+  has_many :instructor_entries, class_name: 'Entry', foreign_key: :instructor_id,
+    dependent: :nullify
 
   has_many :scores, dependent: :destroy, foreign_key: :judge_id
 

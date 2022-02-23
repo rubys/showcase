@@ -22,9 +22,14 @@
     <table>
       <caption class="text-left font-bold pt-8 text-3xl pb-5">Entries</caption>
 
+      <% instructor = @entries.any? {|parner, entries| entries.any? {|entry| entry.instructor}} %>
+
       <thead>
         <th>count
         <th>partner
+        <% if instructor %>
+        <th>instructor
+        <% end %>
         <th>level
         <th>age
       </thead>
@@ -35,6 +40,9 @@
             <tr class="group">
               <td class="row text-right"><%= (entry.heats - @solos).length %>
               <td class="row"><%= link_to partner.display_name, partner %>
+              <% if instructor %>
+              <td class="row"><%= link_to_if entry.instructor_id, entry.instructor&.display_name, entry.instructor %>
+              <% end %>
               <td class="row"><%= entry.level.name %>
               <td class="row"><%= entry.age.category %>
               <td>
@@ -58,9 +66,14 @@
     <table>
     <caption class="text-left font-bold pt-8 text-3xl pb-5">Solos</caption>
 
+    <% instructor = @solos.any? {|heat| heat.entry.instructor} %>
+
     <thead>
       <th>dance
       <th>partner
+      <% if instructor %>
+      <th>instructor
+      <% end %>
       <th>level
       <th>age
     </thead>
@@ -74,7 +87,10 @@
             <% else %>
             <td class="row"><%= heat.dance.name %>
             <% end %>
-            <td class="row"><%= link_to entry.lead.display_name, entry.lead %>
+            <td class="row"><%= link_to entry.partner(@person).display_name, entry.partner(@person) %>
+            <% if instructor %>
+            <td class="row"><%= link_to_if entry.instructor_id, entry.instructor&.display_name, entry.instructor %>
+            <% end %>
             <td class="row"><%= entry.level.name %>
             <td class="row"><%= entry.age.category %>
             <td>

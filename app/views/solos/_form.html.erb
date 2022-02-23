@@ -13,15 +13,7 @@
 
 <div class="mx-auto w-full mb-8 text-center">
 <%= form.hidden_field :primary, value: @person.id %>
-
-<div>
-<%= form.select :partner, @avail, {selected: @partner},
-  class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>
-<div><%= form.select :age, @ages, {selected: @age},
-  class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>
-<div><%= form.select :level, @levels, {selected: @level},
-  class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>
-</div>
+  <%= render partial: 'entries/box', locals: {form: form} %>
 
   <div class="my-5">
     <%= form.label :dance_id %>

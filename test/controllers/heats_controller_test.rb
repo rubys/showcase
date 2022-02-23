@@ -12,7 +12,7 @@ class HeatsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should get new" do
-    get new_heat_url
+    get new_heat_url, params: { primary: @primary.id }
     assert_response :success
   end
 

@@ -20,7 +20,7 @@ class SolosControllerTest < ActionDispatch::IntegrationTest
     assert_difference("Solo.count") do
       post solos_url, params: { solo: { 
         primary: @primary.id,
-        partner: people(:Arthur).name,
+        partner: people(:Arthur).id,
         age: @solo.heat.entry.age_id,
         level: @solo.heat.entry.level_id,
         dance_id: @solo.heat.dance_id, 
@@ -47,7 +47,7 @@ class SolosControllerTest < ActionDispatch::IntegrationTest
   test "should update solo" do
     patch solo_url(@solo), params: { solo: { 
       primary: @primary.id,
-      partner: people(:Arthur).name,
+      partner: people(:Arthur).id,
       age: @solo.heat.entry.age_id,
       level: @solo.heat.entry.level_id,
       dance_id: @solo.heat.dance_id, 

@@ -1,0 +1,22 @@
+<div data-controller="entry-box">
+
+  <% if @person %>
+  <%= form.hidden_field :primary, value: @person.id, data: {'entry-box-target' => 'primary'} %>
+  <%= form.select :partner, @avail, {selected: @partner}, data: {'entry-box-target' => 'partner', action: 'change->entry-box#reveal'},
+    class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'partner' %>
+  <% else %>
+  <%= form.select :primary, @followers, {selected: @partner}, data: {'entry-box-target' => 'primary', action: 'change->entryBox#reveal'},
+  class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'primary' %>
+  <%= form.select :partner, @leads, {selected: @partner}, data: {'entry-box-target' => 'partner', action: 'change->entryBox#reveal'},
+  class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'partner' %>
+  <% end %>
+
+  <%= form.select :instructor, @instructors, {selected: @instructor}, data: {'entry-box-target' => 'instructor'},
+    class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'instructor' %>
+
+  <%= form.select :age, @ages, {selected: @age},
+    class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %>
+
+  <%= form.select :level, @levels, {selected: @level},
+    class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>
+</div>

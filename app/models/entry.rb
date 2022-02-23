@@ -1,6 +1,7 @@
 class Entry < ApplicationRecord
   belongs_to :lead, class_name: 'Person'
   belongs_to :follow, class_name: 'Person'
+  belongs_to :instructor, class_name: 'Person', optional: true
   belongs_to :age
   belongs_to :level
 
@@ -24,5 +25,9 @@ class Entry < ApplicationRecord
     else
       "AC - #{age.category}"
     end
+  end
+
+  def partner(person)
+    follow == person ? lead : follow 
   end
 end
