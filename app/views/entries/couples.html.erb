@@ -1,0 +1,33 @@
+<div>
+
+<div class="flex justify-between items-center">
+<h1 class="mx-auto font-bold text-4xl mb-4">Couple Entries</h1>
+</div>
+
+<table>
+  <thead>
+    <th class="row-head">Leader
+    <th class="row-head">Follower
+    <th class="row-head">Instructor
+    <th class="row-head">Level
+    <th class="row-head">Age
+  </thead>
+<% @entries.each do |entry| %>
+  <tr>
+    <td class="row"><%= link_to entry.lead.name, entry.lead %>
+    <td class="row"><%= link_to entry.follow.name, entry.follow %>
+    <td class="row"><%= link_to_if entry.instructor, entry.instructor&.name, entry.instructor %>
+    <td class="row"><%= entry.level.name %>
+    <td class="row"><%= entry.age.category %>
+  </tr>
+<% end %>
+</table>
+
+
+<div class="mt-4 flex justify-between items-center">
+<div class="mx-auto">
+<%= link_to 'Couples', couples_people_path, class: "btn-green" %>
+<%= link_to 'Back to event', root_path, class: "btn-green" %>
+</div>
+</div>
+</div>
