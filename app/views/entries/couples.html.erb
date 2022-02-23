@@ -13,12 +13,17 @@
     <th class="row-head">Age
   </thead>
 <% @entries.each do |entry| %>
-  <tr>
+  <tr class="group">
     <td class="row"><%= link_to entry.lead.name, entry.lead %>
     <td class="row"><%= link_to entry.follow.name, entry.follow %>
     <td class="row"><%= link_to_if entry.instructor, entry.instructor&.name, entry.instructor %>
     <td class="row"><%= entry.level.name %>
     <td class="row"><%= entry.age.category %>
+    <td>
+    <form method="get" action="<%= edit_entry_path(entry) %>">
+    <input type="hidden" name="primary" value="<%= entry.lead_id %>">
+    <button type="submit" class='group-hover:inline hidden x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium'>Edit</button>
+    </form>
   </tr>
 <% end %>
 </table>
