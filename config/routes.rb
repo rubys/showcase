@@ -12,7 +12,9 @@ Rails.application.routes.draw do
     post 'redo', on: :collection
   end
 
-  resources :entries
+  resources :entries do
+    get 'couples', on: :collection
+  end
 
   resources :dances do
     post 'drop', on: :collection

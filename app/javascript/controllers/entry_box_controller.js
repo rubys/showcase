@@ -5,7 +5,7 @@ export default class extends Controller {
   static targets = [ "primary", "partner", "instructor" ];
 
   connect() {
-    this.reveal()
+    this.reveal();
   }
 
   reveal() {

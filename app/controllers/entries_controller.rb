@@ -108,6 +108,13 @@ class EntriesController < ApplicationController
     end
   end
 
+    # GET /entriese/couples or /entries.json
+    def couples
+      @entries = Entry.preload(:lead, :follow).joins(:lead, :follow).
+        where(lead: {type: 'Student'}, follow: {type: 'Student'}).
+        order('lead.name').all
+    end
+
   # DELETE /entries/1 or /entries/1.json
   def destroy
     person = Person.find(params[:primary])
