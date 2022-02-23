@@ -35,6 +35,8 @@ class EntriesController < ApplicationController
     @age = @entry.age_id
     @level = @entry.level_id
 
+    @next = params[:next]
+
     tally_entry
   end
 
@@ -98,7 +100,7 @@ class EntriesController < ApplicationController
       end
 
       if @entry.update(entry_params)
-        format.html { redirect_to @person, notice: "#{helpers.pluralize @total, 'heat'} #{operation}." }
+        format.html { redirect_to entry[:next] || @person, notice: "#{helpers.pluralize @total, 'heat'} #{operation}." }
         format.json { render :show, status: :ok, location: @entry }
       else
         edit

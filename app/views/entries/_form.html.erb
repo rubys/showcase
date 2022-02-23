@@ -12,6 +12,11 @@
   <% end %>
 
 <div class="mx-auto w-full mb-8 text-center">
+
+<% if @next and not @next.empty? %>
+<%= form.hidden_field :next, value: @next %>
+<% end %>
+
 <%= render partial: 'entries/box', locals: {form: form} %>
 
 <div class="mx-auto w-full flex flex-wrap">

@@ -1,4 +1,8 @@
 <div class="mx-auto md:w-2/3 w-full">
+<div class="mx-auto">
+<% if notice.present? %>
+  <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+<% end %>
 
 <div class="flex justify-between items-center">
 <h1 class="mx-auto font-bold text-4xl mb-4">Couple Entries</h1>
@@ -22,6 +26,7 @@
     <td>
     <form method="get" action="<%= edit_entry_path(entry) %>">
     <input type="hidden" name="primary" value="<%= entry.lead_id %>">
+    <input type="hidden" name="next" value="<%=couples_entries_path %>">
     <button type="submit" class='group-hover:inline hidden x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium'>Edit</button>
     </form>
   </tr>
