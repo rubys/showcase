@@ -24,4 +24,12 @@ class Person < ApplicationRecord
   def first_name
     name.split(/,\s*/).last
   end
+
+  def join(person)
+    if name.split(',').first == person.name.split(',').first
+      "#{first_name} and #{person.display_name}"
+    else
+      "#{display_name} and #{person.display_name}"
+    end
+  end
 end

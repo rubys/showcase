@@ -1,15 +1,14 @@
-<div class="mx-auto md:w-2/3 w-full flex">
+<div class="mx-auto md:w-5/6 w-full flex">
   <div class="mx-auto">
     <% if notice.present? %>
       <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
     <% end %>
 
     <% empty = true %>
-    <% @points.each do |category, groups| %>
-      <% groups.each do |group, levels| %>
+      <% @scores.each do |group, levels| %>
         <% next if levels.values.all? {|students| students.empty?} %>
 
-        <h1 class="font-bold mt-8 text-4xl pb-5 text-center"><%= category %> <%= group %></h1>
+        <h1 class="font-bold mt-8 text-4xl pb-5 text-center"><%= group %></h1>
 
         <% levels.each do |level, students| %>
           <% next if students.empty? %>
@@ -17,29 +16,42 @@
           <h2 class="font-bold pt-4 text-2xl pb-5"><%= level.name %></h1>
           <table class="mb-8">
             <thead>
-              <th class="row-head">Name
+              <tr>
+                <th colspan="2">
+                <th colspan="4" class="bg-slate-200">Closed
+                <th colspan="4">Open
+              </tr>
+
+              <tr>
               <th class="row-head">Points
-              <% ScoresController::SCORES[category].each do |score| %>
+              <th class="row-head">Name
+              <% ScoresController::SCORES['Closed'].each do |score| %>
+              <th class="row-head bg-slate-200"><%= score %>
+              <% end %>
+              <% ScoresController::SCORES['Open'].each do |score| %>
               <th class="row-head"><%= score %>
               <% end %>
+              </tr>
             </thead>
-          <% students.sort_by {|students, points| points}.reverse.each do |students, points| %>
+          <% students.sort_by {|students, results| results['points']}.reverse.each do |students, results| %>
             <tr>
-              <td class="row"><%= Array(students).map {|student| student.display_name}.join(' and ') %></td>
-              <td class="row text-right"><%= points %>
-              <% @scores[category][group][level][students].each do |score| %>
+              <td class="row text-right"><%= results['points'] %>
+              <td class="row"><%= students %></td>
+              <% results['Closed'].each do |score| %>
+              <td class="text-right px-4 bg-slate-200"><%= score == 0 ? '' : score %></td>
+              <% end %>
+              <% results['Open'].each do |score| %>
               <td class="text-right px-4"><%= score == 0 ? '' : score %></td>
               <% end %>
           <% end %>
           </table>
         <% end %>
-      <% end %>
     <% end %>
 
     <% if empty %>
     <p class="my-8">No scores entered yet.</p>
     <% end %>
 
-    <%= link_to 'Back to scores', scores_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+    <%= link_to 'Back to summary', summary_event_index_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
   </div>
 </div>

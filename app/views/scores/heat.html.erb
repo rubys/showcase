@@ -5,6 +5,9 @@
 
   <h1 class="font-bold text-4xl pt-1 pb-3 text-center">
     <%= link_to @judge.display_name, judge_heatlist_path(judge: @judge) %>
+    <%= link_to root_path do %>
+      <%= image_tag "/arthur-murray-logo.gif", class: "absolute right-4 top-4 h-8" %>
+    <% end %>
   </h1>
 
   <div class="grow flex flex-col border-2 border-slate-400" data-controller="score"  data-drop-action="<%=  post_score_path(judge: @judge) %>">
@@ -15,7 +18,7 @@
       <% @results[score]&.each do |subject| %>
         <div class='w-20 mx-1 my-1 py-1 border-2 rounded-lg bg-sky-200 text-center' draggable="true" id="<%= dom_id subject %>">
           <span class="font-bold text-xl"><%= subject.entry.lead.back %></span>
-          <span class="hidden md:block"><br>
+          <span class="hidden sm:block"><br>
           <%= subject.entry.subject_category %><br>
           <%= subject.entry.level.initials %></span>
         </div>  

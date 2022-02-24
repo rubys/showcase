@@ -7,6 +7,8 @@ class ScoresController < ApplicationController
     "Solo" => %w(B S G GH).reverse
   }
 
+  WEIGHTS = [5, 3, 2, 1]
+
   # GET /scores or /scores.json
   def heatlist
     @judge = Person.find(params[:judge].to_i)
@@ -90,63 +92,58 @@ class ScoresController < ApplicationController
   def by_level
     levels = Level.order(:id).all
 
-    template1 = ->() {levels.map {|level| [level, {}]}.to_h}
+    template1 = ->() {
+      levels.map {|level| [level, {}]}.to_h
+    }
 
-    template2 = -> () {{
+    @scores = {
       'Followers' => template1[],
       'Leaders' => template1[],
       'Couples' => template1[]
-    }}
-
-    @scores = {
-      'Closed' => template2[],
-      'Open' => template2[] 
     }
 
     scores = Score.includes(heat: {entry: [:lead, :follow]}).all
 
     scores.each do |score|
       category = score.heat.category
+      next if category == 'Solo'
       value = SCORES[category].index score.value
       next unless value
 
       tally = []
 
       entry = score.heat.entry
-      level = entry.level
 
       if entry.lead.type == 'Professional'
-        tally << ['Followers', entry.follow]
+        tally << ['Followers', entry.follow.display_name]
+        level = entry.follow.level
       elsif entry.follow.type == 'Professional'
-        tally << ['Leaders', entry.lead]
+        tally << ['Leaders', entry.lead.display_name]
+        level = entry.lead.level
       else
-        tally << ['Followers', entry.follow]
-        tally << ['Leaders', entry.lead]
-        tally << ['Couples', [entry.lead, entry.follow]]
+        tally << ['Followers', entry.follow.display_name]
+        tally << ['Leaders', entry.lead.display_name]
+        tally << ['Couples', entry.follow.join(entry.lead)]
+        level = [entry.follow.level, entry.lead.level].max
       end
 
       tally.each do |group, students|
-        @scores[category][group][level][students] ||= SCORES[category].map {0}
-        @scores[category][group][level][students][value] += 1
+        @scores[group][level][students] ||= {
+          'Open' => SCORES['Open'].map {0},
+          'Closed' => SCORES['Closed'].map {0},
+          'points' => 0
+        }
+
+        @scores[group][level][students][category][value] += 1
       end
     end
 
-    @points = {}
-    @scores.each do |category, groups|
-      @points[category] = {}
-      groups.each do |group, levels|
-        @points[category][group] = {}
-        levels.each do |level, students|
-          @points[category][group][level] = {}
-          students.each do |student, values|
-            points = 0
-            weight = 1
-            values.reverse.each do |value|
-              points += value*weight
-              weight += 2
-            end
-            @points[category][group][level][student] = points
-          end
+    @scores.each do |group, levels|
+      levels.each do |level, students|
+        students.each do |student, results|
+          results['points'] =
+            results['Closed'].zip(WEIGHTS).sum {|value, weight| value*weight} +
+              results['Open'].zip(WEIGHTS).sum {|value, weight| value*weight}
         end
       end
     end
@@ -156,66 +153,61 @@ class ScoresController < ApplicationController
   def by_age
     ages = Age.order(:id).all
 
-    template1 = ->() {ages.map {|age| [age, {}]}.to_h}
+    template1 = ->() {
+      ages.map {|age| [age, {}]}.to_h
+    }
 
-    template2 = -> () {{
+    @scores = {
       'Followers' => template1[],
       'Leaders' => template1[],
       'Couples' => template1[]
-    }}
-
-    @scores = {
-      'Closed' => template2[],
-      'Open' => template2[] 
     }
 
     scores = Score.includes(heat: {entry: [:lead, :follow]}).all
 
     scores.each do |score|
       category = score.heat.category
+      next if category == 'Solo'
       value = SCORES[category].index score.value
       next unless value
 
       tally = []
 
       entry = score.heat.entry
-      age = entry.age
 
       if entry.lead.type == 'Professional'
-        tally << ['Followers', entry.follow]
+        tally << ['Followers', entry.follow.display_name]
+        age = entry.follow.age
       elsif entry.follow.type == 'Professional'
-        tally << ['Leaders', entry.lead]
+        tally << ['Leaders', entry.lead.display_name]
+        age = entry.lead.age
       else
-        tally << ['Followers', entry.follow]
-        tally << ['Leaders', entry.lead]
-        tally << ['Couples', [entry.lead, entry.follow]]
+        tally << ['Followers', entry.follow.display_name]
+        tally << ['Leaders', entry.lead.display_name]
+        tally << ['Couples', entry.follow.join(entry.lead)]
+        age = [entry.follow.age, entry.lead.age].max
       end
 
       tally.each do |group, students|
-        @scores[category][group][age][students] ||= SCORES[category].map {0}
-        @scores[category][group][age][students][value] += 1
+        @scores[group][age][students] ||= {
+          'Open' => SCORES['Open'].map {0},
+          'Closed' => SCORES['Closed'].map {0},
+          'points' => 0
+        }
+
+        @scores[group][age][students][category][value] += 1
       end
     end
 
-    @points = {}
-    @scores.each do |category, groups|
-      @points[category] = {}
-      groups.each do |group, ages|
-        @points[category][group] = {}
-        ages.each do |age, students|
-          @points[category][group][age] = {}
-          students.each do |student, values|
-            points = 0
-            weight = 1
-            values.reverse.each do |value|
-              points += value*weight
-              weight += 2
-            end
-            @points[category][group][age][student] = points
-          end
+    @scores.each do |group, ages|
+      ages.each do |age, students|
+        students.each do |student, results|
+          results['points'] =
+            results['Closed'].zip(WEIGHTS).sum {|value, weight| value*weight} +
+              results['Open'].zip(WEIGHTS).sum {|value, weight| value*weight}
         end
       end
-    end
+    end  
   end
 
   # GET /scores/1 or /scores/1.json
