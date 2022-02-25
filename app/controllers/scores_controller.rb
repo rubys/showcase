@@ -48,11 +48,11 @@ class ScoresController < ApplicationController
 
     student_results = Score.where(judge: @judge, heat: @subjects).map {|score| [score.heat, score.value]}.to_h
 
-    @student_results = {}
+    @results = {}
     @subjects.each do |subject|
       score = student_results[subject] || ''
-      @student_results[score] ||= []
-      @student_results[score] << subject
+      @results[score] ||= []
+      @results[score] << subject
     end
 
     @scores << ''
