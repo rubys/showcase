@@ -119,21 +119,19 @@ class ScoresController < ApplicationController
         end
 
         if students.length == 1
-          name = students.first.display_name
           level = levels[students.first.level_id]
         else
-          name = students.first.join(students.last)
           level = levels[students.map {|student| student.level_id}.max]
         end
 
-        @scores[group][level][name] ||= {
+        @scores[group][level][students] ||= {
           'Open' => SCORES['Open'].map {0},
           'Closed' => SCORES['Closed'].map {0},
           'points' => 0
         }
 
-        @scores[group][level][name][category][value] += count
-        @scores[group][level][name]['points'] += count * WEIGHTS[value]
+        @scores[group][level][students][category][value] += count
+        @scores[group][level][students]['points'] += count * WEIGHTS[value]
       end
     end
   end
@@ -168,21 +166,19 @@ class ScoresController < ApplicationController
         end
 
         if students.length == 1
-          name = students.first.display_name
           age = ages[students.first.age_id]
         else
-          name = students.first.join(students.last)
           age = ages[students.map {|student| student.age_id}.max]
         end
 
-        @scores[group][age][name] ||= {
+        @scores[group][age][students] ||= {
           'Open' => SCORES['Open'].map {0},
           'Closed' => SCORES['Closed'].map {0},
           'points' => 0
         }
 
-        @scores[group][age][name][category][value] += count
-        @scores[group][age][name]['points'] += count * WEIGHTS[value]
+        @scores[group][age][students][category][value] += count
+        @scores[group][age][students]['points'] += count * WEIGHTS[value]
       end
     end      
   end
