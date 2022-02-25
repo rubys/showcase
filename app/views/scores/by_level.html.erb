@@ -35,13 +35,13 @@
             </thead>
           <% students.sort_by {|students, results| results['points']}.reverse.each do |students, results| %>
             <tr>
-              <td class="row text-right"><%= results['points'] %>
-              <td class="row"><%= students %></td>
+              <td class="row-main text-right"><%= results['points'] %>
+              <td class="row-main"><%= students %></td>
               <% results['Closed'].each do |score| %>
-              <td class="text-right px-4 bg-slate-200"><%= score == 0 ? '' : score %></td>
+              <td class="row text-right px-4 bg-slate-200"><%= score == 0 ? '' : score %></td>
               <% end %>
               <% results['Open'].each do |score| %>
-              <td class="text-right px-4"><%= score == 0 ? '' : score %></td>
+              <td class="row text-right px-4"><%= score == 0 ? '' : score %></td>
               <% end %>
           <% end %>
           </table>

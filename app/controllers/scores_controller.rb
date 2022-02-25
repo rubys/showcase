@@ -102,53 +102,41 @@ class ScoresController < ApplicationController
       'Couples' => template1[]
     }
 
-    scores = Score.includes(heat: {entry: [:lead, :follow]}).all
+    people = Person.where(type: 'Student').
+      map {|person| [person.id, person]}.to_h
+    levels = Level.all.map {|level| [level.id, level]}.to_h
 
-    scores.each do |score|
-      category = score.heat.category
-      next if category == 'Solo'
-      value = SCORES[category].index score.value
-      next unless value
+    results.each do |group, scores|
+      scores.each do |(score, *students), count|
+        students = students.map {|student| people[student]}
 
-      tally = []
+        value = SCORES['Closed'].index score
+        if value
+          category = 'Closed'
+        else
+          category = 'Open'
+          value = SCORES['Open'].index score
+        end
 
-      entry = score.heat.entry
+        if students.length == 1
+          name = students.first.display_name
+          level = levels[students.first.level_id]
+        else
+          name = students.first.join(students.last)
+          level = levels[students.map {|student| student.level_id}.max]
+        end
 
-      if entry.lead.type == 'Professional'
-        tally << ['Followers', entry.follow.display_name]
-        level = entry.follow.level
-      elsif entry.follow.type == 'Professional'
-        tally << ['Leaders', entry.lead.display_name]
-        level = entry.lead.level
-      else
-        tally << ['Followers', entry.follow.display_name]
-        tally << ['Leaders', entry.lead.display_name]
-        tally << ['Couples', entry.follow.join(entry.lead)]
-        level = [entry.follow.level, entry.lead.level].max
-      end
-
-      tally.each do |group, students|
-        @scores[group][level][students] ||= {
+        @scores[group][level][name] ||= {
           'Open' => SCORES['Open'].map {0},
           'Closed' => SCORES['Closed'].map {0},
           'points' => 0
         }
 
-        @scores[group][level][students][category][value] += 1
-      end
-    end
-
-    @scores.each do |group, levels|
-      levels.each do |level, students|
-        students.each do |student, results|
-          results['points'] =
-            results['Closed'].zip(WEIGHTS).sum {|value, weight| value*weight} +
-              results['Open'].zip(WEIGHTS).sum {|value, weight| value*weight}
-        end
+        @scores[group][level][name][category][value] += count
+        @scores[group][level][name]['points'] += count * WEIGHTS[value]
       end
     end
   end
-
 
   def by_age
     ages = Age.order(:id).all
@@ -163,51 +151,40 @@ class ScoresController < ApplicationController
       'Couples' => template1[]
     }
 
-    scores = Score.includes(heat: {entry: [:lead, :follow]}).all
+    people = Person.where(type: 'Student').
+      map {|person| [person.id, person]}.to_h
+    ages = Age.all.map {|age| [age.id, age]}.to_h
 
-    scores.each do |score|
-      category = score.heat.category
-      next if category == 'Solo'
-      value = SCORES[category].index score.value
-      next unless value
+    results.each do |group, scores|
+      scores.each do |(score, *students), count|
+        students = students.map {|student| people[student]}
 
-      tally = []
+        value = SCORES['Closed'].index score
+        if value
+          category = 'Closed'
+        else
+          category = 'Open'
+          value = SCORES['Open'].index score
+        end
 
-      entry = score.heat.entry
+        if students.length == 1
+          name = students.first.display_name
+          age = ages[students.first.age_id]
+        else
+          name = students.first.join(students.last)
+          age = ages[students.map {|student| student.age_id}.max]
+        end
 
-      if entry.lead.type == 'Professional'
-        tally << ['Followers', entry.follow.display_name]
-        age = entry.follow.age
-      elsif entry.follow.type == 'Professional'
-        tally << ['Leaders', entry.lead.display_name]
-        age = entry.lead.age
-      else
-        tally << ['Followers', entry.follow.display_name]
-        tally << ['Leaders', entry.lead.display_name]
-        tally << ['Couples', entry.follow.join(entry.lead)]
-        age = [entry.follow.age, entry.lead.age].max
-      end
-
-      tally.each do |group, students|
-        @scores[group][age][students] ||= {
+        @scores[group][age][name] ||= {
           'Open' => SCORES['Open'].map {0},
           'Closed' => SCORES['Closed'].map {0},
           'points' => 0
         }
 
-        @scores[group][age][students][category][value] += 1
+        @scores[group][age][name][category][value] += count
+        @scores[group][age][name]['points'] += count * WEIGHTS[value]
       end
-    end
-
-    @scores.each do |group, ages|
-      ages.each do |age, students|
-        students.each do |student, results|
-          results['points'] =
-            results['Closed'].zip(WEIGHTS).sum {|value, weight| value*weight} +
-              results['Open'].zip(WEIGHTS).sum {|value, weight| value*weight}
-        end
-      end
-    end  
+    end      
   end
 
   # GET /scores/1 or /scores/1.json
@@ -272,5 +249,23 @@ class ScoresController < ApplicationController
     # Only allow a list of trusted parameters through.
     def score_params
       params.require(:score).permit(:judge_id, :heat_id, :value)
+    end
+
+    def results
+      scores = {
+        'Followers' => Score.joins(heat: {entry: [:follow]}).
+          group(:value, :follow_id).
+          where(follow: {type: 'Student'}, heat: {category: ['Open', 'Closed']}).
+          count(:value),
+        'Leaders' => Score.joins(heat: {entry: [:lead]}).
+          group(:value, :lead_id).
+          where(lead: {type: 'Student'}, heat: {category: ['Open', 'Closed']}).
+          count(:value),
+        'Couples' => Score.joins(heat: {entry: [:lead, :follow]}).
+          group(:value, :follow_id, :lead_id).
+          where(lead: {type: 'Student'}, follow: {type: 'Student'},
+            heat: {category: ['Open', 'Closed']}).
+          count(:value)
+       }
     end
 end
