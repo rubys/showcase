@@ -22,6 +22,12 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     assert_select 'h2', 'Full Silver'
   end
 
+  test "should get scores by instructor" do
+    get instructor_scores_url
+    assert_response :success
+    assert_select 'h1', 'Instructor Scores'
+  end
+
   test "should get new" do
     get new_score_url
     assert_response :success

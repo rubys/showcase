@@ -184,13 +184,15 @@
     <% end %>
 
     <% if @person.type == 'Judge' %>
-    <div class="mt-4 mx-auto">
+    <div class="mt-4 fmx-auto">
     <%= link_to 'Score heats',  judge_heatlist_path(judge: @person), class: "btn-orange" %>
-    <%= link_to 'Scores by level',   by_level_scores_path , class: "btn-grey" %>
-    <%= link_to 'Scores by age',   by_age_scores_path , class: "btn-grey" %>
+    </div>
+    <div class="mt-4 mx-auto">
+    <%= link_to 'Scores by level', by_level_scores_path , class: "btn-pale-green" %>
+    <%= link_to 'Scores by age', by_age_scores_path , class: "btn-pale-green" %>
+    <%= link_to 'Instructor Scores', instructor_scores_path , class: "btn-pale-blue" %>
     </div>
     <% end %>
-
 
     <div class="mt-4 mx-auto">
     <%= link_to 'Edit this person', edit_person_path(@person), class: "btn-blue" %>

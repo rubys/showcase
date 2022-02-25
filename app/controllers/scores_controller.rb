@@ -46,13 +46,13 @@ class ScoresController < ApplicationController
       @scores = SCORES[@subjects.first.category].dup
     end
 
-    results = Score.where(judge: @judge, heat: @subjects).map {|score| [score.heat, score.value]}.to_h
+    student_results = Score.where(judge: @judge, heat: @subjects).map {|score| [score.heat, score.value]}.to_h
 
-    @results = {}
+    @student_results = {}
     @subjects.each do |subject|
-      score = results[subject] || ''
-      @results[score] ||= []
-      @results[score] << subject
+      score = student_results[subject] || ''
+      @student_results[score] ||= []
+      @student_results[score] << subject
     end
 
     @scores << ''
@@ -106,7 +106,7 @@ class ScoresController < ApplicationController
       map {|person| [person.id, person]}.to_h
     levels = Level.all.map {|level| [level.id, level]}.to_h
 
-    results.each do |group, scores|
+    student_results.each do |group, scores|
       scores.each do |(score, *students), count|
         students = students.map {|student| people[student]}
 
@@ -153,7 +153,7 @@ class ScoresController < ApplicationController
       map {|person| [person.id, person]}.to_h
     ages = Age.all.map {|age| [age.id, age]}.to_h
 
-    results.each do |group, scores|
+    student_results.each do |group, scores|
       scores.each do |(score, *students), count|
         students = students.map {|student| people[student]}
 
@@ -181,6 +181,34 @@ class ScoresController < ApplicationController
         @scores[group][age][students]['points'] += count * WEIGHTS[value]
       end
     end      
+  end
+
+  def instructor
+    @scores = {}
+
+    people = Person.where(type: 'Professional').
+      map {|person| [person.id, person]}.to_h
+
+    instructor_results.each do |(score, instructor), count|
+      person = people[instructor]
+
+      value = SCORES['Closed'].index score
+      if value
+        category = 'Closed'
+      else
+        category = 'Open'
+        value = SCORES['Open'].index score
+      end
+
+      @scores[person] ||= {
+        'Open' => SCORES['Open'].map {0},
+        'Closed' => SCORES['Closed'].map {0},
+        'points' => 0
+      }
+
+      @scores[person][category][value] += count
+      @scores[person]['points'] += count * WEIGHTS[value]
+    end
   end
 
   # GET /scores/1 or /scores/1.json
@@ -247,7 +275,7 @@ class ScoresController < ApplicationController
       params.require(:score).permit(:judge_id, :heat_id, :value)
     end
 
-    def results
+    def student_results
       scores = {
         'Followers' => Score.joins(heat: {entry: [:follow]}).
           group(:value, :follow_id).
@@ -263,5 +291,16 @@ class ScoresController < ApplicationController
             heat: {category: ['Open', 'Closed']}).
           count(:value)
        }
+    end
+
+    def instructor_results
+      Score.joins(heat: {entry: [:follow]}).
+        group(:value, :follow_id).
+        where(follow: {type: 'Professional'}, heat: {category: ['Open', 'Closed']}).
+        count(:value).to_a +
+      Score.joins(heat: {entry: [:lead]}).
+        group(:value, :lead_id).
+        where(lead: {type: 'Professional'}, heat: {category: ['Open', 'Closed']}).
+        count(:value).to_a
     end
 end
