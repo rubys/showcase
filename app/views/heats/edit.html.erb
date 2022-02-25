@@ -1,9 +1,15 @@
 <div class="mx-auto md:w-2/3 w-full">
+  <% if @person %>
   <h1 class="text-center font-bold text-4xl"><%= @person.display_name %></h1>
+  <% else %>
+  <h1 class="text-center font-bold text-4xl">Edit Heat</h1>
+  <% end %>
 
   <%= render "form", heat: @heat %>
 
   <%= link_to 'Remove this heat', heat_path(@heat), class: 'btn-grey',
     data: { turbo_method: :delete, turbo_confirm: 'Are you sure?' } %>
+  <% if @person %>
   <%= link_to "Back to student", person_path(@person), class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  <% end %>
 </div>

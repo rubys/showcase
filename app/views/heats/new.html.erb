@@ -1,5 +1,9 @@
 <div class="mx-auto md:w-2/3 w-full">
-  <h1 class="text-center font-bold text-4xl">New heat</h1>
+  <% if @person %>
+  <h1 class="text-center font-bold text-4xl"><%= @person.display_name %></h1>
+  <% else %>
+  <h1 class="text-center font-bold text-4xl">New Heat</h1>
+  <% end %>
 
   <%= render "form", heat: @heat %>
 

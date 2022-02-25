@@ -14,6 +14,8 @@ class SolosControllerTest < ActionDispatch::IntegrationTest
   test "should get new" do
     get new_solo_url(primary: @primary.id)
     assert_response :success
+    get new_solo_url
+    assert_response :success
   end
 
   test "should create solo" do
@@ -41,6 +43,8 @@ class SolosControllerTest < ActionDispatch::IntegrationTest
 
   test "should get edit" do
     get edit_solo_url(@solo, primary: @primary.id)
+    assert_response :success
+    get edit_solo_url
     assert_response :success
   end
 

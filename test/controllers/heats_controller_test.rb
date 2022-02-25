@@ -14,6 +14,8 @@ class HeatsControllerTest < ActionDispatch::IntegrationTest
   test "should get new" do
     get new_heat_url, params: { primary: @primary.id }
     assert_response :success
+    get new_heat_url
+    assert_response :success
   end
 
   test "should create heat" do
@@ -31,6 +33,8 @@ class HeatsControllerTest < ActionDispatch::IntegrationTest
 
   test "should get edit" do
     get edit_heat_url(@heat, primary: @primary.id)
+    assert_response :success
+    get edit_heat_url
     assert_response :success
   end
 

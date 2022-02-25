@@ -30,8 +30,8 @@ class SolosController < ApplicationController
     @dances = Dance.order(:name).all.map {|dance| [dance.name, dance.id]}
 
     @partner = nil
-    @age = @person.age_id
-    @level = @person.level_id
+    @age = @person&.age_id
+    @level = @person&.level_id
   end
 
   # GET /solos/1/edit

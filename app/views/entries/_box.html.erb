@@ -5,9 +5,9 @@
   <%= form.select :partner, @avail, {selected: @partner}, data: {'entry-box-target' => 'partner', action: 'change->entry-box#reveal'},
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'partner' %>
   <% else %>
-  <%= form.select :primary, @followers, {selected: @partner}, data: {'entry-box-target' => 'primary', action: 'change->entryBox#reveal'},
+  <%= form.select :primary, @followers, {selected: @partner}, data: {'entry-box-target' => 'primary', action: 'change->entry-box#reveal'},
   class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'primary' %>
-  <%= form.select :partner, @leads, {selected: @partner}, data: {'entry-box-target' => 'partner', action: 'change->entryBox#reveal'},
+  <%= form.select :partner, @leads, {selected: @partner}, data: {'entry-box-target' => 'partner', action: 'change->entry-box#reveal'},
   class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'partner' %>
   <% end %>
 
