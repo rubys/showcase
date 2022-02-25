@@ -46,6 +46,7 @@ class SolosController < ApplicationController
     @age = @solo.heat.entry.age_id
     @level = @solo.heat.entry.level_id
     @dance = @solo.heat.dance.id
+    @number = @solo.heat.number
   end
 
   # POST /solos or /solos.json
@@ -53,7 +54,7 @@ class SolosController < ApplicationController
     solo = params[:solo]
 
     @heat = Heat.create!({
-      number: 0, 
+      number: solo[:number] || 0, 
       entry: find_or_create_entry(solo),
       category: "Solo",
       dance: Dance.find(solo[:dance_id].to_i)
@@ -92,6 +93,7 @@ class SolosController < ApplicationController
     end
 
     @solo.heat.dance = Dance.find(solo[:dance_id])
+    @solo.heat.number = solo[:number] if solo[:number]
     @solo.heat.save!
 
     if solo[:combo_dance_id].empty?
