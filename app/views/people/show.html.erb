@@ -38,7 +38,10 @@ when most dances for an individual are with one instructor but one or two are ch
       <% instructor = @entries.any? {|parner, entries| entries.any? {|entry| entry.instructor}} %>
 
       <thead>
-        <th>count
+        <th>heats
+        <% if @solos.length > 0 %>
+        <th>solos
+        <% end %>
         <th>partner
         <% if instructor %>
         <th>instructor
@@ -52,6 +55,9 @@ when most dances for an individual are with one instructor but one or two are ch
           <% entries.each do |entry| %>
             <tr class="group">
               <td class="row text-right"><%= (entry.heats - @solos).length %>
+              <% if @solos.length > 0 %>
+              <td class="row text-right"><%= (entry.heats & @solos).length %>
+              <% end %>
               <td class="row"><%= link_to partner.display_name, partner %>
               <% if instructor %>
               <td class="row"><%= link_to_if entry.instructor_id, entry.instructor&.display_name, entry.instructor %>
@@ -69,6 +75,9 @@ when most dances for an individual are with one instructor but one or two are ch
         <% end %>
         <tr>
           <td class="border-t-2 border-gray-200 row text-right"d><%= @entries.values.flatten.map {|entry| (entry.heats - @solos).length}.sum %>
+          <% if @solos.length > 0 %>
+          <td class="border-t-2 border-gray-200 row text-right"d><%= @solos.length %>
+          <% end %>
           <th colspan="3" class="border-t-2 border-gray-200 row text-center font-bold">total
         </tr>
       </tbody>
