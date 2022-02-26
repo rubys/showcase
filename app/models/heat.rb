@@ -1,6 +1,7 @@
 class Heat < ApplicationRecord
   belongs_to :dance
   belongs_to :entry
+  validates_associated :entry
 
   has_many :scores, dependent: :destroy
   has_one :solo, dependent: :destroy

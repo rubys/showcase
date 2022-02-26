@@ -1,4 +1,6 @@
 class Entry < ApplicationRecord
+  validate :has_one_instructor
+
   belongs_to :lead, class_name: 'Person'
   belongs_to :follow, class_name: 'Person'
   belongs_to :instructor, class_name: 'Person', optional: true
@@ -29,5 +31,26 @@ class Entry < ApplicationRecord
 
   def partner(person)
     follow == person ? lead : follow 
+  end
+
+private
+
+  def has_one_instructor
+    instructors = 0
+    instructors += 1 if lead.type == 'Professional'
+    instructors += 1 if follow.type == 'Professional'
+    instructors += 1 if instructor_id
+
+    if instructors == 0
+      errors.add :instructor_id, 'All entries must have an instructor'
+    elsif instructors > 1
+      if instructor_id
+        errors.add :instructor_id, 'Entry already has an instructor'
+      else
+        errors.add :lead_id, 'All entries must include a student'
+      end
+    elsif instructor_id and instructor.type != 'Professional'
+      errors.add :instructor_id, 'Instructor must be a profressional'
+    end
   end
 end

@@ -79,7 +79,7 @@ class HeatsController < ApplicationController
   def create
     @heat = Heat.new(heat_params)
     @heat.entry = find_or_create_entry(params[:heat])
-    @heat.number = 0
+    @heat.number ||= 0
 
     respond_to do |format|
       if @heat.save

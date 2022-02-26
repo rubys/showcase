@@ -50,7 +50,7 @@ module EntryForm
       instructor = params[:instructor]
     end
 
-    Entry.find_or_create_by!(
+    Entry.find_or_initialize_by(
       lead: lead,
       follow: follow,
       age_id: params[:age],
