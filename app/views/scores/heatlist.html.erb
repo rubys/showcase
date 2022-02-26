@@ -3,7 +3,7 @@
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
-  <h1 class="font-bold text-4xl"><%= @judge.display_name %></h1>
+  <h1 class="font-bold text-4xl"><%= link_to @judge.display_name, person_path(@judge) %></h1>
 
   <table>
     <tbody>
@@ -14,7 +14,7 @@
           <td colspan="2" class="py-4 text-xl"><%= @agenda[heat.number] %></td>
         </tr>
         <% end %>
-        <tr class="text-<%= @scored.include?(heat.number) ? 'slate-400' : 'black' %>">
+        <tr id="<%= dom_id heat %>" class="text-<%= @scored.include?(heat.number) ? 'slate-400' : 'black' %>">
           <td><%= link_to heat.number, judge_heat_path(judge: @judge, heat: heat.number) %>
           <td><%= link_to "#{heat.category} #{heat.dance.name}", 
             judge_heat_path(judge: @judge, heat: heat.number) %>

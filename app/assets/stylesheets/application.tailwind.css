@@ -13,6 +13,14 @@
 */
 
 @layer components {
+  .info-button { @apply
+    absolute left-8 top-8 text-4xl text-emerald-600 print:hidden
+  }
+
+  .info-box { @apply
+   hidden list-disc list-outside border-double border-4 rounded-lg border-emerald-600 mx-4 my-8 pl-8 pr-4 py-4 text-left
+  }
+
   .entry-count { @apply
     shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-12
      ml-4 mr-2

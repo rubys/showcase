@@ -57,6 +57,7 @@ class ScoresController < ApplicationController
 
     @scores << ''
  
+    @heat = Heat.find_by(number: @number)
     @next = Heat.where(number: @number+1...).minimum(:number)
     @prev = Heat.where(number: ...@number).maximum(:number)
 

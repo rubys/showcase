@@ -11,6 +11,18 @@
     </div>
   <% end %>
 
+<div data-controller="info-box">
+<div class="info-button">&#x24D8;</div>
+<ul class="info-box">
+<li>Day and time is option, but if entered will appear on the <%= link_to 'Heat List', heats_path, class: 'x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium' %> page.
+<li>Each dance can be in only one Closed and one Open category.  Adding a dance to this category will replace any prior association that dance might have had with any other category.
+<% if category.id %>
+<li class="text-red-600">Removing a category will remove it from the agenda and make all associated dances
+<span class="font-bold">unassociated with any category</span>.  Doing so will <span class="font-bold">not</span> delete any heats or scores that have been entered for that dance.</span>
+<% end %>
+</ul>
+</div>
+
   <div class="my-5">
     <%= form.label :name %>
     <%= form.text_field :name, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>

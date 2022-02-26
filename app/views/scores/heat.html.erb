@@ -4,11 +4,20 @@
   <% end %>
 
   <h1 class="font-bold text-4xl pt-1 pb-3 text-center">
-    <%= link_to @judge.display_name, judge_heatlist_path(judge: @judge) %>
+    <%= link_to @judge.display_name, person_path(@judge) %>
     <%= link_to root_path do %>
       <%= image_tag "/arthur-murray-logo.gif", class: "absolute right-4 top-4 h-8" %>
     <% end %>
   </h1>
+
+<div data-controller="info-box">
+<div class="info-button top-2">&#x24D8;</div>
+<ul class="info-box">
+<li>Scoring is done via drag and drop.  Dragging an entry back to the unlabelled box at the bottom returns the participant to the unscored state.
+<li>Clicking on the arrows at the bottom corners will advance you to the next or previous heats.
+<li>Clicking on the heat information at the bottom center of the page will return you to the heat list where you can quickly scroll and select a different heat.
+</ul>
+</div>
 
   <div class="grow flex flex-col border-2 border-slate-400" data-controller="score"  data-drop-action="<%=  post_score_path(judge: @judge) %>">
     <% @scores.each do |score| %>
@@ -35,7 +44,7 @@
     </div>
 
     <h1 class="grow font-bold text-2xl pt-1 pb-3 text-center">
-      Heat <%= @number %>: <%= @dance %>
+      <%= link_to "Heat #{@number}: #{@dance}", judge_heatlist_path(judge: @judge, anchor: dom_id(@heat)) %>
     </h1>
 
     <div class="align-middle">

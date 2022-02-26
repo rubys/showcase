@@ -11,6 +11,15 @@
     </div>
   <% end %>
 
+  <% if person.id and %w(Student Professional).include? person.type %>
+  <div data-controller="info-box">
+  <div class="info-button">&#x24D8;</div>
+  <ul class="info-box">
+  <li class="text-red-600 font-bold">Removing a person will delete any heats and scores that have been entered for that individual.
+  </ul>
+  </div>
+  <% end %>
+
   <div class="my-5">
     <%= form.label :name %>
     <%= form.text_field :name, placeholder: 'last, first', class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>

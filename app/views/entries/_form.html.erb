@@ -13,6 +13,16 @@
 
 <div class="mx-auto w-full mb-8 text-center">
 
+<div data-controller="info-box">
+<div class="info-button">&#x24D8;</div>
+<ul class="info-box">
+<li>You can control what dances show up on this list from the <%= link_to 'Dance', dances_path, class: 'x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium' %> page.
+<li>Clicking on an empty box will check the box.  Clicking again will uncheck it.  A check represents a single dance.  This makes for quick data
+entry in the common case.
+<li>Clicking on an empty box and then typing a number will enter that number a the number of heats for that dance.
+</ul>
+</div>
+
 <% if @next and not @next.empty? %>
 <%= form.hidden_field :next, value: @next %>
 <% end %>
