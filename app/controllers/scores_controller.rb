@@ -301,6 +301,10 @@ class ScoresController < ApplicationController
       Score.joins(heat: {entry: [:lead]}).
         group(:value, :lead_id).
         where(lead: {type: 'Professional'}, heat: {category: ['Open', 'Closed']}).
+        count(:value).to_a +
+      Score.joins(heat: :entry).
+        group(:value, :instructor_id).
+        where.not(entry: {instructor_id: nil}).
         count(:value).to_a
     end
 end
