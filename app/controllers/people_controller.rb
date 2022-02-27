@@ -3,7 +3,7 @@ class PeopleController < ApplicationController
     %i[ show edit update destroy get_entries post_entries ]
 
   def heats
-    @people = Person.all.order(:name)
+    @people = Person.where(type: ['Student', 'Professional']).order(:name)
     @heats = Heat.includes(:dance, entry: [:level, :age, :lead, :follow]).all.order(:number)
     @layout = 'mx-0'
     @nologo = true
