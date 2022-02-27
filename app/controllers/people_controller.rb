@@ -96,6 +96,16 @@ class PeopleController < ApplicationController
       order(:number).to_a
 
     @solos = Solo.includes(:heat).all.map(&:heat) & @heats
+
+    @scores = Score.joins(heat: :entry).
+      where(entry: {follow_id: @person.id}).or(
+        Score.joins(heat: :entry).where(entry: {lead_id: @person.id})
+      ).group(:value, :dance_id).order(:dance_id).
+      count(:value).
+      group_by {|(value, dance), count| dance}.
+      map {|dance, list| [dance, list.map {|(value, dance), count|
+        [value, count]
+      }.to_h]}.to_h
   end
 
   # GET /people/new

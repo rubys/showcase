@@ -205,6 +205,38 @@ when most dances for an individual are with one instructor but one or two are ch
     <% end %>
     <% end %>
 
+    <% unless @scores.empty? %>
+    <table>
+    <caption class="text-left font-bold pt-8 text-3xl pb-5">Scores</caption>
+
+    <thead>
+    <th class="row-head">Dance</th>
+    <% ScoresController::SCORES['Closed'].each do |score| %>
+      <th class="row-head bg-slate-200"><%= score %>
+      <% end %>
+    <% ScoresController::SCORES['Open'].each do |score| %>
+      <th class="row-head"><%= score %>
+    <% end %>
+    </thead>
+
+    <tbody>
+    <% @dances.each do |dance, partners| %>
+      <% values = @scores[dance.id] %>
+      <% next unless values %>
+      <tr>
+        <td class="row"><%= dance.name %>
+        <% ScoresController::SCORES['Closed'].each do |score| %>
+        <td class="row text-right px-4 bg-slate-200"><%= values[score] || '' %></td>
+        <% end %>
+        <% ScoresController::SCORES['Open'].each do |score| %>
+        <td class="row text-right px-4"><%= values[score] || '' %></td>
+        <% end %>
+      </tr>
+    <% end %>
+    </tbody>
+    </table>
+    <% end %>
+
     <% if @person.type == 'Judge' %>
     <div class="mt-4 fmx-auto">
     <%= link_to 'Score heats',  judge_heatlist_path(judge: @person), class: "btn-orange" %>
