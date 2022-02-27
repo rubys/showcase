@@ -1,9 +1,10 @@
 <div class="w-screen">
   <% @people.each do |person| %>
-    <h2 class="font-bold pt-8 text-3xl pb-5"><%= person.name %></h2>
-
     <table class="" style="break-after: page">
       <thead>
+        <tr>
+          <td colspan="6" class="font-bold pt-8 text-3xl pb-5" ><%= person.name %></td>
+        </tr>
         <tr>
           <td class="row-head">Heat
           <td class="row-head">Type
