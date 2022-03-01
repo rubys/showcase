@@ -7,7 +7,6 @@
         </tr>
         <tr>
           <td class="row-head">Heat
-          <td class="row-head">Ballroom
           <td class="row-head">Type
           <td class="row-head">Dance
           <td class="row-head">Partner
@@ -19,8 +18,8 @@
         <% @heats.each do |heat| %>
         <% next unless [heat.entry.lead, heat.entry.follow].include? person %>
         <tr class="text-sm">
-          <td class="text-center"><%= heat.number %>
-          <td class="text-center"><%= heat.lead.type == 'Student' ? 'B' : 'A' %>
+          <td class="text-center"><%= heat.number %> -
+          <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
           <td><div class="mx-4"><%= heat.category %>
           <td><div class="mx-4"><%= heat.dance.name %></div>
           <% if heat.entry.lead != person %>
