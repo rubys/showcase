@@ -32,4 +32,7 @@ class EventController < ApplicationController
     @people = Person.order(:name).includes(:level, :age, :studio)
     @heats = Heat.joins(entry: :lead).includes(:dance).order('number,people.back').all
   end
+
+  def publish
+  end
 end

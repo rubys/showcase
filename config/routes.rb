@@ -1,9 +1,10 @@
 Rails.application.routes.draw do
   root 'event#root'
   get '/instructions', to: 'event#instructions'
-  get '/event.xlsx', to: "event#index"
+  get '/event.xlsx', to: "event#index", as: 'event_spreadsheet'
 
   resources 'event', only: [:update] do
+    get 'publish', on: :collection
     get 'settings', on: :collection
     get 'summary', on: :collection
   end

@@ -32,4 +32,10 @@ class EventControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to settings_event_index_path
   end
+
+  test "should get publish" do
+    get publish_event_index_path
+    assert_response :success
+  end
+
 end
