@@ -10,6 +10,11 @@ export default class extends Controller {
         child.addEventListener('dragstart', event => {
           event.dataTransfer.setData('application/drag-id', child.dataset.dragId);
           event.dataTransfer.effectAllowed = "move";
+          child.style.opacity = 0.4;
+        });
+
+        child.addEventListener('dragend', event => {
+          child.style.opacity = 1;
         });
 
         child.addEventListener('dragover', event => {

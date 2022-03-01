@@ -59,7 +59,7 @@ module HeatScheduler
       groups.each_with_index do |group, index|
         group.each do |heat|
           heat.number = index + 1
-          heat.save!
+          heat.save
         end
       end
     end
@@ -125,7 +125,8 @@ module HeatScheduler
           solos[cat].sort_by {|group| group.first.solo.order}
       end
     else
-      new_order = cats.values.flatten
+      new_order = cats.values.flatten +
+        solos[cat].sort_by {|group| group.first.solo.order}
     end
 
     new_order
@@ -181,6 +182,7 @@ module HeatScheduler
     def match?(dance, dcat, level, age, heat)
       return false unless @dance == dance
       return false unless @dcat == dcat or @@category > 0
+      return false if dcat == 2 # Solo
       return true
     end
 
@@ -189,6 +191,7 @@ module HeatScheduler
       return if @participants.include? heat.follow
 
       return false unless @dance == dance
+      return false if dcat == 2 # Solo
       return false unless (dcat-@max_dcat).abs <= @@category
       return false unless (dcat-@min_dcat).abs <= @@category
       return false unless (level-@max_level).abs <= @@level

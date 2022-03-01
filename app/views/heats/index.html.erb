@@ -13,7 +13,7 @@ tbody::after {
 }
 </style>
 
-<div class="">
+<div class="mx-auto md:w-2/3 w-full print:w-full">
   <% if notice.present? %>
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
@@ -54,31 +54,31 @@ tbody::after {
   <div style="page-break-after: always"></div>
 
   <div class="mt-8 flex justify-between items-center" id="cat-<%= cat.downcase.gsub(' ', '-') %>">
-    <h1 class="mx-auto font-bold text-4xl"><%= cat %></h1>
+    <h1 class="font-bold text-4xl"><%= cat %></h1>
   </div>
 
   <div class="min-w-full">
     <% heats.each do |number, heats| %>
-    <table class="break-inside-avoid text-xs mt-4 table-fixed mx-auto">
+    <table class="break-inside-avoid text-xs mt-4 table-fixed">
       <thead>
-	<td>
-	<% if heats.first != 0 %>
-	<th width="5">
-	<% else %>
-	<th>
-	<th>
-	<% end %>
-	<th>
-	<th>
-	<th>
-	<th>
-	<th>
-	<th>
+        <td>
+        <% if heats.first != 0 %>
+        <th width="5">
+        <% else %>
+        <th>
+        <th>
+        <% end %>
+        <th>
+        <th>
+        <th>
+        <th>
+        <th>
+        <th>
       </thead>
       <tbody id="heat-<%= number %>">
       <% if number and number > 0 %>
       <tr>
-        <td>
+        <td></td>
         <td colspan="9" class="text-xl pt-4">Heat <%= number %>: 
           <%= heats.first.category %> <%= heats.first.dance.name %>
           <% if heats.first.category == 'Solo' and heats.first.solo.combo_dance%>
