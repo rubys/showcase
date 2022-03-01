@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_02_23_032029) do
+ActiveRecord::Schema[7.0].define(version: 2022_03_01_223832) do
   create_table "ages", force: :cascade do |t|
     t.string "category"
     t.string "description"
@@ -34,8 +34,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_02_23_032029) do
     t.integer "open_category_id"
     t.integer "closed_category_id"
     t.integer "order"
+    t.integer "solo_category_id"
     t.index ["closed_category_id"], name: "index_dances_on_closed_category_id"
     t.index ["open_category_id"], name: "index_dances_on_open_category_id"
+    t.index ["solo_category_id"], name: "index_dances_on_solo_category_id"
   end
 
   create_table "entries", force: :cascade do |t|
@@ -137,6 +139,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_02_23_032029) do
 
   add_foreign_key "dances", "categories", column: "closed_category_id"
   add_foreign_key "dances", "categories", column: "open_category_id"
+  add_foreign_key "dances", "categories", column: "solo_category_id"
   add_foreign_key "entries", "ages"
   add_foreign_key "entries", "levels"
   add_foreign_key "entries", "people", column: "follow_id"

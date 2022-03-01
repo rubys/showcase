@@ -7,7 +7,7 @@ class SolosController < ApplicationController
     @solos = {}
 
     Solo.order(:order).each do |solo|
-      cat = solo.heat.dance.closed_category
+      cat = solo.heat.dance.solo_category
       @solos[cat] ||= []
       @solos[cat] << solo.heat
     end
@@ -124,8 +124,8 @@ class SolosController < ApplicationController
     source = Solo.find(params[:source].to_i)
     target = Solo.find(params[:target].to_i)
 
-    category = source.heat.dance.closed_category
-    solos = Solo.order(:order).joins(heat: :dance).where(dance: {closed_category_id: category.id})
+    category = source.heat.dance.solo_category
+    solos = Solo.order(:order).joins(heat: :dance).where(dance: {solo_category_id: category.id})
 
     if source.order > target.order
       slice = solos.where(order: target.order..source.order)

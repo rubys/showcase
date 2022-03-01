@@ -30,6 +30,7 @@
         <td class="row grid grid-cols-1">
           <%= link_to dance.closed_category&.name, edit_category_path(dance.closed_category) if dance.closed_category %>
           <%= link_to dance.open_category&.name, edit_category_path(dance.open_category) if dance.open_category %>
+          <%= link_to dance.solo_category&.name, edit_category_path(dance.solo_category) if dance.solo_category %>
         </td>
         <td class="row text-right"><%= @entries[dance.id] || 0 %></td>
         <td class="row text-right"><%= @heats[dance.id] || 0 %></td>

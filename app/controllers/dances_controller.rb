@@ -3,7 +3,7 @@ class DancesController < ApplicationController
 
   # GET /dances or /dances.json
   def index
-    @dances = Dance.includes(:open_category, :closed_category).order(:order).all
+    @dances = Dance.includes(:open_category, :closed_category, :solo_category).order(:order).all
     @heats = Heat.group(:dance_id).distinct.count(:number)
     @entries = Heat.group(:dance_id).count
   end
@@ -106,6 +106,6 @@ class DancesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def dance_params
-      params.require(:dance).permit(:name, :category)
+      params.require(:dance).permit(:name, :category, :closed_category_id, :open_category_id, :solo_category_id)
     end
 end

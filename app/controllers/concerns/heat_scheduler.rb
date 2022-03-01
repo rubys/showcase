@@ -4,7 +4,7 @@ module HeatScheduler
 
     # extract heats
     @heats = Heat.eager_load(
-      dance: [:open_category, :closed_category],
+      dance: [:open_category, :closed_category, :solo_category],
       entry: [{lead: :studio}, {follow: :studio}]
     )
 
@@ -102,7 +102,7 @@ module HeatScheduler
       if group.dcat == 'Open'
         cats[group.dance.open_category] << group
       elsif group.dcat == 'Solo'
-        solos[group.dance.closed_category] << group
+        solos[group.dance.solo_category] << group
       else
         cats[group.dance.closed_category] << group
       end

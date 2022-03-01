@@ -4,22 +4,26 @@ waltz:
   name: Waltz
   closed_category: one
   open_category: two
+  solo_category: one
   order: 1
 
 tango:
   name: Tango
   closed_category: one
   open_category: two
+  solo_category: one
   order: 2
 
 rumba:
   name: Rumba
   closed_category: three
   open_category: four
+  solo_category: three
   order: 3
 
 chacha:
   name: Cha Cha
   closed_category: three
   open_category: four
+  solo_category: three
   order: 4
