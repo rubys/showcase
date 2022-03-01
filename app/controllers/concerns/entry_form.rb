@@ -7,20 +7,21 @@ module EntryForm
       studios = [@person.studio] + @person.studio.pairs
 
       seeking = @person.role == 'Leader' ? 'Follower' : 'Leader'
-      @instructors = Person.where(type: 'Professional', studio: studios, 
+      instructors = Person.where(type: 'Professional', studio: studios, 
         role: [seeking, 'Both']).order(:name)
       students = Person.where(type: 'Student', studio: @person.studio, 
         role: [seeking, 'Both']).order(:name) +
         Person.where(type: 'Student', studio: @person.studio.pairs,
         role: [seeking, 'Both']).order(:name)
 
-      @avail = @instructors + students
+      @avail = instructors + students
       surname = @person.name.split(',').first + ','
       spouse = @avail.find {|person| person.name.start_with? surname}
       @avail = ([spouse] + @avail).uniq if spouse
 
       @avail = @avail.map {|person| [person.display_name, person.id]}.to_h
-      @instructors = @instructors.map {|person| [person.display_name, person.id]}.to_h
+      @instructors = Person.where(type: 'Professional', studio: studios).
+        all.map {|person| [person.display_name, person.id]}.sort.to_h
     else
       @followers = Person.where(role: %w(Follower Both)).order(:name).pluck(:name, :id)
       @leads = Person.where(role: %w(Leader Both)).order(:name).pluck(:name, :id)
