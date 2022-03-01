@@ -38,7 +38,7 @@ tbody::after {
   </div>
 </div>
 
-  <table class="table-auto ml-6 mb-8">
+  <table class="table-fixed ml-6 mb-8">
     <% @agenda.each do |cat, heats| %>
       <tr>
         <td class="row"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a>
@@ -58,29 +58,28 @@ tbody::after {
   </div>
 
   <div class="min-w-full">
-    <table class="mt-4 table-auto mx-auto">
-    <thead>
-      <td>
-        <div class="row-head hidden print:block">Score</div>
-      <% if heats.first.first != 0 %>
-      <th width="5">
-      <% else %>
-      <th class="row-head">Category
-      <th class="row-head">Dance
-      <% end %>
-      <th class="row-head">#
-      <th class="row-head">Lead
-      <th class="row-head">Follow
-      <th class="row-head">Level
-      <th class="row-head">Category
-      <th class="row-head">Studio
-    </thead>
     <% heats.each do |number, heats| %>
+    <table class="break-inside-avoid text-xs mt-4 table-fixed mx-auto">
+      <thead>
+	<td>
+	<% if heats.first != 0 %>
+	<th width="5">
+	<% else %>
+	<th>
+	<th>
+	<% end %>
+	<th>
+	<th>
+	<th>
+	<th>
+	<th>
+	<th>
+      </thead>
       <tbody id="heat-<%= number %>">
       <% if number and number > 0 %>
       <tr>
         <td>
-        <td colspan="9" class="text-2xl pt-4">Heat <%= number %>: 
+        <td colspan="9" class="text-xl pt-4">Heat <%= number %>: 
           <%= heats.first.category %> <%= heats.first.dance.name %>
           <% if heats.first.category == 'Solo' and heats.first.solo.combo_dance%>
           / <%= heats.first.solo.combo_dance.name %>
@@ -91,7 +90,7 @@ tbody::after {
       <tr>
         <td>
         <td>
-        <td colspan="8" class="text-xl pt-2">Ballroom A</td>
+        <td colspan="8" class="text-xs pt-2">Ballroom A</td>
       </tr>
       <% end %>
       <% last_back = 100 %>
@@ -108,7 +107,7 @@ tbody::after {
          <tr>
            <td>
            <td>
-           <td colspan="8" class="text-xl pt-2">Ballroom B</td>
+           <td colspan="8" class="text-xs pt-2">Ballroom B</td>
          </tr>
          <% end %>
          <% last_back = heat.back if heat.back %>
@@ -135,8 +134,8 @@ tbody::after {
          </tr>
       <% end %>
       </tbody>
-    <% end %>
     </table>
+    <% end %>
   </div>
   <% end %>
 
@@ -144,7 +143,7 @@ tbody::after {
   <div>
   <h1 id="stats" class="mt-12 mx-auto font-bold text-4xl print:hidden">Summary</h1>
   <div class="min-w-full print:hidden">
-    <table class="mt-4 table-auto mx-auto">
+    <table class="mt-4 table-fixed mx-auto">
       <thead>
         <th class="row-head">Couples
         <th class="row-head">Heats
