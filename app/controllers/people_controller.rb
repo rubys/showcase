@@ -9,6 +9,14 @@ class PeopleController < ApplicationController
     @nologo = true
   end
 
+  def scores
+    @judges = Person.where(type: 'Judge').order(:name)
+    @people = Person.joins(:studio).where(type: 'Student').order('studios.name, name')
+    @heats = Heat.includes(:scores, :dance, entry: [:level, :age, :lead, :follow]).all.order(:number)
+    @layout = 'mx-0'
+    @nologo = true
+  end
+
   # GET /people or /people.json
   def index
     @people ||= Person.includes(:studio).order(sort_order)
