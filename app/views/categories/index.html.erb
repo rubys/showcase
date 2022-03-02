@@ -30,7 +30,7 @@
     </thead>
     <tbody data-controller="drop" data-drop-action="<%= drop_categories_path %>">
     <% @categories.each do |category| %>
-      <tr draggable="true" data-drag-id="<%= category.id %>">
+      <tr class="hover:bg-yellow-200" draggable="true" data-drag-id="<%= category.id %>">
         <td class="row text-black font-medium"><%= link_to category.name, edit_category_path(category) %></td>
         <td class="row text-right"><%= @entries[category] %>
         <td class="row text-right"><%= @heats[category] %>

@@ -25,7 +25,7 @@
     </thead>
     <tbody data-controller="drop" data-drop-action="<%= drop_dances_path %>">
     <% @dances.each do |dance| %>
-      <tr draggable="true" data-drag-id="<%= dance.id %>">
+      <tr class="hover:bg-yellow-200" draggable="true" data-drag-id="<%= dance.id %>">
         <td class="row text-black font-medium"><%= link_to dance.name, edit_dance_path(dance) %></td>
         <td class="row grid grid-cols-1">
           <%= link_to dance.closed_category&.name, edit_category_path(dance.closed_category) if dance.closed_category %>
