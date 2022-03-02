@@ -11,6 +11,7 @@ Rails.application.routes.draw do
 
   resources :heats do
     post 'redo', on: :collection
+    get 'book', on: :collection
   end
 
   resources :entries do

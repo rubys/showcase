@@ -1,0 +1,132 @@
+<style>
+tbody {
+    page-break-inside: avoid;
+    page-break-before: avoid;
+    page-break-after: avoid;
+}
+tbody::after {
+  content: '';
+  display: block;
+  margin-bottom: 1.5em;
+  page-break-before: auto;
+  page-break-after: auto;
+}
+</style>
+
+<div class="mx-auto md:w-2/3 w-full print:w-full">
+
+<div class="flex justify-between items-center">
+  <h1 class="font-bold text-4xl">Agenda</h1>
+</div>
+
+  <table class="table-fixed ml-6 mb-8">
+    <% @agenda.each do |cat, heats| %>
+      <tr>
+        <td class="row"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a>
+        <td class="row text-right"><a href="#heat-<%= heats.first.first %>"><%= heats.first.first %></a>
+        <td class="row text-right"><a href="#heat-<%= heats.last.first %>"><%= heats.last.first %></a>
+        <td class="row"><%= @categories[cat]&.day %>
+        <td class="row"><%= @categories[cat]&.time %>
+      </tr>
+    <% end %>
+  </table>
+
+  <% @agenda.each do |cat, heats| %>
+  <div style="page-break-after: always"></div>
+
+  <div class="mt-8 flex justify-between items-center" id="cat-<%= cat.downcase.gsub(' ', '-') %>">
+    <h1 class="font-bold text-4xl"><%= cat %></h1>
+  </div>
+
+  <div class="w-full">
+    <% heats.each do |number, heats| %>
+    <table class="break-inside-avoid text-xs table-fixed">
+      <thead>
+        <td>
+        <% if heats.first != 0 %>
+        <th width="5">
+        <% else %>
+        <th>
+        <th>
+        <% end %>
+        <th>
+        <th>
+        <th>
+        <th>
+        <th>
+        <th>
+      </thead>
+      <tbody id="heat-<%= number %>">
+      <% if number and number > 0 %>
+      <tr>
+        <td></td>
+        <td colspan="9" class="text-lg">Heat <%= number %>: 
+          <%= heats.first.category %> <%= heats.first.dance.name %>
+          <% if heats.first.category == 'Solo' and heats.first.solo.combo_dance%>
+          / <%= heats.first.solo.combo_dance.name %>
+          <% end %>
+        </td>
+      </tr>
+      <% if heats.first.back < 200 %>
+      <tr>
+        <% if @type == 'judge' %>
+        <td>
+        <% end %>
+        <td>
+        <td colspan="8" class="text-xs pt-2">Ballroom A</td>
+      </tr>
+      <% end %>
+      <% last_back = 100 %>
+      <% else %>
+      <% last_back = 200 %>
+      <% end %>
+
+      <% if heats.first.category == 'Solo' %>
+      <% last_back = 200 %>
+      <% end %>
+
+      <% heats.each do |heat| %>
+         <% if heat.back && last_back < 200 && heat.back >= 200 %>
+         <tr>
+           <% if @type == 'judge' %>
+           <td>
+           <% end %>
+           <td>
+           <td colspan="8" class="text-xs pt-2">Ballroom B</td>
+         </tr>
+         <% end %>
+         <% last_back = heat.back if heat.back %>
+         <tr class="font-base" id="<%= dom_id heat %>">
+           <% if @type == 'judge' %>
+           <td>
+             <div class="w-24 pt-4 border-b-2 border-black">&nbsp;</div>
+           </td>
+           <% end %>
+           <% if number != 0 %>
+           <td class="pl-4">
+           <% else %>
+           <td class="pl-4"><%= heat.category %>
+           <% if heat.category == 'Solo' and heat.solo.combo_dance %>
+           <td class="pl-4"><%= heat.dance.name %> / <%= heat.solo.combo_dance.name %>
+           <% else %>
+           <td class="pl-4"><%= heat.dance.name %>
+           <% end %>
+           <% end %>
+           <td class="pl-4"><%= heat.back %>
+           <td class="pl-4"><%= link_to heat.lead.display_name, polymorphic_path(heat.lead, anchor: 'heats') %>
+           <td class="pl-4"><%= link_to heat.follow.display_name, polymorphic_path(heat.follow, anchor: 'heats') %>
+           <% if @type == 'judge' %>
+           <td class="pl-4 text-center"><%= heat.entry.subject_lvlcat %>
+           <% else %>
+           <td class="pl-4"><%= heat.entry.level.name %>
+           <td class="pl-4 text-center"><%= heat.entry.subject_category %>
+           <% end %>
+           <td class="pl-4"><%= link_to heat.studio.name, heat.studio %>
+         </tr>
+      <% end %>
+      </tbody>
+    </table>
+    <% end %>
+  </div>
+  <% end %>
+</div>

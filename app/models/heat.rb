@@ -9,6 +9,8 @@ class Heat < ApplicationRecord
   def dance_category
     if category == "Open"
       dance.open_category
+    elsif category == "Solo"
+      dance.solo_category
     else
       dance.closed_category
     end

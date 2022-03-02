@@ -40,6 +40,12 @@ class HeatsController < ApplicationController
     end
   end
 
+  # GET /heats/book or /heats/book.json
+  def book
+    @type = params[:type]
+    index
+  end
+
   # GET /heats/1 or /heats/1.json
   def show
   end
