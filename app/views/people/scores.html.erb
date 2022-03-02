@@ -8,7 +8,6 @@
         <tr>
           <td class="row-head">Heat
           <td class="row-head" colspan="<%= @judges.length %>">Scores
-          <td class="row-head">Type
           <td class="row-head">Dance
           <td class="row-head">Partner
           <td class="row-head">Lvl/Cat
@@ -22,7 +21,6 @@
           <% @judges.each do |judge| %>
             <td class="text-center"><%= heat.scores.find {|score| score.judge == judge}&.value %>
           <% end %>
-          <td><div class="mx-4"><%= heat.category %>
           <td><div class="mx-4"><%= heat.dance.name %></div>
           <% if heat.entry.lead != person %>
           <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div>
