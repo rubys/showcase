@@ -6,6 +6,8 @@ export default class extends Controller {
     let targets = [...this.element.querySelectorAll(':scope > *[data-drag-id]')].map (node => node.dataset.dragId);
 
     for (let child of this.element.children) {
+      child.style.cursor = 'grab';
+
       if (child.draggable) {
         child.addEventListener('dragstart', event => {
           event.dataTransfer.setData('application/drag-id', child.dataset.dragId);
