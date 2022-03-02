@@ -30,7 +30,10 @@ class EventController < ApplicationController
 
   def index
     @people = Person.order(:name).includes(:level, :age, :studio)
-    @heats = Heat.joins(entry: :lead).includes(:dance).order('number,people.back').all
+    @judges = Person.where(type: 'Judge').order(:name)
+    @heats = Heat.joins(entry: :lead).
+      includes(:scores, :dance, entry: [:level, :age, :lead, :follow]).
+      order('number,people.back').all
   end
 
   def publish

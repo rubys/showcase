@@ -52,11 +52,13 @@
     'Level',
     'Category',
     'Studio',
-  ]
+  ] + @judges.map(&:first_name)
 
   worksheet.append_row(headers, bold)
 
   @heats.each do |heat|
+    scores = heat.scores
+    scores_by_judge = @judges.map {|judge| scores.find {|score| score.judge == judge}&.value}
     worksheet.append_row [
       heat.number,
       heat.entry.subject.name,
@@ -68,6 +70,7 @@
       heat.entry.level.name,
       heat.entry.subject_category,
       heat.entry.subject.studio.name,
+      *scores_by_judge
     ]
   end
 
