@@ -41,7 +41,16 @@ tbody::after {
   <div class="w-full">
     <% heats.each do |number, heats| %>
     <table class="break-inside-avoid text-xs table-fixed">
-      <thead>
+      <colgroup>
+        <col width="5px">
+        <col width="8%">
+        <col width="25%">
+        <col width="25%">
+        <col width="20%">
+        <col width="15%">
+        <col width="10%">
+      </colgroup>
+      <thead class="w-full">
         <td>
         <% if heats.first != 0 %>
         <th width="5">
