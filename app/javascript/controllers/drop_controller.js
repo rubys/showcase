@@ -15,21 +15,13 @@ export default class extends Controller {
 
         child.addEventListener('dragend', event => {
           child.style.opacity = 1;
+          child.style.cursor = 'default';
         });
 
         child.addEventListener('dragover', event => {
-          let source = event.dataTransfer.getData("application/drag-id");
-          if (targets.includes(source)) {
-            event.preventDefault();
-            event.dataTransfer.dropEffect = "move";
-            return true;
-          }
-          return false;
-        });
-
-        child.addEventListener('dragenter', event => {
-          let source = event.dataTransfer.getData("application/drag-id");
-          if (targets.includes(source)) event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+          event.preventDefault();
+          return true;
         });
 
         child.addEventListener('drop', event => {
