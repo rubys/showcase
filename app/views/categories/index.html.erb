@@ -42,6 +42,15 @@
         <% end %>
       </tr>
     <% end %>
+    <tr>
+      <th class="border-t-2 border-gray-200 row text-center font-bold">total
+      <td class="border-t-2 border-gray-200 row text-right">
+        <%= @entries.values.sum %>
+      </td>
+      <td class="border-t-2 border-gray-200 row text-right">
+        <%= @heats.values.sum %>
+      </td>
+    </tr>
     </tbody>
   </table>
   </div>
