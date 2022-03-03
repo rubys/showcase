@@ -13,7 +13,7 @@ tbody::after {
 }
 </style>
 
-<div class="mx-auto md:w-2/3 w-full print:w-full">
+<div class="mx-auto w-full print:w-full">
   <% if notice.present? %>
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
@@ -59,7 +59,22 @@ tbody::after {
 
   <div class="min-w-full">
     <% heats.each do |number, heats| %>
-    <table class="break-inside-avoid text-xs mt-4 table-fixed">
+    <table class="break-inside-avoid text-sm mt-4 table-fixed">
+      <colgroup>
+        <% if heats.first != 0 %>
+        <col width="1%">
+        <% else %>
+        <col width="5%">
+        <col width="5%">
+        <% end %>
+        <col width="2%">
+        <col width="5%">
+        <col width="20%">
+        <col width="20%">
+        <col width="15%">
+        <col width="10%">
+        <col width="10%">
+      </colgroup>
       <thead>
         <td>
         <% if heats.first != 0 %>
@@ -89,7 +104,7 @@ tbody::after {
       <% if heats.first.back < 200 %>
       <tr>
         <td>
-        <td>
+        <td></td>
         <td colspan="8" class="text-xs pt-2">Ballroom A</td>
       </tr>
       <% end %>
@@ -106,15 +121,13 @@ tbody::after {
          <% if heat.back && last_back < 200 && heat.back >= 200 %>
          <tr>
            <td>
-           <td>
+           <td></td>
            <td colspan="8" class="text-xs pt-2">Ballroom B</td>
          </tr>
          <% end %>
          <% last_back = heat.back if heat.back %>
          <tr id="<%= dom_id heat %>">
-           <td>
-             <div class="hidden print:block w-32 border-b-2 border-black">&nbsp;</div>
-           </td>
+           <td></td>
            <% if number != 0 %>
            <td class="row">
            <% else %>
