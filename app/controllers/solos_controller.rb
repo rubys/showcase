@@ -36,7 +36,7 @@ class SolosController < ApplicationController
 
   # GET /solos/1/edit
   def edit
-    form_init(params[:primary])
+    form_init(params[:primary], @solo.heat.entry)
 
     @partner = @solo.heat.entry.partner(@person).id
 

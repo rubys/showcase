@@ -71,7 +71,7 @@ class HeatsController < ApplicationController
 
   # GET /heats/1/edit
   def edit
-    form_init(params[:primary])
+    form_init(params[:primary], @heat.entry)
 
     @dances = Dance.order(:name).pluck(:name, :id).to_h
     

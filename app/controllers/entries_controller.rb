@@ -27,7 +27,7 @@ class EntriesController < ApplicationController
 
   # GET /entries/1/edit
   def edit
-    form_init(params[:primary])
+    form_init(params[:primary], @entry)
 
     @dances = Dance.order(:order).all.map(&:name)
     

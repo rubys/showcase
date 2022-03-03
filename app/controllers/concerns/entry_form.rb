@@ -1,6 +1,14 @@
 module EntryForm
-  def form_init(id = nil)
+  def form_init(id = nil, entry = nil)
     @person ||= Person.find(id) if id
+
+    if entry and @person&.type != 'Student'
+      if entry.follow.type == "Student"
+        @person = entry.follow
+      else
+        @person = entry.lead
+      end
+    end
 
     if @person
       entries = @person.lead_entries + @person.follow_entries
