@@ -18,8 +18,18 @@ class CategoriesController < ApplicationController
     @entries = @categories.map {|category| [category, 0]}.to_h
 
     @entries.merge!(counts.map do |(heat, category, dance), count|
-      dance = Dance.find(dance);
-      [category == "Open" ? dance.open_category : dance.closed_category, count]
+      dance = Dance.find(dance)
+
+      case category
+      when "Open"
+        category = dance.open_category
+      when "Solo"
+        category = dance.solo_category
+      else
+        category = dance.closed_category
+      end
+
+      [category, count]
     end.group_by {|category, counts| category}.
     map {|category, counts| [category, counts.map(&:last).sum]}.to_h)
   end
@@ -133,7 +143,7 @@ class CategoriesController < ApplicationController
     def form_init
       dances = Dance.order(:order).all
       @dances = dances.map(&:name)
-      @entries = {'Closed' => {}, 'Open' => {}}
+      @entries = {'Closed' => {}, 'Open' => {}, 'Solo' => {}}
 
       dances.each do |dance|
         if dance.open_category == @category
@@ -142,6 +152,11 @@ class CategoriesController < ApplicationController
 
         if dance.closed_category == @category
           @entries['Closed'][dance.name] = true
+        end
+
+
+        if dance.solo_category == @category
+          @entries['Solo'][dance.name] = true
         end
       end
     end
@@ -164,6 +179,14 @@ class CategoriesController < ApplicationController
           end
         elsif include['Closed'][dance.name].to_i == 1
           dance.closed_category = @category
+        end
+
+        if dance.solo_category == @category
+          if include['Solo'][dance.name].to_i == 0
+            dance.solo_category = nil
+          end
+        elsif include['Solo'][dance.name].to_i == 1
+          dance.solo_category = @category
         end
 
         if dance.changed?

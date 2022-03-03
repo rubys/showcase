@@ -23,7 +23,8 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
         time: @category.time,
         include: {
           'Open' => {'Waltz' => 0, 'Tango' => 1},
-          'Closed' => {'Waltz' => 1, 'Tango' => 0}
+          'Closed' => {'Waltz' => 1, 'Tango' => 0},
+          'Solo' => {'Waltz' => 1, 'Tango' => 0}
         }
       } }
     end
@@ -60,7 +61,8 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
       time: @category.time,
       include: {
         'Open' => {'Waltz' => 0, 'Tango' => 1},
-        'Closed' => {'Waltz' => 1, 'Tango' => 0}
+        'Closed' => {'Waltz' => 1, 'Tango' => 0},
+        'Solo' => {'Waltz' => 1, 'Tango' => 0}
       }
     } }
 
