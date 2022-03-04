@@ -2,6 +2,8 @@ import { Controller } from "@hotwired/stimulus"
 
 // Connects to data-controller="score"
 export default class extends Controller {
+  static targets = [ "error" ]
+
   keydown(event) {
     if (event.key == 'ArrowRight') {
       let link = document.querySelector('a[rel=next]')
@@ -42,10 +44,13 @@ export default class extends Controller {
           const token = document.querySelector('meta[name="csrf-token"]').content;
 
           source = document.getElementById(source);
+          let parent = source.parentElement;
           score.appendChild(source);
 
           let back = source.querySelector('span');
           back.style.opacity = 0.5;
+
+          let error = this.errorTarget;
 
           fetch(this.element.getAttribute('data-drop-action'), {
             method: 'POST',
@@ -62,8 +67,12 @@ export default class extends Controller {
           }).then (response => {
             back.style.opacity = 1;
             if (response.ok) {
+              error.style.display = 'none';
               back.classList.remove('text-red-500')
             } else {
+              parent.appendChild(source);
+              error.textContent = response.statusText;
+              error.style.display = 'block';
               back.classList.add('text-red-500')
             }
           })

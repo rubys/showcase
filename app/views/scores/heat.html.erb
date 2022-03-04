@@ -20,6 +20,7 @@
 </div>
 
   <div class="grow flex flex-col border-2 border-slate-400" data-controller="score"  data-drop-action="<%=  post_score_path(judge: @judge) %>">
+    <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>
     <% @scores.each do |score| %>
     <div class="border-2 h-full flex" data-score="<%= score %>">
       <span class="order-2 ml-auto p-2"><%= score %></span>
