@@ -2,7 +2,23 @@ import { Controller } from "@hotwired/stimulus"
 
 // Connects to data-controller="score"
 export default class extends Controller {
+  keydown(event) {
+    if (event.key == 'ArrowRight') {
+      let link = document.querySelector('a[rel=next]')
+      if (link) link.click();
+    } else if (event.key == 'ArrowLeft') {
+      let link = document.querySelector('a[rel=prev]')
+      if (link) link.click();
+    }
+  }
+
+  disconnect() {
+    document.body.addRemoveListener('keydown', this.keydown);
+  }
+
   connect() {
+    document.body.addEventListener('keydown', this.keydown);
+
     for (let subject of this.element.querySelectorAll('*[draggable=true]')) {
       subject.addEventListener('dragstart', event => {
         event.dataTransfer.setData('application/drag-id', subject.id);

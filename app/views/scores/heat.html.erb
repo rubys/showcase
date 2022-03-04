@@ -39,7 +39,7 @@
   <div class="mt-2 flex flex-row">
     <div class="align-middle">
       <% if @prev %>
-      <%= link_to '<<', judge_heat_path(judge: @judge, heat: @prev) %>
+      <%= link_to '<<', judge_heat_path(judge: @judge, heat: @prev), class: 'text-2xl lg:text-4xl', rel: 'prev' %>
       <% end %>
     </div>
 
@@ -49,7 +49,7 @@
 
     <div class="align-middle">
       <% if @next %>
-      <%= link_to '>>', judge_heat_path(judge: @judge, heat: @next) %>
+      <%= link_to '>>', judge_heat_path(judge: @judge, heat: @next), class: 'text-2xl lg:text-4xl', rel: 'next' %>
       <% end %>
   </div>
   </div>
