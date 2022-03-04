@@ -13,7 +13,7 @@ export default class extends Controller {
   }
 
   disconnect() {
-    document.body.addRemoveListener('keydown', this.keydown);
+    document.body.removeEventListener('keydown', this.keydown);
   }
 
   connect() {
