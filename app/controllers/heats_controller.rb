@@ -28,6 +28,8 @@ class HeatsController < ApplicationController
       else
         if heats.first.category == 'Open'
           cat = heats.first.dance.open_category
+        elsif heats.first.category == 'Solo'
+          cat = heats.first.dance.solo_category
         else
           cat = heats.first.dance.closed_category
         end
