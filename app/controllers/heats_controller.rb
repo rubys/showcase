@@ -7,7 +7,7 @@ class HeatsController < ApplicationController
   # GET /heats or /heats.json
   def index
     @heats = Heat.order(:number).includes(
-      dance: [:open_category, :closed_category], 
+      dance: [:open_category, :closed_category, :solo_category], 
       entry: [:age, :level, lead: [:studio], follow: [:studio]]
     ).group_by {|heat| heat.number}.map do |number, heats|
       [number, heats.sort_by { |heat| heat.back || 0 } ]
@@ -26,15 +26,7 @@ class HeatsController < ApplicationController
         @agenda['Unscheduled'] ||= []
         @agenda['Unscheduled'] << [number, heats]
       else
-        if heats.first.category == 'Open'
-          cat = heats.first.dance.open_category
-        elsif heats.first.category == 'Solo'
-          cat = heats.first.dance.solo_category
-        else
-          cat = heats.first.dance.closed_category
-        end
-
-        cat = cat&.name || 'Uncategorieed'
+        cat = heats.first.dance_category&.name || 'Uncategorieed'
 
         @agenda[cat] ||= []
         @agenda[cat] << [number, heats]

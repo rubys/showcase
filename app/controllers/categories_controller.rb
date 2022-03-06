@@ -11,7 +11,17 @@ class CategoriesController < ApplicationController
 
     @heats.merge!(counts.map do |(heat, category, dance), count|
       dance = Dance.find(dance);
-      [category == "Open" ? dance.open_category : dance.closed_category, 1]
+
+      case category
+      when "Open"
+        category = dance.open_category
+      when "Solo"
+        category = dance.solo_category
+      else
+        category = dance.closed_category
+      end
+
+      [category, 1]
     end.group_by {|category, counts| category}.
     map {|category, counts| [category, counts.map(&:last).sum]}.to_h)
 
@@ -153,7 +163,6 @@ class CategoriesController < ApplicationController
         if dance.closed_category == @category
           @entries['Closed'][dance.name] = true
         end
-
 
         if dance.solo_category == @category
           @entries['Solo'][dance.name] = true

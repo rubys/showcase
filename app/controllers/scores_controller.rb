@@ -15,13 +15,7 @@ class ScoresController < ApplicationController
 
     @heats = Heat.all.order(:number).group(:number).includes(:dance)
 
-    @agenda = @heats.group_by do |heat|
-      if heat.category == 'Open'
-        heat.dance.open_category
-      else
-        heat.dance.closed_category
-      end
-    end.map do |category, heats|
+    @agenda = @heats.group_by(&:dance_category).map do |category, heats|
       [heats.map {|heat| heat.number}.min, category.name]
     end.to_h
 
