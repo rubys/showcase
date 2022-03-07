@@ -7,8 +7,8 @@
     <%= render @studio %>
 
     <div class="mt-4 flex justify-between items-center">
-      <%= link_to 'Add Person', new_person_path(studio: @studio), class: "btn-blue" %>
-      <%= link_to 'Edit this studio', edit_studio_path(@studio), class: "mt-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+      <%= up_link 'Add Person', new_person_path(studio: @studio), class: "btn-blue" %>
+      <%= up_link 'Edit this studio', edit_studio_path(@studio), class: "mt-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
       <%= link_to 'Back to studios', studios_path, class: "btn-green" %>
     </div>
   </div>

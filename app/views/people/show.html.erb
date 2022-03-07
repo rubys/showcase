@@ -18,8 +18,8 @@ when most dances for an individual are with one instructor but one or two are ch
     <% end %>
 
     <% if @person.type == "Student" %>
-    <%= link_to 'Add heats', new_entry_path(primary: @person), class: "btn-blue float-right" %>
-    <%= link_to 'Add solo', new_solo_path(primary: @person), class: "btn-blue float-right" %>
+    <%= up_link 'Add heats', new_entry_path(primary: @person), class: "btn-blue float-right" %>
+    <%= up_link 'Add solo', new_solo_path(primary: @person), class: "btn-blue float-right" %>
     <% end %>
 
     <%= render @person %>
@@ -249,11 +249,11 @@ when most dances for an individual are with one instructor but one or two are ch
     <% end %>
 
     <div class="mt-4 mx-auto">
-    <%= link_to 'Edit this person', edit_person_path(@person), class: "btn-blue" %>
+    <%= up_link 'Edit this person', edit_person_path(@person), class: "btn-blue" %>
 
     <% if @person.type == 'Student' %>
-    <%= link_to 'Add heats', new_entry_path(primary: @person), class: "btn-blue" %>
-    <%= link_to 'Add solo', new_solo_path(primary: @person), class: "btn-blue" %>
+    <%= up_link 'Add heats', new_entry_path(primary: @person), class: "btn-blue" %>
+    <%= up_link 'Add solo', new_solo_path(primary: @person), class: "btn-blue" %>
     <% end %>
 
     <% if @person.studio %>

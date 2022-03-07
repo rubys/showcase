@@ -66,7 +66,9 @@ class ScoresController < ApplicationController
 
     score = Score.find_or_create_by(judge_id: judge.id, heat_id: heat.id)
     score.value = params[:score]
-    if score.value.empty?
+    if ApplicationRecord.readonly?
+      render json: 'database is readonly', status: :service_unavailable
+    elsif score.value.empty?
       score.destroy
       render json: score
     else

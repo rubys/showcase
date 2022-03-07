@@ -11,6 +11,7 @@ default: &default
 
 development:
   <<: *default
+  readonly: true
   database: db/development.sqlite3
 
 # Warning: The database defined as "test" will be erased and

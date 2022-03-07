@@ -26,6 +26,10 @@
      ml-4 mr-2
   }
 
+  .btn-disabled { @apply
+    cursor-not-allowed opacity-30
+  }
+
   .btn-blue { @apply
      mx-2 rounded-lg py-3 px-5 text-white bg-blue-600 inline-block font-medium
      text-center
