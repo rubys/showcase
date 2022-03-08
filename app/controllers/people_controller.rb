@@ -1,12 +1,18 @@
 class PeopleController < ApplicationController
   before_action :set_person, only: 
-    %i[ show edit update destroy get_entries post_entries ]
+    %i[ show edit update destroy get_entries post_entries individual_heats ]
 
   def heats
-    @people = Person.where(type: ['Student', 'Professional']).order(:name)
+    @people ||= Person.where(type: ['Student', 'Professional']).order(:name)
     @heats = Heat.includes(:dance, entry: [:level, :age, :lead, :follow]).all.order(:number)
     @layout = 'mx-0'
     @nologo = true
+  end
+
+  def individual_heats
+    @people = [@person]
+    heats
+    render :heats
   end
 
   def scores

@@ -1,39 +1,5 @@
 <div class="w-screen">
   <% @people.each do |person| %>
-    <table class="" style="break-after: page">
-      <thead>
-        <tr>
-          <td colspan="6" class="font-bold pt-8 text-3xl pb-5" ><%= person.name %></td>
-        </tr>
-        <tr>
-          <td class="row-head">Heat
-          <td class="row-head">Type
-          <td class="row-head">Dance
-          <td class="row-head">Partner
-          <td class="row-head">Level
-          <td class="row-head">Category
-        </tr>
-      </thead>
-      <tbody>
-        <% @heats.each do |heat| %>
-        <% next unless [heat.entry.lead, heat.entry.follow].include? person %>
-        <tr class="text-sm">
-          <td class="text-center"><%= heat.number %> -
-          <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
-          <td><div class="mx-4"><%= heat.category %>
-          <td><div class="mx-4"><%= heat.dance.name %></div>
-          <% if heat.entry.lead != person %>
-          <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div>
-          <% end %>
-          <% if heat.entry.follow != person %>
-          <td><div class="mx-4"><%= link_to heat.entry.follow.display_name, heat.entry.follow %></div>
-          <% end %>
-          <td><%= heat.entry.level.name %>
-          <td class="text-center"><%= heat.entry.subject_category %>
-        </tr>
-        <% end %>
-      </tbody>
-    </table>
-
+    <%= render "heats", person: person %>
   <% end %>
 </div>

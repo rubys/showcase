@@ -32,6 +32,7 @@ Rails.application.routes.draw do
     get 'couples', on: :collection
     get 'students', on: :collection
     get 'heats', on: :collection
+    get 'heats', on: :member, action: 'individual_heats'
     get 'scores', on: :collection
     get 'entries', on: :member, action: 'get_entries'
     post 'entries', on: :member, action: 'post_entries'

@@ -20,6 +20,11 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "should get individual heat sheet" do
+    get heats_person_url(@person)
+    assert_response :success
+  end
+
   test "should get students scores" do
     get scores_people_url
     assert_response :success
