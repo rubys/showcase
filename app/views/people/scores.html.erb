@@ -1,41 +1,5 @@
 <div class="w-screen">
   <% @people.each do |person| %>
-    <table class="" style="break-after: page">
-      <thead>
-        <tr>
-          <td colspan="6" class="font-bold pt-8 text-3xl pb-5" ><%= person.name %></td>
-        </tr>
-        <tr>
-          <td class="row-head">Heat
-          <td class="row-head" colspan="<%= @judges.length %>">Scores
-          <td class="row-head">Dance
-          <td class="row-head">Partner
-          <td class="row-head" colspan="3">Lvl/Cat
-        </tr>
-      </thead>
-      <tbody>
-        <% @heats.each do |heat| %>
-        <% next unless [heat.entry.lead, heat.entry.follow].include? person %>
-        <tr class="text-sm">
-          <td class="text-center"><%= heat.number %>
-          <% @judges.each do |judge| %>
-            <td class="text-center"><%= heat.scores.find {|score| score.judge == judge}&.value %>
-          <% end %>
-          <td><div class="mx-4"><%= heat.dance.name %></div>
-          <% if heat.entry.lead != person %>
-          <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div>
-          <% end %>
-          <% if heat.entry.follow != person %>
-          <td><div class="mx-4"><%= link_to heat.entry.follow.display_name, heat.entry.follow %></div>
-          <% end %>
-          <% lvlcat = heat.entry.subject_lvlcat.split(/\s*-\s*/) %>
-          <td class="pl-4 text-right"><%= lvlcat[0] %>
-          <td class="pl-1">- <%= lvlcat[1] %> -
-          <td class="text-left"><%= lvlcat[2].strip %>
-        </tr>
-        <% end %>
-      </tbody>
-    </table>
-
+    <%= render "scores", person: person %>
   <% end %>
 </div>

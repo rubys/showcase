@@ -1,6 +1,6 @@
 class PeopleController < ApplicationController
   before_action :set_person, only: 
-    %i[ show edit update destroy get_entries post_entries individual_heats ]
+    %i[ show edit update destroy get_entries post_entries ]
 
   def heats
     @people ||= Person.where(type: ['Student', 'Professional']).order(:name)
@@ -10,17 +10,23 @@ class PeopleController < ApplicationController
   end
 
   def individual_heats
-    @people = [@person]
+    @people = [set_person]
     heats
     render :heats
   end
 
   def scores
     @judges = Person.where(type: 'Judge').order(:name)
-    @people = Person.joins(:studio).where(type: 'Student').order('studios.name, name')
+    @people ||= Person.joins(:studio).where(type: 'Student').order('studios.name, name')
     @heats = Heat.includes(:scores, :dance, entry: [:level, :age, :lead, :follow]).all.order(:number)
     @layout = 'mx-0'
     @nologo = true
+  end
+
+  def individual_scores
+    @people = [set_person]
+    scores
+    render :scores
   end
 
   # GET /people or /people.json

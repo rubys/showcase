@@ -259,6 +259,7 @@ when most dances for an individual are with one instructor but one or two are ch
 
     <div class="mt-4 mx-auto">
       <%= link_to 'Heat sheet', heats_person_path(@person), class: "btn-pale-orange" %>
+      <%= link_to 'Scores', scores_person_path(@person), class: "btn-pale-orange" %>
 
       <% if @person.studio %>
       <%= link_to 'Back to studio', @person.studio, class: "btn-green" %>

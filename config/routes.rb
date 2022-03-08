@@ -34,6 +34,7 @@ Rails.application.routes.draw do
     get 'heats', on: :collection
     get 'heats', on: :member, action: 'individual_heats'
     get 'scores', on: :collection
+    get 'scores', on: :member, action: 'individual_scores'
     get 'entries', on: :member, action: 'get_entries'
     post 'entries', on: :member, action: 'post_entries'
   end
