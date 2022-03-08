@@ -29,6 +29,16 @@ class StudiosControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "should get studio heat sheet" do
+    get heats_studio_url(@studio)
+    assert_response :success
+  end
+
+  test "should get studio scores" do
+    get scores_studio_url(@studio)
+    assert_response :success
+  end
+
   test "should get edit" do
     get edit_studio_url(@studio)
     assert_response :success

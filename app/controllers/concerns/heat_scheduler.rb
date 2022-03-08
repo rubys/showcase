@@ -1,4 +1,6 @@
 module HeatScheduler
+  include Printable
+  
   def schedule_heats
     Group.set_knobs
 

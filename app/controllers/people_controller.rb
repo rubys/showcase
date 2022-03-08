@@ -1,31 +1,26 @@
 class PeopleController < ApplicationController
+  include Printable
+  
   before_action :set_person, only: 
     %i[ show edit update destroy get_entries post_entries ]
 
   def heats
-    @people ||= Person.where(type: ['Student', 'Professional']).order(:name)
-    @heats = Heat.includes(:dance, entry: [:level, :age, :lead, :follow]).all.order(:number)
-    @layout = 'mx-0'
-    @nologo = true
+    heat_sheets
   end
 
   def individual_heats
     @people = [set_person]
-    heats
+    heat_sheets
     render :heats
   end
 
   def scores
-    @judges = Person.where(type: 'Judge').order(:name)
-    @people ||= Person.joins(:studio).where(type: 'Student').order('studios.name, name')
-    @heats = Heat.includes(:scores, :dance, entry: [:level, :age, :lead, :follow]).all.order(:number)
-    @layout = 'mx-0'
-    @nologo = true
+    score_sheets
   end
 
   def individual_scores
     @people = [set_person]
-    scores
+    score_sheets
     render :scores
   end
 

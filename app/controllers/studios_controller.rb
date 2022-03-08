@@ -1,4 +1,6 @@
 class StudiosController < ApplicationController
+  include Printable
+
   before_action :set_studio, only: %i[ show edit update unpair destroy ]
 
   # GET /studios or /studios.json
@@ -8,6 +10,18 @@ class StudiosController < ApplicationController
 
   # GET /studios/1 or /studios/1.json
   def show
+  end
+
+  def heats
+    @people = set_studio.people
+    heat_sheets
+    render 'people/heats'
+  end
+
+  def scores
+    @people = set_studio.people
+    score_sheets
+    render 'people/scores'
   end
 
   # GET /studios/new
