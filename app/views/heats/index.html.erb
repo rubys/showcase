@@ -161,12 +161,24 @@ tbody::after {
         <th class="row-head">Couples
         <th class="row-head">Heats
       </thead>
+
       <% @stats.each do |size, heats| %>
       <tr>
-        <td class="row"><%= size %>
+        <td class="row text-right pr-4"><%= size %>
         <td>
         <% heats.each do |heat| %>
         <a href="#heat-<%= heat %>"><%= heat %></a>
+        <% end %>
+        </td>
+      </tr>
+      <% end %>
+
+      <% unless @solos.empty? %>
+      <tr>
+        <td class="text-right row pr-4">Solos
+        <td>
+        <% @solos.each do |heat| %>
+        <a href="#heat-<%= heat.number %>"><%= heat.number %></a>
         <% end %>
         </td>
       </tr>

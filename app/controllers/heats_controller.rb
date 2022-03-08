@@ -9,7 +9,12 @@ class HeatsController < ApplicationController
     @heats = Heat.order(:number).includes(
       dance: [:open_category, :closed_category, :solo_category], 
       entry: [:age, :level, lead: [:studio], follow: [:studio]]
-    ).group_by {|heat| heat.number}.map do |number, heats|
+    )
+
+    @solos = Solo.includes(:heat).map(&:heat)
+
+    @heats = (@heats.to_a - @solos.to_a).group_by {|heat| heat.number}.
+    map do |number, heats|
       [number, heats.sort_by { |heat| heat.back || 0 } ]
     end
 
