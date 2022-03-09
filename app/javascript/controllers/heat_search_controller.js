@@ -49,6 +49,10 @@ export default class extends Controller {
     }
 
     let pages = Math.ceil(counter / 100);
+    if (this.page > pages) {
+      this.page = pages;
+      return this.search(value);
+    }
 
     let navTarget = this.navTarget;
     let prev = navTarget.firstElementChild;
