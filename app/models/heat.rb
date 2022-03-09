@@ -16,6 +16,10 @@ class Heat < ApplicationRecord
     end
   end
 
+  def ballroom
+    entry.lead.type == "Student" ? 'B' : 'A'
+  end
+
   def lead
     entry.lead
   end

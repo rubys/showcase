@@ -1,0 +1,41 @@
+<div class='flex flex-col h-screen w-screen'>
+
+<div class='flex-initial w-screen'>
+  <div class='bg-orange-300 text-center text-3xl'>Current: 
+    <span class='text-sky-500 font-bold'>See you in <%= @location %>!</span>
+  </div>
+
+  <div class='text-center my-2'>
+    Search:
+    <input class='border'>
+  </div>
+</div>
+
+<table class='flex-1'>
+  <% @heats.each do |number, heats| %>
+  <% heats.each do |heat| %>
+  <tbody>
+  <tr class="bg-slate-200">
+    <td colspan="4" class='px-4 py-2 font-bold text-xl'>
+      <span class='text-sky-500'><%= heat.number %></span>:
+      <%= heat.category %>
+      <%= heat.entry.subject_category %>
+      <%= heat.entry.level.name %>
+      <%= heat.dance.name %>
+    </td>
+  </tr>
+    <td class='border-r text-green-400 text-center py-2'>&#x2B24;</td>
+    <td class="px-2 text-center"><%= heat.entry.lead.back %>
+    <td class="px-2 border-x"><%= heat.entry.lead.display_name %>
+    - <%= heat.entry.follow.display_name %>
+    <td class='px-2 text-center'><%= heat.ballroom %>
+  </tr>
+  </tbody>
+  <% end %>
+  <% end %>
+</table>
+
+<div class='flex-initial'>
+bottom
+</div>
+</div>

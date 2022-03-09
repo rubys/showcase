@@ -39,6 +39,13 @@ class HeatsController < ApplicationController
     end
   end
 
+  def mobile
+    index
+    @location = Event.last.location
+    @layout = 'mx-0'
+    @nologo = true
+  end
+
   # GET /heats/book or /heats/book.json
   def book
     @type = params[:type]

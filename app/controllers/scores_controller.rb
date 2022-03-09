@@ -55,7 +55,7 @@ class ScoresController < ApplicationController
     @next = Heat.where(number: @number+1...).minimum(:number)
     @prev = Heat.where(number: ...@number).maximum(:number)
 
-    @layout = 'mx-0'
+    @layout = 'mx-0 px-5'
     @nologo = true
   end
 
