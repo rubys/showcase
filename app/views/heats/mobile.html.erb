@@ -1,20 +1,21 @@
-<div class='flex flex-col h-screen w-screen'>
+<div class='h-screen flex flex-col w-full' data-controller="heat-search">
 
-<div class='flex-initial w-screen'>
+<div class='flex flex-col'>
   <div class='bg-orange-300 text-center text-3xl'>Current: 
     <span class='text-sky-500 font-bold'>See you in <%= @location %>!</span>
   </div>
 
   <div class='text-center my-2'>
     Search:
-    <input class='border'>
+    <input class='border' data-heat-search-target="input">
   </div>
 </div>
 
-<table class='flex-1'>
+<div class="flex flex-1 w-screen overflow-y-auto">
+<table class="w-full">
   <% @heats.each do |number, heats| %>
   <% heats.each do |heat| %>
-  <tbody>
+  <tbody class='hidden'>
   <tr class="bg-slate-200">
     <td colspan="4" class='px-4 py-2 font-bold text-xl'>
       <span class='text-sky-500'><%= heat.number %></span>:
@@ -26,7 +27,7 @@
   </tr>
     <td class='border-r text-green-400 text-center py-2'>&#x2B24;</td>
     <td class="px-2 text-center"><%= heat.entry.lead.back %>
-    <td class="px-2 border-x"><%= heat.entry.lead.display_name %>
+    <td class="px-2 border-x" data-index><%= heat.entry.lead.display_name %>
     - <%= heat.entry.follow.display_name %>
     <td class='px-2 text-center'><%= heat.ballroom %>
   </tr>
@@ -34,8 +35,11 @@
   <% end %>
   <% end %>
 </table>
-
-<div class='flex-initial'>
-bottom
 </div>
+
+<ul class='flex mx-auto' data-heat-search-target="nav">
+<li><div class="border p-2">Previous</div></li>
+<li class="mx-4"><div class="border p-2">1</div></li>
+<li><div class="border p-2">Next</div></li>
+</ul>
 </div>
