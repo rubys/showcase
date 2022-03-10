@@ -7,6 +7,7 @@ Rails.application.routes.draw do
     get 'publish', on: :collection
     get 'settings', on: :collection
     get 'summary', on: :collection
+    post 'start_heat', on: :collection
   end
 
   resources :heats do

@@ -38,4 +38,8 @@ class EventController < ApplicationController
 
   def publish
   end
+
+  def start_heat
+    Event.last.update(current_heat: params[:heat])
+  end
 end

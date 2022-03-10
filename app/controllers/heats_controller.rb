@@ -41,7 +41,8 @@ class HeatsController < ApplicationController
 
   def mobile
     index
-    @location = Event.last.location
+    @current_heat = Event.last.current_heat ||
+      "See you in #{Event.last.location}!"
     @layout = 'mx-0'
     @nologo = true
   end

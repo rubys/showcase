@@ -4,13 +4,26 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = [ "error" ]
 
-  keydown(event) {
+  keydown = event => {
     if (event.key == 'ArrowRight') {
       let link = document.querySelector('a[rel=next]')
       if (link) link.click();
     } else if (event.key == 'ArrowLeft') {
       let link = document.querySelector('a[rel=prev]')
       if (link) link.click();
+    } else if (event.key == ' ' || event.key == 'Enter') {
+      fetch(this.element.dataset.startAction, {
+        method: 'POST',
+        headers: {
+          'X-CSRF-Token': this.token,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin',
+        redirect: 'follow',
+        body: JSON.stringify({
+          heat: parseInt(this.element.dataset.heat)
+        })
+      })
     }
   }
 
@@ -19,6 +32,8 @@ export default class extends Controller {
   }
 
   connect() {
+    this.token = document.querySelector('meta[name="csrf-token"]').content;
+
     document.body.addEventListener('keydown', this.keydown);
 
     for (let subject of this.element.querySelectorAll('*[draggable=true]')) {
@@ -41,8 +56,6 @@ export default class extends Controller {
       score.addEventListener('drop', event => {
         let source = event.dataTransfer.getData("application/drag-id");
         if (source) {
-          const token = document.querySelector('meta[name="csrf-token"]').content;
-
           source = document.getElementById(source);
           let parent = source.parentElement;
           score.appendChild(source);
@@ -52,16 +65,16 @@ export default class extends Controller {
 
           let error = this.errorTarget;
 
-          fetch(this.element.getAttribute('data-drop-action'), {
+          fetch(this.element.dataset.dropAction, {
             method: 'POST',
             headers: {
-              'X-CSRF-Token': token,
+              'X-CSRF-Token': this.token,
               'Content-Type': 'application/json'
             },
             credentials: 'same-origin',
             redirect: 'follow',
             body: JSON.stringify({
-              heat: parseInt(source.id.replaceAll(/[^\d]/g, '')),
+              heat: parseInt(this.element.dataset.heat),
               score: score.dataset.score || ''
             })
           }).then (response => {
