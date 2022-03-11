@@ -40,6 +40,10 @@ class EventController < ApplicationController
   end
 
   def start_heat
-    Event.last.update(current_heat: params[:heat])
+    event = Event.last
+    event.current_heat = params[:heat]
+    event.save
+    event.broadcast_replace_later_to 'current-heat', partial: 'event/heat',
+      target: 'current-heat', locals: {event: event}
   end
 end

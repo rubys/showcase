@@ -1,8 +1,11 @@
 <div class='h-screen flex flex-col w-full' data-controller="heat-search">
 
 <div class='flex flex-col'>
+  <%= turbo_stream_from 'current-heat' %>
   <div class='bg-orange-300 text-center text-3xl'>Current: 
-    <span class='text-sky-500 font-bold'><%= @current_heat %>!</span>
+    <span class='text-sky-500 font-bold'>
+      <%= render partial: 'event/heat', locals: {event: @event} %>
+    </span>
   </div>
 
   <div class='text-center my-2'>
