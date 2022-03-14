@@ -28,11 +28,12 @@
       <span class="order-2 ml-auto p-2"><%= score %></span>
 
       <% @results[score]&.each do |subject| %>
-        <div class='w-20 mx-1 my-1 py-1 border-2 rounded-lg bg-sky-200 text-center' draggable="true" id="<%= dom_id subject %>">
+        <% lvl = subject.entry.level.initials %>
+        <div class='w-20 mx-1 my-1 py-1 border-2 rounded-lg text-center text-center head-<%=lvl%>' draggable="true" id="<%= dom_id subject %>">
           <span class="font-bold text-xl"><%= subject.entry.lead.back %></span>
-          <span class="hidden sm:block"><br>
+          <span class="hidden sm:block base-<%=lvl%>"><br>
           <%= subject.entry.subject_category %><br>
-          <%= subject.entry.level.initials %></span>
+          <%= lvl %></span>
         </div>  
     <% end %>
     </div>

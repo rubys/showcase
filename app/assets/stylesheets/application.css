@@ -13,3 +13,8 @@
  *= require_tree .
  *= require_self
  */
+
+.head-N, .base-N, .head-AB {background-color: #90ee90}
+.base-AB, .head-FB, .base-FB, .head-AS {background-color: #e7cfae}
+.baes-AS, .head-FS, .base-FS, .head-AG {background-color: #dcdcdc}
+.base-AG, .head-FG, .base-FG {background-color: #ffd700}
