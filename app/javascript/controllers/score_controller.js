@@ -59,11 +59,20 @@ export default class extends Controller {
         if (source) {
           source = document.getElementById(source);
           let parent = source.parentElement;
-          score.appendChild(source);
 
           let back = source.querySelector('span');
           source.style.opacity = 1;
           back.style.opacity = 0.5;
+
+          let before = [...score.children].find(child => (
+            child.draggable && child.querySelector('span').textContent >= back.textContent
+          ));
+
+          if (before) {
+            score.insertBefore(source, before);
+          } else {
+            score.appendChild(source);
+          }
 
           let error = this.errorTarget;
 
