@@ -19,15 +19,15 @@
 </ul>
 </div>
 
-  <div class="h-full flex flex-row" h-full
+  <div class="h-full flex flex-row max-h-[85%]"
     data-controller="score" data-drop-action="<%=  post_score_path(judge: @judge) %>" 
     data-start-action="<%= start_heat_event_index_path %>" data-heat="<%= @number %>">
     <div class="grow flex flex-col border-2 border-slate-400">
     <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>
     <% @scores.each do |score| %>
     <% if score == '' %>
-    </div><div class="my-auto h-full max-w-[30%] min-w-[30%] border-2 border-slate-400">
-    <div class="my-auto w-20 flex flex-col flex-wrap shrink-1 pl-4 h-full" data-score="<%= score %>">
+    </div><div class="my-auto h-full max-w-[30%] min-w-[30%] border-2 border-slate-400
+       flex flex-col flex-wrap pl-4" data-score="<%= score %>">
     <% else %>
     <div class="flex flex-wrap border-2 h-full pl-4" data-score="<%= score %>">
     <% end %>
@@ -42,7 +42,9 @@
           <%= lvl %></span>
         </div>  
     <% end %>
+    <% if score != '' %>
     </div>
+    <% end %>
     <% end %>
     </div>
   </div>

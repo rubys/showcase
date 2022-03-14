@@ -38,6 +38,7 @@ export default class extends Controller {
 
     for (let subject of this.element.querySelectorAll('*[draggable=true]')) {
       subject.addEventListener('dragstart', event => {
+        subject.style.opacity = 0.4;
         event.dataTransfer.setData('application/drag-id', subject.id);
         event.dataTransfer.effectAllowed = "move";
       });
@@ -61,6 +62,7 @@ export default class extends Controller {
           score.appendChild(source);
 
           let back = source.querySelector('span');
+          source.style.opacity = 1;
           back.style.opacity = 0.5;
 
           let error = this.errorTarget;
