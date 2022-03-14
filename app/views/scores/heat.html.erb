@@ -1,4 +1,4 @@
-<div class="flex flex-col h-screen w-full">
+<div class="flex flex-col h-screen max-h-full w-full">
   <% if notice.present? %>
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
@@ -19,17 +19,23 @@
 </ul>
 </div>
 
-  <div class="grow flex flex-col border-2 border-slate-400"
+  <div class="h-full flex flex-row" h-full
     data-controller="score" data-drop-action="<%=  post_score_path(judge: @judge) %>" 
     data-start-action="<%= start_heat_event_index_path %>" data-heat="<%= @number %>">
+    <div class="grow flex flex-col border-2 border-slate-400">
     <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>
     <% @scores.each do |score| %>
-    <div class="border-2 h-full flex" data-score="<%= score %>">
+    <% if score == '' %>
+    </div><div class="my-auto h-full max-w-[30%] min-w-[30%] border-2 border-slate-400">
+    <div class="my-auto w-20 flex flex-col flex-wrap shrink-1 pl-4 h-full" data-score="<%= score %>">
+    <% else %>
+    <div class="flex flex-wrap border-2 h-full pl-4" data-score="<%= score %>">
+    <% end %>
       <span class="order-2 ml-auto p-2"><%= score %></span>
 
       <% @results[score]&.each do |subject| %>
         <% lvl = subject.entry.level.initials %>
-        <div class='w-20 mx-1 my-1 py-1 border-2 rounded-lg text-center text-center head-<%=lvl%>' draggable="true" id="<%= dom_id subject %>">
+        <div class='flex-none w-20 h-36 mx-1 my-1 py-1 border-2 rounded-lg text-center align-middle my-auto head-<%=lvl%>' draggable="true" data-heat="<%= subject.id %>" id="<%= dom_id subject %>">
           <span class="font-bold text-xl"><%= subject.entry.lead.back %></span>
           <span class="hidden sm:block base-<%=lvl%>"><br>
           <%= subject.entry.subject_category %><br>
@@ -38,6 +44,7 @@
     <% end %>
     </div>
     <% end %>
+    </div>
   </div>
 
   <div class="mt-2 flex flex-row">

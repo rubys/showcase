@@ -33,7 +33,7 @@ class Heat < ApplicationRecord
   end
 
   def level
-    subject.level
+    entry.level
   end
 
   def studio

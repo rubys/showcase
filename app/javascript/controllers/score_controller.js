@@ -43,7 +43,7 @@ export default class extends Controller {
       });
     }
 
-    for (let score of this.element.children) {
+    for (let score of this.element.querySelectorAll('*[data-score]')) {
       score.addEventListener('dragover', event => {
         event.preventDefault();
         return true;
@@ -74,7 +74,7 @@ export default class extends Controller {
             credentials: 'same-origin',
             redirect: 'follow',
             body: JSON.stringify({
-              heat: parseInt(this.element.dataset.heat),
+              heat: parseInt(source.dataset.heat),
               score: score.dataset.score || ''
             })
           }).then (response => {
