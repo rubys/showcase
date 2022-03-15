@@ -96,9 +96,9 @@ export default class extends Controller {
       if (counter + show.length > 100) {
         pages++;
         counter = 0;
-      } else {
-        counter += show.length;
       }
+
+      counter += show.length;
 
       if (pages != this.page) {
         show = [];
