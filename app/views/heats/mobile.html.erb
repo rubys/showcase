@@ -15,27 +15,28 @@
 </div>
 
 <div class="flex flex-1 w-screen overflow-y-auto">
-<table class="w-full">
+<table class="w-full table-auto">
   <% @heats.each do |number, heats| %>
-  <% heats.each do |heat| %>
-  <tbody class='hidden'>
+  <thead>
   <tr class="bg-slate-200">
-    <td colspan="4" class='px-4 py-2 font-bold text-xl'>
-      <span class='text-sky-500'><%= heat.number %></span>:
-      <%= heat.category %>
-      <%= heat.entry.subject_category %>
-      <%= heat.entry.level.name %>
-      <%= heat.dance.name %>
+    <td colspan="3" class='px-4 py-2 font-bold text-xl'>
+      <span class='text-sky-500'><%= number %></span>:
+      <%= heats.first.category %>
+      <%= heats.first.dance.name %>
     </td>
   </tr>
-    <td class='border-r text-green-400 text-center py-2'>&#x2B24;</td>
+  </thead>
+  <tbody>
+  <% heats.each do |heat| %>
+  <tr>
+    <!-- td class='border-r text-green-400 text-center py-2'>&#x2B24;</td> -->
     <td class="px-2 text-center"><%= heat.entry.lead.back %>
     <td class="px-2 border-x" data-index><%= heat.entry.lead.display_name %>
     - <%= heat.entry.follow.display_name %>
     <td class='px-2 text-center'><%= heat.ballroom %>
   </tr>
-  </tbody>
   <% end %>
+  </tbody>
   <% end %>
 </table>
 </div>

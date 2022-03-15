@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 // Connects to data-controller="heat-search"
 export default class extends Controller {
-  static targets = [ "input", "nav" ]
+  static targets = ["input", "nav"]
 
   connect() {
     let input = this.inputTarget;
@@ -10,17 +10,23 @@ export default class extends Controller {
 
     this.page = 1;
 
-    this.rows = [];
-    for (let tbody of this.element.querySelectorAll('tbody')) {
-      let text = tbody.querySelector('td[data-index]').textContent.toLowerCase();
-      this.rows.push([text, tbody]);
+    this.heats = [];
+    let rows = null;
+    for (let tr of this.element.querySelectorAll('tr')) {
+      if (tr.parentElement.nodeName == 'THEAD') {
+        rows = [];
+        this.heats.push([tr.parentElement, rows]);
+      } else {
+        let text = tr.querySelector('td[data-index]').textContent.toLowerCase();
+        rows.push([text, tr]);
+      }
     }
 
     search(input.value);
 
     input.addEventListener('input', event => {
       search(input.value)
-    })    
+    })
   }
 
   setPage(page) {
@@ -31,24 +37,44 @@ export default class extends Controller {
   search(value) {
     value = value.toLowerCase();
 
-    let start = (this.page - 1) * 100;
-    let finish = start + 99;
     let counter = 0;
+    let pages = 1;
 
-    for (let [text, tbody] of this.rows) {
-      if (text.includes(value)) {
-        if (counter >= start && counter <= finish) {
-          tbody.style.display = 'table-row-group';
-        } else {
-          tbody.style.display = 'none';
+    for (let [thead, rows] of this.heats) {
+      let show = [];
+
+      for (let [text, tr] of rows) {
+        if (text.includes(value)) {
+          show.push(tr);
         }
-        counter++;
+      }
+
+      if (counter + show.length > 100) {
+        pages++;
+        counter = 0;
       } else {
-        tbody.style.display = 'none';
+        counter += show.length;
+      }
+
+      if (pages != this.page) {
+        show = [];
+      }
+
+      if (show.length > 0) {
+        thead.style.display = 'table-header-group';
+      } else {
+        thead.style.display = 'none';
+      }
+
+      for (let [text, tr] of rows) {
+        if (show.includes(tr)) {
+          tr.style.display = 'table-row';
+        } else {
+          tr.style.display = 'none';
+        }
       }
     }
 
-    let pages = Math.ceil(counter / 100);
     if (this.page > pages) {
       this.page = pages;
       return this.search(value);
@@ -73,7 +99,7 @@ export default class extends Controller {
       if (page == currentPage) {
         div.classList.add('bg-black', 'text-orange-300');
       } else if (typeof page == 'number') {
-        li.addEventListener('click', () => {setPage(page)})
+        li.addEventListener('click', () => { setPage(page) })
       }
       li.appendChild(div);
       navTarget.insertBefore(li, next);
@@ -81,9 +107,9 @@ export default class extends Controller {
 
     if (this.page < 5) {
       if (pages < 7) {
-        for (let page=1; page <= pages; page++) addPage(page);
+        for (let page = 1; page <= pages; page++) addPage(page);
       } else {
-        for (let page=1; page <= 5; page++) addPage(page);
+        for (let page = 1; page <= 5; page++) addPage(page);
         addPage('...');
         addPage(pages);
       }
@@ -91,8 +117,7 @@ export default class extends Controller {
       addPage(1);
       addPage('...');
       if (this.page + 3 >= pages) {
-        console.log(this.page, this.page + 3, pages, this.page+3 <= pages);
-        for (let page=this.page-1; page <= pages; page++) addPage(page);
+        for (let page = this.page - 1; page <= pages; page++) addPage(page);
       } else {
         addPage(this.page - 1);
         addPage(this.page);
