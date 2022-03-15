@@ -7,7 +7,6 @@ export default class extends Controller {
   keydown = event => {
     if (event.key == 'ArrowRight') {
       let link = document.querySelector('div[rel=next]');
-      console.log(link)
       if (link) link.click();
     } else if (event.key == 'ArrowLeft') {
       let link = document.querySelector('div[rel=prev]');
@@ -32,7 +31,7 @@ export default class extends Controller {
     for (let tr of this.element.querySelectorAll('tr')) {
       if (tr.parentElement.nodeName == 'THEAD') {
         rows = [];
-        this.heats.push([tr.parentElement, rows]);
+        this.heats.push({ head: tr.parentElement, rows });
       } else {
         let text = tr.querySelector('td[data-index]').textContent.toLowerCase();
         rows.push([text, tr]);
@@ -52,17 +51,17 @@ export default class extends Controller {
     });
 
     this.element.querySelector('div[rel=prev').addEventListener('click', () => {
-      if (this.page > 1) this.setPage(this.page-1);
+      if (this.page > 1) this.setPage(this.page - 1);
     });
 
     this.element.querySelector('div[rel=next').addEventListener('click', () => {
-      this.setPage(this.page+1);
+      if (this.page < this.totalPages) this.setPage(this.page + 1);
     });
   }
 
   setPage(page) {
     this.page = page;
-    this.search(this.inputTarget.value);
+    this.navigate();
   }
 
   seek = () => {
@@ -84,44 +83,53 @@ export default class extends Controller {
     let counter = 0;
     let pages = 1;
 
-    for (let [thead, rows] of this.heats) {
-      let show = [];
+    for (let heat of this.heats) {
+      heat.show = [];
 
-      for (let [text, tr] of rows) {
+      for (let [text, tr] of heat.rows) {
         if (text.includes(value)) {
-          show.push(tr);
+          heat.show.push(tr);
         }
       }
 
-      if (counter + show.length > 100) {
+      if (counter + heat.show.length > 100) {
         pages++;
         counter = 0;
       }
 
-      counter += show.length;
+      heat.page = pages;
+      counter += heat.show.length;
+    };
 
-      if (pages != this.page) {
+    if (this.page > pages) {
+      this.page = pages;
+    };
+
+    this.totalPages = pages;
+    this.navigate();
+  }
+
+  navigate() {
+    let pages = this.totalPages;
+
+    for (let { head, rows, show, page } of this.heats) {
+      if (page != this.page) {
         show = [];
       }
 
       if (show.length > 0) {
-        thead.style.display = 'table-header-group';
+        head.style.display = 'table-header-group';
       } else {
-        thead.style.display = 'none';
+        head.style.display = 'none';
       }
 
-      for (let [text, tr] of rows) {
+      for (let [_text, tr] of rows) {
         if (show.includes(tr)) {
           tr.style.display = 'table-row';
         } else {
           tr.style.display = 'none';
         }
       }
-    }
-
-    if (this.page > pages) {
-      this.page = pages;
-      return this.search(value);
     }
 
     let navTarget = this.navTarget;
@@ -131,19 +139,16 @@ export default class extends Controller {
       if (child != prev && child != next) child.remove();
     }
 
-    let currentPage = this.page;
-    let setPage = this.setPage.bind(this);
-
-    function addPage(page) {
+    const addPage = (page) => {
       let div = document.createElement('div');
       div.classList.add('border', 'py-2', 'px-2');
       div.textContent = page;
       let li = document.createElement('li');
       li.classList.add('mx-4');
-      if (page == currentPage) {
+      if (page == this.page) {
         div.classList.add('bg-black', 'text-orange-300');
       } else if (typeof page == 'number') {
-        li.addEventListener('click', () => { setPage(page) })
+        li.addEventListener('click', () => { this.setPage(page) })
       }
       li.appendChild(div);
       navTarget.insertBefore(li, next);
