@@ -4,7 +4,24 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = ["input", "nav"];
 
+  keydown = event => {
+    if (event.key == 'ArrowRight') {
+      let link = document.querySelector('div[rel=next]');
+      console.log(link)
+      if (link) link.click();
+    } else if (event.key == 'ArrowLeft') {
+      let link = document.querySelector('div[rel=prev]');
+      if (link) link.click();
+    }
+  }
+
+  disconnect() {
+    document.body.removeEventListener('keydown', this.keydown);
+  }
+
   connect() {
+    document.body.addEventListener('keydown', this.keydown);
+
     let input = this.inputTarget;
     let search = this.search.bind(this);
 
@@ -32,7 +49,15 @@ export default class extends Controller {
 
     input.addEventListener('input', event => {
       this.search(input.value)
-    })
+    });
+
+    this.element.querySelector('div[rel=prev').addEventListener('click', () => {
+      if (this.page > 1) this.setPage(this.page-1);
+    });
+
+    this.element.querySelector('div[rel=next').addEventListener('click', () => {
+      this.setPage(this.page+1);
+    });
   }
 
   setPage(page) {
