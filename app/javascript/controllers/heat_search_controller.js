@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 // Connects to data-controller="heat-search"
 export default class extends Controller {
-  static targets = ["input", "nav"]
+  static targets = ["input", "nav"];
 
   connect() {
     let input = this.inputTarget;
@@ -22,10 +22,11 @@ export default class extends Controller {
       }
     }
 
-    search(input.value);
+    this.search(input.value);
+    this.seek();
 
     input.addEventListener('input', event => {
-      search(input.value)
+      this.search(input.value)
     })
   }
 
@@ -34,7 +35,17 @@ export default class extends Controller {
     this.search(this.inputTarget.value);
   }
 
-  search(value) {
+  seek = () => {
+    let currentHeat = document.getElementById('current-heat').textContent.trim();
+
+    for (let thead of this.element.querySelectorAll('thead')) {
+      if (thead.style.display == 'none') continue;
+      let heat = thead.querySelector('span').textContent;
+      if (heat == currentHeat) thead.scrollIntoView();
+    }
+  }
+
+  search = (value) => {
     value = value.toLowerCase();
 
     let counter = 0;
