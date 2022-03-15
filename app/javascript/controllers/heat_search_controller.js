@@ -25,6 +25,11 @@ export default class extends Controller {
     this.search(input.value);
     this.seek();
 
+    const observer = new MutationObserver(this.seek);
+    const config = { attributes: true, childList: true, subtree: true };
+    let currentHeat = document.getElementById('current-heat');
+    observer.observe(currentHeat.parentElement, config);
+
     input.addEventListener('input', event => {
       this.search(input.value)
     })
@@ -41,7 +46,10 @@ export default class extends Controller {
     for (let thead of this.element.querySelectorAll('thead')) {
       if (thead.style.display == 'none') continue;
       let heat = thead.querySelector('span').textContent;
-      if (heat == currentHeat) thead.scrollIntoView();
+      if (heat == currentHeat) {
+        thead.scrollIntoView({ behavior: "smooth", block: "start" });
+        break;
+      }
     }
   }
 
