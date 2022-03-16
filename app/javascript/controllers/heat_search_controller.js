@@ -31,7 +31,9 @@ export default class extends Controller {
     for (let tr of this.element.querySelectorAll('tr')) {
       if (tr.parentElement.nodeName == 'THEAD') {
         rows = [];
-        this.heats.push({ head: tr.parentElement, rows });
+        let head = tr.parentElement;
+        let number = head.querySelector('span').textContent;
+        this.heats.push({ number, head, rows });
       } else {
         let text = tr.querySelector('td[data-index]').textContent.toLowerCase();
         rows.push([text, tr]);
@@ -67,13 +69,19 @@ export default class extends Controller {
   seek = () => {
     let currentHeat = document.getElementById('current-heat').textContent.trim();
 
-    for (let thead of this.element.querySelectorAll('thead')) {
-      if (thead.style.display == 'none') continue;
-      let heat = thead.querySelector('span').textContent;
-      if (heat == currentHeat) {
-        thead.scrollIntoView({ behavior: "smooth", block: "start" });
-        break;
-      }
+    let heat = this.heats.find(heat => heat.number == currentHeat);
+
+    if (heat && heat.show?.length == 0) {
+      currentHeat = parseInt(currentHeat);
+      heat = this.heats.find(heat => (
+        parseInt(heat.number) > currentHeat && heat.show?.length
+      ))
+    }
+
+    if (heat?.page && heat.page != this.page) this.setPage(heat.page);
+
+    if (heat && heat.head.style.display != 'none') {
+      heat.head.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }
 
