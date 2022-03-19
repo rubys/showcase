@@ -33,8 +33,8 @@ Rails.application.configure do
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
 
-  if ENV['RAILS_APP_SCOPE']
-    config.assets.prefix = "/#{ENV['RAILS_APP_SCOPE']}/assets""
+  if ENV['RAILS_APP_SCOPE'].present?
+    config.assets.prefix = "/#{ENV['RAILS_APP_SCOPE']}/assets"
   end
 
   # Specifies the header that your server uses for sending files.
