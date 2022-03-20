@@ -43,12 +43,16 @@ Rails.application.configure do
   # Mount Action Cable outside main process or domain.
   if ENV['RAILS_APP_CABLE'].present?
     config.action_cable.mount_path = ENV['RAILS_APP_CABLE']
-    config.action_cable.url = "wss://example.com/cable"
+    if ENV['RAILS_RELATIVE_URL_ROOT']
+      config.action_cable.url = "wss:#{ENV['RAILS_RELATIVE_URL_ROOT']}#{ENV['RAILS_APP_CABLE']}"
+    end
   end
   # config.action_cable.allowed_request_origins = [ "http://example.com", /http:\/\/example.*/ ]
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  # config.force_ssl = true
+  if ENV['RAILS_RELATIVE_URL_ROOT']
+    config.force_ssl = true
+  end
 
   # Include generic and useful information about system operation, but avoid logging too much
   # information to avoid inadvertent exposure of personally identifiable information (PII).
