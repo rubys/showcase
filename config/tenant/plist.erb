@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>net.intertwingly.rubymini.showcase.<%= @label %></string>
+
+    <key>WorkingDirectory</key>
+    <string><%= @git_path %></string>
+
+    <key>Program</key>
+    <string><%= RbConfig.ruby %></string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string><%= RbConfig.ruby %></string>
+        <string>bin/rails</string>
+        <string>server</string>
+        <string>-e</string>
+        <string>production</string>
+        <string>-b</string>
+        <string>0.0.0.0</string>
+        <string>-p</string>
+        <string><%= @port %></string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+      <key>RAILS_RELATIVE_URL_ROOT</key>
+      <string>/showcase</string>
+
+      <key>RAILS_APP_DB</key>
+      <string><%= @label %></string>
+
+      <key>RAILS_APP_SCOPE</key>
+      <string><%= @scope %></string>
+
+      <key>RAILS_LOG_TO_STDOUT</key>
+      <string>true</string>
+
+      <key>RAILS_SERVE_STATIC_FILES</key>
+      <string>true</string>
+
+      <key>PIDFILE</key>
+      <string>/Users/rubys/git/showcase/tmp/pids/<%= @label %>.pid</string>
+
+      <key>PATH</key>
+      <string><![CDATA[/opt/homebrew/opt/ruby/bin:/opt/homebrew/lib/ruby/gems/3.0.0/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin]]></string>
+    </dict>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/rubys/git/showcase/log/<%= @label %>.stderr</string>
+    <key>StandardOutPath</key>
+    <string>/Users/rubys/git/showcase/log/<%= @label %>.stdout</string>
+</dict>
+</plist>
