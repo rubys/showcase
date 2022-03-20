@@ -1,7 +1,6 @@
 Rails.application.routes.draw do
   scope ENV.fetch("RAILS_APP_SCOPE", '') do
     root 'event#root'
-    get '/', to: 'event#root', as: 'home'
     get '/instructions', to: 'event#instructions'
     get '/event.xlsx', to: "event#index", as: 'event_spreadsheet'
 

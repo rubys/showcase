@@ -14,7 +14,7 @@
   <body>
 
     <% unless @nologo %>
-    <%= link_to home_path do %>
+    <%= link_to root_path.chomp('/') + '/' do %>
       <%= image_tag "/arthur-murray-logo.gif", class: "absolute right-4 top-4 h-16" %>
     <% end %>
     <% end %>
