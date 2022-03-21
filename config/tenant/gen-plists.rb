@@ -16,6 +16,7 @@ showcases = YAML.load_file("showcases.yml")
 showcases.each do |year, list|
   list.each do |token, info|
     @label = "#{year}-#{token}"
+    @redis = "#{year}_#{token}"
     @scope = "#{year}/#{token}"
     @port = info[:port]
     template = ERB.new(IO.read("plist.erb"))
