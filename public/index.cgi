@@ -2,8 +2,16 @@
 require 'yaml'
 require 'cgi'
 require 'erb'
+require 'json'
 
 config = YAML.load_file("#{__dir__}/../config/tenant/showcases.yml")
+
+config.each do |year, sites|
+  sites.each do |token, info|
+    db = "#{__dir__}/../db/#{year}-#{token}.sqlite3"
+    info.merge! JSON.parse(`sqlite3 --json #{db} "select date from events"`).first
+  end
+end
 
 CGI.new.out { ERB.new(DATA.read).result(binding) }
 
@@ -28,6 +36,7 @@ __END__
       <li>
         <a href="<%= year %>/<%= token %>/">
           <span class="text-xl"><%= info[:name] %><span>
+          <span class="text-slate-400">- <%= info['date'] %><span>
         </a>
       </li>
       <% end %>
