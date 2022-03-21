@@ -42,9 +42,13 @@ Rails.application.configure do
 
   # Mount Action Cable outside main process or domain.
   if ENV['RAILS_APP_CABLE'].present?
-    config.action_cable.mount_path = ENV['RAILS_APP_CABLE']
-    if ENV['RAILS_RELATIVE_URL_ROOT']
-      config.action_cable.url = "wss:#{ENV['RAILS_RELATIVE_URL_ROOT']}#{ENV['RAILS_APP_CABLE']}"
+    config.action_cable.url = ENV['RAILS_APP_CABLE']
+
+    if ENV['RAILS_RELATIVE_URL_ROOT'].present?
+      path = URI.parse(ENV['RAILS_APP_CABLE']).path
+      if path.start_with? ENV['RAILS_RELATIVE_URL_ROOT']
+        config.action_cable.mount_path = path[ENV['RAILS_RELATIVE_URL_ROOT']..]
+      end
     end
   end
   # config.action_cable.allowed_request_origins = [ "http://example.com", /http:\/\/example.*/ ]
