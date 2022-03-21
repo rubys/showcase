@@ -47,7 +47,7 @@ Rails.application.configure do
     if ENV['RAILS_RELATIVE_URL_ROOT'].present?
       path = URI.parse(ENV['RAILS_APP_CABLE']).path
       if path.start_with? ENV['RAILS_RELATIVE_URL_ROOT']
-        config.action_cable.mount_path = path[ENV['RAILS_RELATIVE_URL_ROOT']..]
+        config.action_cable.mount_path = path[ENV['RAILS_RELATIVE_URL_ROOT'].length..]
       end
     end
   end
