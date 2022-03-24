@@ -46,7 +46,7 @@ __END__
       <div class="info-button">&#x24D8;</div>
       <ul class="info-box">
       <li>When you see an &#x24D8; in the top left corner of the page, you
-	  can click on it to see helpful hints</li>
+	  can click on it to see helpful hints.</li>
       <li>Click on it again to dismiss the hints.</li>
       <li>Click a city below to get started.</li>
       </ul>
