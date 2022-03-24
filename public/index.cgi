@@ -67,7 +67,7 @@ __END__
     </ul>
     <% end %>
     <p>Click on the <span class="info-button">&#x24D8;</span> in the top
-       right corner of this page to see helpful hints.</p>
+       left corner of this page to see helpful hints.</p>
   </div>
   <script>
     document.querySelector('.info-button').addEventListener('click', () => {
