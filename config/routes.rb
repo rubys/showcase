@@ -4,6 +4,10 @@ Rails.application.routes.draw do
     get '/instructions', to: 'event#instructions'
     get '/event.xlsx', to: "event#index", as: 'event_spreadsheet'
 
+    scope 'public' do
+      get 'heats', to: 'heats#mobile', as: 'public_heats'
+    end
+
     resources 'event', only: [:update] do
       get 'publish', on: :collection
       get 'settings', on: :collection
