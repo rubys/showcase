@@ -48,7 +48,7 @@ server {
   server_name localhost;
 
   # Tell Nginx and Passenger where your app's 'public' directory is
-  root <%= @git_path %>;
+  root <%= @git_path %>/public;
   
   # Turn on Passenger
   passenger_enabled on;
