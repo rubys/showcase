@@ -12,7 +12,7 @@ end.to_h
 showcases = YAML.load_file("#{__dir__}/showcases.yml")
 template = ERB.new(DATA.read)
 
-restart = not ARGV.include? '--restart'
+restart = not ARGV.include?('--restart')
 
 Dir.chdir @git_path
 
