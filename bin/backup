@@ -4,10 +4,22 @@ require 'date'
 
 db_dir = File.expand_path('../db', __dir__)
 backup_dir = File.join(db_dir, 'backup')
-FileUtils.mkdir_p backup_dir
-
 date = Date.today.to_s
+last_dir = Dir[File.join(backup_dir,'2*')].sort.last
+dest_dir = File.join(backup_dir, date)
+FileUtils.mkdir_p dest_dir
 
-system "/usr/bin/sqlite3 #{db_dir}/development.sqlite3 .dump | gzip > #{backup_dir}/#{date}.sqlite3.gz"
+Dir["#{db_dir}/2*.sqlite3"].each do |db|
+  basename = File.basename(db)
+  system "/usr/bin/sqlite3 #{db} .dump | gzip > #{dest_dir}/#{basename}.gz"
+  if File.exist? File.join(last_dir, basename+'.gz')
+    old_contents = IO.read File.join(last_dir, basename+'.gz')
+    new_contents = IO.read File.join(dest_dir, basename+'.gz')
+    if old_contents = new_contents
+      FileUtils.link File.join(dest_dir, basename+'.gz'),
+        File.join(last_dir, basename+'.gz'), force: true
+    end
+  end
+end
 
-# gzcat db/backup/2022-02-08.sqlite3.gz
+# gzcat db/backup/2022-02-08/2022-harrisburg.sqlite3.gz
