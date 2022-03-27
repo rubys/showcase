@@ -7,12 +7,12 @@ agents = Dir["#{NGINX_SERVERS}/showcase-*.conf"].map do |file|
   [File.basename(file, '.conf'), IO.read(file)]
 end.to_h
 
-@git_path = File.realpath('../..')
+@git_path = File.realpath(File.expand_path('../..', __dir__))
 
 showcases = YAML.load_file("#{__dir__}/showcases.yml")
 template = ERB.new(DATA.read)
 
-restart = not ARGV.include?('--restart')
+restart = (not ARGV.include?('--restart'))
 
 Dir.chdir @git_path
 
@@ -31,7 +31,9 @@ showcases.each do |year, list|
       restart = true
     end
 
+p Dir.pwd
     ENV['RAILS_APP_DB'] = @label
+    system 'bin/rails db:create' unless File.exist? "db/#{@label}.sqlite3"
     system 'bin/rails db:migrate'
 
     count = `sqlite3 db/#{@label}.sqlite3 "select count(*) from events"`.to_i
