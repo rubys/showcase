@@ -31,7 +31,6 @@ showcases.each do |year, list|
       restart = true
     end
 
-p Dir.pwd
     ENV['RAILS_APP_DB'] = @label
     system 'bin/rails db:create' unless File.exist? "db/#{@label}.sqlite3"
     system 'bin/rails db:migrate'
