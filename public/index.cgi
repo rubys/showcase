@@ -58,7 +58,13 @@ __END__
     <ul class="mt-2 list-disc list-inside">
       <% sites.each do |token, info| %>
       <li>
-        <a href="<%= year %>/<%= token %>/">
+        <a href="<%= 
+           if ENV['HTTP_X_FORWARDED_HOST']
+             "#{year}/#{token}"
+           else
+             "#{ENV['REQUEST_SCHEME']}://#{ENV['HTTP_HOST']}:#{info[:port]}/showcase/#{year}/#{token}"
+           end
+         %>/">
           <span class="text-xl"><%= info[:name] %><span>
           <span class="text-slate-400">- <%= info['date'] %><span>
         </a>

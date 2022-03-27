@@ -61,8 +61,10 @@ server {
   passenger_enabled on;
   passenger_ruby <%= RbConfig.ruby %>;
   passenger_friendly_error_pages on;
+  passenger_min_instances 0;
   
   # Define tenant
+  passenger_app_group_name showcase-<%= @label %>;
   passenger_env_var RAILS_RELATIVE_URL_ROOT /showcase;
   passenger_env_var RAILS_APP_DB <%= @label %>;
   passenger_env_var RAILS_APP_SCOPE <%= @scope %>;
@@ -70,4 +72,9 @@ server {
   passenger_env_var RAILS_APP_REDIS am_event_<%= @redis %>_production;
   passenger_env_var RAILS_SERVE_STATIC_FILES true;
   passenger_env_var PIDFILE <%= @git_path %>/tmp/pids/<%= @label %>.pid;
+
+  location /showcase/<%= @scope %>/cable {
+    passenger_app_group_name showcase-<%= @label %>-cable;
+    passenger_force_max_concurrent_requests_per_process 0;
+  }
 }
