@@ -1,8 +1,6 @@
 require 'erb'
 require 'yaml'
 
-Dir.chdir __dir__
-
 NGINX_SERVERS = "/opt/homebrew/etc/nginx/servers"
 
 agents = Dir["#{NGINX_SERVERS}/showcase-*.conf"].map do |file|
@@ -11,10 +9,12 @@ end.to_h
 
 @git_path = File.realpath('../..')
 
-showcases = YAML.load_file("showcases.yml")
+showcases = YAML.load_file("#{__dir__}/showcases.yml")
 template = ERB.new(DATA.read)
 
-restart = false
+restart = not ARGV.include? '--restart'
+
+Dir.chdir @git_path
 
 showcases.each do |year, list|
   list.each do |token, info|
@@ -30,6 +30,12 @@ showcases.each do |year, list|
       puts "+ #{NGINX_SERVERS}/#{showcase}.conf"
       restart = true
     end
+
+    ENV['RAILS_APP_DB'] = @label
+    system 'bin/rails db:migrate'
+
+    count = `sqlite3 db/#{@label}.sqlite3 "select count(*) from events"`.to_i
+    system 'bin/rails db:seed' if count == 0
   end
 end
 

@@ -61,6 +61,11 @@ Rails.application.configure do
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
   if ENV['RAILS_RELATIVE_URL_ROOT']
     config.force_ssl = true
+
+    # enable direct access within the LAN
+    config.ssl_options = { redirect: { exclude: -> request { 
+      request.headers['X-Forwarded-Ssl'] != 'on'
+    } } }
   end
 
   # Include generic and useful information about system operation, but avoid logging too much
@@ -99,6 +104,10 @@ Rails.application.configure do
 
   if ENV["RAILS_LOG_TO_STDOUT"].present?
     logger           = ActiveSupport::Logger.new(STDOUT)
+    logger.formatter = config.log_formatter
+    config.logger    = ActiveSupport::TaggedLogging.new(logger)
+  elsif ENV["RAILS_APP_DB"].present?
+    logger = ActiveSupport::Logger.new("log/#{ENV['RAILS_APP_DB']}.log")
     logger.formatter = config.log_formatter
     config.logger    = ActiveSupport::TaggedLogging.new(logger)
   end
