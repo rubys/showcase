@@ -22,14 +22,14 @@
   <h2 class="font-bold text-2xl mt-4 mb-2">Judges</h2>
   <ul class="list-disc list-inside">
     <% @judges.each do |judge| %>
-      <li><%= link_to judge.name, judge %></li>
+      <li><%= link_to judge.display_name, judge %></li>
     <% end %>
   </u>
   
   <h2 class="font-bold text-2xl mt-4 mb-2">Emcee</h2>
   <ul class="list-disc list-inside">
     <% @emcees.each do |emcee| %>
-      <li><%= link_to emcee.name, emcee %></li>
+      <li><%= link_to emcee.display_name, emcee %></li>
     <% end %>
   </ul>
 

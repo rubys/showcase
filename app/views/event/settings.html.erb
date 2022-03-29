@@ -40,7 +40,7 @@
 <h2 class="font-bold text-2xl mt-4 mb-2">Emcee</h2>
 <ul class="list-disc list-inside mb-8">
   <% @emcees.each do |emcee| %>
-    <li><%= link_to emcee.name, emcee %></li>
+    <li><%= link_to emcee.display_name, emcee %></li>
   <% end %>
 </ul>
 
