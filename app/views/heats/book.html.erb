@@ -15,7 +15,14 @@ tbody::after {
 
 <div class="mx-auto md:w-2/3 w-full print:w-full">
 
-<div class="flex justify-between items-center">
+<div class="mb-4">
+  <h2 class="font-bold text-center text-4xl"><%= @event.name %></h1>
+
+  <p class="mt-4 text-center"><%= @event.location %></p>
+  <p class="mt-2 text-center"><%= @event.date %></p>
+</div>
+
+<div class="justify-between items-center">
   <h1 class="font-bold text-4xl">Agenda</h1>
 </div>
 

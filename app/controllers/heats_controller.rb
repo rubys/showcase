@@ -49,6 +49,7 @@ class HeatsController < ApplicationController
   # GET /heats/book or /heats/book.json
   def book
     @type = params[:type]
+    @event = Event.last
     index
   end
 
