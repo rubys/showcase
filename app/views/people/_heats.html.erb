@@ -4,7 +4,7 @@
     <td colspan="6" class="font-bold pt-8 text-3xl pb-5" >
       <%= person.name %>
       <span class="font-normal text-base float-right">
-        <%= ENV.fetch("RAILS_APP_DB") { 'development' } %>
+        <%= @event.name %>
       </span>
     </td>
   </tr>

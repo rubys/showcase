@@ -4,6 +4,7 @@ module Printable
     @heats = Heat.includes(:dance, entry: [:level, :age, :lead, :follow]).all.order(:number)
     @layout = 'mx-0 px-5'
     @nologo = true
+    @event = Event.last
   end
 
   def score_sheets
@@ -12,5 +13,6 @@ module Printable
     @heats = Heat.includes(:scores, :dance, entry: [:level, :age, :lead, :follow]).all.order(:number)
     @layout = 'mx-0 px-5'
     @nologo = true
+    @event = Event.last
   end
 end
