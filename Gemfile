@@ -73,3 +73,5 @@ group :test do
 end
 
 gem "fast_excel", "~> 0.4.0"
+
+gem "rqrcode", "~> 2.1"
