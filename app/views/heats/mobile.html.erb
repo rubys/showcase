@@ -33,7 +33,7 @@
     <td class="px-2 text-center"><%= heat.entry.lead.back %>
     <td class="px-2 border-x" data-index><%= heat.entry.lead.display_name %>
     - <%= heat.entry.follow.display_name %>
-    <td class='px-2 text-center'><%= heat.ballroom %>
+    <td class='px-2 text-center'><%= heat.category == 'Solo' ? '-' : heat.ballroom %>
   </tr>
   <% end %>
   </tbody>

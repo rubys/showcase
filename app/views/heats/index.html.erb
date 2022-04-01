@@ -101,7 +101,7 @@ tbody::after {
           <% end %>
         </td>
       </tr>
-      <% if heats.first.back < 200 %>
+      <% if heats.first.back < 200 && heats.first.category != 'Solo' %>
       <tr>
         <td>
         <td></td>
@@ -113,12 +113,8 @@ tbody::after {
       <% last_back = 200 %>
       <% end %>
 
-      <% if heats.first.category == 'Solo' %>
-      <% last_back = 200 %>
-      <% end %>
-
       <% heats.each do |heat| %>
-         <% if heat.back && last_back < 200 && heat.back >= 200 %>
+         <% if number != 0 and heat.back && last_back < 200 && heat.back >= 200 && heats.first.category != 'Solo'%>
          <tr>
            <td>
            <td></td>

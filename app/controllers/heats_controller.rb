@@ -13,7 +13,7 @@ class HeatsController < ApplicationController
 
     @solos = Solo.includes(:heat).map(&:heat)
 
-    @heats = (@heats.to_a - @solos.to_a).group_by {|heat| heat.number}.
+    @heats = @heats.to_a.group_by {|heat| heat.number}.
     map do |number, heats|
       [number, heats.sort_by { |heat| heat.back || 0 } ]
     end
