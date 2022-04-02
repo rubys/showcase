@@ -1,6 +1,12 @@
 Rails.application.routes.draw do
   scope ENV.fetch("RAILS_APP_SCOPE", '') do
-    root 'event#root'
+
+    if ENV.fetch("RAILS_APP_SCOPE", '') == '__index__'
+      root 'event#showcases'
+    else
+      root 'event#root'
+    end
+
     get '/instructions', to: 'event#instructions'
     get '/event.xlsx', to: "event#index", as: 'event_spreadsheet'
 

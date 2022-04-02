@@ -36,6 +36,20 @@ class EventController < ApplicationController
       order('number,people.back').all
   end
 
+  def showcases
+    @showcases = YAML.load_file('config/tenant/showcases.yml')
+
+    @showcases.each do |year, sites|
+      sites.each do |token, info|
+        db = "#{__dir__}/../..//db/#{year}-#{token}.sqlite3"
+        begin
+          info.merge! JSON.parse(`sqlite3 --json #{db} "select date from events"`).first
+        rescue
+        end
+      end
+    end
+  end
+
   def publish
     @public_url = URI.join(request.original_url, '../../public')
   end

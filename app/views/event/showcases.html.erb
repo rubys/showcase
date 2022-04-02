@@ -1,0 +1,31 @@
+<div class="mx-auto md:w-2/3 lg:w-1/2">
+<h1 class="mt-8 text-center font-bold text-4xl mb-8">Index of Showcases</h1>
+
+<div data-controller="info-box">
+  <div class="info-button">&#x24D8;</div>
+  <ul class="info-box">
+  <li>When you see an &#x24D8; in the top left corner of the page, you
+can click on it to see helpful hints.</li>
+  <li>Click on it again to dismiss the hints.</li>
+  <li>Click a city below to get started.</li>
+  </ul>
+</div>
+
+<% @showcases.each do |year, sites| %>
+  <h2 class="font-bold text-2xl mt-4 mb-2"><%= year %></h2>
+
+  <ul class="mt-2 list-disc list-inside">
+    <% sites.each do |token, info| %>
+    <li>
+      <a href="<%= "#{year}/#{token}" %>/">
+        <span class="text-xl"><%= info[:name] %><span>
+        <span class="text-slate-400">- <%= info['date'] %><span>
+      </a>
+    </li>
+    <% end %>
+  </ul>
+<% end %>
+
+<p class="mt-4">Click on the <span class="text-emerald-600">&#x24D8;</span> in the top
+    left corner of this page to see helpful hints.</p>   
+</div> 
