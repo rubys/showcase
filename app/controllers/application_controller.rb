@@ -6,9 +6,10 @@ class ApplicationController < ActionController::Base
   end
 
   before_action do
-    scheme = request.env['HTTP_X_FORWARDED_PROTO'] || request.env["rack.url_scheme"]
+    scheme = (request.env['HTTP_X_FORWARDED_PROTO'] || request.env["rack.url_scheme"]).split(',').last
     host = request.env['HTTP_X_FORWARDED_HOST'] || request.env["HTTP_HOST"]
-    script = request.env['ORIGINAL_SCRIPT_NAME'] || request.env['ORIGINAL_SCRIPT_NAME']
-    @websocket = "#{scheme.sub('http', 'ws')}://#{host}#{script}/cable"
+    scope = request.env['RAILS_APP_SCOPE']
+    root = request.env['RAILS_RELATIVE_URL_ROOT']
+    @websocket = "#{scheme.sub('http', 'ws')}://#{host}/#{[scope, root, 'cable'].compact.join('/')}"
   end
 end
