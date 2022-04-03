@@ -92,7 +92,7 @@ server {
     passenger_env_var PIDFILE <%= @git_path %>/tmp/pids/<%= tenant.label %>.pid;
   }
 
-  location <%= ROOT %><%= tenant.cable %> {
+  location <%= ROOT %>/<%= tenant.scope %>/cable {
     passenger_app_group_name showcase-<%= tenant.label %>-cable;
     passenger_force_max_concurrent_requests_per_process 0;
   }
