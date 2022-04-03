@@ -10,6 +10,6 @@ class ApplicationController < ActionController::Base
     host = request.env['HTTP_X_FORWARDED_HOST'] || request.env["HTTP_HOST"]
     scope = request.env['RAILS_APP_SCOPE']
     root = request.env['RAILS_RELATIVE_URL_ROOT']
-    @websocket = "#{scheme.sub('http', 'ws')}://#{host}/#{[scope, root, 'cable'].compact.join('/')}"
+    @websocket = "#{scheme.sub('http', 'ws')}://#{host}#{scope}/#{[root, 'cable'].compact.join('/')}"
   end
 end
