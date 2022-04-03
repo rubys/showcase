@@ -68,6 +68,7 @@ server {
   passenger_env_var RAILS_RELATIVE_URL_ROOT /showcase;
   passenger_env_var RAILS_APP_DB <%= @label %>;
   passenger_env_var RAILS_APP_SCOPE <%= @scope %>;
+  passenger_env_var RAILS_PROXY_HOST https://rubix.intertwingly.net/;
   passenger_env_var RAILS_APP_CABLE wss://rubix.intertwingly.net/showcase/<%= @scope %>/cable;
   passenger_env_var RAILS_APP_REDIS am_event_<%= @redis %>_production;
   passenger_env_var RAILS_SERVE_STATIC_FILES true;

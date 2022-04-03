@@ -41,15 +41,14 @@ Rails.application.configure do
   config.active_storage.service = :local
 
   # Mount Action Cable outside main process or domain.
-  if ENV['HTTP_X_FORWARDED_HOST'].present? and ENV['HTTP_X_FORWARDED_PROTO'].present?
-    if ENV['RAILS_APP_SCOPE'].present?
-      config.action_cable.mount_path = "/#{"ENV['RAILS_APP_SCOPE']"}/cable"
-    end
+  if ENV['RAILS_APP_SCOPE'].present?
+    config.action_cable.mount_path = "/#{ENV['RAILS_APP_SCOPE']}/cable"
+  end
 
-    config.action_cable.allowed_request_origins =
-      ENV['HTTP_X_FORWARDED_PROTO'].split(',').map do |scheme|
-        "#{scheme}:#{ENV['HTTP_X_FORWARDED_HOST']}"
-      end
+  if ENV['RAILS_PROXY_HOST'].present?
+    config.action_cable.allowed_request_origins = [
+      ENV['RAILS_PROXY_HOST'].chomp('/')
+    ]
   end
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
