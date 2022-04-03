@@ -2,13 +2,13 @@
 2022:                                                                           
   annapolis:
     :name: Annapolis
-    :port: 21012
+    :port: 9999
   charlotte:
     :name: Charlotte
-    :port: 28277
+    :port: 9999
   harrisburg:                                                                   
     :name: Harrisburg
-    :port: 17043
+    :port: 9999
   vabeach:                                                                   
     :name: Virginia Beach
-    :port: 23452
+    :port: 9999
