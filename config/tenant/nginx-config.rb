@@ -90,6 +90,7 @@ server {
     passenger_env_var RAILS_APP_REDIS am_event_<%= tenant.redis %>_production;
     passenger_env_var RAILS_PROXY_HOST https://rubix.intertwingly.net/;
     passenger_env_var PIDFILE <%= @git_path %>/tmp/pids/<%= tenant.label %>.pid;
+    passenger_env_var RAILS_SERVE_STATIC_FILES true;
   }
 
   location <%= ROOT %>/<%= tenant.scope %>/cable {
