@@ -7,6 +7,7 @@ Rails.application.routes.draw do
       root 'event#root'
     end
 
+    get '/env', to: 'event#env'
     get '/instructions', to: 'event#instructions'
     get '/event.xlsx', to: "event#index", as: 'event_spreadsheet'
 
