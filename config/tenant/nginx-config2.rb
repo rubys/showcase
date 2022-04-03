@@ -21,7 +21,6 @@ index = OpenStruct.new(
   label: "index",
   redis: "index",
   scope: "__index__",
-  cable: "index/cable"
 )
 
 ENV['RAILS_APP_DB'] = index.label
@@ -34,7 +33,6 @@ showcases.each do |year, list|
       label: "#{year}-#{token}",
       redis: "#{year}_#{token}",
       scope: "#{year}/#{token}",
-      cable: "#{year}/#{token}/cable",
       port:  info[:port]
     )
 
@@ -55,8 +53,10 @@ new_conf = template.result(binding)
 if new_conf != old_conf
   STDERR.puts SHOWCASE_CONF
   IO.write SHOWCASE_CONF, new_conf
-  system 'brew services restart nginx'
+  restart = true
 end
+
+system 'brew services restart nginx' if restart
 
 __END__
 server {
@@ -87,7 +87,6 @@ server {
     passenger_env_var RAILS_RELATIVE_URL_ROOT <%= ROOT %>;
     passenger_env_var RAILS_APP_DB <%= tenant.label %>;
     passenger_env_var RAILS_APP_SCOPE <%= tenant.scope %>;
-    passenger_env_var RAILS_APP_CABLE wss://<%= HOST %><%= ROOT %>/<%= tenant.cable %>;
     passenger_env_var RAILS_APP_REDIS am_event_<%= tenant.redis %>_production;
     passenger_env_var PIDFILE <%= @git_path %>/tmp/pids/<%= tenant.label %>.pid;
   }

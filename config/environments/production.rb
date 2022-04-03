@@ -42,19 +42,11 @@ Rails.application.configure do
 
   # Mount Action Cable outside main process or domain.
   if ENV['RAILS_APP_CABLE'].present?
-    config.action_cable.url = ENV['RAILS_APP_CABLE']
-
-    if ENV['RAILS_RELATIVE_URL_ROOT'].present?
-      uri = URI.parse(ENV['RAILS_APP_CABLE'])
-      path = uri.path
-      if path.start_with? ENV['RAILS_RELATIVE_URL_ROOT']
-        config.action_cable.mount_path =
-          path[ENV['RAILS_RELATIVE_URL_ROOT'].length..]
-      end
-
-      host = "#{uri.scheme}://#{uri.host}"
-      host+= ":#{uri.port}" if uri.port
-      config.action_cable.allowed_request_origins = [ host.sub(/^ws/, 'http') ]
+    if ENV['HTTP_X_FORWARDED_HOST'].present? and ENV['HTTP_X_FORWARDED_PROTO'].present?
+      config.action_cable.allowed_request_origins =
+        ENV['HTTP_X_FORWARDED_PROTO'].split(',').map do |scheme|
+          "#{scheme}:#{ENV['HTTP_X_FORWARDED_HOST']}"
+        end
     end
   end
 
