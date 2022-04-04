@@ -58,7 +58,7 @@ class EventController < ApplicationController
     event = Event.last
     event.current_heat = params[:heat]
     event.save
-    event.broadcast_replace_later_to 'current-heat', partial: 'event/heat',
-      target: 'current-heat', locals: {event: event}
+    event.broadcast_replace_later_to "current-heat-#{ENV['RAILS_APP_DB']}",
+      partial: 'event/heat', target: 'current-heat', locals: {event: event}
   end
 end

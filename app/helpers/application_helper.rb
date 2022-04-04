@@ -14,7 +14,7 @@ module ApplicationHelper
     host = request.env['HTTP_X_FORWARDED_HOST'] || request.env["HTTP_HOST"]
     scope = request.env['RAILS_APP_SCOPE']
     root = request.env['RAILS_RELATIVE_URL_ROOT']
-    websocket = "#{scheme.sub('http', 'ws')}://#{host}#{root}/#{[scope, 'cable'].compact.join('/')}"
+    websocket = "#{scheme.sub('http', 'ws')}://#{host}#{root}/cable"
     "<meta name=\"action-cable-url\" content=\"#{websocket}\" />".html_safe
   end
 end

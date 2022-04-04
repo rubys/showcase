@@ -1,4 +1,9 @@
 Rails.application.routes.draw do
+  # if ENV['RAILS_RELATIVE_URL_ROOT'].present?
+  #   mount ActionCable.server => "#{ENV['RAILS_RELATIVE_URL_ROOT']}/cable"
+  # end
+  mount ActionCable.server => "/showcase/cable"
+ 
   scope ENV.fetch("RAILS_APP_SCOPE", '') do
 
     if ENV.fetch("RAILS_APP_SCOPE", '') == '__index__'

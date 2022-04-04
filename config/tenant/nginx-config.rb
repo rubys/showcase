@@ -30,6 +30,7 @@ system 'bin/rails db:create' unless File.exist? "db/#{index.label}.sqlite3"
 showcases.each do |year, list|
   list.each do |token, info|
     tenant = OpenStruct.new(
+      name:  info[:name],
       label: "#{year}-#{token}",
       redis: "#{year}_#{token}",
       scope: "#{year}/#{token}",
@@ -65,6 +66,14 @@ server {
 
   # Tell Nginx and Passenger where your app's 'public' directory is
   root <%= @git_path %>/public;
+  passenger_enabled on;
+  passenger_ruby <%= RbConfig.ruby %>;
+  passenger_friendly_error_pages on;
+  passenger_min_instances 0;
+  passenger_env_var RAILS_RELATIVE_URL_ROOT <%= ROOT %>;
+  passenger_env_var RAILS_PROXY_HOST https://rubix.intertwingly.net/;
+  passenger_env_var RAILS_APP_REDIS showcase_production;
+  passenger_env_var RAILS_APP_CABLE wss://rubix.intertwingly.net<%= ROOT %>/cable;
 
   location /showcase {
     alias <%= @git_path %>/public;
@@ -74,31 +83,18 @@ server {
   location @index {
     rewrite ^/showcase/(.*)$ /showcase/__index__/$1;
   }
-  <% @tenants.each do |tenant| %>
-  location <%= ROOT %>/<%= tenant.scope %> {
-    # Turn on Passenger
-    passenger_enabled on;
-    passenger_ruby <%= RbConfig.ruby %>;
-    passenger_friendly_error_pages on;
-    passenger_min_instances 0;
-    
-    # Define tenant
-    passenger_app_group_name showcase-<%= tenant.label %>;
-    passenger_env_var RAILS_RELATIVE_URL_ROOT <%= ROOT %>;
-    passenger_env_var RAILS_APP_DB <%= tenant.label %>;
-    passenger_env_var RAILS_APP_SCOPE <%= tenant.scope %>;
-    passenger_env_var RAILS_APP_REDIS am_event_<%= tenant.redis %>_production;
-    passenger_env_var RAILS_PROXY_HOST https://rubix.intertwingly.net/;
-    passenger_env_var PIDFILE <%= @git_path %>/tmp/pids/<%= tenant.label %>.pid;
-    passenger_env_var RAILS_SERVE_STATIC_FILES true;
-  }
 
-  location <%= ROOT %>/<%= tenant.scope %>/cable {
-    passenger_app_group_name showcase-<%= tenant.label %>-cable;
+  location <%= ROOT %>/cable {
+    passenger_app_group_name showcase-cable;
     passenger_force_max_concurrent_requests_per_process 0;
   }
-  <% 
-
-  end
-  %>
+  <% @tenants.each do |tenant| %>
+  # <%= tenant.name %>
+  location <%= ROOT %>/<%= tenant.scope %> {
+    passenger_app_group_name showcase-<%= tenant.label %>;
+    passenger_env_var RAILS_APP_DB <%= tenant.label %>;
+    passenger_env_var RAILS_APP_SCOPE <%= tenant.scope %>;
+    passenger_env_var PIDFILE <%= @git_path %>/tmp/pids/<%= tenant.label %>.pid;
+  }
+  <% end %>
 }

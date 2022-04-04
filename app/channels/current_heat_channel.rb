@@ -1,6 +1,6 @@
 class CurrentHeatChannel < ApplicationCable::Channel
   def subscribed
-    stream_from "current-heat"
+    stream_from "current-heat-#{ENV['RAILS_APP_DB']}"
   end
 
   def unsubscribed
