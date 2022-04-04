@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  web:
+    build: .
+    volumes:
+      - ./db:/home/app/showcase/db
+      - ./log:/home/app/showcase/log
+    secrets:
+      - source: master_key
+        target: /home/app/showcase/config/master.key
+    ports:
+      - "9999:9999"
+
+secrets:
+  master_key:
+    file: ./config/master.key
+
