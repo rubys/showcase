@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 require 'erb'
 require 'yaml'
 require 'ostruct'
@@ -5,8 +7,13 @@ require 'ostruct'
 HOST = 'rubix.intertwingly.net'
 ROOT = '/showcase'
 
-NGINX_SERVERS = "/opt/homebrew/etc/nginx/servers"
-SHOWCASE_CONF = "#{NGINX_SERVERS}/showcase.conf"
+if File.exist? '"/opt/homebrew/etc/nginx'
+  NGINX_CONF = "/opt/homebrew/etc/nginx/servers"
+elsif File.exist? "/etc/nginx/sites-enabled"
+  NGINX_CONF = "/etc/nginx/sites-enabled"
+end
+
+SHOWCASE_CONF = "#{NGINX_CONF}/showcase.conf"
 
 @git_path = File.realpath(File.expand_path('../..', __dir__))
 
@@ -18,8 +25,8 @@ restart = (not ARGV.include?('--restart'))
 Dir.chdir @git_path
 
 index = OpenStruct.new(
+  name:  "index",
   label: "index",
-  redis: "index",
   scope: "__index__",
 )
 
@@ -29,23 +36,21 @@ system 'bin/rails db:create' unless File.exist? "db/#{index.label}.sqlite3"
 @tenants = [index]
 showcases.each do |year, list|
   list.each do |token, info|
-    tenant = OpenStruct.new(
+    @tenants << OpenStruct.new(
       name:  info[:name],
       label: "#{year}-#{token}",
-      redis: "#{year}_#{token}",
-      scope: "#{year}/#{token}",
-      port:  info[:port]
+      scope: "#{year}/#{token}"
     )
-
-    ENV['RAILS_APP_DB'] = tenant.label
-    system 'bin/rails db:create' unless File.exist? "db/#{tenant.label}.sqlite3"
-    system 'bin/rails db:migrate'
-
-    count = `sqlite3 db/#{tenant.label}.sqlite3 "select count(*) from events"`.to_i
-    system 'bin/rails db:seed' if count == 0
-
-    @tenants << tenant
   end
+end
+
+@tenants.each do |tenant|
+  ENV['RAILS_APP_DB'] = tenant.label
+  system 'bin/rails db:create' unless File.exist? "db/#{tenant.label}.sqlite3"
+  system 'bin/rails db:migrate'
+
+  count = `sqlite3 db/#{tenant.label}.sqlite3 "select count(*) from events"`.to_i
+  system 'bin/rails db:seed' if count == 0
 end
 
 old_conf = IO.read(SHOWCASE_CONF) rescue nil
@@ -57,7 +62,7 @@ if new_conf != old_conf
   restart = true
 end
 
-system 'brew services restart nginx' if restart
+system 'nginx -s reload' if restart
 
 __END__
 server {

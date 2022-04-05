@@ -18,7 +18,7 @@ same heat.
 This is application that does exactly that, from data entry to scheduling, to
 generating of printed reports.
 
-# Getting up and running
+# Getting up and running - bare metal, one event
 
 Prerequisites:
 [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) and
@@ -34,6 +34,22 @@ bin/rails test:system
 bin/dev
 ```
 
+# Getting up and running - docker image, multiple events
+
+Prerequisites:
+[docker](https://docs.docker.com/get-docker/).
+
+```
+git clone -b main
+cd Showcase
+bundle install
+rm config/credentials.yml.enc
+RAILS_ENV=production bin/rails credentials:edit
+$EDITOR config/tenant/showcases.yml
+docker compose build
+docker compose up
+docker compose exec web /home/app/showcase/config/tenant/nginx-config.rb
+```
 # Implementation overview
 
 This is pretty much a standard
@@ -106,6 +122,9 @@ event is well suited to deployment in a Docker container to one of any number
 of available cloud providers.  Doing so would not only give scalability and
 privacy, it would eliminate any concerns of the app not being available due to
 power or network outages.
+
+Depending on the cloud provider, you will likely need to replace the database,
+the volumes, the ports, and even the `docker-compose.yml`.
 
 # Futures (planned features)
 
