@@ -34,9 +34,13 @@ bin/rails test:system
 bin/dev
 ```
 
+Visit http://localhost:3000/ to see the event.
+
 # Getting up and running - docker image, multiple events
 
 Prerequisites:
+[git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git),
+[ruby](https://www.ruby-lang.org/en/documentation/installation/), and
 [docker](https://docs.docker.com/get-docker/).
 
 ```
@@ -44,12 +48,15 @@ git clone -b main
 cd Showcase
 bundle install
 rm config/credentials.yml.enc
-RAILS_ENV=production bin/rails credentials:edit
+bin/rails credentials:edit
 $EDITOR config/tenant/showcases.yml
 docker compose build
 docker compose up
 docker compose exec web /home/app/showcase/config/tenant/nginx-config.rb
 ```
+
+Visit http://localhost:9999/showcase/ to see the list of events.
+
 # Implementation overview
 
 This is pretty much a standard
@@ -64,7 +71,7 @@ scores, as well as a special table for event information and settings.
 The heat scheduler can be found in
 [app/controllers/concerns/heat_scheduler.rb](./app/controllers/concerns/heat_scheduler.rb).
 It collects heats by agenda category, schedules them in two passes (first pass
-minimizes the number of heats, the second pass balances heats size), interleves
+minimizes the number of heats, the second pass balances heats size), interleaves
 dances of different types within an agenda category, then appends solos.
 
 Order of solos within an agenda category is controlled entirely manually via
@@ -84,24 +91,26 @@ mid-size local event is about a megabyte in size (about the size of a single
 camera image), and can be kept in sqlite3.  Passenger provides a
 [passenger_min_instances](https://www.phusionpassenger.com/library/config/nginx/reference/#passenger_min_instances)
 `0` option that allow a reasonable number of past, present, and future events
-to be hosted esentially without any overhead.  It does mean that you have to
+to be hosted essentially without any overhead.  It does mean that you have to
 accept the cold start times of the first access, but that appears to be on the
 order of a second on modern hardware, which is acceptable.
 
-The way this works is to set environment varialbes for each instance to control
+The way this works is to set environment variables for each instance to control
 the name of the database, the log file, base url, and pidfile.
 
-For Action Cable, nginx is preferred over Apache.  The [documentation for
-this](https://www.phusionpassenger.com/library/deploy/nginx/) is still listed
-as todo, but the following is what I have been able to figure out:
+For Action Cable, nginx is [preferred over Apache
+httpd](https://www.phusionpassenger.com/library/config/apache/action_cable_integration/).
+The [documentation for Deploying multiple apps on a single server
+(multitenancy)](https://www.phusionpassenger.com/library/deploy/nginx/) is
+still listed as todo, but the following is what I have been able to figure out:
 
 - One action cable process is allocated per server (i.e., listen port).
 - In order to share the action cable process, all apps on the same server will
   need to share the same redis URL and channel prefix.  The (Rails
-documentation)[https://guides.rubyonrails.org/action_cable_overview.html#redis-adapter]
-suggests that you use a different channel prefix for different applications on
-the same server -- **IGNORE THAT**.
-- Instead, use environment varialbes to stream from and broadcast to different
+  documentation)[https://guides.rubyonrails.org/action_cable_overview.html#redis-adapter]
+  suggests that you use a different channel prefix for different applications
+  on the same server -- **IGNORE THAT**.
+- Instead, use environment variables to stream from and broadcast to different
   action cable channels.
 
 The end result is what outwardly appears to be a single Rails app, with a
@@ -114,7 +123,7 @@ completes the picture.
 The initial (and as of this writing, current) configuration has a 8 year old
 Linux box running Apache httpd handing SSL and reverse proxying the application
 to a 2021 vintage Mac Mini M1 running the nginx configuration described above.
-This appraoch should easily scale to be able to handle hundreds of events even
+This approach should easily scale to be able to handle hundreds of events even
 with a half dozen or so running concurrently.
 
 An architecture of a single nginx process per group of rails apps, one per
@@ -130,7 +139,7 @@ the volumes, the ports, and even the `docker-compose.yml`.
 
 Some of features being explored:
 
-- Cloud deploymen (described above)
+- Cloud deployment (described above)
 - User access control and authentication
     - Likely initially basic auth within the application
     - OAuth with providers like google, facebook, etc is indeed possible
