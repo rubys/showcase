@@ -6,7 +6,7 @@ Rails.application.routes.draw do
  
   scope ENV.fetch("RAILS_APP_SCOPE", '') do
 
-    if ENV.fetch("RAILS_APP_SCOPE", '') == '__index__'
+    if ENV.fetch("RAILS_APP_DB", '') == 'index'
       root 'event#showcases'
     else
       root 'event#root'

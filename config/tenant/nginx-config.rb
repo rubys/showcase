@@ -18,7 +18,7 @@ SHOWCASE_CONF = "#{NGINX_CONF}/showcase.conf"
 @git_path = File.realpath(File.expand_path('../..', __dir__))
 
 showcases = YAML.load_file("#{__dir__}/showcases.yml")
-template = ERB.new(DATA.read)
+template = ERB.new(DATA.read, trim_mode: '-')
 
 restart = (not ARGV.include?('--restart'))
 
@@ -27,7 +27,7 @@ Dir.chdir @git_path
 index = OpenStruct.new(
   name:  "index",
   label: "index",
-  scope: "__index__",
+  scope: "",
 )
 
 ENV['RAILS_APP_DB'] = index.label
@@ -68,8 +68,9 @@ __END__
 server {
   listen 9999;
   server_name localhost;
+  rewrite ^/(showcase)?$ /showcase/ redirect;
 
-  # Tell Nginx and Passenger where your app's 'public' directory is
+  # Configuration common to all apps
   root <%= @git_path %>/public;
   passenger_enabled on;
   passenger_ruby <%= RbConfig.ruby %>;
@@ -79,27 +80,22 @@ server {
   passenger_env_var RAILS_PROXY_HOST https://rubix.intertwingly.net/;
   passenger_env_var RAILS_APP_REDIS showcase_production;
   passenger_env_var RAILS_APP_CABLE wss://rubix.intertwingly.net<%= ROOT %>/cable;
-
-  location /showcase {
-    alias <%= @git_path %>/public;
-    try_files $uri @index;
-  }
- 
-  location @index {
-    rewrite ^/showcase/(.*)$ /showcase/__index__/$1;
-  }
-
-  location <%= ROOT %>/cable {
-    passenger_app_group_name showcase-cable;
-    passenger_force_max_concurrent_requests_per_process 0;
-  }
-  <% @tenants.each do |tenant| %>
+<% @tenants.each do |tenant| %>
   # <%= tenant.name %>
   location <%= ROOT %>/<%= tenant.scope %> {
     passenger_app_group_name showcase-<%= tenant.label %>;
     passenger_env_var RAILS_APP_DB <%= tenant.label %>;
+<% if tenant.label == 'index' -%>
+    passenger_base_uri /;
+<% else -%>
     passenger_env_var RAILS_APP_SCOPE <%= tenant.scope %>;
+<% end -%>
     passenger_env_var PIDFILE <%= @git_path %>/tmp/pids/<%= tenant.label %>.pid;
   }
-  <% end %>
+<% end %>
+  # Action cable (shared by all apps on this server listen port)
+  location <%= ROOT %>/cable {
+    passenger_app_group_name showcase-cable;
+    passenger_force_max_concurrent_requests_per_process 0;
+  }
 }
