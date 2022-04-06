@@ -2,7 +2,7 @@
 
 In between updates to [Agile Web Development with Rails
 7](https://pragprog.com/titles/rails7/agile-web-development-with-rails-7/), I
-keep my Rails skills shap by developing small applications.
+keep my Rails skills sharp by developing small applications.
 
 I also take ballroom dance lessons with my wife, and we have competed
 nationally and at smaller local competitions.  Nationally, there is commercial
@@ -15,8 +15,9 @@ Manually making last minute changes can lead to scheduling mishaps, such as
 having the same person being scheduled twice with different partners for the
 same heat.
 
-This is application that does exactly that, from data entry to scheduling, to
-generating of printed reports.
+This application does exactly that, from data entry to scheduling, to
+generating of printed reports.  It can even be accessed by participants
+on the day of the event to see the list of heats.
 
 # Getting up and running - bare metal, one event
 
@@ -91,9 +92,9 @@ mid-size local event is about a megabyte in size (about the size of a single
 camera image), and can be kept in sqlite3.  Passenger provides a
 [passenger_min_instances](https://www.phusionpassenger.com/library/config/nginx/reference/#passenger_min_instances)
 `0` option that allow a reasonable number of past, present, and future events
-to be hosted essentially without any overhead.  It does mean that you have to
-accept the cold start times of the first access, but that appears to be on the
-order of a second on modern hardware, which is acceptable.
+to be hosted essentially without any overhead when not in use.  This does mean
+that you have to accept the cold start times of the first access, but that
+appears to be on the order of a second on modern hardware, which is acceptable.
 
 The way this works is to set environment variables for each instance to control
 the name of the database, the log file, base url, and pidfile.
@@ -114,9 +115,8 @@ still listed as todo, but the following is what I have been able to figure out:
   action cable channels.
 
 The end result is what outwardly appears to be a single Rails app, with a
-single set of assets and a single cable.  One additional rails instance to
-serve the index and ultimately provide global administration and features
-completes the picture.
+single set of assets and a single cable.  One additional rails instance
+serves the index and ultimately will provide global administration.
 
 # Topology
 
@@ -127,7 +127,7 @@ This approach should easily scale to be able to handle hundreds of events even
 with a half dozen or so running concurrently.
 
 An architecture of a single nginx process per group of rails apps, one per
-event is well suited to deployment in a Docker container to one of any number
+event, is well suited to deployment in a Docker container to one of any number
 of available cloud providers.  Doing so would not only give scalability and
 privacy, it would eliminate any concerns of the app not being available due to
 power or network outages.
