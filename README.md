@@ -141,7 +141,8 @@ Some of features being explored:
 
 - Cloud deployment (described above)
 - User access control and authentication
-    - Likely initially basic auth within the application
+    - Likely initially "Basic" HTTP authentication within the application
     - OAuth with providers like google, facebook, etc is indeed possible
+- User interface to create a new event
 - Basic "bulletin board" feature both for support request and for studios to
   coordinate plans
