@@ -110,7 +110,7 @@ still listed as todo, but the following is what I have been able to figure out:
   documentation](https://guides.rubyonrails.org/action_cable_overview.html#redis-adapter)
   suggests that you use a different channel prefix for different applications
   on the same server -- **IGNORE THAT**.
-- Instead, use environment variables to stream from and broadcast to different
+- Instead, use environment variables to stream from, and broadcast to, different
   action cable channels.
 
 The end result is what outwardly appears to be a single Rails app, with a
@@ -120,7 +120,7 @@ completes the picture.
 
 # Topology
 
-The initial (and as of this writing, current) configuration has a 8 year old
+The initial (and as of this writing, current) configuration has a 8 year old i3
 Linux box running Apache httpd handing SSL and reverse proxying the application
 to a 2021 vintage Mac Mini M1 running the nginx configuration described above.
 This approach should easily scale to be able to handle hundreds of events even
