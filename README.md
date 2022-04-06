@@ -26,7 +26,7 @@ Prerequisites:
 [ruby](https://www.ruby-lang.org/en/documentation/installation/).
 
 ```
-git clone -b main
+git clone https://github.com/rubys/showcase.git
 cd Showcase
 bundle install
 bin/rails db:create db:migrate db:seed
@@ -45,7 +45,7 @@ Prerequisites:
 [docker](https://docs.docker.com/get-docker/).
 
 ```
-git clone -b main
+git clone https://github.com/rubys/showcase.git
 cd Showcase
 bundle install
 rm config/credentials.yml.enc
