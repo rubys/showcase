@@ -17,10 +17,24 @@ can click on it to see helpful hints.</li>
   <ul class="mt-2 list-disc list-inside">
     <% sites.each do |token, info| %>
     <li>
+      <% if info[:events] %>
+      <span class="text-xl"><%= info[:name] %><span>
+      <ul class="my-2 ml-8 list-disc list-inside">
+      <% info[:events].each do |subtoken, info| %>
+        <li>
+          <a href="<%= "#{year}/#{token}/#{subtoken}" %>/">
+            <span class="text-xl"><%= info[:name] %><span>
+            <span class="text-slate-400">- <%= info['date'] %><span>
+          </a>
+        </li>
+      <% end %>
+      </ul>
+      <% else %>
       <a href="<%= "#{year}/#{token}" %>/">
         <span class="text-xl"><%= info[:name] %><span>
         <span class="text-slate-400">- <%= info['date'] %><span>
       </a>
+      <% end %>
     </li>
     <% end %>
   </ul>

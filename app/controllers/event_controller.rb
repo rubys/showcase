@@ -41,10 +41,20 @@ class EventController < ApplicationController
 
     @showcases.each do |year, sites|
       sites.each do |token, info|
-        db = "#{__dir__}/../..//db/#{year}-#{token}.sqlite3"
-        begin
-          info.merge! JSON.parse(`sqlite3 --json #{db} "select date from events"`).first
-        rescue
+        if info[:events]
+          info[:events].each do |subtoken, subinfo|
+            db = "#{__dir__}/../..//db/#{year}-#{token}-#{subtoken}.sqlite3"
+            begin
+              subinfo.merge! JSON.parse(`sqlite3 --json #{db} "select date from events"`).first
+            rescue
+            end
+          end
+        else
+          db = "#{__dir__}/../..//db/#{year}-#{token}.sqlite3"
+          begin
+            info.merge! JSON.parse(`sqlite3 --json #{db} "select date from events"`).first
+          rescue
+          end
         end
       end
     end

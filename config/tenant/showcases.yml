@@ -2,13 +2,16 @@
 2022:                                                                           
   annapolis:
     :name: Annapolis
-    :port: 9999
+    :events:                                          
+      :medalball:                                     
+        :name: Metal Ball                             
+      :chesapeakeclassic:
+        :name: Chesapeake Classic
+      :gratitudegala:
+        :name: Gratitude Gala
   charlotte:
     :name: Charlotte
-    :port: 9999
   harrisburg:                                                                   
     :name: Harrisburg
-    :port: 9999
   vabeach:                                                                   
     :name: Virginia Beach
-    :port: 9999
