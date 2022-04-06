@@ -106,8 +106,8 @@ still listed as todo, but the following is what I have been able to figure out:
 
 - One action cable process is allocated per server (i.e., listen port).
 - In order to share the action cable process, all apps on the same server will
-  need to share the same redis URL and channel prefix.  The (Rails
-  documentation)[https://guides.rubyonrails.org/action_cable_overview.html#redis-adapter]
+  need to share the same redis URL and channel prefix.  The [Rails
+  documentation](https://guides.rubyonrails.org/action_cable_overview.html#redis-adapter)
   suggests that you use a different channel prefix for different applications
   on the same server -- **IGNORE THAT**.
 - Instead, use environment variables to stream from and broadcast to different
