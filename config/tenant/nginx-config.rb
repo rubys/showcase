@@ -30,17 +30,24 @@ index = OpenStruct.new(
   scope: "",
 )
 
-ENV['RAILS_APP_DB'] = index.label
-system 'bin/rails db:create' unless File.exist? "db/#{index.label}.sqlite3"
-
 @tenants = [index]
 showcases.each do |year, list|
   list.each do |token, info|
-    @tenants << OpenStruct.new(
-      name:  info[:name],
-      label: "#{year}-#{token}",
-      scope: "#{year}/#{token}"
-    )
+    if info[:events]
+      info[:events].each do |subtoken, subinfo|
+        @tenants << OpenStruct.new(
+          name:  info[:name] + ' - ' + subinfo[:name] ,
+          label: "#{year}-#{token}-#{subtoken}",
+          scope: "#{year}/#{token}/#{subtoken}"
+        )
+      end
+    else
+      @tenants << OpenStruct.new(
+        name:  info[:name],
+        label: "#{year}-#{token}",
+        scope: "#{year}/#{token}"
+      )
+    end
   end
 end
 
@@ -86,6 +93,7 @@ server {
     passenger_app_group_name showcase-<%= tenant.label %>;
     passenger_env_var RAILS_APP_DB <%= tenant.label %>;
 <% if tenant.label == 'index' -%>
+    passenger_env_var RAILS_SERVE_STATIC_FILES true;
     passenger_base_uri /;
 <% else -%>
     passenger_env_var RAILS_APP_SCOPE <%= tenant.scope %>;
