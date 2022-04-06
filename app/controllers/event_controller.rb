@@ -64,6 +64,11 @@ class EventController < ApplicationController
     @public_url = URI.join(request.original_url, '../../public')
   end
 
+  def database
+    database = "db/#{ENV.fetch("RAILS_APP_DB") { Rails.env }}.sqlite3"
+    render plain: `sqlite3 #{database} .dump`
+  end
+
   def start_heat
     event = Event.last
     event.current_heat = params[:heat]

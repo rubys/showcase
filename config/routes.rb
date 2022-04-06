@@ -15,6 +15,7 @@ Rails.application.routes.draw do
     get '/env', to: 'event#env'
     get '/instructions', to: 'event#instructions'
     get '/event.xlsx', to: "event#index", as: 'event_spreadsheet'
+    get '/event.sqlite3', to: "event#database", as: 'event_database'
 
     scope 'public' do
       get 'heats', to: 'heats#mobile', as: 'public_heats'
