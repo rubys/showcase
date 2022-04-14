@@ -70,6 +70,7 @@ Rails.application.configure do
 
   # allow access
   config.hosts << "rubymini"
+  config.hosts << "rubym1p.local"
   config.hosts << "rubix.local"
   config.hosts << "rubix.intertwingly.net"
 
