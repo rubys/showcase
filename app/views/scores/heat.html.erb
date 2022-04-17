@@ -3,11 +3,8 @@
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
-  <h1 class="font-bold text-4xl pt-1 pb-3 text-center">
-    <%= link_to @judge.display_name, person_path(@judge) %>
-    <%= link_to root_path do %>
-      <%= image_tag "/arthur-murray-logo.gif", class: "absolute right-4 top-4 h-8" %>
-    <% end %>
+  <h1 class="grow font-bold text-4xl pt-1 pb-3 text-center">
+    <%= link_to "Heat #{@number}: #{@dance}", judge_heatlist_path(judge: @judge, anchor: dom_id(@heat)) %>
   </h1>
 
 <div data-controller="info-box">
@@ -35,7 +32,7 @@
 
       <% @results[score]&.each do |subject| %>
         <% lvl = subject.entry.level.initials %>
-        <div class='flex-none w-20 h-36 mx-1 my-1 py-1 border-2 rounded-lg text-center align-middle my-auto head-<%=lvl%>' draggable="true" data-heat="<%= subject.id %>" id="<%= dom_id subject %>">
+        <div class='flex-none w-20 h-20 mx-1 my-1 py-1 border-2 rounded-lg text-center text-xs align-middle my-auto head-<%=lvl%>' draggable="true" data-heat="<%= subject.id %>" id="<%= dom_id subject %>">
           <span class="font-bold text-xl"><%= subject.entry.lead.back %></span>
           <span class="hidden sm:block base-<%=lvl%>"><br>
           <%= subject.entry.subject_category %><br>
@@ -49,15 +46,18 @@
     </div>
   </div>
 
-  <div class="mt-2 flex flex-row">
+  <div class="mt-2 flex flex-row w-full">
     <div class="align-middle">
       <% if @prev %>
       <%= link_to '<<', judge_heat_path(judge: @judge, heat: @prev), class: 'text-2xl lg:text-4xl', rel: 'prev' %>
       <% end %>
     </div>
 
-    <h1 class="grow font-bold text-2xl pt-1 pb-3 text-center">
-      <%= link_to "Heat #{@number}: #{@dance}", judge_heatlist_path(judge: @judge, anchor: dom_id(@heat)) %>
+    <h1 class="font-bold text-2xl pt-1 pb-3 flex-1 text-center">
+      <%= link_to @judge.display_name, person_path(@judge) %>
+      <%= link_to root_path do %>
+        <%= image_tag "/arthur-murray-logo.gif", class: "absolute right-4 top-4 h-8" %>
+      <% end %>
     </h1>
 
     <div class="align-middle">

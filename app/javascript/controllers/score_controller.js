@@ -1,5 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
+const HIGHLIGHT = 'bg-yellow-200';
+
 // Connects to data-controller="score"
 export default class extends Controller {
   static targets = [ "error" ]
@@ -51,10 +53,16 @@ export default class extends Controller {
       });
 
       score.addEventListener('dragenter', event => {
+        score.classList.add(HIGHLIGHT);
         event.preventDefault();
       });
 
+      score.addEventListener('dragleave', event => {
+        score.classList.remove(HIGHLIGHT);
+      });
+
       score.addEventListener('drop', event => {
+        score.classList.remove(HIGHLIGHT);
         let source = event.dataTransfer.getData("application/drag-id");
         if (source) {
           source = document.getElementById(source);
