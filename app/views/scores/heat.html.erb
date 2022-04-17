@@ -32,11 +32,11 @@
 
       <% @results[score]&.each do |subject| %>
         <% lvl = subject.entry.level.initials %>
-        <div class='flex-none w-20 h-20 mx-1 my-1 py-1 border-2 rounded-lg text-center text-xs align-middle my-auto head-<%=lvl%>' draggable="true" data-heat="<%= subject.id %>" id="<%= dom_id subject %>">
-          <span class="font-bold text-xl"><%= subject.entry.lead.back %></span>
-          <span class="hidden sm:block base-<%=lvl%>"><br>
+        <div class='grid align-middle w-20 my-[1%] min-h-[24%] mx-1 border-2 rounded-lg text-center head-<%=lvl%>' draggable="true" data-heat="<%= subject.id %>" id="<%= dom_id subject %>">
+          <span class="font-bold text-xl my-auto"><%= subject.entry.lead.back %></span>
+          <div class="hidden text-xs sm:block base-<%=lvl%>"><br>
           <%= subject.entry.subject_category %><br>
-          <%= lvl %></span>
+          <%= lvl %></div>
         </div>  
     <% end %>
     <% if score != '' %>
