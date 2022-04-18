@@ -202,7 +202,8 @@ export default class extends Controller {
       });
 
       subject.addEventListener('touchend', event => {
-        this.select(subject);
+        event.preventDefault();
+        this.toggle(subject);
       });
     }
 
