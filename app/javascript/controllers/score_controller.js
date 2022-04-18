@@ -199,6 +199,11 @@ export default class extends Controller {
       subject.addEventListener('mouseup', event => {
         event.stopPropagation();
         this.toggle(subject);
+
+        for (let score of this.scores) {
+          console.log(score)
+          score.classList.remove(HIGHLIGHT)
+        }
       });
 
       subject.addEventListener('touchend', event => {
@@ -239,10 +244,19 @@ export default class extends Controller {
       score.addEventListener('mouseup', event => {
         this.move(this.selected, score)
       })
+
+      score.addEventListener('touchend', event => {
+        event.preventDefault();
+        this.move(this.selected, score)
+
+        for (let score of this.scores) {
+          score.classList.remove(HIGHLIGHT)
+        }
+      })
     }
 
-    // iPad viewport height is unreliable - use clientHeight
-    let overflow = document.body.getBoundingClientRect().height - window.innerHeight;
+    // mobile device viewport height is unreliable - use clientHeight
+    let overflow = document.body.getBoundingClientRect().height - document.documentElement.clientHeight;
     if (overflow > 0) {
       let container = document.querySelector('.max-h-full');
 
