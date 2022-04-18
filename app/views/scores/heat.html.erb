@@ -34,7 +34,7 @@
         <% lvl = subject.entry.level.initials %>
         <div class='grid align-middle w-20 my-[1%] min-h-[24%] mx-1 border-2 rounded-lg text-center head-<%=lvl%>' draggable="true" data-heat="<%= subject.id %>" id="<%= dom_id subject %>">
           <span class="font-bold text-xl my-auto"><%= subject.entry.lead.back %></span>
-          <div class="hidden text-xs sm:block base-<%=lvl%>"><br>
+          <div class="hidden text-sm sm:block base-<%=lvl%>"><br>
           <%= subject.entry.subject_category %><br>
           <%= lvl %></div>
         </div>  
