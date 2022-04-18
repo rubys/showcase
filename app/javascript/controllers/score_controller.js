@@ -240,5 +240,18 @@ export default class extends Controller {
         this.move(this.selected, score)
       })
     }
+
+    // iPad viewport height is unreliable - use clientHeight
+    let overflow = document.body.getBoundingClientRect().height - window.innerHeight;
+    if (overflow > 0) {
+      let container = document.querySelector('.max-h-full');
+
+      function resize() {
+        container.style.maxHeight = `${document.documentElement.clientHeight}px`;
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+    }
   }
 }
