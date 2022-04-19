@@ -11,7 +11,8 @@ class HeatsController < ApplicationController
       entry: [:age, :level, lead: [:studio], follow: [:studio]]
     )
 
-    @solos = Solo.includes(:heat).order('heats.number').map(&:heat)
+    @solos = Solo.includes(:heat).order('heats.number').
+      map {|solo| solo.heat.number}
 
     @heats = @heats.to_a.group_by {|heat| heat.number}.
     map do |number, heats|
