@@ -13,6 +13,7 @@
 */
 
 @layer components {
+
   .info-button { @apply
     absolute left-8 top-8 text-4xl text-emerald-600 print:hidden
   }

@@ -4,7 +4,9 @@
   <% end %>
 
   <h1 class="grow font-bold text-4xl pt-1 pb-3 text-center">
-    <%= link_to "Heat #{@number}: #{@dance}", judge_heatlist_path(judge: @judge, anchor: dom_id(@heat)) %>
+    <%= link_to judge_heatlist_path(judge: @judge, anchor: dom_id(@heat)), rel: 'up' do %>
+      <span>Heat <%= @number %>:<br class="block sm:hidden"> <%= @dance %></span>
+    <% end %>
   </h1>
 
 <div data-controller="info-box">
@@ -19,6 +21,7 @@
 <li>Dragging an entry back to the unlabelled box at the right returns the participant to the unscored state.
 <li>Clicking on the arrows at the bottom corners will advance you to the next or previous heats.
 Left and right arrows on the keyboard may also be used.
+Swiping left and right on mobile devices and tablets also work.
 <li>Clicking on the heat information at the top center of the page will return you to the heat list where you can quickly scroll and select a different heat.
 </ul>
 </div>
@@ -39,7 +42,7 @@ Left and right arrows on the keyboard may also be used.
 
       <% @results[score]&.each do |subject| %>
         <% lvl = subject.entry.level.initials %>
-        <div class='grid align-middle w-20 my-[1%] min-h-[24%] mx-1 border-2 rounded-lg text-center head-<%=lvl%>' draggable="true" data-heat="<%= subject.id %>" id="<%= dom_id subject %>">
+        <div class='grid align-middle w-20 my-[1%] min-h-[12%] sm:min-h-[24%] mx-1 border-2 rounded-lg text-center head-<%=lvl%>' draggable="true" data-heat="<%= subject.id %>" id="<%= dom_id subject %>">
           <span class="font-bold text-xl my-auto"><%= subject.entry.lead.back %></span>
           <div class="hidden text-sm sm:block base-<%=lvl%>"><br>
           <%= subject.entry.subject_category %><br>

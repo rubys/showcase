@@ -44,6 +44,45 @@ export default class extends Controller {
     }
   }
 
+  touchstart = event => {
+    this.touchStart = event.touches[0];
+  }
+
+  touchend = event => {
+    let direction = this.swipe(event);
+
+    if (direction == 'right') {
+      let link = document.querySelector('a[rel=prev]')
+      if (link) link.click();
+    } else if (direction == 'left') {
+      let link = document.querySelector('a[rel=next]')
+      if (link) link.click();
+    } else if (direction == 'up') {
+      let link = document.querySelector('a[rel=up]')
+      if (link) link.click();
+    }
+  }
+
+  swipe(event) {
+    if (!this.touchStart) return false;
+    let stop = event.changedTouches[0];
+    if (stop.identifier != this.touchStart.identifier) return false;
+
+    let deltaX = stop.clientX - this.touchStart.clientX;
+    let deltaY = stop.clientY - this.touchStart.clientY;
+
+    let height = document.documentElement.clientHeight;
+    let width = document.documentElement.clientWidth;
+
+    if (Math.abs(deltaX) > width/2 && Math.abs(deltaY) < height/4) {
+      return deltaX > 0 ? "right" : "left"; 
+    } else if (Math.abs(deltaY) > height/2 && Math.abs(deltaX) < width/4) {
+      return deltaY > 0 ? "down" : "up";
+    } else {
+      return false;
+    }
+  }
+
   unselect() {
     if (!this.selected) return;
     this.selected.style.borderColor = '';
@@ -175,6 +214,8 @@ export default class extends Controller {
 
   disconnect() {
     document.body.removeEventListener('keydown', this.keydown);
+    document.body.removeEventListener('touchstart', this.touchstart);
+    document.body.removeEventListener('touchend', this.touchend);
   }
 
   connect() {
@@ -189,8 +230,11 @@ export default class extends Controller {
     this.scores = [...this.element.querySelectorAll('*[data-score]')];
 
     this.selected = null;
+    this.mouseStart = null;
 
     document.body.addEventListener('keydown', this.keydown);
+    document.body.addEventListener('touchstart', this.touchstart);
+    document.body.addEventListener('touchend', this.touchend);
 
     for (let subject of this.subjects.values()) {
       subject.addEventListener('dragstart', event => {
@@ -207,6 +251,7 @@ export default class extends Controller {
       });
 
       subject.addEventListener('touchend', event => {
+        if (this.swipe(event)) return;
         event.preventDefault();
         this.toggle(subject);
       });
@@ -246,12 +291,10 @@ export default class extends Controller {
       })
 
       score.addEventListener('touchend', event => {
+        if (this.swipe(event)) return;
         event.preventDefault();
         this.move(this.selected, score)
-
-        for (let score of this.scores) {
-          score.classList.remove(HIGHLIGHT)
-        }
+        this.unhighlight();
       })
     }
 
