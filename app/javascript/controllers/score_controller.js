@@ -19,6 +19,7 @@ export default class extends Controller {
       this.moveDown();
     } else if (event.key == 'Escape') {
       this.unselect();
+      this.unhighlight();
     } else if (event.key == 'Tab') {
       event.preventDefault();
       event.stopPropagation();
@@ -57,13 +58,16 @@ export default class extends Controller {
     subject.style.borderWidth = '3px';
   }
 
+  unhighlight() {
+    for (let score of this.scores) {
+      score.classList.remove(HIGHLIGHT)
+    }
+  }
+
   toggle(subject) {
     if (this.selected == subject) {
       this.unselect();
-
-      for (let score of this.scores) {
-        score.classList.remove(HIGHLIGHT)
-      }
+      this.unhighlight();
     } else {
       this.select(subject);
     }
@@ -199,11 +203,7 @@ export default class extends Controller {
       subject.addEventListener('mouseup', event => {
         event.stopPropagation();
         this.toggle(subject);
-
-        for (let score of this.scores) {
-          console.log(score)
-          score.classList.remove(HIGHLIGHT)
-        }
+        this.unhighlight();
       });
 
       subject.addEventListener('touchend', event => {
