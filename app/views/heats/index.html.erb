@@ -134,7 +134,7 @@ tbody::after {
            <td class="row"><%= heat.dance.name %>
            <% end %>
            <% end %>
-           <td class="row"><%= heat.back %>
+           <td class="row"><%= heat.back || 'TBD' %>
            <td class="row"><%= link_to heat.lead.display_name, polymorphic_path(heat.lead, anchor: 'heats') %>
            <td class="row"><%= link_to heat.follow.display_name, polymorphic_path(heat.follow, anchor: 'heats') %>
            <td class="row"><%= heat.entry.level.name %>

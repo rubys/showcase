@@ -74,7 +74,7 @@ module HeatScheduler
 
     @heats = @heats.
       group_by {|heat| heat.number}.map do |number, heats|
-        [number, heats.sort_by { |heat| heat.back } ]
+        [number, heats.sort_by { |heat| heat.back || 0 } ]
       end.sort
   end
 
