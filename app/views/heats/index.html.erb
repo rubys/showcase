@@ -101,7 +101,7 @@ tbody::after {
           <% end %>
         </td>
       </tr>
-      <% if heats.first.back < 200 && heats.first.category != 'Solo' %>
+      <% if (heats.first.back || 0) < 200 && heats.first.category != 'Solo' %>
       <tr>
         <td>
         <td></td>
