@@ -16,12 +16,12 @@ class DancesController < ApplicationController
   def new
     @dance ||= Dance.new
 
-    @categories = Category.order(:order).pluck(:name, :id)
+    form_init
   end
 
   # GET /dances/1/edit
   def edit
-    @categories = Category.order(:order).pluck(:name, :id)
+    form_init
   end
 
   # POST /dances or /dances.json
@@ -99,6 +99,33 @@ class DancesController < ApplicationController
   end
 
   private
+    def form_init
+      @categories = Category.order(:order).pluck(:name, :id)
+
+      @affinities = Category.all.map do |category| 
+        dances = category.open_dances + category.closed_dances + category.solo_dances
+
+        associations = {}
+        open = dances.map(&:open_category_id).uniq
+        closed = dances.map(&:closed_category_id).uniq
+        solo = dances.map(&:solo_category_id).uniq
+
+        if open.length == 1
+          associations[:dance_open_category_id] = open.first
+        end
+
+        if closed.length == 1
+          associations[:dance_closed_category_id] = closed.first
+        end
+
+        if closed.length == 1
+          associations[:dance_solo_category_id] = solo.first
+        end
+        
+        [category.id, associations]
+      end.to_h
+    end
+
     # Use callbacks to share common setup or constraints between actions.
     def set_dance
       @dance = Dance.find(params[:id])
