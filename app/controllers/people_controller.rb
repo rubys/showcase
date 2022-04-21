@@ -110,6 +110,7 @@ class PeopleController < ApplicationController
       includes(:dance, entry: [:lead, :follow]).
       where(entry: {lead: @person}).
       or(Heat.where(entry: {follow: @person})).
+      or(Heat.where(id: Formation.joins(:solo).where(person: 5).pluck(:heat_id))).
       order(:number).to_a
 
     @solos = Solo.includes(:heat).all.map(&:heat) & @heats
