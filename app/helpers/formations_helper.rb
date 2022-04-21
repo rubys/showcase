@@ -1,0 +1,2 @@
+module FormationsHelper
+end

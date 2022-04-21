@@ -31,7 +31,7 @@ class SolosTest < ApplicationSystemTestCase
     end
 
     fill_in "Song", with: "Por Una Cabeza"
-    click_on "Update Solo"
+    click_on "Update Formation"
 
     assert_text "Solo was successfully updated"
     click_on "Back"

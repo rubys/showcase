@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_03_10_220503) do
+ActiveRecord::Schema[7.0].define(version: 2022_04_21_013549) do
   create_table "ages", force: :cascade do |t|
     t.string "category"
     t.string "description"
@@ -66,6 +66,15 @@ ActiveRecord::Schema[7.0].define(version: 2022_03_10_220503) do
     t.datetime "updated_at", null: false
     t.boolean "intermix", default: true
     t.integer "current_heat"
+  end
+
+  create_table "formations", force: :cascade do |t|
+    t.integer "person_id", null: false
+    t.integer "solo_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["person_id"], name: "index_formations_on_person_id"
+    t.index ["solo_id"], name: "index_formations_on_solo_id"
   end
 
   create_table "heats", force: :cascade do |t|
@@ -146,6 +155,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_03_10_220503) do
   add_foreign_key "entries", "people", column: "follow_id"
   add_foreign_key "entries", "people", column: "instructor_id"
   add_foreign_key "entries", "people", column: "lead_id"
+  add_foreign_key "formations", "people"
+  add_foreign_key "formations", "solos"
   add_foreign_key "heats", "dances"
   add_foreign_key "heats", "entries"
   add_foreign_key "people", "ages"

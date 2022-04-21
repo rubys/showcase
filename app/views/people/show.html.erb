@@ -18,8 +18,11 @@ when most dances for an individual are with one instructor but one or two are ch
     <% end %>
 
     <% if @person.type == "Student" %>
-    <%= up_link 'Add heats', new_entry_path(primary: @person), class: "btn-blue float-right" %>
-    <%= up_link 'Add solo', new_solo_path(primary: @person), class: "btn-blue float-right" %>
+    <div class="float-right flex flex-col justify-end">
+    <%= up_link 'Add heats', new_entry_path(primary: @person), class: "btn-blue" %>
+    <%= up_link 'Add solo', new_solo_path(primary: @person), class: "btn-blue my-2" %>
+    <%= up_link 'Add formation', new_formation_path(primary: @person), class: "btn-blue" %>
+    </div>
     <% end %>
 
     <%= render @person %>
@@ -116,7 +119,7 @@ when most dances for an individual are with one instructor but one or two are ch
             <td class="row"><%= entry.level.name %>
             <td class="row"><%= entry.age.category %>
             <td>
-            <form method="get" action="<%= edit_solo_path(heat.solo) %>">
+            <form method="get" action="<%= heat.solo.formations.empty? ? edit_solo_path(heat.solo) : edit_formation_path(heat.solo) %>">
             <input type="hidden" name="primary" value="<%= @person.id %>">
             <button type="submit" class='group-hover:inline hidden x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium'>Edit</button>
             </form>
@@ -254,6 +257,7 @@ when most dances for an individual are with one instructor but one or two are ch
       <% if @person.type == 'Student' %>
       <%= up_link 'Add heats', new_entry_path(primary: @person), class: "btn-blue" %>
       <%= up_link 'Add solo', new_solo_path(primary: @person), class: "btn-blue" %>
+      <%= up_link 'Add formation', new_formation_path(primary: @person), class: "btn-blue" %>
       <% end %>
     </div>
 

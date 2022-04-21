@@ -71,6 +71,12 @@ class SolosController < ApplicationController
 
     respond_to do |format|
       if @solo.save
+        if solo[:instructor].respond_to? :values
+          solo[:instructor].values.each do |dancer|
+            Formation.create! solo: @solo, person_id: dancer.to_i
+          end
+        end
+
         format.html { redirect_to @person, notice: "Solo was successfully created." }
         format.json { render :show, status: :created, location: @solo }
       else
@@ -100,6 +106,24 @@ class SolosController < ApplicationController
       @solo.combo_dance = nil
     else
       @solo.combo_dance = Dance.find(solo[:combo_dance_id].to_i)
+    end
+
+    if solo[:instructor].respond_to? :values
+      formation = solo[:instructor].values.map(&:to_i)
+    else
+      formation = []
+    end
+
+    if not formation.empty? or not @solo.formations.empty?
+      @solo.formations.each do |record|
+        Formation.delete(record) unless formation.include? record.person_id
+      end
+
+      formation.each do |person|
+        unless @solo.formations.to_a.any? {|record| record.person_id == person}
+          Formation.create! solo: @solo, person_id: person
+        end
+      end
     end
 
     respond_to do |format|

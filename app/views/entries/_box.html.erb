@@ -1,18 +1,26 @@
-<div data-controller="entry-box">
+<div data-controller="<%= @formation ? 'formation' : 'entry-box' %>">
+  <% target = (@formation ? 'formation' : 'entry-box') + '-target' %>
 
   <% if @person %>
-  <%= form.hidden_field :primary, value: @person.id, data: {'entry-box-target' => 'primary'} %>
-  <%= form.select :partner, @avail, {selected: @partner}, data: {'entry-box-target' => 'partner', action: 'change->entry-box#reveal'},
+  <%= form.hidden_field :primary, value: @person.id, data: {target => 'primary'} %>
+  <%= form.select :partner, @avail, {selected: @partner}, data: {target => 'partner', action: 'change->entry-box#reveal'},
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'partner' %>
   <% else %>
-  <%= form.select :primary, @followers, {selected: @partner}, data: {'entry-box-target' => 'primary', action: 'change->entry-box#reveal'},
+  <%= form.select :primary, @followers, {selected: @partner}, data: {target  => 'primary', action: 'change->entry-box#reveal'},
   class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'primary' %>
-  <%= form.select :partner, @leads, {selected: @partner}, data: {'entry-box-target' => 'partner', action: 'change->entry-box#reveal'},
+  <%= form.select :partner, @leads, {selected: @partner}, data: {target => 'partner', action: 'change->entry-box#reveal'},
   class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'partner' %>
   <% end %>
 
-  <%= form.select :instructor, @instructors, {selected: @instructor}, data: {'entry-box-target' => 'instructor'},
+  <% if @formation %>
+   <%= form.select 'instructor[1]', @instructors, {selected: @formation[0]}, data: {target => 'instructor'},
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'instructor' %>
+   <%= form.select 'instructor[2]', @instructors, {selected: @formation[1]}, data: {target => 'instructor'},
+    class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'instructor' %>
+  <% else %>
+  <%= form.select :instructor, @instructors, {selected: @instructor}, data: {target => 'instructor'},
+    class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'instructor' %>
+  <% end %>
 
   <%= form.select :age, @ages, {selected: @age},
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %>

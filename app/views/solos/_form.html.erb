@@ -48,9 +48,11 @@
 
   <div class="mx-auto flex">
   <div class="mx-auto">
-  <%= form.submit class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  <%= form.submit (solo.persisted? ? 'Update' : 'Create') + ' ' + (@formation ? 'Formation' : 'Solo'),
+    class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
   <% if solo.id %>
-  <%= link_to 'Remove this solo', solo_path(solo, primary: @person), class: 'btn-grey',
+  <%= link_to "Remove this #{@formation ? 'formation' : 'solo'}", 
+    solo_path(solo, primary: @person), class: 'btn-grey',
     data: { turbo_method: :delete, turbo_confirm: 'Are you sure?' } %>
   <% end %>
   <%= link_to 'Back to student', @person, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>

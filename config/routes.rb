@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :formations
   # if ENV['RAILS_RELATIVE_URL_ROOT'].present?
   #   mount ActionCable.server => "#{ENV['RAILS_RELATIVE_URL_ROOT']}/cable"
   # end
