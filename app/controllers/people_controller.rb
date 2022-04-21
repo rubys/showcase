@@ -5,10 +5,12 @@ class PeopleController < ApplicationController
     %i[ show edit update destroy get_entries post_entries ]
 
   def heats
+    @ballrooms = Event.last.ballrooms
     heat_sheets
   end
 
   def individual_heats
+    @ballrooms = Event.last.ballrooms
     @people = [set_person]
     heat_sheets
     render :heats

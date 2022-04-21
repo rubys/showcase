@@ -21,8 +21,10 @@
   <% @heats.each do |heat| %>
     <% next unless [heat.entry.lead, heat.entry.follow].include? person %>
     <tr class="text-sm">
-      <td class="text-center"><%= heat.number %> -
-      <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
+      <td class="text-center"><%= heat.number %>
+      <% if @ballrooms == 2 %>
+      - <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
+      <% end %>
       <td><div class="mx-4"><%= heat.category %>
       <td><div class="mx-4"><%= heat.dance.name %></div>
       <% if heat.entry.lead != person %>

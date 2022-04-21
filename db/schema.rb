@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_04_21_013549) do
+ActiveRecord::Schema[7.0].define(version: 2022_04_21_144933) do
   create_table "ages", force: :cascade do |t|
     t.string "category"
     t.string "description"
@@ -66,6 +66,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_04_21_013549) do
     t.datetime "updated_at", null: false
     t.boolean "intermix", default: true
     t.integer "current_heat"
+    t.integer "ballrooms"
   end
 
   create_table "formations", force: :cascade do |t|

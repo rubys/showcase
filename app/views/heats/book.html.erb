@@ -83,7 +83,7 @@ tbody::after {
           <% end %>
         </td>
       </tr>
-      <% if heats.first.back < 200 %>
+      <% if heats.first.back < 200 && @ballrooms == 2 %>
       <tr>
         <% if @type == 'judge' %>
         <td>
@@ -102,7 +102,7 @@ tbody::after {
       <% end %>
 
       <% heats.each do |heat| %>
-         <% if heat.back && last_back < 200 && heat.back >= 200 %>
+         <% if heat.back && last_back < 200 && heat.back >= 200 && @ballrooms == 2 %>
          <tr>
            <% if @type == 'judge' %>
            <td>

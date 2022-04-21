@@ -22,6 +22,19 @@
   <%= form.text_field :date, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <div class="my-5">
+  <%= form.label :ballrooms %>
+  <ul>
+  <li class="my-2"><%= form.radio_button :ballrooms, 1 %> One ballroom
+  <li classs="my-2"><%= form.radio_button :ballrooms, 2 %> Two ballrooms:
+  <ul class="ml-8">
+  <li>Ballroom A: Amateur follower with instructor
+  <li>Ballroom B: Amateur leader (includes amateur couples)
+  </ul>
+  </ul>
+  </div>
+
+
   <div class="inline">
     <%= form.submit value: 'Save', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
   </div>

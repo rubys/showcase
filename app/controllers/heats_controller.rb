@@ -38,6 +38,8 @@ class HeatsController < ApplicationController
         @agenda[cat] << [number, heats]
       end
     end
+
+    @ballrooms = Event.last.ballrooms
   end
 
   def mobile
@@ -51,6 +53,7 @@ class HeatsController < ApplicationController
   def book
     @type = params[:type]
     @event = Event.last
+    @ballrooms = Event.last.ballrooms
     index
   end
 
