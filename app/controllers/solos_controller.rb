@@ -90,7 +90,7 @@ class SolosController < ApplicationController
   # PATCH/PUT /solos/1 or /solos/1.json
   def update
     solo = params[:solo]
-    formation = (solo[:formation] || {}).values.map(&:to_i)
+    formation = (solo[:formation] || {}).sort.to_h.values.map(&:to_i)
     solo[:instructor] ||= formation.first
 
     entry = @solo.heat.entry

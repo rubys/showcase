@@ -39,6 +39,10 @@ class FormationsController < ApplicationController
     @level = @solo.heat.entry.level_id
     @dance = @solo.heat.dance.id
     @number = @solo.heat.number
+
+    if @instructor and @formation.include? @instructor.id
+      @formation.rotate! @formation.index(@instructor.id)
+    end
   end
 
   # POST /formations or /formations.json
