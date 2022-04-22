@@ -18,8 +18,9 @@
   </tr>
   </thead>
   <tbody>
+  <% heatlist = @heatlist[person] %>
   <% @heats.each do |heat| %>
-    <% next unless [heat.entry.lead, heat.entry.follow].include? person %>
+    <% next unless heatlist.include? heat.id %>
     <tr class="text-sm">
       <td class="text-center"><%= heat.number %>
       <% if @ballrooms == 2 %>
@@ -29,8 +30,7 @@
       <td><div class="mx-4"><%= heat.dance.name %></div>
       <% if heat.entry.lead != person %>
       <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div>
-      <% end %>
-      <% if heat.entry.follow != person %>
+      <% elsif heat.entry.follow != person %>
       <td><div class="mx-4"><%= link_to heat.entry.follow.display_name, heat.entry.follow %></div>
       <% end %>
       <td><%= heat.entry.level.name %>

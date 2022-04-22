@@ -201,7 +201,7 @@ when most dances for an individual are with one instructor but one or two are ch
           <td class="row text-center"><%= heat.entry.subject_category %>
           <td>
           <% if heat.category == 'Solo' %>
-          <form method="get" action="<%= edit_solo_path(heat.solo) %>">
+          <form method="get" action="<%= heat.solo.formations.empty? ? edit_solo_path(heat.solo) : edit_formation_path(heat.solo) %>">
           <% else %>
           <form method="get" action="<%= edit_heat_path(heat) %>">
           <% end %>
