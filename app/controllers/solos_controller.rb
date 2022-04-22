@@ -52,7 +52,7 @@ class SolosController < ApplicationController
   # POST /solos or /solos.json
   def create
     solo = params[:solo]
-    formation = (solo[:formation] || []).values.map(&:to_i)
+    formation = (solo[:formation] || {}).sort.to_h.values.map(&:to_i)
     solo[:instructor] ||= formation.first
 
     @heat = Heat.create!({
