@@ -1,13 +1,13 @@
-<div class="mx-auto md:w-2/3 w-full relative">
+<div class="mx-auto md:w-2/3 w-full">
+  <%= render "info_box" %>
+
+  <div class="relative">
   <% if @person %>
   <h1 class="text-center font-bold text-4xl"><%= @person.display_name %></h1>
   <% else %>
   <h1 class="text-center font-bold text-4xl">New <%= @formation ? 'Formation' : 'Solo' %></h1>
   <% end %>
 
-  <div class="ml-auto absolute top-0 right-0">
-    <a class="btn-blue">Add instructor</a>
-  </div>
-
   <%= render "solos/form", solo: @solo %>
+  </div>
 </div>

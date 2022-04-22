@@ -1,5 +1,5 @@
 <div data-controller="<%= @formation ? 'formation' : 'entry-box' %>">
-  <% if @formation and false %>
+  <% if @formation %>
     <a class="btn-blue ml-auto absolute top-0 right-0 cursor-pointer">Add instructor</a>
   <% end %>
 
@@ -17,10 +17,10 @@
   <% end %>
 
   <% if @formation %>
-   <%= form.select 'formation[1]', @instructors, {selected: @formation[0]}, data: {target => 'instructor'},
+   <% @formation.each_with_index do |instructor, index| %>
+   <%= form.select "formation[#{index+1}]", @instructors, {selected: instructor}, data: {target => 'instructor'},
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'instructor' %>
-   <%= form.select 'formation[2]', @instructors, {selected: @formation[1]}, data: {target => 'instructor'},
-    class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'instructor' %>
+   <% end %>
   <% else %>
   <%= form.select :instructor, @instructors, {selected: @instructor}, data: {target => 'instructor'},
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'instructor' %>

@@ -14,7 +14,7 @@ class FormationsController < ApplicationController
   # GET /formations/new
   def new
     @solo ||= Solo.new
-    @formation = [nil, nil]
+    @formation = [nil]
 
     form_init(params[:primary])
 
