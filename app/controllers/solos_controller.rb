@@ -52,6 +52,8 @@ class SolosController < ApplicationController
   # POST /solos or /solos.json
   def create
     solo = params[:solo]
+    formation = (solo[:formation] || []).values.map(&:to_i)
+    solo[:instructor] ||= formation.first
 
     @heat = Heat.create!({
       number: solo[:number] || 0, 
@@ -71,10 +73,8 @@ class SolosController < ApplicationController
 
     respond_to do |format|
       if @solo.save
-        if solo[:instructor].respond_to? :values
-          solo[:instructor].values.each do |dancer|
-            Formation.create! solo: @solo, person_id: dancer.to_i
-          end
+        formation.each do |dancer|
+          Formation.create! solo: @solo, person_id: dancer.to_i
         end
 
         format.html { redirect_to @person, notice: "Solo was successfully created." }
@@ -90,6 +90,8 @@ class SolosController < ApplicationController
   # PATCH/PUT /solos/1 or /solos/1.json
   def update
     solo = params[:solo]
+    formation = (solo[:formation] || []).values.map(&:to_i)
+    solo[:instructor] ||= formation.first
 
     entry = @solo.heat.entry
     replace = find_or_create_entry(solo)
@@ -106,12 +108,6 @@ class SolosController < ApplicationController
       @solo.combo_dance = nil
     else
       @solo.combo_dance = Dance.find(solo[:combo_dance_id].to_i)
-    end
-
-    if solo[:instructor].respond_to? :values
-      formation = solo[:instructor].values.map(&:to_i)
-    else
-      formation = []
     end
 
     if not formation.empty? or not @solo.formations.empty?

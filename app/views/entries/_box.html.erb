@@ -1,4 +1,8 @@
 <div data-controller="<%= @formation ? 'formation' : 'entry-box' %>">
+  <% if @formation and false %>
+    <a class="btn-blue ml-auto absolute top-0 right-0 cursor-pointer">Add instructor</a>
+  <% end %>
+
   <% target = (@formation ? 'formation' : 'entry-box') + '-target' %>
 
   <% if @person %>
@@ -13,9 +17,9 @@
   <% end %>
 
   <% if @formation %>
-   <%= form.select 'instructor[1]', @instructors, {selected: @formation[0]}, data: {target => 'instructor'},
+   <%= form.select 'formation[1]', @instructors, {selected: @formation[0]}, data: {target => 'instructor'},
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'instructor' %>
-   <%= form.select 'instructor[2]', @instructors, {selected: @formation[1]}, data: {target => 'instructor'},
+   <%= form.select 'formation[2]', @instructors, {selected: @formation[1]}, data: {target => 'instructor'},
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'instructor' %>
   <% else %>
   <%= form.select :instructor, @instructors, {selected: @instructor}, data: {target => 'instructor'},
