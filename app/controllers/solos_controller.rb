@@ -52,7 +52,7 @@ class SolosController < ApplicationController
   # POST /solos or /solos.json
   def create
     solo = params[:solo]
-    formation = (solo[:formation] || {}).sort.to_h.values.map(&:to_i)
+    formation = (solo[:formation]&.to_unsafe_h || {}).sort.to_h.values.map(&:to_i)
     solo[:instructor] ||= formation.first
 
     @heat = Heat.create!({
@@ -90,7 +90,7 @@ class SolosController < ApplicationController
   # PATCH/PUT /solos/1 or /solos/1.json
   def update
     solo = params[:solo]
-    formation = (solo[:formation] || {}).sort.to_h.values.map(&:to_i)
+    formation = (solo[:formation]&.to_unsafe_h || {}).sort.to_h.values.map(&:to_i)
     solo[:instructor] ||= formation.first
 
     entry = @solo.heat.entry

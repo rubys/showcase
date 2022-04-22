@@ -26,12 +26,12 @@ class SolosTest < ApplicationSystemTestCase
     visit person_url(people(:Kathryn))
 
     within find('caption', text: 'Solos').sibling('tbody') do
-      find('td', text: 'Full Silver').hover
+      find('td', text: 'Assoc. Silver').hover
       click_on "Edit"
     end
 
     fill_in "Song", with: "Por Una Cabeza"
-    click_on "Update Formation"
+    click_on "Update Solo"
 
     assert_text "Solo was successfully updated"
     click_on "Back"
