@@ -22,6 +22,8 @@ tbody::after {
 <div class="info-button">&#x24D8;</div>
 <ul class="info-box">
 <li>Categories affect where each dance appears in the agenda, and are defined on the <%= link_to 'Category', categories_path, class: 'x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium' %> page.
+<li>The order of Solos within a category is determined by the order in which the Solos appear on the
+<%= link_to "Solos", solos_path, class: "x-2 rounded-lg py-1 px-2 text-white bg-green-600 font-medium" %> page.
 <li>The <%= link_to "Settings", settings_event_index_path(anchor: 'adjust') , class: "x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium" %> page contains some options that allow you to control heat sizes.
 <li>After any changes to a category or heats, you can click the Redo button to regenerate the agenda.
 <% if @stats %>
