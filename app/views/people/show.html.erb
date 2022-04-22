@@ -114,7 +114,15 @@ when most dances for an individual are with one instructor but one or two are ch
             <% end %>
             <td class="row"><%= link_to entry.partner(@person).display_name, entry.partner(@person) %>
             <% if instructor %>
+            <% if heat.solo.formations.empty? %>
             <td class="row"><%= link_to_if entry.instructor_id, entry.instructor&.display_name, entry.instructor %>
+            <% else %>
+            <td class="row">
+            <% heat.solo.formations.each_with_index do |instructor, index| %>
+            <% if index != 0%><br><% end %>
+            <%= link_to instructor.person.display_name, instructor.person %>
+            <% end %>
+            <% end %>
             <% end %>
             <td class="row"><%= entry.level.name %>
             <td class="row"><%= entry.age.category %>
