@@ -33,7 +33,14 @@
     <td class="px-2 text-center"><%= heat.entry.lead.back %>
     <td class="px-2 border-x" data-index><%= heat.entry.lead.display_name %>
     - <%= heat.entry.follow.display_name %>
+    <% if heat.category == 'Solo' %>
+    <% heat.solo.formations.each do |formation| %>
+    - <%= formation.person.display_name %>
+    <% end %>
+    <% end %>
+    <% if @event.ballrooms != 1 %>
     <td class='px-2 text-center'><%= heat.category == 'Solo' ? '-' : heat.ballroom %>
+    <% end %>
   </tr>
   <% end %>
   </tbody>
