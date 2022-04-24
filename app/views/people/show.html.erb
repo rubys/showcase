@@ -196,7 +196,21 @@ when most dances for an individual are with one instructor but one or two are ch
           <td class="row"><%= heat.dance.name %>
           <% end %>
           <td class="row"><%= link_to heat.entry.lead.display_name, heat.entry.lead %>
+          <% if heat.category == 'Solo' and not heat.solo.formations.empty? %>
+          <% heat.solo.formations.each_with_index do |formation, index| %>
+          <% if index % 2 == 0 %>
+          <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
+          <% end %>
+          <% end %>
+          <% end %>
           <td class="row"><%= link_to heat.entry.follow.display_name, heat.entry.follow %>
+          <% if heat.category == 'Solo' and not heat.solo.formations.empty? %>
+          <% heat.solo.formations.each_with_index do |formation, index| %>
+          <% if index % 2 == 1 %>
+          <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
+          <% end %>
+          <% end %>
+          <% end %>
           <td class="row"><%= heat.entry.level.name %>
           <td class="row text-center"><%= heat.entry.subject_category %>
           <td>

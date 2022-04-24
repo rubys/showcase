@@ -8,7 +8,8 @@ class HeatsController < ApplicationController
   def index
     @heats = Heat.order(:number).includes(
       dance: [:open_category, :closed_category, :solo_category], 
-      entry: [:age, :level, lead: [:studio], follow: [:studio]]
+      entry: [:age, :level, lead: [:studio], follow: [:studio]],
+      solo: [:formations]
     )
 
     @solos = Solo.includes(:heat).order('heats.number').
