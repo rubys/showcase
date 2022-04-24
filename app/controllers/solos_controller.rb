@@ -185,12 +185,14 @@ class SolosController < ApplicationController
     person = Person.find(params[:primary])
 
     entry = @solo.heat.entry
+    formation = @solo.formations.to_a
     @solo.heat.destroy
     entry.reload
     entry.destroy! if entry.heats.empty?
 
     respond_to do |format|
-      format.html { redirect_to person_path(person), status: 303, notice: "Solo was successfully removed." }
+      format.html { redirect_to person_path(person), status: 303,
+        notice: "#{formation.empty? ? 'Solo' : 'Formation'} was successfully removed." }
       format.json { head :no_content }
     end
   end

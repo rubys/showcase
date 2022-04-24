@@ -1,10 +1,6 @@
 require "application_system_test_case"
 
 class SolosTest < ApplicationSystemTestCase
-  setup do
-    @solo = solos(:one)
-  end
-
   test "visiting the index" do
     visit solos_url
     assert_selector "h1", text: "Solos"

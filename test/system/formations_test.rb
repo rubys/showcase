@@ -1,9 +1,43 @@
 require "application_system_test_case"
 
 class FormationsTest < ApplicationSystemTestCase
-  setup do
-    @solo = solos(:two)
+  test "should create formation" do
+    visit person_url(people(:Kathryn))
+    click_on "Add formation", match: :first
+
+    select "Rumba", from: "Dance"
+    click_on "Create Formation"
+
+    assert_text "Formation was successfully created"
+    click_on "Back"
   end
 
-  #TBD
+  test "should update Formation" do
+    visit person_url(people(:Kathryn))
+
+    within find('caption', text: 'Solos').sibling('tbody') do
+      find('td', text: 'Full Silver').hover
+      click_on "Edit"
+    end
+
+    fill_in "Song", with: "Por Una Cabeza"
+    click_on "Update Formation"
+
+    assert_text "Formation was successfully updated"
+    click_on "Back"
+  end
+
+  test "should destroy Formation" do
+    visit person_url(people(:Kathryn))
+
+    within find('caption', text: 'Solos').sibling('tbody') do
+      find('td', text: 'Full Silver').hover
+      click_on "Edit"
+    end
+
+    click_on "Remove this formation"
+    page.accept_alert
+
+    assert_text "Formation was successfully removed"
+  end
 end
