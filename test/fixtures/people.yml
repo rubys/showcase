@@ -20,3 +20,17 @@ Judy:
   studio: two
   type: Judge
   level: FS
+
+instructor1:
+  name: One, instructor
+  studio: one
+  type: Professional
+  back: 2
+  role: Leader
+
+instructor2:
+  name: Two, instructor
+  studio: one
+  type: Professional
+  back: 3
+  role: Leader

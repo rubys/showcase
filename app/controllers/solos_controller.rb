@@ -77,7 +77,8 @@ class SolosController < ApplicationController
           Formation.create! solo: @solo, person_id: dancer.to_i
         end
 
-        format.html { redirect_to @person, notice: "Solo was successfully created." }
+        format.html { redirect_to @person, 
+          notice: "#{formation.empty? ? 'Solo' : 'Formation'} was successfully created." }
         format.json { render :show, status: :created, location: @solo }
       else
         new
@@ -124,7 +125,8 @@ class SolosController < ApplicationController
 
     respond_to do |format|
       if @solo.update(solo_params)
-        format.html { redirect_to @person, notice: "Solo was successfully updated." }
+        format.html { redirect_to @person,
+          notice: "#{formation.empty? ? 'Solo' : 'Formation'} was successfully updated." }
         format.json { render :show, status: :ok, location: @solo }
       else
         edit
