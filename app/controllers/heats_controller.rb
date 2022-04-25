@@ -33,7 +33,7 @@ class HeatsController < ApplicationController
         @agenda['Unscheduled'] ||= []
         @agenda['Unscheduled'] << [number, heats]
       else
-        cat = heats.first.dance_category&.name || 'Uncategorieed'
+        cat = heats.first.dance_category&.name || 'Uncategorized'
 
         @agenda[cat] ||= []
         @agenda[cat] << [number, heats]
