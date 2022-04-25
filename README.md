@@ -15,7 +15,7 @@ Manually making last minute changes can lead to scheduling mishaps, such as
 having the same person being scheduled twice with different partners for the
 same heat.
 
-This application does exactly that, from data entry to scheduling, to
+This application manages showcase events, from data entry to scheduling, to
 generating of printed reports.  It can even be accessed by participants
 on the day of the event to see the list of heats.
 
@@ -66,8 +66,9 @@ application using import maps for JavaScript and
 [TailwindCSS](https://tailwindcss.com/) for CSS. 
 
 Models are provided for people (judges, emcees, instructors, students, and
-guests), ages, levels, studios, dances, categories, events, heats, solos, and
-scores, as well as a special table for event information and settings.
+guests), ages, levels, studios, dances, categories, events, heats, solos,
+formations, and scores, as well as a special singleton table for event
+information and settings.
 
 The heat scheduler can be found in
 [app/controllers/concerns/heat_scheduler.rb](./app/controllers/concerns/heat_scheduler.rb).
