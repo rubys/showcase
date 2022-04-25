@@ -293,15 +293,18 @@ class ScoresController < ApplicationController
     def instructor_results
       Score.joins(heat: {entry: [:follow]}).
         group(:value, :follow_id).
-        where(follow: {type: 'Professional'}, heat: {category: ['Open', 'Closed']}).
+        where(follow: {type: 'Professional'}).
         count(:value).to_a +
       Score.joins(heat: {entry: [:lead]}).
         group(:value, :lead_id).
-        where(lead: {type: 'Professional'}, heat: {category: ['Open', 'Closed']}).
+        where(lead: {type: 'Professional'}).
         count(:value).to_a +
       Score.joins(heat: :entry).
         group(:value, :instructor_id).
         where.not(entry: {instructor_id: nil}).
+        count(:value).to_a +
+      Score.joins(heat: {solo: :formations}).
+        group(:person_id, :value).
         count(:value).to_a
     end
 end
