@@ -23,6 +23,12 @@
       <span class='text-sky-500'><%= number %></span>:
       <%= heats.first.category %>
       <%= heats.first.dance.name %>
+      <% if heats.first.category == 'Solo' and heats.first.solo.combo_dance%>
+      / <%= heats.first.solo.combo_dance.name %>
+      <% end %>
+      <% if @start %>
+      <span class="text-base text-slate-600">- <%= @start[number]&.strftime("%-I:%M %P") %></span>
+      <% end %>
     </td>
   </tr>
   </thead>
