@@ -10,6 +10,8 @@ module Printable
       map do |number, heats|
         [number, heats.sort_by { |heat| heat.back || 0 } ]
       end
+
+    @categories = Category.all.map {|category| [category.name, category]}.to_h
       
     start = nil
     heat_length = Event.last.heat_length
@@ -56,13 +58,15 @@ module Printable
   end
 
   def heat_sheets
+    generate_agenda
     @people ||= Person.where(type: ['Student', 'Professional']).order(:name)
-    @heats = Heat.includes(:dance, entry: [:level, :age, :lead, :follow]).all.order(:number)
 
     @heatlist = @people.map {|person| [person, []]}.to_h
-    @heats.each do |heat|
-      @heatlist[heat.lead] << heat.id rescue nil
-      @heatlist[heat.follow] << heat.id rescue nil
+    @heats.each do |number, heats|
+      heats.each do |heat|
+        @heatlist[heat.lead] << heat.id rescue nil
+        @heatlist[heat.follow] << heat.id rescue nil
+      end
     end
 
     Formation.includes(:person, solo: :heat).each do |formation|

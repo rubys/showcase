@@ -9,6 +9,9 @@
     </td>
   </tr>
   <tr>
+    <% if @start %>
+    <td class="row-head">Time
+    <% end %>
     <td class="row-head">Heat
     <td class="row-head">Type
     <td class="row-head">Dance
@@ -19,9 +22,13 @@
   </thead>
   <tbody>
   <% heatlist = @heatlist[person] %>
-  <% @heats.each do |heat| %>
+  <% @heats.each do |number, heats| %>
+  <% heats.each do |heat| %>
     <% next unless heatlist.include? heat.id %>
     <tr class="text-sm">
+      <% if @start %>
+      <td class="text-center"><%= @start[number]&.strftime("%-I:%M") %></td>
+      <% end %>
       <td class="text-center"><%= heat.number %>
       <% if @ballrooms == 2 %>
       - <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
@@ -36,6 +43,7 @@
       <td><%= heat.entry.level.name %>
       <td class="text-center"><%= heat.entry.subject_category %>
     </tr>
+  <% end %>
   <% end %>
   </tbody>
 </table>
