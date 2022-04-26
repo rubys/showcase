@@ -23,6 +23,11 @@
   </div>
 
   <div class="my-5">
+  <%= form.label :heat_length, 'Time between heats (in seconds)' %>
+  <%= form.text_field :heat_length, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
   <%= form.label :ballrooms %>
   <ul>
   <li class="my-2"><%= form.radio_button :ballrooms, 1 %> One ballroom

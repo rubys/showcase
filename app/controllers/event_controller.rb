@@ -24,7 +24,7 @@ class EventController < ApplicationController
 
   def update
     @event = Event.last
-    @event.update! params.require(:event).permit(:name, :location, :date, :heat_range_cat, :heat_range_level, :heat_range_age, :intermix, :ballrooms)
+    @event.update! params.require(:event).permit(:name, :location, :date, :heat_range_cat, :heat_range_level, :heat_range_age, :intermix, :ballrooms, :heat_length)
     redirect_to settings_event_index_path , notice: "Event was successfully updated."
   end
 

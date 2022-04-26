@@ -46,8 +46,8 @@ tbody::after {
         <td class="row"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a>
         <td class="row text-right"><a href="#heat-<%= heats.first.first %>"><%= heats.first.first %></a>
         <td class="row text-right"><a href="#heat-<%= heats.last.first %>"><%= heats.last.first %></a>
-        <td class="row"><%= @categories[cat]&.day %>
-        <td class="row"><%= @categories[cat]&.time %>
+        <td class="row"><%= Date::DAYNAMES[@start && @start[heats.first.first]&.wday || 7] %>
+        <td class="row"><%= @start && @start[heats.first.first]&.strftime("%I:%M %P") %>
       </tr>
     <% end %>
   </table>
@@ -100,6 +100,9 @@ tbody::after {
           <%= heats.first.category %> <%= heats.first.dance.name %>
           <% if heats.first.category == 'Solo' and heats.first.solo.combo_dance%>
           / <%= heats.first.solo.combo_dance.name %>
+          <% end %>
+          <% if @start %>
+          <span class="text-base text-slate-400">- <%= @start[number]&.strftime("%-I:%M %P") %></span>
           <% end %>
         </td>
       </tr>
