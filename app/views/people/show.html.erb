@@ -112,7 +112,12 @@ when most dances for an individual are with one instructor but one or two are ch
             <% else %>
             <td class="row"><%= heat.dance.name %>
             <% end %>
+            <% if heat.solo.formations.empty? or entry.lead == @person or entry.follow == @person %>
             <td class="row"><%= link_to entry.partner(@person).display_name, entry.partner(@person) %>
+            <% else %>
+            <td class="row"><%= link_to entry.lead.display_name, entry.lead %>
+            <br><%= link_to entry.follow.display_name, entry.follow %>
+            <% end %>
             <% if instructor %>
             <% if heat.solo.formations.empty? %>
             <td class="row"><%= link_to_if entry.instructor_id, entry.instructor&.display_name, entry.instructor %>
