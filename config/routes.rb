@@ -76,6 +76,7 @@ Rails.application.routes.draw do
 
     resources :solos do
       post 'drop', on: :collection
+      post 'sort_level', on: :collection
     end
 
     resources :formations

@@ -197,6 +197,34 @@ class SolosController < ApplicationController
     end
   end
 
+  def sort_level
+    solos = {}
+
+    Solo.order(:order).each do |solo|
+      cat = solo.heat.dance.solo_category
+      solos[cat] ||= []
+      solos[cat] << solo
+    end
+
+    order = []
+    solos.each do |cat, solos|
+      order += solos.sort_by {|solo| solo.heat.entry.level_id}
+    end
+
+    Solo.transaction do
+      order.zip(1..).each do |solo, order|
+        solo.order = order
+        solo.save! validate: false
+      end
+
+      raise ActiveRecord::Rollback unless order.all? {|solo| solo.valid?}
+    end
+
+    respond_to do |format|
+      format.html { redirect_to solos_path, notice: 'solos sorted by level' }
+    end
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_solo

@@ -15,8 +15,6 @@ class HeatsController < ApplicationController
       map {|size, entries| [size, entries.map(&:first)]}.
       sort
 
-    @categories = Category.all.map {|category| [category.name, category]}.to_h
-
     @ballrooms = Event.last.ballrooms
   end
 
