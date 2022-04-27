@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_04_25_210448) do
+ActiveRecord::Schema[7.0].define(version: 2022_04_27_002212) do
   create_table "ages", force: :cascade do |t|
     t.string "category"
     t.string "description"
@@ -106,7 +106,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_04_25_210448) do
     t.string "role"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "exclude_id"
     t.index ["age_id"], name: "index_people_on_age_id"
+    t.index ["exclude_id"], name: "index_people_on_exclude_id"
     t.index ["level_id"], name: "index_people_on_level_id"
     t.index ["studio_id"], name: "index_people_on_studio_id"
   end
@@ -163,6 +165,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_04_25_210448) do
   add_foreign_key "heats", "entries"
   add_foreign_key "people", "ages"
   add_foreign_key "people", "levels"
+  add_foreign_key "people", "people", column: "exclude_id"
   add_foreign_key "people", "studios"
   add_foreign_key "scores", "heats"
   add_foreign_key "scores", "people", column: "judge_id"

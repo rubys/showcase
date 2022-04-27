@@ -7,6 +7,7 @@ class Person < ApplicationRecord
   belongs_to :studio, optional: true
   belongs_to :level, optional: true
   belongs_to :age, optional: true
+  belongs_to :exclude, class_name: 'Person', optional: true
 
   has_many :lead_entries, class_name: 'Entry', foreign_key: :lead_id,
     dependent: :destroy

@@ -130,14 +130,14 @@ class PeopleController < ApplicationController
   def new
     @person ||= Person.new
 
-    selections
-
     if params[:studio]
       @types = %w[Student Professional Guest]
       @person.studio_id = params[:studio]
     else
       @types = %w[Judge Emcee]
     end
+
+    selections
   end
 
   # GET /people/1/edit
@@ -222,6 +222,8 @@ class PeopleController < ApplicationController
 
     selections
 
+    set_exclude
+
     respond_to do |format|
       if @person.save
         format.html { redirect_to person_url(@person), notice: "#{@person.display_name} was successfully added." }
@@ -237,6 +239,8 @@ class PeopleController < ApplicationController
   # PATCH/PUT /people/1 or /people/1.json
   def update
     selections
+
+    set_exclude
 
     respond_to do |format|
       if @person.update(filtered_params(person_params))
@@ -270,7 +274,7 @@ class PeopleController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def person_params
-      params.require(:person).permit(:name, :studio_id, :type, :back, :level_id, :age_id, :category, :role)
+      params.require(:person).permit(:name, :studio_id, :type, :back, :level_id, :age_id, :category, :role, :exclude_id)
     end
 
     def filtered_params(person)
@@ -281,7 +285,8 @@ class PeopleController < ApplicationController
         level: person[:level_id] && Level.find(person[:level_id]),
         age_id: person[:age_id],
         role: person[:role],
-        back: person[:back]
+        back: person[:back],
+        exclude_id: person[:exclude_id]
       }
 
       unless %w(Professional Student Guest).include? base[:type]
@@ -308,6 +313,10 @@ class PeopleController < ApplicationController
 
       @ages = Age.all.order(:id).map {|age| [age.description, age.id]}
       @levels = Level.all.order(:id).map {|level| [level.name, level.id]}
+
+      @exclude = Person.where(studio: @person.studio).order(:name).to_a
+      @exclude.delete(@person)
+      @exclude = @exclude.map {|exclude| [exclude.name, exclude.id]}
     end
 
     def sort_order
@@ -317,5 +326,26 @@ class PeopleController < ApplicationController
       order = 'level_id' if order == 'level'
       order = 'name' if order == 'heats'
       order
+    end
+
+    def set_exclude
+      if @person.exclude_id != person_params[:exclude_id].to_i
+        if @person.exclude_id
+          @person.exclude.exclude = nil
+          @person.exclude.save!
+        end
+  
+        unless person_params[:exclude_id].empty?
+          exclude = Person.find(person_params[:exclude_id])
+  
+          if exclude.exclude
+            exclude.exclude.exclude = nil
+            exclude.exclude.save!
+          end
+  
+          exclude.exclude = @person
+          exclude.save!
+        end
+      end
     end
 end

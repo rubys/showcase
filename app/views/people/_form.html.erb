@@ -59,6 +59,12 @@
     <%= form.label :back, 'Back Number' %>
     <%= form.number_field :back, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+
+
+  <div class="my-5">
+    <%= form.label :exclude_id, 'Avoid scheduling the same time as' %>
+    <%= form.select :exclude_id, @exclude, {include_blank: true},
+    class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>  </div>
   <% end %>
 
   <div class="inline">

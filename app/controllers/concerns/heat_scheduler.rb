@@ -191,6 +191,8 @@ module HeatScheduler
     def add?(dance, dcat, level, age, heat)
       return if @participants.include? heat.lead
       return if @participants.include? heat.follow
+      return if heat.lead.exclude_id and @participants.include? heat.lead.exclude
+      return if heat.follow.exclude_id and @participants.include? heat.follow.exclude
 
       return false unless @dance == dance
       return false if dcat == 2 # Solo
