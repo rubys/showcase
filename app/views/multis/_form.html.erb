@@ -35,7 +35,13 @@ Changing the name here will change it everywhere.
   <%= form.label :heat_length, 'Number of heats' %>
   <%= form.number_field :heat_length,
      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
-</div>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :multi_category_id %>
+    <%= form.select :multi_category_id, @categories, {include_blank: true},
+       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
 
 <div class="mx-auto w-full flex flex-wrap">
   <div class="mx-auto flex flex-wrap">

@@ -18,6 +18,8 @@ class MultisController < ApplicationController
     @dances = Dance.order(:order).where(heat_length: nil).pluck(:name)
     @multi = {}
 
+    @categories = Category.order(:order).pluck(:name, :id)
+
     @url = multis_path
   end
 
