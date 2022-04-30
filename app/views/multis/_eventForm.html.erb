@@ -1,0 +1,59 @@
+<%= form_with(model: dance, class: "contents", url: @url) do |form| %>
+  <% if dance.errors.any? %>
+    <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
+      <h2><%= pluralize(dance.errors.count, "error") %> prohibited this dance from being saved:</h2>
+
+      <ul>
+        <% dance.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+<div data-controller="info-box">
+<div class="info-button">&#x24D8;</div>
+<ul class="info-box">
+<li>The dance name will appear on the entry forms and in various places including the final list of generated heats.
+<% if dance.id %>
+Changing the name here will change it everywhere.
+<% end %>
+<li>Categories affect where the dance appears in the agenda, and are defined on the <%= link_to 'Category', categories_path, class: 'x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium' %> page.
+<% if dance.id %>
+<li class="text-red-600">Removing a dance will remove it from the entry form and 
+<span class="font-bold">delete any heats and scores that have been entered for that dance.</span>
+<% end %>
+</ul>
+</div>
+
+  <div class="my-5">
+    <%= form.label :name %>
+    <%= form.text_field :name, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+  <%= form.label :heat_length, 'Number of heats' %>
+  <%= form.number_field :heat_length,
+     class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+</div>
+
+<div class="mx-auto w-full flex flex-wrap">
+  <div class="mx-auto flex flex-wrap">
+    <h1 class="w-full text-center bg-yellow-400 mb-4">Dances</h1>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <% @dances.each do |dance| %>
+        <% field = "multi[#{dance}]" %>
+        <div class="my-5 flex flex-row">
+          <%= form.check_box field, class: "entry-count h-10", checked: @multi[dance] %>
+          <%= form.label field, dance, class: 'mt-1 flex items-center justify-center' %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+  <div class="inline">
+    <%= form.submit class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  </div>
+<% end %>

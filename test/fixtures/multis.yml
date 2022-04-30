@@ -1,0 +1,9 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  parent: aa_smooth
+  dance: waltz
+
+two:
+  parent: aa_smooth
+  dance: tango
