@@ -23,3 +23,9 @@ four:
   order: 4
   day: Saturday
   time: 1 p.m.
+
+five:
+  name: All Arounds
+  order: 6
+  day: Saturday
+  time: 4 p.m.

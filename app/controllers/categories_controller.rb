@@ -152,20 +152,25 @@ class CategoriesController < ApplicationController
 
     def form_init
       dances = Dance.order(:order).all
-      @dances = dances.map(&:name)
-      @entries = {'Closed' => {}, 'Open' => {}, 'Solo' => {}}
+      @dances = dances.select {|dance| dance.heat_length == nil}.map(&:name)
+      @multis = dances.select {|dance| dance.heat_length != nil}.map(&:name)
+      @entries = {'Closed' => {}, 'Open' => {}, 'Solo' => {}, 'Multi' => {}}
 
       dances.each do |dance|
-        if dance.open_category == @category
+        if dance.open_category_id == @category.id
           @entries['Open'][dance.name] = true
         end
 
-        if dance.closed_category == @category
+        if dance.closed_category_id == @category.id
           @entries['Closed'][dance.name] = true
         end
 
-        if dance.solo_category == @category
+        if dance.solo_category == @category.id
           @entries['Solo'][dance.name] = true
+        end
+
+        if dance.multi_category == @category.id
+          @entries['Multi'][dance.name] = true
         end
       end
     end

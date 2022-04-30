@@ -21,8 +21,8 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
 
     entries = %w(Closed Open).map do |category|
       [category, Dance.all.map do |dance|
-        [dance.name, 1]
-      end.to_h]
+        [dance.name, 1] unless dance.heat_length
+      end.compact.to_h]
     end.to_h
 
     assert_difference("Entry.count") do
@@ -38,8 +38,8 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
 
     entries = %w(Closed Open).map do |category|
       [category, Dance.all.map do |dance|
-        [dance.name, 1]
-      end.to_h]
+        [dance.name, 1] unless dance.heat_length
+      end.compact.to_h]
     end.to_h
 
     assert_difference("Entry.count", 0) do
@@ -65,8 +65,8 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
 
     entries = %w(Closed Open).map do |category|
       [category, Dance.all.map do |dance|
-        [dance.name, 1]
-      end.to_h]
+        [dance.name, 1] unless dance.heat_length
+      end.compact.to_h]
     end.to_h
 
     patch entry_url(@entry), params: { entry: { primary: @primary.id, partner: partner.id, entries: entries, age: @entry.age_id, follow_id: @entry.follow_id, lead_id: @entry.lead_id, level: @entry.level_id } }

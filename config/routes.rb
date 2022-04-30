@@ -80,5 +80,8 @@ Rails.application.routes.draw do
     end
 
     resources :formations
+
+    resources :multis do
+    end
   end
 end

@@ -8,6 +8,7 @@
 <ul class="info-box">
 <li>The order categories appear on this list affects the order they appear in the final agenda.  You can rearrange the order by using drag and drop.
 <li>Clicking a category name will let you edit that category's name and identify which dances are included in that category.
+<li>Use the <em>new multi</em> button to define multi-heat events.
 </ul>
 </div>
 
@@ -57,6 +58,7 @@
 
   <div class="mt-4 flex justify-between items-center">
     <%= up_link 'New category', new_category_path, class: "btn-blue" %>
+    <%= up_link 'New multi', new_multi_path, class: "btn-blue" %>
     <%= link_to 'Dances', dances_path, class: "btn-green" %>
     <%= link_to 'Back to Summary', summary_event_index_path, class: "btn-green" %>
   </div>

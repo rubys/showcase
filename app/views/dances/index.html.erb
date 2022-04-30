@@ -25,6 +25,7 @@
     </thead>
     <tbody data-controller="drop" data-drop-action="<%= drop_dances_path %>">
     <% @dances.each do |dance| %>
+      <% next if dance.heat_length %>
       <tr class="hover:bg-yellow-200" draggable="true" data-drag-id="<%= dance.id %>">
         <td class="row text-black font-medium"><%= link_to dance.name, edit_dance_path(dance) %></td>
         <td class="row grid grid-cols-1">
@@ -39,19 +40,59 @@
     <tr>
       <th colspan="2" class="border-t-2 border-gray-200 row text-center font-bold">total
       <td class="border-t-2 border-gray-200 row text-right">
-        <%= @entries.values.sum %>
+        <%= @dances.map {|dance| dance.heat_length ? 0 : @entries[dance.id] || 0}.sum %>
       </td>
       <td class="border-t-2 border-gray-200 row text-right">
-        <%= @heats.values.sum %>
+        <%= @dances.map {|dance| dance.heat_length ? 0 : @heats[dance.id] || 0}.sum %>
       </td>
     </tr>
     </tbody>
   </table>
 
+<% if @dances.any? {|dance| dance.heat_length} %>
+  <h1 class="text-center font-bold text-4xl my-8">Multi-Dances</h1>
+
+  <div class="min-w-full">
+  <table class="mx-auto table-fixed">
+    <thead>
+      <tr>
+        <th class="row-head">Dance
+        <th class="row-head">Category
+        <th class="row-head">Entries
+        <th class="row-head">Heats
+      </tr>
+    </thead>
+    <tbody data-controller="drop" data-drop-action="<%= drop_dances_path %>">
+    <% @dances.each do |dance| %>
+      <% next unless dance.heat_length %>
+      <tr class="hover:bg-yellow-200" draggable="true" data-drag-id="<%= dance.id %>">
+        <td class="row text-black font-medium"><%= link_to dance.name, edit_multi_path(dance.id) %></td>
+        <td class="row grid grid-cols-1">
+          <%= link_to dance.multi_category&.name, edit_category_path(dance.multi_category) if dance.multi_category %>
+        </td>
+        <td class="row text-right"><%= @entries[dance.id] || 0 %></td>
+        <td class="row text-right"><%= @heats[dance.id] || 0 %></td>
+      </tr>
+    <% end %>
+    <tr>
+      <th colspan="2" class="border-t-2 border-gray-200 row text-center font-bold">total
+      <td class="border-t-2 border-gray-200 row text-right">
+        <%= @dances.map {|dance| dance.heat_length ? @entries[dance.id] || 0 : 0}.sum %>
+      </td>
+      <td class="border-t-2 border-gray-200 row text-right">
+        <%= @dances.map {|dance| dance.heat_length ? @heats[dance.id] || 0 : 0}.sum %>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+  <% end %>
+
+
 </div>
 
 <div class="mt-4 flex justify-between items-center">
   <%= up_link 'New dance', new_dance_path, class: "btn-blue" %>
+  <%= up_link 'New multi-dance', new_multi_path, class: "btn-blue" %>
   <%= link_to 'Categories', categories_path, class: "btn-green" %>
   <%= link_to 'Back to Summary', summary_event_index_path, class: "btn-green" %>
 </div>

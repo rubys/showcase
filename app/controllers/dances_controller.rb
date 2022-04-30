@@ -3,7 +3,7 @@ class DancesController < ApplicationController
 
   # GET /dances or /dances.json
   def index
-    @dances = Dance.includes(:open_category, :closed_category, :solo_category).order(:order).all
+    @dances = Dance.includes(:open_category, :closed_category, :solo_category, :multi_category).order(:order).all
     @heats = Heat.group(:dance_id).distinct.count(:number)
     @entries = Heat.group(:dance_id).count
   end
@@ -29,6 +29,13 @@ class DancesController < ApplicationController
     @dance = Dance.new(dance_params)
 
     @dance.order = (Dance.maximum(:order) || 0) + 1
+
+    if dance_params[:multi]
+      dance_params[:multi].each do |dance, count|
+        next if count.to_i == 0
+        @dance.multi_dances.build(parent: @dance, dance: Dance.find_by_name(dance), slot: count.to_i)
+      end
+    end
 
     respond_to do |format|
       if @dance.save
@@ -133,6 +140,8 @@ class DancesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def dance_params
-      params.require(:dance).permit(:name, :category, :closed_category_id, :open_category_id, :solo_category_id)
+      params.require(:dance).permit(:name, :category, 
+        :closed_category_id, :open_category_id, :solo_category_id,
+        :heat_length, :multi_category_id, :multi)
     end
 end

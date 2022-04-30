@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_04_27_002212) do
+ActiveRecord::Schema[7.0].define(version: 2022_04_27_225436) do
   create_table "ages", force: :cascade do |t|
     t.string "category"
     t.string "description"
@@ -35,7 +35,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_04_27_002212) do
     t.integer "closed_category_id"
     t.integer "order"
     t.integer "solo_category_id"
+    t.integer "multi_category_id"
+    t.integer "heat_length"
     t.index ["closed_category_id"], name: "index_dances_on_closed_category_id"
+    t.index ["multi_category_id"], name: "index_dances_on_multi_category_id"
     t.index ["open_category_id"], name: "index_dances_on_open_category_id"
     t.index ["solo_category_id"], name: "index_dances_on_solo_category_id"
   end
@@ -96,6 +99,16 @@ ActiveRecord::Schema[7.0].define(version: 2022_04_27_002212) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "multis", force: :cascade do |t|
+    t.integer "parent_id", null: false
+    t.integer "dance_id", null: false
+    t.integer "slot"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["dance_id"], name: "index_multis_on_dance_id"
+    t.index ["parent_id"], name: "index_multis_on_parent_id"
+  end
+
   create_table "people", force: :cascade do |t|
     t.string "name"
     t.integer "studio_id"
@@ -152,6 +165,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_04_27_002212) do
   end
 
   add_foreign_key "dances", "categories", column: "closed_category_id"
+  add_foreign_key "dances", "categories", column: "multi_category_id"
   add_foreign_key "dances", "categories", column: "open_category_id"
   add_foreign_key "dances", "categories", column: "solo_category_id"
   add_foreign_key "entries", "ages"
@@ -163,6 +177,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_04_27_002212) do
   add_foreign_key "formations", "solos"
   add_foreign_key "heats", "dances"
   add_foreign_key "heats", "entries"
+  add_foreign_key "multis", "dances"
+  add_foreign_key "multis", "dances", column: "parent_id"
   add_foreign_key "people", "ages"
   add_foreign_key "people", "levels"
   add_foreign_key "people", "people", column: "exclude_id"

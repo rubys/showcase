@@ -27,3 +27,9 @@ chacha:
   open_category: four
   solo_category: three
   order: 4
+
+aa_smooth:
+  name: All Around Smooth
+  heat_length: 2
+  multi_category: five
+  order: 5

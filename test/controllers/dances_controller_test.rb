@@ -59,7 +59,7 @@ class DancesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     assert_select 'tr td:first-child a' do |links|
-      assert_equal ["Rumba", "Waltz", "Tango", "Cha Cha"], links.map(&:text)
+      assert_equal ["Rumba", "Waltz", "Tango", "Cha Cha", "All Around Smooth"], links.map(&:text)
     end
 
     assert_equal 3, dances(:rumba).order

@@ -86,6 +86,24 @@
   </div>
 </div>
 
+<% if @multis.length %>
+<div class="mx-auto w-full flex flex-wrap">
+  <div class="mx-auto flex flex-wrap">
+    <h1 class="w-full text-center bg-yellow-400 mb-4">Multi-heats</h1>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <% @multis.each do |dance| %>
+        <% field = "include[Multi][#{dance}]" %>
+        <div class="my-5 flex flex-row">
+          <%= form.check_box field, class: "entry-count h-10", checked: @entries['Multi'][dance] %>
+          <%= form.label field, dance, class: 'mt-1 flex items-center justify-center' %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+<% end %>
+
   <div class="inline">
     <%= form.submit class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
   </div>
