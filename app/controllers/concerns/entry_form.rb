@@ -44,7 +44,7 @@ module EntryForm
     @ages = Age.all.order(:id).map {|age| [age.description, age.id]}
     @levels = Level.all.order(:id).map {|level| [level.name, level.id]}
 
-    @entries = {'Closed' => {}, 'Open' => {}}
+    @entries = {'Closed' => {}, 'Open' => {}, 'Multi' => {}}
   end
 
   def find_or_create_entry(params)

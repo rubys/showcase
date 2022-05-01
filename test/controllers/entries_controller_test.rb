@@ -19,9 +19,9 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
   test "should create entry" do
     partner = people(:Arthur)
 
-    entries = %w(Closed Open).map do |category|
+    entries = %w(Closed Open Multi).map do |category|
       [category, Dance.all.map do |dance|
-        [dance.name, 1] unless dance.heat_length
+        [dance.name, 1] if !!dance.heat_length ^ (category == 'Multi')
       end.compact.to_h]
     end.to_h
 
@@ -30,15 +30,15 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to person_url(@primary)
-    assert_equal flash[:notice], '8 heats successfully created.'
+    assert_equal flash[:notice], '6 heats successfully created.'
   end
 
   test "should merge entry" do
     partner = people(:Arthur)
 
-    entries = %w(Closed Open).map do |category|
+    entries = %w(Closed Open Multi).map do |category|
       [category, Dance.all.map do |dance|
-        [dance.name, 1] unless dance.heat_length
+        [dance.name, 1] if !!dance.heat_length ^ (category == 'Multi')
       end.compact.to_h]
     end.to_h
 
@@ -47,7 +47,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to person_url(@primary)
-    assert_equal flash[:notice], '8 heats successfully created.'
+    assert_equal flash[:notice], '6 heats successfully created.'
   end
 
   test "should show entry" do
@@ -63,15 +63,15 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
   test "should update entry" do
     partner = people(:Arthur)
 
-    entries = %w(Closed Open).map do |category|
+    entries = %w(Closed Open Multi).map do |category|
       [category, Dance.all.map do |dance|
-        [dance.name, 1] unless dance.heat_length
+        [dance.name, 1] if !!dance.heat_length ^ (category == 'Multi')
       end.compact.to_h]
     end.to_h
 
     patch entry_url(@entry), params: { entry: { primary: @primary.id, partner: partner.id, entries: entries, age: @entry.age_id, follow_id: @entry.follow_id, lead_id: @entry.lead_id, level: @entry.level_id } }
     assert_redirected_to person_url(@primary)
-    assert_equal flash[:notice], '7 heats added.'
+    assert_equal flash[:notice], '7 heats changed.'
   end
 
   test "should destroy entry" do

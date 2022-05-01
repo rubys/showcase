@@ -1,7 +1,7 @@
 module Printable
   def generate_agenda
     @heats = Heat.order(:number).includes(
-      dance: [:open_category, :closed_category, :solo_category], 
+      dance: [:open_category, :closed_category, :solo_category, :multi_category], 
       entry: [:age, :level, lead: [:studio], follow: [:studio]],
       solo: [:formations]
     )

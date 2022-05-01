@@ -156,23 +156,23 @@ class CategoriesController < ApplicationController
       @multis = dances.select {|dance| dance.heat_length != nil}.map(&:name)
       @entries = {'Closed' => {}, 'Open' => {}, 'Solo' => {}, 'Multi' => {}}
 
-      dances.each do |dance|
-        if dance.open_category_id == @category.id
-          @entries['Open'][dance.name] = true
-        end
+        dances.each do |dance|
+          if dance.open_category_id == @category.id
+            @entries['Open'][dance.name] = true
+          end
 
-        if dance.closed_category_id == @category.id
-          @entries['Closed'][dance.name] = true
-        end
+          if dance.closed_category_id == @category.id
+            @entries['Closed'][dance.name] = true
+          end
 
-        if dance.solo_category == @category.id
-          @entries['Solo'][dance.name] = true
-        end
+          if dance.solo_category_id == @category.id
+            @entries['Solo'][dance.name] = true
+          end
 
-        if dance.multi_category == @category.id
-          @entries['Multi'][dance.name] = true
+          if dance.multi_category_id == @category.id
+            @entries['Multi'][dance.name] = true
+          end
         end
-      end
     end
 
     def update_dances(include)
@@ -201,6 +201,14 @@ class CategoriesController < ApplicationController
           end
         elsif include['Solo'][dance.name].to_i == 1
           dance.solo_category = @category
+        end
+
+        if dance.multi_category == @category
+          if include['Multi'][dance.name].to_i == 0
+            dance.multi_category = nil
+          end
+        elsif include['Multi'][dance.name].to_i == 1
+          dance.multi_category = @category
         end
 
         if dance.changed?

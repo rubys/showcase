@@ -6,12 +6,12 @@ module HeatScheduler
 
     # extract heats
     @heats = Heat.eager_load(
-      dance: [:open_category, :closed_category, :solo_category],
+      dance: [:open_category, :closed_category, :solo_category, :multi_category],
       entry: [{lead: :studio}, {follow: :studio}]
     )
 
     # convert relevant data to numbers
-    heat_categories = {'Closed' => 0, 'Open' => 1, 'Solo' => 2}
+    heat_categories = {'Closed' => 0, 'Open' => 1, 'Solo' => 2, 'Multi' => 3}
 
     heats = @heats.map {|heat|
       [heat.dance_id,
@@ -99,12 +99,15 @@ module HeatScheduler
     categories = Category.order(:order).all
     cats = (categories.map {|cat| [cat, []]} + [[nil, []]]).to_h
     solos = (categories.map {|cat| [cat, []]} + [[nil, []]]).to_h
+    multis = (categories.map {|cat| [cat, []]} + [[nil, []]]).to_h
 
     groups.each do |group|
       if group.dcat == 'Open'
         cats[group.dance.open_category] << group
       elsif group.dcat == 'Solo'
         solos[group.dance.solo_category] << group
+      elsif group.dcat == 'Multi'
+        multis[group.dance.multi_category] << group
       else
         cats[group.dance.closed_category] << group
       end

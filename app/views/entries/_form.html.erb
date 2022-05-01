@@ -78,9 +78,9 @@ entry in the common case.
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <% @multis.each do |dance| %>
-        <% field = "entries[Open][#{dance}]" %>
+        <% field = "entries[Multi][#{dance}]" %>
         <div class="my-5 flex flex-row">
-          <% value = @entries['Open'][dance]&.length || 0 %>
+          <% value = @entries['Multi'][dance]&.length || 0 %>
           <% if value <= 1 %>
           <%= form.check_box field, class: "entry-count h-10", checked: value > 0 %>
           <% else %>

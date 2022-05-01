@@ -23,7 +23,6 @@ class EntriesController < ApplicationController
 
     @dances = Dance.order(:order).where(heat_length: nil).pluck(:name)
     @multis = Dance.order(:order).where.not(heat_length: nil).pluck(:name)
-    @entries = {'Closed' => {}, 'Open' => {}}
   end
 
   # GET /entries/1/edit
@@ -144,7 +143,7 @@ class EntriesController < ApplicationController
     end
 
     def tally_entry
-      @entries = {'Closed' => {}, 'Open' => {}}
+      @entries = {'Closed' => {}, 'Open' => {}, 'Multi' => {}}
 
       @entries.merge!(@entry.heats.
         select {|heat| heat.category != 'Solo'}.
@@ -157,7 +156,7 @@ class EntriesController < ApplicationController
       tally_entry
 
       @total = 0
-      %w(Closed Open).each do |category|
+      %w(Closed Open Multi).each do |category|
         Dance.all.each do |dance|
           was = new ? 0 : @entries[category][dance.name]&.length || 0
           wants = entry[:entries][category][dance.name].to_i

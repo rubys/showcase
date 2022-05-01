@@ -24,7 +24,8 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
         include: {
           'Open' => {'Waltz' => 0, 'Tango' => 1},
           'Closed' => {'Waltz' => 1, 'Tango' => 0},
-          'Solo' => {'Waltz' => 1, 'Tango' => 0}
+          'Solo' => {'Waltz' => 1, 'Tango' => 0},
+          'Multi' => {'All Around Smooth' => 0}
         }
       } }
     end
@@ -62,7 +63,8 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
       include: {
         'Open' => {'Waltz' => 0, 'Tango' => 1},
         'Closed' => {'Waltz' => 1, 'Tango' => 0},
-        'Solo' => {'Waltz' => 1, 'Tango' => 0}
+        'Solo' => {'Waltz' => 1, 'Tango' => 0},
+        'Multi' => {'All Around Smooth' => 0}
       }
     } }
 
