@@ -214,11 +214,48 @@ class PeopleController < ApplicationController
     redirect_to person_url(@person), notice: "#{helpers.pluralize total, 'heat'} successfully added."
   end
 
+  def post_type
+    if params[:id]
+      @person = Person.find(params[:id])
+    else
+      @person = Person.new
+    end
+
+    @person.type = params[:type]
+
+    selections
+
+    respond_to do |format|
+      format.turbo_stream { render turbo_stream: turbo_stream.replace('package-select', 
+        render_to_string(partial: 'package'))}
+      format.html { redirect_to people_url }
+    end
+  end
+
+  def post_package
+    if params[:id]
+      @person = Person.find(params[:id])
+    else
+      @person = Person.new
+    end
+    
+    @person.type = params[:type]
+    @person.package_id = params[:package_id].to_i
+
+    selections
+
+    respond_to do |format|
+      format.turbo_stream { render turbo_stream: turbo_stream.replace('options-select', 
+        render_to_string(partial: 'options'))}
+      format.html { redirect_to people_url }
+    end
+  end
+
   # POST /people or /people.json
   def create
     person = params[:person]
 
-    @person = Person.new(filtered_params(person))
+    @person = Person.new(filtered_params(person).except(:options))
 
     selections
 
@@ -226,6 +263,8 @@ class PeopleController < ApplicationController
 
     respond_to do |format|
       if @person.save
+        update_options
+
         format.html { redirect_to person_url(@person), notice: "#{@person.display_name} was successfully added." }
         format.json { render :show, status: :created, location: @person }
       else
@@ -243,7 +282,9 @@ class PeopleController < ApplicationController
     set_exclude
 
     respond_to do |format|
-      if @person.update(filtered_params(person_params))
+      if @person.update(filtered_params(person_params).except(:options))
+        update_options
+
         format.html { redirect_to person_url(@person), notice: "#{@person.display_name} was successfully updated." }
         format.json { render :show, status: :ok, location: @person }
       else
@@ -274,7 +315,7 @@ class PeopleController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def person_params
-      params.require(:person).permit(:name, :studio_id, :type, :back, :level_id, :age_id, :category, :role, :exclude_id)
+      params.require(:person).permit(:name, :studio_id, :type, :back, :level_id, :age_id, :category, :role, :exclude_id, :package_id, options: {})
     end
 
     def filtered_params(person)
@@ -317,6 +358,20 @@ class PeopleController < ApplicationController
       @exclude = Person.where(studio: @person.studio).order(:name).to_a
       @exclude.delete(@person)
       @exclude = @exclude.map {|exclude| [exclude.name, exclude.id]}
+
+      if %w(Student Guest).include? @person.type
+        @packages = Billable.where(type: @person.type).order(:order).pluck(:name, :id)
+      else
+        @packages = []
+      end
+
+      @options = Billable.where(type: 'Option').order(:order)
+
+      if @person.package_id
+        @package_options = @person.package.package_includes.map(&:option)
+      else
+        @package_options = []
+      end
     end
 
     def sort_order
@@ -345,6 +400,22 @@ class PeopleController < ApplicationController
   
           exclude.exclude = @person
           exclude.save!
+        end
+      end
+    end
+
+    def update_options
+      desired_options = person_params[:options] || {}
+      current_options = @person.options.map(&:option_id)
+      Billable.where(type: 'Option').each do |option|
+        if desired_options[option.id.to_s].to_i == 1
+          unless current_options.include? option.id
+            PersonOption.create! person: @person, option: option
+          end
+        else
+          if current_options.include? option.id
+            PersonOption.destroy_by person: @person, option: option
+          end
         end
       end
     end

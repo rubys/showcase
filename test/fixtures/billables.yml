@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  type: Student
+  name: Full Package
+  price: 9.99
+  order: 1
+
+two:
+  type: Option
+  name: Lunch
+  price: 4.99
+  order: 2

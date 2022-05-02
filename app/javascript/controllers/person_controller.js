@@ -2,9 +2,12 @@ import { Controller } from "@hotwired/stimulus"
 
 // Connects to data-controller="person"
 export default class extends Controller {
-  static targets = [ "level", "age", "role", "back" ];
+  static targets = [ "level", "age", "role", "back", "exclude", "type", "package", "options" ];
 
   connect() {
+    this.id = JSON.parse(this.element.dataset.id);
+    this.token = document.querySelector('meta[name="csrf-token"]').content;
+
     for (let select of [...document.querySelectorAll('select')]) {
       let changeEvent = new Event('change');
       select.dispatchEvent(changeEvent);
@@ -15,17 +18,33 @@ export default class extends Controller {
     if (event.target.value == 'Student') {
       this.levelTarget.style.display = 'block';
       this.ageTarget.style.display = 'block';
-      this.roleTarget.style.role = 'block';
+      this.roleTarget.style.display = 'block';
+      this.excludeTarget.style.display = 'block';
     } else {
       this.levelTarget.style.display = 'none';
       this.ageTarget.style.display = 'none';
 
       if (event.target.value == 'Guest') {
         this.roleTarget.style.display = 'none';
+        this.backTarget.style.display = 'none';
+        this.excludeTarget.style.display = 'none';
       } else {
         this.roleTarget.style.display = 'block';
+        this.excludeTarget.style.display = 'block';
       }
     }
+
+    fetch(event.target.getAttribute('data-url'), {
+      method: 'POST',
+      headers: {
+        'X-CSRF-Token': this.token,
+        'Content-Type': 'application/json'
+      },
+      credentials: 'same-origin',
+      redirect: 'follow',
+      body: JSON.stringify({id: this.id, type: event.target.value})
+    }).then (response => response.text())
+    .then(html => Turbo.renderStreamMessage(html));
   }
 
   setRole(event) {
@@ -34,5 +53,19 @@ export default class extends Controller {
     } else {
       this.backTarget.style.display = 'block';
     }
+  }
+
+  setPackage(event) {
+    fetch(event.target.getAttribute('data-url'), {
+      method: 'POST',
+      headers: {
+        'X-CSRF-Token': this.token,
+        'Content-Type': 'application/json'
+      },
+      credentials: 'same-origin',
+      redirect: 'follow',
+      body: JSON.stringify({id: this.id, type: this.typeTarget.value, package_id: event.target.value})
+    }).then (response => response.text())
+    .then(html => Turbo.renderStreamMessage(html));
   }
 }

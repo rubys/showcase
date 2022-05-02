@@ -8,6 +8,7 @@ class Person < ApplicationRecord
   belongs_to :level, optional: true
   belongs_to :age, optional: true
   belongs_to :exclude, class_name: 'Person', optional: true
+  belongs_to :package, class_name: 'Billable', optional: true
 
   has_many :lead_entries, class_name: 'Entry', foreign_key: :lead_id,
     dependent: :destroy
@@ -16,6 +17,8 @@ class Person < ApplicationRecord
   has_many :instructor_entries, class_name: 'Entry', foreign_key: :instructor_id,
     dependent: :nullify
   has_many :formations, dependent: :destroy
+  has_many :options, class_name: 'PersonOption', foreign_key: :person_id,
+    dependent: :destroy
 
   has_many :scores, dependent: :destroy, foreign_key: :judge_id
 

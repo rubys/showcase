@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :billables
   # if ENV['RAILS_RELATIVE_URL_ROOT'].present?
   #   mount ActionCable.server => "#{ENV['RAILS_RELATIVE_URL_ROOT']}/cable"
   # end
@@ -57,6 +58,8 @@ Rails.application.routes.draw do
       get 'scores', on: :member, action: 'individual_scores'
       get 'entries', on: :member, action: 'get_entries'
       post 'entries', on: :member, action: 'post_entries'
+      post 'type', on: :collection, action: 'post_type'
+      post 'package', on: :collection, action: 'post_package'
     end
 
     resources :studios do

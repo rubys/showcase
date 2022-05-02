@@ -1,0 +1,27 @@
+<div id="<%= dom_id billable %>">
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Type:</strong>
+    <%= billable.type %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Name:</strong>
+    <%= billable.name %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Price:</strong>
+    <%= billable.price %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Order:</strong>
+    <%= billable.order %>
+  </p>
+
+  <% if action_name != "show" %>
+    <%= link_to "Show this billable", billable, class: "rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+    <%= link_to 'Edit this billable', edit_billable_path(billable), class: "rounded-lg py-3 ml-2 px-5 bg-gray-100 inline-block font-medium" %>
+    <hr class="mt-6">
+  <% end %>
+</div>

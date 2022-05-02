@@ -1,0 +1,62 @@
+<%= form_with(model: billable, class: "contents") do |form| %>
+  <% if billable.errors.any? %>
+    <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
+      <h2><%= pluralize(billable.errors.count, "error") %> prohibited this billable from being saved:</h2>
+
+      <ul>
+        <% billable.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <% if @type == 'package' %>
+  <div class="my-5">
+    <%= form.label :type %>
+    <%= form.select :type, ['Student', 'Guest'], {},
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  <% else %>
+  <input type="hidden" name="billable[type]" value="Option">
+  <% end %>
+
+  <div class="my-5">
+    <%= form.label :name %>
+    <%= form.text_field :name, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :price %>
+    <%= form.number_field :price, step: :any,
+      value: number_to_currency(form.object.price.to_f, delimiter: '', unit: ''),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <% if @type == 'package' and not @options.empty? %>
+  <h2 class="font-bold text-2xl mt-4">Options included in package:</h1>
+  <ul class="mb-8">
+  <% @options.each do |option, checked| %>
+  <li>
+    <%= form.check_box "options[#{option.id}]", class: "entry-count h-10", checked: checked %>
+    <%= option.name %>
+  </li>
+  <% end %>
+  </ul>
+  <% elsif @type == 'option' and not @packages.empty? %>
+    <h2 class="font-bold text-2xl mt-4">Option is included by the following packages:</h1>
+  <ul class="mb-8">
+  <% @packages.each do |package, checked| %>
+  <li>
+    <%= form.check_box "packages[#{package.id}]", class: "entry-count h-10", checked: checked %>
+    <%= package.type %>: <%= package.name %>
+  </li>
+  <% end %>
+  </ul>
+  <% end %>
+
+  <div class="inline">
+    <%= form.submit (billable.persisted? ? 'Update' : 'Create') + ' ' + @type,
+      class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  </div>
+<% end %>

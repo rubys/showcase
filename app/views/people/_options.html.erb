@@ -1,0 +1,18 @@
+<div <% unless @options.empty? %>class="my-5"<% end %> id="options-select">
+<% unless @options.empty? %>
+  <%= label_tag :person_options, 'Options' %>
+  <ul class="mb-8">
+  <% @options.each do |option| %>
+  <li>
+    <% if @package_options.include? option %>
+    <%= check_box_tag "person[options[#{option.id}]]", '1', true, class: "entry-count h-10 opacity-70", disabled: true %>
+    <input type="hidden" name="person[options[#{option.id}]]" value="1">
+    <% else %>
+    <%= check_box_tag "person[options[#{option.id}]]", '1', false, class: "entry-count h-10" %>
+    <% end %>
+    <%= option.name %>
+  </li>
+  <% end %>
+  </ul>
+  <% end %>
+  </div>

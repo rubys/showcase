@@ -10,10 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_04_27_225436) do
+ActiveRecord::Schema[7.0].define(version: 2022_05_01_163652) do
   create_table "ages", force: :cascade do |t|
     t.string "category"
     t.string "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "billables", force: :cascade do |t|
+    t.string "type"
+    t.string "name"
+    t.decimal "price", precision: 7, scale: 2
+    t.integer "order"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
@@ -71,6 +80,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_04_27_225436) do
     t.integer "current_heat"
     t.integer "ballrooms", default: 1
     t.integer "heat_length"
+    t.decimal "heat_cost", precision: 7, scale: 2
+    t.decimal "solo_cost", precision: 7, scale: 2
+    t.decimal "multi_cost", precision: 7, scale: 2
   end
 
   create_table "formations", force: :cascade do |t|
@@ -109,6 +121,15 @@ ActiveRecord::Schema[7.0].define(version: 2022_04_27_225436) do
     t.index ["parent_id"], name: "index_multis_on_parent_id"
   end
 
+  create_table "package_includes", force: :cascade do |t|
+    t.integer "package_id", null: false
+    t.integer "option_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["option_id"], name: "index_package_includes_on_option_id"
+    t.index ["package_id"], name: "index_package_includes_on_package_id"
+  end
+
   create_table "people", force: :cascade do |t|
     t.string "name"
     t.integer "studio_id"
@@ -120,10 +141,21 @@ ActiveRecord::Schema[7.0].define(version: 2022_04_27_225436) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "exclude_id"
+    t.integer "package_id"
     t.index ["age_id"], name: "index_people_on_age_id"
     t.index ["exclude_id"], name: "index_people_on_exclude_id"
     t.index ["level_id"], name: "index_people_on_level_id"
+    t.index ["package_id"], name: "index_people_on_package_id"
     t.index ["studio_id"], name: "index_people_on_studio_id"
+  end
+
+  create_table "person_options", force: :cascade do |t|
+    t.integer "person_id", null: false
+    t.integer "option_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["option_id"], name: "index_person_options_on_option_id"
+    t.index ["person_id"], name: "index_person_options_on_person_id"
   end
 
   create_table "scores", force: :cascade do |t|
@@ -179,10 +211,15 @@ ActiveRecord::Schema[7.0].define(version: 2022_04_27_225436) do
   add_foreign_key "heats", "entries"
   add_foreign_key "multis", "dances"
   add_foreign_key "multis", "dances", column: "parent_id"
+  add_foreign_key "package_includes", "billables", column: "option_id"
+  add_foreign_key "package_includes", "billables", column: "package_id"
   add_foreign_key "people", "ages"
+  add_foreign_key "people", "billables", column: "package_id"
   add_foreign_key "people", "levels"
   add_foreign_key "people", "people", column: "exclude_id"
   add_foreign_key "people", "studios"
+  add_foreign_key "person_options", "billables", column: "option_id"
+  add_foreign_key "person_options", "people"
   add_foreign_key "scores", "heats"
   add_foreign_key "scores", "people", column: "judge_id"
   add_foreign_key "solos", "dances", column: "combo_dance_id"

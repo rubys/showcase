@@ -1,0 +1,113 @@
+<div class="w-full">
+  <% if notice.present? %>
+    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+  <% end %>
+
+  <div class="float-right">
+    <%= link_to 'New package', new_billable_path(type: 'package'), class: "rounded-lg py-3 px-5 bg-blue-600 text-white block font-medium" %>
+    <%= link_to 'New option', new_billable_path(type: 'option'), class: "rounded-lg py-3 px-5 bg-blue-600 text-white block font-medium mt-4" %>
+  </div>
+
+  <div id="billables" class="min-w-full">
+    <h1 class="font-bold text-4xl">Billable Items</h1>
+
+    <% unless @student_packages.empty? %>
+    <h2 class="font-bold text-2xl mt-4">Student Packages</h1>
+    <table class="table-auto">
+      <thead>
+        <th>Name
+        <th>Price
+      </thead>
+      <tbody>
+        <% @student_packages.each do |package| %>
+        <tr>
+          <td class="row"><%= link_to package.name, edit_billable_path(package) %>
+          <td class="row"><%= number_to_currency package.price %>
+        </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% end %>
+
+    <% unless @guest_packages.empty? %>
+    <h2 class="font-bold text-2xl mt-4">Guest Packages</h1>
+    <table class="table-auto">
+      <thead>
+        <th>Name
+        <th>Price
+      </thead>
+      <tbody>
+        <% @guest_packages.each do |package| %>
+        <tr>
+          <td class="row"><%= link_to package.name, edit_billable_path(package) %>
+          <td class="row"><%= number_to_currency package.price %>
+        </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% end %>
+
+    <% unless @options.empty? %>
+    <h2 class="font-bold text-2xl mt-4">Options</h1>
+    <table class="table-auto">
+      <thead>
+        <th>Name
+        <th>Price
+      </thead>
+      <tbody>
+        <% @options.each do |package| %>
+        <tr>
+          <td class="row"><%= link_to package.name, edit_billable_path(package) %>
+          <td class="row"><%= number_to_currency package.price %>
+        </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% end %>  
+
+    <h2 class="font-bold text-2xl mt-4">Dances</h1>
+
+    <%= form_with(model: @event, class: "contents") do |form| %>
+  <% if @event.errors.any? %>
+    <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
+      <h2><%= pluralize(@event.errors.count, "error") %> prohibited these dance costs from being saved:</h2>
+
+      <ul>
+        <% @event.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="my-5">
+    <%= form.label :heat_cost, 'Heats' %>
+    <%= form.number_field :heat_cost, step: :any,
+      value: number_to_currency(form.object.heat_cost.to_f, delimiter: '', unit: ''),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :solo_cost, 'Solos' %>
+    <%= form.number_field :solo_cost, step: :any,
+      value: number_to_currency(form.object.solo_cost.to_f, delimiter: '', unit: ''),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :multi_cost, 'Multi-dances' %>
+    <%= form.number_field :multi_cost, step: :any,
+    value: number_to_currency(form.object.multi_cost.to_f, delimiter: '', unit: ''),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="inline">
+    <%= form.submit 'Update prices',
+      class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  </div>
+  <% end %>
+
+
+
+  </div>
+</div>
