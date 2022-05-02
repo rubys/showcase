@@ -51,7 +51,8 @@ class BillablesController < ApplicationController
       if @billable.save
         update_includes
 
-        format.html { redirect_to billables_url, notice: "#{@billable.name} was successfully created." }
+        format.html { redirect_to settings_event_index_path(anchor: 'prices'),
+          notice: "#{@billable.name} was successfully created." }
         format.json { render :show, status: :created, location: @billable }
       else
         new
@@ -67,7 +68,8 @@ class BillablesController < ApplicationController
       if @billable.update(billable_params.except(:options, :packages))
         update_includes
 
-        format.html { redirect_to billables_url, notice: "#{@billable.name} was successfully updated." }
+        format.html { redirect_to settings_event_index_path(anchor: 'prices'),
+          notice: "#{@billable.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @billable }
       else
         new
@@ -82,7 +84,8 @@ class BillablesController < ApplicationController
     @billable.destroy
 
     respond_to do |format|
-      format.html { redirect_to billables_url, status: 303, notice: "#{@billable.name} was successfully removed." }
+      format.html { redirect_to settings_event_index_path(anchor: 'prices'),
+        status: 303, notice: "#{@billable.name} was successfully removed." }
       format.json { head :no_content }
     end
   end

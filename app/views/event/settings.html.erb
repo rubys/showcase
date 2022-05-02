@@ -64,6 +64,8 @@
 
 <%= link_to "Add person", new_person_path, class: "btn-blue" %>
 
+<%= render partial: 'billables/index', locals: { heading: 'Prices', id: 'prices' } %>
+
 <h1 id="adjust" class="mt-16 font-bold text-4xl mb-6">Adjust the number of heats</h1>
 
 <p class="mb-2">

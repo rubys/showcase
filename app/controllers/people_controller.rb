@@ -238,7 +238,7 @@ class PeopleController < ApplicationController
     else
       @person = Person.new
     end
-    
+
     @person.type = params[:type]
     @person.package_id = params[:package_id].to_i
 
@@ -372,6 +372,8 @@ class PeopleController < ApplicationController
       else
         @package_options = []
       end
+
+      @person_options = @person.options.map(&:option)
     end
 
     def sort_order
