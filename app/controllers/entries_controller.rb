@@ -156,7 +156,6 @@ class EntriesController < ApplicationController
       tally_entry
 
       @total = 0
-      STDERR.puts entry.inspect
       %w(Closed Open Multi).each do |category|
         Dance.all.each do |dance|
           was = new ? 0 : @entries[category][dance.name]&.length || 0
