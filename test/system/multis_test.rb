@@ -15,7 +15,7 @@ class MultisTest < ApplicationSystemTestCase
     click_on "New multi-dance"
 
     fill_in "Name", with: "All Around Rhythm"
-    fill_in "Number of heats", with: 2
+    fill_in "Number of dances", with: 2
     check "Rumba"
     check "Cha Cha"
     click_on "Create Dance"
@@ -28,7 +28,7 @@ class MultisTest < ApplicationSystemTestCase
     visit edit_multi_path(@dance.id)
 
     fill_in "Name", with: "All Around"
-    fill_in "Number of heats", with: 4
+    fill_in "Number of dances", with: 4
     check "Rumba"
     check "Cha Cha"
     click_on "Update Dance"

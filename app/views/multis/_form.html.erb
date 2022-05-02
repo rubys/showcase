@@ -1,4 +1,4 @@
-<%= form_with(model: @dance, class: "contents", url: @url, data: {controller: "check-number"}) do |form| %>
+<%= form_with(model: @dance, class: "contents", url: @url, data: {controller: "multi-heat"}) do |form| %>
   <% if @dance.errors.any? %>
     <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
       <h2><%= pluralize(dance.errors.count, "error") %> prohibited this dance from being saved:</h2>
@@ -14,15 +14,13 @@
 <div data-controller="info-box">
 <div class="info-button">&#x24D8;</div>
 <ul class="info-box">
-<li>The dance name will appear on the entry forms and in various places including the final list of generated heats.
-<% if @dance.id %>
-Changing the name here will change it everywhere.
-<% end %>
-<li>Categories affect where the dance appears in the agenda, and are defined on the <%= link_to 'Category', categories_path, class: 'x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium' %> page.
-<% if @dance.id %>
-<li class="text-red-600">Removing a dance will remove it from the entry form and 
-<span class="font-bold">delete any heats and scores that have been entered for that dance.</span>
-<% end %>
+<li>Multi-dances can be used for a variety of purposes, such as All Arounds, Three Heats, Triple Threats, and Scholarships.
+<li>If the number of dances entered matches the number of dances selected, the dances will be performed serially.
+<li>If the number of dances entered is less than the number of dances selected, participants will know which dances
+may be chosen, but they won't know exactly which ones actually are chosen until they appear on the dance floor.
+<li>If after selecting a dance a numeric key is pressed on the keyboard, all selections will be numeric, and the
+first dance will be one of the dances indicated with a <tt>1</tt>, the second dance will be one of the dances indicated
+with a <tt>2</tt>, etc.
 </ul>
 </div>
 
@@ -32,7 +30,7 @@ Changing the name here will change it everywhere.
   </div>
 
   <div class="my-5">
-  <%= form.label :heat_length, 'Number of heats' %>
+  <%= form.label :heat_length, 'Number of dances' %>
   <%= form.number_field :heat_length,
      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
