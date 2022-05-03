@@ -1,0 +1,17 @@
+<div class="w-screen">
+
+<div class="mb-4">
+  <h2 class="font-bold text-center text-4xl"><%= @event.name %></h1>
+
+  <p class="mt-4 text-center"><%= @event.location %></p>
+  <p class="mt-2 text-center"><%= @event.date %></p>
+</div>
+
+<div class="justify-between items-center">
+  <h1 class="font-bold text-2xl">Invoice/Confirmation - <%= @studio.name %></h1>
+</div>
+
+  <% @entries.each do |names, entries| %>
+    <%= render "entry", names: names, entries: entries %>
+  <% end %>
+</div>

@@ -60,12 +60,14 @@ Rails.application.routes.draw do
       post 'entries', on: :member, action: 'post_entries'
       post 'type', on: :collection, action: 'post_type'
       post 'package', on: :collection, action: 'post_package'
+      get 'invoice', on: :member
     end
 
     resources :studios do
       post 'unpair', on: :member
       get 'heats', on: :member
       get 'scores', on: :member
+      get 'invoice', on: :member
     end
 
     get '/scores/:judge/heatlist', to: 'scores#heatlist', as: 'judge_heatlist'

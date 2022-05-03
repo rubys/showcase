@@ -1,7 +1,7 @@
 class StudiosController < ApplicationController
   include Printable
 
-  before_action :set_studio, only: %i[ show edit update unpair destroy ]
+  before_action :set_studio, only: %i[ show edit update unpair destroy invoice ]
 
   # GET /studios or /studios.json
   def index
@@ -23,6 +23,26 @@ class StudiosController < ApplicationController
     @people = set_studio.people
     score_sheets
     render 'people/scores'
+  end
+
+  def invoice
+    @event = Event.last
+
+    @cost = {
+      'Closed' => @event.heat_cost || 0,
+      'Open' => @event.heat_cost || 0,
+      'Solo' => @event.solo_cost || 0,
+      'Multi' => @event.multi_cost || 0
+    }
+
+    entries = (Entry.joins(:follow).where(people: {type: 'Student', studio: @studio}) +
+      Entry.joins(:lead).where(people: {type: 'Student', studio: @studio})).uniq
+
+    @entries = Entry.where(id: entries.map(&:id)).
+      order(:levei_id, :age_id).
+      includes(lead: [:studio], follow: [:studio], heats: [:dance]).group_by {|entry| 
+         entry.follow.type == "Student" ? [entry.follow.name, entry.lead.name] : [entry.lead.name, entry.follow.name]
+       }.sort_by {|key, value| key}
   end
 
   # GET /studios/new

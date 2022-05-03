@@ -1,0 +1,38 @@
+<table class="w-full" style="break-before: page">
+  <thead>
+  <tr>
+    <td colspan="6" class="font-bold pt-8 text-3xl pb-5" >
+      <%= names.join(' / ') %>
+      <span class="font-normal text-base float-right">
+        <%= @event.name %>
+      </span>
+    </td>
+  </tr>
+  <tr>
+    <td class="row-head-left">Category
+    <td class="row-head-left">Dance
+    <td class="row-head-left">Level
+    <td class="row-head">Category
+    <td class="row-head">Price
+  </tr>
+  </thead>
+  <tbody>
+  <% total = 0 %>
+  <% entries.sort_by {|entry| [entry.level_id, entry.age_id]}.each do |entry| %>
+  <% entry.heats.sort_by {|heat| [heat.category, heat.dance.name]}.each do |heat| %>
+    <tr class="text-sm">
+      <td><div class="mx-4"><%= heat.category %>
+      <td><div class="mx-4"><%= heat.dance.name %></div>
+      <td><%= heat.entry.level.name %>
+      <td class="text-center"><%= heat.entry.subject_category %>
+      <td class="text-right"><%= number_to_currency @cost[heat.category], precision: 2, unit: '' %>
+    </tr>
+    <% total += @cost[heat.category] %>
+  <% end %>
+  <% end %>
+    <tr class="text-sm">
+      <th colspan="4">subtotal
+      <td class="text-right"><%= number_to_currency total, precision: 2, unit: '' %>
+    </tr>
+  </tbody>
+</table>
