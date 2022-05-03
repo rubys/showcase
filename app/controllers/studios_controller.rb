@@ -6,6 +6,7 @@ class StudiosController < ApplicationController
   # GET /studios or /studios.json
   def index
     @studios = Studio.all.order(:name)
+    @tables = Studio.sum(:tables)
   end
 
   # GET /studios/1 or /studios/1.json

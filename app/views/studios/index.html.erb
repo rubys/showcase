@@ -13,7 +13,9 @@
       <tr>
         <td class="row-head">Location
         <td class="row-head">Count
+        <% if @tables > 0 %>
         <td class="row-head">Tables
+        <% end %>
       </tr>
     </thead>
     <tbody>
@@ -21,7 +23,9 @@
       <tr>
         <td class="text-black font-medium"><%= link_to studio.name, studio %></td>
         <td class="text-right"><%= studio.people.count %></td>
+        <% if @tables > 0 %>
         <td class="text-right"><%= studio.tables.to_i %></td>
+        <% end %>
       </tr>
     <% end %>
     </tbody>
