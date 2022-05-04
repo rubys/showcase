@@ -7,12 +7,11 @@
   <p class="mt-2 text-center"><%= @event.date %></p>
 </div>
 
-<div class="justify-between items-center">
-  <h1 class="font-bold text-2xl mb-4">Invoice/Confirmation - <%= @studio.name %></h1>
-</div>
-
-<table class="table" style="break-before: page">
+<table class="table" style="break-inside: avoid">
   <thead>
+  <tr>
+    <td colspan="5" class="font-bold text-2xl pb-4">Invoice/Confirmation - <%= @studio.name %></td>
+  </tr>
   <tr>
     <th class="row-head-left">Name
     <th class="row-head-left"># Entries
@@ -44,6 +43,28 @@
     </tr>
   </tbody>
 </table>
+
+<table class="table" style="break-inside: avoid">
+  <thead>
+  <tr>
+    <td colspan="2" class="font-bold text-2xl pb-4">Purchases</td>
+  </tr>
+  <tr>
+    <th class="row-head-left">Name
+    <th class="row-head">Purchases
+  </thead>
+  <tbody>
+    
+    <% @people.each do |person| %>
+    <% purchases = person.options.map(&:option).map(&:name) %>
+    <% purchases.unshift "#{person.type} #{person.package.name}" if person.package_id %>
+    <% next if purchases.empty? %>
+    <tr>
+      <td><div class="mx-4"><%= person.name %>
+      <td><div class="mx-4"><%= purchases.join(' + ') %>
+    </tr>
+    <% end %>
+  </tbody>
 
   <% @entries.each do |names, entries| %>
     <%= render "entry", names: names, entries: entries %>

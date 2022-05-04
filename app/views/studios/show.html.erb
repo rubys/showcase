@@ -6,12 +6,17 @@
 
     <%= render @studio %>
 
-    <div class="mt-4 flex justify-between items-center">
+    <div class="mt-4 flex-row justify-between items-center">
+    <div>
       <%= up_link 'Add Person', new_person_path(studio: @studio), class: "btn-blue" %>
       <%= up_link 'Edit this studio', edit_studio_path(@studio), class: "mt-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+      <%= link_to 'Back to studios', studios_path, class: "btn-green" %>
+    </div>
+    <div class="mt-4">
+      <%= link_to 'Invoice', invoice_studio_path(@studio), class: "btn-pale-orange" %>
       <%= link_to 'Heat sheets', heats_studio_path(@studio), class: "btn-pale-orange" %>
       <%= link_to 'Scores', scores_studio_path(@studio), class: "btn-pale-orange" %>
-      <%= link_to 'Back to studios', studios_path, class: "btn-green" %>
+    </div>
     </div>
   </div>
 </div>
