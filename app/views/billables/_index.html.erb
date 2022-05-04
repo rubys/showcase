@@ -18,7 +18,7 @@
         <% @student_packages.each do |package| %>
         <tr>
           <td class="row"><%= link_to package.name, edit_billable_path(package) %>
-          <td class="row"><%= number_to_currency package.price %>
+          <td class="row text-right"><%= number_to_currency package.price %>
         </tr>
         <% end %>
       </tbody>
@@ -36,7 +36,7 @@
         <% @guest_packages.each do |package| %>
         <tr>
           <td class="row"><%= link_to package.name, edit_billable_path(package) %>
-          <td class="row"><%= number_to_currency package.price %>
+          <td class="row text-right"><%= number_to_currency package.price %>
         </tr>
         <% end %>
       </tbody>
@@ -47,14 +47,14 @@
     <h2 class="font-bold text-2xl mt-4">Options</h1>
     <table class="table-auto">
       <thead>
-        <th>Name
+        <th class="w-1/2">Name
         <th>Price
       </thead>
       <tbody>
         <% @options.each do |package| %>
         <tr>
           <td class="row"><%= link_to package.name, edit_billable_path(package) %>
-          <td class="row"><%= number_to_currency package.price %>
+          <td class="row text-right"><%= number_to_currency package.price %>
         </tr>
         <% end %>
       </tbody>
@@ -63,7 +63,7 @@
 
     <h2 class="font-bold text-2xl mt-4">Dances</h1>
 
-    <%= form_with(model: @event, class: "contents") do |form| %>
+    <%= form_with(model: @event, class: "contents", data: {turbo: false}) do |form| %>
   <% if @event.errors.any? %>
     <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
       <h2><%= pluralize(@event.errors.count, "error") %> prohibited these dance costs from being saved:</h2>

@@ -327,7 +327,8 @@ class PeopleController < ApplicationController
         age_id: person[:age_id],
         role: person[:role],
         back: person[:back],
-        exclude_id: person[:exclude_id]
+        exclude_id: person[:exclude_id],
+        package_id: person[:package_id]
       }
 
       unless %w(Professional Student Guest).include? base[:type]

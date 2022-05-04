@@ -30,7 +30,9 @@ class EventController < ApplicationController
     @event = Event.last
     @event.update! params.require(:event).permit(:name, :location, :date, :heat_range_cat, :heat_range_level, :heat_range_age,
       :intermix, :ballrooms, :heat_length, :heat_cost, :solo_cost, :multi_cost)
-    redirect_to settings_event_index_path , notice: "Event was successfully updated."
+    anchor = nil
+    anchor = 'prices' if params[:event][:heat_cost]
+    redirect_to settings_event_index_path(anchor: anchor), notice: "Event was successfully updated."
   end
 
   def index

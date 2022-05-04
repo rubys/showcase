@@ -1,4 +1,4 @@
-<%= form_with(model: billable, class: "contents") do |form| %>
+<%= form_with(model: billable, class: "contents", data: {turbo: false}) do |form| %>
   <% if billable.errors.any? %>
     <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
       <h2><%= pluralize(billable.errors.count, "error") %> prohibited this billable from being saved:</h2>

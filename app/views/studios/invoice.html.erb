@@ -16,23 +16,31 @@
   <tr>
     <th class="row-head-left">Name
     <th class="row-head-left"># Entries
-    <th class="row-head-left">Cost
-  </tr>
+    <th class="row-head">Cost
+    <th class="row-head">Purchases
+    <th class="row-head">Total
   </thead>
   <tbody>
-    <% total_dance_cost = 0 %>
+    <% total_dance_cost = total_purchases = 0 %>
     <% @people.each do |person| %>
+    <% dance_cost = @dances[person][:cost] %>
+    <% purchases = (person.package&.price || 0) + person.options.map(&:option).map(&:price).sum %>
     <tr class="text-base">
       <td><div class="mx-4"><%= person.name %>
       <td><div class="mx-4 text-right"><%= @dances[person][:dances] %>
-      <td class="text-right"><%= number_to_currency @dances[person][:cost], precision: 2, unit: '' %>
+      <td class="pr-4 text-right"><%= number_to_currency dance_cost, precision: 2, unit: '' %>
+      <td class="pr-4 text-right"><%= number_to_currency purchases, precision: 2, unit: '' %>
+      <td class="pr-4 text-right"><%= number_to_currency dance_cost + purchases, precision: 2, unit: '' %>
     </tr>
-    <% total_dance_cost += @dances[person][:cost] %>
+    <% total_dance_cost += dance_cost %>
+    <% total_purchases += purchases %>
   <% end %>
     <tr class="text-base">
-      <th>total
-      <td><div class="mx-4 text-right"><%= @dance_count %>
-      <td class="text-right"><%= number_to_currency total_dance_cost, precision: 2, unit: '' %>
+      <th class="row-foot">total
+      <td><div class="row-foot text-right"><%= @dance_count %>
+      <td class="row-foot text-right"><%= number_to_currency total_dance_cost, precision: 2, unit: '' %>
+      <td class="row-foot text-right"><%= number_to_currency total_purchases, precision: 2, unit: '' %>
+      <td class="row-foot text-right"><%= number_to_currency total_dance_cost + total_purchases, precision: 2, unit: '' %>
     </tr>
   </tbody>
 </table>
