@@ -1,7 +1,7 @@
 class StudiosController < ApplicationController
   include Printable
 
-  before_action :set_studio, only: %i[ show edit update unpair destroy invoice ]
+  before_action :set_studio, only: %i[ show edit update unpair destroy heats scores invoice ]
 
   # GET /studios or /studios.json
   def index
@@ -14,19 +14,21 @@ class StudiosController < ApplicationController
   end
 
   def heats
-    @people = set_studio.people
+    @people = @studio.people
     heat_sheets
     render 'people/heats'
   end
 
   def scores
-    @people = set_studio.people
+    @people = @studio.people
     score_sheets
     render 'people/scores'
   end
 
   def invoice
     @event = Event.last
+
+    @people = @studio.people.where(type: ['Student', 'Guest']).order(:name)
 
     @cost = {
       'Closed' => @event.heat_cost || 0,
@@ -37,6 +39,32 @@ class StudiosController < ApplicationController
 
     entries = (Entry.joins(:follow).where(people: {type: 'Student', studio: @studio}) +
       Entry.joins(:lead).where(people: {type: 'Student', studio: @studio})).uniq
+
+    @dances = @people.map {|person| [person, {dances: 0, cost: 0}]}.to_h
+
+    @dance_count = 0
+
+    entries.each do |entry|
+      if entry.lead.type == 'Student' and entry.follow.type == 'Student'
+        split = 2
+      else
+        split = 1
+      end
+
+      entry.heats.each do |heat|
+        if entry.lead.type == 'Student'
+          @dances[entry.lead][:dances] += 1
+          @dances[entry.lead][:cost] += @cost[heat.category] / split
+        end
+
+        if entry.follow.type == 'Student'
+          @dances[entry.follow][:dances] += 1
+          @dances[entry.follow][:cost] += @cost[heat.category] / split
+        end
+      end
+
+      @dance_count += entry.heats.length
+    end
 
     @entries = Entry.where(id: entries.map(&:id)).
       order(:levei_id, :age_id).

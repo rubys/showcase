@@ -8,8 +8,34 @@
 </div>
 
 <div class="justify-between items-center">
-  <h1 class="font-bold text-2xl">Invoice/Confirmation - <%= @studio.name %></h1>
+  <h1 class="font-bold text-2xl mb-4">Invoice/Confirmation - <%= @studio.name %></h1>
 </div>
+
+<table class="table" style="break-before: page">
+  <thead>
+  <tr>
+    <th class="row-head-left">Name
+    <th class="row-head-left"># Entries
+    <th class="row-head-left">Cost
+  </tr>
+  </thead>
+  <tbody>
+    <% total_dance_cost = 0 %>
+    <% @people.each do |person| %>
+    <tr class="text-base">
+      <td><div class="mx-4"><%= person.name %>
+      <td><div class="mx-4 text-right"><%= @dances[person][:dances] %>
+      <td class="text-right"><%= number_to_currency @dances[person][:cost], precision: 2, unit: '' %>
+    </tr>
+    <% total_dance_cost += @dances[person][:cost] %>
+  <% end %>
+    <tr class="text-base">
+      <th>total
+      <td><div class="mx-4 text-right"><%= @dance_count %>
+      <td class="text-right"><%= number_to_currency total_dance_cost, precision: 2, unit: '' %>
+    </tr>
+  </tbody>
+</table>
 
   <% @entries.each do |names, entries| %>
     <%= render "entry", names: names, entries: entries %>
