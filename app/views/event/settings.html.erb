@@ -23,8 +23,9 @@
   </div>
 
   <div class="my-5">
-  <%= form.label :heat_length, 'Time between heats (in seconds)' %>
-  <%= form.text_field :heat_length, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  <%= form.label :heat_length, 'Time between start of heats (in seconds)' %><br>
+  <span class="text-sm">(Be sure to include time for people to enter the floor, dance, and exit)</span>
+  <%= form.number_field :heat_length, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
   <div class="my-5">
