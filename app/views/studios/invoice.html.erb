@@ -16,8 +16,10 @@
     <th class="row-head-left">Name
     <th class="row-head-left"># Entries
     <th class="row-head">Cost
+    <% if @purchases_made %>
     <th class="row-head">Purchases
     <th class="row-head">Total
+    <% end %>
   </thead>
   <tbody>
     <% total_dance_cost = total_purchases = 0 %>
@@ -28,8 +30,10 @@
       <td><div class="mx-4"><%= person.name %>
       <td><div class="mx-4 text-right"><%= @dances[person][:dances] %>
       <td class="pr-4 text-right"><%= number_to_currency dance_cost, precision: 2, unit: '' %>
+      <% if @purchases_made %>
       <td class="pr-4 text-right"><%= number_to_currency purchases, precision: 2, unit: '' %>
       <td class="pr-4 text-right"><%= number_to_currency dance_cost + purchases, precision: 2, unit: '' %>
+      <% end %>
     </tr>
     <% total_dance_cost += dance_cost %>
     <% total_purchases += purchases %>
@@ -38,12 +42,15 @@
       <th class="row-foot">total
       <td><div class="row-foot text-right"><%= @dance_count %>
       <td class="row-foot text-right"><%= number_to_currency total_dance_cost, precision: 2, unit: '' %>
+      <% if @purchases_made %>
       <td class="row-foot text-right"><%= number_to_currency total_purchases, precision: 2, unit: '' %>
       <td class="row-foot text-right"><%= number_to_currency total_dance_cost + total_purchases, precision: 2, unit: '' %>
+      <% end %>
     </tr>
   </tbody>
 </table>
 
+<% if @purchases_made %>
 <table class="table" style="break-inside: avoid">
   <thead>
   <tr>
@@ -65,6 +72,8 @@
     </tr>
     <% end %>
   </tbody>
+  </table>
+  <% end %>
 
   <% @entries.each do |names, entries| %>
     <%= render "entry", names: names, entries: entries %>

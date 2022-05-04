@@ -71,6 +71,9 @@ class StudiosController < ApplicationController
       includes(lead: [:studio], follow: [:studio], heats: [:dance]).group_by {|entry| 
          entry.follow.type == "Student" ? [entry.follow.name, entry.lead.name] : [entry.lead.name, entry.follow.name]
        }.sort_by {|key, value| key}
+
+    @purchases_made = @people.any? {|person| person.package_id} or
+      @people.any? {|person| not person.options.empty?}
   end
 
   # GET /studios/new
