@@ -1,5 +1,4 @@
 Rails.application.routes.draw do
-  resources :billables
   # if ENV['RAILS_RELATIVE_URL_ROOT'].present?
   #   mount ActionCable.server => "#{ENV['RAILS_RELATIVE_URL_ROOT']}/cable"
   # end
@@ -86,7 +85,8 @@ Rails.application.routes.draw do
 
     resources :formations
 
-    resources :multis do
-    end
+    resources :multis
+
+    resources :billables
   end
 end
