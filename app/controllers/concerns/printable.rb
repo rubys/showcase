@@ -45,7 +45,11 @@ module Printable
           end
 
           @start[number] ||= start
-          start += heat_length
+          if heats.first.dance.heat_length
+            start += heat_length * heats.first.dance.heat_length
+          else
+            start += heat_length
+          end
         end
         
         cat = cat&.name || 'Uncategorized'
