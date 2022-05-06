@@ -113,7 +113,7 @@ class PeopleController < ApplicationController
       or(Heat.where(id: Formation.joins(:solo).where(person: @person).pluck(:heat_id))).
       order(:number).to_a
 
-    @solos = Solo.includes(:heat).all.map(&:heat) & @heats
+    @solos = Solo.includes(:heat, :formations).all.map(&:heat) & @heats
 
     @scores = Score.joins(heat: :entry).
       where(entry: {follow_id: @person.id}).or(
