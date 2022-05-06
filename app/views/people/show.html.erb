@@ -88,10 +88,12 @@ when most dances for an individual are with one instructor but one or two are ch
 
     <% if @solos.length > 0 %>
 
-    <table>
+    <table id="solos">
     <caption class="text-left font-bold pt-8 text-3xl pb-5">Solos</caption>
 
-    <% instructor = @solos.any? {|heat| heat.entry.instructor} %>
+    <% instructor = @solos.any? do |heat| 
+      not heat.solo.instructors(@person).empty?
+    end %>
 
     <thead>
       <th>dance
@@ -112,23 +114,21 @@ when most dances for an individual are with one instructor but one or two are ch
             <% else %>
             <td class="row"><%= heat.dance.name %>
             <% end %>
-            <% if heat.solo.formations.empty? or entry.lead == @person or entry.follow == @person %>
-            <td class="row"><%= link_to entry.partner(@person).display_name, entry.partner(@person) %>
-            <% else %>
-            <td class="row"><%= link_to entry.lead.display_name, entry.lead %>
-            <br><%= link_to entry.follow.display_name, entry.follow %>
-            <% end %>
-            <% if instructor %>
-            <% if heat.solo.formations.empty? %>
-            <td class="row"><%= link_to_if entry.instructor_id, entry.instructor&.display_name, entry.instructor %>
-            <% else %>
+
             <td class="row">
-            <% heat.solo.formations.each_with_index do |instructor, index| %>
+            <% heat.solo.partners(@person).each_with_index do |partner, index| %>
             <% if index != 0%><br><% end %>
-            <%= link_to instructor.person.display_name, instructor.person %>
+            <%= link_to partner.display_name, partner %>
+            <% end %>
+
+            <% if instructor %>
+            <td class="row">
+            <% heat.solo.instructors(@person).each_with_index do |instructor, index| %>
+            <% if index != 0%><br><% end %>
+            <%= link_to instructor.display_name, instructor %>
             <% end %>
             <% end %>
-            <% end %>
+
             <td class="row"><%= entry.level.name %>
             <td class="row"><%= entry.age.category %>
             <td>

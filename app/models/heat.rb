@@ -30,6 +30,10 @@ class Heat < ApplicationRecord
     entry.follow
   end
 
+  def partner(person)
+    entry.partner(person)
+  end
+
   def subject
     entry.subject
   end
