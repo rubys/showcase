@@ -23,7 +23,30 @@ class EventController < ApplicationController
   end
 
   def summary
-    @people = Person.all.group_by {|person| person.type}
+    @people = Person.includes(:level, :age, options: :option, package: {package_includes: :option}).
+      all.group_by {|person| person.type}
+
+    @packages = {
+      'Student' => Billable.where(type: 'Student').order(:order).map {|package| [package, 0]}.to_h,
+      'Guest' => Billable.where(type: 'Guest').order(:order).map {|package| [package, 0]}.to_h
+    }
+
+    @options = Billable.where(type: 'Option').order(:order).map {|package| [package, 0]}.to_h
+
+    @people.each do |type, people|
+      people.each do |person|
+        if person.package_id
+          @packages[person.type][person.package] += 1
+          person.package.package_includes.map(&:option).each do |option|
+            @options[option] += 1
+          end
+        end
+
+        person.options.map(&:option).each do |option|
+          @options[option] += 1
+        end
+      end
+    end
   end
 
   def update

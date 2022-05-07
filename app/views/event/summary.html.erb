@@ -2,6 +2,32 @@
 
 <h1 class="font-bold text-center text-4xl mb-6">Event Summary</h1>
 
+<% if @packages.values.map(&:values).flatten.any? {|count| count > 0} %>
+<h2 class="font-bold text-2xl my-4">Packages</h2>
+<ul class="list-disc list-inside">
+  <% @packages.each do |type, packages| %>
+    <% next if packages.values.all? {|count| count == 0 } %>
+    <li><%= type %>
+    <ul class="ml-4 list-disc list-inside">
+    <% packages.each do |package, count| %>
+      <% next if count == 0 %>
+      <li><%= package.name %>: <%= count %></li>
+    <% end %>
+    </ul>
+  <% end %>
+</ul>
+<% end %>
+
+<% if @options.values.any? {|count| count > 0} %>
+<h2 class="font-bold text-2xl my-4">Options</h2>
+<ul class="list-disc list-inside">
+  <% @options.each do |option, count| %>
+    <% next if count == 0 %>
+    <li><%= option.name %>: <%= count %></li>
+  <% end %>
+</ul>
+<% end %>
+
 <h2 class="font-bold text-2xl my-4">People</h2>
 
 <ul class="list-disc list-inside">
