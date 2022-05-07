@@ -174,6 +174,7 @@ export default class extends Controller {
       redirect: 'follow',
       body: JSON.stringify({
         heat: parseInt(source.dataset.heat),
+        slot: this.element.dataset.slot && parseInt(this.element.dataset.slot),
         score: score.dataset.score || ''
       })
     }).then(response => {

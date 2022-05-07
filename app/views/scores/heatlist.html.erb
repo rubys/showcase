@@ -16,8 +16,10 @@
         <% end %>
         <tr id="<%= dom_id heat %>" class="text-<%= @scored.include?(heat.number) ? 'slate-400' : 'black' %>">
           <td><%= link_to heat.number, judge_heat_path(judge: @judge, heat: heat.number) %>
-          <td><%= link_to "#{heat.category} #{heat.dance.name}", 
-            judge_heat_path(judge: @judge, heat: heat.number) %>
+          <td><%= link_to "#{heat.category} #{heat.dance.name}",
+            heat.category == 'Multi' ?
+            judge_heat_slot_path(judge: @judge, heat: heat.number, slot: 1)
+            : judge_heat_path(judge: @judge, heat: heat.number) %>
         </tr>
       <% end %>
     </tbody>

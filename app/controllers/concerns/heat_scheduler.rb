@@ -115,7 +115,10 @@ module HeatScheduler
 
     if Event.last.intermix
       new_order = []
+      STDERR.puts 'reorder'
+      STDERR.puts multis.inspect
       cats.each do |cat, groups|
+        STDERR.puts cat&.name.inspect
         dances = groups.group_by {|group| [group.dcat, group.dance.id]}
         candidates = []
 
@@ -127,11 +130,13 @@ module HeatScheduler
         end
 
         new_order += candidates.sort_by {|candidate| candidate[0..2]}.map(&:last) +
-          solos[cat].sort_by {|group| group.first.solo.order}
+          solos[cat].sort_by {|group| group.first.solo.order} +
+          multis[cat]
       end
     else
       new_order = cats.values.flatten +
-        solos[cat].sort_by {|group| group.first.solo.order}
+        solos[cat].sort_by {|group| group.first.solo.order} +
+        multis[cat]
     end
 
     new_order
@@ -165,6 +170,8 @@ module HeatScheduler
         'Open'
       when 2
         'Solo'
+      when 3
+        'Multi'
       else
         '?'
       end

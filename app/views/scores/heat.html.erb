@@ -7,7 +7,14 @@
     <%= link_to judge_heatlist_path(judge: @judge, anchor: dom_id(@heat)), rel: 'up' do %>
       <span>Heat <%= @number %>:<br class="block sm:hidden"> <%= @dance %></span>
     <% end %>
+
+    <% if @heat.dance.heat_length %>
+    <div class="text-2xl font-normal">
+    Dance <%= @slot %> of <%= @heat.dance.heat_length %>
+    </div>
+    <% end %>
   </h1>
+
 
 <div data-controller="info-box">
 <div class="info-button top-2">&#x24D8;</div>
@@ -28,7 +35,8 @@ Swiping left and right on mobile devices and tablets also work.
 
   <div class="h-full flex flex-row max-h-[85%]"
     data-controller="score" data-drop-action="<%=  post_score_path(judge: @judge) %>" 
-    data-start-action="<%= start_heat_event_index_path %>" data-heat="<%= @number %>">
+    data-start-action="<%= start_heat_event_index_path %>" data-heat="<%= @number %>"
+    <% if @slot %>data-slot="<%= @slot %>"<% end %>>
     <div class="grow flex flex-col border-2 border-slate-400">
     <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>
     <% @scores.each do |score| %>
@@ -59,7 +67,7 @@ Swiping left and right on mobile devices and tablets also work.
   <div class="mt-2 flex flex-row w-full">
     <div class="align-middle">
       <% if @prev %>
-      <%= link_to '<<', judge_heat_path(judge: @judge, heat: @prev), class: 'text-2xl lg:text-4xl', rel: 'prev' %>
+      <%= link_to '<<', @prev, class: 'text-2xl lg:text-4xl', rel: 'prev' %>
       <% end %>
     </div>
 
@@ -72,7 +80,7 @@ Swiping left and right on mobile devices and tablets also work.
 
     <div class="align-middle">
       <% if @next %>
-      <%= link_to '>>', judge_heat_path(judge: @judge, heat: @next), class: 'text-2xl lg:text-4xl', rel: 'next' %>
+      <%= link_to '>>', @next, class: 'text-2xl lg:text-4xl', rel: 'next' %>
       <% end %>
   </div>
   </div>

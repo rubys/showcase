@@ -4,7 +4,8 @@ class ScoresController < ApplicationController
   SCORES = {
     "Open" => %w(1 2 3 F),
     "Closed" => %w(B S G GH).reverse,
-    "Solo" => %w(B S G GH).reverse
+    "Solo" => %w(B S G GH).reverse,
+    "Multi" => %w(1 2 3 F)
   }
 
   WEIGHTS = [5, 3, 2, 1]
@@ -26,6 +27,7 @@ class ScoresController < ApplicationController
   def heat
     @judge = Person.find(params[:judge].to_i)
     @number = params[:heat].to_i
+    @slot = params[:slot]&.to_i
 
     @subjects = Heat.where(number: @number).includes(
       :dance, 
@@ -40,7 +42,8 @@ class ScoresController < ApplicationController
       @scores = SCORES[@subjects.first.category].dup
     end
 
-    student_results = Score.where(judge: @judge, heat: @subjects).map {|score| [score.heat, score.value]}.to_h
+    student_results = Score.where(judge: @judge, heat: @subjects, slot: @slot).
+      map {|score| [score.heat, score.value]}.to_h
 
     @results = {}
     @subjects.each do |subject|
@@ -52,8 +55,32 @@ class ScoresController < ApplicationController
     @scores << ''
  
     @heat = Heat.find_by(number: @number)
-    @next = Heat.where(number: @number+1...).minimum(:number)
-    @prev = Heat.where(number: ...@number).maximum(:number)
+
+    if @heat.dance.heat_length and (@slot||0) < @heat.dance.heat_length
+      @next = judge_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||0)+1)
+    else
+      @next = Heat.where(number: @number+1...).order(:number).first
+      if @next
+        if @next.dance.heat_length
+          @next = judge_heat_slot_path(judge: @judge, heat: @next.number, slot: 1)
+        else
+          @next = judge_heat_path(judge: @judge, heat: @next.number)
+        end
+      end
+    end
+
+    if @heat.dance.heat_length and (@slot||0) > 1
+      @prev = judge_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||2)-1)
+    else
+      @prev = Heat.where(number: ...@number).order(:number).last
+      if @prev
+        if @prev.dance.heat_length
+          @prev = judge_heat_slot_path(judge: @judge, heat: @prev.number, slot: @prev.dance.heat_length)
+        else
+          @prev = judge_heat_path(judge: @judge, heat: @prev.number)
+        end
+      end
+    end
 
     @layout = 'mx-0 px-5'
     @nologo = true
@@ -63,8 +90,9 @@ class ScoresController < ApplicationController
     judge = Person.find(params[:judge].to_i)
     heat = Heat.find(params[:heat].to_i)
     score = params[:score]
+    slot = params[:slot]&.to_i
 
-    score = Score.find_or_create_by(judge_id: judge.id, heat_id: heat.id)
+    score = Score.find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
     score.value = params[:score]
     if ApplicationRecord.readonly?
       render json: 'database is readonly', status: :service_unavailable

@@ -71,6 +71,7 @@ Rails.application.routes.draw do
 
     get '/scores/:judge/heatlist', to: 'scores#heatlist', as: 'judge_heatlist'
     get '/scores/:judge/heat/:heat', to: 'scores#heat', as: 'judge_heat'
+    get '/scores/:judge/heat/:heat/:slot', to: 'scores#heat', as: 'judge_heat_slot'
     post '/scores/:judge/post', to: 'scores#post', as: 'post_score'
     resources :scores do
       get 'by-level', on: :collection, action: :by_level

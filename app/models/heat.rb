@@ -7,7 +7,7 @@ class Heat < ApplicationRecord
   has_one :solo, dependent: :destroy
 
   def dance_category
-    if dance.heat_length
+    if dance.heat_length or category == 'Multi'
       dance.multi_category
     elsif category == "Open"
       dance.open_category
