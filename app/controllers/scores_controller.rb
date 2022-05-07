@@ -30,7 +30,7 @@ class ScoresController < ApplicationController
     @slot = params[:slot]&.to_i
 
     @subjects = Heat.where(number: @number).includes(
-      :dance, 
+      dance: [:multi_children], 
       entry: [:age, :level, :lead, :follow]
     ).sort_by {|heat| heat.entry.lead.back || 0}
 
