@@ -6,7 +6,6 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   connect() {
     let id = window.location.hash;
-    console.log('anchor', id)
     if (id.length > 1) {
         let element = document.getElementById(id.slice(1));
         if (element) element.scrollIntoView(true);

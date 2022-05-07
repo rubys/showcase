@@ -1,0 +1,8 @@
+<tbody data-controller="drop" data-drop-action="<%= drop_billables_path %>" id="<%= id %>">
+  <% group.each do |item| %>
+  <tr class="hover:bg-yellow-200" draggable="true" id="<%= dom_id item %>" data-drag-id="<%= item.id %>">
+    <td class="row"><%= link_to item.name, edit_billable_path(item) %>
+    <td class="row text-right"><%= number_to_currency item.price %>
+  </tr>
+  <% end %>
+</tbody>

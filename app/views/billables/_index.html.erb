@@ -14,14 +14,7 @@
         <th>Name
         <th>Price
       </thead>
-      <tbody>
-        <% @student_packages.each do |package| %>
-        <tr>
-          <td class="row"><%= link_to package.name, edit_billable_path(package) %>
-          <td class="row text-right"><%= number_to_currency package.price %>
-        </tr>
-        <% end %>
-      </tbody>
+      <%= render partial: "billables/group", locals: { group: @student_packages, id: 'student-packages' } %>
     </table>
     <% end %>
 
@@ -32,14 +25,7 @@
         <th>Name
         <th>Price
       </thead>
-      <tbody>
-        <% @guest_packages.each do |package| %>
-        <tr>
-          <td class="row"><%= link_to package.name, edit_billable_path(package) %>
-          <td class="row text-right"><%= number_to_currency package.price %>
-        </tr>
-        <% end %>
-      </tbody>
+      <%= render partial: "billables/group", locals: { group: @guest_packages, id: 'guest-packages' } %>
     </table>
     <% end %>
 
@@ -50,14 +36,7 @@
         <th class="w-1/2">Name
         <th>Price
       </thead>
-      <tbody>
-        <% @options.each do |package| %>
-        <tr>
-          <td class="row"><%= link_to package.name, edit_billable_path(package) %>
-          <td class="row text-right"><%= number_to_currency package.price %>
-        </tr>
-        <% end %>
-      </tbody>
+      <%= render partial: "billables/group", locals: { group: @options, id: 'billable-options' } %>
     </table>
     <% end %>  
 

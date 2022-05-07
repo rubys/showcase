@@ -79,6 +79,42 @@ class BillablesController < ApplicationController
     end
   end
 
+   # POST /billables/drop
+   def drop
+    id = params[:id]
+    source = Billable.find(params[:source].to_i)
+    target = Billable.find(params[:target].to_i)
+
+    group = Billable.where(type: source.type).order(:order)
+
+    if source.order > target.order
+      billables = Billable.where(type: source.type, order: target.order..source.order).order(:order)
+      new_order = billables.map(&:order).rotate(1)
+    else
+      billables = Billable.where(type: source.type, order: source.order..target.order).order(:order)
+      new_order = billables.map(&:order).rotate(-1)
+    end
+
+    Billable.transaction do
+      billables.zip(new_order).each do |billable, order|
+        billable.order = order
+        billable.save! validate: false
+      end
+
+      raise ActiveRecord::Rollback unless billables.all? {|billable| billable.valid?}
+    end
+
+    index
+    flash.now.notice = "#{source.name} was successfully moved."
+
+    respond_to do |format|
+      format.turbo_stream { render turbo_stream: turbo_stream.replace(id,
+        render_to_string(partial: 'group', layout: false, locals: { group: group, id: id })
+      )}
+      format.html { redirect_tobillables_url }
+    end
+  end
+
   # DELETE /billables/1 or /billables/1.json
   def destroy
     @billable.destroy

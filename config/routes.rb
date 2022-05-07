@@ -87,6 +87,8 @@ Rails.application.routes.draw do
 
     resources :multis
 
-    resources :billables
+    resources :billables do
+      post 'drop', on: :collection
+    end
   end
 end

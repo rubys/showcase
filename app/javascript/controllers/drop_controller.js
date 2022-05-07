@@ -42,7 +42,7 @@ export default class extends Controller {
             },
             credentials: 'same-origin',
             redirect: 'follow',
-            body: JSON.stringify({source, target})
+            body: JSON.stringify({source, target, id: this.element.id})
           }).then (response => response.text())
           .then(html => Turbo.renderStreamMessage(html));
 
