@@ -35,14 +35,16 @@ class EventController < ApplicationController
 
     @people.each do |type, people|
       people.each do |person|
+        options = person.options
+
         if person.package_id
           @packages[person.type][person.package] += 1
           person.package.package_includes.map(&:option).each do |option|
-            @options[option] += 1
+            @options[option] += 1 unless options.include? option
           end
         end
 
-        person.options.map(&:option).each do |option|
+        options.map(&:option).each do |option|
           @options[option] += 1
         end
       end
