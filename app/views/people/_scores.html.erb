@@ -22,7 +22,7 @@
     <tr class="text-sm">
       <td class="text-center"><%= heat.number %>
       <% @judges.each do |judge| %>
-        <td class="text-center"><%= heat.scores.find {|score| score.judge == judge}&.value %>
+        <td class="text-center"><%= heat.scores.select {|score| score.judge == judge}.sort_by(&:slot).map(&:value).join(' ') %>
       <% end %>
       <td><div class="mx-4"><%= heat.dance.name %></div>
       <% if heat.entry.lead != person %>
