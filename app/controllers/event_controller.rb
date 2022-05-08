@@ -50,7 +50,7 @@ class EventController < ApplicationController
       end
     end
 
-    @multi = Score.where.not(slot: nil).count
+    @multi = Dance.where.not(multi_category: nil).count
   end
 
   def update

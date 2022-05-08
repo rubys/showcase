@@ -274,6 +274,9 @@ when most dances for an individual are with one instructor but one or two are ch
     <div class="mt-4 mx-auto">
     <%= link_to 'Scores by level', by_level_scores_path , class: "btn-pale-green" %>
     <%= link_to 'Scores by age', by_age_scores_path , class: "btn-pale-green" %>
+    <% if @multi > 0 %>
+    <%= link_to 'Multi Scores', multis_scores_path , class: "btn-pale-green" %>
+    <% end %>
     <%= link_to 'Instructor Scores', instructor_scores_path , class: "btn-pale-blue" %>
     </div>
     <% end %>
@@ -285,12 +288,14 @@ when most dances for an individual are with one instructor but one or two are ch
       <%= up_link 'Add heats', new_entry_path(primary: @person), class: "btn-blue" %>
       <%= up_link 'Add solo', new_solo_path(primary: @person), class: "btn-blue" %>
       <%= up_link 'Add formation', new_formation_path(primary: @person), class: "btn-blue" %>
-      <% end %>
     </div>
 
     <div class="mt-4 mx-auto">
+      <% end %>
+      <% if %w(Student Professional).include? @person.type %>
       <%= link_to 'Heat sheet', heats_person_path(@person), class: "btn-pale-orange" %>
       <%= link_to 'Scores', scores_person_path(@person), class: "btn-pale-orange" %>
+      <% end %>
 
       <% if @person.studio %>
       <%= link_to 'Back to studio', @person.studio, class: "btn-green" %>

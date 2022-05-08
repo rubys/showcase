@@ -124,6 +124,10 @@ class PeopleController < ApplicationController
       map {|dance, list| [dance, list.map {|(value, dance), count|
         [value, count]
       }.to_h]}.to_h
+
+    if @person.type == 'Judge'
+      @multi = Dance.where.not(multi_category: nil).count
+    end
   end
 
   # GET /people/new
