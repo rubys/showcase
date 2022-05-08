@@ -1,0 +1,48 @@
+<div class="mx-auto md:w-5/6 w-full flex">
+  <div class="mx-auto">
+    <% if notice.present? %>
+      <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+    <% end %>
+
+    <% empty = true %>
+
+        <% @scores.each do |dance, entries| %>
+          <% next if entries.empty? %>
+          <% empty = false %>
+          <h2 class="font-bold pt-4 text-2xl pb-5"><%= dance.name %></h1>
+          <table class="mb-8">
+            <thead>
+              <tr>
+                <th colspan="3">
+                <th colspan="4" class="bg-slate-200">Scores
+              </tr>
+
+              <tr>
+              <th class="row-head">Points
+              <th class="row-head">Lead
+              <th class="row-head">Follow
+              <% ScoresController::SCORES['Multi'].each do |score| %>
+              <th class="row-head bg-slate-200"><%= score %>
+              <% end %>
+              </tr>
+            </thead>
+          <% entries.sort_by {|entry, results| results['points']}.reverse.each do |entry, results| %>
+            <tr>
+              <td class="row-main text-right"><%= results['points'] %>
+              <td class="row-main"><%= link_to entry.lead.display_name, entry.lead %></td>
+              <td class="row-main"><%= link_to entry.follow.display_name, entry.follow %></td>
+              <% results['Multi'].each do |score| %>
+              <td class="row text-right px-4 bg-slate-200"><%= score == 0 ? '' : score %></td>
+              <% end %>
+            </tr>
+        <% end %>
+    </table>
+    <% end %>
+
+    <% if empty %>
+    <p class="my-8">No scores entered yet.</p>
+    <% end %>
+
+    <%= link_to 'Back to summary', summary_event_index_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  </div>
+</div>

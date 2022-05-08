@@ -49,6 +49,8 @@ class EventController < ApplicationController
         end
       end
     end
+
+    @multi = Score.where.not(slot: nil).count
   end
 
   def update

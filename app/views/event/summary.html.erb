@@ -70,6 +70,9 @@
 <%= link_to 'Scores by level', by_level_scores_path , class: "btn-pale-green" %>
 <%= link_to 'Scores by age', by_age_scores_path , class: "btn-pale-green" %>
 <%= link_to 'Instructor Scores', instructor_scores_path , class: "btn-pale-green" %>
+<% if @multi > 0 %>
+<%= link_to 'Multi Scores', multis_scores_path , class: "btn-pale-green" %>
+<% end %>
 </div>
 
 </div>

@@ -76,6 +76,7 @@ Rails.application.routes.draw do
     resources :scores do
       get 'by-level', on: :collection, action: :by_level
       get 'by-age', on: :collection, action: :by_age
+      get 'multis', on: :collection, action: :multis
       get 'instructor', on: :collection
     end
 

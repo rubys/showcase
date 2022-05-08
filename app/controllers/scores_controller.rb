@@ -208,6 +208,29 @@ class ScoresController < ApplicationController
     end      
   end
 
+  def multis
+    dances = Dance.where.not(multi_category_id: nil).
+      includes(multi_children: :dance, heats: [{entry: [:lead, :follow]}, :scores]).
+      order(:order)
+
+    @scores = {}
+    dances.each do |dance|
+      @scores[dance] = {}
+      dance.heats.map(&:scores).flatten.group_by {|score| score.heat.entry}.map do |entry, scores|
+        @scores[dance][entry] = {
+          'Multi' => SCORES['Multi'].map {0},
+          'points' => 0
+        }
+
+        scores.each do |score|
+          value = SCORES['Multi'].index score.value
+          @scores[dance][entry]['Multi'][value] += 1
+          @scores[dance][entry]['points'] += WEIGHTS[value]
+        end
+      end
+    end
+  end
+
   def instructor
     @scores = {}
 
