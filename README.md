@@ -66,9 +66,9 @@ application using import maps for JavaScript and
 [TailwindCSS](https://tailwindcss.com/) for CSS. 
 
 Models are provided for people (judges, emcees, instructors, students, and
-guests), ages, levels, studios, dances, categories, events, heats, solos,
-formations, and scores, as well as a special singleton table for event
-information and settings.
+guests), packages, options, ages, levels, studios, dances, categories, events,
+heats, solos, formations, multi-heats, and scores, as well as a special
+singleton table for event information and settings.
 
 The heat scheduler can be found in
 [app/controllers/concerns/heat_scheduler.rb](./app/controllers/concerns/heat_scheduler.rb).
@@ -88,9 +88,9 @@ There are a number of blog posts out there on how to do
 with Rails.  Phusion Passenger provides a [different
 approach](https://stackoverflow.com/questions/48669947/multitenancy-passenger-rails-multiple-apps-different-versions-same-domain).
 
-For this use case, the Phusion Passenger is the best match.  The database for a
-mid-size local event is about a megabyte in size (about the size of a single
-camera image), and can be kept in sqlite3.  Passenger provides a
+For this use case, the Phusion Passenger approach is the best match.  The
+database for a mid-size local event is about a megabyte in size (about the size
+of a single camera image), and can be kept in sqlite3.  Passenger provides a
 [passenger_min_instances](https://www.phusionpassenger.com/library/config/nginx/reference/#passenger_min_instances)
 `0` option that allow a reasonable number of past, present, and future events
 to be hosted essentially without any overhead when not in use.  This does mean
