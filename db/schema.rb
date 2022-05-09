@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_05_07_162016) do
+ActiveRecord::Schema[7.0].define(version: 2022_05_09_185821) do
   create_table "ages", force: :cascade do |t|
     t.string "category"
     t.string "description"
@@ -195,6 +195,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_05_07_162016) do
     t.integer "tables"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "heat_cost", precision: 7, scale: 2
+    t.decimal "solo_cost", precision: 7, scale: 2
+    t.decimal "multi_cost", precision: 7, scale: 2
   end
 
   add_foreign_key "dances", "categories", column: "closed_category_id"

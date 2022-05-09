@@ -41,6 +41,34 @@
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <div data-controller="studio-price-override">
+  <div class="my-5">
+    <%= form.check_box :cost_override, checked: @cost_override, class: 'entry-count h-10' %>
+    <%= form.label :cost_override, 'Override prices for Studio' %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :heat_cost, 'Heats' %>
+    <%= form.number_field :heat_cost, step: :any,
+      value: number_to_currency(form.object.heat_cost.to_f, delimiter: '', unit: ''),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :solo_cost, 'Solos' %>
+    <%= form.number_field :solo_cost, step: :any,
+      value: number_to_currency(form.object.solo_cost.to_f, delimiter: '', unit: ''),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :multi_cost, 'Multi-dances' %>
+    <%= form.number_field :multi_cost, step: :any,
+    value: number_to_currency(form.object.multi_cost.to_f, delimiter: '', unit: ''),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  </div>
+
   <div class="inline">
     <%= form.submit class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
   </div>

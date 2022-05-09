@@ -90,6 +90,6 @@ class EntriesTest < ApplicationSystemTestCase
     click_on "Remove this entry", match: :first
     page.accept_alert
 
-    assert_text "2 heats successfully removed"
+    assert_text "3 heats successfully removed"
   end
 end

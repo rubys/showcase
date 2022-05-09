@@ -31,10 +31,10 @@ class StudiosController < ApplicationController
     @people = @studio.people.where(type: ['Student', 'Guest']).order(:name)
 
     @cost = {
-      'Closed' => @event.heat_cost || 0,
-      'Open' => @event.heat_cost || 0,
-      'Solo' => @event.solo_cost || 0,
-      'Multi' => @event.multi_cost || 0
+      'Closed' => @studio.heat_cost || @event.heat_cost || 0,
+      'Open' => @studio.heat_cost || @event.heat_cost || 0,
+      'Solo' => @studio.solo_cost || @event.solo_cost || 0,
+      'Multi' => @studio.multi_cost || @event.multi_cost || 0
     }
 
     entries = (Entry.joins(:follow).where(people: {type: 'Student', studio: @studio}) +
@@ -81,17 +81,24 @@ class StudiosController < ApplicationController
     @studio ||= Studio.new
     @pairs = @studio.pairs
     @avail = Studio.all.map {|studio| studio.name}
+    @cost_override = !!(@studio.heat_cost || @studio.solo_cost || @studio.multi_cost)
+
+    event = Event.last
+    @studio.heat_cost ||= event.heat_cost
+    @studio.solo_cost ||= event.solo_cost
+    @studio.multi_cost ||= event.multi_cost
   end
 
   # GET /studios/1/edit
   def edit
-    @pairs = @studio.pairs
-    @avail = (Studio.all - @pairs).map {|studio| studio.name}
+    new
   end
 
   # POST /studios or /studios.json
   def create
-    @studio = Studio.new(studio_params.except(:pair))
+    @studio = Studio.new(studio_params.except(:pair, :cost_override))
+
+    cost_override
 
     respond_to do |format|
       if @studio.save
@@ -110,8 +117,9 @@ class StudiosController < ApplicationController
   def update
     respond_to do |format|
       add_pair
+      cost_override
 
-      if @studio.update(studio_params.except(:pair))
+      if @studio.update(studio_params.except(:pair, :cost_override))
         format.html { redirect_to studio_url(@studio), notice: "#{@studio.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @studio }
       else
@@ -153,7 +161,7 @@ class StudiosController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def studio_params
-      params.require(:studio).permit(:name, :tables, :pair)
+      params.require(:studio).permit(:name, :tables, :pair, :cost_override, :heat_cost, :solo_cost, :multi_cost)
     end
 
     def add_pair
@@ -164,6 +172,14 @@ class StudiosController < ApplicationController
           pair = StudioPair.new(studio1: @studio, studio2: pair)
           pair.save!
         end
+      end
+    end
+
+    def cost_override
+      if studio_params[:cost_override] == '0'
+        params[:studio][:heat_cost] = nil
+        params[:studio][:solo_cost] = nil
+        params[:studio][:multi_cost] = nil
       end
     end
 end
