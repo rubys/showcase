@@ -33,6 +33,35 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "agenda traversal" do
+    judge = people(:Judy)
+
+    get judge_heat_url(judge: judge, heat: 1)
+    assert_response :success
+    assert_select 'a[rel=prev]', false
+    assert_select 'a[rel=next][href=?]', judge_heat_path(judge: judge, heat: 2)
+
+    get judge_heat_url(judge: judge, heat: 3)
+    assert_response :success
+    assert_select 'a[rel=prev][href=?]', judge_heat_path(judge: judge, heat: 2)
+    assert_select 'a[rel=next][href=?]', judge_heat_slot_path(judge: judge, heat: 4, slot: 1)
+
+    get judge_heat_slot_url(judge: judge, heat: 4, slot: 1)
+    assert_response :success
+    assert_select 'a[rel=prev][href=?]', judge_heat_path(judge: judge, heat: 3)
+    assert_select 'a[rel=next][href=?]', judge_heat_slot_path(judge: judge, heat: 4, slot: 2)
+
+    get judge_heat_slot_url(judge: judge, heat: 4, slot: 2)
+    assert_response :success
+    assert_select 'a[rel=prev][href=?]', judge_heat_slot_path(judge: judge, heat: 4, slot: 1)
+    assert_select 'a[rel=next][href=?]', judge_heat_path(judge: judge, heat: 5)
+
+    get judge_heat_url(judge: judge, heat: 5)
+    assert_response :success
+    assert_select 'a[rel=prev][href=?]', judge_heat_slot_path(judge: judge, heat: 4, slot: 2)
+    assert_select 'a[rel=next]', false
+  end
+
   test "should create score" do
     assert_difference("Score.count") do
       post scores_url, params: { score: { heat_id: @score.heat_id, judge_id: @score.judge_id, value: @score.value } }

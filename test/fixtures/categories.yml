@@ -8,24 +8,24 @@ one:
 
 two:
   name: Open American Smooth
-  order: 2
+  order: 4
   day: Saturday
   time: 10 a.m.
 
 three:
   name: Closed American Rhythm
-  order: 3
+  order: 2
   day: Friday
   time: 1 p.m.
 
 four:
   name: Open American Rhythm
-  order: 4
+  order: 5
   day: Saturday
   time: 1 p.m.
 
 five:
   name: All Arounds
-  order: 6
+  order: 3
   day: Saturday
   time: 4 p.m.

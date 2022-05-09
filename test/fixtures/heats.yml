@@ -7,19 +7,25 @@ one:
   dance: waltz
 
 two:
-  number: 2
+  number: 5
   entry: two
   category: Open
   dance: tango
 
 three:
-  number: 3
+  number: 2
   entry: one
   category: Solo
   dance: waltz
 
 four:
-  number: 4
+  number: 3
   entry: two
   category: Solo
   dance: tango
+
+five:
+  number: 4
+  entry: two
+  category: Multi
+  dance: aa_smooth

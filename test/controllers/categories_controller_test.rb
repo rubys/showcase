@@ -92,13 +92,13 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
       assert_equal [
         "Closed American Rhythm",
         "Closed American Smooth",
+        "All Arounds",
         "Open American Smooth",
-        "Open American Rhythm", 
-        "All Arounds"
+        "Open American Rhythm" 
       ], links.map(&:text)
     end
 
-    assert_equal 3, categories(:three).order
+    assert_equal 2, categories(:three).order
     categories(:three).reload
     assert_equal 1, categories(:three).order
   end
