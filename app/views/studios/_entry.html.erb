@@ -18,8 +18,8 @@
   </thead>
   <tbody>
   <% total = 0 %>
-  <% entries.sort_by {|entry| [entry.level_id, entry.age_id]}.each do |entry| %>
-  <% entry.heats.sort_by {|heat| [heat.category, heat.dance.name]}.each do |heat| %>
+  <% heats = entries.map(&:heats).flatten %>
+  <% heats.sort_by {|heat| [heat.entry.level_id, heat.entry.age_id, heat.category, heat.dance.name]}.each do |heat| %>
     <tr class="text-sm">
       <td><div class="mx-4"><%= heat.category %>
       <td><div class="mx-4"><%= heat.dance.name %></div>
@@ -28,7 +28,6 @@
       <td class="text-right"><%= number_to_currency @cost[heat.category], precision: 2, unit: '' %>
     </tr>
     <% total += @cost[heat.category] %>
-  <% end %>
   <% end %>
     <tr class="text-sm">
       <th colspan="4">subtotal
