@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :add_email_to_events
   # if ENV['RAILS_RELATIVE_URL_ROOT'].present?
   #   mount ActionCable.server => "#{ENV['RAILS_RELATIVE_URL_ROOT']}/cable"
   # end
@@ -67,6 +68,8 @@ Rails.application.routes.draw do
       get 'heats', on: :member
       get 'scores', on: :member
       get 'invoice', on: :member
+      get 'send-invoice', on: :member
+      post 'send-invoice', on: :member
     end
 
     get '/scores/:judge/heatlist', to: 'scores#heatlist', as: 'judge_heatlist'

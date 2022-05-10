@@ -1,7 +1,7 @@
 class StudiosController < ApplicationController
   include Printable
 
-  before_action :set_studio, only: %i[ show edit update unpair destroy heats scores invoice ]
+  before_action :set_studio, only: %i[ show edit update unpair destroy heats scores invoice send_invoice ]
 
   # GET /studios or /studios.json
   def index
@@ -74,6 +74,44 @@ class StudiosController < ApplicationController
 
     @purchases_made = @people.any? {|person| person.package_id} or
       @people.any? {|person| not person.options.empty?}
+  end
+
+  def send_invoice
+    @event = Event.last
+
+    if request.post?
+      begin
+        # do job NOW
+        SendInvoiceJob.perform_now URI.join(request.original_url, invoice_studio_path(@studio)),
+          params.except(:authenticity_token, :commit, :id).
+          permit(:from, :to, :subject, :body).
+          to_h
+
+        @event.update!(email: params['from']) unless @event.email == params['from']
+        @studio.update!(email: params['to']) unless @event.email == params['to']
+
+        respond_to do |format|
+          format.html { redirect_to studio_url(@studio), notice: "Invoice sent to #{params['to']}." }
+          format.json { render :show, status: :created, location: @studio }
+        end
+      rescue => exception
+        Rails.logger.error "Exception: #{exception}."
+        Rails.logger.error "Message: #{exception.message}."
+        Rails.logger.error "Backtrace:  \n #{exception.backtrace.join("\n")}"
+
+        respond_to do |format|
+          format.html { redirect_to studio_url(@studio), status: :unprocessable_entity,
+            notice: "Error Occurred: #{exception}." }
+          format.json { render status: :unprocessable_entity,
+            json: {exception: exception.to_s, message: exception.message, backtrace: exception.backtrace } }
+        end
+      end
+    else  
+      @from = @event.email
+      @to = @studio.email
+      @subject = "Invoice/Confirmation - #{@event.name}"
+      @body = 'See attached.'
+    end
   end
 
   # GET /studios/new

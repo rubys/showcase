@@ -1,0 +1,33 @@
+<div class="mx-auto md:w-2/3 w-full">
+  <h1 class="font-bold text-4xl">Send invoice - <%= @studio.name %></h1>
+
+<%= form_with(class: "contents") do |form| %>
+  <div class="my-5">
+    <%= form.label :from %>
+    <%= form.email_field :from, required: true, value: @from,
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :to %>
+    <%= form.email_field :to, required: true, value: @to,
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :subject %>
+    <%= form.text_field :subject, required: true, value: @subject,
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label 'body'%>
+    <%= form.rich_text_area 'body', {value: @body} %>
+  </div>
+
+  <div class="inline">
+    <%= form.submit 'Send', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  </div>
+<% end %>
+
+</div>
