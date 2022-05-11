@@ -24,7 +24,7 @@
       <% @judges.each do |judge| %>
         <td class="text-center"><%= heat.scores.select {|score| score.judge == judge}.sort_by(&:slot).map(&:value).join(' ') %>
       <% end %>
-      <td><div class="mx-4"><%= heat.dance.name %></div>
+      <td><div class="mx-4"><%= heat.category %> <%= heat.dance.name %></div>
       <% if heat.entry.lead != person %>
       <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div>
       <% end %>
