@@ -7,26 +7,17 @@
 
     <h1 class="mt-16 font-bold text-4xl mb-6"><%= heading %></h1>
 
-    <% unless @student_packages.empty? %>
-    <h2 class="font-bold text-2xl mt-4">Student Packages</h1>
+    <% %w(Student Professional Guest Judge Emcee).each do |type| %>
+    <% if @packages.include? type %>
+    <h2 class="font-bold text-2xl mt-4"><%= type %> Packages</h1>
     <table class="table-auto">
       <thead>
         <th>Name
         <th>Price
       </thead>
-      <%= render partial: "billables/group", locals: { group: @student_packages, id: 'student-packages' } %>
+      <%= render partial: "billables/group", locals: { group: @packages[type], id: "#{type}-packages" } %>
     </table>
     <% end %>
-
-    <% unless @guest_packages.empty? %>
-    <h2 class="font-bold text-2xl mt-4">Guest Packages</h1>
-    <table class="table-auto">
-      <thead>
-        <th>Name
-        <th>Price
-      </thead>
-      <%= render partial: "billables/group", locals: { group: @guest_packages, id: 'guest-packages' } %>
-    </table>
     <% end %>
 
     <% unless @options.empty? %>

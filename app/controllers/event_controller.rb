@@ -17,8 +17,7 @@ class EventController < ApplicationController
     @ages = Age.all.size
     @levels = Level.all.size
 
-    @student_packages = Billable.where(type: 'Student').order(:order)
-    @guest_packages = Billable.where(type: 'Guest').order(:order)
+    @packages = Billable.where.not(type: 'Order').order(:order).group_by(&:type)
     @options = Billable.where(type: 'Option').order(:order)
   end
 

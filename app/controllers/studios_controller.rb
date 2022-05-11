@@ -28,7 +28,7 @@ class StudiosController < ApplicationController
   def invoice
     @event = Event.last
 
-    @people = @studio.people.where(type: ['Student', 'Guest']).order(:name)
+    @people = @studio.people.order(:name)
 
     @cost = {
       'Closed' => @studio.heat_cost || @event.heat_cost || 0,

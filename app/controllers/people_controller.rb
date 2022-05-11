@@ -364,11 +364,7 @@ class PeopleController < ApplicationController
       @exclude.delete(@person)
       @exclude = @exclude.map {|exclude| [exclude.name, exclude.id]}
 
-      if %w(Student Guest).include? @person.type
-        @packages = Billable.where(type: @person.type).order(:order).pluck(:name, :id)
-      else
-        @packages = []
-      end
+      @packages = Billable.where(type: @person.type).order(:order).pluck(:name, :id)
 
       @options = Billable.where(type: 'Option').order(:order)
 
