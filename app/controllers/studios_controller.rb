@@ -45,19 +45,19 @@ class StudiosController < ApplicationController
     @dance_count = 0
 
     entries.each do |entry|
-      if entry.lead.type == 'Student' and entry.follow.type == 'Student'
-        split = 2
+      if entry.lead.type == 'Student' and entry.follow.type == 'Student' 
+        split = (entry.lead.studio_id == entry.follow.studio_id) ? 1 : 2
       else
         split = 1
       end
 
       entry.heats.each do |heat|
-        if entry.lead.type == 'Student'
+        if entry.lead.type == 'Student' and @dances[entry.lead]
           @dances[entry.lead][:dances] += 1
           @dances[entry.lead][:cost] += @cost[heat.category] / split
         end
 
-        if entry.follow.type == 'Student'
+        if entry.follow.type == 'Student' and @dances[entry.follow]
           @dances[entry.follow][:dances] += 1
           @dances[entry.follow][:cost] += @cost[heat.category] / split
         end
