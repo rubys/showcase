@@ -3,7 +3,7 @@ class BillablesController < ApplicationController
 
   # GET /billables or /billables.json
   def index
-    @packages = Billable.where.not(type: 'Order').order(:order).group_by(:type)
+    @packages = Billable.where.not(type: 'Order').order(:order).group_by(&:type)
     @options = Billable.where(type: 'Option').order(:order)
     @event = Event.last
   end
