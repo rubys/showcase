@@ -25,10 +25,8 @@ class EventController < ApplicationController
     @people = Person.includes(:level, :age, options: :option, package: {package_includes: :option}).
       all.group_by {|person| person.type}
 
-    @packages = {
-      'Student' => Billable.where(type: 'Student').order(:order).map {|package| [package, 0]}.to_h,
-      'Guest' => Billable.where(type: 'Guest').order(:order).map {|package| [package, 0]}.to_h
-    }
+    @packages = Billable.where.not(type: 'Option').order(:order).group_by(&:type).
+      map {|type, packages| [type, packages.map {|package| [package, 0]}.to_h]}.to_h
 
     @options = Billable.where(type: 'Option').order(:order).map {|package| [package, 0]}.to_h
 
