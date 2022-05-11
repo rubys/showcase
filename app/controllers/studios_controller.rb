@@ -46,7 +46,7 @@ class StudiosController < ApplicationController
 
     entries.each do |entry|
       if entry.lead.type == 'Student' and entry.follow.type == 'Student' 
-        split = (entry.lead.studio_id == entry.follow.studio_id) ? 1 : 2
+        split = 2
       else
         split = 1
       end
