@@ -29,7 +29,7 @@
     <% next if purchases == 0 and @dances[person][:dances] == 0 %>
     <tr class="text-base">
       <td><div class="mx-4"><%= person.name %>
-      <td><div class="mx-4 text-right"><%= @dances[person][:dances] %>
+      <td><div class="mx-4 text-right"><%= number_with_precision @dances[person][:dances], strip_insignificant_zeros: true %>
       <td class="pr-4 text-right"><%= number_to_currency dance_cost, precision: 2, unit: '' %>
       <% if @purchases_made %>
       <td class="pr-4 text-right"><%= number_to_currency purchases, precision: 2, unit: '' %>
@@ -41,7 +41,7 @@
   <% end %>
     <tr class="text-base">
       <th class="row-foot">total
-      <td><div class="row-foot text-right"><%= @dance_count %>
+      <td><div class="row-foot text-right"><%= number_with_precision @dance_count, strip_insignificant_zeros: true %>
       <td class="row-foot text-right"><%= number_to_currency total_dance_cost, precision: 2, unit: '' %>
       <% if @purchases_made %>
       <td class="row-foot text-right"><%= number_to_currency total_purchases, precision: 2, unit: '' %>

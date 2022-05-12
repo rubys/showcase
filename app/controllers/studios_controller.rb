@@ -46,25 +46,27 @@ class StudiosController < ApplicationController
 
     entries.each do |entry|
       if entry.lead.type == 'Student' and entry.follow.type == 'Student' 
-        split = 2
+        split = 2.0
       else
         split = 1
       end
 
       entry.heats.each do |heat|
         if entry.lead.type == 'Student' and @dances[entry.lead]
-          @dances[entry.lead][:dances] += 1
+          @dances[entry.lead][:dances] += 1 / split
           @dances[entry.lead][:cost] += @cost[heat.category] / split
         end
 
         if entry.follow.type == 'Student' and @dances[entry.follow]
-          @dances[entry.follow][:dances] += 1
+          @dances[entry.follow][:dances] += 1 / split
           @dances[entry.follow][:cost] += @cost[heat.category] / split
         end
       end
 
       @dance_count += entry.heats.length
     end
+
+    @dance_count = @dances.map {|person, info| info[:dances]}.sum
 
     @entries = Entry.where(id: entries.map(&:id)).
       order(:levei_id, :age_id).
