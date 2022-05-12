@@ -25,7 +25,7 @@
     <% total_dance_cost = total_purchases = 0 %>
     <% @people.each do |person| %>
     <% dance_cost = @dances[person][:cost] %>
-    <% purchases = (person.package&.price || 0) + person.options.map(&:option).map(&:price).sum %>
+    <% purchases = @dances[person][:purchases] %>
     <% next if purchases == 0 and @dances[person][:dances] == 0 %>
     <tr class="text-base">
       <td><div class="mx-4"><%= person.name %>

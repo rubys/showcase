@@ -13,8 +13,11 @@
       <tr>
         <td class="row-head">Location
         <td class="row-head">Count
-        <% if @tables > 0 %>
+        <% if @total_tables > 0 %>
         <td class="row-head">Tables
+        <% end %>
+        <% if @total_invoice > 0 %>
+        <td class="row-head">Invoice
         <% end %>
       </tr>
     </thead>
@@ -23,11 +26,20 @@
       <tr>
         <td class="text-black font-medium"><%= link_to studio.name, studio %></td>
         <td class="text-right"><%= studio.people.count %></td>
-        <% if @tables > 0 %>
+        <% if @total_tables > 0 %>
         <td class="text-right"><%= studio.tables.to_i %></td>
         <% end %>
+        <td class="text-right"><%= number_to_currency @invoice[studio], precision: 2, unit: '' %></td>
       </tr>
     <% end %>
+      <tr>
+        <th class="row-foot-right">totals</td>
+        <td class="row-foot-right"><%= @total_count %></td>
+        <% if @total_tables > 0 %>
+        <td class="row-foot-right"><%= @total_tables %></td>
+        <% end %>
+        <td class="row-foot-right text-right"><%= number_to_currency @total_invoice, precision: 2, unit: '' %></td>
+      </tr>
     </tbody>
     </table>
   </div>

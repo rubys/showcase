@@ -6,7 +6,17 @@ class StudiosController < ApplicationController
   # GET /studios or /studios.json
   def index
     @studios = Studio.all.order(:name)
-    @tables = Studio.sum(:tables)
+
+    @invoice = {}
+    @studios.each do |studio|
+      @studio = studio
+      invoice
+      @invoice[studio] = @dances.map {|person, info| info[:cost] + info[:purchases]}.sum
+    end
+
+    @total_count = Person.where.not(studio_id: nil).count
+    @total_tables = Studio.sum(:tables)
+    @total_invoice = @invoice.values.sum
   end
 
   # GET /studios/1 or /studios/1.json
@@ -40,7 +50,10 @@ class StudiosController < ApplicationController
     entries = (Entry.joins(:follow).where(people: {type: 'Student', studio: @studio}) +
       Entry.joins(:lead).where(people: {type: 'Student', studio: @studio})).uniq
 
-    @dances = @people.map {|person| [person, {dances: 0, cost: 0}]}.to_h
+    @dances = @people.map do |person|
+      purchases = (person.package&.price || 0) + person.options.map(&:option).map(&:price).sum
+      [person, {dances: 0, cost: 0, purchases: purchases}]
+    end.to_h
 
     @dance_count = 0
 
@@ -74,8 +87,7 @@ class StudiosController < ApplicationController
          entry.follow.type == "Student" ? [entry.follow.name, entry.lead.name] : [entry.lead.name, entry.follow.name]
        }.sort_by {|key, value| key}
 
-    @purchases_made = @people.any? {|person| person.package_id} or
-      @people.any? {|person| not person.options.empty?}
+    @purchases_made = @dances.any? {|person, info| info[:purchases] > 0}
   end
 
   def send_invoice

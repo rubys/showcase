@@ -91,6 +91,11 @@
   .row-foot { @apply
    border-t dark:border-slate-600 font-medium p-4 pl-8 pt-2
    text-slate-600 dark:text-slate-600 text-center
-}
+  }
+
+  .row-foot-right { @apply
+   border-t dark:border-slate-600 font-medium pt-2
+   text-slate-600 dark:text-slate-600 text-right
+  }
 }
 @import 'actiontext.css';
