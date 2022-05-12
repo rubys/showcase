@@ -29,7 +29,9 @@
         <% if @total_tables > 0 %>
         <td class="text-right"><%= studio.tables.to_i %></td>
         <% end %>
+        <% if @total_invoice > 0 %>
         <td class="text-right"><%= number_to_currency @invoice[studio], precision: 2, unit: '' %></td>
+        <% end %>
       </tr>
     <% end %>
       <tr>
@@ -38,7 +40,9 @@
         <% if @total_tables > 0 %>
         <td class="row-foot-right"><%= @total_tables %></td>
         <% end %>
+        <% if @total_invoice > 0 %>
         <td class="row-foot-right text-right"><%= number_to_currency @total_invoice, precision: 2, unit: '' %></td>
+        <% end %>
       </tr>
     </tbody>
     </table>
