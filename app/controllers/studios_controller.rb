@@ -7,16 +7,15 @@ class StudiosController < ApplicationController
   def index
     @studios = Studio.all.order(:name)
 
-    @invoice = {}
-    @studios.each do |studio|
-      @studio = studio
-      invoice
-      @invoice[studio] = @dances.map {|person, info| info[:cost] + info[:purchases]}.sum
-    end
+    generate_invoice @studios
 
     @total_count = Person.where.not(studio_id: nil).count
     @total_tables = Studio.sum(:tables)
-    @total_invoice = @invoice.values.sum
+    @total_invoice = @invoices.values.map {|info| info[:total_cost]}.sum
+  end
+
+  def invoices
+    index
   end
 
   # GET /studios/1 or /studios/1.json
@@ -36,58 +35,7 @@ class StudiosController < ApplicationController
   end
 
   def invoice
-    @event = Event.last
-
-    @people = @studio.people.order(:name)
-
-    @cost = {
-      'Closed' => @studio.heat_cost || @event.heat_cost || 0,
-      'Open' => @studio.heat_cost || @event.heat_cost || 0,
-      'Solo' => @studio.solo_cost || @event.solo_cost || 0,
-      'Multi' => @studio.multi_cost || @event.multi_cost || 0
-    }
-
-    entries = (Entry.joins(:follow).where(people: {type: 'Student', studio: @studio}) +
-      Entry.joins(:lead).where(people: {type: 'Student', studio: @studio})).uniq
-
-    @dances = @people.map do |person|
-      purchases = (person.package&.price || 0) + person.options.map(&:option).map(&:price).sum
-      [person, {dances: 0, cost: 0, purchases: purchases}]
-    end.to_h
-
-    @dance_count = 0
-
-    entries.each do |entry|
-      if entry.lead.type == 'Student' and entry.follow.type == 'Student' 
-        split = 2.0
-      else
-        split = 1
-      end
-
-      entry.heats.each do |heat|
-        if entry.lead.type == 'Student' and @dances[entry.lead]
-          @dances[entry.lead][:dances] += 1 / split
-          @dances[entry.lead][:cost] += @cost[heat.category] / split
-        end
-
-        if entry.follow.type == 'Student' and @dances[entry.follow]
-          @dances[entry.follow][:dances] += 1 / split
-          @dances[entry.follow][:cost] += @cost[heat.category] / split
-        end
-      end
-
-      @dance_count += entry.heats.length
-    end
-
-    @dance_count = @dances.map {|person, info| info[:dances]}.sum
-
-    @entries = Entry.where(id: entries.map(&:id)).
-      order(:levei_id, :age_id).
-      includes(lead: [:studio], follow: [:studio], heats: [:dance]).group_by {|entry| 
-         entry.follow.type == "Student" ? [entry.follow.name, entry.lead.name] : [entry.lead.name, entry.follow.name]
-       }.sort_by {|key, value| key}
-
-    @purchases_made = @dances.any? {|person, info| info[:purchases] > 0}
+    generate_invoice([@studio])
   end
 
   def send_invoice

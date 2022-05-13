@@ -68,6 +68,7 @@ Rails.application.routes.draw do
       get 'heats', on: :member
       get 'scores', on: :member
       get 'invoice', on: :member
+      get 'invoices', on: :collection
       get 'send-invoice', on: :member
       post 'send-invoice', on: :member
     end

@@ -30,7 +30,9 @@
         <td class="text-right"><%= studio.tables.to_i %></td>
         <% end %>
         <% if @total_invoice > 0 %>
-        <td class="text-right"><%= number_to_currency @invoice[studio], precision: 2, unit: '' %></td>
+        <td class="text-right">
+          <%= number_to_currency @invoices[studio][:total_cost], precision: 2, unit: '' %>
+        </td>
         <% end %>
       </tr>
     <% end %>

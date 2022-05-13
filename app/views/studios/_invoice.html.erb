@@ -1,0 +1,80 @@
+<div class="mb-4">
+  <h2 class="font-bold text-center text-4xl"><%= @event.name %></h1>
+
+  <p class="mt-4 text-center"><%= @event.location %></p>
+  <p class="mt-2 text-center"><%= @event.date %></p>
+</div>
+
+<table class="table" style="break-inside: avoid">
+  <thead>
+  <tr>
+    <td colspan="5" class="font-bold text-2xl pb-4">Invoice/Confirmation - <%= studio.name %></td>
+  </tr>
+  <tr>
+    <th class="row-head-left">Name
+    <th class="row-head-left"># Entries
+    <th class="row-head">Cost
+    <% if invoice[:purchases_made] %>
+    <th class="row-head">Purchases
+    <th class="row-head">Total
+    <% end %>
+  </thead>
+  <tbody>
+    <% total_dance_cost = total_purchases = 0 %>
+    <% studio.people.order(:name).each do |person| %>
+    <% dances = invoice[:dances] %>
+    <% dance_cost = dances[person][:cost] %>
+    <% purchases = dances[person][:purchases] %>
+    <% next if purchases == 0 and dances[person][:dances] == 0 %>
+    <tr class="text-base">
+      <td><div class="mx-4"><%= person.name %>
+      <td><div class="mx-4 text-right"><%= number_with_precision dances[person][:dances], strip_insignificant_zeros: true %>
+      <td class="pr-4 text-right"><%= number_to_currency dance_cost, precision: 2, unit: '' %>
+      <% if invoice[:purchases_made] %>
+      <td class="pr-4 text-right"><%= number_to_currency purchases, precision: 2, unit: '' %>
+      <td class="pr-4 text-right"><%= number_to_currency dance_cost + purchases, precision: 2, unit: '' %>
+      <% end %>
+    </tr>
+    <% total_dance_cost += dance_cost %>
+    <% total_purchases += purchases %>
+  <% end %>
+    <tr class="text-base">
+      <th class="row-foot">total
+      <td><div class="row-foot text-right"><%= number_with_precision invoice[:dance_count], strip_insignificant_zeros: true %>
+      <td class="row-foot text-right"><%= number_to_currency total_dance_cost, precision: 2, unit: '' %>
+      <% if invoice[:purchases_made] %>
+      <td class="row-foot text-right"><%= number_to_currency total_purchases, precision: 2, unit: '' %>
+      <td class="row-foot text-right"><%= number_to_currency total_dance_cost + total_purchases, precision: 2, unit: '' %>
+      <% end %>
+    </tr>
+  </tbody>
+</table>
+
+<% if invoice[:purchases_made] %>
+<table class="table" style="break-inside: avoid">
+  <thead>
+  <tr>
+    <td colspan="2" class="font-bold text-2xl pb-4">Purchases</td>
+  </tr>
+  <tr>
+    <th class="row-head-left">Name
+    <th class="row-head">Purchases
+  </thead>
+  <tbody>
+    
+    <% studio.people.order(:name).each do |person| %>
+    <% purchases = person.options.map(&:option).map(&:name) %>
+    <% purchases.unshift "#{person.type} #{person.package.name}" if person.package_id %>
+    <% next if purchases.empty? %>
+    <tr>
+      <td><div class="mx-4"><%= person.name %>
+      <td><div class="mx-4"><%= purchases.join(' + ') %>
+    </tr>
+    <% end %>
+  </tbody>
+  </table>
+  <% end %>
+
+  <% invoice[:entries].each do |names, entries| %>
+    <%= render "entry", names: names, entries: entries %>
+  <% end %>

@@ -1,0 +1,67 @@
+<div class="mx-auto md:w-2/3 w-full print:w-full">
+
+<div class="mb-4">
+  <h2 class="font-bold text-center text-4xl"><%= @event.name %></h1>
+
+  <p class="mt-4 text-center"><%= @event.location %></p>
+  <p class="mt-2 text-center"><%= @event.date %></p>
+</div>
+
+<div class="justify-between items-center">
+  <h1 class="font-bold text-4xl mb-4">Summary</h1>
+</div>
+
+<div id="studios" class="min-w-full">
+  <table class="table-fixed">
+  <thead>
+      <tr>
+      <td class="row-head">Location
+      <td class="row-head">People
+      <td class="row-head"># Entries
+      <td class="row-head">Cost
+      <td class="row-head">Purchases
+      <td class="row-head">Total
+      </tr>
+  </thead>
+  <tbody>
+  <% total_heats = total_cost = total_purchases = 0 %>
+  <% @studios.each do |studio| %>
+      <% 
+        total_heats += heats = @invoices[studio][:dances].values.map {|value| value[:dances]}.sum
+        total_cost += cost = @invoices[studio][:dance_cost]
+        total_purchases += purchases = @invoices[studio][:purchases]
+       %>
+      <tr>
+      <td class="text-black font-medium"><%= link_to studio.name, studio %></td>
+      <td class="text-right"><div class="mx-4"><%= studio.people.count %></td></div>
+      <td class="text-right"><div class="mx-4">
+        <%= number_with_precision heats, strip_insignificant_zeros: true %>
+      </div></td>
+      <td class="text-right"><div class="mx-4">
+        <%= number_to_currency cost, precision: 2, unit: '' %>
+      </div></td>
+      <td class="text-right"><div class="mx-4">
+        <%= number_to_currency purchases, precision: 2, unit: '' %>
+      </div></td>
+      <td class="text-right"><div class="mx-4">
+        <%= number_to_currency @invoices[studio][:total_cost], precision: 2, unit: '' %>
+      </div></td>
+      </tr>
+  <% end %>
+      <tr>
+      <th class="row-foot-right">totals</td>
+      <td class="row-foot-right"><div class="mx-4"><%= @total_count %></td>
+      <td class="row-foot-right"><div class="mx-4"><%= number_with_precision total_heats, strip_insignificant_zeros: true %></td>
+      <td class="row-foot-right"><div class="mx-4"><%= number_to_currency total_cost, precision: 2, unit: '' %></td>
+      <td class="row-foot-right"><div class="mx-4"><%= number_to_currency total_purchases, precision: 2, unit: '' %></td>
+      <td class="row-foot-right"><div class="mx-4"><%= number_to_currency @total_invoice, precision: 2, unit: '' %></td>
+      </tr>
+  </tbody>
+  </table>
+</div>
+  
+<% @invoices.each do |studio, invoice|%>
+<div class="w-full mt-8 print:mt-0" style="page-break-before: always">
+  <%= render "invoice", studio: studio, invoice: invoice %>  
+</div>
+<% end %>
