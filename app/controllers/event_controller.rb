@@ -71,12 +71,12 @@ class EventController < ApplicationController
     user = ENV['REMOTE_USER']
     auth = YAML.load_file('config/tenant/auth.yml')[user]
     @showcases = YAML.load_file('config/tenant/showcases.yml')
-    logo = Set.new
+    logos = Set.new
 
     @showcases.each do |year, sites|
       sites.each do |token, info|
         next if auth and not auth.include? token
-        logo.add info[:logo] if info[:logo]
+        logos.add info[:logo] if info[:logo]
         if info[:events]
           info[:events].each do |subtoken, subinfo|
             db = "#{__dir__}/../..//db/#{year}-#{token}-#{subtoken}.sqlite3"
