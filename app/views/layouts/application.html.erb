@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Arthur Murray Showcase</title>
+    <title>Showcase</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -16,7 +16,7 @@
 
     <% unless @nologo %>
     <%= link_to root_path.chomp('/') + '/' do %>
-      <%= image_tag "/arthur-murray-logo.gif", class: "absolute right-4 top-4 h-16" %>
+      <%= image_tag showcase_logo, class: "absolute right-4 top-4 h-16" %>
     <% end %>
     <% end %>
     

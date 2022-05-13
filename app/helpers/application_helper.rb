@@ -17,4 +17,8 @@ module ApplicationHelper
     websocket = "#{scheme.sub('http', 'ws')}://#{host}#{root}/cable"
     "<meta name=\"action-cable-url\" content=\"#{websocket}\" />".html_safe
   end
+
+  def showcase_logo
+    "/#{ENV['SHOWCASE_LOGO'] || 'intertwingly.png'}"
+  end
 end

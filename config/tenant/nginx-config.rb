@@ -38,14 +38,16 @@ showcases.each do |year, list|
         @tenants << OpenStruct.new(
           name:  info[:name] + ' - ' + subinfo[:name] ,
           label: "#{year}-#{token}-#{subtoken}",
-          scope: "#{year}/#{token}/#{subtoken}"
+          scope: "#{year}/#{token}/#{subtoken}",
+          logo:  info[:logo],
         )
       end
     else
       @tenants << OpenStruct.new(
         name:  info[:name],
         label: "#{year}-#{token}",
-        scope: "#{year}/#{token}"
+        scope: "#{year}/#{token}",
+        logo:  info[:logo],
       )
     end
   end
@@ -97,6 +99,9 @@ server {
     passenger_base_uri /;
 <% else -%>
     passenger_env_var RAILS_APP_SCOPE <%= tenant.scope %>;
+<% if tenant.logo -%>
+    passenger_env_var SHOWCASE_LOGO <%= tenant.logo %>;
+<% end -%>
 <% end -%>
     passenger_env_var PIDFILE <%= @git_path %>/tmp/pids/<%= tenant.label %>.pid;
   }

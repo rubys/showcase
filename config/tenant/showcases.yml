@@ -2,6 +2,7 @@
 2022:                                                                           
   annapolis:
     :name: Annapolis
+    :logo: arthur-murray-logo.gif
     :events:                                          
       :medalball:                                     
         :name: Metal Ball                             
@@ -9,9 +10,15 @@
         :name: Chesapeake Classic
       :gratitudegala:
         :name: Gratitude Gala
+  cary:
+    :name: Cary
+    :logo: fred-astaire-logo.jpg
   charlotte:
     :name: Charlotte
+    :logo: arthur-murray-logo.gif
   harrisburg:                                                                   
     :name: Harrisburg
+    :logo: arthur-murray-logo.gif
   vabeach:                                                                   
     :name: Virginia Beach
+    :logo: arthur-murray-logo.gif
