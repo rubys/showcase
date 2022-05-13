@@ -68,14 +68,19 @@ class EventController < ApplicationController
   end
 
   def showcases
-    user = ENV['REMOTE_USER']
+    user = request.headers["HTTP_X_REMOTE_USER"]
     auth = YAML.load_file('config/tenant/auth.yml')[user]
     @showcases = YAML.load_file('config/tenant/showcases.yml')
     logos = Set.new
 
     @showcases.each do |year, sites|
+      if auth
+        sites.select! do |token, value|
+          auth.include? token
+        end
+      end
+
       sites.each do |token, info|
-        next if auth and not auth.include? token
         logos.add info[:logo] if info[:logo]
         if info[:events]
           info[:events].each do |subtoken, subinfo|
