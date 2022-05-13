@@ -130,6 +130,55 @@ class EventController < ApplicationController
   end
 
   def ages
-    @ages = Age.pluck(:category, :description).map {|category, description| "#{category}: #{description}"}.join("\n")
+    if request.post?
+      old_ages = Age.order(:id)
+      new_ages = params[:ages].strip.split("\n").map(&:strip).select {|level| level.length > 0}
+
+      if old_ages.length > new_ages.length
+        Age.destroy_by(id: new_ages.length+1..)
+      end
+
+      new_ages.each_with_index do |new_age, index|
+        category = new_age.split(':').first.strip
+        description = new_age.split(':').last.strip
+
+        if index >= old_ages.length
+          Level.create(name: new_level, id: index+1)
+        elsif old_ages[index].category != category or old_ages[index].description != description
+          old_ages[index].update(category: category, description: description)
+        end
+      end
+
+      respond_to do |format|
+        format.html { redirect_to settings_event_index_path(anchor: 'advanced') }
+      end
+    else
+      @ages = Age.pluck(:category, :description).map {|category, description| "#{category}: #{description}"}.join("\n")
+    end
+  end
+
+  def levels
+    if request.post?
+      old_levels = Level.order(:id)
+      new_levels = params[:levels].strip.split("\n").map(&:strip).select {|level| level.length > 0}
+
+      if old_levels.length > new_levels.length
+        Level.destroy_by(id: new_levels.length+1..)
+      end
+
+      new_levels.each_with_index do |new_level, index|
+        if index >= old_levels.length
+          Level.create(name: new_level, id: index+1)
+        elsif old_levels[index].name != new_level
+          old_levels[index].update(name: new_level)
+        end
+      end
+
+      respond_to do |format|
+        format.html { redirect_to settings_event_index_path(anchor: 'advanced') }
+      end
+    else
+      @levels = Level.pluck(:name).join("\n")
+    end
   end
 end

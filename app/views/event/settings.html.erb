@@ -113,4 +113,15 @@ on the floor at the same time.
     <%= form.submit value: 'Save', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
   </div>  
 <% end %>
+
+<h1 id="advanced" class="mt-16 font-bold text-4xl mb-6">Advanced</h1>
+
+<p class="mb-2">
+You normally won't need to adjust these.  Be aware that any ajustments may affect any students that you
+have entered so far.
+</p>
+
+<%= link_to 'Ages', ages_event_index_path, class: 'btn-grey' %>
+<%= link_to 'Levels', levels_event_index_path, class: 'btn-grey' %>
+
 </div>
