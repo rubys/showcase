@@ -128,4 +128,8 @@ class EventController < ApplicationController
     event.broadcast_replace_later_to "current-heat-#{ENV['RAILS_APP_DB']}",
       partial: 'event/heat', target: 'current-heat', locals: {event: event}
   end
+
+  def ages
+    @ages = Age.pluck(:category, :description).map {|category, description| "#{category}: #{description}"}.join("\n")
+  end
 end

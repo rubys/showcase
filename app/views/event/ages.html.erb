@@ -1,0 +1,16 @@
+<div class="mx-auto w-full">
+<h1 class="font-bold text-4xl pb-5 text-center">Ages</h1>
+
+<%= form_with(url: "ages", class: "contents") do |form| %>
+
+<%= form.text_area :ages, value: @ages, rows: @ages.split("\n").length + 1,
+  class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+
+<div class="mx-auto w-full mt-4 text-center">
+  <%= form.submit 'Save', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  <%= link_to 'Back to settings', settings_event_index_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+</div>
+
+<% end %>
+
+</div>

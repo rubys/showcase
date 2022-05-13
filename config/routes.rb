@@ -27,6 +27,10 @@ Rails.application.routes.draw do
       get 'settings', on: :collection
       get 'summary', on: :collection
       post 'start_heat', on: :collection
+      get 'ages', on: :collection
+      post 'ages', on: :collection
+      get 'levels', on: :collection
+      post 'levels', on: :collection
     end
 
     resources :heats do
