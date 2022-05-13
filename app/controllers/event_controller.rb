@@ -68,8 +68,13 @@ class EventController < ApplicationController
   end
 
   def showcases
-    user = request.headers["HTTP_X_REMOTE_USER"]
-    auth = YAML.load_file('config/tenant/auth.yml')[user]
+    if request.headers['HTTP_AUTHORIZATION']
+      @user = Base64.decode64(request.headers['HTTP_AUTHORIZATION'].split(' ')[1]).split(':').first
+    else
+      @user = request.headers["HTTP_X_REMOTE_USER"]
+    end
+
+    auth = YAML.load_file('config/tenant/auth.yml')[@user]
     @showcases = YAML.load_file('config/tenant/showcases.yml')
     logos = Set.new
 
@@ -100,7 +105,11 @@ class EventController < ApplicationController
       end
     end
 
-    ENV['SHOWCASE_LOGO'] = logos.first if logos.size == 1
+    if logos.size == 1
+      ENV['SHOWCASE_LOGO'] = logos.first 
+    else
+      ENV.delete 'SHOWCASE_LOGO'
+    end
   end
 
   def publish
