@@ -1,9 +1,9 @@
 <div class="mx-auto w-full">
-<h1 class="font-bold text-4xl pb-5 text-center">Levels</h1>
+<h1 class="font-bold text-4xl pb-5 text-center">Dances</h1>
 
-<%= form_with(url: "levels", class: "contents") do |form| %>
+<%= form_with(url: "dances", class: "contents") do |form| %>
 
-<%= form.text_area :levels, value: @levels, rows: @levels.split("\n").length + 1,
+<%= form.text_area :dances, value: @dances, rows: @dances.split("\n").length + 1,
   class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
 
 <div class="mx-auto w-full mt-4 text-center">

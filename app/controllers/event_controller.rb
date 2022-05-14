@@ -153,7 +153,8 @@ class EventController < ApplicationController
         format.html { redirect_to settings_event_index_path(anchor: 'advanced') }
       end
     else
-      @ages = Age.pluck(:category, :description).map {|category, description| "#{category}: #{description}"}.join("\n")
+      @ages = Age.order(:id).pluck(:category, :description).
+        map {|category, description| "#{category}: #{description}"}.join("\n")
     end
   end
 
@@ -178,7 +179,41 @@ class EventController < ApplicationController
         format.html { redirect_to settings_event_index_path(anchor: 'advanced') }
       end
     else
-      @levels = Level.pluck(:name).join("\n")
+      @levels = Level.order(:id).pluck(:name).join("\n")
+    end
+  end
+
+  def dances
+    if request.post?
+      dances = Dance.order(:order).map {|dance| [dance.name, dance]}.to_h
+      new_names = params[:dances].strip.split("\n").map(&:strip).select {|level| level.length > 0}.uniq
+      order = dances.values.map(&:order)
+
+      remove = dances.keys - new_names
+      Dance.destroy_by(name: remove) if remove.length > 0
+
+      Dance.transaction do
+        new_names.zip(order).each do |name, order|
+          dance = dances[name]
+          order ||= (Dance.maximum(:order) || 0) + 1
+
+          if not dance
+            dance = dances[name] = Dance.new(name: name, order: order)
+            dance.save! validate: false
+          elsif dance.order != order
+            dance.order = order
+            dance.save! validate: false
+          end
+        end
+
+        raise ActiveRecord::Rollback unless dances.values.all? {|dance| dance.valid?}
+      end
+
+      respond_to do |format|
+        format.html { redirect_to settings_event_index_path(anchor: 'advanced') }
+      end
+    else
+      @dances = Dance.where(heat_length: nil).order(:order).pluck(:name).join("\n")
     end
   end
 end

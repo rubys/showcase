@@ -31,6 +31,8 @@ Rails.application.routes.draw do
       post 'ages', on: :collection
       get 'levels', on: :collection
       post 'levels', on: :collection
+      get 'dances', on: :collection
+      post 'dances', on: :collection
     end
 
     resources :heats do
