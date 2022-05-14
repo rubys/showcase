@@ -132,7 +132,7 @@ class EventController < ApplicationController
   def ages
     if request.post?
       old_ages = Age.order(:id)
-      new_ages = params[:ages].strip.split("\n").map(&:strip).select {|level| level.length > 0}
+      new_ages = params[:ages].strip.split("\n").map(&:strip).select {|age| not age.empty?} 
 
       if old_ages.length > new_ages.length
         Age.destroy_by(id: new_ages.length+1..)
@@ -161,7 +161,7 @@ class EventController < ApplicationController
   def levels
     if request.post?
       old_levels = Level.order(:id)
-      new_levels = params[:levels].strip.split("\n").map(&:strip).select {|level| level.length > 0}
+      new_levels = params[:levels].strip.split("\n").map(&:strip).select {|level| not level.empty?}
 
       if old_levels.length > new_levels.length
         Level.destroy_by(id: new_levels.length+1..)
@@ -186,7 +186,8 @@ class EventController < ApplicationController
   def dances
     if request.post?
       dances = Dance.order(:order).map {|dance| [dance.name, dance]}.to_h
-      new_names = params[:dances].strip.split("\n").map(&:strip).select {|level| level.length > 0}.uniq
+      new_names = params[:dances].split(/\s\s+|\n|\t|,/).
+        map {|str| str.gsub(/^\W+/, '')}.select {|name| not name.empty?}.uniq
       order = dances.values.map(&:order)
 
       remove = dances.keys - new_names
