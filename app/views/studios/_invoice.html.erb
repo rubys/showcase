@@ -14,7 +14,7 @@
     <th class="row-head-left">Name
     <th class="row-head-left"># Entries
     <th class="row-head">Cost
-    <% if invoice[:purchases_made] %>
+    <% if invoice[:purchases] != 0 %>
     <th class="row-head">Purchases
     <th class="row-head">Total
     <% end %>
@@ -30,7 +30,7 @@
       <td><div class="mx-4"><%= person.name %>
       <td><div class="mx-4 text-right"><%= number_with_precision dances[person][:dances], strip_insignificant_zeros: true %>
       <td class="pr-4 text-right"><%= number_to_currency dance_cost, precision: 2, unit: '' %>
-      <% if invoice[:purchases_made] %>
+      <% if invoice[:purchases] > 0 %>
       <td class="pr-4 text-right"><%= number_to_currency purchases, precision: 2, unit: '' %>
       <td class="pr-4 text-right"><%= number_to_currency dance_cost + purchases, precision: 2, unit: '' %>
       <% end %>
@@ -42,7 +42,7 @@
       <th class="row-foot">total
       <td><div class="row-foot text-right"><%= number_with_precision invoice[:dance_count], strip_insignificant_zeros: true %>
       <td class="row-foot text-right"><%= number_to_currency total_dance_cost, precision: 2, unit: '' %>
-      <% if invoice[:purchases_made] %>
+      <% if invoice[:purchases] > 0 %>
       <td class="row-foot text-right"><%= number_to_currency total_purchases, precision: 2, unit: '' %>
       <td class="row-foot text-right"><%= number_to_currency total_dance_cost + total_purchases, precision: 2, unit: '' %>
       <% end %>
@@ -50,7 +50,7 @@
   </tbody>
 </table>
 
-<% if invoice[:purchases_made] %>
+<% if invoice[:purchases] > 0 %>
 <table class="table" style="break-inside: avoid">
   <thead>
   <tr>
