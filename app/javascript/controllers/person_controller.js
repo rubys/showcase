@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 // Connects to data-controller="person"
 export default class extends Controller {
-  static targets = [ "level", "age", "role", "back", "exclude", "type", "package", "options" ];
+  static targets = [ "studio", "level", "age", "role", "back", "exclude", "type", "package", "options" ];
 
   connect() {
     this.id = JSON.parse(this.element.dataset.id);
@@ -42,7 +42,7 @@ export default class extends Controller {
       },
       credentials: 'same-origin',
       redirect: 'follow',
-      body: JSON.stringify({id: this.id, type: event.target.value})
+      body: JSON.stringify({id: this.id, type: event.target.value, studio_id: this.studioTarget.value})
     }).then (response => response.text())
     .then(html => Turbo.renderStreamMessage(html));
   }

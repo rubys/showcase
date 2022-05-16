@@ -41,6 +41,14 @@
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <% if @student_packages.length > 1 %>
+  <div class="my-5">
+    <%= form.label 'Default Student Package'%>
+    <%= form.select :default_student_package_id, @student_packages, {include_blank: true}, 
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  <% end %>
+
   <div data-controller="studio-price-override">
   <div class="my-5">
     <%= form.check_box :cost_override, checked: @cost_override, class: 'entry-count h-10' %>

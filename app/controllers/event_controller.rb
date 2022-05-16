@@ -262,7 +262,10 @@ class EventController < ApplicationController
         Studio.transaction do
           StudioPair.destroy_all
           Studio.destroy_all
-          query(source, 'studios').each {|studio| Studio.create studio}
+          query(source, 'studios').each do |studio|
+            studio.delete 'default_student_package_id' unless tables[:packages]
+            Studio.create studio
+          end
           query(source, 'studio-pairs').each {|pair| StudioPair.create pair}
         end
       end

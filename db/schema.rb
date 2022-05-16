@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_05_10_161408) do
+ActiveRecord::Schema[7.0].define(version: 2022_05_16_162358) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -238,6 +238,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_05_10_161408) do
     t.decimal "solo_cost", precision: 7, scale: 2
     t.decimal "multi_cost", precision: 7, scale: 2
     t.string "email"
+    t.integer "default_student_package_id"
+    t.index ["default_student_package_id"], name: "index_studios_on_default_student_package_id"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
@@ -272,4 +274,5 @@ ActiveRecord::Schema[7.0].define(version: 2022_05_10_161408) do
   add_foreign_key "solos", "heats"
   add_foreign_key "studio_pairs", "studios", column: "studio1_id"
   add_foreign_key "studio_pairs", "studios", column: "studio2_id"
+  add_foreign_key "studios", "billables", column: "default_student_package_id"
 end

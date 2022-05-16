@@ -1,6 +1,8 @@
 class Studio < ApplicationRecord
   validates :name, presence: true, uniqueness: true
 
+  belongs_to :default_student_package, class_name: 'Billable', optional: true
+
   has_many :people, dependent: :destroy
 
   has_many :studio1_pairs, class_name: "StudioPair", foreign_key: :studio2_id,

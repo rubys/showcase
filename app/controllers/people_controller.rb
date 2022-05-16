@@ -136,7 +136,8 @@ class PeopleController < ApplicationController
 
     if params[:studio]
       @types = %w[Student Professional Guest]
-      @person.studio_id = params[:studio]
+      @person.studio = Studio.find(params[:studio])
+      @person.type ||= 'Student'
     else
       @types = %w[Judge Emcee]
     end
@@ -227,6 +228,10 @@ class PeopleController < ApplicationController
       @person = Person.find(params[:id])
     else
       @person = Person.new
+
+      if params[:studio_id]
+        @person.studio = Studio.find(params[:studio_id])
+      end
     end
 
     @person.type = params[:type]
@@ -371,6 +376,11 @@ class PeopleController < ApplicationController
       @packages = Billable.where(type: @person.type).order(:order).pluck(:name, :id)
 
       @options = Billable.where(type: 'Option').order(:order)
+
+      if @person.type == 'Student' and @person.studio_id
+        @person.package_id = @person.studio.default_student_package_id ||
+          Billable.where(type: 'Student').order(:order).pluck(:id).first
+      end  
 
       if @person.package_id
         @package_options = @person.package.package_includes.map(&:option)

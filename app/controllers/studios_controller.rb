@@ -87,6 +87,8 @@ class StudiosController < ApplicationController
     @studio.heat_cost ||= event.heat_cost
     @studio.solo_cost ||= event.solo_cost
     @studio.multi_cost ||= event.multi_cost
+
+    @student_packages = Billable.where(type: 'Student').order(:order).pluck(:name, :id).to_h
   end
 
   # GET /studios/1/edit
@@ -161,7 +163,9 @@ class StudiosController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def studio_params
-      params.require(:studio).permit(:name, :tables, :pair, :cost_override, :heat_cost, :solo_cost, :multi_cost)
+      params.require(:studio).permit(:name, :tables, :pair,
+        :default_student_package_id,
+        :cost_override, :heat_cost, :solo_cost, :multi_cost)
     end
 
     def add_pair
