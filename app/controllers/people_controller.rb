@@ -142,11 +142,15 @@ class PeopleController < ApplicationController
     end
 
     selections
+
+    @entries = 0
   end
 
   # GET /people/1/edit
   def edit
     selections
+
+    @entries = @person.lead_entries.count + @person.follow_entries.count
   end
 
   def get_entries

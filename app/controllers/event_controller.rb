@@ -217,4 +217,131 @@ class EventController < ApplicationController
       @dances = Dance.where(heat_length: nil).order(:order).pluck(:name).join("\n")
     end
   end
+
+  def clone
+    if request.post?
+      source = params[:source]
+      tables = params.to_unsafe_h.select {|key, value| value == '1'}.
+        map {|key, value| [key.to_sym, value]}.to_h
+
+      if tables[:ages]
+        Age.transaction do
+          Person.destroy_all
+          Age.destroy_all
+          query(source, 'ages').each {|age| Age.create age}
+        end
+      end
+
+      if tables[:settings]
+        event = query(source, 'events').first
+        event.delete 'id'
+        event.delete 'name'
+        event.delete 'date'
+        event.delete 'current_heat'
+        Event.first.update(event)
+      end
+
+      if tables[:levels]
+        Level.transaction do
+          Person.destroy_all
+          Level.destroy_all
+          query(source, 'levels').each {|level| Level.create level}
+        end
+      end
+
+      if tables[:packages]
+        Billable.transaction do
+          PackageInclude.destroy_all
+          Billable.destroy_all
+          query(source, 'billables').each {|billable| Billable.create billable}
+          query(source, 'package_includes').each {|pi| PackageInclude.create pi}
+        end
+      end
+
+      if tables[:studios]
+        Studio.transaction do
+          StudioPair.destroy_all
+          Studio.destroy_all
+          query(source, 'studios').each {|studio| Studio.create studio}
+          query(source, 'studio-pairs').each {|pair| StudioPair.create pair}
+        end
+      end
+
+      if tables[:people]
+        Person.transaction do
+          Person.destroy_all
+          excludes = {}
+          query(source, 'people').each do |person|
+            person.delete 'age_id' unless tables[:ages]
+            person.delete 'level_id' unless tables[:levels]
+            person.delete 'studio_id' unless tables[:studios]
+            person.delete 'package_id'
+            excludes[person['id']] = person.delete('exclude_id') if person['exclude_id']
+
+            Person.create person
+          end
+
+          excludes.each do |id, exclude|
+            person.find(id).update(exlude_id: exclude)
+          end
+        end
+
+        if tables[:agenda]
+          Category.transaction do
+            Category.destroy_all
+            query(source, 'categories').each {|category| Category.create category}
+          end
+        end
+
+        if tables[:dances]
+          Dance.transaction do
+            Multi.destroy_all
+            Dance.destroy_all
+            query(source, 'dances').each do |dance|
+              person.delete 'open_category_id' unless tables[:agenda]
+              person.delete 'closed_category_id' unless tables[:agenda]
+              person.delete 'solo_category_id' unless tables[:agenda]
+              person.delete 'multi_category_id' unless tables[:agenda]
+              Dance.create dance
+            end
+            query(source, 'multis').each {|multi| Multi.create multi}
+          end
+        end
+      end
+    end
+
+    showcases
+
+    @sources = []
+
+    @showcases.each do |year, sites|
+      sites.each do |token, info|
+        if info[:events]
+          info[:events].each do |subtoken, subinfo|
+            @sources << "#{year}-#{token}-#{subtoken}"
+          end
+        else
+          @sources << "#{year}-#{token}"
+        end
+      end
+    end
+  end
+
+  private
+
+    def query(db, table, fields=nil)
+      if fields
+        Array(fields).map(&:inspect).join(', ')
+      else
+        fields = '*'
+      end
+
+      json = `sqlite3 --json db/#{db}.sqlite3 "select #{fields} from #{table}"`
+
+      if json.empty?
+        []
+      else
+        JSON.parse(json)
+      end
+    end
 end

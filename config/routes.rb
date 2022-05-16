@@ -33,6 +33,8 @@ Rails.application.routes.draw do
       post 'levels', on: :collection
       get 'dances', on: :collection
       post 'dances', on: :collection
+      get 'clone', on: :collection
+      post 'clone', on: :collection
     end
 
     resources :heats do
