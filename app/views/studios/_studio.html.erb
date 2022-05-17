@@ -14,7 +14,13 @@
     </thead>
     <tbody>
     <% @studio.people.sort_by {|person| person.name}.each do |person| %>
+      <% if not person.active? %>
+      <tr class="bg-slate-200">
+      <% elsif not person.package_id %>
+      <tr class="bg-green-200">
+      <% else %>
       <tr>
+      <% end %>
         <td class="row-main"><%= link_to person.name, person %></td>
         <td class="row"><%= person.type %></td>
         <td class="row"><%= person.role %></td>

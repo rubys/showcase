@@ -37,4 +37,25 @@ class Person < ApplicationRecord
       "#{display_name} and #{person.display_name}"
     end
   end
+
+  def self.active
+    (Entry.distinct(:lead_id).pluck(:lead_id) + 
+      Entry.distinct(:follow_id).pluck(:follow_id) + 
+      Entry.distinct(:follow_id).pluck(:follow_id)).uniq
+  end
+
+  def active?
+    case type
+    when 'Judge', 'Emcee'
+      true
+    when 'Guest'
+      package_id != null or not Billable.where(type: 'Guest').exists?
+    else
+      if role == 'Leader'
+        lead_entries.exists? or follow_entries.exists?
+      else
+        follow_entries.exists? or lead_entries.exists?
+      end
+    end
+  end
 end
