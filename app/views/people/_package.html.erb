@@ -1,9 +1,8 @@
 <div <% unless @packages.empty? %>class="my-5"<% end %> id="package-select">
 <% unless @packages.empty? %>
   <%= label_tag :person_package_id, 'Package' %>
-  <%= select_tag 'person[package_id]', options_for_select(@packages, @person.package_id), {
-    "data-person-target" => "package", 'data-action' => 'person#setPackage',
-    'data-url' => package_people_path,
+  <%= select_tag 'person[package_id]', options_for_select(@packages, @person.package_id || ''), {
+    data: {"person-target" => "package", 'action' => 'person#setPackage', 'url' => package_people_path},
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full"} %>
 <% end %>
 </div>

@@ -375,12 +375,11 @@ class PeopleController < ApplicationController
 
       @packages = Billable.where(type: @person.type).order(:order).pluck(:name, :id)
 
-      @options = Billable.where(type: 'Option').order(:order)
+      if %w(Student Profressional).include? @person.type and not @person.active?
+        @packages.unshift ['', '']
+      end
 
-      if @person.type == 'Student' and @person.studio_id
-        @person.package_id = @person.studio.default_student_package_id ||
-          Billable.where(type: 'Student').order(:order).pluck(:id).first
-      end  
+      @options = Billable.where(type: 'Option').order(:order)
 
       if @person.package_id
         @package_options = @person.package.package_includes.map(&:option)
