@@ -387,7 +387,8 @@ class PeopleController < ApplicationController
       @options = Billable.where(type: 'Option').order(:order)
 
       if @person.package_id
-        @package_options = @person.package.package_includes.map(&:option)
+        package = @person.package || Billable.find(@person.package_id)
+        @package_options = package.package_includes.map(&:option)
       else
         @package_options = []
       end
