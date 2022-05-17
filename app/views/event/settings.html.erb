@@ -90,6 +90,12 @@ on the floor at the same time.
 
 <%= form_with model: @event, local: true, data: {turbo: false} do |form| %>
   <div class="my-5">
+    <%= form.label :max_heat_size %>
+    <%= form.number_field :max_heat_size,
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
     <%= form.label :heat_range_cat, 'open/closed' %>
     <%= form.range_field :heat_range_cat, min: 0, max: 1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>

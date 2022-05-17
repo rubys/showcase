@@ -148,6 +148,7 @@ module HeatScheduler
       @@category = event.heat_range_cat
       @@level = event.heat_range_level
       @@age = event.heat_range_age
+      @@max = event.max_heat_size || 9999
     end
 
     def self.sort(heats)
@@ -199,6 +200,7 @@ module HeatScheduler
     end
 
     def add?(dance, dcat, level, age, heat)
+      return if @group.size >= @@max
       return if @participants.include? heat.lead
       return if @participants.include? heat.follow
       return if heat.lead.exclude_id and @participants.include? heat.lead.exclude
