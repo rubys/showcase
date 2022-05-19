@@ -181,6 +181,7 @@ tbody::after {
       </thead>
 
       <% @stats.each do |size, heats| %>
+      <% next if size == 1 and (heats - @solos).empty? %>
       <tr>
         <td class="row text-right pr-4"><%= size %>
         <td>
