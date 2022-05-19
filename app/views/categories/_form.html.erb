@@ -15,6 +15,11 @@
 <div class="info-button">&#x24D8;</div>
 <ul class="info-box">
 <li>Day and time is optional, but if entered will appear on the <%= link_to 'Heat List', heats_path, class: 'x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium' %> page.
+<ul class="ml-4 list-disc list-outside">
+<li>If the first agenda item has a time <strong>and</strong> a time between events is provided in the settings page, then
+start times for each heat will show up on the heats page.
+<li>Times on agenda items after the first indicate a time that the agenda item will start no earlier than.  Too many heats in previous agenda items may delay the start.
+</ul>
 <li>Each dance can be in only one Closed, Open, and Solo category.  Adding a dance to this category will replace any prior association that dance might have had with any other category.
 <% if category.id %>
 <li class="text-red-600">Removing a category will remove it from the agenda and make all associated dances
