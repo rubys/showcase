@@ -380,8 +380,17 @@ class PeopleController < ApplicationController
       end
 
       if @person.type == 'Student'
+        @person.package_id = nil unless @person.package&.type == 'Student'
         @person.package_id ||= @person.studio.default_student_package_id ||
           Billable.where(type: 'Student').order(:order).pluck(:id).first
+      elsif @person.type == 'Professional'
+        @person.package_id = nil unless @person.package&.type == 'Professional'
+        @person.package_id ||= @person.studio.default_professional_package_id ||
+          Billable.where(type: 'Professional').order(:order).pluck(:id).first
+      elsif @person.type == 'Guest'
+        @person.package_id = nil unless @person.package&.type == 'Guest'
+        @person.package_id ||= @person.studio.default_guest_package_id ||
+          Billable.where(type: 'Guest').order(:order).pluck(:id).first
       end
 
       @options = Billable.where(type: 'Option').order(:order)

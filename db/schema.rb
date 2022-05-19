@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_05_17_173618) do
+ActiveRecord::Schema[7.0].define(version: 2022_05_19_134900) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -123,6 +123,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_05_17_173618) do
     t.decimal "multi_cost", precision: 7, scale: 2
     t.string "email"
     t.integer "max_heat_size"
+    t.boolean "package_required", default: true
   end
 
   create_table "formations", force: :cascade do |t|
@@ -240,6 +241,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_05_17_173618) do
     t.decimal "multi_cost", precision: 7, scale: 2
     t.string "email"
     t.integer "default_student_package_id"
+    t.integer "default_professional_package_id"
+    t.integer "default_guest_package_id"
+    t.index ["default_guest_package_id"], name: "index_studios_on_default_guest_package_id"
+    t.index ["default_professional_package_id"], name: "index_studios_on_default_professional_package_id"
     t.index ["default_student_package_id"], name: "index_studios_on_default_student_package_id"
   end
 
@@ -275,5 +280,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_05_17_173618) do
   add_foreign_key "solos", "heats"
   add_foreign_key "studio_pairs", "studios", column: "studio1_id"
   add_foreign_key "studio_pairs", "studios", column: "studio2_id"
+  add_foreign_key "studios", "billables", column: "default_guest_package_id"
+  add_foreign_key "studios", "billables", column: "default_professional_package_id"
   add_foreign_key "studios", "billables", column: "default_student_package_id"
 end

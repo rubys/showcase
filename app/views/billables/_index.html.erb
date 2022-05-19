@@ -31,9 +31,15 @@
     </table>
     <% end %>  
 
-    <h2 class="font-bold text-2xl mt-4">Dances</h1>
-
     <%= form_with(model: @event, class: "contents", data: {turbo: false}) do |form| %>
+
+  <div class="my-5">
+    <%= form.check_box :package_required, class: 'entry-count h-10' %>
+    <%= form.label :package_required, 'Packages are required to participate' %>
+  </div>
+
+  <h2 class="font-bold text-2xl mt-4">Dances</h1>
+
   <% if @event.errors.any? %>
     <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
       <h2><%= pluralize(@event.errors.count, "error") %> prohibited these dance costs from being saved:</h2>

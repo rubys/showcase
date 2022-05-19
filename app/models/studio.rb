@@ -2,6 +2,8 @@ class Studio < ApplicationRecord
   validates :name, presence: true, uniqueness: true
 
   belongs_to :default_student_package, class_name: 'Billable', optional: true
+  belongs_to :default_professional_package, class_name: 'Billable', optional: true
+  belongs_to :default_guest_package, class_name: 'Billable', optional: true
 
   has_many :people, dependent: :destroy
 

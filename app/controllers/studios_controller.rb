@@ -89,6 +89,8 @@ class StudiosController < ApplicationController
     @studio.multi_cost ||= event.multi_cost
 
     @student_packages = Billable.where(type: 'Student').order(:order).pluck(:name, :id).to_h
+    @professional_packages = Billable.where(type: 'Professional').order(:order).pluck(:name, :id).to_h
+    @guest_packages = Billable.where(type: 'Guest').order(:order).pluck(:name, :id).to_h
   end
 
   # GET /studios/1/edit
