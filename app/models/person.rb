@@ -44,6 +44,25 @@ class Person < ApplicationRecord
       Entry.distinct(:follow_id).pluck(:follow_id)).uniq
   end
 
+  def default_package
+    self.package_id = nil unless package&.type == type
+
+    if type == 'Student'
+      self.package_id ||= studio&.default_student_package_id
+    elsif type == 'Professional'
+      self.package_id ||= studio&.default_professional_package_id
+    elsif type == 'Guest'
+      self.package_id ||= studio&.default_guest_package_id
+    end
+
+    self.package_id ||= Billable.where(type: type).order(:order).pluck(:id).first
+  end
+
+  def default_package!
+    default_package
+    save! if changed?
+  end
+
   def active?
     case type
     when 'Judge', 'Emcee'

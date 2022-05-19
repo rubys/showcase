@@ -362,6 +362,8 @@ class PeopleController < ApplicationController
     end
 
     def selections
+      @event = Event.last
+
       @studios = Studio.all.map{|studio| [studio.name, studio.id]}.to_h
       @types = %w[Student Guest Professional Judge Emcee]
       @roles = %w[Follower Leader Both]
@@ -375,23 +377,15 @@ class PeopleController < ApplicationController
 
       @packages = Billable.where(type: @person.type).order(:order).pluck(:name, :id)
 
-      if %w(Student Professional).include? @person.type
-        @packages.unshift ['', ''] unless @person.active?
+      unless @packages.empty?
+        if %w(Student Professional).include? @person.type
+          @packages.unshift ['', ''] unless @event.package_required and @person.active?
+        else
+          @packages.unshift ['', ''] unless @event.package_required
+        end
       end
 
-      if @person.type == 'Student'
-        @person.package_id = nil unless @person.package&.type == 'Student'
-        @person.package_id ||= @person.studio.default_student_package_id ||
-          Billable.where(type: 'Student').order(:order).pluck(:id).first
-      elsif @person.type == 'Professional'
-        @person.package_id = nil unless @person.package&.type == 'Professional'
-        @person.package_id ||= @person.studio.default_professional_package_id ||
-          Billable.where(type: 'Professional').order(:order).pluck(:id).first
-      elsif @person.type == 'Guest'
-        @person.package_id = nil unless @person.package&.type == 'Guest'
-        @person.package_id ||= @person.studio.default_guest_package_id ||
-          Billable.where(type: 'Guest').order(:order).pluck(:id).first
-      end
+      @person.default_package
 
       @options = Billable.where(type: 'Option').order(:order)
 

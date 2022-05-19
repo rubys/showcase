@@ -51,6 +51,11 @@ class EntriesController < ApplicationController
 
     respond_to do |format|
       if @entry.save
+        if Event.first.package_required
+          @entry.lead.default_package!
+          @entry.follow.default_package!
+        end
+        
         format.html { redirect_to @person, notice: "#{helpers.pluralize @total, 'heat'} successfully created." }
         format.json { render :show, status: :created, location: @entry }
       else
