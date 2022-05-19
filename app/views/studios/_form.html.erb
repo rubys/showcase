@@ -4,7 +4,9 @@
   <li>Pairing studios enable Students from one studio to dance with Professionals and Students from a neighboring studio.
   <li>Pairs can be removed by hovering over the associated studio name and clicking on the Unpair button that appears.
   <li>If prices are not overridden for the studio, the prices defined in the settings will apply.
+  <% unless @student_packages.empty? and professional_packages.empty? and guest_packages.empty? %>
   <li>If packages are not defaulted, the defaults will be the first package listed for each type on the settings page.
+  <% end %>
   <% if studio.id %>
   <li class="text-red-600 font-bold">Removing a studio will remove all professionals, guests, and students that are
   associated with the studio, and delete any heats and scores that have been entered for those individuals.
