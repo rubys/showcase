@@ -41,13 +41,27 @@ tbody::after {
 </div>
 
   <table class="table-fixed ml-6 mb-8">
+    <tr>
+      <th class="row-head">Category
+      <th colspan="2" class="row-head">Heats
+      <% if @start && !@start.compact.empty? %>
+      <% unless @oneday %>
+      <th class="row-head">Day
+      <% end %>
+      <th class="row-head">Time
+      <% end %>
+    </tr>
     <% @agenda.each do |cat, heats| %>
       <tr>
         <td class="row"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a>
         <td class="row text-right"><a href="#heat-<%= heats.first.first %>"><%= heats.first.first %></a>
         <td class="row text-right"><a href="#heat-<%= heats.last.first %>"><%= heats.last.first %></a>
-        <td class="row"><%= Date::DAYNAMES[@start && @start[heats.first.first]&.wday || 7] %>
-        <td class="row"><%= @start && @start[heats.first.first]&.strftime("%I:%M %P") %>
+        <% if @start %>
+        <% unless @oneday %>
+        <td class="row"><%= Date::DAYNAMES[@start[heats.first.first]&.wday || 7] %>
+        <% end %>
+        <td class="row"><%= @start[heats.first.first]&.strftime("%I:%M %P") %>
+        <% end %>
       </tr>
     <% end %>
   </table>

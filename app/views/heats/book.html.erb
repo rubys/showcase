@@ -26,7 +26,17 @@ tbody::after {
   <h1 class="font-bold text-4xl">Agenda</h1>
 </div>
 
-  <table class="table-fixed ml-6 mb-8">
+  <table class="table-fixed mt-4 ml-6 mb-8">
+    <tr>
+      <th class="row-head">Category
+      <th colspan="2" class="row-head">Heats
+      <% if @start && !@start.compact.empty? %>
+      <% unless @oneday %>
+      <th class="row-head">Day
+      <% end %>
+      <th class="row-head">Time
+      <% end %>
+    </tr>
     <% @agenda.each do |cat, heats| %>
       <tr>
         <td class="row"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a>
@@ -43,7 +53,7 @@ tbody::after {
   <% @agenda.each do |cat, heats| %>
   <div style="page-break-after: always"></div>
 
-  <div class="mt-8 flex justify-between items-center" id="cat-<%= cat.downcase.gsub(' ', '-') %>">
+  <div class="mt-8 mb-2 flex justify-between items-center" id="cat-<%= cat.downcase.gsub(' ', '-') %>">
     <h1 class="font-bold text-4xl"><%= cat %></h1>
   </div>
 
