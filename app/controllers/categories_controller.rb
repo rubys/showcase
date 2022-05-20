@@ -207,7 +207,7 @@ class CategoriesController < ApplicationController
           if include['Multi'][dance.name].to_i == 0
             dance.multi_category = nil
           end
-        elsif include['Multi'][dance.name].to_i == 1
+        elsif include['Multi'] and include['Multi'][dance.name].to_i == 1
           dance.multi_category = @category
         end
 
