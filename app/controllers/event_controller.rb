@@ -263,7 +263,12 @@ class EventController < ApplicationController
           StudioPair.destroy_all
           Studio.destroy_all
           query(source, 'studios').each do |studio|
-            studio.delete 'default_student_package_id' unless tables[:packages]
+            unless tables[:packages]
+              studio.delete 'default_student_package_id'
+              studio.delete 'default_professional_package_id'
+              studio.delete 'default_guest_package_id'
+            end
+
             Studio.create studio
           end
           query(source, 'studio-pairs').each {|pair| StudioPair.create pair}
@@ -300,6 +305,7 @@ class EventController < ApplicationController
           Dance.transaction do
             Multi.destroy_all
             Dance.destroy_all
+
             query(source, 'dances').each do |dance|
               person.delete 'open_category_id' unless tables[:agenda]
               person.delete 'closed_category_id' unless tables[:agenda]
@@ -307,6 +313,7 @@ class EventController < ApplicationController
               person.delete 'multi_category_id' unless tables[:agenda]
               Dance.create dance
             end
+
             query(source, 'multis').each {|multi| Multi.create multi}
           end
         end
@@ -328,6 +335,8 @@ class EventController < ApplicationController
         end
       end
     end
+
+    @sources.delete ENV["RAILS_APP_DB"]
   end
 
   private

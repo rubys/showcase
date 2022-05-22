@@ -2,6 +2,9 @@
 
 <h1 class="font-bold text-4xl mb-6">Clone</h1>
 
+<p class="text-red-600 text-xl"><strong>Warning</strong>: cloning data from another database will
+overwrite data you may have already entered in this database.</p>
+
 <%= form_with url: 'clone', data: {turbo: false, controller: "authtoken"} do |form| %>
 
   <div class="my-5">
@@ -10,7 +13,7 @@
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
-  <% %i(settings dances multis agenda packages studios people ages levels).each do |model| %>
+  <% %i(settings dances agenda packages studios people ages levels).each do |model| %>
   <div class="my-5">
     <%= form.check_box model, class: 'entry-count h-8', checked: true %>
     <%= form.label model, class: 'text-xl align-middle pt-2' %>
@@ -18,7 +21,7 @@
   <% end %>
 
   <div class="inline">
-    <%= form.submit value: 'Copy', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+    <%= form.submit value: 'Clone', class: "rounded-lg py-3 px-5 bg-red-600 text-white inline-block font-medium cursor-pointer" %>
   </div>  
 <% end %>
 
