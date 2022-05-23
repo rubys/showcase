@@ -9,7 +9,7 @@
     </td>
   </tr>
   <tr>
-    <% if @start %>
+    <% if false # @start %>
     <td class="row-head">Time
     <% end %>
     <td class="row-head">Heat
@@ -26,7 +26,7 @@
   <% heats.each do |heat| %>
     <% next unless heatlist.include? heat.id %>
     <tr class="text-sm">
-      <% if @start %>
+      <% if false # @start %>
       <td class="text-center"><%= @start[number]&.strftime("%-I:%M") %></td>
       <% end %>
       <td class="text-center"><%= heat.number %>
