@@ -5,7 +5,7 @@
 <p class="text-red-600 text-xl"><strong>Warning</strong>: cloning data from another database will
 overwrite data you may have already entered in this database.</p>
 
-<%= form_with url: 'clone', data: {turbo: false, controller: "authtoken"} do |form| %>
+<%= form_with url: clone_event_index_path, data: {turbo: false} do |form| %>
 
   <div class="my-5">
     <%= form.label :source %>
