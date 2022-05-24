@@ -30,7 +30,7 @@ class EventControllerTest < ActionDispatch::IntegrationTest
       intermix: @event.intermix
     } }
 
-    assert_redirected_to settings_event_index_path
+    assert_redirected_to settings_event_index_path(anchor: 'adjust')
   end
 
   test "should get publish" do

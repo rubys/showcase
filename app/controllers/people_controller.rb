@@ -365,7 +365,7 @@ class PeopleController < ApplicationController
       @event = Event.last
 
       @studios = Studio.all.map{|studio| [studio.name, studio.id]}.to_h
-      @types = %w[Student Guest Professional Judge Emcee]
+      @types ||= %w[Student Guest Professional Judge Emcee]
       @roles = %w[Follower Leader Both]
 
       @ages = Age.all.order(:id).map {|age| [age.description, age.id]}
@@ -415,7 +415,7 @@ class PeopleController < ApplicationController
           @person.exclude.save!
         end
   
-        unless person_params[:exclude_id].empty?
+        if person_params[:exclude_id] and not person_params[:exclude_id].empty?
           exclude = Person.find(person_params[:exclude_id])
   
           if exclude.exclude

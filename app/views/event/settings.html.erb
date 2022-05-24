@@ -7,6 +7,9 @@
 <div data-controller="info-box">
   <div class="info-button">&#x24D8;</div>
   <ul class="info-box">
+  <% if @sources and not @sources.empty? %>
+  <li>Feel free to skip over the "copy from another event" section if this is your first event.  This section of the settings will disappear once you have added a studio.</li>
+  <% end %>
   <li>Event description is used in printed materials.</li>
   <li>Event staff are involved in scoring and running the event.</li>
   <li>Packages are fixed costs for partipation - excluding heats.</li>
@@ -16,9 +19,15 @@
   </ul>
 </div>
 
-<h1 class="font-bold text-4xl mb-6">Event Description</h1>
+<% if @sources and not @sources.empty? %>
+<div class="mb-16">
+<%= render partial: 'clone' %>
+</div>
+<% end %>
 
-<%= form_with model: @event, local: true, data: {turbo: false} do |form| %>
+<h1 class="font-bold text-4xl mb-6" id="description">Event Description</h1>
+
+<%= form_with model: @event, data: {turbo: false} do |form| %>
   <div class="my-5">
   <%= form.label :name %>
   <%= form.text_field :name, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
@@ -51,7 +60,6 @@
   </ul>
   </ul>
   </div>
-
 
   <div class="inline">
     <%= form.submit value: 'Save', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>

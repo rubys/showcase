@@ -19,6 +19,10 @@ class EventController < ApplicationController
 
     @packages = Billable.where.not(type: 'Order').order(:order).group_by(&:type)
     @options = Billable.where(type: 'Option').order(:order)
+
+    if Studio.count == 0
+      clone
+    end
   end
 
   def summary
@@ -55,7 +59,9 @@ class EventController < ApplicationController
     @event.update! params.require(:event).permit(:name, :location, :date, :heat_range_cat, :heat_range_level, :heat_range_age,
       :intermix, :ballrooms, :heat_length, :heat_cost, :solo_cost, :multi_cost, :max_heat_size, :package_required)
     anchor = nil
+    anchor = 'description' if params[:event][:name]
     anchor = 'prices' if params[:event][:heat_cost]
+    anchor = 'adjust' if params[:event][:intermix]
     redirect_to settings_event_index_path(anchor: anchor), notice: "Event was successfully updated."
   end
 

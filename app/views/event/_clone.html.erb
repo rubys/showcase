@@ -1,0 +1,28 @@
+<h1 class="font-bold text-4xl my-6">Copy data from another event</h1>
+
+<p>Using a prior event as a starting point may safe you some data entry.  What will <strong>not</strong>
+be copied is entries, heats, scores, and any package and options a participant may have selected.</p>
+
+<%= form_with url: clone_event_index_path, data: {turbo: false} do |form| %>
+
+  <div class="my-5">
+    <%= form.label :source %>
+    <%= form.select :source, @sources, {},
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <% %i(settings dances agenda packages studios people ages levels).each do |model| %>
+  <div class="my-5">
+    <%= form.check_box model, class: 'entry-count h-8', checked: true %>
+    <%= form.label model, class: 'text-xl align-middle pt-2' %>
+  </div>
+  <% end %>
+
+  <div class="inline">
+  <% if @judges %>
+    <%= form.submit value: 'Clone', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  <% else %>
+      <%= form.submit value: 'Clone', class: "rounded-lg py-3 px-5 bg-red-600 text-white inline-block font-medium cursor-pointer" %>
+  <% end %>
+  </div>  
+<% end %>
