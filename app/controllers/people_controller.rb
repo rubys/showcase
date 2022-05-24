@@ -30,12 +30,28 @@ class PeopleController < ApplicationController
   def index
     @people ||= Person.includes(:studio).order(sort_order)
 
-    @heats = (Heat.where(category: ['Open', 'Closed']).joins(:entry).group('entries.follow_id').count).merge(
-      Heat.where(category: ['Open', 'Closed']).joins(:entry).group('entries.lead_id').count)
-    @solos = (Heat.where(category: 'Solo').joins(:entry).group('entries.follow_id').count).merge(
-      Heat.where(category: 'Solo').joins(:entry).group('entries.lead_id').count)
-    @multis = (Heat.where(category: 'Multi').joins(:entry).group('entries.follow_id').count).merge(
-      Heat.where(category: 'Multi').joins(:entry).group('entries.lead_id').count)    
+    @heats = {}
+    @solos = {}
+    @multis = {}
+
+    counts =
+      Heat.joins(:entry).group(:category, 'entries.follow_id').count.to_a +
+      Heat.joins(:entry).group(:category, 'entries.lead_id').count.to_a +
+      Formation.pluck(:person_id).map {|id| [['Solo', id], 1]}
+
+    counts.each do |(category, id), count|
+      list = case category
+        when "Solo"
+          @solos
+        when "Mutli"
+          @multis
+        else
+          @heats
+      end
+
+      list[id] ||= 0
+      list[id] += count
+    end
 
     if params[:sort] == 'heats'
       @people = @people.to_a.sort_by! {|person| @heats[person.id] || 0}
