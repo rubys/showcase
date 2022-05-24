@@ -30,6 +30,12 @@
       <% end %>
       <td class="row-head"><a href="?sort=studio">Studio
       <td class="row-head"><a href="?sort=heats">Heats
+      <% unless @solos.empty? %>
+      <td class="row-head"><a href="?sort=solos">Solos
+      <% end %>
+      <% unless @multis.empty? %>
+      <td class="row-head"><a href="?sort=multis">Multis
+      <% end %>
     </tr>
   </thead>
 
@@ -51,6 +57,12 @@
       <% end %>
       <td class="row"><%= link_to person.studio&.name || '', person.studio %></td>
       <td class="row text-right"><%= @heats[person.id] %></td>
+      <% unless @solos.empty? %>
+      <td class="row text-right"><%= @solos[person.id] %></td>
+      <% end %>
+      <% unless @multis.empty? %>
+      <td class="row text-right"><%= @multis[person.id] %></td>
+      <% end %>
     </tr>
   <% end %>
   </tbody>

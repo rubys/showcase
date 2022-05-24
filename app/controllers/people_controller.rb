@@ -30,11 +30,19 @@ class PeopleController < ApplicationController
   def index
     @people ||= Person.includes(:studio).order(sort_order)
 
-    @heats = (Heat.joins(:entry).group('entries.follow_id').count).merge(
-      Heat.joins(:entry).group('entries.lead_id').count)
+    @heats = (Heat.where(category: ['Open', 'Closed']).joins(:entry).group('entries.follow_id').count).merge(
+      Heat.where(category: ['Open', 'Closed']).joins(:entry).group('entries.lead_id').count)
+    @solos = (Heat.where(category: 'Solo').joins(:entry).group('entries.follow_id').count).merge(
+      Heat.where(category: 'Solo').joins(:entry).group('entries.lead_id').count)
+    @multis = (Heat.where(category: 'Multi').joins(:entry).group('entries.follow_id').count).merge(
+      Heat.where(category: 'Multi').joins(:entry).group('entries.lead_id').count)    
 
     if params[:sort] == 'heats'
       @people = @people.to_a.sort_by! {|person| @heats[person.id] || 0}
+    elsif params[:sort] == 'solos'
+      @people = @people.to_a.sort_by! {|person| @solos[person.id] || 0}
+    elsif params[:sort] == 'multis'
+      @people = @people.to_a.sort_by! {|person| @multis[person.id] || 0}
     end
 
     render :index
@@ -420,7 +428,7 @@ class PeopleController < ApplicationController
       order = 'studios.name' if order == 'studio'
       order = 'age_id' if order == 'age'
       order = 'level_id' if order == 'level'
-      order = 'name' if order == 'heats'
+      order = 'name' if %w(heats solos multis).include? order
       order
     end
 
