@@ -49,8 +49,7 @@ class PeopleController < ApplicationController
           @heats
       end
 
-      list[id] ||= 0
-      list[id] += count
+      list[id] = (list[id] ||= 0) + count
     end
 
     if params[:sort] == 'heats'
