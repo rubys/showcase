@@ -48,7 +48,7 @@ tbody::after {
       <% unless @oneday %>
       <th class="row-head">Day
       <% end %>
-      <th class="row-head">Time
+      <th class="row-head" colspan="2">Time
       <% end %>
     </tr>
     <% @agenda.each do |cat, heats| %>
@@ -61,6 +61,7 @@ tbody::after {
         <td class="row"><%= Date::DAYNAMES[@start[heats.first.first]&.wday || 7] %>
         <% end %>
         <td class="row"><%= @start[heats.first.first]&.strftime("%I:%M %P") %>
+        <td class="row"><%= @start[heats.last.first]&.strftime("%I:%M %P") %>
         <% end %>
       </tr>
     <% end %>
