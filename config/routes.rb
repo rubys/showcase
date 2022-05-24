@@ -60,6 +60,8 @@ Rails.application.routes.draw do
       post 'backs', on: :collection, action: 'assign_backs'
       get 'couples', on: :collection
       get 'students', on: :collection
+      get 'professionals', on: :collection
+      get 'guests', on: :collection
       get 'heats', on: :collection
       get 'heats', on: :member, action: 'individual_heats'
       get 'scores', on: :collection

@@ -62,11 +62,15 @@
 
 <h2 class="font-bold text-2xl my-4">See also:</h2>
 
-<div class="grid grid-cols-2 gap-1">
+<div class="grid grid-cols-3 gap-1">
 <%= link_to "Couples", couples_people_path, class: "btn-pale-green" %>
-<div></div>
+<%= link_to "Professionals", professionals_people_path, class: "btn-pale-green" %>
+<%= link_to "Guests", guests_people_path, class: "btn-pale-green" %>
+
 <%= link_to "Dances", dances_path, class: "btn-pale-blue" %>
 <%= link_to "Categories", categories_path, class: "btn-pale-blue" %>
+<div></div>
+
 <%= link_to 'Scores by level', by_level_scores_path , class: "btn-pale-green" %>
 <%= link_to 'Scores by age', by_age_scores_path , class: "btn-pale-green" %>
 <%= link_to 'Instructor Scores', instructor_scores_path , class: "btn-pale-green" %>

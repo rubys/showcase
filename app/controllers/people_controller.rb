@@ -71,6 +71,22 @@ class PeopleController < ApplicationController
     index
   end
 
+  # GET /people/professionals or /professionals.json
+  def professionals
+    @people = Person.includes(:studio).where(type: 'Professional').order(sort_order)
+    @title = 'Professionals'
+
+    index
+  end
+
+  # GET /people/professionals or /professionals.json
+  def guests
+    @people = Person.includes(:studio).where(type: 'Guests').order(sort_order)
+    @title = 'Guests'
+
+    index
+  end
+
   # GET /people/couples or /couples.json
   def couples
     @couples = Entry.preload(:lead, :follow).joins(:lead, :follow).
