@@ -112,9 +112,9 @@ class EventController < ApplicationController
     end
 
     if logos.size == 1
-      ENV['SHOWCASE_LOGO'] = logos.first 
+      EventController.logo = logos.first 
     else
-      ENV.delete 'SHOWCASE_LOGO'
+      EventController.logo = nil
     end
   end
 
@@ -343,6 +343,14 @@ class EventController < ApplicationController
     end
 
     @sources.delete ENV["RAILS_APP_DB"]
+  end
+
+  def self.logo
+    @@logo ||= ENV['SHOWCASE_LOGO'] || 'intertwingly.png'
+  end
+
+  def self.logo=(logo)
+    @@logo = logo || 'intertwingly.png'
   end
 
   private

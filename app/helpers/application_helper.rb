@@ -19,6 +19,6 @@ module ApplicationHelper
   end
 
   def showcase_logo
-    "/#{ENV['SHOWCASE_LOGO'] || 'intertwingly.png'}"
+    "/#{EventController.logo}"
   end
 end
