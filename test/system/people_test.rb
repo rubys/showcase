@@ -45,6 +45,23 @@ class PeopleTest < ApplicationSystemTestCase
     click_on "Back"
   end
 
+  test "should create judge" do
+    visit  settings_event_index_url
+    click_on "Add person"
+
+    fill_in "Name", with: 'Wopner, Joseph'
+    select 'Judge', from: 'Type'
+
+    assert_no_selector "#person_level_id"
+    assert_no_selector "#person_age_id"
+    assert_no_selector "#person_role"
+    assert_no_selector "#person_back"
+    click_on "Create Person"
+
+    assert_text "Joseph Wopner was successfully added"
+    click_on "Back"
+  end
+
   test "should update Person" do
     visit person_url(@person)
     click_on "Edit this person", match: :first

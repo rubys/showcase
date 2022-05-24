@@ -44,6 +44,15 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to person_url(Person.last)
   end
 
+  test "should create judge" do
+    assert_difference("Person.count") do
+      post people_url, params: { person: { name: 'Joseph Wopner', type: 'Judge' } }
+    assert_equal flash[:notice], 'Joseph Wopner was successfully added.'
+    end
+
+    assert_redirected_to person_url(Person.last)
+  end
+
   test "should show person" do
     get person_url(@person)
     assert_response :success
