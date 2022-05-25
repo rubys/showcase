@@ -15,9 +15,9 @@
     <tbody>
     <% @studio.people.sort_by {|person| person.name}.each do |person| %>
       <% if not person.active? %>
-      <tr class="bg-slate-200">
-      <% elsif not person.package_id %>
-      <tr class="bg-green-200">
+      <tr class="bg-slate-200" title="no entries defined">
+      <% elsif not person.package_id and @packages[person.type].to_i > 0 %>
+      <tr class="bg-yellow-100" title="no package selected">
       <% else %>
       <tr>
       <% end %>

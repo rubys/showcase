@@ -20,6 +20,7 @@ class StudiosController < ApplicationController
 
   # GET /studios/1 or /studios/1.json
   def show
+    @packages = Billable.group(:type).count
   end
 
   def heats
