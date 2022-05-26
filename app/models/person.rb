@@ -68,7 +68,7 @@ class Person < ApplicationRecord
     when 'Judge', 'Emcee'
       true
     when 'Guest'
-      package_id != null or not Billable.where(type: 'Guest').exists?
+      package_id != nil or not Billable.where(type: 'Guest').exists?
     else
       if role == 'Leader'
         lead_entries.exists? or follow_entries.exists?
