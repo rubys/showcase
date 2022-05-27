@@ -15,7 +15,7 @@ class MultisController < ApplicationController
     @dance ||= Dance.new
     @dance.heat_length ||= 3
 
-    @dances = Dance.order(:order).where(heat_length: nil).pluck(:name)
+    @dances = Dance.order(:order).where(heat_length: nil)
     @multi = {}
 
     @categories = Category.order(:order).pluck(:name, :id)
@@ -24,6 +24,8 @@ class MultisController < ApplicationController
     @dance.multi_category_id ||= previous.first if previous.length == 1
 
     @url = multis_path
+
+    @columns = Dance.maximum(:col)
   end
 
   # GET /multis/1/edit

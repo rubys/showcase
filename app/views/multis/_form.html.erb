@@ -49,12 +49,20 @@ categories, make a separate multi-dance for each.
   <div class="mx-auto flex flex-wrap">
     <h1 class="w-full text-center bg-yellow-400 mb-4">Dances</h1>
 
+    <% if @columns %>
+    <div style="display: grid; width: 100%; grid-template-columns: repeat(<%= @columns %>, 1fr);  gap: 10px;">
+    <% else %>
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <% end %>
       <% @dances.each do |dance| %>
-        <% field = "multi[#{dance}]" %>
+        <% field = "multi[#{dance.name}]" %>
+        <% if dance.row and dance.col %>
+        <div class="my-5 flex flex-row" style="grid-row:<%= dance.row %>; grid-column:<%= dance.col %>">
+        <% else %>
         <div class="my-5 flex flex-row">
-          <%= form.check_box field, class: "entry-count h-10", checked: !!@multi[dance] %>
-          <%= form.label field, dance, class: 'mt-1 flex items-center justify-center' %>
+        <% end %>
+          <%= form.check_box field, class: "entry-count h-10", checked: !!@multi[dance.name] %>
+          <%= form.label field, dance.name, class: 'mt-1 flex items-center justify-center' %>
         </div>
       <% end %>
     </div>

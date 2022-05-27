@@ -15,7 +15,7 @@ module Printable
       
     start = nil
     heat_length = Event.last.heat_length
-    if Event.last.date and heat_length and not @categories.values.first.time.empty?
+    if Event.last.date and heat_length and not @categories.empty? and not @categories.values.first.time.empty?
       start = Chronic.parse(
         Event.last.date.sub(/[a-z]+ \d+-\d+/) {|str| str.sub(/-.*/, '')},
         guess: false
