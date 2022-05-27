@@ -125,6 +125,9 @@ class EventController < ApplicationController
           end
         end
       end
+
+      @scope = ENV.fetch("RAILS_APP_SCOPE", '')
+      @scope = '/' + @scope unless @scope.empty?
     end
 
     if logos.size == 1
