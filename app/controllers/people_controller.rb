@@ -65,22 +65,25 @@ class PeopleController < ApplicationController
 
   # GET /people/backs or /people.json
   def backs
-    @people = Person.where(role: %w(Leader Both)).order(:back)
+    @people = Person.where(id: Entry.distinct.pluck(:lead_id)).order(:back)
   end
 
   def assign_backs
-    @people = Person.where(role: %w(Leader Both)).order(:type, :name)
+    leaders = Entry.distinct.pluck(:lead_id)
+    people = Person.where(id: leaders).order(:type, :name)
 
     number = 101
     Person.transaction do
-      @people.each do |person|
+      Person.where.not(back: nil).where.not(id: leaders).update_all(back: nil)
+
+      people.each do |person|
         number = 201 if number < 200 and person.type == "Student"
         person.back = number
         person.save! validate: false
         number += 1
       end
 
-      raise ActiveRecord::Rollback unless @people.all? {|person| person.valid?}
+      raise ActiveRecord::Rollback unless people.all? {|person| person.valid?}
     end
 
     redirect_to backs_people_path 
