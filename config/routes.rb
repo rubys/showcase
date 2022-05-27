@@ -9,6 +9,9 @@ Rails.application.routes.draw do
 
     if ENV.fetch("RAILS_APP_DB", '') == 'index'
       root 'event#showcases'
+
+      get "/:year/:city", to: 'event#showcases', year: /\d+/
+      get "/:year/:city/", to: 'event#showcases', year: /\d+/
     else
       root 'event#root'
     end

@@ -84,6 +84,22 @@ class EventController < ApplicationController
     @showcases = YAML.load_file('config/tenant/showcases.yml')
     logos = Set.new
 
+    if params[:year]
+      @showcases.select! {|year, sites| year.to_s == params[:year]}
+
+      if params[:city] and @showcases[params[:year].to_i]
+        @showcases.each do |year, sites|
+          sites.select! do |token, value|
+            token == params[:city]
+          end
+        end
+      end
+
+      if @showcases.empty? or @showcases.all? {|year, sites| sites.empty?}
+        raise ActiveRecord::RecordNotFound
+      end
+    end
+
     @showcases.each do |year, sites|
       if auth
         sites.select! do |token, value|
