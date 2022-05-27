@@ -29,69 +29,15 @@ entry in the common case.
 
 <%= render partial: 'entries/box', locals: {form: form} %>
 
-<div class="mx-auto w-full flex flex-wrap">
-  <div class="mx-auto flex flex-wrap">
-    <h2 class="w-full text-center bg-yellow-400 mb-4">CLOSED CATEGORY</h1>
+<%= render partial: 'entries/dances',
+  locals: {form: form, title: 'CLOSED CATEGORY', dances: @dances, category: 'Closed'} %>
 
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <% @dances.each do |dance| %>
-        <% field = "entries[Closed][#{dance}]" %>
-        <div class="my-5 flex flex-row">
-          <% value = @entries['Closed'][dance]&.length || 0 %>
-          <% if value <= 1 %>
-          <%= form.check_box field, class: "entry-count h-10", checked: value > 0 %>
-          <% else %>
-          <%= form.text_field field, class: "entry-count", value: value %>
-          <% end %>
-          <%= form.label field, dance, class: 'mt-2 flex items-center justify-center' %>
-        </div>
-      <% end %>
-    </div>
-  </div>
-</div>
-
-<div class="mx-auto w-full flex flex-wrap">
-  <div class="mx-auto flex flex-wrap">
-    <h2 class="w-full text-center bg-yellow-400 mb-4">OPEN CATEGORY</h1>
-
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <% @dances.each do |dance| %>
-        <% field = "entries[Open][#{dance}]" %>
-        <div class="my-5 flex flex-row">
-          <% value = @entries['Open'][dance]&.length || 0 %>
-          <% if value <= 1 %>
-          <%= form.check_box field, class: "entry-count h-10", checked: value > 0 %>
-          <% else %>
-          <%= form.text_field field, class: "entry-count", value: value %>
-          <% end %>
-          <%= form.label field, dance, class: 'mt-2 flex items-center justify-center' %>
-        </div>
-      <% end %>
-    </div>
-  </div>
-</div>
+<%= render partial: 'entries/dances',
+  locals: {form: form, title: 'OPEN CATEGORY', dances: @dances, category: 'Open'} %>
 
 <% unless @multis.empty? %>
-<div class="mx-auto w-full flex flex-wrap">
-  <div class="mx-auto flex flex-wrap">
-    <h2 class="w-full text-center bg-yellow-400 mb-4">MULTI CATEGORY</h1>
-
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <% @multis.each do |dance| %>
-        <% field = "entries[Multi][#{dance}]" %>
-        <div class="my-5 flex flex-row">
-          <% value = @entries['Multi'][dance]&.length || 0 %>
-          <% if value <= 1 %>
-          <%= form.check_box field, class: "entry-count h-10", checked: value > 0 %>
-          <% else %>
-          <%= form.text_field field, class: "entry-count", value: value %>
-          <% end %>
-          <%= form.label field, dance, class: 'mt-2 flex items-center justify-center' %>
-        </div>
-      <% end %>
-    </div>
-  </div>
-</div>
+<%= render partial: 'entries/dances',
+  locals: {form: form, title: 'MULTI CATEGORY', dances: @multis, category: 'Multi'} %>
 <% end %>
 
 <div class="mx-auto flex">

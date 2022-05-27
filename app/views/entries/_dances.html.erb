@@ -1,0 +1,28 @@
+<div class="mx-auto w-full flex flex-wrap">
+  <div class="mx-auto flex flex-wrap">
+    <h2 class="w-full text-center bg-yellow-400 mb-4"><%= title %></h1>
+
+    <% if @columns %>
+    <div style="display: grid; width: 100%; grid-template-columns: repeat(<%= @columns %>, 1fr);  gap: 10px;">
+    <% else %>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <% end %>
+      <% dances.each do |dance| %>
+        <% field = "entries[#{category}][#{dance.name}]" %>
+        <% if dance.row and dance.col %>
+        <div class="my-5 flex flex-row" style="grid-row:<%= dance.row %>; grid-column:<%= dance.col %>">
+        <% else %>
+        <div class="my-5 flex flex-row">
+        <% end %>
+          <% value = @entries[category][dance.name]&.length || 0 %>
+          <% if value <= 1 %>
+          <%= form.check_box field, class: "entry-count h-10", checked: value > 0 %>
+          <% else %>
+          <%= form.text_field field, class: "entry-count", value: value %>
+          <% end %>
+          <%= form.label field, dance.name, class: 'mt-2 flex items-center justify-center' %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -21,16 +21,16 @@ class EntriesController < ApplicationController
     @age = @person.age_id
     @level = @person.level_id
 
-    @dances = Dance.order(:order).where(heat_length: nil).pluck(:name)
-    @multis = Dance.order(:order).where.not(heat_length: nil).pluck(:name)
+    @dances = Dance.order(:order).where(heat_length: nil)
+    @multis = Dance.order(:order).where.not(heat_length: nil)
   end
 
   # GET /entries/1/edit
   def edit
     form_init(params[:primary], @entry)
 
-    @dances = Dance.order(:order).where(heat_length: nil).map(&:name)
-    @multis = Dance.order(:order).where.not(heat_length: nil).pluck(:name)
+    @dances = Dance.order(:order).where(heat_length: nil)
+    @multis = Dance.order(:order).where.not(heat_length: nil)
     
     @partner = @entry.partner(@person).id
     @age = @entry.age_id

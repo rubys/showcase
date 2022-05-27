@@ -45,6 +45,8 @@ module EntryForm
     @levels = Level.all.order(:id).map {|level| [level.name, level.id]}
 
     @entries = {'Closed' => {}, 'Open' => {}, 'Multi' => {}}
+
+    @columns = Dance.maximum(:col) || 4
   end
 
   def find_or_create_entry(params)

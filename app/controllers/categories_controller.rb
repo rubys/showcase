@@ -152,10 +152,12 @@ class CategoriesController < ApplicationController
 
     def form_init
       dances = Dance.order(:order).all
-      @dances = dances.select {|dance| dance.heat_length == nil}.map(&:name)
-      @multis = dances.select {|dance| dance.heat_length != nil}.map(&:name)
+      @dances = dances.select {|dance| dance.heat_length == nil}
+      @multis = dances.select {|dance| dance.heat_length != nil}
       @entries = {'Closed' => {}, 'Open' => {}, 'Solo' => {}, 'Multi' => {}}
+      @columns = Dance.maximum(:col)
 
+      if @category.id
         dances.each do |dance|
           if dance.open_category_id == @category.id
             @entries['Open'][dance.name] = true
@@ -173,6 +175,7 @@ class CategoriesController < ApplicationController
             @entries['Multi'][dance.name] = true
           end
         end
+      end
     end
 
     def update_dances(include)
