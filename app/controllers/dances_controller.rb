@@ -95,6 +95,24 @@ class DancesController < ApplicationController
     end
   end
 
+  def form
+    @dances = Dance.order(:order).all
+    @columns = Dance.maximum(:col) || 4
+  end
+
+  def form_update
+    Dance.transaction do
+      params[:dance].each do |id, position|
+        dance = Dance.find(id)
+        dance.row = position['row'].to_i
+        dance.col = position['col'].to_i
+        dance.save!
+      end
+    end
+
+    render plain: "Dance form updated"
+  end
+
   # DELETE /dances/1 or /dances/1.json
   def destroy
     @dance.destroy

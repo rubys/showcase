@@ -18,3 +18,5 @@
 .base-AB, .head-FB, .base-FB, .head-AS {background-color: #e7cfae}
 .base-AS, .head-FS, .base-FS, .head-AG {background-color: #dcdcdc}
 .base-AG, .head-FG, .base-FG {background-color: #ffd700}
+
+#notice:empty {display: none}

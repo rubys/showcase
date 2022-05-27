@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_05_19_134900) do
+ActiveRecord::Schema[7.0].define(version: 2022_05_27_143539) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -84,6 +84,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_05_19_134900) do
     t.integer "solo_category_id"
     t.integer "multi_category_id"
     t.integer "heat_length"
+    t.integer "row"
+    t.integer "col"
     t.index ["closed_category_id"], name: "index_dances_on_closed_category_id"
     t.index ["multi_category_id"], name: "index_dances_on_multi_category_id"
     t.index ["open_category_id"], name: "index_dances_on_open_category_id"

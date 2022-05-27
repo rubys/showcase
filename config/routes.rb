@@ -55,6 +55,8 @@ Rails.application.routes.draw do
 
     resources :dances do
       post 'drop', on: :collection
+      get 'form', on: :collection
+      post 'form-update', on: :collection, as: 'update_form'
     end
 
     resources :categories do
