@@ -49,6 +49,8 @@ tbody::after {
       <th class="row-head">Day
       <% end %>
       <th class="row-head" colspan="2">Time
+      <% elsif @categories.values.any? {|category| not category.day.blank?} %>
+      <th class="row-head">Day
       <% end %>
     </tr>
     <% @agenda.each do |cat, heats| %>
@@ -62,6 +64,8 @@ tbody::after {
         <% end %>
         <td class="row"><%= @start[heats.first.first]&.strftime("%I:%M %P") %>
         <td class="row"><%= @start[heats.last.first]&.strftime("%I:%M %P") %>
+        <% elsif not @categories[cat].day.empty? %>
+        <td class="row"><%= @categories[cat].day %>
         <% end %>
       </tr>
     <% end %>
