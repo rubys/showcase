@@ -2,11 +2,7 @@
 
 require_relative "config/environment"
 
-if ENV['RAILS_RELATIVE_URL_ROOT']
-  map ENV['RAILS_RELATIVE_URL_ROOT'] do
-    run Rails.application
-  end
-else
+map ENV.fetch 'RAILS_RELATIVE_URL_ROOT', '/' do
   run Rails.application
 end
 
