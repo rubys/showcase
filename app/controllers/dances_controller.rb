@@ -96,7 +96,7 @@ class DancesController < ApplicationController
   end
 
   def form
-    @dances = Dance.order(:order).all
+    @dances = Dance.where(heat_length: nil).order(:order).all
     @columns = Dance.maximum(:col) || 4
   end
 
