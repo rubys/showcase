@@ -90,9 +90,10 @@
 
 </div>
 
-<div class="mt-4 flex justify-between items-center">
+<div class="mt-4 grid grid-cols-3 justify-between items-center">
   <%= up_link 'New dance', new_dance_path, class: "btn-blue" %>
   <%= up_link 'New multi-dance', new_multi_path, class: "btn-blue" %>
+  <%= link_to 'Arrange', form_dances_path, class: "btn-green" %>
   <%= link_to 'Categories', categories_path, class: "btn-green" %>
   <%= link_to 'Back to Summary', summary_event_index_path, class: "btn-green" %>
 </div>

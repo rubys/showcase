@@ -1,7 +1,7 @@
 <div class="mx-auto md:w-2/3 w-full">
 <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
 
-  <h1 class="font-bold text-4xl">Form builder</h1>
+  <h1 class="font-bold text-4xl">Arrange Dances</h1>
 
 <%= form_with(url: update_form_dances_path, class: "contents", data: {controller: 'form-builder'}) do |form| %>
 
@@ -9,6 +9,7 @@
 <div class="info-button">&#x24D8;</div>
 <ul class="info-box">
 <li>Use drag and drop to order dances to match the entry form.
+<li>Leave alone, or reset, to allow the arrangement to be determined by the screen width.
 </ul>
 </div>
 
@@ -21,17 +22,18 @@
   <div id="dances" class="mb-4" style="display: grid; grid-template-columns: repeat(<%= @columns %>, 1fr);  gap: 10px;">
     <% @dances.each do |dance| %>
       <% if dance.row and dance.col %>
-      <div draggable="true" data-id="<%= dance.id %>" style="grid-row:<%= dance.row %>; grid-column:<%= dance.col %>">
+      <div draggable="true" class="hover:bg-yellow-200" data-id="<%= dance.id %>" style="grid-row:<%= dance.row %>; grid-column:<%= dance.col %>">
       <% else %>
-      <div draggable="true" data-id="<%= dance.id %>">
+      <div draggable="true" class="hover:bg-yellow-200" data-id="<%= dance.id %>">
       <% end %>
         <%= dance.name %>
       </div>
     <% end %>
   </div>
 
-<% end %>
 
   <button id="save" class="btn-blue">Save</button>
-  <%= link_to 'Back to dances', dances_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  <%= form.submit "Reset", class: 'btn-grey' %>
+  <%= link_to 'Back to dances', dances_path, class: "btn-green" %>
+  <% end %>
 </div>

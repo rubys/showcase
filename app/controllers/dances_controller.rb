@@ -101,16 +101,22 @@ class DancesController < ApplicationController
   end
 
   def form_update
-    Dance.transaction do
-      params[:dance].each do |id, position|
-        dance = Dance.find(id)
-        dance.row = position['row'].to_i
-        dance.col = position['col'].to_i
-        dance.save!
-      end
-    end
+    if params[:commit] == 'Reset'
+      Dance.update_all(row: nil, col: nil)
 
-    render plain: "Dance form updated"
+      redirect_to form_dances_url, notice: "Form reset."
+    else
+      Dance.transaction do
+        params[:dance].each do |id, position|
+          dance = Dance.find(id)
+          dance.row = position['row'].to_i
+          dance.col = position['col'].to_i
+          dance.save!
+        end
+      end
+
+      render plain: "Dance form updated"
+    end
   end
 
   # DELETE /dances/1 or /dances/1.json

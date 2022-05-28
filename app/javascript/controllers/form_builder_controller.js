@@ -39,13 +39,22 @@ export default class extends Controller {
   }
 
   reflow() {
-    let columns = this.columns.value;
+    let columns = parseInt(this.columns.value);
 
     for (let div of [...this.dances.children]) {
       if (!div.draggable) div.remove();
     }
 
-    for (let i=(this.dances.childElementCount - 1) % columns + 1; i < columns; i++) {
+    let rows = Math.floor((this.dances.childElementCount + columns - 1) / columns);
+    console.log(rows);
+    for (let child of this.dances.children) {
+      if (child.style.gridRow && child.style.gridRow > rows) {
+        rows = parseInt(child.style.gridRow);
+      }
+    }
+    console.log(rows);
+
+    for (let i=this.dances.childElementCount; i < columns * rows; i++) {
       let div = document.createElement('div');
       div.addEventListener('drop', this.drop);
 
