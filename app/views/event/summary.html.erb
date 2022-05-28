@@ -44,6 +44,7 @@
   <% end %>
 </ul>
 
+<%if @people['Student'] %>
 <h2 class="font-bold text-2xl my-4">Students, by level</h2>
 
 <ul class="list-disc list-inside">
@@ -59,6 +60,7 @@
     <li><%= age.category %> (<%= age.description %>): <%= people.length %></li>
   <% end %>
 </ul>
+<% end %>
 
 <h2 class="font-bold text-2xl my-4">See also:</h2>
 
