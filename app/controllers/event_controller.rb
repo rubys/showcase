@@ -61,10 +61,10 @@ class EventController < ApplicationController
     anchor = nil
 
     if ok
-    anchor = 'description' if params[:event][:name]
-    anchor = 'prices' if params[:event][:heat_cost]
-    anchor = 'adjust' if params[:event][:intermix]
-    redirect_to settings_event_index_path(anchor: anchor), notice: "Event was successfully updated."
+      anchor = 'description' if params[:event][:name]
+      anchor = 'prices' if params[:event][:heat_cost]
+      anchor = 'adjust' if params[:event][:intermix]
+      redirect_to settings_event_index_path(anchor: anchor), notice: "Event was successfully updated."
     else
       settings
       render :settings, status: :unprocessable_entity

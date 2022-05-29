@@ -46,13 +46,11 @@ export default class extends Controller {
     }
 
     let rows = Math.floor((this.dances.childElementCount + columns - 1) / columns);
-    console.log(rows);
     for (let child of this.dances.children) {
       if (child.style.gridRow && child.style.gridRow > rows) {
         rows = parseInt(child.style.gridRow);
       }
     }
-    console.log(rows);
 
     for (let i=this.dances.childElementCount; i < columns * rows; i++) {
       let div = document.createElement('div');
