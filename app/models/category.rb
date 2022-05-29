@@ -10,4 +10,7 @@ class Category < ApplicationRecord
 
   validates :name, presence: true, uniqueness: true
   validates :order, presence: true, uniqueness: true
+
+  validates :day, chronic: true, allow_blank: true
+  validates :time, chronic: true, allow_blank: true
 end

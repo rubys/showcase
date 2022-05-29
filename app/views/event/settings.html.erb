@@ -28,6 +28,19 @@
 <h1 class="font-bold text-4xl mb-6" id="description">Event Description</h1>
 
 <%= form_with model: @event, data: {turbo: false} do |form| %>
+
+  <% if @event.errors.any? %>
+    <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
+      <h2><%= pluralize(@event.errors.count, "error") %> prohibited these settings from being saved:</h2>
+
+      <ul>
+        <% @event.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
   <div class="my-5">
   <%= form.label :name %>
   <%= form.text_field :name, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>

@@ -35,11 +35,11 @@ module Printable
       
     start = nil
     heat_length = Event.last.heat_length
-    if Event.last.date and heat_length and @categories.values.any? {|category| not category.time.blank?}
+    if not Event.last.date.blank? and heat_length and @categories.values.any? {|category| not category.time.blank?}
       start = Chronic.parse(
         Event.last.date.sub(/(^|[a-z]+ )?\d+-\d+/) {|str| str.sub(/-.*/, '')},
         guess: false
-      ).begin
+      )&.begin || Time.now
     end
 
     @agenda = {}
@@ -58,13 +58,13 @@ module Printable
 
           if cat != last_cat and not cat.day.blank?
             yesterday = Chronic.parse('yesterday', now: start)
-            day = Chronic.parse(cat.day, now: yesterday, guess: false).begin
+            day = Chronic.parse(cat.day, now: yesterday, guess: false)&.begin || start
             start = day if day > start
           end
 
           if not cat.time.blank?
             if cat != last_cat
-              time = Chronic.parse(cat.time, now: start)
+              time = Chronic.parse(cat.time, now: start) || start
               start = time if time and time > start
             end
 
