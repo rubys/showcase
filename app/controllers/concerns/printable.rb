@@ -11,19 +11,40 @@ module Printable
         [number, heats.sort_by { |heat| heat.back || 0 } ]
       end
 
-    @categories = Category.all.map {|category| [category.name, category]}.to_h
+    @categories = Category.order(:order).map {|category| [category.name, category]}.to_h
+
+    # copy start time/date to subsequent entries
+    last_cat = nil
+    first_time = nil
+    @categories.each do |name, category|
+      if last_cat
+        category.day = last_cat.day if category.blank?
+        if category.time.blank?
+          if last_cat&.day == category.day
+            category.time = last_cat&.time
+          else
+            category.time = first_time
+          end
+        else
+          first_time ||= category.time
+        end
+        category.time ||= last_cat.time
+      end
+      last_cat = category
+    end
       
     start = nil
     heat_length = Event.last.heat_length
-    if Event.last.date and heat_length and not @categories.empty? and not @categories.values.first.time.empty?
+    if Event.last.date and heat_length and @categories.values.any? {|category| not category.time.blank?}
       start = Chronic.parse(
-        Event.last.date.sub(/[a-z]+ \d+-\d+/) {|str| str.sub(/-.*/, '')},
+        Event.last.date.sub(/(^|[a-z]+ )?\d+-\d+/) {|str| str.sub(/-.*/, '')},
         guess: false
       ).begin
     end
 
     @agenda = {}
     @start = [] if start
+    last_cat = nil
 
     @heats.each do |number, heats|
       if number == 0
@@ -33,23 +54,30 @@ module Printable
         cat = heats.first.dance_category
 
         if cat and start
-          if cat.day and not cat.day.empty?
+          cat = @categories[cat.name]
+
+          if cat != last_cat and not cat.day.blank?
             yesterday = Chronic.parse('yesterday', now: start)
             day = Chronic.parse(cat.day, now: yesterday, guess: false).begin
             start = day if day > start
           end
 
-          if cat.time and not cat.time.empty?
-            time = Chronic.parse(cat.time, now: start)
-            start = time if time and time > start
+          if not cat.time.blank?
+            if cat != last_cat
+              time = Chronic.parse(cat.time, now: start)
+              start = time if time and time > start
+            end
+
+            @start[number] ||= start
+
+            if heats.first.dance.heat_length
+              start += heat_length * heats.first.dance.heat_length
+            else
+              start += heat_length
+            end
           end
 
-          @start[number] ||= start
-          if heats.first.dance.heat_length
-            start += heat_length * heats.first.dance.heat_length
-          else
-            start += heat_length
-          end
+          last_cat = cat
         end
         
         cat = cat&.name || 'Uncategorized'
@@ -58,7 +86,7 @@ module Printable
       end
     end
 
-    @oneday = !@start || @start.compact.first.to_date == @start.last.to_date
+    @oneday = @categories.values.map(&:day).uniq.length <= 1
   end
 
   def generate_invoice(studios = nil)

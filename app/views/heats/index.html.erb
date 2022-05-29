@@ -21,11 +21,13 @@ tbody::after {
 <div data-controller="info-box">
 <div class="info-button">&#x24D8;</div>
 <ul class="info-box">
-<li>Categories affect where each dance appears in the agenda, and are defined on the <%= link_to 'Category', categories_path, class: 'x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium' %> page.
+<li>After any changes to a category or heats, you can click the Redo button to regenerate the agenda.
+<li>Categories affect where each dance appears in the agenda, and are defined on the <%= link_to 'Agenda', categories_path, class: 'x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium' %> page.
 <li>The order of Solos within a category is determined by the order in which the Solos appear on the
 <%= link_to "Solos", solos_path, class: "x-2 rounded-lg py-1 px-2 text-white bg-green-600 font-medium" %> page.
 <li>The <%= link_to "Settings", settings_event_index_path(anchor: 'adjust') , class: "x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium" %> page contains some options that allow you to control heat sizes.
-<li>After any changes to a category or heats, you can click the Redo button to regenerate the agenda.
+<li>If you set the time between start of heats in the settings and add a start time to at least one agenda item,
+a scheduled heat time will be added to each heat.
 <% if @stats %>
 <li>A summary of how many couples are on the floor for each heat is at the <a href="#stats">bottom</a> of this page.
 <% end %>
@@ -49,7 +51,7 @@ tbody::after {
       <th class="row-head">Day
       <% end %>
       <th class="row-head" colspan="2">Time
-      <% elsif @categories.values.any? {|category| not category.day.blank?} %>
+      <% elsif not @oneday %>
       <th class="row-head">Day
       <% end %>
     </tr>
@@ -58,13 +60,13 @@ tbody::after {
         <td class="row"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a>
         <td class="row text-right"><a href="#heat-<%= heats.first.first %>"><%= heats.first.first %></a>
         <td class="row text-right"><a href="#heat-<%= heats.last.first %>"><%= heats.last.first %></a>
-        <% if @start %>
+        <% if @start and @start[heats.first.first] %>
         <% unless @oneday %>
         <td class="row"><%= Date::DAYNAMES[@start[heats.first.first]&.wday || 7] %>
         <% end %>
         <td class="row"><%= @start[heats.first.first]&.strftime("%I:%M %P") %>
         <td class="row"><%= @start[heats.last.first]&.strftime("%I:%M %P") %>
-        <% elsif not @categories[cat].day.empty? %>
+        <% elsif not @categories[cat].day.empty? and not @oneday %>
         <td class="row"><%= @categories[cat].day %>
         <% end %>
       </tr>
