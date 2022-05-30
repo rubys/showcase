@@ -65,7 +65,8 @@ class PeopleController < ApplicationController
 
   # GET /people/backs or /people.json
   def backs
-    @people = Person.where(id: Entry.distinct.pluck(:lead_id)).order(:back)
+    @people = Person.where(id: Entry.distinct.pluck(:lead_id)).
+      or(Person.where.not(back: nil)).includes(:lead_entries, :studio).order(:back)
   end
 
   def assign_backs

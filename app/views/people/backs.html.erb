@@ -18,7 +18,11 @@
     </thead>
     <tbody>
       <% @people.each do |person| %>
+      <% if person.lead_entries.empty? %>
+      <tr class="bg-slate-200" title="no entries defined">
+      <% else %>
       <tr>
+      <% end %>
         <td class="text-right px-2"><%= person.back %>
         <td class="px-2"><%= link_to person.name, person %>
         <td class="px-2"><%= link_to person.studio.name, person.studio %>
