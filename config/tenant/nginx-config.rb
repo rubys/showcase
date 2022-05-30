@@ -20,7 +20,7 @@ SHOWCASE_CONF = "#{NGINX_CONF}/showcase.conf"
 showcases = YAML.load_file("#{__dir__}/showcases.yml")
 template = ERB.new(DATA.read, trim_mode: '-')
 
-restart = (not ARGV.include?('--restart'))
+restart = ARGV.include?('--restart')
 
 Dir.chdir @git_path
 
