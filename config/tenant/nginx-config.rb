@@ -66,12 +66,14 @@ old_conf = IO.read(SHOWCASE_CONF) rescue nil
 new_conf = template.result(binding)
 
 if new_conf != old_conf
-  STDERR.puts SHOWCASE_CONF
   IO.write SHOWCASE_CONF, new_conf
   restart = true
 end
 
-system 'nginx -s reload' if restart
+if restart
+  system "passenger-config restart-app #{@git_path}"
+  system 'nginx -s reload'
+end
 
 __END__
 server {
