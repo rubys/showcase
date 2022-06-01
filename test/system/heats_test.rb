@@ -12,7 +12,7 @@ class HeatsTest < ApplicationSystemTestCase
 
   test "should update Heat" do
     visit person_url(people(:Kathryn))
-    page.find('td', text: 'Open').hover
+    page.all('td', text: 'Open').last.hover
     click_on "Edit"
 
     select "Full Gold", from: "heat_level"

@@ -29,3 +29,10 @@ five:
   entry: two
   category: Multi
   dance: aa_smooth
+
+zero:
+  number: 0
+  entry: two
+  category: Open
+  dance: waltz
+
