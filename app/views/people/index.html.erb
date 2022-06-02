@@ -41,7 +41,11 @@
 
   <tbody>
   <% @people.each do |person| %>
+    <% if not person.active? %>
+    <tr class="bg-slate-200" title="no entries defined">
+    <% else %>
     <tr>
+    <% end %>
       <td class="row-main"><%= link_to person.name, person %></td>
       <% unless @title == 'Students' %>
       <td class="row"><%= person.type %></td>
