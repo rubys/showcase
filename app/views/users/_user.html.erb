@@ -1,0 +1,47 @@
+<div id="<%= dom_id user %>">
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Userid:</strong>
+    <%= user.userid %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Password:</strong>
+    <%= user.password %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Email:</strong>
+    <%= user.email %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Name1:</strong>
+    <%= user.name1 %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Name2:</strong>
+    <%= user.name2 %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Token:</strong>
+    <%= user.token %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Link:</strong>
+    <%= user.link %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Sites:</strong>
+    <%= user.sites %>
+  </p>
+
+  <% if action_name != "show" %>
+    <%= link_to "Show this user", user, class: "rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+    <%= link_to 'Edit this user', edit_user_path(user), class: "rounded-lg py-3 ml-2 px-5 bg-gray-100 inline-block font-medium" %>
+    <hr class="mt-6">
+  <% end %>
+</div>

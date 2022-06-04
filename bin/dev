@@ -8,4 +8,8 @@ fi
 
 test -e public/assets && bin/rake assets:clobber
 
+if [[ $# -gt 0 ]]; then
+  export RAILS_APP_DB=$(basename $1)
+fi
+
 foreman start -f Procfile.dev

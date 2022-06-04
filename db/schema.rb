@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_05_27_143539) do
+ActiveRecord::Schema[7.0].define(version: 2022_06_04_141131) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -248,6 +248,19 @@ ActiveRecord::Schema[7.0].define(version: 2022_05_27_143539) do
     t.index ["default_guest_package_id"], name: "index_studios_on_default_guest_package_id"
     t.index ["default_professional_package_id"], name: "index_studios_on_default_professional_package_id"
     t.index ["default_student_package_id"], name: "index_studios_on_default_student_package_id"
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.string "userid"
+    t.string "password"
+    t.string "email"
+    t.string "name1"
+    t.string "name2"
+    t.string "token"
+    t.string "link"
+    t.string "sites"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

@@ -114,5 +114,7 @@ Rails.application.routes.draw do
     resources :billables do
       post 'drop', on: :collection
     end
+
+    resources :users
   end
 end
