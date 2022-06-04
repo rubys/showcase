@@ -81,6 +81,16 @@ server {
   server_name localhost;
   rewrite ^/(showcase)?$ /showcase/ redirect;
 
+  # Authentication
+<% if File.exist? "#{@git_path}/config/htpasswd" -%>
+  set $realm "Showcase";
+  if ($request_uri ~ "^/showcase/\d+/\w+/(\w+/)?public/") { set $realm off; }
+  auth_basic $realm;
+  auth_basic_user_file <%= @git_path %>/config/htpasswd;
+<% else -%>
+  auth_basic off;
+<% end -%>
+
   # Configuration common to all apps
   root <%= @git_path %>/public;
   passenger_enabled on;

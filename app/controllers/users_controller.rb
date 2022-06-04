@@ -5,7 +5,7 @@ class UsersController < ApplicationController
 
   # GET /users or /users.json
   def index
-    @users = User.all
+    @users = User.order(:userid).all
   end
 
   # GET /users/1 or /users/1.json
@@ -28,7 +28,7 @@ class UsersController < ApplicationController
 
     respond_to do |format|
       if @user.save
-        format.html { redirect_to user_url(@user), notice: "User was successfully created." }
+        format.html { redirect_to users_url, notice: "#{@user.userid} was successfully created." }
         format.json { render :show, status: :created, location: @user }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -43,7 +43,7 @@ class UsersController < ApplicationController
 
     respond_to do |format|
       if @user.update(user_params)
-        format.html { redirect_to user_url(@user), notice: "User was successfully updated." }
+        format.html { redirect_to users_url, notice: "#{@user.userid} was successfully updated." }
         format.json { render :show, status: :ok, location: @user }
       else
         format.html { render :edit, status: :unprocessable_entity }
@@ -57,7 +57,8 @@ class UsersController < ApplicationController
     @user.destroy
 
     respond_to do |format|
-      format.html { redirect_to users_url, notice: "User was successfully destroyed." }
+      format.html { redirect_to users_url, status: 303,
+        notice: "#{@user.userid} was successfully removed." }
       format.json { head :no_content }
     end
   end
@@ -75,7 +76,7 @@ class UsersController < ApplicationController
       htpasswd, status = Open3.capture2("htpasswd -ni #{params[:userid]}",
         stdin_data: params[:password])
       if status.success?
-        params[:password] = params[:password_confirmation] = htpasswd
+        params[:password] = params[:password_confirmation] = htpasswd.strip
       end
     end
 

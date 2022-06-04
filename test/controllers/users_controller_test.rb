@@ -20,7 +20,7 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
       post users_url, params: { user: { email: @user.email + '2', link: @user.link, name1: @user.name1, name2: @user.name2, password: @user.password, sites: @user.sites, token: @user.token, userid: @user.userid + '2'} }
     end
 
-    assert_redirected_to user_url(User.last)
+    assert_redirected_to users_url
   end
 
   test "should show user" do
@@ -35,7 +35,7 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
 
   test "should update user" do
     patch user_url(@user), params: { user: { email: @user.email + '2', link: @user.link, name1: @user.name1, name2: @user.name2, password: @user.password, password_confirmation: @user.password, sites: @user.sites, token: @user.token, userid: @user.userid + '2' } }
-    assert_redirected_to user_url(@user)
+    assert_redirected_to users_url
   end
 
   test "should destroy user" do
@@ -43,6 +43,8 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
       delete user_url(@user)
     end
 
+    assert_response 303
     assert_redirected_to users_url
+    assert_equal flash[:notice], 'MyString1 was successfully removed.'
   end
 end
