@@ -1,6 +1,7 @@
 require 'open3'
 
 class UsersController < ApplicationController
+  before_action :authenticate_index
   before_action :set_user, only: %i[ show edit update destroy ]
 
   # GET /users or /users.json
@@ -71,6 +72,18 @@ class UsersController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_user
       @user = User.find(params[:id])
+    end
+
+    def authenticate_index
+      # deny access if there is a user with 'index' access and this user does not
+      return unless @authuser
+
+      sites = User.pluck(:sites).map {|sites| sites.split(',')}.flatten
+      return unless sites.include? 'index'
+
+      return if User.where(userid: @authuser).pluck(:sites).first.to_s.split(',').include? 'index'
+
+      request_http_basic_authentication "Showcase"
     end
 
     def set_password
