@@ -9,7 +9,6 @@ class ApplicationController < ActionController::Base
 
   private
     def get_authentication
-      STDERR.puts request.headers.inspect
       if request.headers['HTTP_AUTHORIZATION']
         @authuser = Base64.decode64(request.headers['HTTP_AUTHORIZATION'].split(' ')[1]).split(':').first
       else
