@@ -17,7 +17,8 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
 
   test "should create user" do
     assert_difference("User.count") do
-      post users_url, params: { user: { email: @user.email + '2', link: @user.link, name1: @user.name1, name2: @user.name2, password: @user.password, sites: @user.sites, token: @user.token, userid: @user.userid + '2'} }
+      sites =  @user.sites.split(',').map {|name| [name, 1]}.to_h
+      post users_url, params: { user: { email: @user.email + '2', link: @user.link, name1: @user.name1, name2: @user.name2, password: @user.password, sites: sites, token: @user.token, userid: @user.userid + '2'} }
     end
 
     assert_redirected_to users_url
@@ -34,7 +35,8 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should update user" do
-    patch user_url(@user), params: { user: { email: @user.email + '2', link: @user.link, name1: @user.name1, name2: @user.name2, password: @user.password, password_confirmation: @user.password, sites: @user.sites, token: @user.token, userid: @user.userid + '2' } }
+    sites =  @user.sites.split(',').map {|name| [name, 1]}.to_h
+    patch user_url(@user), params: { user: { email: @user.email + '2', link: @user.link, name1: @user.name1, name2: @user.name2, password: @user.password, password_confirmation: @user.password, sites: sites, token: @user.token, userid: @user.userid + '2' } }
     assert_redirected_to users_url
   end
 

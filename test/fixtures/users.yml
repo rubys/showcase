@@ -8,7 +8,7 @@ one:
   name2: MyString
   token: MyString
   link: http://example.comf/MyString
-  sites: MyString
+  sites: Two
 
 two:
   userid: MyString2
@@ -18,4 +18,4 @@ two:
   name2: MyString
   token: MyString
   link: http://example.comf/MyString
-  sites: MyString
+  sites: Two

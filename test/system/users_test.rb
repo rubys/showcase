@@ -20,7 +20,7 @@ class UsersTest < ApplicationSystemTestCase
     fill_in "Name2", with: @user.name2
     fill_in "Password", with: @user.password
     fill_in "Password confirmation", with: @user.password
-    fill_in "Sites", with: @user.sites
+    check "Two"
     fill_in "Token", with: @user.token
     fill_in "Userid", with: @user.userid + '2'
     click_on "Create User"
@@ -39,7 +39,7 @@ class UsersTest < ApplicationSystemTestCase
     fill_in "Name2", with: @user.name2
     fill_in "Password", with: @user.password
     fill_in "Password confirmation", with: @user.password
-    fill_in "Sites", with: @user.sites
+    check "Two"
     fill_in "Token", with: @user.token
     fill_in "Userid", with: @user.userid 
     click_on "Update User"

@@ -14,16 +14,19 @@ class UsersController < ApplicationController
 
   # GET /users/new
   def new
-    @user = User.new
+    @user ||= User.new
+    load_studios
   end
 
   # GET /users/1/edit
   def edit
+    new
   end
 
   # POST /users or /users.json
   def create
     set_password
+    set_sites
     @user = User.new(user_params)
 
     respond_to do |format|
@@ -40,6 +43,7 @@ class UsersController < ApplicationController
   # PATCH/PUT /users/1 or /users/1.json
   def update
     set_password
+    set_sites
 
     respond_to do |format|
       if @user.update(user_params)
@@ -80,8 +84,33 @@ class UsersController < ApplicationController
       end
     end
 
+    def set_sites
+      params = self.params[:user]
+      return unless params[:sites]
+      params[:sites] = params[:sites].select {|name, value| value.to_i > 0}.keys.join(',')
+    end
+
     # Only allow a list of trusted parameters through.
     def user_params
       params.require(:user).permit(:userid, :password, :password_confirmation, :email, :name1, :name2, :token, :link, :sites)
+    end
+
+    def load_studios
+      if Rails.env.test?
+        @studios = Studio.pluck(:name)
+        return
+      end
+
+      @studios = YAML.load_file('config/tenant/showcases.yml').values.
+        map {|hash| hash.values}.flatten
+
+      Dir['db/20*.sqlite3'].each do |db|
+        json = `sqlite3 #{db} --json 'select name from studios'`
+        @studios += JSON.parse(json) unless json.empty?
+      end
+
+      @studios = @studios.map {|studio| studio['name'] || studio[:name]}.uniq.sort
+
+      @studios.unshift 'index'
     end
 end
