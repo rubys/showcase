@@ -80,13 +80,7 @@ class EventController < ApplicationController
   end
 
   def showcases
-    if request.headers['HTTP_AUTHORIZATION']
-      @user = Base64.decode64(request.headers['HTTP_AUTHORIZATION'].split(' ')[1]).split(':').first
-    else
-      @user = request.headers["HTTP_X_REMOTE_USER"]
-    end
-
-    auth = YAML.load_file('config/tenant/auth.yml')[@user]
+    auth = YAML.load_file('config/tenant/auth.yml')[@authuser]
     @showcases = YAML.load_file('config/tenant/showcases.yml')
     logos = Set.new
 
