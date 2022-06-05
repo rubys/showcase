@@ -15,4 +15,4 @@ class ApplicationController < ActionController::Base
         @authuser = request.headers["HTTP_X_REMOTE_USER"]
       end
     end
-endk
+end
