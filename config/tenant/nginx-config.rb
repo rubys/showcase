@@ -108,11 +108,11 @@ server {
   # <%= tenant.name %>
   location <%= ROOT %>/<%= tenant.scope %> {
     passenger_app_group_name showcase-<%= tenant.label %>;
+    passenger_env_var RAILS_APP_OWNER <%= tenant.owner %>;
     passenger_env_var RAILS_APP_DB <%= tenant.label %>;
 <% if tenant.label == 'index' -%>
     passenger_env_var RAILS_SERVE_STATIC_FILES true;
     passenger_base_uri /;
-    passenger_env_var RAILS_APP_OWNER <%= tenant.scope %>;
 <% else -%>
     passenger_env_var RAILS_APP_SCOPE <%= tenant.scope %>;
 <% if tenant.logo -%>
