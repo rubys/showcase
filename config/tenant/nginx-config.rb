@@ -25,6 +25,7 @@ restart = ARGV.include?('--restart')
 Dir.chdir @git_path
 
 index = OpenStruct.new(
+  owner: 'index',
   name:  "index",
   label: "index",
   scope: "",
@@ -36,6 +37,7 @@ showcases.each do |year, list|
     if info[:events]
       info[:events].each do |subtoken, subinfo|
         @tenants << OpenStruct.new(
+          owner: info[:name],
           name:  info[:name] + ' - ' + subinfo[:name] ,
           label: "#{year}-#{token}-#{subtoken}",
           scope: "#{year}/#{token}/#{subtoken}",
@@ -44,6 +46,7 @@ showcases.each do |year, list|
       end
     else
       @tenants << OpenStruct.new(
+        owner: info[:name],
         name:  info[:name],
         label: "#{year}-#{token}",
         scope: "#{year}/#{token}",
@@ -109,6 +112,7 @@ server {
 <% if tenant.label == 'index' -%>
     passenger_env_var RAILS_SERVE_STATIC_FILES true;
     passenger_base_uri /;
+    passenger_env_var RAILS_APP_OWNER <%= tenant.scope %>;
 <% else -%>
     passenger_env_var RAILS_APP_SCOPE <%= tenant.scope %>;
 <% if tenant.logo -%>
