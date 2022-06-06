@@ -11,7 +11,7 @@
   </div>
 
   <h1 class="text-center font-bold text-4xl mb-8"><%= @title || 'People' %></h1>
-  
+
   <table class="table-fixed mx-auto">
   <thead>
     <tr>
@@ -29,7 +29,9 @@
       <td class="row-head"><a href="?sort=age">Age
       <% end %>
       <td class="row-head"><a href="?sort=studio">Studio
+      <% if @people.any? {|person| @heats[person.id]} %>
       <td class="row-head"><a href="?sort=heats">Heats
+      <% end %>
       <% unless @solos.empty? %>
       <td class="row-head"><a href="?sort=solos">Solos
       <% end %>
@@ -60,7 +62,9 @@
       <td class="row text-center"><%= person.age&.description %></td>
       <% end %>
       <td class="row"><%= link_to person.studio&.name || '', person.studio %></td>
+      <% if @people.any? {|person| @heats[person.id]} %>
       <td class="row text-right"><%= @heats[person.id] %></td>
+      <% end %>
       <% unless @solos.empty? %>
       <td class="row text-right"><%= @solos[person.id] %></td>
       <% end %>

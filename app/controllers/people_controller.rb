@@ -40,6 +40,8 @@ class PeopleController < ApplicationController
       Formation.pluck(:person_id).map {|id| [['Solo', id], 1]}
 
     counts.each do |(category, id), count|
+      next unless @people.find {|person| person.id == id}
+      
       list = case category
         when "Solo"
           @solos
@@ -108,7 +110,7 @@ class PeopleController < ApplicationController
 
   # GET /people/professionals or /professionals.json
   def guests
-    @people = Person.includes(:studio).where(type: 'Guests').order(sort_order)
+    @people = Person.includes(:studio).where(type: 'Guest').order(sort_order)
     @title = 'Guests'
 
     index
