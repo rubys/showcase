@@ -34,3 +34,8 @@ instructor2:
   type: Professional
   back: 3
   role: Leader
+
+guest:
+  name: Guest
+  studio: one
+  type: Guest

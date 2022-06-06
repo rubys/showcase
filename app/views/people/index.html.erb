@@ -19,7 +19,7 @@
       <% unless @title == 'Students' %>
       <td class="row-head"><a href="?sort=type">Type
       <% end %>
-      <% if @people.any? {|person| not person.role.empty?} %>
+      <% if @people.any? {|person| not person.role.blank?} %>
       <td class="row-head"><a href="?sort=role">Role
       <% end %>
       <% if @people.any? {|person| person.level_id} %>
@@ -50,7 +50,7 @@
       <% unless @title == 'Students' %>
       <td class="row"><%= person.type %></td>
       <% end %>
-      <% if @people.any? {|person| not person.role.empty?} %>
+      <% if @people.any? {|person| not person.role.blank?} %>
       <td class="row"><%= person.role %></td>
       <% end %>
       <% if @people.any? {|person| person.level_id} %>
