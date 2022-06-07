@@ -49,13 +49,16 @@ class PeopleTest < ApplicationSystemTestCase
     visit  settings_event_index_url
     click_on "Add person"
 
-    fill_in "Name", with: 'Wopner, Joseph'
     select 'Judge', from: 'Type'
 
     assert_no_selector "#person_level_id"
     assert_no_selector "#person_age_id"
     assert_no_selector "#person_role"
     assert_no_selector "#person_back"
+
+    # intermittent timing problem if this is set earlier
+    fill_in "Name", with: 'Wopner, Joseph'
+
     click_on "Create Person"
 
     assert_text "Joseph Wopner was successfully added"
