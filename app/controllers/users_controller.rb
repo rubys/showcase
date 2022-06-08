@@ -32,6 +32,8 @@ class UsersController < ApplicationController
 
     respond_to do |format|
       if @user.save
+        update_htpasswd
+
         format.html { redirect_to users_url, notice: "#{@user.userid} was successfully created." }
         format.json { render :show, status: :created, location: @user }
       else
@@ -48,6 +50,8 @@ class UsersController < ApplicationController
 
     respond_to do |format|
       if @user.update(user_params)
+        update_htpasswd
+
         format.html { redirect_to users_url, notice: "#{@user.userid} was successfully updated." }
         format.json { render :show, status: :ok, location: @user }
       else
@@ -60,11 +64,46 @@ class UsersController < ApplicationController
   # DELETE /users/1 or /users/1.json
   def destroy
     @user.destroy
+    update_htpasswd
 
     respond_to do |format|
       format.html { redirect_to users_url, status: 303,
         notice: "#{@user.userid} was successfully removed." }
       format.json { head :no_content }
+    end
+  end
+
+  def password_reset
+    if request.get?
+      @users = User.order(:userid).pluck(:userid, :id).to_h
+      @authuser = @users['rubys']
+      render :reset
+    else
+      user = @user = User.find(params[:id])
+      @user.token = Random.alphanumeric(8)
+      @user.save!
+
+      # hack for now
+      Mail.defaults do
+        delivery_method :smtp, address: 'mail.twc.com'
+      end
+
+      mail = Mail.new do
+        from 'Sam Ruby <rubys@intertwingly.net>'
+        to "#{user.name1.inspect} <#{user.email}>"
+        subject "Showcase password reset for #{user.userid}"  
+      end
+
+      mail.attachments.inline[EventController.logo] = IO.read "public/#{EventController.logo}"
+      mail.attachments.first.header['X-Attachment-Id'] =  mail.attachments.first.cid
+      mail.attachments.first.header['Content-Type'] =
+        mail.attachments.first.header['Content-Type'].to_s.sub('filename=', 'name=')
+      @logo = mail.attachments.first.url
+      mail.html_part = render_to_string(:reset_email, formats: %i(html), layout: false)
+  
+      mail.deliver!
+
+      redirect_to root_path, notice: "Password reset email sent."
     end
   end
 
@@ -125,5 +164,12 @@ class UsersController < ApplicationController
       @studios = @studios.map {|studio| studio['name'] || studio[:name]}.uniq.sort
 
       @studios.unshift 'index'
+    end
+
+    def update_htpasswd
+      return # if Rails.env.test?
+      contents = User.order(:password).pluck(:password).join("\n")
+      return if contents == (IO.read 'db/htpasswd' rescue '')
+      IO.write 'db/htpasswd', contents
     end
 end

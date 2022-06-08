@@ -15,6 +15,9 @@ Rails.application.routes.draw do
 
       get "/:year", to: 'event#showcases', year: /\d+/
       get "/:year", to: 'event#showcases', year: /\d+/
+
+      match "/password/reset", to: 'users#password_reset', via: %i(get post)
+      match "/password/verify", to: 'users#password_verify', via: %i(get post)
     else
       root 'event#root'
     end
