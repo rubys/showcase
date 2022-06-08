@@ -94,12 +94,13 @@ class UsersController < ApplicationController
         subject "Showcase password reset for #{user.userid}"  
       end
 
-      mail.attachments.inline[EventController.logo] = IO.read "public/#{EventController.logo}"
-      mail.attachments.first.header['X-Attachment-Id'] =  mail.attachments.first.cid
-      mail.attachments.first.header['Content-Type'] =
-        mail.attachments.first.header['Content-Type'].to_s.sub('filename=', 'name=')
-      @logo = mail.attachments.first.url
-      mail.html_part = render_to_string(:reset_email, formats: %i(html), layout: false)
+      mail.part do |part|
+        part.content_type = 'multipart/related'
+        part.attachments.inline[EventController.logo] =
+          IO.read "public/#{EventController.logo}"
+        @logo = part.attachments.first.url
+        part.html_part = render_to_string(:reset_email, formats: %i(html), layout: false)
+      end
   
       mail.deliver!
 
