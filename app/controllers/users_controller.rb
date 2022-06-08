@@ -1,6 +1,7 @@
 require 'open3'
 
 class UsersController < ApplicationController
+  include ActionView::RecordIdentifier
   before_action :authenticate_index
   before_action :set_user, only: %i[ show edit update destroy ]
 
@@ -16,6 +17,7 @@ class UsersController < ApplicationController
   # GET /users/new
   def new
     @user ||= User.new
+    @admin = @@encryptor.encrypt_and_sign(dom_id(@user))
     load_studios
   end
 
@@ -49,11 +51,23 @@ class UsersController < ApplicationController
     set_sites
 
     respond_to do |format|
+      link = @user.link
+
       if @user.update(user_params)
         update_htpasswd
 
-        format.html { redirect_to users_url, notice: "#{@user.userid} was successfully updated." }
-        format.json { render :show, status: :ok, location: @user }
+        if not @user.token.blank?
+          @user.link = ""
+          @user.token = ""
+          @user.save!
+
+          format.html { redirect_to link || root_path, 
+            notice: "#{@user.userid} was successfully updated.",
+            status: 303, allow_other_host: true }
+        else
+          format.html { redirect_to users_url, notice: "#{@user.userid} was successfully updated." }
+          format.json { render :show, status: :ok, location: @user }
+        end
       else
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @user.errors, status: :unprocessable_entity }
@@ -76,11 +90,13 @@ class UsersController < ApplicationController
   def password_reset
     if request.get?
       @users = User.order(:userid).pluck(:userid, :id).to_h
-      @authuser = @users['rubys']
-      render :reset
+      @user = User.where(name: @authuser).first.id if @authuser
+      @user = User.find(params[:user]).id if @user = params[:user]
+      render :request_reset
     else
       user = @user = User.find(params[:id])
       @user.token = Random.alphanumeric(8)
+      @user.link = params[:link]
       @user.save!
 
       # hack for now
@@ -106,6 +122,11 @@ class UsersController < ApplicationController
 
       redirect_to root_path, notice: "Password reset email sent."
     end
+  end
+
+  def password_verify
+    @user = User.where(token: params[:token]).first
+    render :reset
   end
 
   private
@@ -145,7 +166,11 @@ class UsersController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def user_params
-      params.require(:user).permit(:userid, :password, :password_confirmation, :email, :name1, :name2, :token, :link, :sites)
+      if (@@encryptor.decrypt_and_verify(params[:admin].to_s) == dom_id(@user) rescue false)
+        params.require(:user).permit(:userid, :password, :password_confirmation, :email, :name1, :name2, :token, :link, :sites)
+      else
+        params.require(:user).permit(:userid, :password, :password_confirmation, :email, :name1, :name2)
+      end
     end
 
     def load_studios
@@ -173,4 +198,6 @@ class UsersController < ApplicationController
       return if contents == (IO.read 'db/htpasswd' rescue '')
       IO.write 'db/htpasswd', contents
     end
+
+    @@encryptor = ActiveSupport::MessageEncryptor.new(IO.read 'config/master.key')
 end
