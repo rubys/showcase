@@ -25,9 +25,9 @@ class User < ApplicationRecord
         map {|userid, sites| [userid, sites.to_s.split(',')]}
 
       event = ENV['RAILS_APP_OWNER'];
-      @@auth_event = @@auth_sites.select do |userid, sites|
+      @@auth_event = @@auth_studio.select do |userid, sites|
         sites.include? event or sites.include? 'index'
-      end.keys
+      end.to_h.keys
     end
 
     self.load_auth
