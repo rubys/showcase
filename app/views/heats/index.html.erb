@@ -114,8 +114,12 @@ a scheduled heat time will be added to each heat.
         <th>
       </thead>
       <tbody id="heat-<%= number %>">
-      <% if number and number > 0 %>
+      <% if number and number != 0 %>
+      <% if heats.all? {|heat| heat.number < 0} %>
+      <tr class="line-through opacity-50">
+      <% else %>
       <tr>
+      <% end %>
         <td></td>
         <td colspan="9" class="text-xl pt-4">Heat <%= number %>: 
           <%= heats.first.category %> <%= heats.first.dance.name %>
@@ -128,6 +132,7 @@ a scheduled heat time will be added to each heat.
         </td>
       </tr>
 
+      <% last_back = 100 %>
       <% if @ballrooms == 1 %>
       <% last_back = 200 %>
       <% else %>
@@ -138,7 +143,6 @@ a scheduled heat time will be added to each heat.
         <td colspan="8" class="text-xs pt-2">Ballroom A</td>
       </tr>
       <% end %>
-      <% last_back = 100 %>
       <% end %>
       <% end %>
 
@@ -151,7 +155,11 @@ a scheduled heat time will be added to each heat.
          </tr>
          <% end %>
          <% last_back = heat.back if heat.back && @ballrooms == 2 %>
+         <% if heat.number < 0 %>
+         <tr id="<%= dom_id heat %>" class="line-through opacity-50">
+         <% else %>
          <tr id="<%= dom_id heat %>">
+         <% end %>
            <td></td>
            <% if number != 0 %>
            <td class="row">

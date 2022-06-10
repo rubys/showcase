@@ -91,7 +91,11 @@ tbody::after {
         <th>
         <th>
       </thead>
+      <% if heats.all? {|heat| heat.number < 0} %>
+      <tbody class="line-through opacity-50" id="heat-<%= number %>">
+      <% else %>
       <tbody id="heat-<%= number %>">
+      <% end %>
       <% if number and number > 0 %>
       <tr>
         <td></td>
@@ -134,7 +138,11 @@ tbody::after {
          </tr>
          <% end %>
          <% last_back = heat.back if heat.back %>
+         <% if heat.number < 0 %>
+         <tr class="font-base line-through opacity-50" id="<%= dom_id heat %>">
+         <% else %>
          <tr class="font-base" id="<%= dom_id heat %>">
+         <% end %>
            <% if @type == 'judge' %>
            <td>
              <div class="w-24 pt-4 border-b-2 border-black">&nbsp;</div>

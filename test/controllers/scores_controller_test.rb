@@ -36,14 +36,9 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
   test "agenda traversal" do
     judge = people(:Judy)
 
-    get judge_heat_url(judge: judge, heat: 0)
-    assert_response :success
-    assert_select 'a[rel=prev]', false
-    assert_select 'a[rel=next][href=?]', judge_heat_path(judge: judge, heat: 1)
-
     get judge_heat_url(judge: judge, heat: 1)
     assert_response :success
-    assert_select 'a[rel=prev][href=?]', judge_heat_path(judge: judge, heat: 0)
+    assert_select 'a[rel=prev]', false
     assert_select 'a[rel=next][href=?]', judge_heat_path(judge: judge, heat: 2)
 
     get judge_heat_url(judge: judge, heat: 3)

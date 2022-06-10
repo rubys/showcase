@@ -14,7 +14,7 @@ class ScoresController < ApplicationController
   def heatlist
     @judge = Person.find(params[:judge].to_i)
 
-    @heats = Heat.all.order(:number).group(:number).includes(:dance)
+    @heats = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance)
 
     @agenda = @heats.group_by(&:dance_category).map do |category, heats|
       [heats.map {|heat| heat.number}.min, category.name]
@@ -72,7 +72,7 @@ class ScoresController < ApplicationController
     if @heat.dance.heat_length and (@slot||0) > 1
       @prev = judge_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||2)-1)
     else
-      @prev = Heat.where(number: ...@number).order(:number).last
+      @prev = Heat.where(number: 1...@number).order(:number).last
       if @prev
         if @prev.dance.heat_length
           @prev = judge_heat_slot_path(judge: @judge, heat: @prev.number, slot: @prev.dance.heat_length)

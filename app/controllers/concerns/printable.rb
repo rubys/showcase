@@ -1,12 +1,12 @@
 module Printable
   def generate_agenda
-    @heats = Heat.order(:number).includes(
+    @heats = Heat.order('abs(number)').includes(
       dance: [:open_category, :closed_category, :solo_category, :multi_category], 
       entry: [:age, :level, lead: [:studio], follow: [:studio]],
       solo: [:formations]
     )
 
-    @heats = @heats.to_a.group_by {|heat| heat.number}.
+    @heats = @heats.to_a.group_by {|heat| heat.number.abs}.
       map do |number, heats|
         [number, heats.sort_by { |heat| heat.back || 0 } ]
       end
@@ -72,7 +72,7 @@ module Printable
 
             if heats.first.dance.heat_length
               start += heat_length * heats.first.dance.heat_length
-            else
+            elsif heats.any? {|heat| heat.number > 0}
               start += heat_length
             end
           end
