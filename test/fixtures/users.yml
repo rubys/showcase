@@ -6,7 +6,6 @@ one:
   email: MyString1@example.com
   name1: MyString
   name2: MyString
-  token: MyString
   link: http://example.comf/MyString
   sites: Two
 
