@@ -36,7 +36,7 @@ class Person < ApplicationRecord
 
   def back_name
     names = name.split(/,\s*/)
-    "#{names.last[0..5]}#{names.first[0]}"
+    "#{names.last.gsub(' ', '')[0..5]}#{names.first[0]}"
   end
 
   def join(person)

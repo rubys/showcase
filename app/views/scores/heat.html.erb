@@ -62,9 +62,11 @@ Swiping left and right on mobile devices and tablets also work.
           <% if @backnums %>
           <span class="font-bold text-xl my-auto"><%= subject.entry.lead.back %></span>
           <% elsif subject.entry.follow.type == 'Professional' %>
-          <span class="text-l my-auto"><%= subject.entry.follow.back_name %></span>
+          <span class="text-l my-auto"><%= subject.entry.lead.back_name %>
+          <%= subject.entry.follow.back_name %></span>
           <% else %>
-          <span class="text-l my-auto"><%= subject.entry.lead.back_name %></span>
+          <span class="text-l my-auto"><%= subject.entry.follow.back_name %>
+          <%= subject.entry.lead.back_name %></span>
           <% end %>
           <div class="hidden text-sm sm:block base-<%=lvl%>"><br>
           <%= subject.entry.subject_category %><br>
