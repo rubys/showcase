@@ -57,7 +57,7 @@ class EventController < ApplicationController
   def update
     @event = Event.last
     ok = @event.update params.require(:event).permit(:name, :location, :date, :heat_range_cat, :heat_range_level, :heat_range_age,
-      :intermix, :ballrooms, :heat_length, :heat_cost, :solo_cost, :multi_cost, :max_heat_size, :package_required)
+      :intermix, :ballrooms, :backnums, :heat_length, :heat_cost, :solo_cost, :multi_cost, :max_heat_size, :package_required)
     anchor = nil
 
     if ok

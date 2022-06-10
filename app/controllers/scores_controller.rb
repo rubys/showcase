@@ -84,6 +84,7 @@ class ScoresController < ApplicationController
 
     @layout = 'mx-0 px-5'
     @nologo = true
+    @backnums = Event.first.backnums
   end
 
   def post

@@ -30,6 +30,15 @@ class Person < ApplicationRecord
     name.split(/,\s*/).last
   end
 
+  def last_name
+    name.split(/,\s*/).first
+  end
+
+  def back_name
+    names = name.split(/,\s*/)
+    "#{names.last[0..5]}#{names.first[0]}"
+  end
+
   def join(person)
     if name.split(',').first == person.name.split(',').first
       "#{first_name} and #{person.display_name}"

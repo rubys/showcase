@@ -74,6 +74,11 @@
   </ul>
   </div>
 
+  <div class="my-5">
+    <%= form.label :backnums, 'Leaders assigned back numbers:' %>
+    <%= form.check_box :backnums, class: 'entry-count h-10' %>
+  </div>
+
   <div class="inline">
     <%= form.submit value: 'Save', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
   </div>
