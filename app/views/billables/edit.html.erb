@@ -3,7 +3,12 @@
 
   <%= render "form", billable: @billable %>
 
-  <%= link_to "Remove this #{@type}", billable_path(@billable), class: 'btn-grey',
+  <% if @type == 'package' %>
+  <%= link_to "Select people", people_billable_path(@billable), class: 'btn-green' %>
+  <div style="clear:both"></div>
+  <% end %>
+
+  <%= link_to "Remove #{@type}", billable_path(@billable), class: 'btn-grey',
     data: { turbo_method: :delete, turbo_confirm: 'Are you sure?' } %>
   <%= link_to "Back to settings", settings_event_index_path(anchor: 'prices'),
     class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>

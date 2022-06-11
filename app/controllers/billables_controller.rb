@@ -1,5 +1,5 @@
 class BillablesController < ApplicationController
-  before_action :set_billable, only: %i[ show edit update destroy ]
+  before_action :set_billable, only: %i[ show edit update destroy people ]
 
   # GET /billables or /billables.json
   def index
@@ -111,6 +111,45 @@ class BillablesController < ApplicationController
         render_to_string(partial: 'group', layout: false, locals: { group: group, id: id })
       )}
       format.html { redirect_tobillables_url }
+    end
+  end
+
+  def people
+    if request.get?
+      @people = Person.includes(:studio).where(type: @billable.type).order('studios.name', :name)
+    else
+      operation = nil
+      count = 0
+
+      Person.transaction do
+        params['person'].each do |id, value|
+          person = Person.find(id)
+          if value == '1' and person.package != @billable
+            person.update(package: @billable)
+            count += 1
+            if person.package == nil and [nil, 'added to'].include? operation
+              operation = 'added to'
+            else
+              operation = 'changed in'
+            end
+          elsif value == '0' and person.package == @billable
+            person.update(package: nil)
+            count += 1
+            if not operation or operation == 'removed from'
+              operation = 'removed from'
+            else
+              operation = 'changed in'
+            end
+          end
+        end
+      end
+
+      if operation
+        redirect_to settings_event_index_path(anchor: 'prices'),
+          notice: "#{helpers.pluralize(count, @billable.type.downcase)} #{operation} #{@billable.name} package"
+      else
+        redirect_to settings_event_index_path(anchor: 'prices')
+      end
     end
   end
 

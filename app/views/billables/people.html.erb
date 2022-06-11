@@ -1,0 +1,36 @@
+<div class="mx-auto md:w-2/3 w-full">
+  <h1 class="font-bold text-4xl"><%= @billable.name %></h1>
+
+<div data-controller="info-box">
+<div class="info-button">&#x24D8;</div>
+<ul class="info-box">
+<li>
+</ul>
+</div>
+
+<%= form_with(class: "contents", data: {turbo: false}) do |form| %>
+
+<table class="table-auto my-4">
+<% @people.each do |person| %>
+  <% if not person.active? %>
+  <tr class="bg-slate-200" title="no entries defined">
+  <% elsif not person.package_id %>
+  <tr class="bg-yellow-100" title="no package selected">
+  <% else %>
+  <tr>
+  <% end %>
+    <td><%= form.check_box "person[#{person.id}]", class: "entry-count h-10", checked: @billable.people.include?(person) %>
+    <td class="px-4"><%= person.name %>
+    <td><%= person.studio.name %>
+  </tr>
+<% end %>
+</table>
+
+  <div class="inline">
+    <%= form.submit class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  </div>
+<% end %>
+
+  <%= link_to "Back to settings", settings_event_index_path(anchor: 'categories'), class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+</div>
+
