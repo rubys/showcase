@@ -77,7 +77,7 @@ class EntriesController < ApplicationController
     if not replace
       @entry.lead = lead
       @entry.follow = follow
-      @entry.age_id = entry[:age]
+      @entry.age_id = entry[:age] if entry[:age]
       @entry.level_id = entry[:level]
     elsif replace != @entry
       @entry.reload

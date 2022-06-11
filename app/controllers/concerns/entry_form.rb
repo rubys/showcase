@@ -71,7 +71,7 @@ module EntryForm
     Entry.find_or_initialize_by(
       lead: lead,
       follow: follow,
-      age_id: params[:age],
+      age_id: params[:age] || Age.order(:order).pluck(:id).first,
       level_id: params[:level],
       instructor_id: instructor
     )
