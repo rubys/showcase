@@ -26,8 +26,10 @@
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'instructor' %>
   <% end %>
 
+  <% unless @track_ages == false %>
   <%= form.select :age, @ages, {selected: @age},
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %>
+  <% end %>
 
   <%= form.select :level, @levels, {selected: @level},
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>

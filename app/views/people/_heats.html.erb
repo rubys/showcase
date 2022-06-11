@@ -41,7 +41,7 @@
       <td><div class="mx-4"><%= link_to heat.entry.follow.display_name, heat.entry.follow %></div>
       <% end %>
       <td><%= heat.entry.level.name %>
-      <td class="text-center"><%= heat.entry.subject_category %>
+      <td class="text-center"><%= heat.entry.subject_category(@track_heats) %>
     </tr>
   <% end %>
   <% end %>

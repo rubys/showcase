@@ -17,13 +17,13 @@ class ScoresController < ApplicationController
     @heats = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance)
 
     @agenda = @heats.group_by(&:dance_category).map do |category, heats|
-      [heats.map {|heat| heat.number}.min, category.name]
+      [heats.map {|heat| heat.number}.min, category&.name]
     end.to_h
 
     @scored = Score.includes(:heat).where(judge: @judge).group_by {|score| score.heat.number}.keys
   end
 
-  # GET /scores or /scores.json
+  # GET /scores/:judge/heat/:heat
   def heat
     @judge = Person.find(params[:judge].to_i)
     @number = params[:heat].to_i
@@ -84,7 +84,10 @@ class ScoresController < ApplicationController
 
     @layout = 'mx-0 px-5'
     @nologo = true
-    @backnums = Event.first.backnums
+
+    event = Event.first
+    @backnums = event.backnums
+    @track_ages = event.track_ages
   end
 
   def post

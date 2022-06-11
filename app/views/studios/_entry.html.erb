@@ -30,7 +30,7 @@
       <td><div class="mx-4"><%= heat.category %>
       <td><div class="mx-4"><%= heat.dance.name %></div>
       <td><%= heat.entry.level.name %>
-      <td class="text-center"><%= heat.entry.subject_category %>
+      <td class="text-center"><%= heat.entry.subject_category(@track_ages) %>
       <td class="text-right"><%= number_to_currency @cost[heat.category]/split, precision: 2, unit: '' %>
     </tr>
     <% total += @cost[heat.category]/split %>

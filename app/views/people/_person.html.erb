@@ -21,6 +21,7 @@
         <td class="row-main"><%= person.level&.name %></td>
       </tr>
 
+      <% if @track_ages %>
       <tr>
         <td class="row">Category</td>
         <td class="row-main">
@@ -28,6 +29,7 @@
           (<%= person.age&.description %>)
         </td>
       </tr>
+      <% end %>
       <% end %>
 
       <% if %w(Student Professional).include? person.type %>

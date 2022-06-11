@@ -93,6 +93,7 @@ module Printable
     studios ||= Studio.all(order: name)
 
     @event = Event.last
+    @track_ages = @event.track_ages
 
     @invoices = {}
 

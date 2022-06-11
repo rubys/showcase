@@ -69,7 +69,7 @@ Swiping left and right on mobile devices and tablets also work.
           <%= subject.entry.lead.back_name %></span>
           <% end %>
           <div class="hidden text-sm sm:block base-<%=lvl%>"><br>
-          <%= subject.entry.subject_category %><br>
+          <%= subject.entry.subject_category(@track_ages) %><br>
           <%= lvl %></div>
         </div>  
     <% end %>

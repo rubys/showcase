@@ -176,10 +176,10 @@ tbody::after {
            <% end %>
            <% end %>
            <% if @type == 'judge' %>
-           <td class="pl-4 text-center"><%= heat.entry.subject_lvlcat %>
+           <td class="pl-4 text-center"><%= heat.entry.subject_lvlcat(@track_ages) %>
            <% else %>
            <td class="pl-4"><%= heat.entry.level.name %>
-           <td class="pl-4 text-center"><%= heat.entry.subject_category %>
+           <td class="pl-4 text-center"><%= heat.entry.subject_category(@track_ages) %>
            <% end %>
            <td class="pl-4"><%= link_to heat.studio.name, heat.studio %>
          </tr>

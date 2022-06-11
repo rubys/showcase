@@ -47,6 +47,8 @@ module EntryForm
     @entries = {'Closed' => {}, 'Open' => {}, 'Multi' => {}}
 
     @columns = Dance.maximum(:col) || 4
+
+    @track_ages = Event.first.track_ages
   end
 
   def find_or_create_entry(params)

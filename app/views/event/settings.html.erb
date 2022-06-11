@@ -79,6 +79,11 @@
     <%= form.check_box :backnums, class: 'entry-count h-10' %>
   </div>
 
+  <div class="my-5">
+    <%= form.label :backnums, 'Track student ages:' %>
+    <%= form.check_box :track_ages, class: 'entry-count h-10' %>
+  </div>
+
   <div class="inline">
     <%= form.submit value: 'Save', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
   </div>
@@ -115,15 +120,20 @@ on the floor at the same time.
 <p class="mb-2">
 With the sliders all the way to the left, Open and Closed heats are never
 on the floor at the same time, Full Bronze students can only be on the floor
-with other Full Bronze students.  And people in age category B1 can only
+with other Full Bronze students.
+<% if @event.track_ages %>
+And people in age category B1 can only
 be on the floor with others in the same age category.
+<% end %>
 </p>
 
 <p class="mb-2">
 With the sliders all the way to the right, Open and Closed heats can be 
 on the floor at the same time, Newcomers can be on the dance floor at the
-same time as Full Gold students.  And people in any age category can be
-on the floor at the same time.
+same time as Full Gold students.
+<% if @event.track_ages %>
+And people in any age category can be on the floor at the same time.
+<% end %>
 </p>
 
 <%= form_with model: @event, local: true, data: {turbo: false} do |form| %>
@@ -143,10 +153,14 @@ on the floor at the same time.
     <%= form.range_field :heat_range_level, min: 0, max: @levels-1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <% if @track_ages %>
   <div class="my-5">
     <%= form.label :heat_range_age, 'age' %>
     <%= form.range_field :heat_range_age, min: 0, max: @ages-1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+  <% else %>
+    <%= form.hidden_field :heat_range_age, value: @ages-1 %>
+  <% end %>
 
   <div class="my-5">
     <%= form.label :intermix, 'Intermix dances within category:' %>

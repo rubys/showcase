@@ -17,27 +17,43 @@ class Entry < ApplicationRecord
     end   
   end
 
-  def subject_category
-    if follow.type == 'Professional' or not follow.age_id
-      "G - #{age.category}"
-    elsif lead.type == 'Professional' or not lead.age_id
-      "L - #{age.category}"
-    elsif lead.age_id > follow.age_id
-      "AC - #{age.category}"
+  def subject_category(show_ages = true)
+    if show_ages
+      if follow.type == 'Professional' or not follow.age_id
+        "G - #{age.category}"
+      elsif lead.type == 'Professional' or not lead.age_id
+        "L - #{age.category}"
+      else
+        "AC - #{age.category}"
+      end
     else
-      "AC - #{age.category}"
+      if follow.type == 'Professional' or not follow.age_id
+        "G"
+      elsif lead.type == 'Professional' or not lead.age_id
+        "L"
+      else
+        "AC"
+      end
     end
   end
 
-  def subject_lvlcat
-    if follow.type == 'Professional' or not follow.age_id
-      "G - #{level.initials} - #{age.category}"
-    elsif lead.type == 'Professional' or not lead.age_id
-      "L - #{level.initials} - #{age.category}"
-    elsif lead.age_id > follow.age_id
-      "AC - #{level.initials} - #{age.category}"
+  def subject_lvlcat(show_ages = true)
+    if show_ages
+      if follow.type == 'Professional' or not follow.age_id
+        "G - #{level.initials} - #{age.category}"
+      elsif lead.type == 'Professional' or not lead.age_id
+        "L - #{level.initials} - #{age.category}"
+      else
+        "AC - #{level.initials} - #{age.category}"
+      end
     else
-      "AC - #{level.initials} - #{age.category}"
+      if follow.type == 'Professional' or not follow.age_id
+        "G - #{level.initials}"
+      elsif lead.type == 'Professional' or not lead.age_id
+        "L - #{level.initials}"
+      else
+        "AC - #{level.initials}"
+      end
     end
   end
 

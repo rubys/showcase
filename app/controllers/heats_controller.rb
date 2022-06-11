@@ -15,7 +15,9 @@ class HeatsController < ApplicationController
       map {|size, entries| [size, entries.map(&:first)]}.
       sort
 
-    @ballrooms = Event.last.ballrooms
+    event = Event.last
+    @ballrooms = event.ballrooms
+    @track_ages = event.track_ages
   end
 
   def mobile

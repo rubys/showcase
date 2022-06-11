@@ -5,7 +5,9 @@ class PeopleController < ApplicationController
     %i[ show edit update destroy get_entries post_entries ]
 
   def heats
-    @ballrooms = Event.last.ballrooms
+    event = Event.last
+    @ballrooms = event.ballrooms
+    @track_ages = event.track_ages
     heat_sheets
   end
 
@@ -61,6 +63,8 @@ class PeopleController < ApplicationController
     elsif params[:sort] == 'multis'
       @people = @people.to_a.sort_by! {|person| @multis[person.id] || 0}
     end
+
+    @track_ages = Event.first.track_ages
 
     render :index
   end
@@ -173,6 +177,8 @@ class PeopleController < ApplicationController
     if @person.type == 'Judge'
       @multi = Dance.where.not(multi_category: nil).count
     end
+
+    @track_ages = Event.first.track_ages
   end
 
   # GET /people/new
@@ -442,6 +448,8 @@ class PeopleController < ApplicationController
       end
 
       @person_options = @person.options.map(&:option)
+
+      @track_ages = @event.track_ages
     end
 
     def sort_order

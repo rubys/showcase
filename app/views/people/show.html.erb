@@ -50,7 +50,9 @@ when most dances for an individual are with one instructor but one or two are ch
         <th>instructor
         <% end %>
         <th>level
+        <% if @track_ages %>
         <th>age
+        <% end %>
       </thead>
 
       <tbody>
@@ -66,7 +68,9 @@ when most dances for an individual are with one instructor but one or two are ch
               <td class="row"><%= link_to_if entry.instructor_id, entry.instructor&.display_name, entry.instructor %>
               <% end %>
               <td class="row"><%= entry.level.name %>
+              <% if @track_ages %>
               <td class="row"><%= entry.age.category %>
+              <% end %>
               <td>
               <form method="get" action="<%= edit_entry_path(entry) %>">
               <input type="hidden" name="primary" value="<%= @person.id %>">
@@ -102,7 +106,9 @@ when most dances for an individual are with one instructor but one or two are ch
       <th>instructor
       <% end %>
       <th>level
+      <% if @track_ages %>
       <th>age
+      <% end %>
     </thead>
 
     <tbody>
@@ -130,7 +136,9 @@ when most dances for an individual are with one instructor but one or two are ch
             <% end %>
 
             <td class="row"><%= entry.level.name %>
+            <% if @track_ages %>
             <td class="row"><%= entry.age.category %>
+            <% end %>
             <td>
             <form method="get" action="<%= heat.solo.formations.empty? ? edit_solo_path(heat.solo) : edit_formation_path(heat.solo) %>">
             <input type="hidden" name="primary" value="<%= @person.id %>">
@@ -221,7 +229,7 @@ when most dances for an individual are with one instructor but one or two are ch
           <% end %>
           <% end %>
           <td class="row"><%= heat.entry.level.name %>
-          <td class="row text-center"><%= heat.entry.subject_category %>
+          <td class="row text-center"><%= heat.entry.subject_category(@track_ages) %>
           <td>
           <% if heat.category == 'Solo' %>
           <form method="get" action="<%= heat.solo.formations.empty? ? edit_solo_path(heat.solo) : edit_formation_path(heat.solo) %>">
