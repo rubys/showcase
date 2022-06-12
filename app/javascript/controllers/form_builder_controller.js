@@ -52,8 +52,11 @@ export default class extends Controller {
       }
     }
 
+    rows++;
+
     for (let i=this.dances.childElementCount; i < columns * rows; i++) {
       let div = document.createElement('div');
+      div.textContent = '\xA0';
       div.addEventListener('drop', this.drop);
 
       div.addEventListener('dragover', event => {
@@ -97,6 +100,8 @@ export default class extends Controller {
       [target.style.gridColumn, source.style.gridColumn];
 
     document.getElementById('notice').textContent = '';
+
+    this.reflow();
 
     event.preventDefault();
   }
