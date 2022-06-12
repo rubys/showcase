@@ -59,7 +59,7 @@ Swiping left and right on mobile devices and tablets also work.
       <% @results[score]&.each do |subject| %>
         <% lvl = subject.entry.level.initials %>
         <div class='grid align-middle w-20 my-[1%] min-h-[12%] sm:min-h-[24%] mx-1 border-2 rounded-lg text-center head-<%=lvl%>' draggable="true" data-heat="<%= subject.id %>" id="<%= dom_id subject %>">
-          <% if @backnums %>
+          <% if @backnums and not subject.entry.lead.back.blank? %>
           <span class="font-bold text-xl my-auto"><%= subject.entry.lead.back %></span>
           <% elsif subject.entry.follow.type == 'Professional' %>
           <span class="text-l my-auto"><%= subject.entry.lead.back_name %>
