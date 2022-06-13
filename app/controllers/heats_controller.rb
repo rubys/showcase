@@ -18,6 +18,7 @@ class HeatsController < ApplicationController
     event = Event.last
     @ballrooms = event.ballrooms
     @track_ages = event.track_ages
+    @column_order = event.column_order
   end
 
   def mobile

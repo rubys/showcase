@@ -159,7 +159,14 @@ tbody::after {
            <% end %>
            <% end %>
            <td class="pl-4"><%= heat.back %>
-           <td class="pl-4"><%= link_to heat.lead.display_name, polymorphic_path(heat.lead, anchor: 'heats') %>
+           <%
+             if @column_order == 1 or heat.follow.type == 'Professional'
+               p1, p2 = heat.lead, heat.follow
+             else
+               p1, p2 = heat.follow, heat.lead
+             end
+           %>
+           <td class="pl-4"><%= link_to p1.display_name, polymorphic_path(p1, anchor: 'heats') %>
            <% if heat.category == 'Solo' %>
            <% heat.solo.formations.each_with_index do |formation, index| %>
              <% if index % 2 == 0 %>
@@ -167,7 +174,7 @@ tbody::after {
              <% end %>
            <% end %>
            <% end %>
-           <td class="pl-4"><%= link_to heat.follow.display_name, polymorphic_path(heat.follow, anchor: 'heats') %>
+           <td class="pl-4"><%= link_to p2.display_name, polymorphic_path(p2, anchor: 'heats') %>
            <% if heat.category == 'Solo' %>
            <% heat.solo.formations.each_with_index do |formation, index| %>
              <% if index % 2 == 1 %>

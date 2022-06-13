@@ -94,6 +94,7 @@ module Printable
 
     @event = Event.last
     @track_ages = @event.track_ages
+    @column_order = @event.column_order
 
     @invoices = {}
 

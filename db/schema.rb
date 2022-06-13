@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_06_11_163304) do
+ActiveRecord::Schema[7.0].define(version: 2022_06_13_132933) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -127,7 +127,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_11_163304) do
     t.integer "max_heat_size"
     t.boolean "package_required", default: true
     t.boolean "backnums", default: true
-    t.boolean "track_ages"
+    t.boolean "track_ages", default: true
+    t.integer "column_order", default: 1
   end
 
   create_table "formations", force: :cascade do |t|

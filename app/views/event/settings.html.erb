@@ -63,8 +63,17 @@
   </div>
 
   <div class="my-5">
+  <%= form.label :column_order, 'Heat list column order' %>
+  <ul class="ml-6">
+  <li class="my-2"><%= form.radio_button :column_order, 1 %> Lead, Follow
+  <li classs="my-2"><%= form.radio_button :column_order, 2 %> Student, Instructor
+  (Lead, Follow for Amateur Couples)
+  </ul>
+  </div>
+
+  <div class="my-5">
   <%= form.label :ballrooms %>
-  <ul>
+  <ul class="ml-6">
   <li class="my-2"><%= form.radio_button :ballrooms, 1 %> One ballroom
   <li classs="my-2"><%= form.radio_button :ballrooms, 2 %> Two ballrooms:
   <ul class="ml-8">
