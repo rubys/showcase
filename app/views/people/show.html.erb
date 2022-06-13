@@ -192,8 +192,12 @@ when most dances for an individual are with one instructor but one or two are ch
           <td class="row-head">Heat
           <td class="row-head">Type
           <td class="row-head">Dance
+          <% if @person.role != 'Leader' %>
           <td class="row-head">Lead
+          <% end %>
+          <% if @person.role != 'Follower' %>
           <td class="row-head">Follow
+          <% end %>
           <td class="row-head">Level
           <td class="row-head">Category
         </tr>
@@ -212,19 +216,23 @@ when most dances for an individual are with one instructor but one or two are ch
           <% else %>
           <td class="row"><%= heat.dance.name %>
           <% end %>
+          <% if @person.role != 'Leader' %>
           <td class="row"><%= link_to heat.entry.lead.display_name, heat.entry.lead %>
           <% if heat.category == 'Solo' and not heat.solo.formations.empty? %>
           <% heat.solo.formations.each_with_index do |formation, index| %>
-          <% if index % 2 == 0 %>
+          <% if index % 2 == 0 or @person.role == 'Both' %>
           <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
           <% end %>
           <% end %>
           <% end %>
+          <% end %>
+          <% if @person.role != 'Follower' %>
           <td class="row"><%= link_to heat.entry.follow.display_name, heat.entry.follow %>
           <% if heat.category == 'Solo' and not heat.solo.formations.empty? %>
           <% heat.solo.formations.each_with_index do |formation, index| %>
-          <% if index % 2 == 1 %>
+          <% if index % 2 == 1 or @person.role == 'Both' %>
           <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
+          <% end %>
           <% end %>
           <% end %>
           <% end %>
