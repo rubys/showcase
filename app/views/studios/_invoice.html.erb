@@ -1,7 +1,12 @@
 <div class="mb-4">
   <h2 class="font-bold text-center text-4xl"><%= @event.name %></h1>
 
-  <p class="mt-4 text-center"><%= @event.location %></p>
+  <p class="mt-4">
+    <% @event.location.to_s.lines.each do |line| %>
+      <div class="text-center"><%= line.chomp %></div>
+    <% end %>
+  </p>
+  
   <p class="mt-2 text-center"><%= @event.date %></p>
 </div>
 
