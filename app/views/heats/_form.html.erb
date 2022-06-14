@@ -14,9 +14,9 @@
   <div class="mx-auto w-full mb-8 text-center">
     <%= render partial: 'entries/box', locals: {form: form} %>
 
-    <% unless @person %>
+    <% if heat.id and params[:primary] and heat.number >= 0 %>
     <div class="my-5">
-      <%= form.label :number %>
+      <%= form.label :number, 'Heat number' %>
       <%= form.number_field :number,
         class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
     </div>

@@ -14,7 +14,7 @@
         <% else %>
         <div class="my-5 flex flex-row">
         <% end %>
-          <% value = @entries[category][dance.name]&.length || 0 %>
+          <% value = (@entries[category][dance.name] || []).count {|heat| heat.number >= 0} %>
           <% if value <= 1 %>
           <%= form.check_box field, class: "entry-count h-10", checked: value > 0 %>
           <% else %>

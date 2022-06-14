@@ -7,8 +7,17 @@
 
   <%= render "form", heat: @heat %>
 
-  <%= link_to 'Remove this heat', heat_path(@heat), class: 'btn-grey',
+  <% if @heat.number < 0 %>
+  <%= up_link 'Restore this heat', heat_path(@heat, primary: params[:primary]), class: 'btn-grey',
+    data: { turbo_method: :delete } %>
+  <% elsif @heat.number > 0 %>
+  <%= up_link 'Scratch this heat', heat_path(@heat, primary: params[:primary]), class: 'btn-grey',
+    data: { turbo_method: :delete } %>
+  <% else %>
+  <%= up_link 'Remove this heat', heat_path(@heat, primary: params[:primary]), class: 'btn-grey',
     data: { turbo_method: :delete, turbo_confirm: 'Are you sure?' } %>
+  <% end %>
+
   <% if @person %>
   <%= link_to "Back to student", person_path(@person), class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
   <% end %>

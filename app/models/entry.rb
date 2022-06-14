@@ -9,6 +9,10 @@ class Entry < ApplicationRecord
 
   has_many :heats, dependent: :destroy
 
+  def active_heats
+    heats.select {|heat| heat.number >= 0}
+  end
+
   def subject
     if lead.type == 'Professional'
       follow

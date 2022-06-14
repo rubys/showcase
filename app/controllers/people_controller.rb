@@ -148,7 +148,7 @@ class PeopleController < ApplicationController
 
     @dances = Dance.order(:order).all.map {|dance|
       [dance, partners.map {|partner, entries|
-        [partner, entries.map {|entry| entry.heats.count {|heat| heat.dance == dance}}.sum]
+        [partner, entries.map {|entry| entry.active_heats.count {|heat| heat.dance == dance}}.sum]
       }.to_h]
     }.select {|dance, partners| partners.values.any? {|count| count > 0}}.to_h
 

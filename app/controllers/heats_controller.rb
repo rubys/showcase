@@ -48,6 +48,10 @@ class HeatsController < ApplicationController
 
   # POST /heats/redo
   def redo
+    # remove all scratches and orphaned entries
+    Heat.delete_by(number: ...0)
+    Entry.includes(:heats).delete_by(heats: {id: nil})
+
     schedule_heats
     redirect_to heats_url, notice: "#{Heat.maximum(:number)} heats generated."
   end
@@ -116,10 +120,21 @@ class HeatsController < ApplicationController
 
   # DELETE /heats/1 or /heats/1.json
   def destroy
-    @heat.destroy
+    if @heat.number != 0
+      notice = "Heat was successfully #{@heat.number < 0 ? 'restored' : 'scratched'}."
+      @heat.update(number: -@heat.number)
+    elsif @heat.entry.heats.length == 1
+      @heat.entry.destroy
+      notice = "Heat was successfully removed."
+    else
+      @heat.destroy
+      notice = "Heat was successfully removed."
+    end
+    
 
     respond_to do |format|
-      format.html { redirect_to heats_url, status: 303, notice: "Heat was successfully removed." }
+      format.html { redirect_to params[:primary] ? person_url(params[:primary]) : heats_url, 
+        status: 303, notice: notice }
       format.json { head :no_content }
     end
   end

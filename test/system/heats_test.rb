@@ -22,14 +22,13 @@ class HeatsTest < ApplicationSystemTestCase
     click_on "Back"
   end
 
-  test "should remove Heat" do
+  test "should scratch Heat" do
     visit person_url(people(:Kathryn))
     page.find('td', text: 'Closed').hover
     click_on "Edit"
 
-    click_on "Remove this heat"
-    page.accept_alert
+    click_on "Scratch this heat"
 
-    assert_text "Heat was successfully removed"
+    assert_text "Heat was successfully scratched"
   end
 end

@@ -56,9 +56,19 @@ class HeatsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy heat" do
+    @heat = heats(:zero)
     assert_difference("Heat.count", -1) do
       delete heat_url(@heat)
     end
+
+    assert_response 303
+    assert_redirected_to heats_url
+  end
+
+  test "should scratch heat" do
+    delete heat_url(@heat)
+    @heat.reload
+    assert_operator @heat.number, :<, 0
 
     assert_response 303
     assert_redirected_to heats_url

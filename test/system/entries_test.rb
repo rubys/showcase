@@ -75,11 +75,11 @@ class EntriesTest < ApplicationSystemTestCase
 
     click_on "Update Entry"
 
-    assert_text "1 heat removed"
+    assert_text "1 heat changed"
     click_on "Back"
   end
 
-  test "should destroy Entry" do
+  test "should scratch Entry" do
     visit person_url(people(:Kathryn))
 
     within find('caption', text: 'Entries').sibling('tbody') do
@@ -87,9 +87,8 @@ class EntriesTest < ApplicationSystemTestCase
       click_on "Edit"
     end
 
-    click_on "Remove this entry", match: :first
-    page.accept_alert
+    click_on "Scratch this entry", match: :first
 
-    assert_text "4 heats successfully removed"
+    assert_text "3 heats scratched"
   end
 end

@@ -126,12 +126,33 @@ class EntriesController < ApplicationController
   # DELETE /entries/1 or /entries/1.json
   def destroy
     person = Person.find(params[:primary])
-    heats = @entry.heats.length
 
-    @entry.destroy
+    heats = 0
+
+    if @entry.heats.any? {|heat| heat.number < 0}
+      @entry.heats.each do |heat|
+        if heat.number < 0
+          heat.update(number: -heat.number)
+          heats += 1
+        end
+      end
+      notice = "#{helpers.pluralize heats, 'heat'} restored."
+    elsif @entry.heats.any? {|heat| heat.number > 0}
+      @entry.heats.each do |heat|
+        if heat.number > 0
+          heat.update(number: -heat.number)
+          heats += 1
+        end
+      end
+      notice = "#{helpers.pluralize heats, 'heat'} scratched."
+    else
+      heats = @entry.heats.length
+      @entry.destroy
+      notice = "#{helpers.pluralize heats, 'heat'} successfully removed."
+    end
 
     respond_to do |format|
-      format.html { redirect_to person_path(person), status: 303, notice: "#{helpers.pluralize heats, 'heat'} successfully removed." }
+      format.html { redirect_to person_path(person), status: 303, notice: notice }
       format.json { head :no_content }
     end
   end
@@ -163,22 +184,33 @@ class EntriesController < ApplicationController
       @total = 0
       %w(Closed Open Multi).each do |category|
         Dance.all.each do |dance|
-          was = new ? 0 : @entries[category][dance.name]&.length || 0
+          heats = @entries[category][dance.name] || []
+          was = new ? 0 : heats.count {|heat| heat.number >= 0}
           wants = entry[:entries][category] ? entry[:entries][category][dance.name].to_i : 0
           if wants != was
             @total += (wants - was).abs
   
-            (wants...was).each do |heat|
-              @entries[category][dance.name][heat].destroy!
+            (wants...was).each do |index|
+              heat = heats[index]
+              if heat.number == 0
+                heat.destroy!
+              elsif heat.number > 0
+                heat.update(number: -heat.number)
+              end
             end
   
-            (was...wants).each do |heat|
-              Heat.create({
-                number: 0, 
-                entry: @entry,
-                category: category,
-                dance: dance
-              })
+            (was...wants).each do
+              heat = heats.find {|heat| heat.number < 0}
+              if heat
+                heat.update(number: -heat.number)
+              else
+                Heat.create({
+                  number: 0, 
+                  entry: @entry,
+                  category: category,
+                  dance: dance
+                })
+              end
             end
           end
         end

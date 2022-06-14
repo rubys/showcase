@@ -74,13 +74,13 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal flash[:notice], '7 heats changed.'
   end
 
-  test "should destroy entry" do
-    assert_difference("Entry.count", -1) do
-      delete entry_url(@entry, params: { primary: @primary.id })
-    end
+  test "should scratch entry" do
+    delete entry_url(@entry, params: { primary: @primary.id })
+    @entry.reload
+    assert @entry.heats.all? {|heat| heat.number <= 0}
 
     assert_response 303
     assert_redirected_to person_url(@primary)
-    assert_equal flash[:notice], '2 heats successfully removed.'
+    assert_equal flash[:notice], '2 heats scratched.'
   end
 end
