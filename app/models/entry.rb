@@ -31,9 +31,9 @@ class Entry < ApplicationRecord
         "AC - #{age.category}"
       end
     else
-      if follow.type == 'Professional' or not follow.age_id
+      if follow.type == 'Professional'
         "G"
-      elsif lead.type == 'Professional' or not lead.age_id
+      elsif lead.type == 'Professional'
         "L"
       else
         "AC"
