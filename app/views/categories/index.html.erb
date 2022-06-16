@@ -30,7 +30,7 @@
       </tr>
     </thead>
     <tbody data-controller="drop" data-drop-action="<%= drop_categories_path %>">
-    <% if @unscheduled %>
+    <% if @unscheduled > 0 %>
     <tr>
       <td class="row text-black font-medium">Unscheduled
       <td class="row text-right"><%= @unscheduled %>
