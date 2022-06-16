@@ -2,7 +2,7 @@ require 'open3'
 
 class UsersController < ApplicationController
   include ActionView::RecordIdentifier
-  before_action :authenticate_index
+  before_action :authenticate_index, except: %i[ password_reset password_verify ]
   before_action :set_user, only: %i[ show edit update destroy ]
 
   # GET /users or /users.json
@@ -193,7 +193,7 @@ class UsersController < ApplicationController
     end
 
     def update_htpasswd
-      return # if Rails.env.test?
+      return if Rails.env.test?
       contents = User.order(:password).pluck(:password).join("\n")
       return if contents == (IO.read 'db/htpasswd' rescue '')
       IO.write 'db/htpasswd', contents
