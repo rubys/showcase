@@ -65,14 +65,14 @@ class EventController < ApplicationController
 
     if @event.open_scoring != old_open_scoring
       map = {
-        "1" => "GH",
-        "2" => "G",
-        "3" => "S",
+        "1" => "G",
+        "2" => "S",
+        "3" => "B",
         "4" => "B",
-        "GH" => "1",
-        "G" => "2",
-        "S" => "3",
-        "B" => "4"
+       # "GH" => "1",
+       # "G" => "2",
+       # "S" => "3",
+       # "B" => "4"
       }
 
       Score.transaction do
