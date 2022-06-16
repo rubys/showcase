@@ -119,7 +119,11 @@ when most dances for an individual are with one instructor but one or two are ch
     <tbody>
       <% @solos.each do |heat| %>
         <% entry = heat.entry %>
+          <% if heat.number < 0 %>
+          <tr class="group line-through opacity-50">
+          <% else %>
           <tr class="group">
+          <% end %>
             <% if heat.solo.combo_dance %>
             <td class="row"><%= heat.dance.name %> / <%= heat.solo.combo_dance.name %>
             <% else %>

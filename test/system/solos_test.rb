@@ -33,7 +33,7 @@ class SolosTest < ApplicationSystemTestCase
     click_on "Back"
   end
 
-  test "should destroy Solo" do
+  test "should scratch Solo" do
     visit person_url(people(:Kathryn))
 
     within find('caption', text: 'Solos').sibling('tbody') do
@@ -41,9 +41,8 @@ class SolosTest < ApplicationSystemTestCase
       click_on "Edit"
     end
 
-    click_on "Remove this solo"
-    page.accept_alert
+    click_on "Scratch this solo"
 
-    assert_text "Solo was successfully removed"
+    assert_text "Solo was successfully scratched"
   end
 end

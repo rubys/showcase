@@ -77,13 +77,13 @@ class SolosControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, solos(:two).order
   end
 
-  test "should destroy solo" do
-    assert_difference("Solo.count", -1) do
-      delete solo_url(@solo, primary: @primary.id)
-    end
+  test "should scratch solo" do
+    delete solo_url(@solo, primary: @primary.id)
+    @solo.heat.reload
+    assert_operator @solo.heat.number, :<, 0
 
     assert_response 303
     assert_redirected_to person_url(@primary)
-    assert_equal flash[:notice], 'Solo was successfully removed.'
+    assert_equal flash[:notice], 'Solo was successfully scratched.'
   end
 end

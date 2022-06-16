@@ -56,13 +56,13 @@ class FormationsControllerTest < ActionDispatch::IntegrationTest
     assert_equal flash[:notice], 'Formation was successfully updated.'
   end
 
-  test "should destroy formation" do
-    assert_difference("Formation.count", -1) do
-      delete solo_url(@solo, primary: @primary.id)
-    end
+  test "should scratch formation" do
+    delete solo_url(@solo, primary: @primary.id)
+    @solo.heat.reload
+    assert_operator @solo.heat.number, :<, 0
 
     assert_response 303
     assert_redirected_to person_url(@primary)
-    assert_equal flash[:notice], 'Formation was successfully removed.'
+    assert_equal flash[:notice], 'Formation was successfully scratched.'
   end
 end

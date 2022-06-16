@@ -51,9 +51,20 @@
   <%= form.submit (solo.persisted? ? 'Update' : 'Create') + ' ' + (@formation ? 'Formation' : 'Solo'),
     class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
   <% if solo.id %>
-  <%= link_to "Remove this #{@formation ? 'formation' : 'solo'}", 
+  <% if solo.heat.number < 0 %>
+  <%= up_link "Restore this #{@formation ? 'formation' : 'solo'}",
+    solo_path(solo, primary: @person), class: 'btn-grey',
+    data: { turbo_method: :delete } %>
+  <% elsif solo.heat.number > 0 %>
+  <%= up_link "Scratch this #{@formation ? 'formation' : 'solo'}",
+    solo_path(solo, primary: @person), class: 'btn-grey',
+    data: { turbo_method: :delete } %>
+  <% else %>
+  <%= up_link "Remove this #{@formation ? 'formation' : 'solo'}",
     solo_path(solo, primary: @person), class: 'btn-grey',
     data: { turbo_method: :delete, turbo_confirm: 'Are you sure?' } %>
+  <% end %>
+
   <% end %>
   <%= link_to 'Back to student', @person, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
   </div>

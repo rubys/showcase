@@ -188,13 +188,19 @@ class SolosController < ApplicationController
 
     entry = @solo.heat.entry
     formation = @solo.formations.to_a
-    @solo.heat.destroy
-    entry.reload
-    entry.destroy! if entry.heats.empty?
+
+    if @solo.heat.number != 0
+      notice = "#{formation.empty? ? 'Solo' : 'Formation'} was successfully #{@solo.heat.number < 0 ? 'restored' : 'scratched'}."
+      @solo.heat.update(number: -@solo.heat.number)
+    elsif @heat.entry.heats.length == 1
+      @solo.heat.destroy
+      entry.reload
+      entry.destroy! if entry.heats.empty?
+      notice = "#{formation.empty? ? 'Solo' : 'Formation'} was successfully removed."
+    end
 
     respond_to do |format|
-      format.html { redirect_to person_path(person), status: 303,
-        notice: "#{formation.empty? ? 'Solo' : 'Formation'} was successfully removed." }
+      format.html { redirect_to person_path(person), status: 303, notice: notice }
       format.json { head :no_content }
     end
   end

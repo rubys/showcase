@@ -27,7 +27,7 @@ class FormationsTest < ApplicationSystemTestCase
     click_on "Back"
   end
 
-  test "should destroy Formation" do
+  test "should scratch Formation" do
     visit person_url(people(:Kathryn))
 
     within find('caption', text: 'Solos').sibling('tbody') do
@@ -35,9 +35,8 @@ class FormationsTest < ApplicationSystemTestCase
       click_on "Edit"
     end
 
-    click_on "Remove this formation"
-    page.accept_alert
+    click_on "Scratch this formation"
 
-    assert_text "Formation was successfully removed"
+    assert_text "Formation was successfully scratched"
   end
 end
