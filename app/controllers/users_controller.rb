@@ -139,7 +139,8 @@ class UsersController < ApplicationController
       # deny access if there is a user with 'index' access and this user does not
       return unless @authuser
 
-      sites = User.pluck(:sites).map {|sites| sites.split(',')}.flatten
+      sites = User.pluck(:sites).map {|sites| sites.to_s.split(',')}.flatten.
+        select {|site| not site.blank?}
       return unless sites.include? 'index'
 
       return if User.where(userid: @authuser).pluck(:sites).first.to_s.split(',').include? 'index'
