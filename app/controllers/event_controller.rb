@@ -58,8 +58,30 @@ class EventController < ApplicationController
 
   def update
     @event = Event.last
+    old_open_scoring = @event.open_scoring
     ok = @event.update params.require(:event).permit(:name, :location, :date, :heat_range_cat, :heat_range_level, :heat_range_age,
-      :intermix, :ballrooms, :column_order, :backnums, :track_ages, :heat_length, :heat_cost, :solo_cost, :multi_cost, :max_heat_size, :package_required)
+      :intermix, :ballrooms, :column_order, :backnums, :track_ages, :heat_length, :open_scoring,
+      :heat_cost, :solo_cost, :multi_cost, :max_heat_size, :package_required)
+
+    if @event.open_scoring != old_open_scoring
+      map = {
+        "1" => "GH",
+        "2" => "G",
+        "3" => "S",
+        "4" => "B",
+        "GH" => "1",
+        "G" => "2",
+        "S" => "3",
+        "B" => "4"
+      }
+
+      Score.transaction do
+        Score.includes(:heat).where(heat: {category: 'Open'}).each do |score|
+          score.update(value: map[score.value]) if map[score.value]
+        end
+      end
+    end
+
     anchor = nil
 
     if ok

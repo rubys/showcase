@@ -25,6 +25,7 @@ class ScoresController < ApplicationController
 
   # GET /scores/:judge/heat/:heat
   def heat
+    event = Event.first
     @judge = Person.find(params[:judge].to_i)
     @number = params[:heat].to_i
     @slot = params[:slot]&.to_i
@@ -38,8 +39,13 @@ class ScoresController < ApplicationController
       @dance = '-'
       @scores = []
     else
-      @dance = "#{@subjects.first.category} #{@subjects.first.dance.name}"
-      @scores = SCORES[@subjects.first.category].dup
+      category = @subjects.first.category
+      @dance = "#{category} #{@subjects.first.dance.name}"
+      if category == 'Open' and event.open_scoring == 'G'
+        @scores = SCORES['Closed'].dup
+      else
+        @scores = SCORES[category].dup
+      end
     end
 
     student_results = Score.where(judge: @judge, heat: @subjects, slot: @slot).
@@ -84,8 +90,6 @@ class ScoresController < ApplicationController
 
     @layout = 'mx-0 px-5'
     @nologo = true
-
-    event = Event.first
     @backnums = event.backnums
     @track_ages = event.track_ages
   end
@@ -119,6 +123,7 @@ class ScoresController < ApplicationController
   end
 
   def by_level
+    @open_scoring = Event.first.open_scoring
     levels = Level.order(:id).all
 
     template1 = ->() {
@@ -166,6 +171,7 @@ class ScoresController < ApplicationController
   end
 
   def by_age
+    @open_scoring = Event.first.open_scoring
     ages = Age.order(:id).all
 
     template1 = ->() {
@@ -213,6 +219,7 @@ class ScoresController < ApplicationController
   end
 
   def multis
+    @open_scoring = Event.first.open_scoring
     dances = Dance.where.not(multi_category_id: nil).
       includes(multi_children: :dance, heats: [{entry: [:lead, :follow]}, :scores]).
       order(:order)
@@ -236,6 +243,7 @@ class ScoresController < ApplicationController
   end
 
   def instructor
+    @open_scoring = Event.first.open_scoring
     @scores = {}
 
     people = Person.where(type: 'Professional').

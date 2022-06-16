@@ -85,6 +85,14 @@
   </div>
 
   <div class="my-5">
+  <%= form.label :open_scoring %>
+  <ul class="ml-6">
+  <li class="my-2"><%= form.radio_button :open_scoring, 1 %> 1/2/3/4
+  <li classs="my-2"><%= form.radio_button :open_scoring, 'G' %> GH/G/S/B
+  </ul>
+  </div>
+
+  <div class="my-5">
     <%= form.label :backnums, 'Leaders assigned back numbers:' %>
     <%= form.check_box :backnums, class: 'entry-count h-10' %>
   </div>

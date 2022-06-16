@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_06_13_132933) do
+ActiveRecord::Schema[7.0].define(version: 2022_06_16_181115) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -129,6 +129,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_13_132933) do
     t.boolean "backnums", default: true
     t.boolean "track_ages", default: true
     t.integer "column_order", default: 1
+    t.string "open_scoring", default: "1"
   end
 
   create_table "formations", force: :cascade do |t|
