@@ -129,6 +129,7 @@ class PeopleController < ApplicationController
         [lead, follow, entries.sum {|entry| entry.heats.count}]
       end.
       sort_by {|(lead, follow), count| level = lead.level_id}
+    @track_ages = Event.first.track_ages
   end
 
   # GET /people/1 or /people/1.json

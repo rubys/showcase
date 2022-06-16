@@ -16,7 +16,9 @@
         <th class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Follow
         <th class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Studio
         <th class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Level
+        <% if @track_ages %>
         <th class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Category
+        <% end %>
       </tr>
     </thead>
     <tbody>
@@ -29,9 +31,11 @@
         <td class="px-2">
           <%= lead.level_id > follow.level_id ? lead.level.name : follow.level.name %>
         </td>
+        <% if @track_ages %>
         <td class="text-center px-2">
           <%= lead.age_id > follow.age_id ? lead.age.description : follow.age.description %>
         </td>
+        <% end %>
       </tr>
       <% end %>
     </tbody>
