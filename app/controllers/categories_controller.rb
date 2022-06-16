@@ -7,6 +7,8 @@ class CategoriesController < ApplicationController
 
     counts = Heat.group(:number, :category, :dance_id).count(:number)
 
+    @unscheduled = counts.select {|(number, category, dance), count| number == 0}.values.sum
+
     @heats = @categories.map {|category| [category, 0]}.to_h
 
     @heats.merge!(counts.map do |(heat, category, dance), count|
