@@ -223,9 +223,7 @@ export default class extends Controller {
     this.token = document.querySelector('meta[name="csrf-token"]').content;
 
     this.subjects = new Map([...this.element.querySelectorAll('*[draggable=true]')]
-      .map(element =>
-        [parseInt(element.querySelector('span').textContent || 1), element]
-      )
+      .map(element => [element.id, element])
     );
 
     this.scores = [...this.element.querySelectorAll('*[data-score]')];
