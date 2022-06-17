@@ -85,12 +85,12 @@ server {
   rewrite ^/(showcase)?$ /showcase/ redirect;
 
   # Authentication
-<% if File.exist? "#{@git_path}/config/htpasswd" -%>
+<% if File.exist? "#{@git_path}/db/htpasswd" -%>
   set $realm "Showcase";
   if ($request_uri ~ "^/showcase/(assets/|cable$)") { set $realm off; }
   if ($request_uri ~ "^/showcase/\d+/\w+/(\w+/)?public/") { set $realm off; }
   auth_basic $realm;
-  auth_basic_user_file <%= @git_path %>/config/htpasswd;
+  auth_basic_user_file <%= @git_path %>/db/htpasswd;
 <% else -%>
   auth_basic off;
 <% end -%>
