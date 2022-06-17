@@ -128,7 +128,7 @@ class UsersController < ApplicationController
     @user = User.where(token: params[:token]).first
     if request.get?
       render :reset
-    elsif @user and @user.userid == params[:user][:userid] and not params[:user][:password].blank?
+    elsif @user and not params[:user][:password].blank?
       # note: packet sniffers could pick up the token from the url and get past this
       # point, but will be blocked by the authenticity token later in the processing.
       update
