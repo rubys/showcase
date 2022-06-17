@@ -90,7 +90,7 @@ class UsersController < ApplicationController
   def password_reset
     if request.get?
       @users = User.order(:userid).pluck(:userid, :id).to_h
-      @user = User.where(name: @authuser).first.id if @authuser
+      @user = User.where(userid: @authuser).first.id if @authuser
       @user = User.find(params[:user]).id if @user = params[:user]
       render :request_reset
     else
