@@ -88,6 +88,7 @@ server {
 <% if File.exist? "#{@git_path}/db/htpasswd" -%>
   set $realm "Showcase";
   if ($request_uri ~ "^/showcase/(assets/|cable$|password/)") { set $realm off; }
+  if ($request_uri ~ "^/showcase/[-\w]+\.\w+$") { set $realm off; }
   if ($request_uri ~ "^/showcase/\d+/\w+/(\w+/)?public/") { set $realm off; }
   auth_basic $realm;
   auth_basic_user_file <%= @git_path %>/db/htpasswd;
