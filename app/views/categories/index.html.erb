@@ -30,13 +30,6 @@
       </tr>
     </thead>
     <tbody data-controller="drop" data-drop-action="<%= drop_categories_path %>">
-    <% if @unscheduled > 0 %>
-    <tr>
-      <td class="row text-black font-medium">Unscheduled
-      <td class="row text-right"><%= @unscheduled %>
-      <td class="row text-right">1
-    </tr>
-    <% end %>
     <% @categories.each do |category| %>
       <tr class="hover:bg-yellow-200" draggable="true" data-drag-id="<%= category.id %>">
         <td class="row text-black font-medium"><%= link_to category.name, edit_category_path(category) %></td>
@@ -60,10 +53,10 @@
     <tr>
       <th class="border-t-2 border-gray-200 row text-center font-bold">total
       <td class="border-t-2 border-gray-200 row text-right">
-        <%= @entries.values.sum + @unscheduled %>
+        <%= @entries.values.sum %>
       </td>
       <td class="border-t-2 border-gray-200 row text-right">
-        <%= @heats.values.sum + (@unscheduled == 0 ? 0 : 1) %>
+        <%= @heats.values.sum %>
       </td>
     </tr>
     </tbody>

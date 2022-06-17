@@ -5,7 +5,7 @@ class CategoriesController < ApplicationController
   def index
     @categories = Category.order(:order)
 
-    counts = Heat.group(:number, :category, :dance_id).count(:number)
+    counts = Heat.where(number: 0..).group(:number, :category, :dance_id).count(:number)
 
     @unscheduled = counts.select {|(number, category, dance), count| number == 0}.values.sum
 
