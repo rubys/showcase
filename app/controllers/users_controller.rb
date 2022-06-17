@@ -126,7 +126,15 @@ class UsersController < ApplicationController
 
   def password_verify
     @user = User.where(token: params[:token]).first
-    render :reset
+    if request.get?
+      render :reset
+    elsif @user and @user.userid == params[:user][:userid] and not params[:user][:password].blank?
+      # note: packet sniffers could pick up the token from the url and get past this
+      # point, but will be blocked by the authenticity token later in the processing.
+      update
+    else
+      render file: 'public/422.html', status: :unprocessable_entity, layout: false
+    end
   end
 
   private

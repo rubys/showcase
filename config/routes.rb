@@ -117,7 +117,7 @@ Rails.application.routes.draw do
     end
 
     match "/password/reset", to: 'users#password_reset', via: %i(get post)
-    get "/password/verify", to: 'users#password_verify'
+    match "/password/verify", to: 'users#password_verify', via: %i[get patch]
     resources :users
   end
 end
