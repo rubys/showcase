@@ -14,5 +14,11 @@ class ApplicationController < ActionController::Base
       else
         @authuser = request.headers["HTTP_X_REMOTE_USER"]
       end
+
+      return unless Rails.env.production?
+
+      authenticate_or_request_with_http_basic do |id, password| 
+        User.authorized? @authuser
+      end
     end
 end

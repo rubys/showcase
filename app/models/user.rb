@@ -17,6 +17,12 @@ class User < ApplicationRecord
     @@auth_event.include?(userid)      
   end
 
+  def self.authlist
+    return [] unless @@db
+    load_auth
+    @@auth_event
+  end
+
   private
 
     def self.load_auth
