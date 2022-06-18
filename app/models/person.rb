@@ -78,9 +78,9 @@ class Person < ApplicationRecord
       package_id != nil or not Billable.where(type: 'Guest').exists?
     when 'Student', 'Professional'
       if role == 'Leader'
-        lead_entries.exists? or follow_entries.exists?
+        not lead_entries.empty? or not follow_entries.empty?
       else
-        follow_entries.exists? or lead_entries.exists?
+        not follow_entries.empty? or not lead_entries.empty?
       end
     else
       true

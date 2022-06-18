@@ -26,7 +26,7 @@ class EventController < ApplicationController
   end
 
   def summary
-    @people = Person.includes(:level, :age, options: :option, package: {package_includes: :option}).
+    @people = Person.includes(:level, :age, :lead_entries, :follow_entries, options: :option, package: {package_includes: :option}).
       all.select(&:active?).group_by {|person| person.type}
 
     @packages = Billable.where.not(type: 'Option').order(:order).group_by(&:type).
