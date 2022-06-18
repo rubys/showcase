@@ -74,16 +74,16 @@ class Person < ApplicationRecord
 
   def active?
     case type
-    when 'Judge', 'Emcee'
-      true
     when 'Guest'
       package_id != nil or not Billable.where(type: 'Guest').exists?
-    else
+    when 'Student', 'Professional'
       if role == 'Leader'
         lead_entries.exists? or follow_entries.exists?
       else
         follow_entries.exists? or lead_entries.exists?
       end
+    else
+      true
     end
   end
 end
