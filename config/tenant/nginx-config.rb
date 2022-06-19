@@ -87,8 +87,8 @@ server {
   # Authentication
 <% if File.exist? "#{@git_path}/db/htpasswd" -%>
   satisfy any;
-  accept 127.0.0.1;
-  accept ::1;
+  allow 127.0.0.1;
+  allow ::1;
 
   set $realm "Showcase";
   if ($request_uri ~ "^/showcase/(assets/|cable$|password/)") { set $realm off; }
