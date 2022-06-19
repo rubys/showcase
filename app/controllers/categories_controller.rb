@@ -19,6 +19,8 @@ class CategoriesController < ApplicationController
         category = dance.open_category
       when "Solo"
         category = dance.solo_category
+      when "Multi"
+        category = dance.multi_category
       else
         category = dance.closed_category
       end
@@ -37,6 +39,8 @@ class CategoriesController < ApplicationController
         category = dance.open_category
       when "Solo"
         category = dance.solo_category
+      when "Multi"
+        category = dance.multi_category
       else
         category = dance.closed_category
       end
