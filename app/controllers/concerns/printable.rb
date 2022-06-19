@@ -180,4 +180,22 @@ module Printable
     @nologo = true
     @event = Event.last
   end
+
+  def render_as_pdf(url:, basename:)
+    tmpfile = Tempfile.new(basename)
+
+    if RUBY_PLATFORM =~ /darwin/
+      chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    else
+      chrome="google-chrome"
+    end
+
+    system chrome, '--headless', '--disable-gpu', '--print-to-pdf-no-header',
+      "--print-to-pdf=#{tmpfile.path}", url
+
+    send_data tmpfile.read, disposition: 'inline', filename: "#{basename}.pdf",
+      type: 'application/pdf'
+  ensure
+    tmpfile.unlink
+  end
 end
