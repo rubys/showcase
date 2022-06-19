@@ -12,6 +12,7 @@ class ApplicationController < ActionController::Base
       get_authentication
 
       return unless Rails.env.production?
+      return if request.local?
 
       authenticate_or_request_with_http_basic do |id, password| 
         User.authorized? @authuser

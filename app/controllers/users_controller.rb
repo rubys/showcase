@@ -155,7 +155,7 @@ class UsersController < ApplicationController
 
       return if User.where(userid: @authuser).pluck(:sites).first.to_s.split(',').include? 'index'
 
-      request_http_basic_authentication "Showcase"
+      request_http_basic_authentication "Showcase" unless request.local?
     end
 
     def set_password
