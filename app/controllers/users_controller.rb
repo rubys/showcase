@@ -162,10 +162,16 @@ class UsersController < ApplicationController
       params = self.params[:user]
       return unless params[:userid]
       return unless params[:password] and params[:password] == params[:password_confirmation]
-      htpasswd, status = Open3.capture2("htpasswd -ni #{params[:userid]}",
-        stdin_data: params[:password])
-      if status.success?
-        params[:password] = params[:password_confirmation] = htpasswd.strip
+
+      if params[:password].blank?
+        params.delete :password
+        params.delete :password_confirmation
+      else
+        htpasswd, status = Open3.capture2("htpasswd -ni #{params[:userid]}",
+          stdin_data: params[:password])
+        if status.success?
+          params[:password] = params[:password_confirmation] = htpasswd.strip
+        end
       end
     end
 
