@@ -19,19 +19,21 @@
   <p class="mt-2 text-center"><%= @event.date %></p>
   <p class="mt-2 text-center"><%= pluralize(@heats, 'heat') %></p>
 
-  <h2 class="font-bold text-2xl mt-4 mb-2">Judges</h2>
+  <h2 class="font-bold text-2xl mt-4 mb-2"><%= @judges.length == 1 ? 'Judge' : 'Judges' %></h2>
   <ul class="list-disc list-inside">
     <% @judges.each do |judge| %>
       <li><%= link_to judge.display_name, judge %></li>
     <% end %>
   </u>
   
+  <% unless @emcees.length == 0 %>
   <h2 class="font-bold text-2xl mt-4 mb-2">Emcee</h2>
   <ul class="list-disc list-inside">
     <% @emcees.each do |emcee| %>
       <li><%= link_to emcee.display_name, emcee %></li>
     <% end %>
   </ul>
+  <% end %>
 
   <div class="mt-8 grid grid-cols-3 gap-1">
     <%= link_to "Studios", studios_path, class: "btn-green" %>
