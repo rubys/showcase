@@ -184,12 +184,9 @@ module Printable
   def render_as_pdf(basename:)
     tmpfile = Tempfile.new(basename)
 
-    Rails.logger.error request.original_url.to_s
-    url = URI.parse(request.url.sub(/\.pdf($|\?)/, '.html\\1'))
-    url.scheme = 'http'
+    url = URI.parse(request.original_url.sub(/\.pdf($|\?)/, '.html\\1'))
     url.hostname = 'localhost'
     url.port = request.headers['SERVER_PORT']
-    Rails.logger.error url.to_s
 
     if RUBY_PLATFORM =~ /darwin/
       chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
