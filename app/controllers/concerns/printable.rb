@@ -59,7 +59,7 @@ module Printable
           if cat != last_cat and not cat.day.blank?
             yesterday = Chronic.parse('yesterday', now: start)
             day = Chronic.parse(cat.day, now: yesterday, guess: false)&.begin || start
-            start = day if day > start
+            start = day if day > start and day < start + 86_400
           end
 
           if not cat.time.blank?
