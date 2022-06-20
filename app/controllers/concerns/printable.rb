@@ -184,9 +184,9 @@ module Printable
   def render_as_pdf(basename:)
     tmpfile = Tempfile.new(basename)
 
-    url = 'http://' + request.host_with_port + '/' + request.path.sub(/\.pdf($|\?)/, '.html\\1')
-    Rails.logger.fatal url
-    Rails.logger.fatal request.headers.to_a.inspect
+    url = URI.parse(request.path.sub(/\.pdf($|\?)/, '.html\\1'))
+    url.hostname = 'localhost'
+    url.port = request.header['SERVER_PORT']
 
     if RUBY_PLATFORM =~ /darwin/
       chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
@@ -195,7 +195,7 @@ module Printable
     end
 
     system chrome, '--headless', '--disable-gpu', '--print-to-pdf-no-header',
-      "--print-to-pdf=#{tmpfile.path}", url
+      "--print-to-pdf=#{tmpfile.path}", url.to_s
 
     send_data tmpfile.read, disposition: 'inline', filename: "#{basename}.pdf",
       type: 'application/pdf'
