@@ -184,7 +184,7 @@ module Printable
   def render_as_pdf(basename:)
     tmpfile = Tempfile.new(basename)
 
-    url = URI.parse(request.path.sub(/\.pdf($|\?)/, '.html\\1'))
+    url = URI.parse(request.url.sub(/\.pdf($|\?)/, '.html\\1'))
     url.hostname = 'localhost'
     url.port = request.headers['SERVER_PORT']
     Rails.logger.error url.to_s
