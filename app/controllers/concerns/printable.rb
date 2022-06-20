@@ -186,7 +186,7 @@ module Printable
 
     url = 'http://' + request.host_with_port + '/' + request.path.sub(/\.pdf($|\?)/, '.html\\1')
     Rails.logger.fatal url
-    Rails.logger.fatal request.original_url
+    Rails.logger.fatal request.inspect
 
     if RUBY_PLATFORM =~ /darwin/
       chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
