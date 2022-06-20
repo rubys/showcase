@@ -184,7 +184,8 @@ module Printable
   def render_as_pdf(basename:)
     tmpfile = Tempfile.new(basename)
 
-    url = URI.parse(request.original_url.sub(/\.pdf($|\?)/, '.html\\1'))
+    url = URI.parse(request.url.sub(/\.pdf($|\?)/, '.html\\1'))
+    url.scheme = 'http'
     url.hostname = 'localhost'
     url.port = request.headers['SERVER_PORT']
 
