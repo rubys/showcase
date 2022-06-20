@@ -187,6 +187,7 @@ module Printable
     url = URI.parse(request.path.sub(/\.pdf($|\?)/, '.html\\1'))
     url.hostname = 'localhost'
     url.port = request.headers['SERVER_PORT']
+    Rails.logger.error url.to_s
 
     if RUBY_PLATFORM =~ /darwin/
       chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
