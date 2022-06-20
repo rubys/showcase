@@ -41,7 +41,7 @@ class StudiosController < ApplicationController
     respond_to do |format|
       format.html
       format.pdf do
-        render_as_pdf url: invoice_studio_url, basename: "#{@studio.name}-invoice"
+        render_as_pdf basename: "#{@studio.name}-invoice"
       end
     end
   end
