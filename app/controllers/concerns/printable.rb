@@ -181,7 +181,7 @@ module Printable
     @event = Event.last
   end
 
-  def render_as_pdf(url:, basename:)
+  def render_as_pdf(basename:)
     tmpfile = Tempfile.new(basename)
 
     url = request.url.sub /\.pdf($|\?)/, '.html\\1'
