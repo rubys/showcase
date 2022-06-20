@@ -1,7 +1,7 @@
 <table class="w-full" style="break-before: page">
   <thead>
   <tr>
-    <td colspan="6" class="font-bold pt-8 text-3xl pb-5" >
+    <td colspan="7" class="font-bold pt-8 text-3xl pb-5" >
       <%= names.join(' / ') %>
       <span class="font-normal text-base float-right">
         <%= @event.name %>
@@ -13,30 +13,35 @@
     <td class="row-head-left">Dance
     <td class="row-head-left">Level
     <td class="row-head">Category
+    <td class="row-head">Count
     <td class="row-head">Price
   </tr>
   </thead>
   <tbody>
-  <% total = 0 %>
+  <% total = count = 0 %>
   <% heats = entries.map(&:heats).flatten %>
-  <% heats.sort_by {|heat| [heat.entry.level_id, heat.entry.age_id, heat.category, heat.dance.name]}.each do |heat| %>
-    <% entry = heat.entry
+  <% heats.sort_by! {|heat| [heat.entry.level_id, heat.entry.age_id, heat.category, heat.dance.name]} %>
+  <% heats.group_by {|heat| [heat.category, heat.dance.name, heat.entry.level.name, heat.entry.subject_category(@track_ages)]}.each do |(category, dance, level, subjcat), heats| %>
+    <% entry = heats.first.entry
        if entry.lead.type == 'Student' and entry.follow.type == 'Student' 
          split = (entry.lead.studio_id == entry.follow.studio_id) ? 1 : 2
        else
          split = 1
        end %>
     <tr class="text-sm">
-      <td><div class="mx-4"><%= heat.category %>
-      <td><div class="mx-4"><%= heat.dance.name %></div>
-      <td><%= heat.entry.level.name %>
-      <td class="text-center"><%= heat.entry.subject_category(@track_ages) %>
-      <td class="text-right"><%= number_to_currency @cost[heat.category]/split, precision: 2, unit: '' %>
+      <td><div class="mx-4"><%= category %>
+      <td><div class="mx-4"><%= dance %></div>
+      <td><%= level %>
+      <td class="text-center"><%= subjcat %>
+      <td class="text-right"><%= heats.length %>
+      <td class="text-right"><%= number_to_currency @cost[category]*heats.length/split, precision: 2, unit: '' %>
     </tr>
-    <% total += @cost[heat.category]/split %>
+    <% count += heats.length %>
+    <% total += @cost[category]/split * heats.length %>
   <% end %>
     <tr class="text-sm">
       <th colspan="4">subtotal
+      <th class="text-right"><%= count %>
       <th class="text-right"><%= number_to_currency total, precision: 2, unit: '' %>
     </tr>
   </tbody>
