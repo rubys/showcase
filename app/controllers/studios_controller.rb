@@ -24,15 +24,27 @@ class StudiosController < ApplicationController
   end
 
   def heats
-    @people = @studio.people
+    @people = Person.where(type: ['Student', 'Professional'], studio: @studio).order(:name)
     heat_sheets
-    render 'people/heats'
+
+    respond_to do |format|
+       format.html { render 'people/heats' }
+       format.pdf do
+         render_as_pdf basename: "#{@studio.name}-heat-sheets"
+       end
+    end
   end
 
   def scores
     @people = @studio.people
     score_sheets
-    render 'people/scores'
+
+    respond_to do |format|
+      format.html { render 'people/scores' }
+      format.pdf do
+        render_as_pdf basename: "#{@studio.name}-scores"
+      end
+    end
   end
 
   def invoice
