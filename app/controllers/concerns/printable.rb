@@ -184,7 +184,8 @@ module Printable
   def render_as_pdf(basename:)
     tmpfile = Tempfile.new(basename)
 
-    url = request.url.sub /\.pdf($|\?)/, '.html\\1'
+    url = 'http:// + request.host_with_port + '/' request.path.sub /\.pdf($|\?)/, '.html\\1'
+    STDERR.puts url
 
     if RUBY_PLATFORM =~ /darwin/
       chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
