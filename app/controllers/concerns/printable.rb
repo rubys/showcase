@@ -186,6 +186,7 @@ module Printable
 
     url = 'http://' + request.host_with_port + '/' + request.path.sub(/\.pdf($|\?)/, '.html\\1')
     STDERR.puts url
+    STDERR.puts request.original_url
 
     if RUBY_PLATFORM =~ /darwin/
       chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
