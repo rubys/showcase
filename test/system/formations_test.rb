@@ -15,14 +15,18 @@ class FormationsTest < ApplicationSystemTestCase
   test "should update Formation" do
     visit person_url(people(:Kathryn))
 
+    assert_no_text "instructor Two"
+
     within find('caption', text: 'Solos').sibling('tbody') do
       find('td', text: 'Full Silver').hover
       click_on "Edit"
     end
 
+    find('a', text: "Add instructor").click # click_on "Add instructor"
     fill_in "Song", with: "Por Una Cabeza"
     click_on "Update Formation"
 
+    assert_text "instructor Two"
     assert_text "Formation was successfully updated"
     click_on "Back"
   end
@@ -37,6 +41,6 @@ class FormationsTest < ApplicationSystemTestCase
 
     click_on "Scratch this formation"
 
-    assert_text "Formation was successfully scratched"
+    assert_text "Formation was successfully "
   end
 end
