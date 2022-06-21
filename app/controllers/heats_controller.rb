@@ -49,8 +49,8 @@ class HeatsController < ApplicationController
   # POST /heats/redo
   def redo
     # remove all scratches and orphaned entries
-    Heat.delete_by(number: ...0)
-    Entry.includes(:heats).delete_by(heats: {id: nil})
+    Heat.where(number: ...0).each {|heat| heat.destroy}
+    Entry.includes(:heats).where(heats: {id: nil}).each {|entry| entry.destroy}
 
     schedule_heats
     redirect_to heats_url, notice: "#{Heat.maximum(:number)} heats generated."
