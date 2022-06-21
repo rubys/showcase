@@ -22,7 +22,7 @@ export default class extends Controller {
       if (lastBox.childElementCount >= this.boxes.length) {
         let box = lastBox.cloneNode(true);
         box.id = box.id.replace(/\d+/, n => parseInt(n) + 1);
-        box.setAttribute('name', box.id);
+        box.setAttribute('name', box['name'].replace(/\d+/, n => parseInt(n) + 1));
         box.addEventListener('change', this.preventDupes);
         lastBox.parentNode.insertBefore(box, lastBox.nextSibling);
         this.boxes.push(box);
