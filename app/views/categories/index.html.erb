@@ -65,8 +65,6 @@
         <td class="row"><%= @start[heats.last.first]&.strftime("%I:%M %P") %>
         <% elsif not cat&.day.blank? and not @oneday %>
         <td class="row"><%= cat.day %>
-        <% else %>
-        <td class="row"><%= link_to cat.name, heats_path(anchor: "cat-#{cat.name.downcase}"), data: { turbo: false } %></a>
         <% end %>
         <% else %>
         <td class="row text-right">0
