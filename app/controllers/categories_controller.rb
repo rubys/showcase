@@ -1,5 +1,6 @@
 class CategoriesController < ApplicationController
   include Printable
+  include HeatScheduler
   before_action :set_category, only: %i[ show edit update destroy ]
 
   # GET /categories or /categories.json
@@ -60,6 +61,13 @@ class CategoriesController < ApplicationController
         format.json { render json: @category.errors, status: :unprocessable_entity }
       end
     end
+  end
+
+
+  # POST /categories/redo
+  def redo
+    schedule_heats
+    redirect_to categories_url, notice: "#{Heat.maximum(:number)} heats generated."
   end
 
   # POST /categories/drop

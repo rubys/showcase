@@ -12,7 +12,12 @@
 </ul>
 </div>
 
-  <h1 class="text-center font-bold text-4xl mb-8">Agenda</h1>
+
+  <div class="float-right flex flex-col justify-end">
+    <%= up_link 'Redo', redo_categories_path, class: "btn-blue print:hidden", data: { turbo_method: :post } %>  
+  </div>
+
+  <h1 class="text-center font-bold text-4xl mb-12">Agenda</h1>
 
   <% entries = 0 %>
 

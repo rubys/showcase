@@ -4,6 +4,10 @@ module HeatScheduler
   def schedule_heats
     Group.set_knobs
 
+    # remove all scratches and orphaned entries
+    Heat.where(number: ...0).each {|heat| heat.destroy}
+    Entry.includes(:heats).where(heats: {id: nil}).each {|entry| entry.destroy}
+
     # extract heats
     @heats = Heat.eager_load(
       dance: [:open_category, :closed_category, :solo_category, :multi_category],

@@ -61,6 +61,7 @@ Rails.application.routes.draw do
     end
 
     resources :categories do
+      post 'redo', on: :collection
       post 'drop', on: :collection
     end
 
