@@ -1,53 +1,12 @@
 class CategoriesController < ApplicationController
+  include Printable
   before_action :set_category, only: %i[ show edit update destroy ]
 
   # GET /categories or /categories.json
   def index
+    generate_agenda
+    @agenda = @agenda.to_h
     @categories = Category.order(:order)
-
-    counts = Heat.where(number: 0..).group(:number, :category, :dance_id).count(:number)
-
-    @unscheduled = counts.select {|(number, category, dance), count| number == 0}.values.sum
-
-    @heats = @categories.map {|category| [category, 0]}.to_h
-
-    @heats.merge!(counts.map do |(heat, category, dance), count|
-      dance = Dance.find(dance);
-
-      case category
-      when "Open"
-        category = dance.open_category
-      when "Solo"
-        category = dance.solo_category
-      when "Multi"
-        category = dance.multi_category
-      else
-        category = dance.closed_category
-      end
-
-      [category, 1]
-    end.group_by {|category, counts| category}.
-    map {|category, counts| [category, counts.map(&:last).sum]}.to_h)
-
-    @entries = @categories.map {|category| [category, 0]}.to_h
-
-    @entries.merge!(counts.map do |(heat, category, dance), count|
-      dance = Dance.find(dance)
-
-      case category
-      when "Open"
-        category = dance.open_category
-      when "Solo"
-        category = dance.solo_category
-      when "Multi"
-        category = dance.multi_category
-      else
-        category = dance.closed_category
-      end
-
-      [category, count]
-    end.group_by {|category, counts| category}.
-    map {|category, counts| [category, counts.map(&:last).sum]}.to_h)
   end
 
   # GET /categories/1 or /categories/1.json

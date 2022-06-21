@@ -14,52 +14,83 @@
 
   <h1 class="text-center font-bold text-4xl mb-8">Agenda</h1>
 
+  <% entries = 0 %>
+
   <div class="min-w-full">
-  <table class="mx-auto table-fixed">
+  <table class="table-fixed ml-6 mb-8">
     <thead>
-      <tr>
-        <th class="row-head">Category
-        <th class="row-head">Entries
-        <th class="row-head">Heats
-        <% if @categories.any? {|category| category.day and not category.day.empty?} %>
-        <th class="row-head">Day
-        <% if @categories.any? {|category| category.time and not category.time.empty?} %>
-        <th class="row-head">Time
-        <% end %>
-        <% end %>
-      </tr>
-    </thead>
-    <tbody data-controller="drop" data-drop-action="<%= drop_categories_path %>">
-    <% @categories.each do |category| %>
-      <tr class="hover:bg-yellow-200" draggable="true" data-drag-id="<%= category.id %>">
-        <td class="row text-black font-medium"><%= link_to category.name, edit_category_path(category) %></td>
-        <td class="row text-right"><%= @entries[category] %>
-        <td class="row text-right"><%= @heats[category] %>
-        <% if category.day and not category.day.empty? %>
-        <td class="row"><%= category.day %></td>
-        <% if category.time and not category.time.empty? %>
-        <td class="row"><%= category.time %></td>
-        <% end %>
-        <% end %>
-      </tr>
-    <% end %>
-    <% if @heats[nil] %>
     <tr>
-      <td class="row text-black font-medium">Uncategoried
-      <td class="row text-right"><%= @heats[nil] %>
-      <td class="row text-right"><%= @entries[nil] %>
+      <th class="row-head">Category
+      <th class="row-heead">Entries
+      <th class="row-head">Heats
+      <% if @start && !@start.compact.empty? %>
+      <% unless @oneday %>
+      <th class="row-head">Day
+      <% end %>
+      <th class="row-head" colspan="2">Time
+      <% elsif not @oneday %>
+      <th class="row-head">Day
+      <% end %>
     </tr>
+    </thead>
+    <% if @agenda['Unscheduled'] %>
+    <% entries += (count = @agenda['Unscheduled'].map {|number, heats| heats.length}.sum) %>
+    <tbody>
+    <tr>
+      <td class="row">Unscheduled
+      <td class="row text-right"><%= count %>
+      <td class="row text-right"><%= @agenda['Unscheduled'].count %>
+    </tr>
+    </tbody>
     <% end %>
+    <tbody data-controller="drop" data-drop-action="<%= drop_categories_path %>">
+    <% @categories.each do |cat| %>
+      <tr class="hover:bg-yellow-200" draggable="true" data-drag-id="<%= cat.id %>">
+        <% heats = @agenda[cat.name] %>
+        <td class="row text-black font-medium"><%= link_to cat.name, edit_category_path(cat.id) %></a>
+        <% if heats %>
+        <% entries += (count = heats.map {|number, heats| heats.length}.sum) %>
+        <td class="row text-right"><%= count %>
+        <td class="row text-right"><%= heats.length %>
+        <% if @start and @start[heats.first.first] %>
+        <% unless @oneday %>
+        <td class="row"><%= Date::DAYNAMES[@start[heats.first.first]&.wday || 7] %>
+        <% end %>
+        <td class="row"><%= @start[heats.first.first]&.strftime("%I:%M %P") %>
+        <td class="row"><%= @start[heats.last.first]&.strftime("%I:%M %P") %>
+        <% elsif not cat&.day.blank? and not @oneday %>
+        <td class="row"><%= cat.day %>
+        <% else %>
+        <td class="row"><%= link_to cat.name, heats_path(anchor: "cat-#{cat.name.downcase}"), data: { turbo: false } %></a>
+        <% end %>
+        <% else %>
+        <td class="row text-right">0
+        <td class="row text-right">0
+        <% end %>
+      </tr>
+    <% end %>
+    </tbody>
+    <% if @agenda['Uncategorized'] %>
+    <% entries += (count = @agenda['Uncategorized'].map {|number, heats| heats.length}.sum) %>
+    <tbody>
+    <tr>
+      <td class="row"><%= link_to 'Uncategorized', heats_path(anchor: 'cat-uncategorized'), data: { turbo: false } %>
+      <td class="row text-right"><%= count %>
+      <td class="row text-right"><%= @agenda['Uncategorized'].count %>
+    </tr>
+    </tbody>
+    <% end %>
+    <tfoot>
     <tr>
       <th class="border-t-2 border-gray-200 row text-center font-bold">total
       <td class="border-t-2 border-gray-200 row text-right">
-        <%= @entries.values.sum %>
+        <%= entries %>
       </td>
       <td class="border-t-2 border-gray-200 row text-right">
-        <%= @heats.values.sum %>
+        <%= @agenda.to_a.last.last.last.last.last.number %>
       </td>
     </tr>
-    </tbody>
+    </tfoot>
   </table>
   </div>
 
