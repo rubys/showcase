@@ -14,31 +14,29 @@ module EntryForm
       entries = @person.lead_entries + @person.follow_entries
       studios = [@person.studio] + @person.studio.pairs
 
-      if false # will be @formation
-        @avail = Person.where(type: ['Student', 'Instructor'], studio: studios).order(:name).to_a
-        @avail.delete(@person)
+      seeking = case @person.role
+      when 'Leader'
+          ['Follower']
+      when 'Follower'
+          ['Leader']
       else
-        seeking = case @person.role
-        when 'Leader'
-           ['Follower']
-        when 'Follower'
-           ['Leader']
-        else
-          ['Leader', 'Follower']
-        end
-
-        instructors = Person.where(type: 'Professional', studio: studios, 
-          role: [*seeking, 'Both']).order(:name)
-        students = Person.where(type: 'Student', studio: @person.studio, 
-          role: [*seeking, 'Both']).order(:name) +
-          Person.where(type: 'Student', studio: @person.studio.pairs,
-          role: [*seeking, 'Both']).order(:name)
-
-        @avail = instructors + students
-        surname = @person.name.split(',').first + ','
-        spouse = @avail.find {|person| person.name.start_with? surname}
-        @avail = ([spouse] + @avail).uniq if spouse
+        ['Leader', 'Follower']
       end
+
+      seeking = ['Leader', 'Follower'] if @formation
+
+      instructors = Person.where(type: 'Professional', studio: studios, 
+        role: [*seeking, 'Both']).order(:name)
+      @students = Person.where(type: 'Student', studio: @person.studio, 
+        role: [*seeking, 'Both']).order(:name) +
+        Person.where(type: 'Student', studio: @person.studio.pairs,
+        role: [*seeking, 'Both']).order(:name)
+
+      @avail = instructors + @students
+      surname = @person.name.split(',').first + ','
+      spouse = @avail.find {|person| person.name.start_with? surname}
+      @avail = ([spouse] + @avail).uniq if spouse
+      @avail.delete(@person)
 
       @avail = @avail.map {|person| [person.display_name, person.id]}.to_h
       @instructors = Person.where(type: 'Professional', studio: studios).
@@ -47,6 +45,7 @@ module EntryForm
       @followers = Person.where(role: %w(Follower Both)).order(:name).pluck(:name, :id)
       @leads = Person.where(role: %w(Leader Both)).order(:name).pluck(:name, :id)
       @instructors = Person.where(type: 'Professional').order(:name).pluck(:name, :id)
+      @students = Person.where(type: 'Student').order(:name)
     end
 
     @ages = Age.all.order(:id).map {|age| [age.description, age.id]}

@@ -46,6 +46,16 @@
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <% if @formation %>
+  <div class="my-5">
+  <%= form.label :on_floor, 'Instructors' %>
+  <ul class="ml-6">
+  <li class="my-2"><%= form.radio_button :on_floor, 1, checked: @on_floor %> On the dance floor with students
+  <li classs="my-2"><%= form.radio_button :on_floor, 0, checked: !@on_floor %> Credit only
+  </ul>
+  </div>
+  <% end %>
+
   <div class="mx-auto flex">
   <div class="mx-auto">
   <%= form.submit (solo.persisted? ? 'Update' : 'Create') + ' ' + (@formation ? 'Formation' : 'Solo'),

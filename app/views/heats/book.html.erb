@@ -174,7 +174,7 @@ tbody::after {
            <td class="pl-4"><%= link_to p1.display_name, polymorphic_path(p1, anchor: 'heats') %>
            <% if heat.category == 'Solo' %>
            <% heat.solo.formations.each_with_index do |formation, index| %>
-             <% if index % 2 == 0 %>
+             <% if index % 2 == 0 and formation.on_floor %>
              <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
              <% end %>
            <% end %>
@@ -182,7 +182,7 @@ tbody::after {
            <td class="pl-4"><%= link_to p2.display_name, polymorphic_path(p2, anchor: 'heats') %>
            <% if heat.category == 'Solo' %>
            <% heat.solo.formations.each_with_index do |formation, index| %>
-             <% if index % 2 == 1 %>
+             <% if index % 2 == 1 and formation.on_floor %>
              <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
              <% end %>
            <% end %>

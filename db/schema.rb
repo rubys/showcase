@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_06_22_011356) do
+ActiveRecord::Schema[7.0].define(version: 2022_06_22_141547) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -138,6 +138,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_22_011356) do
     t.integer "solo_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "on_floor", default: true
     t.index ["person_id"], name: "index_formations_on_person_id"
     t.index ["solo_id"], name: "index_formations_on_solo_id"
   end

@@ -16,19 +16,43 @@ export default class extends Controller {
       box.appendChild(option);
     }
 
-    let add = this.element.querySelector('a.absolute');
-    add.addEventListener('click', event => {
-      let lastBox = this.boxes[this.boxes.length - 1];
-      if (lastBox.childElementCount >= this.boxes.length) {
-        let box = lastBox.cloneNode(true);
-        box.id = box.id.replace(/\d+/, n => parseInt(n) + 1);
-        box.setAttribute('name', box['name'].replace(/\d+/, n => parseInt(n) + 1));
-        box.addEventListener('change', this.preventDupes);
-        lastBox.parentNode.insertBefore(box, lastBox.nextSibling);
-        this.boxes.push(box);
-        this.preventDupes();
-      }
-    })
+    let adds = this.element.querySelectorAll('div.absolute a');
+    for (let add of adds) {
+      add.addEventListener('click', event => {
+        let lastBox = this.boxes[this.boxes.length - 1];
+        if (lastBox.childElementCount >= this.boxes.length) {
+          let box = lastBox.cloneNode(true);
+
+          if (add.dataset.list) {
+            for (let option of box.querySelectorAll('option')) {
+              if (option.value != 'x') {
+                option.remove();
+              }
+            }
+
+            for (let [name, id] of Object.entries(JSON.parse(add.dataset.list)).reverse()) {
+              if (name.includes(',')) {
+                let parts = name.split(/,\s*/);
+                name = [...parts.slice(-1), ...parts.slice(0, 1)].join(' ')
+              }
+
+              let option = document.createElement('option');
+              option.value = id;
+              option.textContent = name;
+              box.prepend(option);
+            }
+          }
+
+          box.id = box.id.replace(/\d+/, n => parseInt(n) + 1);
+          box.setAttribute('name', box['name'].replace(/\d+/, n => parseInt(n) + 1));
+          box.addEventListener('change', this.preventDupes);
+
+          lastBox.parentNode.insertBefore(box, lastBox.nextSibling);
+          this.boxes.push(box);
+          this.preventDupes();
+        }
+      })
+    }
   }
 
   preventDupes = (event) => {
@@ -51,7 +75,7 @@ export default class extends Controller {
           }
         } else {
           option.disabled = false;
-          if (!box.value) box.value = option.value;
+          if (!box.value || box.value == 'x') box.value = option.value;
         }
       }
 

@@ -23,6 +23,7 @@ class FormationsController < ApplicationController
     @partner = nil
     @age = @person&.age_id
     @level = @person&.level_id
+    @on_floor = true
   end
 
   # GET /formations/1/edit
@@ -43,6 +44,8 @@ class FormationsController < ApplicationController
     if @instructor and @formation.include? @instructor.id
       @formation.rotate! @formation.index(@instructor.id)
     end
+
+    @on_floor = @solo.formations.all? {|formation| formation.on_floor}
   end
 
   # POST /formations or /formations.json

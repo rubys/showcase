@@ -76,7 +76,9 @@ class SolosController < ApplicationController
     respond_to do |format|
       if @solo.save
         formation.each do |dancer|
-          Formation.create! solo: @solo, person_id: dancer.to_i
+          person = Person.find(dancer.to_i)
+          Formation.create! solo: @solo, person: person,
+            on_floor: (person.type != 'Professional' || solo[:on_floor] == '1')
         end
 
         format.html { redirect_to @person, 
