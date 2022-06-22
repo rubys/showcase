@@ -41,6 +41,7 @@
     - <%= heat.entry.follow.display_name %>
     <% if heat.category == 'Solo' %>
     <% heat.solo.formations.each do |formation| %>
+    <% next unless formation.on_floor %>
     - <%= formation.person.display_name %>
     <% end %>
     <% end %>

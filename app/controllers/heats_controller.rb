@@ -2,6 +2,7 @@ class HeatsController < ApplicationController
   include HeatScheduler
   include EntryForm
   
+  skip_before_action :authenticate_user, only: %i[ mobile ]
   before_action :set_heat, only: %i[ show edit update destroy ]
 
   # GET /heats or /heats.json

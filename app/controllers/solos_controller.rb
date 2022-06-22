@@ -78,7 +78,7 @@ class SolosController < ApplicationController
         formation.each do |dancer|
           person = Person.find(dancer.to_i)
           Formation.create! solo: @solo, person: person,
-            on_floor: (person.type != 'Professional' || solo[:on_floor] == '1')
+            on_floor: (person.type != 'Professional' || solo[:on_floor] != '0')
         end
 
         format.html { redirect_to @person, 
@@ -117,12 +117,18 @@ class SolosController < ApplicationController
 
     if not formation.empty? or not @solo.formations.empty?
       @solo.formations.each do |record|
-        Formation.delete(record) unless formation.include? record.person_id
+        if not formation.include? record.person_id
+          Formation.delete(record) 
+        elsif record.person.type == "Professional"
+          record.update on_floor: solo[:on_floor] == '1'
+        end
       end
 
-      formation.each do |person|
-        unless @solo.formations.to_a.any? {|record| record.person_id == person}
-          Formation.create! solo: @solo, person_id: person
+      formation.each do |person_id|
+        unless @solo.formations.to_a.any? {|record| record.person_id == person_id}
+          person = Person.find(person_id)
+          Formation.create! solo: @solo, person: person,
+            on_floor: (person.type != 'Professional' || solo[:on_floor] != '0')
         end
       end
     end

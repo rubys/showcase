@@ -28,8 +28,8 @@ class FormationsController < ApplicationController
 
   # GET /formations/1/edit
   def edit
-    form_init(params[:primary], @solo.heat.entry)
     @formation = @solo.formations.map {|record| record.person_id}
+    form_init(params[:primary], @solo.heat.entry)
 
     @partner = @solo.heat.entry.partner(@person).id
 

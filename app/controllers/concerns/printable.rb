@@ -169,6 +169,7 @@ module Printable
     end
 
     Formation.includes(:person, solo: :heat).each do |formation|
+      next unless formation.on_floor
       @heatlist[formation.person] << formation.solo.heat.id rescue nil
     end
 
