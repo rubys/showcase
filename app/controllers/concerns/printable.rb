@@ -35,6 +35,7 @@ module Printable
       
     start = nil
     heat_length = Event.last.heat_length
+    solo_length = Event.last.solo_length
     if not Event.last.date.blank? and heat_length and @categories.values.any? {|category| not category.time.blank?}
       start = Chronic.parse(
         Event.last.date.sub(/(^|[a-z]+ )?\d+-\d+/) {|str| str.sub(/-.*/, '')},
@@ -73,7 +74,11 @@ module Printable
             if heats.first.dance.heat_length
               start += heat_length * heats.first.dance.heat_length
             elsif heats.any? {|heat| heat.number > 0}
-              start += heat_length
+              if heats.length == 1 and heats.first.category == 'Solo'
+                start += solo_length
+              else
+                start += heat_length
+              end
             end
           end
 

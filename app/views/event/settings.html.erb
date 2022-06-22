@@ -64,6 +64,11 @@
   </div>
 
   <div class="my-5">
+  <%= form.label :solo_length, 'Time between start of solos (if different)' %><br>
+  <%= form.number_field :solo_length, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
   <%= form.label :column_order, 'Heat list column order' %>
   <ul class="ml-6">
   <li class="my-2"><%= form.radio_button :column_order, 1 %> Lead, Follow

@@ -60,7 +60,7 @@ class EventController < ApplicationController
     @event = Event.last
     old_open_scoring = @event.open_scoring
     ok = @event.update params.require(:event).permit(:name, :location, :date, :heat_range_cat, :heat_range_level, :heat_range_age,
-      :intermix, :ballrooms, :column_order, :backnums, :track_ages, :heat_length, :open_scoring,
+      :intermix, :ballrooms, :column_order, :backnums, :track_ages, :heat_length, :solo_length, :open_scoring,
       :heat_cost, :solo_cost, :multi_cost, :max_heat_size, :package_required)
 
     if @event.open_scoring != old_open_scoring
