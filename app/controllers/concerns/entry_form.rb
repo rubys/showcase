@@ -18,13 +18,21 @@ module EntryForm
         @avail = Person.where(type: ['Student', 'Instructor'], studio: studios).order(:name).to_a
         @avail.delete(@person)
       else
-        seeking = @person.role == 'Leader' ? 'Follower' : 'Leader'
+        seeking = case @person.role
+        when 'Leader'
+           ['Follower']
+        when 'Follower'
+           ['Leader']
+        else
+          ['Leader', 'Follower']
+        end
+
         instructors = Person.where(type: 'Professional', studio: studios, 
-          role: [seeking, 'Both']).order(:name)
+          role: [*seeking, 'Both']).order(:name)
         students = Person.where(type: 'Student', studio: @person.studio, 
-          role: [seeking, 'Both']).order(:name) +
+          role: [*seeking, 'Both']).order(:name) +
           Person.where(type: 'Student', studio: @person.studio.pairs,
-          role: [seeking, 'Both']).order(:name)
+          role: [*seeking, 'Both']).order(:name)
 
         @avail = instructors + students
         surname = @person.name.split(',').first + ','
