@@ -132,11 +132,11 @@ a scheduled heat time will be added to each heat.
         </td>
       </tr>
 
-      <% last_back = 100 %>
+      <% ballroom = 'A' %>
       <% if @ballrooms == 1 %>
-      <% last_back = 200 %>
+      <% ballroom = 'B' %>
       <% else %>
-      <% if (heats.first.back || 0) < 200 && heats.first.category != 'Solo' %>
+      <% if heats.first.entry.lead.type == 'Professional' && heats.first.category != 'Solo' %>
       <tr>
         <td>
         <td></td>
@@ -147,14 +147,14 @@ a scheduled heat time will be added to each heat.
       <% end %>
 
       <% heats.each do |heat| %>
-         <% if number != 0 and heat.back && last_back < 200 && heat.back >= 200 && heats.first.category != 'Solo'%>
+         <% if ballroom == 'A' and heat.entry.lead.type == 'Student' and heat.category != 'Solo'%>
          <tr>
            <td>
            <td></td>
            <td colspan="8" class="text-xs pt-2">Ballroom B</td>
          </tr>
+         <% ballroom = 'B' %>
          <% end %>
-         <% last_back = heat.back if heat.back && @ballrooms == 2 %>
          <% if heat.number < 0 %>
          <tr id="<%= dom_id heat %>" class="line-through opacity-50">
          <% else %>

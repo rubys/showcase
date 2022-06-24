@@ -8,7 +8,7 @@ module Printable
 
     @heats = @heats.to_a.group_by {|heat| heat.number.abs}.
       map do |number, heats|
-        [number, heats.sort_by { |heat| heat.back || 0 } ]
+        [number, heats.sort_by { |heat| [heat.back || 0, heat.entry.lead.type] } ]
       end
 
     @categories = Category.order(:order).map {|category| [category.name, category]}.to_h

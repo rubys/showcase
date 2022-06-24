@@ -114,7 +114,7 @@ tbody::after {
           <% end %>
         </td>
       </tr>
-      <% if (heats.first.back || 0) < 200 && @ballrooms == 2 %>
+      <% if heats.first.entry.lead.type == 'Professional' and @ballrooms == 2 and heats.first.category!= 'Solo' %>
       <tr>
         <% if @type == 'judge' %>
         <td>
@@ -123,17 +123,17 @@ tbody::after {
         <td colspan="8" class="text-xs pt-2">Ballroom A</td>
       </tr>
       <% end %>
-      <% last_back = 100 %>
+      <% ballroom = 'A' %>
       <% else %>
-      <% last_back = 200 %>
+      <% ballroom = 'B' %>
       <% end %>
 
       <% if heats.first.category == 'Solo' %>
-      <% last_back = 200 %>
+      <% ballroom = 'B' %>
       <% end %>
 
       <% heats.each do |heat| %>
-         <% if heat.back && last_back < 200 && heat.back >= 200 && @ballrooms == 2 %>
+         <% if ballroom == 'A' and heat.entry.lead.type == 'Student' and @ballrooms == 2 %>
          <tr>
            <% if @type == 'judge' %>
            <td>
@@ -141,8 +141,8 @@ tbody::after {
            <td>
            <td colspan="8" class="text-xs pt-2">Ballroom B</td>
          </tr>
+         <% ballroom = 'B' %>
          <% end %>
-         <% last_back = heat.back if heat.back %>
          <% if heat.number < 0 %>
          <tr class="font-base line-through opacity-50" id="<%= dom_id heat %>">
          <% else %>
