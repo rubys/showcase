@@ -323,10 +323,10 @@ when most dances for an individual are with one instructor but one or two are ch
       <% end %>
       <% if %w(Student Professional).include? @person.type %>
       <% unless @heats.empty? and @solos.empty? %>
-      <%= link_to 'Heat sheet', heats_person_path(@person), class: "btn-pale-orange" %>
+      <%= link_to 'Heat sheet', heats_person_path(@person, format: :pdf), class: "btn-pale-orange" %>
       <% end %>
       <% unless @scores.empty? %>
-      <%= link_to 'Scores', scores_person_path(@person), class: "btn-pale-orange" %>
+      <%= link_to 'Scores', scores_person_path(@person, format: :pdf), class: "btn-pale-orange" %>
       <% end %>
       <% end %>
 

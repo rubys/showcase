@@ -15,7 +15,13 @@ class PeopleController < ApplicationController
     @ballrooms = Event.last.ballrooms
     @people = [set_person]
     heat_sheets
-    render :heats
+
+    respond_to do |format|
+      format.html { render 'people/heats' }
+      format.pdf do
+        render_as_pdf basename: "#{@person.name.gsub(/\W+/, '-')}-heat-sheet"
+      end
+    end
   end
 
   def scores
@@ -25,7 +31,13 @@ class PeopleController < ApplicationController
   def individual_scores
     @people = [set_person]
     score_sheets
-    render :scores
+
+    respond_to do |format|
+      format.html { render 'people/scores' }
+      format.pdf do
+        render_as_pdf basename: "#{@person.name.gsub(/\W+/, '-')}-scores"
+      end
+    end
   end
 
   # GET /people or /people.json
