@@ -9,6 +9,13 @@ class PeopleController < ApplicationController
     @ballrooms = event.ballrooms
     @track_ages = event.track_ages
     heat_sheets
+
+    respond_to do |format|
+      format.html { render 'people/heats' }
+      format.pdf do
+        render_as_pdf basename: "heat-sheets"
+      end
+    end
   end
 
   def individual_heats
@@ -26,6 +33,13 @@ class PeopleController < ApplicationController
 
   def scores
     score_sheets
+
+    respond_to do |format|
+      format.html { render 'people/scores' }
+      format.pdf do
+        render_as_pdf basename: "scores"
+      end
+    end
   end
 
   def individual_scores

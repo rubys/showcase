@@ -16,6 +16,13 @@ class StudiosController < ApplicationController
 
   def invoices
     index
+
+    respond_to do |format|
+      format.html
+      format.pdf do
+        render_as_pdf basename: "invoices"
+      end
+    end
   end
 
   # GET /studios/1 or /studios/1.json

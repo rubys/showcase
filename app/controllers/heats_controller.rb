@@ -1,6 +1,7 @@
 class HeatsController < ApplicationController
   include HeatScheduler
   include EntryForm
+  include Printable
   
   skip_before_action :authenticate_user, only: %i[ mobile ]
   before_action :set_heat, only: %i[ show edit update destroy ]
@@ -35,6 +36,13 @@ class HeatsController < ApplicationController
     @event = Event.last
     @ballrooms = Event.last.ballrooms
     index
+
+    respond_to do |format|
+      format.html
+      format.pdf do
+        render_as_pdf basename: @type == 'judget' ? 'judge-heat-book' : "master-heat-book"
+      end
+    end
   end
 
   # GET /heats/1 or /heats/1.json
