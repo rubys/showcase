@@ -27,37 +27,33 @@ module HeatScheduler
 
     heats = Group.sort(heats)
 
-    # convert relevant data to numbers
+    # group entries into heats
     groups = []
-    assignments = {}
-    subgroups = []
-    lastgroup = nil
     while not heats.empty?
-      if lastgroup and not lastgroup.match? *heats.first
-        rebalance(assignments, subgroups) unless subgroups.empty?
+      assignments = {}
+      subgroups = []
 
-        assignments = {}
-        subgroups = []
-      end
+      done = false
+      while not done
+        done = true
+        group = Group.new(*heats.shift)
+        subgroups.unshift group
 
-      group = Group.new(*heats.shift)
-
-      subgroups.unshift group
-
-      for entry in heats.dup
-        if group.add? *entry
-          heats.delete entry
-          assignments[entry] = group
-        elsif not group.match? *entry
-          break
+        for entry in heats.dup
+          if group.add? *entry
+            heats.delete entry
+            assignments[entry] = group
+          elsif group.match? *entry
+            done = false
+          else
+            break
+          end
         end
       end
 
-      groups << group
-      lastgroup = group
+      rebalance(assignments, subgroups)
+      groups += subgroups.reverse
     end
-
-    rebalance(assignments, subgroups) unless subgroups.empty?
 
     groups = reorder(groups)
 
