@@ -33,18 +33,19 @@ module HeatScheduler
       assignments = {}
       subgroups = []
 
-      done = false
-      while not done
-        done = true
-        group = Group.new(*heats.shift)
+      more = heats.first
+      while more
+        group = Group.new(*more)
+        assignments[more] = group
         subgroups.unshift group
+        more = nil
 
-        for entry in heats.dup
+        for entry in heats
+          next if assignments[entry]
           if group.add? *entry
-            heats.delete entry
             assignments[entry] = group
           elsif group.match? *entry
-            done = false
+            more ||= entry
           else
             break
           end
@@ -52,6 +53,7 @@ module HeatScheduler
       end
 
       rebalance(assignments, subgroups)
+      heats.shift assignments.keys.length
       groups += subgroups.reverse
     end
 
