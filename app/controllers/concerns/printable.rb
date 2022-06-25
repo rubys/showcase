@@ -45,6 +45,7 @@ module Printable
 
     @agenda = {}
     @start = [] if start
+    @finish = [] if start
     last_cat = nil
 
     @heats.each do |number, heats|
@@ -80,6 +81,8 @@ module Printable
                 start += heat_length
               end
             end
+
+            @finish[number] ||= start
           end
 
           last_cat = cat

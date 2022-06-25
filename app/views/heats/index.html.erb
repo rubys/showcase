@@ -65,7 +65,7 @@ a scheduled heat time will be added to each heat.
         <td class="row"><%= Date::DAYNAMES[@start[heats.first.first]&.wday || 7] %>
         <% end %>
         <td class="row"><%= @start[heats.first.first]&.strftime("%I:%M %P") %>
-        <td class="row"><%= @start[heats.last.first]&.strftime("%I:%M %P") %>
+        <td class="row"><%= @finish[heats.last.first]&.strftime("%I:%M %P") %>
         <% elsif not @categories[cat]&.day.blank? and not @oneday %>
         <td class="row"><%= @categories[cat].day %>
         <% end %>

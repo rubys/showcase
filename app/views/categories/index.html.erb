@@ -62,7 +62,7 @@
         <td class="row"><%= Date::DAYNAMES[@start[heats.first.first]&.wday || 7] %>
         <% end %>
         <td class="row"><%= @start[heats.first.first]&.strftime("%I:%M %P") %>
-        <td class="row"><%= @start[heats.last.first]&.strftime("%I:%M %P") %>
+        <td class="row"><%= @finish[heats.last.first]&.strftime("%I:%M %P") %>
         <% elsif not cat&.day.blank? and not @oneday %>
         <td class="row"><%= cat.day %>
         <% end %>
