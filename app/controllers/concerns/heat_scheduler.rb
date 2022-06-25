@@ -27,32 +27,43 @@ module HeatScheduler
 
     heats = Group.sort(heats)
 
+    max = Event.last.max_heat_size || 9999
+
     # group entries into heats
     groups = []
     while not heats.empty?
-      assignments = {}
-      subgroups = []
+      assignments = subgroups = nil
 
-      more = heats.first
-      while more
-        group = Group.new(*more)
-        assignments[more] = group
-        subgroups.unshift group
-        more = nil
+      [max + 3, max + 2, max + 1, max].each do |limit|
+        Group.max = limit
 
-        for entry in heats
-          next if assignments[entry]
-          if group.add? *entry
-            assignments[entry] = group
-          elsif group.match? *entry
-            more ||= entry
-          else
-            break
+        assignments = {}
+        subgroups = []
+
+        more = heats.first
+        while more
+          group = Group.new(*more)
+          assignments[more] = group
+          subgroups.unshift group
+          more = nil
+
+          for entry in heats
+            next if assignments[entry]
+            if group.add? *entry
+              assignments[entry] = group
+            elsif group.match? *entry
+              more ||= entry
+            else
+              break
+            end
           end
         end
+
+        rebalance(assignments, subgroups)
+
+        break if subgroups.all? {|subgroup| subgroup.size <= max}
       end
 
-      rebalance(assignments, subgroups)
       heats.shift assignments.keys.length
       groups += subgroups.reverse
     end
@@ -151,6 +162,10 @@ module HeatScheduler
       @@level = event.heat_range_level
       @@age = event.heat_range_age
       @@max = event.max_heat_size || 9999
+    end
+
+    def self.max= max
+      @@max = max
     end
 
     def self.sort(heats)
