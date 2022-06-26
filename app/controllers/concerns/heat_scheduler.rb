@@ -39,15 +39,14 @@ module HeatScheduler
 
       more = heats.first
       while more
-        group = Group.new(*more)
-        assignments[more] = group
+        group = Group.new
         subgroups.unshift group
         more = nil
 
-        for entry in heats
-          next if assignments[entry]
+        heats.each_with_index do |entry, index|
+          next if assignments[index]
           if group.add? *entry
-            assignments[entry] = group
+            assignments[index] = group
           elsif group.match? *entry
             more ||= entry
           else
@@ -57,9 +56,10 @@ module HeatScheduler
       end
 
       Group.max = max
+      assignments = assignments.map {|index, group| [heats[index], group]}
       rebalance(assignments, subgroups, max)
 
-      heats.shift assignments.keys.length
+      heats.shift assignments.length
       groups += subgroups.reverse
     end
 
@@ -87,23 +87,21 @@ module HeatScheduler
   end
 
   def rebalance(assignments, subgroups, max)
+    while subgroups.length * max < assignments.length
+      subgroups.unshift Group.new
+    end
+
     ceiling = (assignments.length.to_f / subgroups.length).ceil
 
     assignments.to_a.reverse.each do |(entry, source)|
-      if subgroups.length * max < assignments.length
-        subgroups.unshift Group.new(*entry)
-        source.remove *entry
-        ceiling = (assignments.length.to_f / subgroups.length).ceil
-      else
-        subgroups.each do |target|
-          break if target == source
-          next if target.size >= ceiling
-          next if target.size >= source.size - 1
+      subgroups.each do |target|
+        break if target == source
+        next if target.size >= ceiling
+        next if target.size >= source.size - 1
 
-          if target.add? *entry
-            source.remove *entry
-            break
-          end
+        if target.add? *entry
+          source.remove *entry
+          break
         end
       end
     end
@@ -196,18 +194,8 @@ module HeatScheduler
       end
     end
 
-    def initialize(dance, dcat, level, age, heat)
-      @participants = Set.new
-      @participants.add heat.lead
-      @participants.add heat.follow
-
-      @max_dcat = @min_dcat = dcat
-      @max_level = @min_level = level
-      @max_age = @min_age = age
-      
-      @group = [heat]
-      @dance = dance
-      @dcat = dcat
+    def initialize
+      @group = []
     end
 
     def match?(dance, dcat, level, age, heat)
@@ -218,6 +206,17 @@ module HeatScheduler
     end
 
     def add?(dance, dcat, level, age, heat)
+      if @group.length == 0
+        @participants = Set.new
+  
+        @max_dcat = @min_dcat = dcat
+        @max_level = @min_level = level
+        @max_age = @min_age = age
+        
+        @dance = dance
+        @dcat = dcat
+      end
+
       return if @group.size >= @@max
       return if @participants.include? heat.lead
       return if @participants.include? heat.follow
@@ -225,7 +224,7 @@ module HeatScheduler
       return if heat.follow.exclude_id and @participants.include? heat.follow.exclude
 
       return false unless @dance == dance
-      return false if dcat == 2 # Solo
+      return false if dcat == 2 and @group.length > 0 # Solo
       return false unless (dcat-@max_dcat).abs <= @@category
       return false unless (dcat-@min_dcat).abs <= @@category
       return false unless (level-@max_level).abs <= @@level
