@@ -97,6 +97,7 @@ module HeatScheduler
       subgroups.each do |target|
         break if target == source
         next if target.size >= ceiling
+        next if target.size >= source.size
 
         if target.add? *entry
           source.remove *entry
