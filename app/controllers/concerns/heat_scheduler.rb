@@ -92,7 +92,7 @@ module HeatScheduler
   end
 
   def rebalance(assignments, subgroups)
-    ceiling = (assignments.length.to_f / subgroups.length).ceil + 1
+    ceiling = (assignments.length.to_f / subgroups.length).ceil
 
     assignments.to_a.reverse.each do |(entry, source)|
       subgroups.each do |target|
