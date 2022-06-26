@@ -32,37 +32,32 @@ module HeatScheduler
     # group entries into heats
     groups = []
     while not heats.empty?
-      assignments = subgroups = nil
+      Group.max = 9999
 
-      [max + 3, max + 2, max + 1, max].each do |limit|
-        Group.max = limit
+      assignments = {}
+      subgroups = []
 
-        assignments = {}
-        subgroups = []
+      more = heats.first
+      while more
+        group = Group.new(*more)
+        assignments[more] = group
+        subgroups.unshift group
+        more = nil
 
-        more = heats.first
-        while more
-          group = Group.new(*more)
-          assignments[more] = group
-          subgroups.unshift group
-          more = nil
-
-          for entry in heats
-            next if assignments[entry]
-            if group.add? *entry
-              assignments[entry] = group
-            elsif group.match? *entry
-              more ||= entry
-            else
-              break
-            end
+        for entry in heats
+          next if assignments[entry]
+          if group.add? *entry
+            assignments[entry] = group
+          elsif group.match? *entry
+            more ||= entry
+          else
+            break
           end
         end
-
-        rebalance(assignments, subgroups)
-
-        break if subgroups.all? {|subgroup| subgroup.size <= max}
       end
+
+      Group.max = max
+      rebalance(assignments, subgroups, max)
 
       heats.shift assignments.keys.length
       groups += subgroups.reverse
@@ -91,18 +86,24 @@ module HeatScheduler
       end.sort
   end
 
-  def rebalance(assignments, subgroups)
+  def rebalance(assignments, subgroups, max)
     ceiling = (assignments.length.to_f / subgroups.length).ceil
 
     assignments.to_a.reverse.each do |(entry, source)|
-      subgroups.each do |target|
-        break if target == source
-        next if target.size >= ceiling
-        next if target.size >= source.size - 1
+      if subgroups.length * max < assignments.length
+        subgroups.unshift Group.new(*entry)
+        source.remove *entry
+        ceiling = (assignments.length.to_f / subgroups.length).ceil
+      else
+        subgroups.each do |target|
+          break if target == source
+          next if target.size >= ceiling
+          next if target.size >= source.size - 1
 
-        if target.add? *entry
-          source.remove *entry
-          break
+          if target.add? *entry
+            source.remove *entry
+            break
+          end
         end
       end
     end
