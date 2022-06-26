@@ -56,7 +56,7 @@ module HeatScheduler
       end
 
       Group.max = max
-      assignments = (0...assignments.length).map {|index| [heats[index], assignments[index]]}
+      assignments = (0...assignments.length).map {|index| [heats[index], assignments[index]]}.to_h
       rebalance(assignments, subgroups, max)
 
       heats.shift assignments.length
@@ -92,6 +92,7 @@ module HeatScheduler
     end
 
     ceiling = (assignments.length.to_f / subgroups.length).ceil
+    floor = (assignments.length.to_f / subgroups.length).floor
 
     assignments.to_a.reverse.each do |(entry, source)|
       subgroups.each do |target|
@@ -101,7 +102,30 @@ module HeatScheduler
 
         if target.add? *entry
           source.remove *entry
+          assignments[entry] = target
           break
+        end
+      end
+    end
+
+    subgroups.select {|subgroup| subgroup.size < floor}.each do |target|
+      assignments.each do |entry, source|
+        next if source.size < ceiling
+        if target.add? *entry
+          source.remove *entry
+          assignments[entry] = target
+          break if target.size >= floor
+        end
+      end
+    end
+
+    subgroups.select {|subgroup| subgroup.size > ceiling}.each do |source|
+      assignments.each do |entry, target|
+        next if target.size > floor
+        if target.add? *entry
+          source.remove *entry
+          assignments[entry] = target
+          break if source.size <= ceiling
         end
       end
     end
