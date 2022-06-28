@@ -110,23 +110,31 @@ module HeatScheduler
 
     subgroups.select {|subgroup| subgroup.size < floor}.each do |target|
       assignments.each do |entry, source|
-        next if source.size < ceiling
+        next if source.size < max
         if target.add? *entry
           source.remove *entry
           assignments[entry] = target
-          break if target.size >= floor
+          break if target.size >= max
         end
       end
     end
 
-    subgroups.select {|subgroup| subgroup.size > ceiling}.each do |source|
+    if subgroups.any? {|subgroup| subgroup.size > max}
       assignments.each do |entry, target|
-        next if target.size > floor
-        if target.add? *entry
-          source.remove *entry
-          assignments[entry] = target
-          break if source.size <= ceiling
+        next if target.size >= max
+        subgroups.each do |source|
+          next if source.size <= max
+          if target.add? *entry
+            source.remove *entry
+            assignments[entry] = target
+            break if target.size >= max
+          end
         end
+      end
+
+      if subgroups.any? {|subgroup| subgroup.size > max}
+        subgroups.unshift Group.new
+        rebalance(assignments, subgroups, max)
       end
     end
   end
