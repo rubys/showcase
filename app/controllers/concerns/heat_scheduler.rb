@@ -55,8 +55,7 @@ module HeatScheduler
         end
       end
 
-      Group.max = max # group.max_heat_size
-      STDERR.puts '*** ' + group.max_heat_size.to_s
+      Group.max = group.max_heat_size
       assignments = (0...assignments.length).map {|index| [heats[index], assignments[index]]}.to_h
       rebalance(assignments, subgroups, group.max_heat_size)
 
