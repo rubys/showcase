@@ -29,6 +29,11 @@ class CategoriesController < ApplicationController
 
   # POST /categories or /categories.json
   def create
+    if params[:category][:customize] != '1'
+      params[:category][:ballrooms] = ''
+      params[:category][:max_heat_size] = ''
+    end
+
     @category = Category.new(category_params)
 
     @category.order = (Category.maximum(:order) || 0) + 1
@@ -49,6 +54,11 @@ class CategoriesController < ApplicationController
 
   # PATCH/PUT /categories/1 or /categories/1.json
   def update
+    if params[:category][:customize] != '1'
+      params[:category][:ballrooms] = ''
+      params[:category][:max_heat_size] = ''
+    end
+
     respond_to do |format|
       if @category.update(category_params)
         update_dances(params[:category][:include])
@@ -120,7 +130,7 @@ class CategoriesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def category_params
-      params.require(:category).permit(:name, :order, :day, :time)
+      params.require(:category).permit(:name, :order, :day, :time, :ballrooms, :max_heat_size)
     end
 
     def form_init

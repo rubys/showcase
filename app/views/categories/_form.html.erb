@@ -43,6 +43,34 @@ start times for each heat will show up on the heats page.
     <%= form.label :time %>
     <%= form.text_field :time, placeholder: '1 pm', class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+
+  <div data-controller="category-override">
+  <div class="my-5">
+    <%= form.check_box :customize, class: 'entry-count h-10',
+      data: {'category-override-target' => "toggle"},
+      checked: !!(category.ballrooms || category.max_heat_size) %>
+    <%= form.label :customize, 'Customize ballroom and heat size' %>
+  </div>
+
+  <div class="my-5" data-category-override-target="form">
+  <%= form.label :ballrooms %>
+  <ul class="ml-6">
+  <li class="my-2"><%= form.radio_button :ballrooms, 1 %> One ballroom
+  <li classs="my-2"><%= form.radio_button :ballrooms, 2 %> Two ballrooms:
+  <ul class="ml-8">
+  <li>Ballroom A: Amateur follower with instructor
+  <li>Ballroom B: Amateur leader (includes amateur couples)
+  </ul>
+  <li classs="my-2"><%= form.radio_button :ballrooms, 3 %> Attempt to evenly split couples between ballrooms
+  </ul>
+  </div>
+
+  <div class="my-5" data-category-override-target="form">
+    <%= form.label :max_heat_size, 'Max heat size (combined)' %>
+    <%= form.number_field :max_heat_size,
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  </div>
   
 <%= render partial: 'categories/dances',
   locals: {form: form, title: 'CLOSED CATEGORY', dances: @dances, category: 'Closed'} %>

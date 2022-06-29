@@ -74,6 +74,7 @@ a scheduled heat time will be added to each heat.
   </table>
 
   <% @agenda.each do |cat, heats| %>
+  <% ballrooms = (@categories[cat]&.ballrooms == nil ? @ballrooms : @categories[cat].ballrooms) %>
   <div style="page-break-after: always"></div>
 
   <div class="mt-8 flex justify-between items-center" id="cat-<%= cat.downcase.gsub(' ', '-') %>">
@@ -133,10 +134,10 @@ a scheduled heat time will be added to each heat.
       </tr>
 
       <% ballroom = 'A' %>
-      <% if @ballrooms == 1 %>
+      <% if ballrooms == 1 or heats.first.category == 'Solo' %>
       <% ballroom = 'B' %>
       <% else %>
-      <% if heats.first.entry.lead.type == 'Professional' && heats.first.category != 'Solo' %>
+      <% if heats.first.entry.lead.type == 'Professional' %>
       <tr>
         <td>
         <td></td>
@@ -146,8 +147,10 @@ a scheduled heat time will be added to each heat.
       <% end %>
       <% end %>
 
-      <% heats.each do |heat| %>
-         <% if ballroom == 'A' and heat.entry.lead.type == 'Student' and heat.category != 'Solo'%>
+      <% heats.each_with_index do |heat, index| %>
+         <% if ballroom == 'A' and (
+            (ballrooms == 2 and heat.entry.lead.type == 'Student') or
+            (ballrooms == 3 and index >= heats.length/2 )) %>
          <tr>
            <td>
            <td></td>

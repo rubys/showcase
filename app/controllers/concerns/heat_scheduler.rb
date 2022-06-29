@@ -55,9 +55,10 @@ module HeatScheduler
         end
       end
 
-      Group.max = max
+      Group.max = max # group.max_heat_size
+      STDERR.puts '*** ' + group.max_heat_size.to_s
       assignments = (0...assignments.length).map {|index| [heats[index], assignments[index]]}.to_h
-      rebalance(assignments, subgroups, max)
+      rebalance(assignments, subgroups, group.max_heat_size)
 
       heats.shift assignments.length
       groups += subgroups.reverse
@@ -224,6 +225,23 @@ module HeatScheduler
       else
         '?'
       end
+    end
+
+    def max_heat_size
+      agenda_cat = case @min_dcat
+      when 0
+        dance&.closed_category
+      when 1
+        dance&.open_category
+      when 2
+        dance&.solo_category
+      when 3
+        dance&.multi_category
+      else
+        nil
+      end
+
+      agenda_cat&.max_heat_size || @@max
     end
 
     def initialize
