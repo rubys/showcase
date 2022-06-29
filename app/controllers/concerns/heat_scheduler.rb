@@ -188,11 +188,11 @@ module HeatScheduler
 
   class Group
     def self.set_knobs
-      event = Event.last
-      @@category = event.heat_range_cat
-      @@level = event.heat_range_level
-      @@age = event.heat_range_age
-      @@max = event.max_heat_size || 9999
+      @@event = Event.last
+      @@category = @@event.heat_range_cat
+      @@level = @@event.heat_range_level
+      @@age = @@event.heat_range_age
+      @@max = @@event.max_heat_size || 9999
     end
 
     def self.max= max
@@ -240,7 +240,7 @@ module HeatScheduler
         nil
       end
 
-      agenda_cat&.max_heat_size || @@max
+      agenda_cat&.max_heat_size || @@event.max_heat_size || 9999
     end
 
     def initialize
