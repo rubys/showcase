@@ -81,5 +81,5 @@
   <% end %>
 
   <% invoice[:entries].each do |names, entries| %>
-    <%= render "entry", names: names, entries: entries %>
+    <%= render "entry", names: names, entries: entries, studio: studio.name %>
   <% end %>
