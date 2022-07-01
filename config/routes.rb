@@ -71,6 +71,7 @@ Rails.application.routes.draw do
       get 'couples', on: :collection
       get 'students', on: :collection
       get 'professionals', on: :collection
+      get 'labels', on: :collection
       get 'guests', on: :collection
       get 'heats', on: :collection
       get 'heats', on: :member, action: 'individual_heats'

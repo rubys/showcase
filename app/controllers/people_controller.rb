@@ -158,6 +158,19 @@ class PeopleController < ApplicationController
     @track_ages = Event.first.track_ages
   end
 
+  # GET /people/labels
+  def labels
+    @event = Event.first
+    @people = Person.includes(:studio).all.sort_by(&:display_name)
+
+    respond_to do |format|
+      format.html { render layout: false }
+      format.pdf do
+        render_as_pdf basename: "labels"
+      end
+    end
+  end
+
   # GET /people/1 or /people/1.json
   def show
     Dance.all
