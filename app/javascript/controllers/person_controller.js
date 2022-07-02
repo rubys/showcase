@@ -17,12 +17,12 @@ export default class extends Controller {
   setType(event) {
     if (event.target.value == 'Student') {
       this.levelTarget.style.display = 'block';
-      this.ageTarget.style.display = 'block';
+      if (this.hasAgeTarget) this.ageTarget.style.display = 'block';
       this.roleTarget.style.display = 'block';
       this.excludeTarget.style.display = 'block';
     } else {
       this.levelTarget.style.display = 'none';
-      this.ageTarget.style.display = 'none';
+      if (this.hasAgeTarget) this.ageTarget.style.display = 'none';
 
       if (event.target.value == 'Guest') {
         this.roleTarget.style.display = 'none';
