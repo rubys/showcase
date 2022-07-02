@@ -12,17 +12,23 @@
     <%= javascript_importmap_tags %>
     <style>
     @page {
-      margin: 0;
+      margin: 0.625in 0.375in;
       padding: 0;
-      size: 4in 3.7in;
     }
     </style>
   </head>
 
   <body>
 
-    <% @people.each do |person| %>
-    <div class="break-inside-avoid grid grid-cols-1 text-center" style="min-width: 4in; max-width: 4in">
+    
+    <% @people.each_with_index do |person, index| %>
+    <% if index % 4 == 0 %>
+    <% if index > 0 %>
+    </div>
+    <% end %>
+    <div class="break-inside-avoid grid grid-cols-2" style="grid-row-gap: 0.5in">
+    <% end %>
+    <div class="grid grid-cols-1 text-center" style="min-width: 4in; max-width: 4in; min-height: 4.5in; max-height: 4.75in">
     <%= image_tag showcase_logo, class: "mx-auto my-4 w-28" %>
     <div>
     <div class="text-xl"><%= @event.name %></div>
@@ -34,6 +40,7 @@
     </div>
     </div>
     <% end %>
+    </div>
 
   </body>
 </html>

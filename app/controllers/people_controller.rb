@@ -161,7 +161,7 @@ class PeopleController < ApplicationController
   # GET /people/labels
   def labels
     @event = Event.first
-    @people = Person.includes(:studio).all.sort_by(&:display_name)
+    @people = Person.where.not(studio_id: nil).includes(:studio).order('studios.name', :name)
 
     respond_to do |format|
       format.html { render layout: false }
