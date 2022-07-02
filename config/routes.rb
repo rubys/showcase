@@ -90,6 +90,7 @@ Rails.application.routes.draw do
       get 'scores', on: :member
       get 'invoice', on: :member
       get 'invoices', on: :collection
+      get 'labels', on: :collection
       get 'send-invoice', on: :member
       post 'send-invoice', on: :member
     end

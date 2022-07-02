@@ -65,7 +65,7 @@
   </table>
 </div>
   
-<% @invoices.each do |studio, invoice|%>
+<% @invoices.each do |studio, invoice| %>
 <div class="w-full mt-8 print:mt-0" style="page-break-before: always">
   <%= render "invoice", studio: studio, invoice: invoice %>  
 </div>

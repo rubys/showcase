@@ -25,6 +25,20 @@ class StudiosController < ApplicationController
     end
   end
 
+  def labels
+    data = ['Name', 'Studio'].to_csv
+    
+    Studio.order(:name).each do |studio|
+      studio.people.order(:name).each do |person|
+        data << [person.display_name, studio.name].to_csv
+      end
+    end
+
+    response.headers['Content-Type'] = 'text/csv'
+    response.headers['Content-Disposition'] = "attachment; filename=event.csv"
+    render plain: data
+  end
+
   # GET /studios/1 or /studios/1.json
   def show
     @packages = Billable.group(:type).count

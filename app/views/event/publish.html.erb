@@ -26,7 +26,6 @@
   <li class=""><%= link_to "Invoices", invoices_studios_path(format: :pdf), class: "btn-pale-orange w-60" %>
   <li class=""><%= link_to "Master Heat Book", book_heats_path(format: :pdf), class: "btn-pale-orange w-60" %>
   <li class=""><%= link_to "Judge Heat Book", book_heats_path(type: 'judge', format: :pdf), class: "btn-pale-orange w-60" %>
-  <li class=""><%= link_to "Labels", labels_people_path(format: :pdf), class: "btn-pale-orange w-60" %>
   <li class=""><%= link_to "Individual Heat Sheets", heats_people_path(format: :pdf), class: "btn-pale-orange w-60" %>
   <li class=""><%= link_to "Student Scores", scores_people_path(format: :pdf), class: "btn-pale-orange w-60" %>
   </ul>
@@ -34,6 +33,7 @@
   <h2 class="font-bold text-2xl my-8">Export</h1>
 
   <ul class="ml-8">
+  <li class=""><%= link_to "Labels", labels_studios_path(format: :pdf), class: "btn-green w-60" %>
   <li class=""><%= link_to "Spreadsheet", event_spreadsheet_path, class: "btn-green w-60" %>
   <li class=""><%= link_to "Database", event_database_path, class: "btn-green w-60" %>
   </ul>
