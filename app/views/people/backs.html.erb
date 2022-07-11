@@ -4,6 +4,13 @@
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
+  <div data-controller="info-box">
+  <div class="info-button">&#x24D8;</div>
+  <ul class="info-box">
+  <li>At the bottom of this page is a form that can be used to assign all leaders new back numbers.
+  </ul>
+  </div>
+
   <div class="flex justify-between items-center">
   <h1 class="mx-auto font-bold text-4xl mb-4">Back Numbers</h1>
   </div>
@@ -31,9 +38,24 @@
     </tbody>
   </table>
 
-  <div class="mt-4 flex justify-between items-center">
-    <%= link_to 'Assign numbers', backs_people_path, class: "mx-auto btn-blue", data: { turbo_method: :post } %>
+  <%= form_with(url: backs_people_path) do |form| %>
+    <div class="mt-4 flex justify-between items-center">
+    <%= form.submit 'Assign numbers', class: "mx-auto btn-blue" %>
     <%= link_to 'Back to event', root_path, class: "mx-auto btn-green" %>
+    </div>
+
+  <div class="my-5">
+    <%= form.label :pro_numbers, 'Professional Back Number start with' %>
+    <%= form.number_field :pro_numbers, value: @pro_numbers || 101,
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+
+
+  <div class="my-5">
+    <%= form.label :student_numbers, 'Student Back Number start with' %>
+    <%= form.number_field :student_numbers, value: @student_numbers || 201,
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  <% end %>
   </div>
 </div>

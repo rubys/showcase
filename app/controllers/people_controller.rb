@@ -99,18 +99,24 @@ class PeopleController < ApplicationController
   def backs
     @people = Person.where(id: Entry.distinct.pluck(:lead_id)).
       or(Person.where.not(back: nil)).includes(:lead_entries, :studio).order(:back)
+
+    @pro_numbers = Person.where(type: 'Professional').minimum(:back)
+    @student_numbers = Person.where(type: 'Student').minimum(:back)
   end
 
   def assign_backs
     leaders = Entry.distinct.pluck(:lead_id)
     people = Person.where(id: leaders).order(:type, :name)
 
-    number = 101
+    pro_numbers = (params[:pro_numbers] || 101).to_i
+    student_numbers = (params[:student_numbers] || 101).to_i
+
+    number = pro_numbers
     Person.transaction do
       Person.where.not(back: nil).where.not(id: leaders).update_all(back: nil)
 
       people.each do |person|
-        number = 201 if number < 200 and person.type == "Student"
+        number = student_numbers if number < student_numbers and person.type == "Student"
         person.back = number
         person.save! validate: false
         number += 1
