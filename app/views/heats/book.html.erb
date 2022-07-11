@@ -117,9 +117,6 @@ tbody::after {
       </tr>
       <% if heats.first.entry.lead.type == 'Professional' and ballrooms >= 2 %>
       <tr>
-        <% if @type == 'judge' %>
-        <td>
-        <% end %>
         <td>
         <td colspan="8" class="text-xs pt-2">Ballroom A</td>
       </tr>
@@ -138,9 +135,6 @@ tbody::after {
            (ballrooms == 2 and heat.entry.lead.type == 'Student') or
            (ballrooms == 3 and index >= heats.length/2)) %>
          <tr>
-           <% if @type == 'judge' %>
-           <td>
-           <% end %>
            <td>
            <td colspan="8" class="text-xs pt-2">Ballroom B</td>
          </tr>
@@ -151,11 +145,6 @@ tbody::after {
          <% else %>
          <tr class="font-base" id="<%= dom_id heat %>">
          <% end %>
-           <% if @type == 'judge' %>
-           <td>
-             <div class="w-24 pt-4 border-b-2 border-black">&nbsp;</div>
-           </td>
-           <% end %>
            <% if number != 0 %>
            <td class="pl-4">
            <% else %>
@@ -166,7 +155,7 @@ tbody::after {
            <td class="pl-4"><%= heat.dance.name %>
            <% end %>
            <% end %>
-           <td class="pl-4"><%= heat.back %>
+           <td class="pl-4 font-bold text-xl"><%= heat.back %>
            <%
              if @column_order == 1 or heat.follow.type == 'Professional'
                p1, p2 = heat.lead, heat.follow
@@ -197,6 +186,11 @@ tbody::after {
            <td class="pl-4 text-center"><%= heat.entry.subject_category(@track_ages) %>
            <% end %>
            <td class="pl-4"><%= link_to heat.studio.name, heat.studio %>
+           <% if @type == 'judge' %>
+           <td>
+             <div class="w-24 pt-4 border-b-2 border-black">&nbsp;</div>
+           </td>
+           <% end %>
          </tr>
       <% end %>
       </tbody>
