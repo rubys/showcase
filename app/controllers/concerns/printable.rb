@@ -38,7 +38,7 @@ module Printable
     solo_length = Event.last.solo_length || heat_length
     if not Event.last.date.blank? and heat_length and @categories.values.any? {|category| not category.time.blank?}
       start = Chronic.parse(
-        Event.last.date.sub(/(^|[a-z]+ )?\d+-\d+/) {|str| str.sub(/-.*/, '')},
+        Event.last.date.sub(/(^|[a-z]+ )?\d+\s*[-&]\s*\d+/) {|str| str.sub(/\s*[-&]\s*.*/, '')},
         guess: false
       )&.begin || Time.now
     end

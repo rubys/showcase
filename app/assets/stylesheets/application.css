@@ -21,7 +21,7 @@
 
 #notice:empty {display: none}
 
-// https://gist.github.com/anotheruiguy/7379570
+/* https://gist.github.com/anotheruiguy/7379570 */
 @font-face {
   font-family: 'Algerian Regular';
   src: url('fonts/Algerian%20Regular.ttf') format('truetype');
