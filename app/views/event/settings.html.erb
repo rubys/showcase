@@ -47,6 +47,11 @@
   </div>
 
   <div class="my-5">
+  <%= form.label :theme %>
+  <%= form.text_field :theme, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
   <%= form.label :location %>
   <%= form.text_area :location, rows: @event.location.blank? ? 2 : @event.location.lines.length + 1,
     class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
