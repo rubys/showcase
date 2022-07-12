@@ -35,8 +35,9 @@ tbody::after {
   font-size: 40px;
   transform: rotate(-30deg);
   font-weight: bold;
-  -webkit-text-stroke: 2px #4338CA;
-  text-stroke: 2px #4338CA;
+  -webkit-text-stroke: 0.5px #4338CA;
+  text-stroke: 0.5px #4338CA;
+  font-family: 'Algerian Regular';
 }
 
 .page .rotate-shadow {
@@ -135,11 +136,11 @@ tbody::after {
 
       <p class="mt-4">
         <% @event.location.to_s.lines.each do |line| %>
-          <div class="text-center"><%= line.chomp %></div>
+          <div class="text-center" style="font-family: 'Algerian Regular'"><%= line.chomp %></div>
         <% end %>
       </p>
       
-      <p class="mt-2 text-center"><%= @event.date %></p>
+      <p class="mt-2 text-center" style="font-family: 'Berlin Sans FB Demi Bold'"><%= @event.date %></p>
     </div>
 
     <%
