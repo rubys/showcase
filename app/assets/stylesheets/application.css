@@ -23,10 +23,10 @@
 
 @font-face {
   font-family: 'Algerian Regular';
-  src: url('/fonts/Algerian Regular.ttf') format('truetype');
+  src: url('fonts/Algerian Regular.ttf') format('truetype');
 }
   
 @font-face {
   font-family: 'Berlin Sans FB Demi Bold';
-  src: url('/fonts/Berlin Sans FB Demi Bold.ttf') format('truetype');
+  src: url('fonts/Berlin Sans FB Demi Bold.ttf') format('truetype');
 }
