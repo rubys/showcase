@@ -35,6 +35,7 @@ tbody::after {
   font-size: 40px;
   transform: rotate(-30deg);
   font-weight: bold;
+  color: #4338CA;
 }
 
 .page .rotate-shadow {
@@ -129,7 +130,7 @@ tbody::after {
 
     <header>
     <div class="mb-4">
-      <h2 class="font-bold text-center text-4xl"><%= @event.name %></h1>
+      <h2 class="font-bold text-center text-4xl" style="font-family: 'Berlin Sans Bold'"><%= @event.name %></h1>
 
       <p class="mt-4">
         <% @event.location.to_s.lines.each do |line| %>
@@ -176,9 +177,10 @@ tbody::after {
     </div>
     </header>
 
-    <div class="content truncate text-4xl">
+    <div class="mt-4 content truncate text-base">
     <div><b class="text-xl">Comments:</b> <span class="whitespace-pre underline"><%= ' ' * 400 %></span></div>
     <% 20.times do %>
+    <div>&nbsp</div>
     <div><span class="whitespace-pre underline"><%= ' ' * 400 %></span></div>
     <% end %>
     </div>
