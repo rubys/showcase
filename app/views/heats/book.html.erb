@@ -65,15 +65,15 @@ tbody::after {
 <div class="mx-auto md:w-2/3 w-full print:w-full">
 
 <div class="mb-4">
-  <h2 class="font-bold text-center text-4xl"><%= @event.name %></h1>
+  <h2 class="font-bold text-center text-4xl" style="font-family: 'Algerian Regular'"><%= @event.name %></h1>
 
   <p class="mt-4">
     <% @event.location.to_s.lines.each do |line| %>
-      <div class="text-center"><%= line.chomp %></div>
+      <div class="text-center" style="font-family: 'Algerian Regular'"><%= line.chomp %></div>
     <% end %>
   </p>
   
-  <p class="mt-2 text-center"><%= @event.date %></p>
+  <p class="mt-2 text-center" style="font-family: 'Berlin Sans FB Demi Bold'"><%= @event.date %></p>
 </div>
 
 <div class="justify-between items-center">
