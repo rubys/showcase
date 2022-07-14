@@ -5,7 +5,11 @@
 
   <h1 class="grow font-bold text-4xl pt-1 pb-3 text-center">
     <%= link_to judge_heatlist_path(judge: @judge, anchor: dom_id(@heat)), rel: 'up' do %>
-      <span>Heat <%= @number %>:<br class="block sm:hidden"> <%= @dance %></span>
+      <span>Heat <%= @number %>:<br class="block sm:hidden"> <%= @dance %>
+      <% if @heat.solo&.combo_dance_id %>
+      / <%= @heat.solo.combo_dance.name %>
+      <% end %>
+      </span>
     <% end %>
 
     <% if @heat.dance.heat_length %>
@@ -45,6 +49,57 @@ Swiping left and right on mobile devices and tablets also work.
     data-controller="score" data-drop-action="<%=  post_score_path(judge: @judge) %>" 
     data-start-action="<%= start_heat_event_index_path %>" data-heat="<%= @number %>"
     <% if @slot %>data-slot="<%= @slot %>"<% end %>>
+
+  <% if @heat.category == 'Solo' %>
+      <%
+      if @column_order == 1 or @heat.follow.type == 'Professional'
+        dancers = [@heat.lead, @heat.follow]
+      else
+        dancers = [@heat.follow, @heat.lead]
+      end
+
+      studio = dancers.first.studio.name
+
+      @heat.solo.formations.each do |formation|
+        dancers << formation.person if formation.on_floor
+      end
+
+      if dancers.length == 2
+        dancers = dancers.first.join(dancers.last)
+      else
+        dancers.map! &:display_name
+        dancers[-1] = "and #{dancers.last}"
+        dancers = dancers.join(', ')
+      end
+    %>
+
+    <div class="mx-auto md:w-2/3 w-full flex flex-col text-xl">
+    <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>
+
+    <div class="mb-4">
+    <div class="float-right"><b>Studio</b>: <%= studio %></div>
+    <div><b >Level</b>: <%= @heat.entry.level.name %></div>
+    </div>
+
+    <div class="mb-4"><span><b>Names</b>:&nbsp;</span><span><%= dancers %></span></div>
+
+    <label><b>Comments:</b></label>
+    <textarea data-score-target="comments"
+      class="grow block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full">
+    </textarea>
+
+    <div>
+    <div class="float-right mt-4">
+    <b>Score:</b>
+    <input data-score-target="score" data-heat="<%= @heat.id %>"
+      class="border-2 border-black w-24 h-24 text-6xl text-center"/>
+    </div>
+    </div>
+
+    </div>
+
+  </div>
+  <% else %>
     <div class="grow flex flex-col border-2 border-slate-400">
     <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>
     <% @scores.each do |score| %>
@@ -79,6 +134,7 @@ Swiping left and right on mobile devices and tablets also work.
     <% end %>
     </div>
   </div>
+  <% end %>
 
   <div class="mt-2 flex flex-row w-full">
     <div class="align-middle">

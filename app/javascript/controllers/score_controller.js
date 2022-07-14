@@ -4,31 +4,46 @@ const HIGHLIGHT = 'bg-yellow-200';
 
 // Connects to data-controller="score"
 export default class extends Controller {
-  static targets = ["error"]
+  static targets = ["error", "comments", "score"];
 
   keydown = event => {
+    let form = false;
+    if (this.hasCommentsTarget && this.commentsTarget == document.activeElement) form = true;
+    if (this.hasScoreTarget && this.scoreTarget == document.activeElement) form == true;
+
     if (event.key == 'ArrowRight') {
+      if (form) return;
       let link = document.querySelector('a[rel=next]')
       if (link) link.click();
     } else if (event.key == 'ArrowLeft') {
+      if (form) return;
       let link = document.querySelector('a[rel=prev]')
       if (link) link.click();
     } else if (event.key == 'ArrowUp') {
+      if (form) return;
       this.moveUp();
     } else if (event.key == 'ArrowDown') {
       this.moveDown();
     } else if (event.key == 'Escape') {
       this.unselect();
       this.unhighlight();
+      if (document.activeElement) document.activeElement.blur();
     } else if (event.key == 'Tab') {
       event.preventDefault();
       event.stopPropagation();
-      if (event.shiftKey) {
-        this.prevSubject();
+      if (this.hasSubjectTarget) {
+        if (event.shiftKey) {
+          this.prevSubject();
+        } else {
+          this.nextSubject();
+        }
+      } else if (document.activeElement == this.commentsTarget) {
+        this.scoreTarget.focus();
       } else {
-        this.nextSubject();
+        this.commentsTarget.focus();
       }
     } else if (event.key == ' ' || event.key == 'Enter') {
+      if (form) return;
       fetch(this.element.dataset.startAction, {
         method: 'POST',
         headers: {
@@ -162,9 +177,23 @@ export default class extends Controller {
       score.appendChild(source);
     }
 
-    let error = this.errorTarget;
+    this.post({
+      heat: parseInt(source.dataset.heat),
+      slot: this.element.dataset.slot && parseInt(this.element.dataset.slot),
+      score: score.dataset.score || ''
+    }).then(response => {
+      back.style.opacity = 1;
+      if (response.ok) {
+        back.classList.remove('text-red-500')
+      } else {
+        parent.appendChild(source);
+        back.classList.add('text-red-500');
+      }
+    })
+  }
 
-    fetch(this.element.dataset.dropAction, {
+  post = results => {
+    return fetch(this.element.dataset.dropAction, {
       method: 'POST',
       headers: {
         'X-CSRF-Token': this.token,
@@ -172,22 +201,18 @@ export default class extends Controller {
       },
       credentials: 'same-origin',
       redirect: 'follow',
-      body: JSON.stringify({
-        heat: parseInt(source.dataset.heat),
-        slot: this.element.dataset.slot && parseInt(this.element.dataset.slot),
-        score: score.dataset.score || ''
-      })
+      body: JSON.stringify(results)
     }).then(response => {
-      back.style.opacity = 1;
+      let error = this.errorTarget;
+
       if (response.ok) {
         error.style.display = 'none';
-        back.classList.remove('text-red-500')
       } else {
-        parent.appendChild(source);
         error.textContent = response.statusText;
         error.style.display = 'block';
-        back.classList.add('text-red-500')
       }
+
+      return response;
     })
   }
 
@@ -308,6 +333,27 @@ export default class extends Controller {
 
       window.addEventListener("resize", resize);
       resize();
+    }
+
+    // wire up comments and scores for solos
+    if (this.hasCommentsTarget) {
+      this.scoreTarget.addEventListener('change', event => {
+        this.scoreTarget.disabled = true;
+
+        this.post({
+          heat: parseInt(this.scoreTarget.dataset.heat),
+          score: this.scoreTarget.value
+        }).then(response => {
+          this.scoreTarget.disabled = false;
+          if (response.ok) {
+            this.scoreTarget.style.backgroundColor = null;
+          } else {
+            this.scoreTarget.style.backgroundColor = '#F00';
+          }
+        })
+      });
+
+      if (this.activeElement) this.activeElement.blur();
     }
   }
 }
