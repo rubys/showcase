@@ -62,6 +62,10 @@ class ScoresController < ApplicationController
  
     @heat = Heat.find_by(number: @number)
 
+    if @heat.category == 'Solo'
+      @comments = Score.where(judge: @judge, heat: @subjects.first).first&.comments
+    end
+
     if @heat.dance.heat_length and (@slot||0) < @heat.dance.heat_length
       @next = judge_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||0)+1)
     else
@@ -97,17 +101,22 @@ class ScoresController < ApplicationController
   def post
     judge = Person.find(params[:judge].to_i)
     heat = Heat.find(params[:heat].to_i)
-    score = params[:score]
     slot = params[:slot]&.to_i
 
     score = Score.find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
-    score.value = params[:score]
     if ApplicationRecord.readonly?
       render json: 'database is readonly', status: :service_unavailable
     elsif score.value.empty?
       score.destroy
       render json: score
-    else
+    elsif params[:comments]
+      score.comments = params[:comments]
+      if score.save
+        render json: score.as_json
+      else
+        render json: score.errors, status: :unprocessable_entity
+      end
+    elsif params[:score]
       score.value = params[:score]
       if score.save
         render json: score.as_json

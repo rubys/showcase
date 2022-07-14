@@ -337,23 +337,38 @@ export default class extends Controller {
 
     // wire up comments and scores for solos
     if (this.hasCommentsTarget) {
-      this.scoreTarget.addEventListener('change', event => {
-        this.scoreTarget.disabled = true;
+      this.commentsTarget.addEventListener('change', event => {
+        this.commentsTarget.disabled = true;
 
         this.post({
           heat: parseInt(this.scoreTarget.dataset.heat),
-          score: this.scoreTarget.value
+          test: 'data',
+          comments: this.commentsTarget.value
         }).then(response => {
-          this.scoreTarget.disabled = false;
+          this.commentsTarget.disabled = false;
           if (response.ok) {
-            this.scoreTarget.style.backgroundColor = null;
+            this.commentsTarget.style.backgroundColor = null;
           } else {
-            this.scoreTarget.style.backgroundColor = '#F00';
+            this.commentsTarget.style.backgroundColor = '#F00';
           }
         })
       });
-
-      if (this.activeElement) this.activeElement.blur();
     }
+
+    this.scoreTarget.addEventListener('change', event => {
+      this.scoreTarget.disabled = true;
+
+      this.post({
+        heat: parseInt(this.scoreTarget.dataset.heat),
+        score: this.scoreTarget.value
+      }).then(response => {
+        this.scoreTarget.disabled = false;
+        if (response.ok) {
+          this.scoreTarget.style.backgroundColor = null;
+        } else {
+          this.scoreTarget.style.backgroundColor = '#F00';
+        }
+      })
+    });
   }
 }
