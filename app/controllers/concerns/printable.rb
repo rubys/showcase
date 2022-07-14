@@ -188,6 +188,7 @@ module Printable
     @layout = 'mx-0 px-5'
     @nologo = true
     @event = Event.last
+    @track_ages = @event.track_ages
   end
 
   def render_as_pdf(basename:)
