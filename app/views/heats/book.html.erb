@@ -195,10 +195,12 @@ tbody::after {
     </footer>
     </div>
     <% else %>
-    <table class="break-inside-avoid text-sm table-fixed">
+    <table class="break-inside-avoid text-sm table-fixed w-full">
       <colgroup>
         <col width="5px">
+        <% unless heats.first.category == 'Solo' %>
         <col width="8%">
+        <% end %>
         <col width="25%">
         <col width="25%">
         <col width="20%">
@@ -210,7 +212,9 @@ tbody::after {
         <% if heats.first != 0 %>
         <th width="5">
         <% else %>
+        <% unless heats.first.category == 'Solo' %>
         <th>
+        <% end %>
         <th>
         <% end %>
         <th>
@@ -278,7 +282,9 @@ tbody::after {
            <td class="pl-4"><%= heat.dance.name %>
            <% end %>
            <% end %>
+           <% unless heat.category == 'Solo' %>
            <td class="pl-4 font-bold text-base"><%= heat.back %>
+           <% end %>
            <%
              if @column_order == 1 or heat.follow.type == 'Professional'
                p1, p2 = heat.lead, heat.follow
