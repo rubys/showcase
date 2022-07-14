@@ -97,7 +97,8 @@ class PeopleController < ApplicationController
 
   # GET /people/backs or /people.json
   def backs
-    @people = Person.where(id: Entry.distinct.pluck(:lead_id)).
+    leaders = Entry.includes(:heats).where.not(heats: {category: 'Solo'}).distinct.pluck(:lead_id)
+    @people = Person.where(id: leaders).
       or(Person.where.not(back: nil)).includes(:lead_entries, :studio).order(:back, :type, :name)
 
     @pro_numbers = Person.where(type: 'Professional').minimum(:back)
@@ -105,7 +106,7 @@ class PeopleController < ApplicationController
   end
 
   def assign_backs
-    leaders = Entry.distinct.pluck(:lead_id)
+    leaders = Entry.includes(:heats).where.not(heats: {category: 'Solo'}).distinct.pluck(:lead_id)
     people = Person.where(id: leaders).order(:type, :name)
 
     pro_numbers = (params[:pro_numbers] || 101).to_i
