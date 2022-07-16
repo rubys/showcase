@@ -18,7 +18,7 @@ module HeatScheduler
     heat_categories = {'Closed' => 0, 'Open' => 1, 'Solo' => 2, 'Multi' => 3}
 
     heats = @heats.map {|heat|
-      [heat.dance_id,
+      [heat.dance.order,
        heat_categories[heat.category],
        heat.entry.level_id,
        heat.entry.age_id,
