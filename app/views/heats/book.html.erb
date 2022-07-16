@@ -238,7 +238,7 @@ tbody::after {
           / <%= heats.first.solo.combo_dance.name %>
           <% end %>
           <% if @start %>
-          <span class="text-base text-slate-400">- <%= @start[number]&.strftime("%-I:%M %P") %></span>
+          <span class="text-base" style="opacity: 50%">- <%= @start[number]&.strftime("%-I:%M %P") %></span>
           <% end %>
         </td>
       </tr>
@@ -314,7 +314,7 @@ tbody::after {
            <td class="pl-4"><%= heat.entry.level.name %>
            <td class="pl-4 text-center"><%= heat.entry.subject_category(@track_ages) %>
            <% end %>
-           <td class="pl-4"><%= link_to heat.studio.name, heat.studio %>
+           <td class="pl-4 h-10"><%= link_to heat.studio.name.gsub(/\s-/, "\xA0-"), heat.studio %>
            <% if @type == 'judge' %>
            <td>
              <div class="w-24 pt-4 border-b-2 border-black">&nbsp;</div>
