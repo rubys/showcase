@@ -65,6 +65,7 @@ Rails.application.routes.draw do
       post 'drop', on: :collection
     end
 
+    match "/people/certificates", to: 'people#certificates', via: %i(get post)
     resources :people do
       get 'backs', on: :collection
       post 'backs', on: :collection, action: 'assign_backs'

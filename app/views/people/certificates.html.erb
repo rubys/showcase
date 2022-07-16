@@ -1,0 +1,46 @@
+<div class="mx-auto md:w-2/3 w-full">
+
+<div data-controller="info-box">
+<div class="info-button">&#x24D8;</div>
+<ul class="info-box">
+<li>This tool can be used to generate certificates for students, using a blank template that you provide and upload.
+<li>Students names will be placed in the area you specify below, using the font-size you provide.
+<li>Results open in a new tab, making it easier for you to experiment with different placements and sizes.
+<li>Students are ordered by studio.  No filtering is provided, print only the pages you need.
+</ul>
+</div>
+
+<h1 class="font-bold text-4xl w-full text-center mb-8">Generate certificates</h1>
+
+<%= form_tag({action: :certificates}, multipart: true, target: '_blank', data: {turbo: false}) do %>
+  <div class="my-4">
+  <label>Upload template</label>
+  <%= file_field_tag 'template', required: true %>
+  </div>
+
+  <div class="grid grid-cols-3 gap-4 my-4">
+  <div>
+  <label>Box placement</label>
+  <span>(X, Y)<span>
+  </div>
+  <%= number_field_tag 'x', 320, class: 'text-right' %>
+  <%= number_field_tag 'y', 222, class: 'text-right' %>
+  </div>
+
+  <div class="grid grid-cols-3 gap-4 my-4">
+  <div>
+  <label>Box size</label>
+  <span>(width, height)
+  </div>
+  <%= number_field_tag 'width', 375, class: 'text-right' %>
+  <%= number_field_tag 'height', 58, class: 'text-right' %>
+  </div>
+
+  <div class="grid grid-cols-3 gap-4 my-4">
+  <label>Font size</label>
+  <%= number_field_tag 'font-size', 32, class: 'text-right' %>
+  </div>
+
+  <%= submit_tag "Generate Certificates", class: "btn-pale-orange" %>
+<% end %>
+</div>
