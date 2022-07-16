@@ -195,7 +195,7 @@ tbody::after {
     </footer>
     </div>
     <% else %>
-    <table class="break-inside-avoid text-xs table-fixed w-full">
+    <table class="break-inside-avoid table-fixed w-full" style="font-size: 11.5px">
       <colgroup>
         <col width="5px">
         <% unless heats.first.category == 'Solo' %>
@@ -312,7 +312,7 @@ tbody::after {
            <td class="pl-4 text-center"><%= heat.entry.subject_lvlcat(@track_ages) %>
            <% else %>
            <td class="pl-4"><%= heat.entry.level.name %>
-           <td class="pl-4 text-center"><%= heat.entry.subject_category(@track_ages) %>
+           <!-- td class="pl-4 text-center"><%= heat.entry.subject_category(@track_ages) %> -->
            <% end %>
            <td class="pl-4"><%= link_to heat.studio.name.gsub(/\s-/, "\xA0-"), heat.studio %>
            <% if @type == 'judge' %>
