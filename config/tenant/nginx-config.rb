@@ -102,6 +102,7 @@ server {
 
   # Configuration common to all apps
   root <%= @git_path %>/public;
+  client_max_body_size 1G;
   passenger_enabled on;
   passenger_ruby <%= RbConfig.ruby %>;
   passenger_friendly_error_pages on;
