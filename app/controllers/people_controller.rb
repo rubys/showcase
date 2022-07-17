@@ -55,22 +55,32 @@ class PeopleController < ApplicationController
   end
 
   def certificates
-    return unless request.post?
+    if request.get?
+      @studios = [['-- all studios --', nil]] + Studio.order(:name).pluck(:name, :id)
+    else
+      @people = Person.joins(:studio).where(type: 'Student').order('studios.name', :name).to_a
 
-    @people = Person.joins(:studio).where(type: 'Student').order('studios.name', :name)
+      if not params[:person_id].blank?
+        person_id = params[:person_id].to_i
+        @people.select! {|person| person.id == person_id}
+      elsif not params[:studio_id].blank?
+        studio_id = params[:studio_id].to_i
+        @people.select! {|person| person.studio_id == studio_id}
+      end
 
-    pdf = CombinePDF.new
-    @people.each do |name|
-      pdf << CombinePDF.load(params[:template].tempfile.path)
+      pdf = CombinePDF.new
+      @people.each do |name|
+        pdf << CombinePDF.load(params[:template].tempfile.path)
+      end
+
+      pdf.pages.zip(@people) do |page, person|
+        page.textbox person.display_name, height: params[:height].to_i, width: params[:width].to_i,
+          y: params[:y].to_i, x: params[:x].to_i, font: :'Times-Bold', font_size: params['font-size'].to_i
+      end
+
+      send_data pdf.to_pdf, disposition: 'inline', filename: "certificates.pdf",
+        type: 'application/pdf'
     end
-
-    pdf.pages.zip(@people) do |page, person|
-      page.textbox person.display_name, height: params[:height].to_i, width: params[:width].to_i,
-        y: params[:y].to_i, x: params[:x].to_i, font: :'Times-Bold', font_size: params['font-size'].to_i
-    end
-
-    send_data pdf.to_pdf, disposition: 'inline', filename: "certificates.pdf",
-      type: 'application/pdf'
   end
 
   # GET /people or /people.json
@@ -338,6 +348,18 @@ class PeopleController < ApplicationController
     end
 
     redirect_to person_url(@person), notice: "#{helpers.pluralize total, 'heat'} successfully added."
+  end
+
+  def studio_list
+    @people = [['-- all students --', nil]] + 
+      Person.where(type: 'Student', studio_id: params[:studio_id].to_i).order(:name).
+         map {|person| [person.display_name, person.id]}
+
+    respond_to do |format|
+      format.turbo_stream { render turbo_stream: turbo_stream.replace('select-person', 
+        render_to_string(partial: 'studio_list'))}
+      format.html { redirect_to people_certificates_url }
+    end
   end
 
   def post_type

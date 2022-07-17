@@ -6,14 +6,26 @@
 <li>This tool can be used to generate certificates for students, using a blank template that you provide and upload.
 <li>Students names will be placed in the area you specify below, using the font-size you provide.
 <li>Results open in a new tab, making it easier for you to experiment with different placements and sizes.
-<li>Students are ordered by studio.  No filtering is provided, print only the pages you need.
 </ul>
 </div>
 
 <h1 class="font-bold text-4xl w-full text-center mb-8">Generate certificates</h1>
 
-<%= form_tag({action: :certificates}, multipart: true, target: '_blank', data: {turbo: false}) do %>
-  <div class="my-4">
+<%= form_tag({action: :certificates}, multipart: true, target: '_blank',
+  data: {turbo: false,  controller: "select-person"}) do %>
+  <div class="mx-auto w-64 text-center">
+  <div class="my-5">
+    <%= select_tag :studio_id, options_for_select(@studios),
+      'data-select-person-target' => 'studio', 'data-url' => studio_list_people_path,
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %>
+  </div>
+
+  <div class="my-5" id='select-person'>
+  </div>
+  </div>
+
+  <div class="my-5">
+  <h2 class="font-bold text-2xl w-full mb-8">Template</h1>
   <label>Upload template</label>
   <%= file_field_tag 'template', required: true %>
   </div>

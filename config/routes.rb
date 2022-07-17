@@ -82,6 +82,7 @@ Rails.application.routes.draw do
       post 'entries', on: :member, action: 'post_entries'
       post 'type', on: :collection, action: 'post_type'
       post 'package', on: :collection, action: 'post_package'
+      post 'studio_list', on: :collection, action: 'studio_list'
       get 'invoice', on: :member
     end
 
