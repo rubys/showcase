@@ -47,6 +47,8 @@ class ScoresController < ApplicationController
       else
         @scores = SCORES[category].dup
       end
+
+      @ballrooms = @subjects.first.dance_category.ballrooms || event.ballrooms
     end
 
     student_results = Score.where(judge: @judge, heat: @subjects, slot: @slot).
@@ -55,7 +57,7 @@ class ScoresController < ApplicationController
     @results = {}
     @subjects.each do |subject|
       score = student_results[subject] || ''
-      if @style == 'radio'
+      if @style == 'radio' and @subjects.first.category != 'Solo' 
         @results[subject] = score 
       else
         score = student_results[subject] || ''
