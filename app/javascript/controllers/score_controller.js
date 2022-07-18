@@ -31,7 +31,7 @@ export default class extends Controller {
     } else if (event.key == 'Tab') {
       event.preventDefault();
       event.stopPropagation();
-      if (this.hasSubjectTarget) {
+      if (this.subjects.size > 0) {
         if (event.shiftKey) {
           this.prevSubject();
         } else {
@@ -129,8 +129,8 @@ export default class extends Controller {
 
   nextSubject() {
     if (this.selected) {
-      let back = parseInt(this.selected.querySelector('span').textContent || 1);
-      let backs = [...this.subjects.keys()].sort();
+      let back = this.selected.id;
+      let backs = [...this.subjects.keys()];
       let index = backs.indexOf(back) + 1;
       if (index >= backs.length) {
         this.select(this.subjects.get(backs[0]));
@@ -138,14 +138,14 @@ export default class extends Controller {
         this.select(this.subjects.get(backs[index]));
       }
     } else {
-      let backs = [...this.subjects.keys()].sort();
+      let backs = [...this.subjects.keys()];
       this.select(this.subjects.get(backs[0]));
     }
   }
 
   prevSubject() {
     if (this.selected) {
-      let back = parseInt(this.selected.querySelector('span').textContent || 1);
+      let back = this.selected.id;
       let backs = [...this.subjects.keys()].sort();
       let index = backs.indexOf(back) - 1;
       if (index < 0) {
@@ -247,7 +247,23 @@ export default class extends Controller {
   connect() {
     this.token = document.querySelector('meta[name="csrf-token"]').content;
 
-    this.subjects = new Map([...this.element.querySelectorAll('*[draggable=true]')]
+    this.subjects = [...this.element.querySelectorAll('*[draggable=true]')];
+
+    let backs = this.subjects.map((element, index) => (
+      {index, back: parseInt(element.querySelector('span').textContent || 1)}
+    ));
+
+    backs.sort((a, b) => {
+      if (a.back > b.back) {
+        return 1;
+      } else if (b.back < a.back) {
+        return -1;
+      } else {
+        return 0;
+      }
+    });
+
+    this.subjects = new Map(backs.map(back => this.subjects[back.index])
       .map(element => [element.id, element])
     );
 
@@ -355,20 +371,22 @@ export default class extends Controller {
       });
     }
 
-    this.scoreTarget.addEventListener('change', event => {
-      this.scoreTarget.disabled = true;
+    if (this.hasScoreTarget) {
+      this.scoreTarget.addEventListener('change', event => {
+        this.scoreTarget.disabled = true;
 
-      this.post({
-        heat: parseInt(this.scoreTarget.dataset.heat),
-        score: this.scoreTarget.value
-      }).then(response => {
-        this.scoreTarget.disabled = false;
-        if (response.ok) {
-          this.scoreTarget.style.backgroundColor = null;
-        } else {
-          this.scoreTarget.style.backgroundColor = '#F00';
-        }
-      })
-    });
+        this.post({
+          heat: parseInt(this.scoreTarget.dataset.heat),
+          score: this.scoreTarget.value
+        }).then(response => {
+          this.scoreTarget.disabled = false;
+          if (response.ok) {
+            this.scoreTarget.style.backgroundColor = null;
+          } else {
+            this.scoreTarget.style.backgroundColor = '#F00';
+          }
+        })
+      });
+    }
   }
 }

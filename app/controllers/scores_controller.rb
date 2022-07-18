@@ -106,14 +106,14 @@ class ScoresController < ApplicationController
     score = Score.find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
     if ApplicationRecord.readonly?
       render json: 'database is readonly', status: :service_unavailable
-    elsif not params[:comments].blank?
+    elsif params[:comments]
       score.comments = params[:comments]
       if score.save
         render json: score.as_json
       else
         render json: score.errors, status: :unprocessable_entity
       end
-    elsif not params[:score].blank?
+    elsif not params[:score].blank? or not score.comments.blank?
       score.value = params[:score]
       if score.save
         render json: score.as_json
