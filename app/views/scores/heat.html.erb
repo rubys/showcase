@@ -4,7 +4,7 @@
   <% end %>
 
   <h1 class="grow font-bold text-4xl pt-1 pb-3 text-center">
-    <%= link_to judge_heatlist_path(judge: @judge, anchor: dom_id(@heat)), rel: 'up' do %>
+    <%= link_to judge_heatlist_path(judge: @judge, anchor: dom_id(@heat), style: @style), rel: 'up' do %>
       <span>Heat <%= @number %>:<br class="block sm:hidden"> <%= @dance %>
       <% if @heat.solo&.combo_dance_id %>
       / <%= @heat.solo.combo_dance.name %>
@@ -104,6 +104,45 @@ Swiping left and right on mobile devices and tablets also work.
     </div>
 
   </div>
+  <% elsif @style == 'radio' %>
+    <div class="grow flex flex-col border-2 border-slate-400 overflow-scroll">
+    <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>
+    <table class="table-auto border-separate border-spacing-y-2 mx-4">
+    <thead>
+      <tr>
+        <th class="text-left border-b-2 border-black" rowspan="2">Back
+        <th class="text-left border-b-2 border-black" rowspan="2">Subject
+        <th class="text-left border-b-2 border-black" rowspan="2">Partner
+        <th class="text-left border-b-2 border-black" rowspan="2">Category
+        <th class="text-left border-b-2 border-black" rowspan="2">Studio
+        <th class="text-center" colspan="<%= @scores.length %>%>">Score
+      </tr>
+      <tr>
+        <% @scores.each do |score| %>
+          <th class="border-b-2 border-black"><%= score.blank? ? '-' : score %>
+        <% end %>
+      </tr>
+    </thead>
+    <% @subjects.each do |subject| %>
+      <tr class="hover:bg-yellow-200">
+        <td class="py-2"><%= subject.lead.back %>
+        <% if subject.lead.type == 'Student' %>
+        <td><%= subject.follow.display_name %>
+        <td><%= subject.lead.display_name %>
+        <% else %>
+        <td><%= subject.follow.display_name %>
+        <td><%= subject.lead.display_name %>
+        <% end %>
+        <td><%= subject.entry.subject_category(@track_ages) %> - <%= subject.entry.level.initials %>
+        <td><%= subject.subject.studio.name %>
+        <% @scores.each do |score| %>
+        <td class="text-center"><input type="radio" name="<%= subject.id %>" value="<%= score %>"<%= @results[subject]==score ? ' checked' : '' %>>
+        <% end %>
+      </tr>
+    <% end %>
+    </table>
+    </div>
+    </div>
   <% else %>
     <div class="grow flex flex-col border-2 border-slate-400">
     <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>

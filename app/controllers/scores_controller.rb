@@ -13,6 +13,7 @@ class ScoresController < ApplicationController
   # GET /scores or /scores.json
   def heatlist
     @judge = Person.find(params[:judge].to_i)
+    @style = params[:style] || 'cards'
 
     @heats = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance)
 
@@ -29,7 +30,7 @@ class ScoresController < ApplicationController
     @judge = Person.find(params[:judge].to_i)
     @number = params[:heat].to_i
     @slot = params[:slot]&.to_i
-
+    @style = params[:style] || 'cards'
     @subjects = Heat.where(number: @number).includes(
       dance: [:multi_children], 
       entry: [:age, :level, :lead, :follow]
@@ -54,8 +55,13 @@ class ScoresController < ApplicationController
     @results = {}
     @subjects.each do |subject|
       score = student_results[subject] || ''
-      @results[score] ||= []
-      @results[score] << subject
+      if @style == 'radio'
+        @results[subject] = score 
+      else
+        score = student_results[subject] || ''
+        @results[score] ||= []
+        @results[score] << subject
+      end
     end
 
     @scores << ''
@@ -67,27 +73,27 @@ class ScoresController < ApplicationController
     end
 
     if @heat.dance.heat_length and (@slot||0) < @heat.dance.heat_length
-      @next = judge_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||0)+1)
+      @next = judge_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||0)+1, style: @style)
     else
       @next = Heat.where(number: @number+1...).order(:number).first
       if @next
         if @next.dance.heat_length
-          @next = judge_heat_slot_path(judge: @judge, heat: @next.number, slot: 1)
+          @next = judge_heat_slot_path(judge: @judge, heat: @next.number, slot: 1, style: @style)
         else
-          @next = judge_heat_path(judge: @judge, heat: @next.number)
+          @next = judge_heat_path(judge: @judge, heat: @next.number, style: @style)
         end
       end
     end
 
     if @heat.dance.heat_length and (@slot||0) > 1
-      @prev = judge_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||2)-1)
+      @prev = judge_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||2)-1, style: @style)
     else
       @prev = Heat.where(number: 1...@number).order(:number).last
       if @prev
         if @prev.dance.heat_length
-          @prev = judge_heat_slot_path(judge: @judge, heat: @prev.number, slot: @prev.dance.heat_length)
+          @prev = judge_heat_slot_path(judge: @judge, heat: @prev.number, slot: @prev.dance.heat_length, style: @style)
         else
-          @prev = judge_heat_path(judge: @judge, heat: @prev.number)
+          @prev = judge_heat_path(judge: @judge, heat: @prev.number, style: @style)
         end
       end
     end

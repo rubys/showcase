@@ -7,17 +7,16 @@ class ScoresTest < ApplicationSystemTestCase
 
   test "should update score - solo" do
     visit person_url(people(:Judy))
-    click_on "Score heats"
+    click_on "Score heats - cards"
     click_on "Solo Waltz"
 
     source = page.find('textarea[data-score-target=comments]')
     target = page.find('input[data-score-target=score]')
   end
 
-
   test "should update score - closed" do
     visit person_url(people(:Judy))
-    click_on "Score heats"
+    click_on "Score heats - cards"
     click_on "Closed Waltz"
 
     # this doesn't work

@@ -28,7 +28,7 @@ export default class extends Controller {
       this.unselect();
       this.unhighlight();
       if (document.activeElement) document.activeElement.blur();
-    } else if (event.key == 'Tab') {
+    } else if (event.key == 'Tabx') {
       event.preventDefault();
       event.stopPropagation();
       if (this.subjects.size > 0) {
@@ -369,6 +369,26 @@ export default class extends Controller {
           }
         })
       });
+    }
+
+    for (let button of this.element.querySelectorAll('input[type=radio]')) {
+      console.log(button)
+      button.addEventListener('change', event => {
+        console.log(event)
+        this.post({
+          heat: parseInt(button.name),
+          slot: this.element.dataset.slot && parseInt(this.element.dataset.slot),
+          score: button.value
+        }).then(response => {
+          button.disabled = false;
+          if (response.ok) {
+            button.classList.remove('border-red-500')
+          } else {
+            parent.appendChild(source);
+            button.classList.add('border-red-500');
+          }
+        })
+      })
     }
 
     if (this.hasScoreTarget) {

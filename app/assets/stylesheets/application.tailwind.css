@@ -65,6 +65,11 @@
      m-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium text-center
   }
 
+  .btn-purple { @apply
+    m-2 rounded-lg py-3 px-5 text-white bg-purple-600 inline-block font-medium
+    text-center
+  }
+
   .row-head-main { @apply
      border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-2
      text-black dark:text-black text-center
