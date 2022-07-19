@@ -11,6 +11,20 @@
 when most dances for an individual are with one instructor but one or two are changed to be with a different instructor.
   </ul>
   </div>
+  <% elsif @person.type == 'Judge' %>
+  <div data-controller="info-box">
+  <div class="info-button">&#x24D8;</div>
+  <ul class="info-box">
+  <li>Scores may be entered during the heats themselves, shortly thereafter, or even after the event entirely.
+  <li>If the scores are entered during the event, the program can be used to tally scores.
+  <li>Two methods are provided for entering scores:
+  <ul class="ml-8 list-disc list-outside">
+  <li><em>Cards</em> visually represent each couple, and scoring is accomplished by moving the cards to areas
+  corresponding to the desired score.
+  <li><em>Radio</em> shows participants in a tabular form and provides "radio buttons" next to each entry to record a score.
+  </ul>
+  </ul>
+  </div>
   <% end %>
 
     <% if notice.present? %>

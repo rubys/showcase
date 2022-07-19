@@ -34,6 +34,10 @@
 <% if @heat.category == 'Solo' %>
 <li>Tab to or click on comments or score to edit.  Press escape or click elsewhere to save.
 <% else %>
+<% if @style == 'radio' %>
+<li>Click on the <em>radio</em> buttons on the right to score a couple.  The last column, with a dash (<code>-</code>),
+means the couple hasn't been scored / didn't participate.
+<% else %>
 <li>Scoring can be done multiple ways:
 <ul class="list-disc ml-4">
 <li>Drag and drop: Drag an entry box to the desired score.  
@@ -41,6 +45,7 @@
 <li>Keyboard: tab to the desired entry back, then move it up and down using the keyboard.  Clicking on escape unselects the back.
 </ul>
 <li>Dragging an entry back to the unlabelled box at the right returns the participant to the unscored state.
+<% end %>
 <% end %>
 <li>Clicking on the arrows at the bottom corners will advance you to the next or previous heats.
 Left and right arrows on the keyboard may also be used<% if @heat.category == 'Solo' %>
@@ -166,17 +171,29 @@ Swiping left and right on mobile devices and tablets also work.
         <% lvl = subject.entry.level.initials %>
         <div class='grid align-middle w-20 my-[1%] min-h-[12%] sm:min-h-[24%] mx-1 border-2 rounded-lg text-center head-<%=lvl%>' draggable="true" data-heat="<%= subject.id %>" id="<%= dom_id subject %>">
           <% if @backnums and not subject.entry.lead.back.blank? %>
-          <span class="font-bold text-xl my-auto"><%= subject.entry.lead.back %></span>
-          <% elsif subject.entry.follow.type == 'Professional' %>
+          <span class="my-auto">
+          <span class="font-bold text-xl"><%= subject.entry.lead.back %></span>
+          <div class="hidden text-xs sm:block"><%= subject.entry.subject_category(@track_ages).gsub(' ', '') %>-<%= subject.entry.level.initials %></div>
+          </span>
+          <div class="hidden text-sm sm:block base-<%=lvl%>"><br>
+          <% else %>
+          <div class="my-auto">
+          <% end %>
+
+          <% if subject.entry.follow.type == 'Professional' %>
           <span class="text-l my-auto"><%= subject.entry.lead.back_name %>
           <%= subject.entry.follow.back_name %></span>
           <% else %>
           <span class="text-l my-auto"><%= subject.entry.follow.back_name %>
           <%= subject.entry.lead.back_name %></span>
           <% end %>
+          
+          </div>
+          <% unless @backnums and not subject.entry.lead.back.blank? %>
           <div class="hidden text-sm sm:block base-<%=lvl%>"><br>
           <%= subject.entry.subject_category(@track_ages) %><br>
           <%= lvl %></div>
+          <% end %>
         </div>  
     <% end %>
     <% if score != '' %>
