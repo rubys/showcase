@@ -35,8 +35,11 @@
   <tbody>
   <% heats.each do |heat| %>
   <tr>
-    <!-- td class='border-r text-green-400 text-center py-2'>&#x2B24;</td> -->
+    <% if heat.category == 'Solo' %>
+    <td></td>
+    <% else %>
     <td class="px-2 text-center"><%= heat.entry.lead.back %>
+    <% end %>
     <td class="px-2 border-x" data-index><%= heat.entry.lead.display_name %>
     - <%= heat.entry.follow.display_name %>
     <% if heat.category == 'Solo' %>
