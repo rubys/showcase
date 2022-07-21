@@ -1,0 +1,32 @@
+<div class="">
+  <% if notice.present? %>
+    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+  <% end %>
+
+        <h1 class="font-bold text-4xl">
+          <td>DJ dance list
+        </h1>
+
+  <table>
+      <% @heats.each do |heat| %>
+        <% next if heat.number == 0 %>
+        <% if @agenda[heat.number] %>
+        <% if heat.number != 1 %>
+        </tbody>
+        <% end %>
+        <thead>
+
+        <tr class="text-black">
+          <td colspan="2" class="py-4 text-2xl"><%= @agenda[heat.number] %></td>
+        </tr>
+        </thead>
+        <tbody>
+        <% end %>
+        <tr id="<%= dom_id heat %>" class="text-black">
+          <td><%= heat.number %>
+          <td><%= "#{heat.category} #{heat.dance.name}#{heat.solo&.combo_dance_id ? " / #{heat.solo.combo_dance.name}" : ''}" %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
