@@ -213,19 +213,13 @@ class ScoresController < ApplicationController
       scores.each do |(score, *students), count|
         students = students.map {|student| people[student]}
 
-        value = SCORES['Closed'].index score
-        if value
-          category = 'Closed'
-        else
-          category = 'Open'
-          value = SCORES['Open'].index score
-        end
-
         if students.length == 1
           age = ages[students.first.age_id]
         else
           age = ages[students.map {|student| student.age_id}.max]
         end
+
+        age ||= ages.first.last
 
         @scores[group][age][students] ||= {
           'Open' => SCORES['Open'].map {0},
@@ -233,8 +227,20 @@ class ScoresController < ApplicationController
           'points' => 0
         }
 
-        @scores[group][age][students][category][value] += count
-        @scores[group][age][students]['points'] += count * WEIGHTS[value]
+        if @open_scoring == '#'
+          @scores[group][age][students]['points'] += score.to_i
+        else
+          value = SCORES['Closed'].index score
+          if value
+            category = 'Closed'
+          else
+            category = 'Open'
+            value = SCORES['Open'].index score
+          end
+  
+          @scores[group][age][students][category][value] += count
+          @scores[group][age][students]['points'] += count * WEIGHTS[value]
+        end
       end
     end      
   end
