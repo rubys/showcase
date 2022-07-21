@@ -110,7 +110,7 @@ Swiping left and right on mobile devices and tablets also work.
 
   </div>
   <% elsif @style == 'radio' %>
-     <% ballroom = 'A' %>
+    <% ballroom = 'A' %>
     <div class="grow flex flex-col border-2 border-slate-400 overflow-y-auto">
     <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>
     <table class="table-auto border-separate border-spacing-y-1 mx-4">
@@ -152,7 +152,7 @@ Swiping left and right on mobile devices and tablets also work.
         <td><%= subject.entry.subject_category(@track_ages) %> - <%= subject.entry.level.initials %>
         <td><%= subject.subject.studio.name %>
         <% if @event.open_scoring == '#' %>
-        <td><div class="mx-auto text-center"><input data-score-target="score" class="text-center w-20 h-10 border-2" name="<%= subject.id %>"></div>
+        <td><div class="mx-auto text-center"><input data-score-target="score" class="text-center w-20 h-10 border-2" name="<%= subject.id %>" value="<%= @results[subject] %>"%></div>
         <% else %>
         <% @scores.each do |score| %>
         <td class="text-center"><input type="radio" name="<%= subject.id %>" value="<%= score %>"<%= @results[subject]==score ? ' checked' : '' %>>
