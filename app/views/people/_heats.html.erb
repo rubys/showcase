@@ -3,6 +3,9 @@
   <tr>
     <td colspan="6" class="font-bold pt-8 text-3xl pb-5" >
       <%= person.name %>
+      <% if person.back %>
+      # <%= person.back %>
+      <% end %>
       <span class="font-normal text-base float-right text-right">
         <%= person.studio.name %><br>
         <%= @event.name %>
