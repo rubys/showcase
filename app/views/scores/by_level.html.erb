@@ -16,7 +16,7 @@
           <h2 class="font-bold pt-4 text-2xl pb-5"><%= level.name %></h1>
           <table class="mb-8">
             <thead>
-              <% if @open_scoring != 'G' %>
+              <% if @open_scoring == '1' %>
               <tr>
                 <th colspan="2">
                 <th colspan="4" class="bg-slate-200">Closed
@@ -27,12 +27,14 @@
               <tr>
               <th class="row-head">Points
               <th class="row-head">Name
+              <% if @open_scoring != '#' %>
               <% ScoresController::SCORES['Closed'].each do |score| %>
               <th class="row-head bg-slate-200"><%= score %>
               <% end %>
               <% if @open_scoring != 'G' %>
               <% ScoresController::SCORES['Open'].each do |score| %>
               <th class="row-head"><%= score %>
+              <% end %>
               <% end %>
               <% end %>
               </tr>
@@ -48,12 +50,14 @@
               <%= link_to names.first, students.first %> and
               <%= link_to names.last, students.last %></td>
               <% end %>
+              <% if @open_scoring != '#' %>
               <% results['Closed'].each do |score| %>
               <td class="row text-right px-4 bg-slate-200"><%= score == 0 ? '' : score %></td>
               <% end %>
               <% if @open_scoring != 'G' %>
               <% results['Open'].each do |score| %>
               <td class="row text-right px-4"><%= score == 0 ? '' : score %></td>
+              <% end %>
               <% end %>
               <% end %>
           <% end %>
