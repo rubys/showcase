@@ -254,7 +254,8 @@ class PeopleController < ApplicationController
       @multi = Dance.where.not(multi_category: nil).count
     end
 
-    @track_ages = Event.first.track_ages
+    @event = Event.first
+    @track_ages = @event.track_ages
   end
 
   # GET /people/new

@@ -26,7 +26,7 @@ class ScoresController < ApplicationController
 
   # GET /scores/:judge/heat/:heat
   def heat
-    event = Event.first
+    @event = Event.first
     @judge = Person.find(params[:judge].to_i)
     @number = params[:heat].to_i
     @slot = params[:slot]&.to_i
@@ -42,13 +42,13 @@ class ScoresController < ApplicationController
     else
       category = @subjects.first.category
       @dance = "#{category} #{@subjects.first.dance.name}"
-      if category == 'Open' and event.open_scoring == 'G'
+      if category == 'Open' and @event.open_scoring == 'G'
         @scores = SCORES['Closed'].dup
       else
         @scores = SCORES[category].dup
       end
 
-      @ballrooms = @subjects.first.dance_category.ballrooms || event.ballrooms
+      @ballrooms = @subjects.first.dance_category.ballrooms || @event.ballrooms
     end
 
     student_results = Score.where(judge: @judge, heat: @subjects, slot: @slot).
@@ -102,8 +102,8 @@ class ScoresController < ApplicationController
 
     @layout = 'mx-0 px-5'
     @nologo = true
-    @backnums = event.backnums
-    @track_ages = event.track_ages
+    @backnums = @event.backnums
+    @track_ages = @event.track_ages
   end
 
   def post

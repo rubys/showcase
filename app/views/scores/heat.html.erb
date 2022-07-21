@@ -94,14 +94,14 @@ Swiping left and right on mobile devices and tablets also work.
     <div class="mb-4"><span><b>Names</b>:&nbsp;</span><span><%= dancers %></span></div>
 
     <label><b>Comments:</b></label>
-    <textarea data-score-target="comments"
+    <textarea data-score-target="comments" data-heat="<%= @heat.id %>" 
       class="grow block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full"
     ><%= @comments %></textarea>
 
     <div>
     <div class="float-right mt-4">
     <b>Score:</b>
-    <input data-score-target="score" data-heat="<%= @heat.id %>" value="<%= @results.keys.first %>"
+    <input data-score-target="score" value="<%= @results.keys.first %>"
       class="border-2 border-black w-24 h-24 text-6xl text-center"/>
     </div>
     </div>
@@ -121,12 +121,16 @@ Swiping left and right on mobile devices and tablets also work.
         <th class="text-left border-b-2 border-black" rowspan="2">Partner
         <th class="text-left border-b-2 border-black" rowspan="2">Category
         <th class="text-left border-b-2 border-black" rowspan="2">Studio
+      <% if @event.open_scoring == '#' %>
+        <th class="text-center border-b-2 border-black">Score
+      <% else %>
         <th class="text-center" colspan="<%= @scores.length %>%>">Score
       </tr>
       <tr>
         <% @scores.each do |score| %>
           <th class="border-b-2 border-black"><%= score.blank? ? '-' : score %>
         <% end %>
+      <% end %>
       </tr>
     </thead>
     <% @subjects.each_with_index do |subject, index| %>
@@ -147,8 +151,12 @@ Swiping left and right on mobile devices and tablets also work.
         <% end %>
         <td><%= subject.entry.subject_category(@track_ages) %> - <%= subject.entry.level.initials %>
         <td><%= subject.subject.studio.name %>
+        <% if @event.open_scoring == '#' %>
+        <td><div class="mx-auto text-center"><input data-score-target="score" class="text-center w-20 h-10 border-2" name="<%= subject.id %>"></div>
+        <% else %>
         <% @scores.each do |score| %>
         <td class="text-center"><input type="radio" name="<%= subject.id %>" value="<%= score %>"<%= @results[subject]==score ? ' checked' : '' %>>
+        <% end %>
         <% end %>
       </tr>
     <% end %>

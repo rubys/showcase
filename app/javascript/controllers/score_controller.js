@@ -9,7 +9,9 @@ export default class extends Controller {
   keydown = event => {
     let form = false;
     if (this.hasCommentsTarget && this.commentsTarget == document.activeElement) form = true;
-    if (this.hasScoreTarget && this.scoreTarget == document.activeElement) form == true;
+    for (let target of this.scoreTargets) {
+      if (target == document.activeElement) form == true;
+    }
 
     if (event.key == 'ArrowRight') {
       if (form) return;
@@ -28,7 +30,7 @@ export default class extends Controller {
       this.unselect();
       this.unhighlight();
       if (document.activeElement) document.activeElement.blur();
-    } else if (event.key == 'Tabx') {
+    } else if (event.key == 'Tab') {
       event.preventDefault();
       event.stopPropagation();
       if (this.subjects.size > 0) {
@@ -37,10 +39,17 @@ export default class extends Controller {
         } else {
           this.nextSubject();
         }
-      } else if (document.activeElement == this.commentsTarget) {
-        this.scoreTarget.focus();
+      } else if (this.hasCommentsTarget && document.activeElement == this.commentsTarget) {
+        this.scoreTargets[0].focus();
       } else {
-        this.commentsTarget.focus();
+        let index = this.scoreTargets.findIndex(target => target == document.activeElement);
+        if (this.hasCommentsTarget && (this.scoreTargets.length < 2 || index == -1)) {
+          this.commentsTarget.focus();
+        } else if (index == this.scoreTargets.length - 1) {
+          this.scoreTargets[0].focus();
+        } else {
+          this.scoreTargets[index+1].focus();
+        }
       }
     } else if (event.key == ' ' || event.key == 'Enter') {
       if (form) return;
@@ -357,7 +366,7 @@ export default class extends Controller {
         this.commentsTarget.disabled = true;
 
         this.post({
-          heat: parseInt(this.scoreTarget.dataset.heat),
+          heat: parseInt(this.commentTarget.dataset.heat),
           test: 'data',
           comments: this.commentsTarget.value
         }).then(response => {
@@ -372,9 +381,7 @@ export default class extends Controller {
     }
 
     for (let button of this.element.querySelectorAll('input[type=radio]')) {
-      console.log(button)
       button.addEventListener('change', event => {
-        console.log(event)
         this.post({
           heat: parseInt(button.name),
           slot: this.element.dataset.slot && parseInt(this.element.dataset.slot),
@@ -391,19 +398,30 @@ export default class extends Controller {
       })
     }
 
-    if (this.hasScoreTarget) {
-      this.scoreTarget.addEventListener('change', event => {
-        this.scoreTarget.disabled = true;
+    for (let target of this.scoreTargets) {
+      target.addEventListener('change', event => {
+        target.disabled = true;
 
-        this.post({
-          heat: parseInt(this.scoreTarget.dataset.heat),
-          score: this.scoreTarget.value
-        }).then(response => {
-          this.scoreTarget.disabled = false;
+        let data;
+        if (this.hasCommentsTarget) {
+          data = {
+            heat: parseInt(this.commentsTarget.dataset.heat),
+            score: target.value
+          }
+        } else {
+          data = {
+            heat: parseInt(target.name),
+            slot: this.element.dataset.slot && parseInt(this.element.dataset.slot),
+            score: target.value
+          }
+        }
+
+        this.post(data).then(response => {
+          target.disabled = false;
           if (response.ok) {
-            this.scoreTarget.style.backgroundColor = null;
+            target.style.backgroundColor = null;
           } else {
-            this.scoreTarget.style.backgroundColor = '#F00';
+            target.style.backgroundColor = '#F00';
           }
         })
       });
