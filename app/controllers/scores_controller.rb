@@ -261,9 +261,13 @@ class ScoresController < ApplicationController
         }
 
         scores.each do |score|
-          value = SCORES['Multi'].index score.value
-          @scores[dance][entry]['Multi'][value] += 1
-          @scores[dance][entry]['points'] += WEIGHTS[value]
+          if @open_scoring == '#'
+            @scores[dance][entry]['points'] += score.value.to_i
+          else
+            value = SCORES['Multi'].index score.value
+            @scores[dance][entry]['Multi'][value] += 1
+            @scores[dance][entry]['points'] += WEIGHTS[value]
+          end
         end
       end
     end

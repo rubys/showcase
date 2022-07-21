@@ -16,18 +16,22 @@
               <th class="row-head">Points
               <th class="row-head">Lead
               <th class="row-head">Follow
+              <% if @open_scoring != '#' %>
               <% ScoresController::SCORES['Multi'].each do |score| %>
               <th class="row-head bg-slate-200"><%= score %>
+              <% end %>
               <% end %>
               </tr>
             </thead>
           <% entries.sort_by {|entry, results| results['points']}.reverse.each do |entry, results| %>
             <tr>
-              <td class="row-main text-right"><%= results['points'] %>
+              <td class="row-main text-right"><%= number_with_delimiter results['points'] %>
               <td class="row-main"><%= link_to entry.lead.display_name, entry.lead %></td>
               <td class="row-main"><%= link_to entry.follow.display_name, entry.follow %></td>
+              <% if @open_scoring != '#' %>
               <% results['Multi'].each do |score| %>
               <td class="row text-right px-4 bg-slate-200"><%= score == 0 ? '' : score %></td>
+              <% end %>
               <% end %>
             </tr>
         <% end %>
