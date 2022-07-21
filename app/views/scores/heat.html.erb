@@ -34,10 +34,7 @@
 <% if @heat.category == 'Solo' %>
 <li>Tab to or click on comments or score to edit.  Press escape or click elsewhere to save.
 <% else %>
-<% if @style == 'radio' %>
-<li>Click on the <em>radio</em> buttons on the right to score a couple.  The last column, with a dash (<code>-</code>),
-means the couple hasn't been scored / didn't participate.
-<% else %>
+<% if @style != 'radio' %>
 <li>Scoring can be done multiple ways:
 <ul class="list-disc ml-4">
 <li>Drag and drop: Drag an entry box to the desired score.  
@@ -45,11 +42,17 @@ means the couple hasn't been scored / didn't participate.
 <li>Keyboard: tab to the desired entry back, then move it up and down using the keyboard.  Clicking on escape unselects the back.
 </ul>
 <li>Dragging an entry back to the unlabelled box at the right returns the participant to the unscored state.
+<% elsif @event.open_scoring == '#' %>
+<li>Enter scores in the right most column.  Tab to move to the next entry.
+<% else %>
+<li>Click on the <em>radio</em> buttons on the right to score a couple.  The last column, with a dash (<code>-</code>),
+means the couple hasn't been scored / didn't participate.
 <% end %>
 <% end %>
 <li>Clicking on the arrows at the bottom corners will advance you to the next or previous heats.
 Left and right arrows on the keyboard may also be used<% if @heat.category == 'Solo' %>
-when not editing comments or score<% end %>.
+when not editing comments or score<% elsif @event.open_scoring == '#' %>
+when not entering scores<% end %>.
 Swiping left and right on mobile devices and tablets also work.
 <li>Clicking on the heat information at the top center of the page will return you to the heat list where you can quickly scroll and select a different heat.
 </ul>
