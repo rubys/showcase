@@ -30,6 +30,21 @@ class HeatsController < ApplicationController
     @nologo = true
   end
 
+  def djlist
+    @heats = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance)
+
+    @agenda = @heats.group_by(&:dance_category).map do |category, heats|
+      [heats.map {|heat| heat.number}.min, category&.name]
+    end.to_h
+
+    respond_to do |format|
+      format.html
+      format.pdf do
+        render_as_pdf basename: "djlist"
+      end
+    end
+  end
+
   # GET /heats/book or /heats/book.json
   def book
     @type = params[:type]

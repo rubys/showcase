@@ -47,8 +47,14 @@
     <% else %>
     <td class="px-2 text-center"><%= heat.entry.lead.back %>
     <% end %>
-    <td class="px-2 border-x" data-index><%= heat.entry.lead.display_name %>
-    - <%= heat.entry.follow.display_name %>
+    <%
+      if @event.column_order == 1 or heat.entry.follow.type == 'Professional'
+        p1, p2 = heat.entry.lead, heat.entry.follow
+      else
+        p1, p2 = heat.entry.follow, heat.entry.lead
+      end
+    %>
+    <td class="px-2 border-x" data-index><%= p1.display_name %> - <%= p2.display_name %>
     <% if heat.category == 'Solo' %>
     <% heat.solo.formations.each do |formation| %>
     <% next unless formation.on_floor %>

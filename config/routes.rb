@@ -48,6 +48,7 @@ Rails.application.routes.draw do
       post 'redo', on: :collection
       get 'book', on: :collection
       get 'mobile', on: :collection
+      get 'djlist', on: :collection
     end
 
     resources :entries do

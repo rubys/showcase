@@ -136,14 +136,12 @@ a scheduled heat time will be added to each heat.
       <% ballroom = 'A' %>
       <% if ballrooms == 1 or heats.first.category == 'Solo' %>
       <% ballroom = 'B' %>
-      <% else %>
-      <% if heats.first.entry.lead.type == 'Professional' %>
+      <% elsif ballrooms > 1 %>
       <tr>
         <td>
         <td></td>
         <td colspan="8" class="text-xs pt-2">Ballroom A</td>
       </tr>
-      <% end %>
       <% end %>
       <% end %>
 
