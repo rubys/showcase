@@ -1,0 +1,19 @@
+<div>
+  <h1 class="font-bold text-center text-4xl"><%= @event.name %></h1>
+
+  <% if @event.theme %>
+  <p class="mt-2 text-2xl text-center"><%= @event.theme %></p>
+  <% end %>
+
+  <p class="mt-4 text-center"><%= @event.location.to_s.lines.first.chomp %></p>
+
+  <p class="mt-2 text-center"><%= @event.date %></p>
+  
+  <a href="<%= @public_url.to_s + '/heats' %>">
+  <div class="mx-auto w-1/2 my-12">
+  <%= RQRCode::QRCode.new(@public_url.to_s + '/heats').as_svg(viewbox: true).html_safe %>
+  </div>
+  </a>
+
+  <div class="text-center">Scan QRCode to see list of heats</div>
+</div>

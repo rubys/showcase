@@ -389,6 +389,11 @@ class EventController < ApplicationController
     @sources.delete ENV["RAILS_APP_DB"]
   end
 
+  def qrcode
+    @public_url = URI.join(request.original_url, '../../public')
+    @event = Event.first
+  end
+
   def self.logo
     @@logo ||= ENV['SHOWCASE_LOGO'] || 'intertwingly.png'
   end

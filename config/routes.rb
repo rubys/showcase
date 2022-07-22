@@ -42,6 +42,7 @@ Rails.application.routes.draw do
       post 'dances', on: :collection
       get 'clone', on: :collection
       post 'clone', on: :collection
+      get 'qrcode', on: :collection
     end
 
     resources :heats do
