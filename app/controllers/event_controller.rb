@@ -63,7 +63,7 @@ class EventController < ApplicationController
       :intermix, :ballrooms, :column_order, :backnums, :track_ages, :heat_length, :solo_length, :open_scoring,
       :heat_cost, :solo_cost, :multi_cost, :max_heat_size, :package_required)
 
-    if @event.open_scoring != old_open_scoring
+    if @event.open_scoring != old_open_scoring and @event.open_scoring != '#' and @event.open_scoring != '#'
       map = {
         "1" => "GH",
         "2" => "G",

@@ -184,8 +184,10 @@ class ScoresController < ApplicationController
             value = SCORES['Open'].index score
           end
 
-          @scores[group][level][students][category][value] += count
-          @scores[group][level][students]['points'] += count * WEIGHTS[value]
+          if value
+            @scores[group][level][students][category][value] += count
+            @scores[group][level][students]['points'] += count * WEIGHTS[value]
+          end
         end
       end
     end
@@ -238,8 +240,10 @@ class ScoresController < ApplicationController
             value = SCORES['Open'].index score
           end
   
-          @scores[group][age][students][category][value] += count
-          @scores[group][age][students]['points'] += count * WEIGHTS[value]
+          if value
+            @scores[group][age][students][category][value] += count
+            @scores[group][age][students]['points'] += count * WEIGHTS[value]
+          end
         end
       end
     end      
@@ -265,8 +269,10 @@ class ScoresController < ApplicationController
             @scores[dance][entry]['points'] += score.value.to_i
           else
             value = SCORES['Multi'].index score.value
-            @scores[dance][entry]['Multi'][value] += 1
-            @scores[dance][entry]['points'] += WEIGHTS[value]
+            if value
+              @scores[dance][entry]['Multi'][value] += 1
+              @scores[dance][entry]['points'] += WEIGHTS[value]
+            end
           end
         end
       end
