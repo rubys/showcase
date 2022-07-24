@@ -8,6 +8,7 @@ class CategoriesController < ApplicationController
     generate_agenda
     @agenda = @agenda.to_h
     @categories = Category.order(:order)
+    @locked = Event.last.locked?
   end
 
   # GET /categories/1 or /categories/1.json
@@ -73,6 +74,11 @@ class CategoriesController < ApplicationController
     end
   end
 
+  def toggle_lock
+    event = Event.first
+    event.update(locked: !event.locked)
+    redirect_to categories_url, notice: "Agenda #{event.locked ? '' : 'un'}locked."
+  end
 
   # POST /categories/redo
   def redo

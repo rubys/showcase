@@ -38,7 +38,7 @@ a scheduled heat time will be added to each heat.
   <h1 class="font-bold text-4xl">Agenda</h1>
   <div>
   <%= link_to 'Solos', solos_path, class: "btn-green print:hidden" %>
-  <%= up_link 'Redo', redo_heats_path, class: "btn-blue print:hidden", data: { turbo_method: :post } %>
+  <%= up_link 'Redo', redo_heats_path, class: "btn-blue print:hidden", method: :post, disabled: @locked %>
   </div>
 </div>
 

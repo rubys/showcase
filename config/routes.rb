@@ -65,6 +65,7 @@ Rails.application.routes.draw do
     resources :categories do
       post 'redo', on: :collection
       post 'drop', on: :collection
+      post 'toggle_lock', on: :collection
     end
 
     match "/people/certificates", to: 'people#certificates', via: %i(get post)

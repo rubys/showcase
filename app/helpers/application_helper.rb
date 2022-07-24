@@ -2,11 +2,20 @@ module ApplicationHelper
   def up_link(name, path_options, html_options = {}, &block)
     if ApplicationRecord.readonly?
       html_options = html_options.merge(disabled: true)
-      html_options[:class] = "#{html_options[:class]} btn-disabled"
-      html_options[:title] = "database is in read-only mode"
+      html_options[:title] ||= "database is in read-only mode"
     end
 
-    link_to name, path_options, html_options, &block
+    boom if html_options[:data] && html_options[:data][:turbo_method]
+
+    html_options[:class] = "#{html_options[:class]} disabled:opacity-50 disabled:cursor-not-allowed"
+    html_options[:method] ||= :get
+
+    if html_options[:method] == :get and not html_options[:disabled]
+      html_options.delete :method
+      link_to name, path_options, html_options, &block
+    else
+      button_to name, path_options, html_options, &block
+    end
   end
 
   def action_cable_meta_tag_dynamic

@@ -21,6 +21,7 @@ class HeatsController < ApplicationController
     @ballrooms = event.ballrooms
     @track_ages = event.track_ages
     @column_order = event.column_order
+    @locked = event.locked?
   end
 
   def mobile

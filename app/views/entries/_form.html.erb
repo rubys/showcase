@@ -40,22 +40,21 @@ entry in the common case.
   locals: {form: form, title: 'MULTI CATEGORY', dances: @multis, category: 'Multi'} %>
 <% end %>
 
-<div class="mx-auto flex">
-  <div class="mx-auto">
+<div class="mx-auto grid grid-cols-3 gap-x-1">
   <%= form.submit class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  <% end %>
   <% if entry.id %>
   <% if entry.heats.any? {|heat| heat.number < 0} %>
-  <%= up_link 'Restore this entry', entry_path(entry, primary: @person), class: 'btn-grey',
-    data: { turbo_method: :delete } %>
+  <%= up_link 'Restore this entry', entry_path(entry), class: 'text-center btn-grey h-full my-0',
+    method: :delete, params: {primary: @person} %>
   <% elsif entry.heats.any? {|heat| heat.number > 0} %>
-  <%= up_link 'Scratch this entry', entry_path(entry, primary: @person), class: 'btn-grey',
-    data: { turbo_method: :delete } %>
+  <%= up_link 'Scratch this entry', entry_path(entry), class: 'text-center btn-grey h-full my-0',
+    method: :delete, params: {primary: @person} %>
   <% else %>
-  <%= up_link 'Remove this entry', entry_path(entry, primary: @person), class: 'btn-grey',
-    data: { turbo_method: :delete, turbo_confirm: 'Are you sure?' } %>
+  <%= up_link 'Remove this entry', entry_path(entry), class: 'text-center btn-grey h-full my-0',
+    method: :delete, params: {primary: @person}, data: { turbo_confirm: 'Are you sure?' } %>
   <% end %>
-  <% end %>
-  <%= link_to 'Back to student', @person, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  <%= link_to 'Back to student', @person, class: "text-center ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
   </div>
 </div>
 <% end %>
