@@ -1,4 +1,5 @@
-<%= form_with(model: solo, class: "contents") do |form| %>
+<div>
+<%= form_with(model: solo, id: 'solo-form', class: "contents") do |form| %>
   <% if solo.errors.any? %>
     <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
       <h2><%= pluralize(solo.errors.count, "error") %> prohibited this solo from being saved:</h2>
@@ -55,11 +56,12 @@
   </ul>
   </div>
   <% end %>
+</div>
+<% end %>
 
-  <div class="mx-auto grid grid-cols-3 gap-x-1">
-  <%= form.submit (solo.persisted? ? 'Update' : 'Create') + ' ' + (@formation ? 'Formation' : 'Solo'),
-    class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
-  <% end %>
+<div class="mx-auto flex">
+  <input type="submit" class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" form="solo-form"
+    value="<%= (solo.persisted? ? 'Update' : 'Create') + ' ' + (@formation ? 'Formation' : 'Solo') %>">
   <% if solo.id %>
   <% if solo.heat.number < 0 %>
   <%= up_link "Restore this #{@formation ? 'formation' : 'solo'}",
@@ -70,10 +72,9 @@
   <% else %>
   <%= up_link "Remove this #{@formation ? 'formation' : 'solo'}",
     solo_path(solo), class: 'text-center btn-grey h-full my-0', method: :delete,
-    params: {primary: @person}, data: { turbo_confirm: 'Are you sure?' } %>
+    params: {primary: @person}, form: { data: { turbo_confirm: 'Are you sure?' }} %>
   <% end %>
-  <%= link_to 'Back to student', @person, class: "text-center mx-auto rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  <% end %>
+  <%= link_to 'Back to student', @person, class: "text-center rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
 </div>
 </div>
-<% end %>
-
