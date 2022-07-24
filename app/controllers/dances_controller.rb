@@ -22,6 +22,8 @@ class DancesController < ApplicationController
   # GET /dances/1/edit
   def edit
     form_init
+
+    @locked = Event.first.locked?
   end
 
   # POST /dances or /dances.json

@@ -1,4 +1,4 @@
-<%= form_with(model: person, class: "contents", data: {controller: "person", id: JSON.dump(person.id) }) do |form| %>
+<%= form_with(model: person, class: "contents", id: 'person-form', data: {controller: "person", id: JSON.dump(person.id) }) do |form| %>
   <% if person.errors.any? %>
     <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
       <h2><%= pluralize(person.errors.count, "error") %> prohibited this person from being saved:</h2>
@@ -73,8 +73,4 @@
   <%= render partial: 'package', locals: { person: person } %>
   <%= render partial: 'options', locals: { form: form } %>
   <% end %>
-
-  <div class="inline">
-    <%= form.submit class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
-  </div>
 <% end %>

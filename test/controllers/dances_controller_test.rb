@@ -36,7 +36,8 @@ class DancesControllerTest < ActionDispatch::IntegrationTest
   test "should get edit" do
     get edit_dance_url(@dance)
     assert_response :success
-    assert_select 'a[data-turbo-method=delete]', 'Remove this dance'
+    assert_select 'form input[name="_method"][value=delete]'
+    assert_select 'form button', 'Remove this dance'
   end
 
   test "should update dance" do

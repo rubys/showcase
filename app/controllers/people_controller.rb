@@ -280,6 +280,7 @@ class PeopleController < ApplicationController
     selections
 
     @entries = @person.lead_entries.count + @person.follow_entries.count
+    @locked = Event.first.locked?
   end
 
   def get_entries

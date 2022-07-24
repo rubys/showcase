@@ -3,8 +3,11 @@
 
   <%= render "form", person: @person %>
 
-  <%= link_to 'Remove this person', person_path(@person), class: 'btn-grey',
-    data: { turbo_method: :delete, turbo_confirm: 'Are you sure?' } %>
+  <div class="mx-auto flex">
+    <input type="submit" class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" form="person-form" value="Update Person">
+    <%= up_link 'Remove this person', person_path(@person), class: 'btn-grey my-0',
+      method: :delete, disabled: @locked, form: {data: { turbo_confirm: 'Are you sure?' }} %>
 
-  <%= link_to "Back to studio", @person.studio, class: "btn-green" %>
+    <%= link_to "Back to studio", @person.studio, class: "btn-green my-0" %>
+  </div>
 </div>
