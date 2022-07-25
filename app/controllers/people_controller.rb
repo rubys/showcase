@@ -174,6 +174,22 @@ class PeopleController < ApplicationController
     index
   end
 
+  def staff
+    @professionals = Person.includes(:studio).where(type: 'Professional').order(sort_order)
+
+    organizers = Studio.where(name: 'Organizer').first
+    if organizers
+      @organizers = organizers.people.order(sort_order)
+    end
+
+    respond_to do |format|
+      format.html { render }
+      format.pdf do
+        render_as_pdf basename: "staff"
+      end
+    end
+  end
+
   # GET /people/professionals or /professionals.json
   def guests
     @people = Person.includes(:studio).where(type: 'Guest').order(sort_order)

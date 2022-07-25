@@ -87,6 +87,7 @@ Rails.application.routes.draw do
       post 'package', on: :collection, action: 'post_package'
       post 'studio_list', on: :collection, action: 'studio_list'
       get 'invoice', on: :member
+      get 'staff', on: :collection
     end
 
     resources :studios do
