@@ -94,6 +94,7 @@ class UsersController < ApplicationController
       @users = User.order(:userid).pluck(:userid, :id).to_h
       @user = User.where(userid: @authuser).first.id if @authuser
       @user = User.find(params[:user]).id if @user = params[:user]
+      @link = User.find(@user).link if @user
       render :request_reset
     else
       user = @user = User.find(params[:id])
