@@ -26,7 +26,7 @@ can click on it to see helpful hints.</li>
       <ul class="my-2 ml-8 list-disc list-inside">
       <% info[:events].each do |subtoken, info| %>
         <li>
-          <a href="<%= "#{@scope}/#{year}/#{token}/#{subtoken}" %>/">
+          <a href="<%= "#{@scope}/#{year}/#{token}/#{subtoken}".squeeze('/') %>/">
             <span class="text-xl"><%= info[:name] %><span>
             <span class="text-slate-400">- <%= info['date'] %><span>
           </a>
@@ -34,7 +34,7 @@ can click on it to see helpful hints.</li>
       <% end %>
       </ul>
       <% else %>
-      <a href="<%= "#{@scope}/#{year}/#{token}" %>/">
+      <a href="<%= "#{@scope}/#{year}/#{token}".squeeze('/') %>/">
         <span class="text-xl"><%= info[:name] %><span>
         <span class="text-slate-400">- <%= info['date'] %><span>
       </a>
