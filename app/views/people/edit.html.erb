@@ -8,6 +8,10 @@
     <%= up_link 'Remove this person', person_path(@person), class: 'btn-grey my-0',
       method: :delete, disabled: @locked, form: {data: { turbo_confirm: 'Are you sure?' }} %>
 
+    <% if @person.studio %>
     <%= link_to "Back to studio", @person.studio, class: "btn-green my-0" %>
+    <% else %>
+    <%= link_to "Back to event staff", studio_path(0), class: "btn-green my-0" %>
+    <% end %>
   </div>
 </div>

@@ -278,6 +278,8 @@ class PeopleController < ApplicationController
   def new
     @person ||= Person.new
 
+    params[:studio] = nil if params[:studio].to_s == '0'
+
     if params[:studio]
       @types = %w[Student Professional Guest]
       @person.studio = Studio.find(params[:studio])

@@ -11,8 +11,10 @@
     <%= up_link 'Edit this studio', edit_studio_path(@studio), class: "btn-grey" %>
     <%= link_to 'Back to studios', studios_path, class: "btn-green" %>
 
+    <% if @studio.id != 0 %>
     <%= link_to 'Invoice', invoice_studio_path(@studio, format: :pdf), class: "btn-pale-orange" %>
     <%= link_to 'Heat sheets', heats_studio_path(@studio, format: :pdf), class: "btn-pale-orange" %>
     <%= link_to 'Scores', scores_studio_path(@studio, format: :pdf), class: "btn-pale-orange" %>
+    <% end %>
   </div>
 </div>

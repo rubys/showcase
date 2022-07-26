@@ -202,7 +202,11 @@ class StudiosController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_studio
-      @studio = Studio.find(params[:id])
+      if params[:id].to_s == '0'
+        @studio = Studio.new(id: 0, name: 'Event Staff', people: Person.where(studio_id: nil))
+      else
+        @studio = Studio.find(params[:id])
+      end
     end
 
     # Only allow a list of trusted parameters through.
