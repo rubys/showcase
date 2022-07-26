@@ -7,18 +7,22 @@
 
   <%= render "form", heat: @heat %>
 
+  <div class="mx-auto flex">
+  <input type="submit" class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" form="heat-form" value="Update Heat">
+
   <% if @heat.number < 0 %>
-  <%= up_link 'Restore this heat', heat_path(@heat), class: 'btn-grey',
+  <%= up_link 'Restore this heat', heat_path(@heat), class: 'btn-grey my-0',
     method: :delete, params: {primary: params[:primary]} %>
   <% elsif @heat.number > 0 %>
-  <%= up_link 'Scratch this heat', heat_path(@heat), class: 'btn-grey',
+  <%= up_link 'Scratch this heat', heat_path(@heat), class: 'btn-grey my-0',
     method: :delete, params: {primary: params[:primary]} %>
   <% else %>
-  <%= up_link 'Remove this heat', heat_path(@heat), class: 'btn-grey',
+  <%= up_link 'Remove this heat', heat_path(@heat), class: 'btn-grey my-0',
     method: :delete, params: {primary: params[:primary]}, data: { turbo_confirm: 'Are you sure?' } %>
   <% end %>
 
   <% if @person %>
-  <%= link_to "Back to student", person_path(@person), class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  <%= link_to "Back to student", person_path(@person), class: "my-0 ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
   <% end %>
+  </div>
 </div>

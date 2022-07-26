@@ -14,8 +14,8 @@
 
 <div class="mx-auto w-full mb-8 text-center">
   <%= render partial: 'entries/box', locals: {form: form} %>
-
-  <% unless @person %>
+  
+  <% if @heat or not @person %>
   <div class="my-5">
     <%= form.label :number %>
     <%= form.number_field :number, value: @number,

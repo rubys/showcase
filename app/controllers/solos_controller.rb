@@ -49,6 +49,8 @@ class SolosController < ApplicationController
     @level = @solo.heat.entry.level_id
     @dance = @solo.heat.dance.id
     @number = @solo.heat.number
+
+    @heat = params[:heat]
   end
 
   # POST /solos or /solos.json

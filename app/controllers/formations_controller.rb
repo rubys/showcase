@@ -46,6 +46,7 @@ class FormationsController < ApplicationController
     end
 
     @on_floor = @solo.formations.all? {|formation| formation.on_floor}
+    @heat = params[:heat]
   end
 
   # POST /formations or /formations.json
