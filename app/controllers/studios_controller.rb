@@ -137,6 +137,7 @@ class StudiosController < ApplicationController
   # GET /studios/1/edit
   def edit
     new
+    @locked = Event.last.locked?
   end
 
   # POST /studios or /studios.json

@@ -3,10 +3,12 @@
 
   <%= render "form", studio: @studio %>
 
-  <%= link_to 'Remove this studio', studio_path(@studio), class: "btn-grey",
-    data: { turbo_method: :delete, turbo_confirm: 'Are you sure?' } %>
+  <div class="mx-auto flex">
+  <input type="submit" class="rounded-lg px-5 bg-blue-600 text-white inline-block cursor-pointer" form="studio-form" value="Update Studio">
+  <%= up_link 'Remove this studio', studio_path(@studio), class: "btn-grey my-0",
+    disabled: @locked, method: :delete, form: {data: { turbo_confirm: 'Are you sure?' }} %>
 
-  <%= link_to "Back to studios", studios_path, class: "btn-green" %>
+  <%= link_to "Back to studios", studios_path, class: "btn-green my-0" %>
 
   <% if @pairs and @pairs.size > 0 %>
   <h2 class="mt-8 font-bold text-2xl">Associated studios</h1>
@@ -22,5 +24,6 @@
   <% end %>
   </ul>
   <% end %>
+  </div>
 
 </div>
