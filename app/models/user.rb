@@ -28,7 +28,7 @@ class User < ApplicationRecord
     def self.load_auth
       return unless @@db
       @@auth_studio = @@db.execute('select userid, sites from users').
-        map {|userid, sites| [userid, sites.to_s.split(',')]}
+        map {|userid, sites| [userid, sites.to_s.split(',')]}.to_h
 
       event = ENV['RAILS_APP_OWNER'];
       if event == 'index'
