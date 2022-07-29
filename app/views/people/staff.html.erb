@@ -21,20 +21,22 @@
   </tbody>
   </table>
 
-  <% if @organizers %>
-  <table class="mx-auto" style="break-after: page">
+  <% if @staff %>
+  <table class="mx-auto break-inside-avoid">
   <thead>
   <tr>
-    <th colspan="1" class="font-bold pt-8 text-3xl pb-5" >Organizers</td>
+    <th colspan="2" class="font-bold pt-8 text-3xl pb-5" ><%= @staff.name %></td>
   </tr>
   <tr>
     <th class="row-head">Name
+    <th class="row-head">Role
   </tr>
   </thead>
   <tbody>
-  <% @organizers.each do |person| %>
+  <% @staff.people.order(:name).each do |person| %>
     <tr>
       <td><div class="mx-4"><%= person.name %>
+      <td><div class="mx-4"><%= person.type %>
     </tr>
   <% end %>
   </tbody>

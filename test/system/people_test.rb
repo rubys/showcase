@@ -51,13 +51,13 @@ class PeopleTest < ApplicationSystemTestCase
 
     select 'Judge', from: 'Type'
 
+    # intermittent timing problem if this is set later
+    fill_in "Name", with: 'Wopner, Joseph'
+
     assert_no_selector "#person_level_id"
     assert_no_selector "#person_age_id"
     assert_no_selector "#person_role"
     assert_no_selector "#person_back"
-
-    # intermittent timing problem if this is set earlier
-    fill_in "Name", with: 'Wopner, Joseph'
 
     click_on "Create Person"
 

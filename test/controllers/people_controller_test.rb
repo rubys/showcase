@@ -46,7 +46,7 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
 
   test "should create judge" do
     assert_difference("Person.count") do
-      post people_url, params: { person: { name: 'Joseph Wopner', type: 'Judge' } }
+      post people_url, params: { person: { name: 'Joseph Wopner', type: 'Judge', studio_id: 0 } }
     assert_equal flash[:notice], 'Joseph Wopner was successfully added.'
     end
 

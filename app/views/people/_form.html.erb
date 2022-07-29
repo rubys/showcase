@@ -31,6 +31,8 @@
     <%= form.select :studio_id, @studios, {}, 'data-person-target' => 'studio',
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+  <% else %>
+  <input type="hidden" name="person[studio_id]" value="0" data-person-target="studio">
   <% end %>
 
   <div class="my-5">
@@ -40,7 +42,6 @@
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
-  <% if @person.studio %>
   <div class="my-5" data-person-target="level">
     <%= form.label :level_id %>
     <%= form.select :level_id, @levels, {}, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
@@ -72,5 +73,4 @@
 
   <%= render partial: 'package', locals: { person: person } %>
   <%= render partial: 'options', locals: { form: form } %>
-  <% end %>
 <% end %>

@@ -53,7 +53,7 @@ can click on it to see helpful hints.</li>
   <a href="https://github.com/rubys/showcase/issues">issues</a>.
 </p>
 
-<% if @user == 'rubys' %>
-<pre><%= '' %></pre>
+<% if User.authorized? @authuser, 'index' %>
+<%= link_to 'Users', users_path, class: 'btn-blue' %>
 <% end %>
 </div>

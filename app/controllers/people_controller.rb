@@ -176,11 +176,7 @@ class PeopleController < ApplicationController
 
   def staff
     @professionals = Person.includes(:studio).where(type: 'Professional').order(sort_order)
-
-    organizers = Studio.where(name: 'Organizer').first
-    if organizers
-      @organizers = organizers.people.order(sort_order)
-    end
+    @staff = Studio.find(0)
 
     respond_to do |format|
       format.html { render }
@@ -213,7 +209,10 @@ class PeopleController < ApplicationController
   # GET /people/labels
   def labels
     @event = Event.first
-    @people = Person.where.not(studio_id: nil).includes(:studio).order('studios.name', :name)
+    @people = Person.where.not(studio_id: nil).includes(:studio).order('studios.name', :name).to_a
+    staff = @people.select {|person| person.studio_id == 0}
+    @people -= staff
+    @people += staff
 
     respond_to do |format|
       format.html { render layout: false }
@@ -502,10 +501,6 @@ class PeopleController < ApplicationController
         exclude_id: person[:exclude_id],
         package_id: person[:package_id]
       }
-
-      unless %w(Professional Student Guest).include? base[:type]
-        base.delete :studio_id
-      end
 
       unless %w(Student).include? base[:type]
         base.delete :level

@@ -161,7 +161,7 @@ class UsersController < ApplicationController
 
     def set_password
       params = self.params[:user]
-      return unless params[:userid]
+      return unless params and params[:userid]
       return unless params[:password] and params[:password] == params[:password_confirmation]
 
       if params[:password].blank?
@@ -178,12 +178,13 @@ class UsersController < ApplicationController
 
     def set_sites
       params = self.params[:user]
-      return unless params[:sites]
+      return unless params and params[:sites]
       params[:sites] = params[:sites].select {|name, value| value.to_i > 0}.keys.join(',')
     end
 
     # Only allow a list of trusted parameters through.
     def user_params
+      return unless self.params[:user]
       if (@@encryptor.decrypt_and_verify(params[:admin].to_s) == dom_id(@user) rescue false)
         params.require(:user).permit(:userid, :password, :password_confirmation, :email, :name1, :name2, :token, :link, :sites)
       else

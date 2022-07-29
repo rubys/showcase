@@ -4,7 +4,7 @@ class Person < ApplicationRecord
   validates :name, presence: true, uniqueness: true
   validates :back, allow_nil: true, uniqueness: true
   
-  belongs_to :studio, optional: true
+  belongs_to :studio, optional: false
   belongs_to :level, optional: true
   belongs_to :age, optional: true
   belongs_to :exclude, class_name: 'Person', optional: true

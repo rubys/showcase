@@ -5,7 +5,9 @@ class StudiosController < ApplicationController
 
   # GET /studios or /studios.json
   def index
-    @studios = Studio.all.order(:name)
+    @studios = Studio.all.order(:name).to_a
+    staff = @studios.find {|studio| studio.id == 0}
+    @studios.push @studios.delete staff
 
     generate_invoice @studios
 
@@ -202,11 +204,7 @@ class StudiosController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_studio
-      if params[:id].to_s == '0'
-        @studio = Studio.new(id: 0, name: 'Event Staff', people: Person.where(studio_id: nil))
-      else
-        @studio = Studio.find(params[:id])
-      end
+      @studio = Studio.find(params[:id])
     end
 
     # Only allow a list of trusted parameters through.

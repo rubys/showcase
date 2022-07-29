@@ -6,7 +6,7 @@ export default class extends Controller {
 
   connect() {
     this.id = JSON.parse(this.element.dataset.id);
-    this.token = document.querySelector('meta[name="csrf-token"]').content;
+    this.token = document.querySelector('meta[name="csrf-token"]')?.content;
 
     for (let select of [...document.querySelectorAll('select')]) {
       let changeEvent = new Event('change');
@@ -24,13 +24,13 @@ export default class extends Controller {
       this.levelTarget.style.display = 'none';
       if (this.hasAgeTarget) this.ageTarget.style.display = 'none';
 
-      if (event.target.value == 'Guest') {
+      if (event.target.value == 'Professional') {
+        this.roleTarget.style.display = 'block';
+        this.excludeTarget.style.display = 'block';
+      } else {
         this.roleTarget.style.display = 'none';
         this.backTarget.style.display = 'none';
         this.excludeTarget.style.display = 'none';
-      } else {
-        this.roleTarget.style.display = 'block';
-        this.excludeTarget.style.display = 'block';
       }
     }
 
