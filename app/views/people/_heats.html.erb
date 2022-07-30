@@ -29,13 +29,16 @@
   <% @heats.each do |number, heats| %>
   <% heats.each do |heat| %>
     <% next unless heatlist.include? heat.id %>
+    <% ballrooms = heat.dance_category.ballrooms || @ballrooms %>
     <tr class="text-sm">
       <% if false # @start %>
       <td class="text-center"><%= @start[number]&.strftime("%-I:%M") %></td>
       <% end %>
       <td class="text-center"><%= heat.number %>
-      <% if @ballrooms == 2 %>
+      <% if ballrooms == 2 %>
       - <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
+      <% elsif ballrooms == 3 %>
+      - <%= heats.index(heat) >= heats.length/2 ? 'B' : 'A' %>
       <% end %>
       <td><div class="mx-4"><%= heat.category %>
       <td><div class="mx-4"><%= heat.dance.name %></div>
