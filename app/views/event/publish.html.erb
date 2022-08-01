@@ -14,7 +14,7 @@
 
   <h2 class="font-bold text-2xl mb-8">Web</h1>
   <ul class="ml-8">
-  <li class="my-2"><%= link_to "Heats", public_heats_path, class: "btn-green w-60" %>
+  <li class="my-2"><%= link_to "Heats", @public_url.to_s + '/heats', class: "btn-green w-60" %>
   <a href="<%= qrcode_event_index_path %>">
   <div class="float-right w-1/3">
   <%= RQRCode::QRCode.new(@public_url.to_s + '/heats').as_svg(viewbox: true).html_safe %>
