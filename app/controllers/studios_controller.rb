@@ -62,10 +62,19 @@ class StudiosController < ApplicationController
     @people = @studio.people
     score_sheets
 
+    solos = Solo.includes(heat: {entry: [:lead, :follow]}).where(follow: {studio_id: 2}).
+      or(Solo.includes(heat: {entry: [:lead, :follow]}).where(follow: {studio_id: 2})).
+      order('number')
+
+    results = solos.map do |solo|
+      file = "scans/#{ENV.fetch("RAILS_APP_DB") { 'development' }}/Solo-#{solo.heat.number}.pdf"
+      File.exist?(file) ? file : nil
+    end.compact
+
     respond_to do |format|
       format.html { render 'people/scores' }
       format.pdf do
-        render_as_pdf basename: "#{@studio.name}-scores"
+        render_as_pdf basename: "#{@studio.name}-scores", concat: results
       end
     end
   end

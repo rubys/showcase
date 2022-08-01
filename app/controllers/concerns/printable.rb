@@ -191,7 +191,7 @@ module Printable
     @track_ages = @event.track_ages
   end
 
-  def render_as_pdf(basename:)
+  def render_as_pdf(basename:, concat: [])
     tmpfile = Tempfile.new(basename)
 
     url = URI.parse(request.url.sub(/\.pdf($|\?)/, '.html\\1'))
@@ -207,6 +207,13 @@ module Printable
 
     system chrome, '--headless', '--disable-gpu', '--print-to-pdf-no-header',
       "--print-to-pdf=#{tmpfile.path}", url.to_s
+
+    STDERR.puts concat.inspect
+    unless concat.empty?
+      concat.unshift tmpfile.path
+      tmpfile = Tempfile.new(basename)
+      system "pdfunite", *concat, tmpfile.path
+    end
 
     send_data tmpfile.read, disposition: 'inline', filename: "#{basename}.pdf",
       type: 'application/pdf'
