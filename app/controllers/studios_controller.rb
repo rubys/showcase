@@ -62,8 +62,8 @@ class StudiosController < ApplicationController
     @people = @studio.people
     score_sheets
 
-    solos = Solo.includes(heat: {entry: [:lead, :follow]}).where(follow: {studio_id: 2}).
-      or(Solo.includes(heat: {entry: [:lead, :follow]}).where(follow: {studio_id: 2})).
+    solos = Solo.includes(heat: {entry: [:lead, :follow]}).where(follow: {studio: @studio}).
+      or(Solo.includes(heat: {entry: [:lead, :follow]}).where(follow: {studio: @studio})).
       order('number')
 
     results = solos.map do |solo|
