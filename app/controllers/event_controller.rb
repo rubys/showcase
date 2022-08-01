@@ -163,7 +163,7 @@ class EventController < ApplicationController
   end
 
   def publish
-    @public_url = URI.join(request.original_url, '../../public')
+    @public_url = URI.join(request.original_url, '../public')
   end
 
   def database
