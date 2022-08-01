@@ -148,7 +148,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_27_000152) do
   end
 
   create_table "heats", force: :cascade do |t|
-    t.integer "number"
+    t.float "number"
     t.string "category"
     t.integer "dance_id", null: false
     t.integer "entry_id", null: false
