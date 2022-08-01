@@ -390,7 +390,7 @@ class EventController < ApplicationController
   end
 
   def qrcode
-    @public_url = URI.join(request.original_url, '../../public')
+    @public_url = URI.join(request.original_url, '../public')
     @event = Event.first
   end
 
