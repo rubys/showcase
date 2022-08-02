@@ -104,8 +104,8 @@ Swiping left and right on mobile devices and tablets also work.
     <div>
     <div class="float-right mt-4">
     <b>Score:</b>
-    <input data-score-target="score" value="<%= @results.keys.first %>"
-      class="border-2 border-black w-24 h-24 text-6xl text-center"/>
+    <input data-score-target="score" value="<%= @results.keys.first %>" pattern="^\d\d$"
+      class="border-2 border-black invalid:border-red-600 w-24 h-24 text-6xl text-center"/>
     </div>
     </div>
 
@@ -155,7 +155,10 @@ Swiping left and right on mobile devices and tablets also work.
         <td><%= subject.entry.subject_category(@track_ages) %> - <%= subject.entry.level.initials %>
         <td><%= subject.subject.studio.name %>
         <% if @event.open_scoring == '#' %>
-        <td><div class="mx-auto text-center"><input data-score-target="score" class="text-center w-20 h-10 border-2" name="<%= subject.id %>" value="<%= @results[subject] %>"%></div>
+        <td><div class="mx-auto text-center">
+          <input data-score-target="score" class="text-center w-20 h-10 border-2 invalid:border-red-600" pattern="^\d\d$"
+            name="<%= subject.id %>" value="<%= @results[subject] %>"%>
+        </div>
         <% else %>
         <% @scores.each do |score| %>
         <td class="text-center"><input type="radio" name="<%= subject.id %>" value="<%= score %>"<%= @results[subject]==score ? ' checked' : '' %>>
