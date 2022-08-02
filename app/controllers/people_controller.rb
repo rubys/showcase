@@ -271,6 +271,16 @@ class PeopleController < ApplicationController
 
     @event = Event.first
     @track_ages = @event.track_ages
+
+    @score_bgcolor = []
+    if @event.open_scoring = '#'
+      @score_range = @scores.values.map(&:keys).flatten.sort.uniq
+    elsif @event.open_scoring = 'G'
+      @score_range = ScoresController::SCORES['Closed'] + ScoresController::SCORES['Open']
+      @score_bgcolor = ScoresController::SCORES['Closed']
+    else
+      @score_range = ScoresController::SCORES['Closed']
+    end
   end
 
   # GET /people/new

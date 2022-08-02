@@ -285,11 +285,12 @@ when most dances for an individual are with one instructor but one or two are ch
 
     <thead>
     <th class="row-head">Dance</th>
-    <% ScoresController::SCORES['Closed'].each do |score| %>
+    <% @score_range.each do |score| %>
+      <% if @score_bgcolor.include? score %>
       <th class="row-head bg-slate-200"><%= score %>
-      <% end %>
-    <% ScoresController::SCORES['Open'].each do |score| %>
+      <% else %>
       <th class="row-head"><%= score %>
+      <% end %>
     <% end %>
     </thead>
 
@@ -299,11 +300,12 @@ when most dances for an individual are with one instructor but one or two are ch
       <% next unless values %>
       <tr>
         <td class="row"><%= dance.name %>
-        <% ScoresController::SCORES['Closed'].each do |score| %>
+        <% @score_range.each do |score| %>
+        <% if @score_bgcolor.include? score %>
         <td class="row text-right px-4 bg-slate-200"><%= values[score] || '' %></td>
-        <% end %>
-        <% ScoresController::SCORES['Open'].each do |score| %>
+        <% else %>
         <td class="row text-right px-4"><%= values[score] || '' %></td>
+        <% end %>
         <% end %>
       </tr>
     <% end %>
