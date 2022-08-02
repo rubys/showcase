@@ -97,7 +97,9 @@ another heat is still possible.
         <%= entries %>
       </td>
       <td class="border-t-2 border-gray-200 row text-right">
+        <% unless @agenda.to_a.empty? %>
         <%= @agenda.to_a.last.last.last.last.last.number %>
+        <% end %>
       </td>
     </tr>
     </tfoot>
