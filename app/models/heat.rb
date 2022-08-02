@@ -6,6 +6,17 @@ class Heat < ApplicationRecord
   has_many :scores, dependent: :destroy
   has_one :solo, dependent: :destroy
 
+  def number
+    return @number if @number
+    value = super
+    @number = value.to_i == value ? value.to_i : value
+  end
+
+  def number= value
+    @number = nil
+    super value
+  end
+
   def dance_category
     if dance.heat_length or category == 'Multi'
       dance.multi_category
