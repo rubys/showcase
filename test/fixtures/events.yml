@@ -9,3 +9,4 @@ one:
   heat_range_age: 7
   intermix: true
   track_ages: true
+  open_scoring: G
