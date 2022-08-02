@@ -43,17 +43,17 @@ class Entry < ApplicationRecord
 
   def subject_lvlcat(show_ages = true)
     if show_ages
-      if follow.type == 'Professional' or not follow.age_id
+      if follow.type == 'Professional'
         "G - #{level.initials} - #{age.category}"
-      elsif lead.type == 'Professional' or not lead.age_id
+      elsif lead.type == 'Professional'
         "L - #{level.initials} - #{age.category}"
       else
         "AC - #{level.initials} - #{age.category}"
       end
     else
-      if follow.type == 'Professional' or not follow.age_id
+      if follow.type == 'Professional'
         "G - #{level.initials}"
-      elsif lead.type == 'Professional' or not lead.age_id
+      elsif lead.type == 'Professional'
         "L - #{level.initials}"
       else
         "AC - #{level.initials}"
