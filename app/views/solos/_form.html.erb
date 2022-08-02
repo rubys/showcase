@@ -18,7 +18,7 @@
   <% if @heat or not @person %>
   <div class="my-5">
     <%= form.label :number %>
-    <%= form.number_field :number, value: @number,
+    <%= form.text_field :number, value: @number, pattern: '^\d+(\.\d+|\d+_?)$',
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
   <% end %>
