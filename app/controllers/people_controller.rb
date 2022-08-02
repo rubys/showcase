@@ -298,6 +298,7 @@ class PeopleController < ApplicationController
 
     @entries = @person.lead_entries.count + @person.follow_entries.count
     @locked = Event.first.locked?
+    @heats = list_heats
   end
 
   def get_entries
@@ -469,11 +470,35 @@ class PeopleController < ApplicationController
   # DELETE /people/1 or /people/1.json
   def destroy
     studio = @person.studio
-    @person.destroy
+
+    if not Event.first.locked?  
+      @person.destroy
+
+      notice = "#{@person.display_name} was successfully removed."
+    else
+      @heats = list_heats
+      count = @heats.count {|heat| heat.number < 0}
+      if count > 0
+        Heat.transaction do
+          @heats.each do |heat|
+            heat.update(number: -heat.number) if heat.number < 0
+          end
+        end
+        notice = "#{count} heats successfully restored."
+      else
+        count = @heats.count {|heat| heat.number > 0}
+        Heat.transaction do
+          @heats.each do |heat|
+            heat.update(number: -heat.number) if heat.number > 0
+          end
+        end
+        notice = "#{count} heats successfully scratched."
+      end
+    end
 
     respond_to do |format|
       format.html { redirect_to (studio ? studio_url(studio) : root_url),
-         status: 303, notice: "#{@person.display_name} was successfully removed." }
+        status: 303, notice: notice }
       format.json { head :no_content }
     end
   end
@@ -599,5 +624,10 @@ class PeopleController < ApplicationController
           end
         end
       end
+    end
+
+    def list_heats
+      Heat.joins(:entry).where(entry: {follow_id: @person.id}).
+        or(Heat.joins(:entry).where(entry: {lead_id: @person.id}))
     end
 end

@@ -5,8 +5,20 @@
 
   <div class="mx-auto flex">
     <input type="submit" class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" form="person-form" value="Update Person">
+
+    <% if not @locked %>
     <%= up_link 'Remove this person', person_path(@person), class: 'btn-grey my-0',
-      method: :delete, disabled: @locked, form: {data: { turbo_confirm: 'Are you sure?' }} %>
+      method: :delete, form: {data: { turbo_confirm: 'Are you sure?' }} %>
+    <% elsif @heats.all? {|heat| heat.number == 0} %>
+    <%= up_link 'Remove this person', person_path(@person), class: 'btn-grey my-0',
+      method: :delete, disabled: true, form: {data: { turbo_confirm: 'Are you sure?' }} %>
+    <% elsif @heats.all? {|heat| heat.number >= 0} %>
+    <%= up_link 'Scratch Heats', person_path(@person), class: 'btn-grey my-0',
+      method: :delete, form: {data: { turbo_confirm: 'Are you sure?' }} %>
+    <% else %>
+    <%= up_link 'Un-scratch Heats', person_path(@person), class: 'btn-grey my-0',
+      method: :delete %>
+    <% end %>
 
     <% if @person.studio %>
     <%= link_to "Back to studio", @person.studio, class: "btn-green my-0" %>
