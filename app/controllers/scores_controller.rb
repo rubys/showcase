@@ -21,7 +21,8 @@ class ScoresController < ApplicationController
       [heats.map {|heat| heat.number}.min, category&.name]
     end.to_h
 
-    @scored = Score.includes(:heat).where(judge: @judge).group_by {|score| score.heat.number}.keys
+    @scored = Score.includes(:heat).where(judge: @judge).group_by {|score| score.heat.number}
+    @count = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance).count
   end
 
   # GET /scores/:judge/heat/:heat
