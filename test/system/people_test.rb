@@ -62,7 +62,7 @@ class PeopleTest < ApplicationSystemTestCase
     click_on "Create Person"
 
     assert_text "Joseph Wopner was successfully added"
-    click_on "Back"
+    assert_equal 'Event Description', page.all('h1').first.text
   end
 
   test "should update Person" do

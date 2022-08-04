@@ -136,7 +136,7 @@
   <% end %>
 </ul>
 
-<%= link_to "Add person", new_person_path, class: "btn-blue" %>
+<%= link_to "Add person", new_person_path(source: 'settings'), class: "btn-blue" %>
 
 <%= render partial: 'billables/index', locals: { heading: 'Prices', id: 'prices' } %>
 
