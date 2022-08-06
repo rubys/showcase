@@ -1,4 +1,4 @@
-FROM phusion/passenger-full:2.2.0
+FROM phusion/passenger-full:2.3.0
 
 RUN rm /etc/nginx/sites-enabled/default
 RUN rm -f /etc/service/nginx/down
