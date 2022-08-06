@@ -137,14 +137,14 @@ class EventController < ApplicationController
           info[:events].each do |subtoken, subinfo|
             db = "#{__dir__}/../..//db/#{year}-#{token}-#{subtoken}.sqlite3"
             begin
-              subinfo.merge! JSON.parse(`sqlite3 --json #{db} "select date from events"`).first
+              subinfo.merge! query(db, 'events', 'date').first
             rescue
             end
           end
         else
           db = "#{__dir__}/../..//db/#{year}-#{token}.sqlite3"
           begin
-            info.merge! JSON.parse(`sqlite3 --json #{db} "select date from events"`).first
+            info.merge! query(db, 'events', 'date').first
           rescue
           end
         end
@@ -406,7 +406,7 @@ class EventController < ApplicationController
 
     def query(db, table, fields=nil)
       if fields
-        Array(fields).map(&:inspect).join(', ')
+        fields = Array(fields).map(&:inspect).join(', ')
       else
         fields = '*'
       end
