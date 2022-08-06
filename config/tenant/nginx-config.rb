@@ -65,7 +65,7 @@ end
   system 'bin/rails db:seed' if count == 0
 end
 
-old_conf = IO.read(SHOWCASE_CONF) rescue nil
+old_conf = IO.read(SHOWCASE_CONF) rescue ''
 new_conf = template.result(binding)
 
 if new_conf != old_conf
@@ -74,7 +74,10 @@ if new_conf != old_conf
 end
 
 if restart
-  system "passenger-config restart-app #{@git_path}"
+  if old_conf.include? @git_path
+    system "passenger-config restart-app #{@git_path}"
+  end
+
   system 'nginx -s reload'
 end
 

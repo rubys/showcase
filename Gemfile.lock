@@ -69,7 +69,7 @@ GEM
     addressable (2.8.0)
       public_suffix (>= 2.0.2, < 5.0)
     bindex (0.8.1)
-    bootsnap (1.12.0)
+    bootsnap (1.13.0)
       msgpack (~> 1.2)
     builder (3.2.4)
     capybara (3.37.1)
@@ -93,7 +93,7 @@ GEM
       irb (>= 1.3.6)
       reline (>= 0.3.1)
     digest (3.1.0)
-    erubi (1.10.0)
+    erubi (1.11.0)
     fast_excel (0.4.0)
       ffi (> 1.9, < 2)
     ffi (1.15.5)
@@ -101,9 +101,6 @@ GEM
       activesupport (>= 5.0)
     i18n (1.12.0)
       concurrent-ruby (~> 1.0)
-    image_processing (1.12.2)
-      mini_magick (>= 4.9.5, < 5)
-      ruby-vips (>= 2.0.17, < 3)
     importmap-rails (1.1.5)
       actionpack (>= 6.0.0)
       railties (>= 6.0.0)
@@ -121,10 +118,9 @@ GEM
     marcel (1.0.2)
     matrix (0.4.2)
     method_source (1.0.0)
-    mini_magick (4.11.0)
     mini_mime (1.1.2)
     minitest (5.16.2)
-    msgpack (1.5.3)
+    msgpack (1.5.4)
     net-imap (0.2.3)
       digest
       net-protocol
@@ -183,22 +179,12 @@ GEM
     reline (0.3.1)
       io-console (~> 0.5)
     rexml (3.2.5)
-    rqrcode (2.1.1)
+    rqrcode (2.1.2)
       chunky_png (~> 1.0)
       rqrcode_core (~> 1.0)
     rqrcode_core (1.2.0)
     ruby-rc4 (0.1.5)
-    ruby-vips (2.1.4)
-      ffi (~> 1.12)
     rubyzip (2.3.2)
-    sassc (2.4.0)
-      ffi (~> 1.9)
-    sassc-rails (2.1.2)
-      railties (>= 4.0.0)
-      sassc (>= 2.0)
-      sprockets (> 3.0)
-      sprockets-rails
-      tilt
     selenium-webdriver (4.3.0)
       childprocess (>= 0.5, < 5.0)
       rexml (~> 3.2, >= 3.2.5)
@@ -220,7 +206,6 @@ GEM
     tailwindcss-rails (2.0.10-x86_64-darwin)
       railties (>= 6.0.0)
     thor (1.2.1)
-    tilt (2.0.11)
     timeout (0.3.0)
     turbo-rails (1.1.1)
       actionpack (>= 6.0.0)
@@ -256,14 +241,12 @@ DEPENDENCIES
   combine_pdf (~> 1.0)
   debug
   fast_excel (~> 0.4.0)
-  image_processing (~> 1.2)
   importmap-rails
   jbuilder
   puma (~> 5.0)
   rails (~> 7.0.1)
   redis (~> 4.0)
   rqrcode (~> 2.1)
-  sassc-rails
   selenium-webdriver
   sprockets-rails
   sqlite3 (~> 1.4)
@@ -275,4 +258,4 @@ DEPENDENCIES
   webdrivers
 
 BUNDLED WITH
-   2.3.17
+   2.3.18
