@@ -1,6 +1,7 @@
 require 'open3'
 
 class UsersController < ApplicationController
+  include DbQuery
   include ActionView::RecordIdentifier
   skip_before_action :authenticate_user
   before_action :get_authentication
@@ -202,8 +203,7 @@ class UsersController < ApplicationController
         map {|hash| hash.values}.flatten
 
       Dir['db/20*.sqlite3'].each do |db|
-        json = `sqlite3 #{db} --json 'select name from studios'`
-        @studios += JSON.parse(json) unless json.empty?
+        @studios += dbquery(File.basename(db, '.sqlite3'), 'studios', 'name')
       end
 
       @studios = @studios.map {|studio| studio['name'] || studio[:name]}.uniq.sort

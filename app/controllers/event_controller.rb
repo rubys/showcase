@@ -1,4 +1,6 @@
 class EventController < ApplicationController
+  include DbQuery
+
   def root
     @judges = Person.where(type: 'Judge')
     @emcees = Person.where(type: 'Emcee')
@@ -137,14 +139,14 @@ class EventController < ApplicationController
           info[:events].each do |subtoken, subinfo|
             db = "#{year}-#{token}-#{subtoken}"
             begin
-              subinfo.merge! query(db, 'events', 'date').first
+              subinfo.merge! dbquery(db, 'events', 'date').first
             rescue
             end
           end
         else
           db = "#{year}-#{token}"
           begin
-            info.merge! query(db, 'events', 'date').first
+            info.merge! dbquery(db, 'events', 'date').first
           rescue
           end
         end
@@ -278,12 +280,12 @@ class EventController < ApplicationController
         Age.transaction do
           Person.destroy_all
           Age.destroy_all
-          query(source, 'ages').each {|age| Age.create age}
+          dbquery(source, 'ages').each {|age| Age.create age}
         end
       end
 
       if tables[:settings]
-        event = query(source, 'events').first
+        event = dbquery(source, 'events').first
         event.delete 'id'
         event.delete 'name'
         event.delete 'date'
@@ -295,7 +297,7 @@ class EventController < ApplicationController
         Level.transaction do
           Person.destroy_all
           Level.destroy_all
-          query(source, 'levels').each {|level| Level.create level}
+          dbquery(source, 'levels').each {|level| Level.create level}
         end
       end
 
@@ -303,8 +305,8 @@ class EventController < ApplicationController
         Billable.transaction do
           PackageInclude.destroy_all
           Billable.destroy_all
-          query(source, 'billables').each {|billable| Billable.create billable}
-          query(source, 'package_includes').each {|pi| PackageInclude.create pi}
+          dbquery(source, 'billables').each {|billable| Billable.create billable}
+          dbquery(source, 'package_includes').each {|pi| PackageInclude.create pi}
         end
       end
 
@@ -312,7 +314,7 @@ class EventController < ApplicationController
         Studio.transaction do
           StudioPair.destroy_all
           Studio.destroy_all
-          query(source, 'studios').each do |studio|
+          dbquery(source, 'studios').each do |studio|
             unless tables[:packages]
               studio.delete 'default_student_package_id'
               studio.delete 'default_professional_package_id'
@@ -321,7 +323,7 @@ class EventController < ApplicationController
 
             Studio.create studio
           end
-          query(source, 'studio-pairs').each {|pair| StudioPair.create pair}
+          dbquery(source, 'studio-pairs').each {|pair| StudioPair.create pair}
         end
       end
 
@@ -329,7 +331,7 @@ class EventController < ApplicationController
         Person.transaction do
           Person.destroy_all
           excludes = {}
-          query(source, 'people').each do |person|
+          dbquery(source, 'people').each do |person|
             person.delete 'age_id' unless tables[:ages]
             person.delete 'level_id' unless tables[:levels]
             person.delete 'studio_id' unless tables[:studios]
@@ -347,7 +349,7 @@ class EventController < ApplicationController
         if tables[:agenda]
           Category.transaction do
             Category.destroy_all
-            query(source, 'categories').each {|category| Category.create category}
+            dbquery(source, 'categories').each {|category| Category.create category}
           end
         end
 
@@ -356,7 +358,7 @@ class EventController < ApplicationController
             Multi.destroy_all
             Dance.destroy_all
 
-            query(source, 'dances').each do |dance|
+            dbquery(source, 'dances').each do |dance|
               person.delete 'open_category_id' unless tables[:agenda]
               person.delete 'closed_category_id' unless tables[:agenda]
               person.delete 'solo_category_id' unless tables[:agenda]
@@ -364,7 +366,7 @@ class EventController < ApplicationController
               Dance.create dance
             end
 
-            query(source, 'multis').each {|multi| Multi.create multi}
+            dbquery(source, 'multis').each {|multi| Multi.create multi}
           end
         end
       end
@@ -401,24 +403,4 @@ class EventController < ApplicationController
   def self.logo=(logo)
     @@logo = logo || 'intertwingly.png'
   end
-
-  private
-
-    def query(db, table, fields=nil)
-      if fields
-        fields = Array(fields).map(&:inspect).join(', ')
-      else
-        fields = '*'
-      end
-
-      csv = `sqlite3 --csv --header db/#{db}.sqlite3 "select #{fields} from #{table}"`
-
-      if csv.empty?
-        []
-      else
-        csv = CSV.parse(csv)
-        headers = csv.shift
-        csv.map {|row| headers.zip(row).to_h}
-      end
-    end
 end
