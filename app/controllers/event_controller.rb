@@ -135,14 +135,14 @@ class EventController < ApplicationController
         logos.add info[:logo] if info[:logo]
         if info[:events]
           info[:events].each do |subtoken, subinfo|
-            db = "#{__dir__}/../..//db/#{year}-#{token}-#{subtoken}.sqlite3"
+            db = "#{year}-#{token}-#{subtoken}"
             begin
               subinfo.merge! query(db, 'events', 'date').first
             rescue
             end
           end
         else
-          db = "#{__dir__}/../..//db/#{year}-#{token}.sqlite3"
+          db = "#{year}-#{token}"
           begin
             info.merge! query(db, 'events', 'date').first
           rescue
@@ -411,12 +411,14 @@ class EventController < ApplicationController
         fields = '*'
       end
 
-      json = `sqlite3 --json db/#{db}.sqlite3 "select #{fields} from #{table}"`
+      csv = `sqlite3 --csv --header db/#{db}.sqlite3 "select #{fields} from #{table}"`
 
-      if json.empty?
+      if csv.empty?
         []
       else
-        JSON.parse(json)
+        csv = CSV.parse(csv)
+        headers = csv.shift
+        csv.map {|row| headers.zip(row).to_h}
       end
     end
 end
