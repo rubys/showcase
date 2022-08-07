@@ -8,7 +8,6 @@ Event.delete_all
 Event.create!(
   name: config[:settings][:event][:name],
   location: config[:settings][:event][:location],
-  date: config[:settings][:event][:date],
   heat_range_cat: config[:settings][:heat][:category],
   heat_range_level: config[:settings][:heat][:level],
   heat_range_age: config[:settings][:heat][:age],

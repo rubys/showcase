@@ -53,7 +53,7 @@ bin/rails credentials:edit
 $EDITOR config/tenant/showcases.yml
 docker compose build
 docker compose up
-docker compose exec web /home/app/showcase/config/tenant/nginx-config.rb
+docker compose exec web bin/bootstrap
 ```
 
 Visit http://localhost:9999/showcase/ to see the list of events.

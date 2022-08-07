@@ -4,7 +4,9 @@ RUN rm /etc/nginx/sites-enabled/default
 RUN rm -f /etc/service/nginx/down
 RUN rm -f /etc/service/redis/down
 
-RUN apt-get update; apt-get dist-upgrade -y
+RUN apt-get update; \
+  apt-get dist-upgrade -y; \
+  apt-get install -y apache2-utils
 
 USER app
 RUN mkdir /home/app/showcase

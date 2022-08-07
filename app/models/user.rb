@@ -30,6 +30,10 @@ class User < ApplicationRecord
       @@auth_studio = @@db.execute('select userid, sites from users').
         map {|userid, sites| [userid, sites.to_s.split(',')]}.to_h
 
+      if @@auth_studio.empty?
+        @@auth_studio['bootstrap'] = ['index']
+      end
+
       event = ENV['RAILS_APP_OWNER'];
       if event == 'index'
         @@auth_event = @@auth_studio.select do |userid, sites|

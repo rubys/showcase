@@ -18,7 +18,6 @@ SHOWCASE_CONF = "#{NGINX_CONF}/showcase.conf"
 @git_path = File.realpath(File.expand_path('../..', __dir__))
 
 showcases = YAML.load_file("#{__dir__}/showcases.yml")
-template = ERB.new(DATA.read, trim_mode: '-')
 
 restart = ARGV.include?('--restart')
 
@@ -66,7 +65,7 @@ end
 end
 
 old_conf = IO.read(SHOWCASE_CONF) rescue ''
-new_conf = template.result(binding)
+new_conf = ERB.new(DATA.read, trim_mode: '-').result(binding)
 
 if new_conf != old_conf
   IO.write SHOWCASE_CONF, new_conf
@@ -78,7 +77,9 @@ if restart
     system "passenger-config restart-app #{@git_path}"
   end
 
-  system 'nginx -s reload'
+  if File.exist?('/run/nginx.pid') or File.exist?('/opt/homebrew/var/run/nginx.pid')
+    system 'nginx -s reload'
+  end
 end
 
 __END__
