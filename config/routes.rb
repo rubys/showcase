@@ -43,6 +43,7 @@ Rails.application.routes.draw do
       get 'clone', on: :collection
       post 'clone', on: :collection
       get 'qrcode', on: :collection
+      match 'import', on: :collection, via: %i(get post)
     end
 
     resources :heats do

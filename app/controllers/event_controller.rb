@@ -1,3 +1,6 @@
+require 'open3'
+require 'zlib'
+
 class EventController < ApplicationController
   include DbQuery
 
@@ -402,5 +405,19 @@ class EventController < ApplicationController
 
   def self.logo=(logo)
     @@logo = logo || 'intertwingly.png'
+  end
+
+  def import
+    if request.post?
+      name = File.basename(params[:file].original_filename)
+      if name.end_with? '.sqlite3'
+        IO.binwrite File.join("db", name), params[:file].read
+      elsif name.end_with? '.sqlite3.gz'
+        stdout, status = Open3.capture2 'sqlite3', File.join('db', File.basename(name, '.gz')),
+          stdin_data: Zlib::GzipReader.new(params[:file].tempfile).read 
+      end
+
+      redirect_to root_path, notice: "#{params[:file].original_filename} was successfully imported."
+    end
   end
 end

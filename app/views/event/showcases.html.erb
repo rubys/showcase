@@ -55,5 +55,6 @@ can click on it to see helpful hints.</li>
 
 <% if User.index_auth? @authuser %>
 <%= link_to 'Users', users_path, class: 'btn-blue' %>
+<%= link_to 'Import', import_event_index_path, class: 'btn-blue' %>
 <% end %>
 </div>
