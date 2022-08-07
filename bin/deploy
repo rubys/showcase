@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+if [ ! -f db/htpasswd ]
+then
+  htpasswd -b -c db/htpasswd bootstrap password
+fi
+
+bin/rails assets:precompile
+ruby config/tenant/nginx-config.rb --restart

@@ -12,11 +12,11 @@ processes = []
     RUBY_VERSION = "3.1.1"
 
 [deploy]
-  release_command = "bundle exec rails db:migrate"
+  release_command = "bin/deploy"
 
 [env]
-  PORT = "8080"
-  SERVER_COMMAND = "bundle exec puma -C config/puma.rb"
+  PORT = "9999"
+  SERVER_COMMAND = "nginx"
 
 [experimental]
   allowed_public_ports = []
@@ -24,7 +24,7 @@ processes = []
 
 [[services]]
   http_checks = []
-  internal_port = 8080
+  internal_port = 9999
   processes = ["app"]
   protocol = "tcp"
   script_checks = []
