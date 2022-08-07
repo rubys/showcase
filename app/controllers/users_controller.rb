@@ -148,16 +148,9 @@ class UsersController < ApplicationController
     end
 
     def authenticate_index
-      # deny access if there is a user with 'index' access and this user does not
-      return unless @authuser
-
-      sites = User.pluck(:sites).map {|sites| sites.to_s.split(',')}.flatten.
-        select {|site| not site.blank?}
-      return unless sites.include? 'index'
-
-      return if User.where(userid: @authuser).pluck(:sites).first.to_s.split(',').include? 'index'
-
-      request_http_basic_authentication "Showcase" unless request.local?
+      unless request.local? or User.index_auth?(@authuser)
+        request_http_basic_authentication "Showcase" unless request.local?
+      end
     end
 
     def set_password

@@ -7,6 +7,7 @@ class User < ApplicationRecord
 
   def self.authorized?(userid, site=nil)
     return true unless @@db
+    IO.write 'tmp/auth' [@@auth_studio, @@auth_event, userid].inspect
 
     return true if site and @@auth_studio[userid]&.include?(site)
     return true if @@auth_event.include?(userid)      
@@ -15,6 +16,16 @@ class User < ApplicationRecord
 
     return true if site and @@auth_studio[userid]&.include?(site)
     @@auth_event.include?(userid)      
+  end
+
+  def self.index_auth?(userid)
+    # deny access if there is a user with 'index' access and this user does not
+    return true unless userid
+    return false unless @@auth_studio[userid]
+    return true if @@auth_studio[userid].include? 'index'
+    return true unless @@auth_studio.any? {|user, sites| sites.include? 'index'}
+
+    false
   end
 
   def self.authlist
