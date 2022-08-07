@@ -7,7 +7,6 @@ class User < ApplicationRecord
 
   def self.authorized?(userid, site=nil)
     return true unless @@db
-    IO.write 'tmp/auth' [@@auth_studio, @@auth_event, userid].inspect
 
     return true if site and @@auth_studio[userid]&.include?(site)
     return true if @@auth_event.include?(userid)      
