@@ -1,6 +1,6 @@
-# fly.toml file generated for dance-showcase on 2022-08-07T19:16:26-04:00
+# fly.toml file generated for smooth on 2022-08-08T10:02:20-04:00
 
-app = "dance-showcase"
+app = "smooth"
 kill_signal = "SIGINT"
 kill_timeout = 5
 processes = []
@@ -12,7 +12,7 @@ processes = []
     RUBY_VERSION = "3.1.1"
 
 [deploy]
-  release_command = "bin/deploy"
+  release_command = "/home/app/showcase/bin/deploy"
 
 [env]
   PORT = "9999"
@@ -44,7 +44,7 @@ processes = []
 
   [[services.tcp_checks]]
     grace_period = "1s"
-    nterval = "15s"
+    interval = "15s"
     restart_limit = 0
     timeout = "2s"
 

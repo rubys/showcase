@@ -85,6 +85,7 @@ end
 __END__
 server {
   listen 9999;
+  port_in_redirect off;
   server_name localhost;
   rewrite ^/(showcase)?$ /showcase/ redirect;
 

@@ -211,5 +211,5 @@ class UsersController < ApplicationController
       IO.write 'db/htpasswd', contents
     end
 
-    @@encryptor = ActiveSupport::MessageEncryptor.new(IO.read 'config/master.key')
+    @@encryptor = ActiveSupport::MessageEncryptor.new(ENV['RAILS_MASTER_KEY'] || IO.read('config/master.key'))
 end
