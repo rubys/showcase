@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+cd $(dirname $(dirname $(readlink -f $0)))
+
+if [ ! -f db/htpasswd ]
+then
+  htpasswd -b -c db/htpasswd bootstrap password
+fi
+
+chown app:app /etc/nginx/sites-enabled
+runuser -u app ruby config/tenant/nginx-config.rb
+
+/sbin/my_init
