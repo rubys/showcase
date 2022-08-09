@@ -22,4 +22,4 @@ RUN SECRET_KEY_BASE=`bin/rails secret` \
   bin/rails assets:precompile
 
 USER root
-CMD ["/sbin/my_init"]
+CMD ["/home/app/showcase/bin/init"]

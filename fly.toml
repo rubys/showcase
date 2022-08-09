@@ -11,9 +11,6 @@ processes = []
     NODE_VERSION = "14"
     RUBY_VERSION = "3.1.1"
 
-[deploy]
-  release_command = "/home/app/showcase/bin/deploy"
-
 [env]
   PORT = "9999"
   SERVER_COMMAND = "nginx"
