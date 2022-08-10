@@ -3,7 +3,8 @@ class User < ApplicationRecord
   validates :password, confirmation: true
   validates :email, uniqueness: true, presence: true
 
-  @@db = ENV['RAILS_APP_OWNER'] && SQLite3::Database.new('db/index.sqlite3')
+  dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
+  @@db = ENV['RAILS_APP_OWNER'] && SQLite3::Database.new("#{dbpath}/index.sqlite3")
 
   def self.authorized?(userid, site=nil)
     return true unless @@db

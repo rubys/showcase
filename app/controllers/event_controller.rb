@@ -172,7 +172,8 @@ class EventController < ApplicationController
   end
 
   def database
-    database = "db/#{ENV.fetch("RAILS_APP_DB") { Rails.env }}.sqlite3"
+    dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
+    database = "#{dbpath}/#{ENV.fetch("RAILS_APP_DB") { Rails.env }}.sqlite3"
     render plain: `sqlite3 #{database} .dump`
   end
 

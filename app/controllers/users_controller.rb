@@ -195,7 +195,8 @@ class UsersController < ApplicationController
       @studios = YAML.load_file('config/tenant/showcases.yml').values.
         map {|hash| hash.values}.flatten
 
-      Dir['db/20*.sqlite3'].each do |db|
+      dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
+      Dir["#{dbpath}/20*.sqlite3"].each do |db|
         @studios += dbquery(File.basename(db, '.sqlite3'), 'studios', 'name')
       end
 
@@ -206,9 +207,10 @@ class UsersController < ApplicationController
 
     def update_htpasswd
       return if Rails.env.test?
+      dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
       contents = User.order(:password).pluck(:password).join("\n")
-      return if contents == (IO.read 'db/htpasswd' rescue '')
-      IO.write 'db/htpasswd', contents
+      return if contents == (IO.read "#{dbpath}/htpasswd" rescue '')
+      IO.write "#{dbpath}/htpasswd", contents
     end
 
     @@encryptor = ActiveSupport::MessageEncryptor.new(ENV['RAILS_MASTER_KEY'] || IO.read('config/master.key'))

@@ -6,7 +6,8 @@ module DbQuery
       fields = '*'
     end
 
-    csv = `sqlite3 --csv --header db/#{db}.sqlite3 "select #{fields} from #{table}"`
+    dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
+    csv = `sqlite3 --csv --header #{dbpath}/#{db}.sqlite3 "select #{fields} from #{table}"`
 
     if csv.empty?
       []

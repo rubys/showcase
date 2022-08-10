@@ -12,7 +12,7 @@ default: &default
 development:
   <<: *default
   # readonly: true
-  database: db/<%= ENV.fetch("RAILS_APP_DB") { 'development' } %>.sqlite3
+  database: <%= ENV.fetch("RAILS_DB_VOLUME") { 'db' } %>/<%= ENV.fetch("RAILS_APP_DB") { 'development' } %>.sqlite3
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
@@ -23,4 +23,4 @@ test:
 
 production:
   <<: *default
-  database: db/<%= ENV.fetch("RAILS_APP_DB") { 'production' } %>.sqlite3
+  database: <%= ENV.fetch("RAILS_DB_VOLUME") { 'db' } %>/<%= ENV.fetch("RAILS_APP_DB") { 'production' } %>.sqlite3

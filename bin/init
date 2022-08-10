@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 cd $(dirname $(dirname $(readlink -f $0)))
 
-if [ ! -f db/htpasswd ]
+if [ -d /mnt/databases ]
 then
-  htpasswd -b -c db/htpasswd bootstrap password
+  chown app:app /mnt/databases
+  export RAILS_DB_VOLUME=/mnt/databases
+fi
+
+if [ ! -f ${RAILS_DB_VOLUME:=db}/htpasswd ]
+then
+  htpasswd -b -c ${RAILS_DB_VOLUME}/htpasswd bootstrap password
 fi
 
 chown app:app /etc/nginx/sites-enabled
 runuser -u app ruby config/tenant/nginx-config.rb
+chown -R root:root /etc/nginx/sites-enabled
 
 /sbin/my_init

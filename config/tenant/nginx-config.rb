@@ -55,12 +55,13 @@ showcases.each do |year, list|
   end
 end
 
+@dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
 @tenants.each do |tenant|
   ENV['RAILS_APP_DB'] = tenant.label
-  system 'bin/rails db:create' unless File.exist? "db/#{tenant.label}.sqlite3"
+  system 'bin/rails db:create' unless File.exist? "#{@dbpath}/#{tenant.label}.sqlite3"
   system 'bin/rails db:migrate'
 
-  count = `sqlite3 db/#{tenant.label}.sqlite3 "select count(*) from events"`.to_i
+  count = `sqlite3 #{@dbpath}/#{tenant.label}.sqlite3 "select count(*) from events"`.to_i
   system 'bin/rails db:seed' if count == 0
 end
 
@@ -90,7 +91,7 @@ server {
   rewrite ^/(showcase)?$ /showcase/ redirect;
 
   # Authentication
-<% if File.exist? "#{@git_path}/db/htpasswd" -%>
+<% if File.exist? "#{@git_path}/#{@dbpath}/htpasswd" -%>
   satisfy any;
   allow 127.0.0.1;
   allow ::1;
@@ -100,7 +101,7 @@ server {
   if ($request_uri ~ "^/showcase/[-\w]+\.\w+$") { set $realm off; }
   if ($request_uri ~ "^/showcase/\d+/\w+/(\w+/)?public/") { set $realm off; }
   auth_basic $realm;
-  auth_basic_user_file <%= @git_path %>/db/htpasswd;
+  auth_basic_user_file <%= @git_path %>/#{@dbpath}/htpasswd;
 <% else -%>
   auth_basic off;
 <% end -%>
@@ -121,6 +122,9 @@ server {
   location <%= ROOT %>/<%= tenant.scope %> {
     passenger_app_group_name showcase-<%= tenant.label %>;
     passenger_env_var RAILS_APP_OWNER <%= tenant.owner.inspect %>;
+<% if ENV['RAILS_DB_VOLUME'] -%>
+    passenger_env_var RAILS_DB_VOLUME <%= ENV['RAILS_DB_VOLUME'] %>;
+<% end -%>
     passenger_env_var RAILS_APP_DB <%= tenant.label %>;
 <% if tenant.label == 'index' -%>
     passenger_env_var RAILS_SERVE_STATIC_FILES true;
