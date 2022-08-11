@@ -78,7 +78,7 @@ export default class extends Controller {
       let found = false;
       for (let row=1; !found; row++) {
         for (let col=1; col <= columns; col++) {
-          if (!dances.some(div => (div != dance && div.style.gridRow == row.toString() && div.style.gridColumn == col.toString()))) {
+          if (!dances.some(div => (div != dance && parseInt(div.style.gridRow || 0) == row && parseInt(div.style.gridColumn || 0) == col))) {
             dance.style.gridRow = row;
             dance.style.gridColumn = col;
             found = true;
