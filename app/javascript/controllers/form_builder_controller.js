@@ -52,7 +52,7 @@ export default class extends Controller {
       }
     }
 
-    rows++;
+    rows+=2;
 
     for (let i=this.dances.childElementCount; i < columns * rows; i++) {
       let div = document.createElement('div');
