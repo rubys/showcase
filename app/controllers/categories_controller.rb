@@ -83,7 +83,7 @@ class CategoriesController < ApplicationController
   # POST /categories/redo
   def redo
     schedule_heats
-    redirect_to categories_url, notice: "#{Heat.maximum(:number)} heats generated."
+    redirect_to categories_url, notice: "#{Heat.maximum(:number).to_i} heats generated."
   end
 
   # POST /categories/drop

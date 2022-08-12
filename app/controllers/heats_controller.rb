@@ -74,7 +74,7 @@ class HeatsController < ApplicationController
   # POST /heats/redo
   def redo
     schedule_heats
-    redirect_to heats_url, notice: "#{Heat.maximum(:number)} heats generated."
+    redirect_to heats_url, notice: "#{Heat.maximum(:number).to_i} heats generated."
   end
 
   # GET /heats/new
