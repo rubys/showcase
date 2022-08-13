@@ -101,7 +101,7 @@ server {
   if ($request_uri ~ "^/showcase/[-\w]+\.\w+$") { set $realm off; }
   if ($request_uri ~ "^/showcase/\d+/\w+/(\w+/)?public/") { set $realm off; }
   auth_basic $realm;
-  auth_basic_user_file <%= @git_path %>/#{@dbpath}/htpasswd;
+  auth_basic_user_file <%= @git_path %>/<%= @dbpath %>/htpasswd;
 <% else -%>
   auth_basic off;
 <% end -%>
