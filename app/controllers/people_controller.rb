@@ -20,6 +20,7 @@ class PeopleController < ApplicationController
 
   def individual_heats
     @ballrooms = Event.last.ballrooms
+    @track_ages = Event.last.track_ages
     @people = [set_person]
     heat_sheets
 

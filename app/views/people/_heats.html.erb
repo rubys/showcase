@@ -13,14 +13,13 @@
     </td>
   </tr>
   <tr>
-    <% if false # @start %>
+    <% if @start %>
     <td class="row-head">Time
     <% end %>
     <td class="row-head">Heat
     <td class="row-head">Type
     <td class="row-head">Dance
     <td class="row-head">Partner
-    <td class="row-head">Level
     <td class="row-head">Category
   </tr>
   </thead>
@@ -31,8 +30,8 @@
     <% next unless heatlist.include? heat.id %>
     <% ballrooms = heat.dance_category.ballrooms || @ballrooms %>
     <tr class="text-sm">
-      <% if false # @start %>
-      <td class="text-center"><%= @start[number]&.strftime("%-I:%M") %></td>
+      <% if @start %>
+      <td class="text-right pr-4"><%= @start[number]&.strftime("%-I:%M") %></td>
       <% end %>
       <td class="text-center"><%= heat.number %>
       <% if ballrooms == 2 %>
@@ -47,8 +46,7 @@
       <% elsif heat.entry.follow != person %>
       <td><div class="mx-4"><%= link_to heat.entry.follow.display_name, heat.entry.follow %></div>
       <% end %>
-      <td><%= heat.entry.level.name %>
-      <td class="text-center"><%= heat.entry.subject_category(@track_heats) %>
+      <td class="text-center"><%= heat.entry.subject_lvlcat(@track_ages) %>
     </tr>
   <% end %>
   <% end %>
