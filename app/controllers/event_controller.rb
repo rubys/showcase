@@ -199,7 +199,7 @@ class EventController < ApplicationController
         description = new_age.split(':').last.strip
 
         if index >= old_ages.length
-          Level.create(name: new_level, id: index+1)
+          Age.create(category: category, description: description, id: index+1)
         elsif old_ages[index].category != category or old_ages[index].description != description
           old_ages[index].update(category: category, description: description)
         end
