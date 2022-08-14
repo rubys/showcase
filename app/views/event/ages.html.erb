@@ -1,6 +1,21 @@
 <div class="mx-auto w-full">
 <h1 class="font-bold text-4xl pb-5 text-center">Ages</h1>
 
+
+<div data-controller="info-box">
+  <div class="info-button">ⓘ</div>
+  <ul class="info-box" style="display: block;">
+  <li>Format of each line is age category name, then a colon, then the description of the category.</li>
+  <li><span class="text-red-600 font-bold">Making changes to this information after students have been entered may
+  cause student ages to be incorrect.</span>  In general, the following are safe:
+  <ul class="ml-8 list-disc list-outside">
+  <li>Changing names and/or descriptions without inserting or deleting any lines.
+  <li>Inserting lines without changing any names or descriptions.
+  </ul>
+  </li>
+  </ul>
+</div>
+
 <%= form_with(url: ages_event_index_path, class: "contents", data: {turbo: false}) do |form| %>
 
 <%= form.text_area :ages, value: @ages, rows: @ages.split("\n").length + 1,
