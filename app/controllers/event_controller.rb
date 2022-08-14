@@ -187,22 +187,36 @@ class EventController < ApplicationController
 
   def ages
     if request.post?
-      old_ages = Age.order(:id)
-      new_ages = params[:ages].strip.split("\n").map(&:strip).select {|age| not age.empty?} 
+      old_ages = Age.all
+      new_ages = params[:ages].strip.split("\n").map(&:strip).
+        select {|age| not age.empty?}.
+        map {|age| age.split(':', 2).map(&:strip)}.to_h
 
-      if old_ages.length > new_ages.length
-        Age.destroy_by(id: new_ages.length+1..)
-      end
+      old_ids = old_ages.map {|age| [age.category, age.id]}.to_h
+      mappings = new_ages.keys.zip(1..).
+        map {|cat, idx| [old_ids[cat], idx]}.
+        select {|old_idx, new_idx| old_idx != nil && old_idx != new_idx}.to_h
 
-      new_ages.each_with_index do |new_age, index|
-        category = new_age.split(':').first.strip
-        description = new_age.split(':').last.strip
-
+      new_ages.each_with_index do |(category, description), index|
         if index >= old_ages.length
           Age.create(category: category, description: description, id: index+1)
         elsif old_ages[index].category != category or old_ages[index].description != description
           old_ages[index].update(category: category, description: description)
         end
+      end
+
+      unless mappings.empty?
+        Age.transaction do
+          Person.all.each do |person|
+            if mappings[person.age_id]
+              Person.update(age_id: mappings[person.age_id])
+            end
+          end
+        end
+      end
+
+      if old_ages.length > new_ages.length
+        Age.destroy_by(id: new_ages.length+1..)
       end
 
       respond_to do |format|
