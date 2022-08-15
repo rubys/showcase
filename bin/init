@@ -16,4 +16,7 @@ chown app:app /etc/nginx/sites-enabled
 runuser -u app ruby config/tenant/nginx-config.rb
 chown -R root:root /etc/nginx/sites-enabled
 
+mkdir -p /var/run/dbus
+dbus-daemon --system
+
 /sbin/my_init
