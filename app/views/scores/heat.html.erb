@@ -138,7 +138,7 @@ Swiping left and right on mobile devices and tablets also work.
     </thead>
     <% @subjects.each_with_index do |subject, index| %>
        <% if ballroom == 'A' and (
-          (@ballrooms == 2 and heat.entry.lead.type == 'Student') or
+          (@ballrooms == 2 and subject.lead.type == 'Student') or
           (@ballrooms == 3 and index >= @subjects.length/2 )) %>
         <tr><td colspan="10" class="bg-black"></tr>
         <% ballroom = 'B' %>
