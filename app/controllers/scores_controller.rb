@@ -144,6 +144,8 @@ class ScoresController < ApplicationController
     @open_scoring = Event.first.open_scoring
     levels = Level.order(:id).all
 
+    @last_score_update = Score.maximum(:updated_at)
+
     template1 = ->() {
       levels.map {|level| [level, {}]}.to_h
     }
