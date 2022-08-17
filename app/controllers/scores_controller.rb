@@ -255,7 +255,13 @@ class ScoresController < ApplicationController
           end
         end
       end
-    end      
+    end
+
+    if request.post?
+      render turbo_stream: turbo_stream.replace("scores-by-age",
+        render_to_string(partial: 'by_age', layout: false)
+      )
+    end
   end
 
   def multis

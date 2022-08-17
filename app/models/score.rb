@@ -4,8 +4,14 @@ class Score < ApplicationRecord
   # validates_associated :heat # Too dangerous to validate during scoring
 
   after_save do |score|
-    score.broadcast_replace_later_to "live-scores-#{ENV['RAILS_APP_DB']}",
+    broadcast_replace_later_to "live-scores-#{ENV['RAILS_APP_DB']}",
       partial: 'scores/last_update', target: 'last-score-update',
-      locals: {timestamp: score.updated_at}
+      locals: {action: nil, timestamp: score.updated_at}
+  end
+
+  before_destroy do
+    broadcast_replace_to "live-scores-#{ENV['RAILS_APP_DB']}",
+      partial: 'scores/last_update', target: 'last-score-update',
+      locals: {action: nil, timestamp: Time.zone.now}
   end
 end

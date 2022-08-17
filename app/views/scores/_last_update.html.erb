@@ -1,3 +1,7 @@
-<span data-controller="live-scores" action="<%= by_level_scores_path %>">
+<% if action -%>
+<span data-controller="live-scores" action="<%= action %>">
+<% end %>
   <span class="hidden" id="last-score-update"><%= timestamp %></span>
+<% if action -%>
 </span>
+<% end -%>
