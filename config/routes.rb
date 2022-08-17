@@ -107,7 +107,7 @@ Rails.application.routes.draw do
     get '/scores/:judge/heat/:heat/:slot', to: 'scores#heat', as: 'judge_heat_slot'
     post '/scores/:judge/post', to: 'scores#post', as: 'post_score'
     resources :scores do
-      get 'by-level', on: :collection, action: :by_level
+      match 'by-level', on: :collection, action: :by_level, via: %i(get post)
       get 'by-age', on: :collection, action: :by_age
       get 'multis', on: :collection, action: :multis
       get 'instructor', on: :collection

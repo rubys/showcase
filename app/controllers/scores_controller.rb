@@ -194,6 +194,12 @@ class ScoresController < ApplicationController
         end
       end
     end
+
+    if request.post?
+      render turbo_stream: turbo_stream.replace("scores-by-level",
+        render_to_string(partial: 'by_level', layout: false)
+      )
+    end
   end
 
   def by_age
