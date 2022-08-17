@@ -4,7 +4,8 @@
       <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
     <% end %>
 
-    <%= render "last_update" %>
+    <%= turbo_stream_from "live-scores-#{ENV['RAILS_APP_DB']}" %>
+    <%= render partial: "last_update", locals: {timestamp: @last_score_update} %>
 
     <%= render "by_level" %>
 
