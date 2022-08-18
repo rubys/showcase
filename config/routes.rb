@@ -109,8 +109,8 @@ Rails.application.routes.draw do
     resources :scores do
       match 'by-level', on: :collection, action: :by_level, via: %i(get post)
       match 'by-age', on: :collection, action: :by_age, via: %i(get post)
-      get 'multis', on: :collection, action: :multis
-      get 'instructor', on: :collection
+      match 'multis', on: :collection, action: :multis, via: %i(get post)
+      match 'instructor', on: :collection, via: %i(get post)
     end
 
     resources :solos do

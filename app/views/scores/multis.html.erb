@@ -4,43 +4,10 @@
       <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
     <% end %>
 
-    <% empty = true %>
+    <%= turbo_stream_from "live-scores-#{ENV['RAILS_APP_DB']}" %>
+    <%= render partial: "last_update", locals: {action: multis_scores_path, timestamp: @last_score_update} %>
 
-        <% @scores.each do |dance, entries| %>
-          <% next if entries.empty? %>
-          <% empty = false %>
-          <h2 class="font-bold pt-4 text-2xl pb-5"><%= dance.name %></h1>
-          <table class="mb-8">
-            <thead>
-              <tr>
-              <th class="row-head">Points
-              <th class="row-head">Lead
-              <th class="row-head">Follow
-              <% if @open_scoring != '#' %>
-              <% ScoresController::SCORES['Multi'].each do |score| %>
-              <th class="row-head bg-slate-200"><%= score %>
-              <% end %>
-              <% end %>
-              </tr>
-            </thead>
-          <% entries.sort_by {|entry, results| results['points']}.reverse.each do |entry, results| %>
-            <tr>
-              <td class="row-main text-right"><%= number_with_delimiter results['points'] %>
-              <td class="row-main"><%= link_to entry.lead.display_name, entry.lead %></td>
-              <td class="row-main"><%= link_to entry.follow.display_name, entry.follow %></td>
-              <% if @open_scoring != '#' %>
-              <% results['Multi'].each do |score| %>
-              <td class="row text-right px-4 bg-slate-200"><%= score == 0 ? '' : score %></td>
-              <% end %>
-              <% end %>
-            </tr>
-        <% end %>
-    </table>
-    <% end %>
-
-    <% if empty %>
-    <p class="my-8">No scores entered yet.</p>
-    <% end %>
+    <%= render "multis" %>
 
     <%= link_to 'Back to summary', summary_event_index_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
   </div>

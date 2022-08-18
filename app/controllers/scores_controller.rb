@@ -292,6 +292,12 @@ class ScoresController < ApplicationController
         end
       end
     end
+
+    if request.post?
+      render turbo_stream: turbo_stream.replace("multis-scores",
+        render_to_string(partial: 'multis', layout: false)
+      )
+    end
   end
 
   def instructor
@@ -320,6 +326,12 @@ class ScoresController < ApplicationController
 
       @scores[person][category][value] += count
       @scores[person]['points'] += count * WEIGHTS[value]
+    end
+
+    if request.post?
+      render turbo_stream: turbo_stream.replace("instructor-scores",
+        render_to_string(partial: 'instructor', layout: false)
+      )
     end
   end
 
