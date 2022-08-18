@@ -316,6 +316,7 @@ class ScoresController < ApplicationController
       else
         category = 'Open'
         value = SCORES['Open'].index score
+        next unless value
       end
 
       @scores[person] ||= {
