@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_08_02_135733) do
+ActiveRecord::Schema[7.0].define(version: 2022_08_18_222750) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -256,6 +256,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_02_135733) do
     t.integer "default_student_package_id"
     t.integer "default_professional_package_id"
     t.integer "default_guest_package_id"
+    t.decimal "student_registration_cost", precision: 7, scale: 2
+    t.decimal "student_heat_cost", precision: 7, scale: 2
+    t.decimal "student_solo_cost", precision: 7, scale: 2
+    t.decimal "student_multi_cost", precision: 7, scale: 2
     t.index ["default_guest_package_id"], name: "index_studios_on_default_guest_package_id"
     t.index ["default_professional_package_id"], name: "index_studios_on_default_professional_package_id"
     t.index ["default_student_package_id"], name: "index_studios_on_default_student_package_id"

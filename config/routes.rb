@@ -96,6 +96,7 @@ Rails.application.routes.draw do
       get 'heats', on: :member
       get 'scores', on: :member
       get 'invoice', on: :member
+      get 'student-invoices', on: :member
       get 'invoices', on: :collection
       get 'labels', on: :collection
       get 'send-invoice', on: :member

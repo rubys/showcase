@@ -15,6 +15,10 @@
     <%= link_to 'Invoice', invoice_studio_path(@studio, format: :pdf), class: "btn-pale-orange" %>
     <%= link_to 'Heat sheets', heats_studio_path(@studio, format: :pdf), class: "btn-pale-orange" %>
     <%= link_to 'Scores', scores_studio_path(@studio, format: :pdf), class: "btn-pale-orange" %>
+
+    <span></span>
+    <%= link_to 'Student Invoices', studio_student_invoices_path(@studio, format: :pdf), class: "btn-pale-orange" %>
+    <span></span>
     <% end %>
   </div>
 </div>

@@ -51,7 +51,7 @@
   <% unless @studio.id == 0 %>
   <div class="my-5">
     <%= form.check_box :cost_override, checked: @cost_override, class: 'entry-count h-10' %>
-    <%= form.label :cost_override, 'Override prices for Studio' %>
+    <%= form.label :cost_override, 'Override studio prices (for payments to host)' %>
   </div>
 
   <div class="my-5">
@@ -73,6 +73,42 @@
     <%= form.number_field :multi_cost, step: :any,
     value: number_to_currency(form.object.multi_cost.to_f, delimiter: '', unit: ''),
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  </div>
+
+  <div data-controller="studio-price-override">
+  <div class="my-5">
+    <%= form.check_box :student_cost_override, checked: @cost_override, class: 'entry-count h-10' %>
+    <%= form.label :student_cost_override, 'Override student prices (for payments to studio)' %>
+  </div>
+
+ <div class="my-5">
+    <%= form.label :student_registration_cost, 'Registration' %>
+    <%= form.number_field :student_registration_cost, step: :any,
+      value: number_to_currency(form.object.student_registration_cost.to_f, delimiter: '', unit: ''),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :student_heat_cost, 'Heats' %>
+    <%= form.number_field :student_heat_cost, step: :any,
+      value: number_to_currency(form.object.student_heat_cost.to_f, delimiter: '', unit: ''),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :student_solo_cost, 'Solos' %>
+    <%= form.number_field :student_solo_cost, step: :any,
+      value: number_to_currency(form.object.student_solo_cost.to_f, delimiter: '', unit: ''),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :student_multi_cost, 'Multi-dances' %>
+    <%= form.number_field :multi_cost, step: :any,
+    value: number_to_currency(form.object.student_multi_cost.to_f, delimiter: '', unit: ''),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
   </div>
 
   <% if @student_packages.length > 1 %>
@@ -99,6 +135,4 @@
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
   <% end %>
-
-  </div>
 <% end %>

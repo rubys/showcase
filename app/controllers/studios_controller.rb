@@ -1,7 +1,7 @@
 class StudiosController < ApplicationController
   include Printable
 
-  before_action :set_studio, only: %i[ show edit update unpair destroy heats scores invoice send_invoice ]
+  before_action :set_studio, only: %i[ show edit update unpair destroy heats scores invoice student_invoices send_invoice ]
 
   # GET /studios or /studios.json
   def index
@@ -9,7 +9,7 @@ class StudiosController < ApplicationController
     staff = @studios.find {|studio| studio.id == 0}
     @studios.push @studios.delete staff
 
-    generate_invoice @studios
+    generate_invoice @studios, @student
 
     @total_count = Person.where.not(studio_id: nil).count
     @total_tables = Studio.sum(:tables)
@@ -90,6 +90,19 @@ class StudiosController < ApplicationController
     end
   end
 
+
+  def student_invoices
+    @student = true
+    generate_invoice([@studio], true)
+
+    respond_to do |format|
+      format.html { render 'invoice' }
+      format.pdf do
+        render_as_pdf basename: "student-invoices"
+      end
+    end
+  end
+
   def send_invoice
     @event = Event.last
 
@@ -134,15 +147,26 @@ class StudiosController < ApplicationController
     @pairs = @studio.pairs
     @avail = Studio.all.map {|studio| studio.name}
     @cost_override = !!(@studio.heat_cost || @studio.solo_cost || @studio.multi_cost)
+    @student_cost_override = !!(@studio.student_heat_cost || @studio.student_solo_cost || @studio.student_multi_cost)
 
     event = Event.last
     @studio.heat_cost ||= event.heat_cost
     @studio.solo_cost ||= event.solo_cost
     @studio.multi_cost ||= event.multi_cost
 
+    @studio.student_heat_cost ||= @studio.heat_cost;
+    @studio.student_solo_cost ||= @studio.solo_cost;
+    @studio.student_multi_cost ||= @studio.multi_cost;
+
     @student_packages = Billable.where(type: 'Student').order(:order).pluck(:name, :id).to_h
     @professional_packages = Billable.where(type: 'Professional').order(:order).pluck(:name, :id).to_h
     @guest_packages = Billable.where(type: 'Guest').order(:order).pluck(:name, :id).to_h
+
+    if @studio.default_student_package_id
+      @studio.student_registration_cost ||= Billable.find(@studio.default_student_package_id).price
+    else
+      @studio.student_registration_cost ||= Billable.find(@student_packages.first.last).price
+    end
   end
 
   # GET /studios/1/edit
@@ -239,6 +263,12 @@ class StudiosController < ApplicationController
         params[:studio][:heat_cost] = nil
         params[:studio][:solo_cost] = nil
         params[:studio][:multi_cost] = nil
+      end
+
+      if studio_params[:student_cost_override] == '0'
+        params[:studio][:student_heat_cost] = nil
+        params[:studio][:student_solo_cost] = nil
+        params[:studio][:student_multi_cost] = nil
       end
     end
 end

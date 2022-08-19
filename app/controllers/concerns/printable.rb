@@ -97,7 +97,7 @@ module Printable
     @oneday = @categories.values.map(&:day).uniq.length <= 1
   end
 
-  def generate_invoice(studios = nil)
+  def generate_invoice(studios = nil, student=false)
     studios ||= Studio.all(order: name)
 
     @event = Event.last
@@ -113,6 +113,15 @@ module Printable
         'Solo' => studio.solo_cost || @event.solo_cost || 0,
         'Multi' => studio.multi_cost || @event.multi_cost || 0
       }
+
+      if @student
+        @cost = {
+          'Closed' => studio.student_heat_cost || @cost['Closed'],
+          'Open' => studio.student_heat_cost || @cost['Open'],
+          'Solo' => studio.student_solo_cost || @cost['Solo'],
+          'Multi' => studio.student_multi_cost || @cost['Multi']
+        }
+      end
 
       entries = (Entry.joins(:follow).where(people: {type: 'Student', studio: studio}) +
         Entry.joins(:lead).where(people: {type: 'Student', studio: studio})).uniq
