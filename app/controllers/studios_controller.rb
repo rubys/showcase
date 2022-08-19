@@ -95,6 +95,21 @@ class StudiosController < ApplicationController
     @student = true
     generate_invoice([@studio], true)
 
+    event = Event.first
+
+    @registration = @studio.student_registration_cost
+    @heat_cost = @studio.student_heat_cost || @studio.heat_cost || event.heat_cost || 0
+    @solo_cost = @studio.student_solo_cost || @studio.solo_cost || event.solo_cost || 0
+    @multi_cost = @studio.student_multi_cost || @studio.multi_cost || event.multi_cost || 0
+
+    unless @registration
+      if @studio.default_student_package_id
+        @registration = Billable.find(@studio.default_student_package_id).price
+      else
+        @registration = Billable.where(type: 'Student').order(:order).pluck(:price).first
+      end
+    end
+
     respond_to do |format|
       format.html { render 'invoice' }
       format.pdf do

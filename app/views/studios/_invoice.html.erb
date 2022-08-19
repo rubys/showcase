@@ -18,9 +18,9 @@
   <tr>
     <th class="row-head-left">Name
     <th class="row-head-left"># Entries
-    <th class="row-head">Cost
+    <th class="row-head">Dances
     <% if invoice[:purchases] != 0 %>
-    <th class="row-head">Purchases
+    <th class="row-head">Registration
     <th class="row-head">Total
     <% end %>
   </thead>
@@ -80,6 +80,79 @@
     <% end %>
   </tbody>
   </table>
+  <% end %>
+
+
+  <% if @student %>
+  <% studio.people.order(:name).each do |person| %>
+  <% next if @student and person.type != 'Student' %>
+  <% dances = invoice[:dances][person] %>
+  <div class="w-full" style="break-before: page">
+
+  <div class="float-right"><%= person.display_name %></div>
+  <div class="mb-4">
+  <h2 class="font-bold text-center text-4xl"><%= @event.name %></h1>
+
+  <p class="mt-4">
+    <% @event.location.to_s.lines.each do |line| %>
+      <div class="text-center"><%= line.chomp %></div>
+    <% end %>
+  </p>
+  
+  <p class="mt-2 text-center"><%= @event.date %></p>
+  </div>
+
+  <table>
+  <tr>
+    <th align="left" class="pr-8">Registration:
+    <th align="left"><%= number_to_currency @registration %> per person</th>
+  </tr>
+  <tr>
+    <th align="left">Freestyles:
+    <th align="left"><%= number_to_currency @heat_cost %> per entry</th>
+  </tr>
+  <tr>
+    <th align="left">Routines:
+    <th align="left"><%= number_to_currency @solo_cost %> per entry</th>
+  </tr>
+    <tr>
+    <th align="left" class="pr-8">3 Dance Event:
+    <th align="left"><%= number_to_currency @multi_cost %> per entry</th>
+  </tr>
+  </table>
+
+  <hr class="border-2 border-black my-4">
+
+  <table class="float-right">
+   <tr>
+    <th align="left" class="pr-8">Invoice:
+  </tr>
+  <tr>
+    <td class="pr-8">Registration:
+    <td align="right"><%= number_to_currency @registration %></td>
+  </tr>
+  <tr>
+    <td>Freestyles
+    <td align="right"><%= number_to_currency @heat_cost * (dances.fetch('Open', 0) + dances.fetch('Closed', 0)) %></th>
+  </tr>
+  <tr>
+    <td>Routines
+    <td align="right"><%= number_to_currency @solo_cost * dances.fetch('Solo', 0) %></td>
+  </tr>
+    <tr>
+    <td class="pr-8">3 dance event
+    <td align="right"><%= number_to_currency @multi_cost * dances.fetch('Multi', 0) %></td>
+  </tr>
+  <tr>
+    <th class="pr-8">Total:
+    <td align="right"><%= number_to_currency dances[:cost] + dances[:purchases] %></td>
+  </tr>
+  </table>
+
+  <div style="clear:both">
+
+  </div>
+  <% end %>
   <% end %>
 
   <% invoice[:entries].each do |names, entries| %>

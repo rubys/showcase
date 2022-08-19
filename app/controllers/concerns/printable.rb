@@ -142,11 +142,19 @@ module Printable
           if entry.lead.type == 'Student' and @dances[entry.lead]
             @dances[entry.lead][:dances] += 1 / split
             @dances[entry.lead][:cost] += @cost[heat.category] / split
+
+            if @student
+              @dances[entry.lead][heat.category] = (@dances[entry.lead][heat.category] || 0) + 1/split
+            end
           end
 
           if entry.follow.type == 'Student' and @dances[entry.follow]
             @dances[entry.follow][:dances] += 1 / split
             @dances[entry.follow][:cost] += @cost[heat.category] / split
+
+            if @student
+              @dances[entry.follow][heat.category] = (@dances[entry.follow][heat.category] || 0) + 1/split
+            end
           end
         end
       end
@@ -217,7 +225,6 @@ module Printable
     system chrome, '--headless', '--disable-gpu', '--print-to-pdf-no-header',
       "--print-to-pdf=#{tmpfile.path}", url.to_s
 
-    STDERR.puts concat.inspect
     unless concat.empty?
       concat.unshift tmpfile.path
       tmpfile = Tempfile.new(basename)
