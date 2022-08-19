@@ -27,6 +27,7 @@
   <tbody>
     <% total_dance_cost = total_purchases = 0 %>
     <% studio.people.order(:name).each do |person| %>
+    <% next if @student and person.type != 'Student' %>
     <% dances = invoice[:dances] %>
     <% dance_cost = dances[person][:cost] %>
     <% purchases = dances[person][:purchases] %>
@@ -68,6 +69,7 @@
   <tbody>
     
     <% studio.people.order(:name).each do |person| %>
+    <% next if @student and person.type != 'Student' %>
     <% purchases = person.options.map(&:option).map(&:name) %>
     <% purchases.unshift "#{person.type} #{person.package.name}" if person.package_id %>
     <% next if purchases.empty? %>
