@@ -78,7 +78,7 @@
 
   <div data-controller="studio-price-override">
   <div class="my-5">
-    <%= form.check_box :student_cost_override, checked: @cost_override, class: 'entry-count h-10' %>
+    <%= form.check_box :student_cost_override, checked: @student_cost_override, class: 'entry-count h-10' %>
     <%= form.label :student_cost_override, 'Override student prices (for payments to studio)' %>
   </div>
 
@@ -105,7 +105,7 @@
 
   <div class="my-5">
     <%= form.label :student_multi_cost, 'Multi-dances' %>
-    <%= form.number_field :multi_cost, step: :any,
+    <%= form.number_field :student_multi_cost, step: :any,
     value: number_to_currency(form.object.student_multi_cost.to_f, delimiter: '', unit: ''),
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>

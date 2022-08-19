@@ -200,7 +200,7 @@ class StudiosController < ApplicationController
       add_pair
       cost_override
 
-      if @studio.update(studio_params.except(:pair, :cost_override))
+      if @studio.update(studio_params.except(:pair, :cost_override, :student_cost_override))
         format.html { redirect_to studio_url(@studio), notice: "#{@studio.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @studio }
       else
@@ -245,7 +245,8 @@ class StudiosController < ApplicationController
       params.require(:studio).permit(:name, :tables, :pair,
         :default_student_package_id,
         :cost_override, :heat_cost, :solo_cost, :multi_cost,
-        :student_cost_override, :student_heat_cost, :student_solo_cost, :student_multi_cost)
+        :student_cost_override, :student_registration_cost,
+        :student_heat_cost, :student_solo_cost, :student_multi_cost)
     end
 
     def add_pair
