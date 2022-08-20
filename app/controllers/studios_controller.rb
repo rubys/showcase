@@ -192,7 +192,7 @@ class StudiosController < ApplicationController
 
   # POST /studios or /studios.json
   def create
-    @studio = Studio.new(studio_params.except(:pair, :cost_override))
+    @studio = Studio.new(studio_params.except(:pair, :cost_override, :student_cost_override))
 
     cost_override
 
