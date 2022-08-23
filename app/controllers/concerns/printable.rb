@@ -41,6 +41,10 @@ module Printable
         Event.last.date.sub(/(^|[a-z]+ )?\d+\s*[-&]\s*\d+/) {|str| str.sub(/\s*[-&]\s*.*/, '')},
         guess: false
       )&.begin || Time.now
+
+      if not @categories.empty? and not @categories.values.first.day.blank?
+        start = Chronic.parse(@categories.values.first.day, guess: false)&.begin || start
+      end
     end
 
     @agenda = {}
