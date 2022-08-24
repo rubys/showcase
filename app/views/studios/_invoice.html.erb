@@ -107,6 +107,11 @@
     <th align="left" class="pr-8">Registration:
     <th align="left"><%= number_to_currency @registration %> per person</th>
   </tr>
+  <% unless @event.student_package_description.empty? %>
+  <tr>
+    <td colspan="2" class="whitespace-pre pt-4"><%= @event.student_package_description %>
+  </tr>
+  <% end %>
   <tr>
     <th align="left">Freestyles:
     <th align="left"><%= number_to_currency @heat_cost %> per entry</th>
@@ -121,7 +126,7 @@
   </tr>
   </table>
 
-  <hr class="border-2 border-black my-4">
+  <hr class="border-2 border-black mt-8 mb-20">
 
   <table class="float-right">
    <tr>
@@ -148,6 +153,13 @@
     <td align="right"><%= number_to_currency dances[:cost] + dances[:purchases] %></td>
   </tr>
   </table>
+
+   <% unless @event.payment_due.empty? %>
+  <ul class="font-bold">
+  <li>Registration and Payment Due:
+  <li><%= @event.payment_due %>
+  </ul>
+  <% end %>
 
   <div style="clear:both">
 

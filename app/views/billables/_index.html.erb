@@ -38,6 +38,19 @@
     <%= form.label :package_required, 'Packages are required to participate' %>
   </div>
 
+  <div class="my-5">
+    <%= form.label :student_package_description %>
+    <%= form.text_area :student_package_description, placeholder: 'Festivities Include: ...',
+      rows: @event.student_package_description.blank? ? 2 : @event.student_package_description.lines.length + 1,
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :payment_due, 'Payment Due Date' %>
+    <%= form.text_field :payment_due, 
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
   <h2 class="font-bold text-2xl mt-4">Dances</h1>
 
   <% if @event.errors.any? %>
