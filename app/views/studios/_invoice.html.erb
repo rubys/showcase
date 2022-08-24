@@ -33,8 +33,8 @@
     <% purchases = dances[person][:purchases] %>
     <% next if purchases == 0 and dances[person][:dances] == 0 %>
     <tr class="text-base">
-      <td><div class="mx-4"><%= person.name %>
-      <td><div class="mx-4 text-right"><%= number_with_precision dances[person][:dances], strip_insignificant_zeros: true %>
+      <td><div class="mx-4"><%= person.name %></div>
+      <td><div class="mx-4 text-right"><%= number_with_precision dances[person][:dances], strip_insignificant_zeros: true %></div>
       <td class="pr-4 text-right"><%= number_to_currency dance_cost, precision: 2, unit: '' %>
       <% if invoice[:purchases] > 0 %>
       <td class="pr-4 text-right"><%= number_to_currency purchases, precision: 2, unit: '' %>
@@ -46,7 +46,7 @@
   <% end %>
     <tr class="text-base">
       <th class="row-foot">total
-      <td><div class="row-foot text-right"><%= number_with_precision invoice[:dance_count], strip_insignificant_zeros: true %>
+      <td><div class="row-foot text-right"><%= number_with_precision invoice[:dance_count], strip_insignificant_zeros: true %></div>
       <td class="row-foot text-right"><%= number_to_currency total_dance_cost, precision: 2, unit: '' %>
       <% if invoice[:purchases] > 0 %>
       <td class="row-foot text-right"><%= number_to_currency total_purchases, precision: 2, unit: '' %>
@@ -89,8 +89,7 @@
   <% dances = invoice[:dances][person] %>
   <div class="w-full" style="break-before: page">
 
-  <div class="float-right"><%= person.display_name %></div>
-  <div class="mb-4">
+  <div class="float-right mb-4"><%= person.display_name %></div>
   <h2 class="font-bold text-center text-4xl"><%= @event.name %></h1>
 
   <p class="mt-4">
@@ -102,7 +101,7 @@
   <p class="mt-2 text-center"><%= @event.date %></p>
   </div>
 
-  <table>
+  <table class="mt-8">
   <tr>
     <th align="left" class="pr-8">Registration:
     <th align="left"><%= number_to_currency @registration %> per person</th>
@@ -161,9 +160,8 @@
   </ul>
   <% end %>
 
-  <div style="clear:both">
+  <div style="clear:both"></div>
 
-  </div>
   <% end %>
   <% end %>
 
