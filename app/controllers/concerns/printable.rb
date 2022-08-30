@@ -1,5 +1,7 @@
 module Printable
   def generate_agenda
+    event = Event.last
+
     @heats = Heat.order('abs(number)').includes(
       dance: [:open_category, :closed_category, :solo_category, :multi_category], 
       entry: [:age, :level, lead: [:studio], follow: [:studio]],
@@ -48,16 +50,20 @@ module Printable
     end
 
     @agenda = {}
+    @agenda0 = {}
     @start = [] if start
     @finish = [] if start
     last_cat = nil
 
     @heats.each do |number, heats|
       if number == 0
+        @agenda0['Unscheduled'] ||= []
+        @agenda0['Unscheduled'] << [number, heats]
         @agenda['Unscheduled'] ||= []
-        @agenda['Unscheduled'] << [number, heats]
+        @agenda['Unscheduled'] << [number, {nil: heats}]
       else
         cat = heats.first.dance_category
+        ballrooms = cat&.ballrooms || event.ballrooms || 1
 
         if cat and start
           cat = @categories[cat.name]
@@ -93,8 +99,15 @@ module Printable
         end
         
         cat = cat&.name || 'Uncategorized'
+        @agenda0[cat] ||= []
+        @agenda0[cat] << [number, heats]
+
         @agenda[cat] ||= []
-        @agenda[cat] << [number, heats]
+        if ballrooms == 1
+          @agenda[cat] << [number, {nil: heats}]
+        elsif ballrooms == 2
+          @agenda[cat] << [number, {nil: heats}]
+        end
       end
     end
 

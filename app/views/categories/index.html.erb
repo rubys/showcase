@@ -99,7 +99,7 @@ another heat is still possible, even when the agenda is locked.
         <% if @agenda.to_a.empty? %>
         0
         <% else %>
-        <%= @agenda.to_a.last.last.last.last.last.number %>
+        <%= @agenda.to_a.last.last.last.last.values.flatten.last.number %>
         <% end %>
       </td>
     </tr>

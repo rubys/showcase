@@ -55,7 +55,7 @@ a scheduled heat time will be added to each heat.
       <th class="row-head">Day
       <% end %>
     </tr>
-    <% @agenda.each do |cat, heats| %>
+    <% @agenda0.each do |cat, heats| %>
       <tr>
         <td class="row"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a>
         <td class="row text-right"><a href="#heat-<%= heats.first.first %>"><%= heats.first.first %></a>
@@ -73,7 +73,7 @@ a scheduled heat time will be added to each heat.
     <% end %>
   </table>
 
-  <% @agenda.each do |cat, heats| %>
+  <% @agenda0.each do |cat, heats| %>
   <% ballrooms = (@categories[cat]&.ballrooms == nil ? @ballrooms : @categories[cat].ballrooms) %>
   <div style="page-break-after: always"></div>
 
