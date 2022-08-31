@@ -103,7 +103,7 @@ tbody::after {
       <th class="row-head">Day
       <% end %>
     </tr>
-    <% @agenda0.each do |cat, heats| %>
+    <% @agenda.each do |cat, heats| %>
       <tr>
         <td class="row"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a>
         <td class="row text-right"><a href="#heat-<%= heats.first.first %>"><%= heats.first.first %></a>
@@ -121,20 +121,20 @@ tbody::after {
     <% end %>
   </table>
 
-  <% @agenda0.each do |cat, heats| %>
-  <% ballrooms = (@categories[cat]&.ballrooms == nil ? @ballrooms : @categories[cat].ballrooms) %>
+  <% @agenda.each do |cat, heats| %>
   <div style="page-break-after: always"></div>
 
-  <% unless @type == 'judge' and heats.all? {|number, heats| heats.first.category == 'Solo'} %>
+  <% unless @type == 'judge' and heats.all? {|number, ballrooms| ballrooms.values.flatten.first.category == 'Solo'} %>
   <div class="mt-8 mb-2 flex justify-between items-center" id="cat-<%= cat.downcase.gsub(' ', '-') %>">
     <h1 class="font-bold text-4xl"><%= cat %></h1>
   </div>
   <% end %>
 
   <div class="w-full">
-    <% heats.each do |number, heats| %>
-    <% if @type == 'judge' and heats.first.category == 'Solo' %>
+    <% heats.each do |number, ballrooms| %>
+    <% heats = ballrooms.values.flatten %>
     <% heat = heats.first %>
+    <% if @type == 'judge' and heats.first.category == 'Solo' %>
     <div class="page">
     <span class="number"><%= number %></span>
     <span class="rotate-shadow">Solo</span>
@@ -208,7 +208,7 @@ tbody::after {
     <table class="break-inside-avoid table-fixed w-full" style="font-size: 11.5px">
       <colgroup>
         <col width="5px">
-        <% unless heats.first.category == 'Solo' %>
+        <% unless heat.category == 'Solo' %>
         <col width="8%">
         <% end %>
         <col width="25%">
@@ -221,10 +221,10 @@ tbody::after {
       </colgroup>
       <thead class="w-full">
         <td>
-        <% if heats.first != 0 %>
+        <% if number != 0 %>
         <th width="5">
         <% else %>
-        <% unless heats.first.category == 'Solo' %>
+        <% unless heat.category == 'Solo' %>
         <th>
         <% end %>
         <th>
@@ -254,31 +254,17 @@ tbody::after {
           <% end %>
         </td>
       </tr>
-      <% if heats.first.entry.lead.type == 'Professional' and ballrooms >= 2 %>
-      <tr>
-        <td>
-        <td colspan="8" class="text-xs pt-2">Ballroom A</td>
-      </tr>
-      <% end %>
-      <% ballroom = 'A' %>
-      <% else %>
-      <% ballroom = 'B' %>
       <% end %>
 
-      <% if heats.first.category == 'Solo' %>
-      <% ballroom = 'B' %>
-      <% end %>
-
-      <% heats.each_with_index do |heat, index| %>
-         <% if ballroom == 'A' and (
-           (ballrooms == 2 and heat.entry.lead.type == 'Student') or
-           (ballrooms == 3 and index >= heats.length/2)) %>
+      <% ballrooms.each do |ballroom, heats| %>
+        <% next if heats.empty? %>
+         <% if ballroom %>
          <tr>
            <td>
-           <td colspan="8" class="text-xs pt-2">Ballroom B</td>
+           <td colspan="8" class="text-xs pt-2">Ballroom <%= ballroom %></td>
          </tr>
-         <% ballroom = 'B' %>
          <% end %>
+         <% heats.each do |heat| %>
          <% if heat.number < 0 %>
          <tr class="font-base line-through opacity-50" id="<%= dom_id heat %>">
          <% else %>
@@ -333,6 +319,7 @@ tbody::after {
            </td>
            <% end %>
          </tr>
+         <% end %>
       <% end %>
       </tbody>
     </table>
