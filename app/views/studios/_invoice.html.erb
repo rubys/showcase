@@ -162,9 +162,14 @@
 
   <div style="clear:both"></div>
 
+  <% invoice[:entries].each do |names, entries| %>
+    <% next unless names.include? person.name%>
+    <%= render "entry", names: names, entries: entries, studio: studio.name, invoice: :student %>
   <% end %>
   <% end %>
+  <% else %>
 
   <% invoice[:entries].each do |names, entries| %>
-    <%= render "entry", names: names, entries: entries, studio: studio.name %>
+    <%= render "entry", names: names, entries: entries, studio: studio.name, invoice: :studio %>
+  <% end %>
   <% end %>
