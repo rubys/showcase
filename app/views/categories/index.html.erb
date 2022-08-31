@@ -60,7 +60,7 @@ another heat is still possible, even when the agenda is locked.
         <% heats = @agenda[cat.name] %>
         <td class="row text-black font-medium"><%= link_to cat.name, edit_category_path(cat.id) %></a>
         <% if heats %>
-        <% entries += (count = heats.map {|number, heats| heats.length}.sum) %>
+        <% entries += (count = heats.map {|number, ballrooms| ballrooms.values.flatten.length}.sum) %>
         <td class="row text-right"><%= count %>
         <td class="row text-right"><%= heats.length %>
         <% if @start and @start[heats.first.first] %>
@@ -99,7 +99,7 @@ another heat is still possible, even when the agenda is locked.
         <% if @agenda.to_a.empty? %>
         0
         <% else %>
-        <%= @agenda.to_a.last.last.last.last.values.flatten.last.number %>
+        <%= @agenda0.to_a.last.last.last.last.last.number %>
         <% end %>
       </td>
     </tr>
