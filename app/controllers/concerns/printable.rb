@@ -57,7 +57,7 @@ module Printable
     @heats.each do |number, heats|
       if number == 0
         @agenda['Unscheduled'] ||= []
-        @agenda['Unscheduled'] << [number, {nil: heats}]
+        @agenda['Unscheduled'] << [number, {nil => heats}]
       else
         cat = heats.first.dance_category
         ballrooms = cat&.ballrooms || event.ballrooms || 1
@@ -99,7 +99,7 @@ module Printable
 
         @agenda[cat] ||= []
         if ballrooms == 1 or heats.all? {|heat| heat.category == 'Solo'}
-          @agenda[cat] << [number, {nil: heats}]
+          @agenda[cat] << [number, {nil => heats}]
         elsif ballrooms == 2
           b = heats.select {|heat| heat.entry.lead.type == "Student"}
           @agenda[cat] << [number, {'A': heats - b, 'B': b}]
