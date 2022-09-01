@@ -55,7 +55,8 @@ a scheduled heat time will be added to each heat.
       <th class="row-head">Day
       <% end %>
     </tr>
-    <% @agenda0.each do |cat, heats| %>
+    <% @agenda.each do |cat, heats| %>
+      <% heats = heats.map {|number, ballrooms| [number, ballrooms.map(&:last).flatten]} %>
       <tr>
         <td class="row"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a>
         <td class="row text-right"><a href="#heat-<%= heats.first.first %>"><%= heats.first.first %></a>
