@@ -50,15 +50,12 @@ module Printable
     end
 
     @agenda = {}
-    @agenda0 = {}
     @start = [] if start
     @finish = [] if start
     last_cat = nil
 
     @heats.each do |number, heats|
       if number == 0
-        @agenda0['Unscheduled'] ||= []
-        @agenda0['Unscheduled'] << [number, heats]
         @agenda['Unscheduled'] ||= []
         @agenda['Unscheduled'] << [number, {nil: heats}]
       else
@@ -99,11 +96,9 @@ module Printable
         end
         
         cat = cat&.name || 'Uncategorized'
-        @agenda0[cat] ||= []
-        @agenda0[cat] << [number, heats]
 
         @agenda[cat] ||= []
-        if ballrooms == 1 or heats.length == 0
+        if ballrooms == 1 or heats.all? {|heat| heat.category == 'Solo'}
           @agenda[cat] << [number, {nil: heats}]
         elsif ballrooms == 2
           b = heats.select {|heat| heat.entry.lead.type == "Student"}

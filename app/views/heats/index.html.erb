@@ -56,7 +56,6 @@ a scheduled heat time will be added to each heat.
       <% end %>
     </tr>
     <% @agenda.each do |cat, heats| %>
-      <% heats = heats.map {|number, ballrooms| [number, ballrooms.map(&:last).flatten]} %>
       <tr>
         <td class="row"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a>
         <td class="row text-right"><a href="#heat-<%= heats.first.first %>"><%= heats.first.first %></a>
@@ -74,7 +73,7 @@ a scheduled heat time will be added to each heat.
     <% end %>
   </table>
 
-  <% @agenda0.each do |cat, heats| %>
+  <% @agenda.each do |cat, heats| %>
   <% ballrooms = (@categories[cat]&.ballrooms == nil ? @ballrooms : @categories[cat].ballrooms) %>
   <div style="page-break-after: always"></div>
 
@@ -84,9 +83,10 @@ a scheduled heat time will be added to each heat.
 
   <div class="min-w-full">
     <% heats.each do |number, heats| %>
+    <% heats = heats.map(&:last).flatten %>
     <table class="break-inside-avoid text-sm mt-4 table-fixed">
       <colgroup>
-        <% if heats.first != 0 %>
+        <% if number != 0 %>
         <col width="1%">
         <% else %>
         <col width="5%">
@@ -102,7 +102,7 @@ a scheduled heat time will be added to each heat.
       </colgroup>
       <thead>
         <td>
-        <% if heats.first != 0 %>
+        <% if number != 0 %>
         <th width="5">
         <% else %>
         <th>
