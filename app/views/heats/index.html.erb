@@ -74,7 +74,6 @@ a scheduled heat time will be added to each heat.
   </table>
 
   <% @agenda.each do |cat, heats| %>
-  <% ballrooms = (@categories[cat]&.ballrooms == nil ? @ballrooms : @categories[cat].ballrooms) %>
   <div style="page-break-after: always"></div>
 
   <div class="mt-8 flex justify-between items-center" id="cat-<%= cat.downcase.gsub(' ', '-') %>">
@@ -82,8 +81,8 @@ a scheduled heat time will be added to each heat.
   </div>
 
   <div class="min-w-full">
-    <% heats.each do |number, heats| %>
-    <% heats = heats.map(&:last).flatten %>
+    <% heats.each do |number, ballrooms| %>
+    <% heats = ballrooms.map(&:last).flatten %>
     <table class="break-inside-avoid text-sm mt-4 table-fixed">
       <colgroup>
         <% if number != 0 %>
@@ -134,29 +133,17 @@ a scheduled heat time will be added to each heat.
         </td>
       </tr>
 
-      <% ballroom = 'A' %>
-      <% if ballrooms == 1 or heats.first.category == 'Solo' %>
-      <% ballroom = 'B' %>
-      <% elsif ballrooms > 1 %>
+      <% ballrooms.each do |ballroom, heats| %>
+      <% next if heats.empty? %>
+      <% if ballroom %>
       <tr>
         <td>
         <td></td>
-        <td colspan="8" class="text-xs pt-2">Ballroom A</td>
+        <td colspan="8" class="text-xs pt-2">Ballroom  <%= ballroom %></td>
       </tr>
-      <% end %>
       <% end %>
 
       <% heats.each_with_index do |heat, index| %>
-         <% if ballroom == 'A' and (
-            (ballrooms == 2 and heat.entry.lead.type == 'Student') or
-            (ballrooms == 3 and index >= heats.length/2 )) %>
-         <tr>
-           <td>
-           <td></td>
-           <td colspan="8" class="text-xs pt-2">Ballroom B</td>
-         </tr>
-         <% ballroom = 'B' %>
-         <% end %>
          <% if heat.number < 0 %>
          <tr id="<%= dom_id heat %>" class="line-through opacity-50">
          <% else %>
@@ -201,6 +188,8 @@ a scheduled heat time will be added to each heat.
            <td class="row text-center"><%= heat.entry.subject_category(@track_ages) %>
            <td class="row"><%= link_to heat.studio.name, heat.studio %>
          </tr>
+      <% end %>
+      <% end %>
       <% end %>
       </tbody>
     </table>
