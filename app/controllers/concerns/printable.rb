@@ -103,13 +103,14 @@ module Printable
         @agenda0[cat] << [number, heats]
 
         @agenda[cat] ||= []
-        if ballrooms == 1
+        if ballrooms == 1 or heats.length == 0
           @agenda[cat] << [number, {nil: heats}]
         elsif ballrooms == 2
           b = heats.select {|heat| heat.entry.lead.type == "Student"}
           @agenda[cat] << [number, {'A': heats - b, 'B': b}]
         else
           n = (heats.length / 2).to_i
+          n += 1 if heats.length % 2 == 1 and heats[n].entry.lead.type != 'Student'
           @agenda[cat] << [number, {'A': heats[...n], 'B': heats[n..]}]
         end
       end
