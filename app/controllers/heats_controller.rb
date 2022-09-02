@@ -94,6 +94,7 @@ class HeatsController < ApplicationController
     @age = @heat.entry.age_id
     @level = @heat.entry.level_id
     @instructor = @heat.entry.instructor_id
+    @ballroom = Event.exists?(ballrooms: 2..) || Category.exists?(ballrooms: 2..)
   end
 
   # POST /heats or /heats.json
@@ -117,6 +118,7 @@ class HeatsController < ApplicationController
   # PATCH/PUT /heats/1 or /heats/1.json
   def update
     entry = @heat.entry
+    params[:heat][:ballroom] = nil if params[:heat][:ballroom] == ''
     replace = find_or_create_entry(params[:heat])
 
     @heat.entry = replace
@@ -168,6 +170,6 @@ class HeatsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def heat_params
-      params.require(:heat).permit(:number, :category, :dance_id)
+      params.require(:heat).permit(:number, :category, :dance_id, :ballroom)
     end
 end

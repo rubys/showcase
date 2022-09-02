@@ -104,9 +104,11 @@ module Printable
           b = heats.select {|heat| heat.entry.lead.type == "Student"}
           @agenda[cat] << [number, {'A': heats - b, 'B': b}]
         else
+          groups = {nil => [], 'A' => [], 'B' => []}.merge(heats.group_by(&:ballroom))
+          heats = groups[nil]
           n = (heats.length / 2).to_i
           n += 1 if heats.length % 2 == 1 and heats[n].entry.lead.type != 'Student'
-          @agenda[cat] << [number, {'A': heats[...n], 'B': heats[n..]}]
+          @agenda[cat] << [number, {'A': heats[...n] + groups['A'], 'B': heats[n..] + groups['B']}]
         end
       end
     end
