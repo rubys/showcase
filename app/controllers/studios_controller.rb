@@ -179,7 +179,7 @@ class StudiosController < ApplicationController
 
     if @studio.default_student_package_id
       @studio.student_registration_cost ||= Billable.find(@studio.default_student_package_id).price
-    else
+    elsif not @student_packages.empty?
       @studio.student_registration_cost ||= Billable.find(@student_packages.first.last).price
     end
   end
