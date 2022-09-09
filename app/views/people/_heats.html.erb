@@ -28,7 +28,7 @@
   <% @heats.each do |number, heats| %>
   <% heats.each do |heat| %>
     <% next unless heatlist.include? heat.id %>
-    <% ballrooms = heat.dance_category.ballrooms || @ballrooms %>
+    <% ballrooms = heat.dance_category&.ballrooms || @ballrooms %>
     <tr class="text-sm">
       <% if @start %>
       <td class="text-right pr-4"><%= @start[number]&.strftime("%-I:%M") %></td>
