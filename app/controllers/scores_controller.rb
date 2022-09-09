@@ -49,7 +49,7 @@ class ScoresController < ApplicationController
         @scores = SCORES[category].dup
       end
 
-      @ballrooms = @subjects.first.dance_category.ballrooms || @event.ballrooms
+      @ballrooms = @subjects.first.dance_category&.ballrooms || @event.ballrooms
     end
 
     student_results = Score.where(judge: @judge, heat: @subjects, slot: @slot).
