@@ -5,8 +5,21 @@
 
   <h1 class="font-bold text-4xl"><%= link_to @judge.display_name, person_path(@judge) %></h1>
 
-  <div class="float-right w-60" title="<%= judge_heatlist_url(@judge, style: @style) %>">
-  <%= RQRCode::QRCode.new(judge_heatlist_url(@judge, style: @style)).as_svg(viewbox: true).html_safe %>
+  <div class="float-right w-60" title="<%= judge_heatlist_url(@judge, style: @style, sort: @sort) %>">
+  <%= RQRCode::QRCode.new(judge_heatlist_url(@judge, style: @style, sort: @sort)).as_svg(viewbox: true).html_safe %>
+
+  <h2 class="mt-12 font-bold text-2xl">Sort order</h2>
+  <form method="post" data-controller="auto-submit" action="<%= sort_scores_path %>">
+    <input type="hidden" name="style" value="<%= @style %>">
+    <div>
+      <input type="radio" name="sort" value="back"<%= !@sort || @sort == 'back' ? ' checked' : '' %>>
+      <span>Back Number</span>
+    </div>
+    <div>
+      <input type="radio" name="sort" value="level"<%= @sort == 'level' ? ' checked' : '' %>>
+      <span>Level</span>
+    </div>
+  </form>
   </div>
 
   <table>
@@ -19,11 +32,11 @@
         </tr>
         <% end %>
         <tr id="<%= dom_id heat %>" class="text-<%= @scored[heat.number] ? 'slate-400' : 'black' %>">
-          <td><%= link_to heat.number, judge_heat_path(judge: @judge, heat: heat.number, style: @style) %>
+          <td><%= link_to heat.number, judge_heat_path(judge: @judge, heat: heat.number, style: @style, sort: @sort) %>
           <td><%= link_to "#{heat.category} #{heat.dance.name}#{heat.solo&.combo_dance_id ? " / #{heat.solo.combo_dance.name}" : ''}",
             heat.category == 'Multi' ?
-            judge_heat_slot_path(judge: @judge, heat: heat.number, slot: 1, style: @style)
-            : judge_heat_path(judge: @judge, heat: heat.number, style: @style) %>
+            judge_heat_slot_path(judge: @judge, heat: heat.number, slot: 1, style: @style, sort: @sort)
+            : judge_heat_path(judge: @judge, heat: heat.number, style: @style, sort: @sort) %>
           <% if @scored[heat.number] and @scored[heat.number].length != @count[heat.number.to_f] %>
           <span class="text-black">*</span>
           <% end %>

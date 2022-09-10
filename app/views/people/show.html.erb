@@ -314,12 +314,13 @@ when most dances for an individual are with one instructor but one or two are ch
     <% end %>
 
     <% if @person.type == 'Judge' %>
+    <% sort = @person.judge&.sort || 'back'%>
     <div class="mt-4 fmx-auto">
     <% if @event.open_scoring == '#' %>
-    <%= link_to 'Score heats',  judge_heatlist_path(judge: @person, style: 'radio'), class: "btn-purple" %>
+    <%= link_to 'Score heats',  judge_heatlist_path(judge: @person, style: 'radio', sort: sort), class: "btn-purple" %>
     <% else %>
-    <%= link_to 'Score heats - cards',  judge_heatlist_path(judge: @person, style: 'cards'), class: "btn-purple" %>
-    <%= link_to 'Score heats - radio',  judge_heatlist_path(judge: @person, style: 'radio'), class: "btn-purple" %>
+    <%= link_to 'Score heats - cards',  judge_heatlist_path(judge: @person, style: 'cards', sort: sort), class: "btn-purple" %>
+    <%= link_to 'Score heats - radio',  judge_heatlist_path(judge: @person, style: 'radio', sort: sort), class: "btn-purple" %>
     <% end %>
     </div>
     <div class="mt-4 mx-auto">

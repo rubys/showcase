@@ -14,6 +14,7 @@ class ScoresController < ApplicationController
   def heatlist
     @judge = Person.find(params[:judge].to_i)
     @style = params[:style] || 'cards'
+    @sort = params[:sort] || 'back'
 
     @heats = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance)
 
@@ -35,7 +36,7 @@ class ScoresController < ApplicationController
     @subjects = Heat.where(number: @number).includes(
       dance: [:multi_children], 
       entry: [:age, :level, :lead, :follow]
-    ).sort_by {|heat| heat.entry.lead.back || 0}
+    ).to_a
 
     if @subjects.empty?
       @dance = '-'
@@ -67,6 +68,16 @@ class ScoresController < ApplicationController
       end
     end
 
+    @sort = params[:sort] || 'back'
+    if @sort == 'level'
+      @subjects.sort_by! do |subject|
+        entry = subject.entry
+        [entry.level_id || 0, entry.age_id || 0, entry.lead.back || 0]
+      end
+    else
+      @subjects.sort_by! {|heat| heat.entry.lead.back || 0}
+    end
+
     @scores << ''
  
     @heat = Heat.find_by(number: @number)
@@ -75,28 +86,30 @@ class ScoresController < ApplicationController
       @comments = Score.where(judge: @judge, heat: @subjects.first).first&.comments
     end
 
+    options = {style: @style, sort: @sort}
+
     if @heat.dance.heat_length and (@slot||0) < @heat.dance.heat_length
-      @next = judge_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||0)+1, style: @style)
+      @next = judge_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||0)+1, **options)
     else
       @next = Heat.where(number: @number+1...).order(:number).first
       if @next
         if @next.dance.heat_length
-          @next = judge_heat_slot_path(judge: @judge, heat: @next.number, slot: 1, style: @style)
+          @next = judge_heat_slot_path(judge: @judge, heat: @next.number, slot: 1, **options)
         else
-          @next = judge_heat_path(judge: @judge, heat: @next.number, style: @style)
+          @next = judge_heat_path(judge: @judge, heat: @next.number, **options)
         end
       end
     end
 
     if @heat.dance.heat_length and (@slot||0) > 1
-      @prev = judge_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||2)-1, style: @style)
+      @prev = judge_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||2)-1, style: @style, **options)
     else
       @prev = Heat.where(number: 1...@number).order(:number).last
       if @prev
         if @prev.dance.heat_length
-          @prev = judge_heat_slot_path(judge: @judge, heat: @prev.number, slot: @prev.dance.heat_length, style: @style)
+          @prev = judge_heat_slot_path(judge: @judge, heat: @prev.number, slot: @prev.dance.heat_length, **options)
         else
-          @prev = judge_heat_path(judge: @judge, heat: @prev.number, style: @style)
+          @prev = judge_heat_path(judge: @judge, heat: @prev.number, **options)
         end
       end
     end
@@ -334,6 +347,12 @@ class ScoresController < ApplicationController
         render_to_string(partial: 'instructor', layout: false)
       )
     end
+  end
+
+  def sort
+    judge = Judge.find_or_create_by(person_id: params[:judge])
+    judge.update! sort: params[:sort]
+    redirect_to judge_heatlist_path(judge: params[:judge], sort: params[:sort], style: params[:style])
   end
 
   # GET /scores/1 or /scores/1.json

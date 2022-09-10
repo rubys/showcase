@@ -39,26 +39,26 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     get judge_heat_url(judge: judge, heat: 1)
     assert_response :success
     assert_select 'a[rel=prev]', false
-    assert_select 'a[rel=next][href=?]', judge_heat_path(judge: judge, heat: 2, style: 'cards')
+    assert_select 'a[rel=next][href=?]', judge_heat_path(judge: judge, heat: 2, style: 'cards', sort: 'back')
 
     get judge_heat_url(judge: judge, heat: 3)
     assert_response :success
-    assert_select 'a[rel=prev][href=?]', judge_heat_path(judge: judge, heat: 2, style: 'cards')
-    assert_select 'a[rel=next][href=?]', judge_heat_slot_path(judge: judge, heat: 4, slot: 1, style: 'cards')
+    assert_select 'a[rel=prev][href=?]', judge_heat_path(judge: judge, heat: 2, style: 'cards', sort: 'back')
+    assert_select 'a[rel=next][href=?]', judge_heat_slot_path(judge: judge, heat: 4, slot: 1, style: 'cards', sort: 'back')
 
     get judge_heat_slot_url(judge: judge, heat: 4, slot: 1)
     assert_response :success
-    assert_select 'a[rel=prev][href=?]', judge_heat_path(judge: judge, heat: 3, style: 'cards')
-    assert_select 'a[rel=next][href=?]', judge_heat_slot_path(judge: judge, heat: 4, slot: 2, style: 'cards')
+    assert_select 'a[rel=prev][href=?]', judge_heat_path(judge: judge, heat: 3, style: 'cards', sort: 'back')
+    assert_select 'a[rel=next][href=?]', judge_heat_slot_path(judge: judge, heat: 4, slot: 2, style: 'cards', sort: 'back')
 
     get judge_heat_slot_url(judge: judge, heat: 4, slot: 2)
     assert_response :success
-    assert_select 'a[rel=prev][href=?]', judge_heat_slot_path(judge: judge, heat: 4, slot: 1, style: 'cards')
-    assert_select 'a[rel=next][href=?]', judge_heat_path(judge: judge, heat: 5, style: 'cards')
+    assert_select 'a[rel=prev][href=?]', judge_heat_slot_path(judge: judge, heat: 4, slot: 1, style: 'cards', sort: 'back')
+    assert_select 'a[rel=next][href=?]', judge_heat_path(judge: judge, heat: 5, style: 'cards', sort: 'back')
 
     get judge_heat_url(judge: judge, heat: 5)
     assert_response :success
-    assert_select 'a[rel=prev][href=?]', judge_heat_slot_path(judge: judge, heat: 4, slot: 2, style: 'cards')
+    assert_select 'a[rel=prev][href=?]', judge_heat_slot_path(judge: judge, heat: 4, slot: 2, style: 'cards', sort: 'back')
     assert_select 'a[rel=next]', false
   end
 

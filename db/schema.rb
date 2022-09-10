@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_09_02_165123) do
+ActiveRecord::Schema[7.0].define(version: 2022_09_10_184733) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -161,6 +161,14 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_02_165123) do
     t.index ["entry_id"], name: "index_heats_on_entry_id"
   end
 
+  create_table "judges", force: :cascade do |t|
+    t.integer "person_id", null: false
+    t.string "sort"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["person_id"], name: "index_judges_on_person_id"
+  end
+
   create_table "levels", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
@@ -296,6 +304,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_02_165123) do
   add_foreign_key "formations", "solos"
   add_foreign_key "heats", "dances"
   add_foreign_key "heats", "entries"
+  add_foreign_key "judges", "people"
   add_foreign_key "multis", "dances"
   add_foreign_key "multis", "dances", column: "parent_id"
   add_foreign_key "package_includes", "billables", column: "option_id"
