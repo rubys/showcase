@@ -136,6 +136,7 @@ Swiping left and right on mobile devices and tablets also work.
       <% end %>
       </tr>
     </thead>
+    <% lastcat = nil %>
     <% @subjects.each_with_index do |subject, index| %>
        <% if ballroom == 'A' and (
           (@ballrooms == 2 and subject.lead.type == 'Student') or
@@ -143,6 +144,13 @@ Swiping left and right on mobile devices and tablets also work.
         <tr><td colspan="10" class="bg-black"></tr>
         <% ballroom = 'B' %>
       <% end %>
+      <% subcat = "#{subject.entry.subject_category(@track_ages)} - #{subject.entry.level.initials}" %>
+      <% if @sort == 'level' and lastcat and subcat != lastcat %>
+      <tr>
+        <td class="h-4"></td>
+      </tr>
+      <% end %>
+      <% lastcat = subcat %>
       <tr class="hover:bg-yellow-200">
         <td class="py-2"><%= subject.lead.back %>
         <% if subject.lead.type == 'Student' %>
@@ -152,7 +160,7 @@ Swiping left and right on mobile devices and tablets also work.
         <td><%= subject.follow.display_name %>
         <td><%= subject.lead.display_name %>
         <% end %>
-        <td><%= subject.entry.subject_category(@track_ages) %> - <%= subject.entry.level.initials %>
+        <td><%= subcat %>
         <td><%= subject.subject.studio.name %>
         <% if @event.open_scoring == '#' %>
         <td><div class="mx-auto text-center">
