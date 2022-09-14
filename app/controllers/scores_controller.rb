@@ -1,4 +1,5 @@
 class ScoresController < ApplicationController
+  include Printable
   before_action :set_score, only: %i[ show edit update destroy ]
 
   SCORES = {
@@ -49,8 +50,6 @@ class ScoresController < ApplicationController
       else
         @scores = SCORES[category].dup
       end
-
-      @ballrooms = @subjects.first.dance_category&.ballrooms || @event.ballrooms
     end
 
     student_results = Score.where(judge: @judge, heat: @subjects, slot: @slot).
@@ -68,14 +67,16 @@ class ScoresController < ApplicationController
       end
     end
 
+    @subjects.sort_by! {|heat| heat.entry.lead.back || 0}
+    ballrooms = @subjects.first.dance_category&.ballrooms || @event.ballrooms
+    @ballrooms = assign_rooms(ballrooms, @subjects)
+
     @sort = params[:sort] || 'back'
     if @sort == 'level'
       @subjects.sort_by! do |subject|
         entry = subject.entry
         [entry.level_id || 0, entry.age_id || 0, entry.lead.back || 0]
       end
-    else
-      @subjects.sort_by! {|heat| heat.entry.lead.back || 0}
     end
 
     @scores << ''

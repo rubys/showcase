@@ -113,7 +113,6 @@ Swiping left and right on mobile devices and tablets also work.
 
   </div>
   <% elsif @style == 'radio' %>
-    <% ballroom = 'A' %>
     <div class="grow flex flex-col border-2 border-slate-400 overflow-y-auto">
     <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>
     <table class="table-auto border-separate border-spacing-y-1 mx-4">
@@ -137,13 +136,11 @@ Swiping left and right on mobile devices and tablets also work.
       </tr>
     </thead>
     <% lastcat = nil %>
-    <% @subjects.each_with_index do |subject, index| %>
-       <% if ballroom == 'A' and (
-          (@ballrooms == 2 and subject.lead.type == 'Student') or
-          (@ballrooms == 3 and index >= @subjects.length/2 )) %>
+    <% @ballrooms.each do |ballroom, subjects| %>
+       <% if ballroom.to_s == 'B' %>
         <tr><td colspan="10" class="bg-black"></tr>
-        <% ballroom = 'B' %>
       <% end %>
+      <% subjects.each do |subject| %>
       <% subcat = "#{subject.entry.subject_category(@track_ages)} - #{subject.entry.level.initials}" %>
       <% if @sort == 'level' and lastcat and subcat != lastcat %>
       <tr>
@@ -170,6 +167,7 @@ Swiping left and right on mobile devices and tablets also work.
         <% else %>
         <% @scores.each do |score| %>
         <td class="text-center"><input type="radio" name="<%= subject.id %>" value="<%= score %>"<%= @results[subject]==score ? ' checked' : '' %>>
+        <% end %>
         <% end %>
         <% end %>
       </tr>
