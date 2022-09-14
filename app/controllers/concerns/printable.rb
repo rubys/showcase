@@ -98,22 +98,26 @@ module Printable
         cat = cat&.name || 'Uncategorized'
 
         @agenda[cat] ||= []
-        if ballrooms == 1 or heats.all? {|heat| heat.category == 'Solo'}
-          @agenda[cat] << [number, {nil => heats}]
-        elsif ballrooms == 2
-          b = heats.select {|heat| heat.entry.lead.type == "Student"}
-          @agenda[cat] << [number, {'A': heats - b, 'B': b}]
-        else
-          groups = {nil => [], 'A' => [], 'B' => []}.merge(heats.group_by(&:ballroom))
-          heats = groups[nil]
-          n = (heats.length / 2).to_i
-          n += 1 if heats.length % 2 == 1 and heats[n].entry.lead.type != 'Student'
-          @agenda[cat] << [number, {'A': heats[...n] + groups['A'], 'B': heats[n..] + groups['B']}]
-        end
+        @agenda[cat] << [number, assign_rooms(ballrooms, heats)]
       end
     end
 
     @oneday = @categories.values.map(&:day).uniq.length <= 1
+  end
+
+  def assign_rooms(ballrooms, heats)
+    if ballrooms == 1 or heats.all? {|heat| heat.category == 'Solo'}
+      {nil => heats}
+    elsif ballrooms == 2
+      b = heats.select {|heat| heat.entry.lead.type == "Student"}
+      {'A': heats - b, 'B': b}
+    else
+      groups = {nil => [], 'A' => [], 'B' => []}.merge(heats.group_by(&:ballroom))
+      heats = groups[nil]
+      n = (heats.length / 2).to_i
+      n += 1 if heats.length % 2 == 1 and heats[n].entry.lead.type != 'Student'
+      {'A': heats[...n] + groups['A'], 'B': heats[n..] + groups['B']}
+    end
   end
 
   def generate_invoice(studios = nil, student=false)
