@@ -132,7 +132,7 @@ a scheduled heat time will be added to each heat.
           <% end %>
         </td>
       </tr>
-
+      <% end %>
       <% ballrooms.each do |ballroom, heats| %>
       <% next if heats.empty? %>
       <% if ballroom %>
@@ -188,7 +188,6 @@ a scheduled heat time will be added to each heat.
            <td class="row text-center"><%= heat.entry.subject_category(@track_ages) %>
            <td class="row"><%= link_to heat.studio.name, heat.studio %>
          </tr>
-      <% end %>
       <% end %>
       <% end %>
       </tbody>
