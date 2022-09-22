@@ -45,10 +45,10 @@ another heat is still possible, even when the agenda is locked.
     </tr>
     </thead>
     <% if @agenda['Unscheduled'] %>
-    <% entries += (count = @agenda['Unscheduled'].map {|number, heats| heats.length}.sum) %>
+    <% entries += (count = @agenda['Unscheduled'].first.last.map {|ballroom, heats| heats.length}.sum) %>
     <tbody>
     <tr>
-      <td class="row">Unscheduled
+      <td class="row"><%= link_to 'Unscheduled', heats_path(anchor: 'cat-unscheduled') %>
       <td class="row text-right"><%= count %>
       <td class="row text-right"><%= @agenda['Unscheduled'].count %>
     </tr>
