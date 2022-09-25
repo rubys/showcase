@@ -26,7 +26,13 @@
         <% end %>
         <tr id="<%= dom_id heat %>" class="text-black">
           <td><%= heat.number %>
-          <td><%= "#{heat.category} #{heat.dance.name}#{heat.solo&.combo_dance_id ? " / #{heat.solo.combo_dance.name}" : ''}" %>
+          <% if heat.solo %>
+          <td><%= "#{heat.category} #{heat.dance.name}#{heat.solo.combo_dance_id ? " / #{heat.solo.combo_dance.name}" : ''}" %>
+          <% unless heat.solo.song.empty? %>- <%= heat.solo.song %><% end %>
+          <% unless heat.solo.artist.empty? %>- <%= heat.solo.artist %><% end %>
+          <% else %>
+          <td><%= "#{heat.category} #{heat.dance.name}" %>
+          <% end %>
         </tr>
       <% end %>
     </tbody>
