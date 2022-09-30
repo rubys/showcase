@@ -49,7 +49,7 @@
 
   <div class="my-5">
     <%= form.label :song_file %>
-    <% if solo.song_file %>
+    <% if solo.song_file and not Rails.env.test? %>
     <%= link_to 'download', solo.song_file, class: 'x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium' %>
     <audio controls style="display: inline">
     <source src=<%= solo.song_file.url %> type=<%= solo.song_file.content_type %>>

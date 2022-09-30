@@ -90,6 +90,7 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
 
     assert_select 'tr td:first-child a' do |links|
       assert_equal [
+        "Unscheduled",
         "Closed American Rhythm",
         "Closed American Smooth",
         "All Arounds",
