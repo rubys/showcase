@@ -1,6 +1,7 @@
 class SolosController < ApplicationController
   before_action :set_solo, only: %i[ show edit update destroy ]
   include EntryForm
+  include ActiveStorage::SetCurrent
 
   # GET /solos or /solos.json
   def index
