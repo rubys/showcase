@@ -251,6 +251,6 @@ class SolosController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def solo_params
-      params.require(:solo).permit(:heat_id, :combo_dance_id, :order, :song, :artist)
+      params.require(:solo).permit(:heat_id, :combo_dance_id, :order, :song, :artist, :song_file)
     end
   end
