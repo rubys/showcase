@@ -424,11 +424,13 @@ class EventController < ApplicationController
 
   def import
     if request.post?
+      db = ENV['RAILS_DB_VOLUME'] || 'db'
+
       name = File.basename(params[:file].original_filename)
-      if name.end_with? '.sqlite3'
-        IO.binwrite File.join("db", name), params[:file].read
+      if name.end_with? '.sqlite3' or name == 'htpasswd'
+        IO.binwrite File.join(db, name), params[:file].read
       elsif name.end_with? '.sqlite3.gz'
-        stdout, status = Open3.capture2 'sqlite3', File.join('db', File.basename(name, '.gz')),
+        stdout, status = Open3.capture2 'sqlite3', File.join(db, File.basename(name, '.gz')),
           stdin_data: Zlib::GzipReader.new(params[:file].tempfile).read 
       end
 
