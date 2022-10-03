@@ -78,4 +78,12 @@ Rails.application.configure do
   if ENV['RAILS_RELATIVE_URL_ROOT']
     config.force_ssl = true
   end
+
+  if ENV['RAILS_APP_DB']
+    path = ENV['RAILS_APP_DB'].split('-',2)
+    showcases = YAML.load_file('config/tenant/showcases.yml')
+    name = showcases.dig(path[0].to_i, path[1], :name)
+    name = 'index' if path.first == 'index'
+    ENV['RAILS_APP_OWNER'] = name if name
+  end
 end

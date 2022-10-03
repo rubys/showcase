@@ -28,6 +28,7 @@ class User < ApplicationRecord
     false
   end
 
+  # list of users authorized to THIS event
   def self.authlist
     return [] unless @@db
     load_auth
@@ -45,7 +46,7 @@ class User < ApplicationRecord
         @@auth_studio['bootstrap'] = ['index']
       end
 
-      event = ENV['RAILS_APP_OWNER'];
+      event = ENV['RAILS_APP_OWNER']
       if event == 'index'
         @@auth_event = @@auth_studio.select do |userid, sites|
           not sites.empty?

@@ -24,6 +24,7 @@ class ApplicationController < ActionController::Base
         @authuser = Base64.decode64(request.headers['HTTP_AUTHORIZATION'].split(' ')[1]).split(':').first
       else
         @authuser = request.headers["HTTP_X_REMOTE_USER"]
+        @authuser ||= ENV["HTTP_X_REMOTE_USER"]
       end
     end
 end

@@ -10,6 +10,10 @@ test -e public/assets && bin/rake assets:clobber
 
 if [[ $# -gt 0 ]]; then
   export RAILS_APP_DB=$(basename -s .sqlite3 $1)
+
+  if [[ $# -gt 1 ]]; then
+    export HTTP_X_REMOTE_USER=$2
+  fi
 fi
 
 foreman start -f Procfile.dev

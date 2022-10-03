@@ -25,7 +25,7 @@ class EventController < ApplicationController
     @packages = Billable.where.not(type: 'Order').order(:order).group_by(&:type)
     @options = Billable.where(type: 'Option').order(:order)
 
-    if Studio.count == 0
+    if Studio.pluck(:name).all? {|name| name == 'Event Staff'}
       clone
     end
   end
@@ -396,6 +396,7 @@ class EventController < ApplicationController
 
     @showcases.each do |year, sites|
       sites.each do |token, info|
+        next unless User.authorized?(@authuser, info[:name])
         if info[:events]
           info[:events].each do |subtoken, subinfo|
             @sources << "#{year}-#{token}-#{subtoken}"
