@@ -9,13 +9,15 @@ class User < ApplicationRecord
   def self.authorized?(userid, site=nil)
     return true unless @@db
 
-    return true if site and @@auth_studio[userid]&.include?(site)
-    return true if @@auth_event.include?(userid)      
-
-    load_auth
-
-    return true if site and @@auth_studio[userid]&.include?(site)
-    @@auth_event.include?(userid)      
+    if site
+      return true if @@auth_studio[userid]&.include?(site)
+      load_auth
+      @@auth_studio[userid]&.include?(site)
+    else
+      return true if @@auth_event.include?(userid) 
+      load_auth
+      @@auth_event.include?(userid)
+    end    
   end
 
   def self.index_auth?(userid)
