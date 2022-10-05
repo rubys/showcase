@@ -152,5 +152,6 @@ server {
   location <%= ROOT %>/publish {
     root <%= @git_path %>/fly/applications/publish/public;
     passenger_app_group_name showcase-publish;
+    passenger_env_var SECRET_KEY_BASE 1;
   }
 }
