@@ -117,6 +117,9 @@ GEM
     marcel (1.0.2)
     matrix (0.4.2)
     method_source (1.0.0)
+    mime-types (3.4.1)
+      mime-types-data (~> 3.2015)
+    mime-types-data (3.2022.0105)
     mini_mime (1.1.2)
     minitest (5.16.3)
     msgpack (1.6.0)
@@ -134,6 +137,10 @@ GEM
     public_suffix (5.0.0)
     puma (5.6.5)
       nio4r (~> 2.0)
+    puppeteer-ruby (0.44.1)
+      concurrent-ruby (~> 1.1.0)
+      mime-types (>= 3.0)
+      websocket-driver (>= 0.6.0)
     racc (1.6.0)
     rack (2.2.4)
     rack-test (2.0.2)
@@ -231,6 +238,7 @@ DEPENDENCIES
   importmap-rails
   jbuilder
   puma (~> 5.0)
+  puppeteer-ruby (~> 0.44.1)
   rails (~> 7.0.1)
   redis (~> 4.0)
   rqrcode (~> 2.1)

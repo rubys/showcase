@@ -81,3 +81,5 @@ gem "rqrcode", "~> 2.1"
 gem "chronic", "~> 0.10.2"
 
 gem "combine_pdf", "~> 1.0"
+
+gem "puppeteer-ruby", "~> 0.44.1"

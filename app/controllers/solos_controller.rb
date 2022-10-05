@@ -20,6 +20,10 @@ class SolosController < ApplicationController
     @track_ages = Event.last.track_ages
   end
 
+  def djlist
+    index
+  end
+
   # GET /solos/1 or /solos/1.json
   def show
   end

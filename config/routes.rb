@@ -116,6 +116,7 @@ Rails.application.routes.draw do
     end
 
     resources :solos do
+      get 'djlist', on: :collection
       post 'drop', on: :collection
       post 'sort_level', on: :collection
     end
