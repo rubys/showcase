@@ -107,9 +107,6 @@ server {
 <% end -%>
 
   # Configuration common to all apps
-  set $app_path "<%= @git_path %>";
-  if ($request_uri ~ "^/showcase/publish/") { set $app_path "<%= @git_path %>/fly/applications/publish"; }
-  root <%= @app_path %>/public;
   client_max_body_size 1G;
   passenger_enabled on;
   passenger_ruby <%= RbConfig.ruby %>;
@@ -122,6 +119,7 @@ server {
 <% @tenants.each do |tenant| %>
   # <%= tenant.name %>
   location <%= ROOT %>/<%= tenant.scope %> {
+    root <%= @git_path %>/public;
     passenger_app_group_name showcase-<%= tenant.label %>;
     passenger_env_var RAILS_APP_OWNER <%= tenant.owner.inspect %>;
 <% if ENV['RAILS_DB_VOLUME'] -%>
@@ -145,13 +143,14 @@ server {
 <% end %>
   # Action cable (shared by all apps on this server listen port)
   location <%= ROOT %>/cable {
+    root <%= @git_path %>/public;
     passenger_app_group_name showcase-cable;
     passenger_force_max_concurrent_requests_per_process 0;
   }
 
   # publish
   location <%= ROOT %>/publish {
+    root <%= @git_path %>/fly/applications/publish/public;
     passenger_app_group_name showcase-publish;
-    root
   }
 }
