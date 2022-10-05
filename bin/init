@@ -4,7 +4,14 @@ cd $(dirname $(dirname $(readlink -f $0)))
 if [ -d /mnt/databases ]
 then
   chown app:app /mnt/databases
-  export RAILS_DB_VOLUME=/mnt/databases
+
+  mkdir -p /mnt/databases/db
+  chown app:app /mnt/databases/db
+  export RAILS_DB_VOLUME=/mnt/databases/db
+
+  mkdir -p /mnt/databases/shorage
+  chown app:app /mnt/databases/storage
+  export RAILS_STORAGE=/mnt/databases/storage
 fi
 
 if [ ! -f ${RAILS_DB_VOLUME:=db}/htpasswd ]

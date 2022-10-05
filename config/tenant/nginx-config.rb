@@ -97,7 +97,7 @@ server {
   allow ::1;
 
   set $realm "Showcase";
-  if ($request_uri ~ "^/showcase/(assets/|cable$|password/)") { set $realm off; }
+  if ($request_uri ~ "^/showcase/(assets/|cable$|password/|publish/)") { set $realm off; }
   if ($request_uri ~ "^/showcase/[-\w]+\.\w+$") { set $realm off; }
   if ($request_uri ~ "^/showcase/\d+/\w+/(\w+/)?public/") { set $realm off; }
   auth_basic $realm;
@@ -107,7 +107,9 @@ server {
 <% end -%>
 
   # Configuration common to all apps
-  root <%= @git_path %>/public;
+  set $app_path "<%= @git_path %>";
+  if ($request_uri ~ "^/showcase/publish/") { set $app_path "<%= @git_path %>/fly/applications/publish"; }
+  root <%= @app_path %>/public;
   client_max_body_size 1G;
   passenger_enabled on;
   passenger_ruby <%= RbConfig.ruby %>;
@@ -124,6 +126,9 @@ server {
     passenger_env_var RAILS_APP_OWNER <%= tenant.owner.inspect %>;
 <% if ENV['RAILS_DB_VOLUME'] -%>
     passenger_env_var RAILS_DB_VOLUME <%= ENV['RAILS_DB_VOLUME'] %>;
+<% end -%>
+<% if ENV['RAILS_STORAGE'] -%>
+    passenger_env_var RAILS_STORAGE <%= ENV['RAILS_STORAGE'] %>;
 <% end -%>
     passenger_env_var RAILS_APP_DB <%= tenant.label %>;
 <% if tenant.label == 'index' -%>
@@ -142,5 +147,11 @@ server {
   location <%= ROOT %>/cable {
     passenger_app_group_name showcase-cable;
     passenger_force_max_concurrent_requests_per_process 0;
+  }
+
+  # publish
+  location <%= ROOT %>/publish {
+    passenger_app_group_name showcase-publish;
+    root
   }
 }
