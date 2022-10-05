@@ -6,6 +6,7 @@ class EventController < ApplicationController
 
   def root
     @judges = Person.where(type: 'Judge')
+    @djs    = Person.where(type: 'DJ')
     @emcees = Person.where(type: 'Emcee')
 
     @event = Event.last
@@ -15,6 +16,7 @@ class EventController < ApplicationController
 
   def settings
     @judges = Person.where(type: 'Judge')
+    @djs    = Person.where(type: 'DJ')
     @emcees = Person.where(type: 'Emcee')
 
     @event ||= Event.last

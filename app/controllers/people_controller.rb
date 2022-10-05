@@ -295,7 +295,7 @@ class PeopleController < ApplicationController
       @person.studio = Studio.find(params[:studio])
       @person.type ||= 'Student'
     else
-      @types = %w[Judge Emcee Official Organizer Guest]
+      @types = %w[Judge DJ Emcee Official Organizer Guest]
     end
 
     selections
@@ -557,7 +557,7 @@ class PeopleController < ApplicationController
       @event = Event.last
 
       @studios = Studio.all.map{|studio| [studio.name, studio.id]}.to_h
-      @types ||= %w[Student Guest Professional Judge Emcee Official Organizer]
+      @types ||= %w[Student Guest Professional Judge DJ Emcee Official Organizer]
       @roles = %w[Follower Leader Both]
 
       @ages = Age.all.order(:id).map {|age| [age.description, age.id]}

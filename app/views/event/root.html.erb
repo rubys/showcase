@@ -26,6 +26,15 @@
       <li><%= link_to judge.display_name, judge %></li>
     <% end %>
   </u>
+
+  <% unless @djs.length == 0 %>
+  <h2 class="font-bold text-2xl mt-4 mb-2">DJ</h2>
+  <ul class="list-disc list-inside">
+    <% @djs.each do |dj| %>
+      <li><%= link_to dj.display_name, dj %></li>
+    <% end %>
+  </ul>
+  <% end %>
   
   <% unless @emcees.length == 0 %>
   <h2 class="font-bold text-2xl mt-4 mb-2">Emcee</h2>
