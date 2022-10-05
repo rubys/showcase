@@ -42,4 +42,8 @@ end
 
 App.initialize!
 
-Rack::Server.start(app: App, Port: ENV['PORT'])
+map ENV.fetch('RAILS_RELATIVE_URL_ROOT', '') + '/publish' do
+  run Rails.application
+end
+
+Rails.application.load_server
