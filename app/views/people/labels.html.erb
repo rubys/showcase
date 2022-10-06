@@ -12,18 +12,17 @@
     <%= javascript_importmap_tags %>
     <style>
     @page {
-      size: letter landscape; 
-      margin: 0.8in 1.3in;
+      size: 6in 4in; /* letter landscape */
+      margin: 0.7in 1.3in;
       padding: 0;
     }
     </style>
   </head>
 
   <body>
-
     
     <% @people.each_with_index do |person, index| %>
-    <% if index % 4 == 0 %>
+    <% if index % 1 == 0 # % 4 %>
     <% if index > 0 %>
     </div>
     <% end %>
