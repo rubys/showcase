@@ -31,3 +31,13 @@
   font-family: 'Berlin Sans FB Demi Bold';
   src: url('fonts/Berlin%20Sans%20FB%20Demi%20Bold.ttf') format('truetype');
 }
+
+@font-face {
+  font-family: 'Bevan Italic';
+  src: url('fonts/Bevan-Italic.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Bevan Regular';
+  src: url('fonts/Bevan-Regular.ttf') format('truetype');
+}

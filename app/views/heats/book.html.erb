@@ -37,7 +37,7 @@ tbody::after {
   font-weight: bold;
   -webkit-text-stroke: 0.5px #4338CA;
   text-stroke: 0.5px #4338CA;
-  font-family: 'Algerian Regular';
+  font-family: 'Bevan Regular';
 }
 
 .page .rotate-shadow {
@@ -75,19 +75,19 @@ tbody::after {
 <div class="mx-auto md:w-2/3 w-full print:w-full">
 
 <div class="mb-4">
-  <h2 class="font-bold text-center text-4xl" style="font-family: 'Algerian Regular'"><%= @event.name %></h1>
+  <h2 class="font-bold text-center text-4xl" style="font-family: 'Bevan Regular'"><%= @event.name %></h1>
 
   <p class="mt-4">
     <% @event.location.to_s.lines.each do |line| %>
-      <div class="text-center" style="font-family: 'Algerian Regular'"><%= line.chomp %></div>
+      <div class="text-center" style="font-family: 'Bevan Regular'"><%= line.chomp %></div>
     <% end %>
   </p>
   
-  <p class="mt-2 text-center" style="font-family: 'Berlin Sans FB Demi Bold'"><%= @event.date %></p>
+  <p class="mt-2 text-center" style="font-family: 'Bevan Regular'"><%= @event.date %></p>
 </div>
 
 <div class="justify-between items-center">
-  <h1 class="font-bold text-4xl" style="font-family: 'Berlin Sans FB Demi Bold'">Agenda</h1>
+  <h1 class="font-bold text-4xl" style="font-family: 'Bevan Regular'">Agenda</h1>
 </div>
 
   <table class="table-fixed mt-4 ml-6 mb-8">
@@ -142,15 +142,15 @@ tbody::after {
 
     <header>
     <div class="mb-4">
-      <h2 class="font-bold text-center text-4xl" style="font-family: 'Algerian Regular'"><%= @event.name %></h1>
+      <h2 class="font-bold text-center text-4xl" style="font-family: 'Bevan Regular'"><%= @event.name %></h1>
 
       <p class="mt-4">
         <% (@event.theme || @event.location).to_s.lines.each do |line| %>
-          <div class="text-center text-2xl" style="font-family: 'Algerian Regular'"><%= line.chomp %></div>
+          <div class="text-center text-2xl" style="font-family: 'Bevan Regular'"><%= line.chomp %></div>
         <% end %>
       </p>
       
-      <p class="mt-2 text-center" style="font-family: 'Berlin Sans FB Demi Bold'"><%= @event.date %></p>
+      <p class="mt-2 text-center" style="font-family: 'Bevan Regular'"><%= @event.date %></p>
     </div>
 
     <%
@@ -176,13 +176,13 @@ tbody::after {
     %>
 
     <div class="mb-4">
-    <div class="text-xl float-right"><b style="font-family: 'Berlin Sans FB Demi Bold'">Studio</b>: <%= studio %></div>
-    <div class="text-xl"><b style="font-family: 'Berlin Sans FB Demi Bold'">Level</b>: <%= heat.entry.level.name %></div>
+    <div class="text-xl float-right"><b style="font-family: 'Bevan Regular'">Studio</b>: <%= studio %></div>
+    <div class="text-xl"><b style="font-family: 'Bevan Regular'">Level</b>: <%= heat.entry.level.name %></div>
     </div>
 
    
-    <div class="text-xl mb-4 grid grid-cols-2" style="grid-template-columns: auto 1fr"><span><b style="font-family: 'Berlin Sans FB Demi Bold'">Names</b>:&nbsp;</span><span><%= dancers %></span></div>
-    <div class="text-xl"><b style="font-family: 'Berlin Sans FB Demi Bold'">Dance</b>: <%= heat.dance.name %>
+    <div class="text-xl mb-4 grid grid-cols-2" style="grid-template-columns: auto 1fr"><span><b style="font-family: 'Bevan Regular'">Names</b>:&nbsp;</span><span><%= dancers %></span></div>
+    <div class="text-xl"><b style="font-family: 'Bevan Regular'">Dance</b>: <%= heat.dance.name %>
     <% if heat.solo.combo_dance%>
     / <%= heat.solo.combo_dance.name %>
     <% end %>
@@ -190,7 +190,7 @@ tbody::after {
     </header>
 
     <div class="mt-4 content truncate text-base">
-    <div><b class="text-xl" style="font-family: 'Berlin Sans FB Demi Bold'">Comments:</b> <span class="whitespace-pre underline"><%= ' ' * 400 %></span></div>
+    <div><b class="text-xl" style="font-family: 'Bevan Regular'">Comments:</b> <span class="whitespace-pre underline"><%= ' ' * 400 %></span></div>
     <% 20.times do %>
     <div>&nbsp</div>
     <div><span class="whitespace-pre underline"><%= ' ' * 400 %></span></div>
