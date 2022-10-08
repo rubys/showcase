@@ -1,3 +1,4 @@
+<% if person %>
 <table class="" style="break-after: page">
   <thead>
   <tr>
@@ -52,15 +53,22 @@
   <% end %>
   </tbody>
 </table>
+<% end %>
 
-<% if person.type == 'Professional' and not person.instructor_entries.empty? %>
+<% if person == nil or (person&.type == 'Professional' and not person.instructor_entries.empty?) %>
 <table class="" style="break-after: page">
   <thead>
   <tr>
     <td colspan="6" class="font-bold pt-8 text-3xl pb-5" >
+      <% if person %>
       <%= person.name %> - Couples
+      <% else %>
+      <%= @studio.name %>
+      <% end %>
       <span class="font-normal text-base float-right text-right">
-        <%= person.studio.name %><br>
+        <% if person %>
+        <%= person.studio.name %>
+        <% end %>
         <%= @event.name %>
       </span>
     </td>
@@ -72,7 +80,12 @@
     <td class="row-head">Heat
     <td class="row-head">Type
     <td class="row-head">Dance
+    <% if person %>
     <td class="row-head">Students
+    <% else %>
+    <td class="row-head">Lead
+    <td class="row-head">Follow
+    <% end %>
     <td class="row-head">Category
   </tr>
   </thead>
@@ -80,7 +93,13 @@
   <% heatlist = @heatlist[person] %>
   <% @heats.each do |number, heats| %>
   <% heats.each do |heat| %>
-    <% next unless heat.entry.instructor == person %>
+    <%  
+      if person
+        next unless heat.entry.instructor == person 
+      else
+        next unless heat.entry.subject.studio == @studio
+      end
+    %>
     <% ballrooms = heat.dance_category&.ballrooms || @ballrooms %>
     <tr class="text-sm">
       <% if @start %>
@@ -94,7 +113,12 @@
       <% end %>
       <td><div class="mx-4"><%= heat.category %>
       <td><div class="mx-4"><%= heat.dance.name %></div>
+      <% if person %>
       <td><div class="mx-4"><%= link_to heat.entry.follow.join(heat.entry.lead), heat.entry.follow %></div>
+      <% else %>
+      <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div>
+      <td><div class="mx-4"><%= link_to heat.entry.follow.display_name, heat.entry.follow %></div>
+      <% end %>
       <td class="text-center"><%= heat.entry.subject_lvlcat(@track_ages) %>
     </tr>
   <% end %>

@@ -4,3 +4,13 @@
     <%= render "people/heats", person: person %>
   <% end %>
 </div>
+
+<% if @studio %>
+  <%= render "people/heats", person: nil %>
+<% else
+  Studio.order(:name).each do |studio|
+    next if studio.name == 'Event Staff'
+    @studio = studio %>
+    <%= render "people/heats", person: nil %>
+  <% end %>
+<% end %>
