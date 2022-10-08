@@ -52,3 +52,53 @@
   <% end %>
   </tbody>
 </table>
+
+<% if person.type == 'Professional' and not person.instructor_entries.empty? %>
+<table class="" style="break-after: page">
+  <thead>
+  <tr>
+    <td colspan="6" class="font-bold pt-8 text-3xl pb-5" >
+      <%= person.name %> - Couples
+      <span class="font-normal text-base float-right text-right">
+        <%= person.studio.name %><br>
+        <%= @event.name %>
+      </span>
+    </td>
+  </tr>
+  <tr>
+    <% if @start %>
+    <td class="row-head">Time
+    <% end %>
+    <td class="row-head">Heat
+    <td class="row-head">Type
+    <td class="row-head">Dance
+    <td class="row-head">Students
+    <td class="row-head">Category
+  </tr>
+  </thead>
+  <tbody>
+  <% heatlist = @heatlist[person] %>
+  <% @heats.each do |number, heats| %>
+  <% heats.each do |heat| %>
+    <% next unless heat.entry.instructor == person %>
+    <% ballrooms = heat.dance_category&.ballrooms || @ballrooms %>
+    <tr class="text-sm">
+      <% if @start %>
+      <td class="text-right pr-4"><%= @start[number]&.strftime("%-I:%M") %></td>
+      <% end %>
+      <td class="text-center"><%= heat.number %>
+      <% if ballrooms == 2 %>
+      - <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
+      <% elsif ballrooms == 3 %>
+      - <%= heats.index(heat) >= heats.length/2 ? 'B' : 'A' %>
+      <% end %>
+      <td><div class="mx-4"><%= heat.category %>
+      <td><div class="mx-4"><%= heat.dance.name %></div>
+      <td><div class="mx-4"><%= link_to heat.entry.follow.join(heat.entry.lead), heat.entry.follow %></div>
+      <td class="text-center"><%= heat.entry.subject_lvlcat(@track_ages) %>
+    </tr>
+  <% end %>
+  <% end %>
+  </tbody>
+</table>
+<% end %>
