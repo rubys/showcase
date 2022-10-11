@@ -96,6 +96,18 @@ Swiping left and right on mobile devices and tablets also work.
 
     <div class="mb-4"><span><b>Names</b>:&nbsp;</span><span><%= dancers %></span></div>
 
+    <% if @style == 'emcee' %>
+    <% unless @heat.solo.song.blank? %>
+    <div class="mb-4">
+    <div><b >Song</b>: <%= @heat.solo.song %></div>
+    </div>
+    <% end %>
+    <% unless @heat.solo.artist.blank? %>
+    <div class="mb-4">
+    <div><b >Artist</b>: <%= @heat.solo.artist %></div>
+    </div>
+    <% end %>
+    <% else %>
     <label><b>Comments:</b></label>
     <textarea data-score-target="comments" data-heat="<%= @heat.id %>" 
       class="grow block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full"
@@ -108,6 +120,7 @@ Swiping left and right on mobile devices and tablets also work.
       class="border-2 border-black invalid:border-red-600 w-24 h-24 text-6xl text-center"/>
     </div>
     </div>
+    <% end %>
 
     </div>
 
