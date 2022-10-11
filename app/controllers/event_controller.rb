@@ -35,7 +35,7 @@ class EventController < ApplicationController
 
   def counter
     @event = Event.last
-    @layout = 'mx-0'
+    @layout = 'mx-0 overflow-hidden'
   end
 
   def summary
