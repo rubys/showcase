@@ -1,3 +1,10 @@
+<style>
+html, body {
+   height: 100%;
+   overflow-y: hidden;
+}
+</style>
+
 <% if @event.counter_art.attached? %>
 <div style="background-image: url(<%= @event.counter_art.url %>); background-size: 100% 100%">
 <% else %>
