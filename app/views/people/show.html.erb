@@ -333,6 +333,12 @@ when most dances for an individual are with one instructor but one or two are ch
     </div>
     <% end %>
 
+    <% if @person.type == 'Emcee' %>
+    <div class="mt-4 mx-auto">
+    <%= link_to 'heats', judge_heatlist_path(judge: @person, style: 'emcee', sort: 'back'), class: "btn-purple" %>
+    </div>
+    <% end %>
+
     <% if @person.type == 'DJ' %>
     <div class="mt-4 mx-auto">
     <%= link_to 'Solos', djlist_solos_path, class: "btn-purple" %>

@@ -30,6 +30,7 @@ Rails.application.routes.draw do
     end
 
     resources 'event', only: [:update] do
+      get 'counter', on: :collection
       get 'publish', on: :collection
       get 'settings', on: :collection
       get 'summary', on: :collection

@@ -112,7 +112,7 @@ Swiping left and right on mobile devices and tablets also work.
     </div>
 
   </div>
-  <% elsif @style == 'radio' %>
+  <% elsif @style == 'radio' || @style == 'emcee' %>
     <div class="grow flex flex-col border-2 border-slate-400 overflow-y-auto">
     <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>
     <table class="table-auto border-separate border-spacing-y-1 mx-4">
@@ -123,6 +123,7 @@ Swiping left and right on mobile devices and tablets also work.
         <th class="text-left border-b-2 border-black" rowspan="2">Partner
         <th class="text-left border-b-2 border-black" rowspan="2">Category
         <th class="text-left border-b-2 border-black" rowspan="2">Studio
+      <% unless @style == 'emcee' %>  
       <% if @event.open_scoring == '#' %>
         <th class="text-center border-b-2 border-black">Score
       <% else %>
@@ -132,6 +133,7 @@ Swiping left and right on mobile devices and tablets also work.
         <% @scores.each do |score| %>
           <th class="border-b-2 border-black"><%= score.blank? ? '-' : score %>
         <% end %>
+      <% end %>
       <% end %>
       </tr>
     </thead>
@@ -159,6 +161,7 @@ Swiping left and right on mobile devices and tablets also work.
         <% end %>
         <td><%= subcat %>
         <td><%= subject.subject.studio.name %>
+        <% unless @style == 'emcee' %>
         <% if @event.open_scoring == '#' %>
         <td><div class="mx-auto text-center">
           <input data-score-target="score" class="text-center w-20 h-10 border-2 invalid:border-red-600" pattern="^\d\d$"
@@ -167,6 +170,7 @@ Swiping left and right on mobile devices and tablets also work.
         <% else %>
         <% @scores.each do |score| %>
         <td class="text-center"><input type="radio" name="<%= subject.id %>" value="<%= score %>"<%= @results[subject]==score ? ' checked' : '' %>>
+        <% end %>
         <% end %>
         <% end %>
         <% end %>

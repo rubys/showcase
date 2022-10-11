@@ -1,0 +1,4 @@
+<div class="bg-lime-600 flex flex-col h-screen justify-center items-center">
+  <%= turbo_stream_from "current-heat-#{ENV['RAILS_APP_DB']}" %>
+  <div class="text-white text-9xl p-2"><%= render partial: 'event/heat', locals: {event: @event} %></div>
+</div>

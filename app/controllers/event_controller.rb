@@ -32,6 +32,11 @@ class EventController < ApplicationController
     end
   end
 
+  def counter
+    @event = Event.last
+    @layout = 'mx-0'
+  end
+
   def summary
     @people = Person.includes(:level, :age, :lead_entries, :follow_entries, options: :option, package: {package_includes: :option}).
       all.select(&:active?).group_by {|person| person.type}

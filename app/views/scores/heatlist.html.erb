@@ -8,6 +8,7 @@
   <div class="float-right w-60" title="<%= judge_heatlist_url(@judge, style: @style, sort: @sort) %>">
   <%= RQRCode::QRCode.new(judge_heatlist_url(@judge, style: @style, sort: @sort)).as_svg(viewbox: true).html_safe %>
 
+  <% unless @style == 'emcee' %>
   <h2 class="mt-12 font-bold text-2xl">Sort order</h2>
   <form method="post" data-controller="auto-submit" action="<%= sort_scores_path %>">
     <input type="hidden" name="style" value="<%= @style %>">
@@ -20,6 +21,7 @@
       <span>Level</span>
     </div>
   </form>
+  <% end %>
   </div>
 
   <table>
