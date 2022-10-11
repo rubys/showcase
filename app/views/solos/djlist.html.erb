@@ -31,7 +31,7 @@
        <ul>
        <% unless heat.solo.song.blank? %><li><%= heat.solo.song %><% end %>
        <% unless heat.solo.artist.blank? %><li><%= heat.solo.artist %><% end %>
-       <% unless heat.solo.song_file.blank? %>
+       <% if heat.solo.song_file.attached? %>
        <li>
          <audio controls style="display: inline">
            <source src=<%= heat.solo.song_file.url %> type=<%= heat.solo.song_file.content_type %>>

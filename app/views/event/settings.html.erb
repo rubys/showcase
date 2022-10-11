@@ -114,6 +114,15 @@
     <%= form.check_box :track_ages, class: 'entry-count h-10' %>
   </div>
 
+  <div class="my-5">
+    <%= form.label :counter_art %>
+    <% if @event.counter_art.attached? and not Rails.env.test? %>
+    <%= image_tag @event.counter_art.url, style: 'height: 5em' %>
+    <% end %>
+    <%= form.file_field :counter_art, 
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
   <div class="inline">
     <%= form.submit value: 'Save', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
   </div>

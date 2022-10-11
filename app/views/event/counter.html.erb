@@ -1,4 +1,10 @@
-<div class="bg-lime-600 flex flex-col h-screen justify-center items-center">
+<% if @event.counter_art.attached? %>
+<div style="background-image: url(<%= @event.counter_art.url %>); background-size: 100% 100%">
+<% else %>
+<div class="bg-gradient-to-r from-violet-500 to-fuchsia-500">
+<% end %>
+<div class="flex flex-col h-screen justify-center items-center">
   <%= turbo_stream_from "current-heat-#{ENV['RAILS_APP_DB']}" %>
-  <div class="text-white text-9xl p-2"><%= render partial: 'event/heat', locals: {event: @event} %></div>
+  <div class="text-white p-2" style="font-size: 50vw"><%= render partial: 'event/heat', locals: {event: @event} %></div>
+</div>
 </div>
