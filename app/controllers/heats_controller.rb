@@ -29,6 +29,7 @@ class HeatsController < ApplicationController
     @event = Event.last
     @layout = 'mx-0'
     @nologo = true
+    @search = params[:q] || params[:search]
   end
 
   def djlist
