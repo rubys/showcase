@@ -19,6 +19,7 @@
   </thead>
   <% @solos.each do |cat, heats| %>
   <% heats.each do |heat| %>
+    <% next if heat.number <= 0 %>
     <tr class="hover:bg-yellow-200" id="<%= dom_id heat.solo %>">
        <td class="text-center"><%= heat.number %>
        <% if heat.category == 'Solo' and heat.solo.combo_dance %>
