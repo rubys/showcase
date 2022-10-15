@@ -12,6 +12,8 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key
  && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list \
  && apt-get update && apt-get install -y google-chrome-stable
 
+RUN echo 'env RAILS_MASTER_KEY;' >> /etc/nginx/main.d/default.conf
+
 USER app
 RUN mkdir /home/app/showcase
 WORKDIR /home/app/showcase
