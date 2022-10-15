@@ -4,7 +4,8 @@ test:
 
 local:
   service: Disk
-  root: /mnt/databases/storage
+  root: 
+  root: <%= Rails.root.join("storage") %>
 
 # Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
 # amazon:
