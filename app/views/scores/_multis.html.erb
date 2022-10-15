@@ -12,8 +12,8 @@
         <th class="row-head">Points
         <th class="row-head">Lead
         <th class="row-head">Follow
-        <% if @open_scoring != '#' %>
-        <% ScoresController::SCORES['Multi'].each do |score| %>
+        <% if @multi_scoring != '#' %>
+        <% @score_range.each do |score| %>
         <th class="row-head bg-slate-200"><%= score %>
         <% end %>
         <% end %>

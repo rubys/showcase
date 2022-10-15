@@ -47,6 +47,8 @@ class ScoresController < ApplicationController
       @dance = "#{category} #{@subjects.first.dance.name}"
       if category == 'Open' and @event.open_scoring == 'G'
         @scores = SCORES['Closed'].dup
+      elsif category == 'Multi' and @event.multi_scoring == 'G'
+        @scores = SCORES['Closed'].dup
       else
         @scores = SCORES[category].dup
       end
@@ -279,25 +281,28 @@ class ScoresController < ApplicationController
   end
 
   def multis
-    @open_scoring = Event.first.open_scoring
+    @multi_scoring = Event.first.multi_scoring
     dances = Dance.where.not(multi_category_id: nil).
       includes(multi_children: :dance, heats: [{entry: [:lead, :follow]}, :scores]).
       order(:order)
+
+    @score_range = SCORES['Multi']
+    @score_range = SCORES['Closed'] if @multi_scoring == 'G'
 
     @scores = {}
     dances.each do |dance|
       @scores[dance] = {}
       dance.heats.map(&:scores).flatten.group_by {|score| score.heat.entry}.map do |entry, scores|
         @scores[dance][entry] = {
-          'Multi' => SCORES['Multi'].map {0},
+          'Multi' => @score_range.map {0},
           'points' => 0
         }
 
         scores.each do |score|
-          if @open_scoring == '#'
+          if @multi_scoring == '#'
             @scores[dance][entry]['points'] += score.value.to_i
           else
-            value = SCORES['Multi'].index score.value
+            value = @score_range.index score.value
             if value
               @scores[dance][entry]['Multi'][value] += 1
               @scores[dance][entry]['points'] += WEIGHTS[value]

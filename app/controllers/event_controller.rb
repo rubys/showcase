@@ -72,8 +72,9 @@ class EventController < ApplicationController
   def update
     @event = Event.last
     old_open_scoring = @event.open_scoring
+    old_multi_scoring = @event.multi_scoring
     ok = @event.update params.require(:event).permit(:name, :theme, :location, :date, :heat_range_cat, :heat_range_level, :heat_range_age,
-      :intermix, :ballrooms, :column_order, :backnums, :track_ages, :heat_length, :solo_length, :open_scoring,
+      :intermix, :ballrooms, :column_order, :backnums, :track_ages, :heat_length, :solo_length, :open_scoring, :multi_scoring,
       :heat_cost, :solo_cost, :multi_cost, :max_heat_size, :package_required, :student_package_description, :payment_due,
       :counter_art)
 
@@ -91,6 +92,25 @@ class EventController < ApplicationController
 
       Score.transaction do
         Score.includes(:heat).where(heat: {category: 'Open'}).each do |score|
+          score.update(value: map[score.value]) if map[score.value]
+        end
+      end
+    end
+
+    if @event.multi_scoring != old_multi_scoring and @event.multi_scoring != '#' and @event.multi_scoring != '#'
+      map = {
+        "1" => "GH",
+        "2" => "G",
+        "3" => "S",
+        "4" => "B",
+        "GH" => "1",
+        "G" => "2",
+        "S" => "3",
+        "B" => "4"
+      }
+
+      Score.transaction do
+        Score.includes(:heat).where(heat: {category: 'Multi'}).each do |score|
           score.update(value: map[score.value]) if map[score.value]
         end
       end
