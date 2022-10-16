@@ -12,7 +12,7 @@ class EventController < ApplicationController
 
     @event = Event.last
 
-    @heats = Heat.distinct.count(:number)
+    @heats = Heat.where(number: 1..).distinct.count(:number)
   end
 
   def settings

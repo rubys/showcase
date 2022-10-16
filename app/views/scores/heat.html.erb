@@ -166,7 +166,11 @@ Swiping left and right on mobile devices and tablets also work.
       </tr>
       <% end %>
       <% lastcat = subcat %>
+      <% if subject.number > 0 %>
       <tr class="hover:bg-yellow-200">
+      <% else %>
+      <tr class="hover:bg-yellow-200 line-through opacity-50">
+      <% end %>
         <td class="py-2"><%= subject.lead.back %>
         <% if subject.lead.type == 'Student' %>
         <td><%= subject.follow.display_name %>
