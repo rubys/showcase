@@ -103,11 +103,6 @@ class UsersController < ApplicationController
       @user.link = params[:link]
       @user.save!
 
-      # hack for now
-      Mail.defaults do
-        delivery_method :smtp, address: 'mail.twc.com'
-      end
-
       mail = Mail.new do
         from 'Sam Ruby <rubys@intertwingly.net>'
         to "#{user.name1.inspect} <#{user.email}>"
@@ -122,6 +117,9 @@ class UsersController < ApplicationController
         part.html_part = render_to_string(:reset_email, formats: %i(html), layout: false)
       end
   
+      mail.delivery_method :smtp,
+        Rails.application.credentials.smtp || { address: 'mail.twc.com' }
+
       mail.deliver!
 
       redirect_to root_path, notice: "Password reset email sent."
