@@ -35,6 +35,12 @@ class PublishController < ActionController::Base
     Puppeteer.launch do |browser|
       page = browser.new_page
       page.goto(params[:url], wait_until: 'networkidle0')
+      page.addStyleTag(content: "
+        html {
+          -webkit-print-color-adjust: exact !important;
+          -webkit-filter: opacity(1) !important;
+        }
+      ")
       render plain: page.pdf(format: 'letter'), content_type: "application/pdf"
     end
   end
