@@ -64,6 +64,9 @@ end
 
   count = `sqlite3 #{@dbpath}/#{tenant.label}.sqlite3 "select count(*) from events"`.to_i
   system 'bin/rails db:seed' if count == 0
+
+  storage = File.join(@storage, tenant.label)
+  Dir.mkdir storage unless Dir.exist? storage
 end
 
 old_conf = IO.read(SHOWCASE_CONF) rescue ''
