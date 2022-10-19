@@ -4,7 +4,7 @@ test:
 
 local:
   service: Disk
-  root: ENV.fetch('RAILS_STORAGE', Rails.root.join("storage")) %>
+  root: <%= ENV.fetch('RAILS_STORAGE', Rails.root.join("storage")) %>
 
 # Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
 # amazon:
