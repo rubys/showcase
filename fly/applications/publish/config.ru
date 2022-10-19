@@ -35,7 +35,7 @@ class PublishController < ActionController::Base
     Puppeteer.launch do |browser|
       page = browser.new_page
       page.goto(params[:url], wait_until: 'networkidle0')
-      page.addStyleTag(content: "
+      page.add_style_tag(content: "
         html {
           -webkit-print-color-adjust: exact !important;
           -webkit-filter: opacity(1) !important;
