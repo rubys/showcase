@@ -16,6 +16,7 @@ end
 SHOWCASE_CONF = "#{NGINX_CONF}/showcase.conf"
 
 @git_path = File.realpath(File.expand_path('../..', __dir__))
+@storage = ENV['RAILS_STORAGE'] || File.join(@git_path, 'storage')
 
 showcases = YAML.load_file("#{__dir__}/showcases.yml")
 
@@ -125,9 +126,7 @@ server {
 <% if ENV['RAILS_DB_VOLUME'] -%>
     passenger_env_var RAILS_DB_VOLUME <%= ENV['RAILS_DB_VOLUME'] %>;
 <% end -%>
-<% if ENV['RAILS_STORAGE'] -%>
-    passenger_env_var RAILS_STORAGE <%= ENV['RAILS_STORAGE'] %>;
-<% end -%>
+    passenger_env_var RAILS_STORAGE <%= File.join(@storage, tenant.label) %>;
     passenger_env_var RAILS_APP_DB <%= tenant.label %>;
 <% if tenant.label == 'index' -%>
     passenger_env_var RAILS_SERVE_STATIC_FILES true;
