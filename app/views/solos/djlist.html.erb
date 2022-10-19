@@ -17,8 +17,7 @@
     <th class="row-head">Follow
     <th class="row-head">Studio
   </thead>
-  <% @solos.each do |cat, heats| %>
-  <% heats.each do |heat| %>
+  <% @heats.each do |heat| %>
     <% next if heat.number <= 0 %>
     <tr class="hover:bg-yellow-200" id="<%= dom_id heat.solo %>">
        <td class="text-center"><%= heat.number %>
@@ -54,7 +53,6 @@
        <% end %>
        <td class="row"><%= link_to heat.studio.name, heat.studio %>
     </tr>
-  <% end %>
   <% end %>
   </table>
 </div>

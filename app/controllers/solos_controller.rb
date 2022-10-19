@@ -22,6 +22,8 @@ class SolosController < ApplicationController
 
   def djlist
     index
+
+    @heats = @solos.map {|solo| solo.last}.flatten.sort_by {|heat| heat.number}
   end
 
   # GET /solos/1 or /solos/1.json
