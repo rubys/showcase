@@ -1,0 +1,70 @@
+<div class="w-full">
+  <% if notice.present? %>
+    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+  <% end %>
+
+  <div class="flex justify-between items-center">
+    <h1 class="mx-auto font-bold text-4xl">Solos: <%= @studios.map(&:name).join(' and ') %></h1>
+  </div>
+
+  <div class="min-w-full">
+  <table class="mt-4 table-auto mx-auto">
+  <thead>
+    <th class="row-head">Heat
+    <th class="row-head">Dance
+    <th class="row-head">Song
+    <th class="row-head">Lead
+    <th class="row-head">Follow
+  </thead>
+  <% @solos.each do |solo| %>
+    <% heat = solo.heat %>
+    <% next if heat.number <= 0 %>
+    <tr class="hover:bg-yellow-200 group py-2" id="<%= dom_id solo %>">
+       <td class="text-center py-6"><%= heat.number %>
+       <% if heat.category == 'Solo' and solo.combo_dance %>
+       <td class="row"><%= link_to heat.dance.name, edit_dance_path(heat.dance) %> / 
+       <%= link_to solo.combo_dance.name, edit_dance_path(solo.combo_dance) %>
+       <% else %>
+       <td class="row"><%= link_to heat.dance.name, edit_dance_path(heat.dance) %>
+       <% end %>
+       <td>
+       <ul>
+       <% unless solo.song.blank? %><li><%= solo.song %><% end %>
+       <% unless solo.artist.blank? %><li><%= solo.artist %><% end %>
+       <% if solo.song_file.attached? %>
+       <li>
+         <audio controls style="display: inline">
+           <source src=<%= solo.song_file.url %> type=<%= solo.song_file.content_type %>>
+         </audio>
+       </li>
+       <% end %>
+       </ul>
+       <td class="row"><%= link_to heat.lead.display_name, polymorphic_path(heat.lead, anchor: 'heats') %>
+       <% solo.formations.each_with_index do |formation, index| %>
+         <% if index % 2 == 0 and formation.on_floor %>
+         <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
+         <% end %>
+       <% end %>
+       <td class="row"><%= link_to heat.follow.display_name, polymorphic_path(heat.follow, anchor: 'heats') %>
+       <% solo.formations.each_with_index do |formation, index| %>
+         <% if index % 2 == 1 and formation.on_floor %>
+         <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
+         <% end %>
+       <% end %>
+       <td class="px-4">
+         <form method="get" action="<%= edit_solo_path(solo) %>">
+         <button type="submit" class='group-hover:inline hidden x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium'>Edit</button>
+         </form>
+       </td>
+    </tr>
+  <% end %>
+  </table>
+
+</div>
+
+
+  <div class="flex justify-center">
+  <%= link_to 'Back to studio', @studio, class: "btn-green" %>
+  </div>
+
+</div>

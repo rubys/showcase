@@ -1,7 +1,8 @@
 class StudiosController < ApplicationController
   include Printable
+  include ActiveStorage::SetCurrent
 
-  before_action :set_studio, only: %i[ show edit update unpair destroy heats scores invoice student_invoices send_invoice ]
+  before_action :set_studio, only: %i[ show edit update unpair destroy heats scores invoice student_invoices send_invoice solos ]
 
   # GET /studios or /studios.json
   def index
@@ -56,6 +57,13 @@ class StudiosController < ApplicationController
          render_as_pdf basename: "#{@studio.name}-heat-sheets"
        end
     end
+  end
+
+  def solos
+    @studios = [@studio] + @studio.pairs
+    @solos = Solo.includes(heat: {entry: [:lead, :follow]}).where(follow: {studio_id: @studios}).
+      or(Solo.includes(heat: {entry: [:lead, :follow]}).where(follow: {studio_id: @studios})).
+      order('number')
   end
 
   def scores

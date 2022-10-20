@@ -102,6 +102,7 @@ Rails.application.routes.draw do
       get 'labels', on: :collection
       get 'send-invoice', on: :member
       post 'send-invoice', on: :member
+      get 'solos', on: :member
     end
 
     get '/scores/:judge/heatlist', to: 'scores#heatlist', as: 'judge_heatlist'
