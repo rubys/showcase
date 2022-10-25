@@ -9,7 +9,12 @@ fi
 test -e public/assets && bin/rake assets:clobber
 
 if [[ $# -gt 0 ]]; then
+  DIR="$( dirname -- "${BASH_SOURCE[0]}"; )";   # Get the directory name
+  DIR="$( realpath -e -- "$DIR"; )";    # Resolve its full path if need be
+  BASE="$(realpath $DIR/..)"
+
   export RAILS_APP_DB=$(basename -s .sqlite3 $1)
+  export RAILS_STORAGE=$BASE/storage/$(basename -s .sqlite3 $1)
 
   if [[ $# -gt 1 ]]; then
     export HTTP_X_REMOTE_USER=$2
