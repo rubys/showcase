@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Showcase</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= stylesheet_link_tag "docs", "data-turbo-track": "reload" %>
+  </head>
+
+  <body>
+    <%= link_to root_path.chomp('/') + '/' do %>
+      <%= image_tag showcase_logo, class: "icon" %>
+    <% end %>
+    
+    <main>
+      <%= yield %>
+    </main>
+  </body>
+</html>

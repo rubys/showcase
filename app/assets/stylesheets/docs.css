@@ -1,0 +1,16 @@
+body {
+  margin-top: 1in;
+  font-size: 1.5em;
+  font-family: "Inter var, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji";
+}
+
+main {
+  margin: auto;
+  max-width: 60%;
+}
+
+.icon {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+}

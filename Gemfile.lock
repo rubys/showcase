@@ -109,6 +109,8 @@ GEM
     jbuilder (2.11.5)
       actionview (>= 5.0.0)
       activesupport (>= 5.0.0)
+    kramdown (2.4.0)
+      rexml
     loofah (2.19.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.5.9)
@@ -237,6 +239,7 @@ DEPENDENCIES
   fast_excel (~> 0.4.0)
   importmap-rails
   jbuilder
+  kramdown (~> 2.4)
   puma (~> 5.0)
   puppeteer-ruby (~> 0.44.1)
   rails (~> 7.0.1)
