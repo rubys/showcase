@@ -1,3 +1,5 @@
+# Invoicing
+
 Two types of invoice are supported: student invoices (the amounts student pay to their studio), and studio invoices (the amounts studios pay to the event organizer).  Invoices are also useful for confirmation that entries were entered correctly.
 
 ## Setup

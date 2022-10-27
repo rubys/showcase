@@ -1,3 +1,5 @@
+# Scratches and Walk Ons
+
 Things always come up at the last minute which will require changes after you've gone to print.
 
 Even if you've clicked the lock button on agenda page once you have gone to print (and it is highly recommended that you do so), you can continue to add remove entries, either by editing entries or individual heats.  See [Changing Entries](./Entries#changing-entries) for more information.

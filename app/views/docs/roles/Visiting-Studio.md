@@ -12,8 +12,6 @@ to access this page anywhere: desktop, laptop, tablet, and even your phone.
 
 At the top right of the page will be a francise logo.  Click on it to return to the home page the event.
 
-At the top left of some pages will be a green ⓘ symbol.  Click on it to get help.
-
 Look for a green Studios button.  This will take you to where you will do most of your work.
 
 ## Studios
@@ -33,7 +31,7 @@ When done, click on Create Studio.
 
 Click on a studio name to see a list of participants for that studio.
 
-From that page, C=click on Add Person to add Professionals, Students, and Guests to your list.
+From that page, click on Add Person to add Professionals, Students, and Guests to your list.
 It generally is best to add Professionals before students.
 
 Names work best if entered as last name first and some of the generated results will

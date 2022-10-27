@@ -1,3 +1,5 @@
+# Entries
+
 ## Adding entries
 
  * Add studio(s).  If an owner has multiple studios and instructors from one studio may dance with students from either studio be sure to pair the studios at this time.

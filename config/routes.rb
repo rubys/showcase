@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
-  get "/docs/:page", to: "docs#page"
+  get "/docs/", to: "docs#page", trailing_slash: true, defaults: {page: 'index'}
+  get "/docs/*page", to: "docs#page"
 
   # if ENV['RAILS_RELATIVE_URL_ROOT'].present?
   #   mount ActionCable.server => "#{ENV['RAILS_RELATIVE_URL_ROOT']}/cable"

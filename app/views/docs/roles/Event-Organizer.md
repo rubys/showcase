@@ -1,3 +1,5 @@
+# Event Organizer
+
 At this point you have been assigned an id, set a password, and an event has been created for you.
 
 There are three basic activities needed to get started:

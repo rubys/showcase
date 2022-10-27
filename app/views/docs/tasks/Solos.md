@@ -1,3 +1,5 @@
+# Solos
+
 Solos are different from other heats beyond the obvious: only one set of participants are on the floor.
 
 ## Quick start

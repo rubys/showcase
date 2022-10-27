@@ -5,12 +5,47 @@ body.docs {
 }
 
 .docs main {
-  margin: auto;
-  max-width: 60%;
+  margin: 0 2em;
+}
+
+@media only screen and (min-width: 768px) {
+  .docs main {
+    margin: auto;
+    max-width: 60%;
+  }
 }
 
 .docs .icon {
   position: absolute;
   right: 16px;
   top: 16px;
+}
+
+.docs p {
+  margin: 0.8em 0;
+}
+
+.docs h1 {
+  font-size: xxx-large;
+  text-align: center;
+}
+
+.docs h2 {
+  margin-top: 0.5em;
+  font-size: xx-large;
+}
+
+.docs ul {
+  list-style: revert;
+}
+
+.docs ul {
+  margin: revert;
+  padding: revert;
+} 
+
+.docs a {
+  color: revert;
+  text-decoration: underline;
+  cursor: revert;
 }

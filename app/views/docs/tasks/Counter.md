@@ -1,3 +1,5 @@
+# Counter
+
 Most events have one or more displays showing the current heat number.
 
   * On the settings page you can upload cover art.
