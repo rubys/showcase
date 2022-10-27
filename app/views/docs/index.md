@@ -19,6 +19,9 @@ can click on it to see helpful hints related to the page you are on.</li>
 
  * [Event Organizer](./roles/Event-Organizer)
  * [Visiting Studio](./roles/Visiting-Studio)
+ * [Judge](./roles/Judge)
+ * [DJ](./roles/DJ)
+ * [Emcee](./roles/Emcee)
 
 ## Topics
 
