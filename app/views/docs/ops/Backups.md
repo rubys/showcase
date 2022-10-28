@@ -1,0 +1,17 @@
+# Backups
+
+Event databases, counter backgrounds, and solo music are all backed up.
+
+There are two separate backups performed automatically:
+
+  * Daily backups - these are stored on the same machine.
+  * Idle backups - these are performed five minutes after the last access is made
+    to the application.  These are stored on a separate machine at the
+    same location.
+
+Additionally, I frequently make copies of the data onto my development machine
+for testing.  I'm also starting to test deployment on [fly.io](https://fly.io/)
+so there may be a copy "in the cloud".
+
+On the "publish" page there are links where you can export your database in
+a number of formats.

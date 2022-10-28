@@ -4,18 +4,21 @@
   <li>When you see an <span class="text-emerald-600">ⓘ</span> in the top left corner of the page, you
 can click on it to see helpful hints related to the page you are on.</li>
   <li>The purpose of this guide is to help you find the right page.</li>
-  <li>This guide is for busy event staff, i.e. people with day jobs.  People who want quick answers so that
-  they can return to the task at hand.</li>
-  <li>Be sure to read the information related to your role, then feel free to select individual topics in any order.</li>
+
   <li>Click on the <span class="text-emerald-600">ⓘ</span> again to dismiss the hints.</li>
   </ul>
 </div>
 
 # Showcase Application Guide
 
+This guide is for busy event staff, i.e. people with day jobs.  People who want quick answers so that
+they can return to the task at hand.
+
 <p class="mt-4">Click on the <span class="text-emerald-600">ⓘ</span> in the top left corner of this page to see helpful hints.</p>
 
 ## Roles
+
+Be sure to read the information related to your role, then feel free to select individual topics in any order.
 
  * [Event Organizer](./roles/Event-Organizer)
  * [Visiting Studio](./roles/Visiting-Studio)
@@ -23,7 +26,7 @@ can click on it to see helpful hints related to the page you are on.</li>
  * [DJ](./roles/DJ)
  * [Emcee](./roles/Emcee)
 
-## Topics
+## Tasks
 
 Think of the application like a calculator with buttons you may never use.  That's ok, use as much or as little as you like.
 
@@ -39,3 +42,15 @@ Think of the application like a calculator with buttons you may never use.  That
  * [Scoring](./tasks/Scoring) - entering scores and determining winners
  * [Scratches and Walk-ons](./tasks/Scratches-and-Walk-ons) - handling last minute changes
  * [Solos](./tasks/Solos) - entering and ordering solos, uploading and playing music
+
+## Operations
+
+Following are things that you don't need to worry about to use the program, but might
+want to be aware of.
+
+ * [Backups](./ops/Backups) - copies of your database in case of failure
+ * [Cost](./ops/Cost) - yes, this application is indeed free
+ * [Devices](./ops/Devices) - access this application from any browser
+ * [Hosting](./ops/Hosting) - where the server currently is, and where it can and will be in the future
+ * [Logging](./ops/Logging) - every access is logged
+ * [Passwords](./ops/Passwords) - obtaining access and resetting passwords
