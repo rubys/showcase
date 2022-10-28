@@ -1,6 +1,6 @@
 # Visiting Studios
 
-Studios will be asssigned a user id, and will be sent an email to reset their password.
+Studios will be assigned a user id, and will be sent an email to reset their password.
 Feel free to share that user and password with studio staff.
 
 Event databases are backed up, and every access is authenticated and logged.  If for any
