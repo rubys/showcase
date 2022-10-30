@@ -129,7 +129,7 @@ server {
   allow ::1;
 
   set $realm "Showcase";
-  if ($request_uri ~ "^/showcase/(assets/|cable$|docs/|password/|publish/)") { set $realm off; }
+  if ($request_uri ~ "^/showcase/(assets/|cable$|docs/|password/|publish/|$)") { set $realm off; }
   <%- if @region -%>
   if ($request_uri ~ "^/showcase/<%= @cables %>/cable$") { set $realm off; }
   <%- end -%>

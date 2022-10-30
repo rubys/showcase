@@ -5,7 +5,7 @@ class EventController < ApplicationController
   include DbQuery
   include ActiveStorage::SetCurrent
 
-  skip_before_action :authenticate_user, only: %i[ counter ]
+  skip_before_action :authenticate_user, only: %i[ counter, showcases ]
 
   def root
     @judges = Person.where(type: 'Judge')
