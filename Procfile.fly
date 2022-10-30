@@ -1,0 +1,2 @@
+web: nginx -g 'daemon off;'
+redis: redis-server /etc/redis/redis.conf

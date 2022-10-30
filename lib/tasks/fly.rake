@@ -19,6 +19,10 @@ namespace :fly do
   #    to last successful deploy (if any).
   task :server => :swapfile do
     sh Rails.application.root.join('bin/init').to_s
+
+    Bundler.with_original_env do
+      sh "foreman start --procfile=Procfile.fly"
+    end
   end
 
   # optional SWAPFILE task:
@@ -28,7 +32,7 @@ namespace :fly do
   #  - disable by removing dependency on the :server task, thus:
   #        task :server => 'db:migrate' do
   task :swapfile do
-    sh 'fallocate -l 512M /swapfile'
+    sh 'fallocate -l 1024M /swapfile'
     sh 'chmod 0600 /swapfile'
     sh 'mkswap /swapfile'
     sh 'echo 10 > /proc/sys/vm/swappiness'

@@ -246,7 +246,7 @@ module Printable
     end
 
     system chrome, '--headless', '--disable-gpu', '--print-to-pdf-no-header',
-      "--print-to-pdf=#{tmpfile.path}", url.to_s
+      "--no-sandbox", "--print-to-pdf=#{tmpfile.path}", url.to_s
 
     unless concat.empty?
       concat.unshift tmpfile.path

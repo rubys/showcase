@@ -8,12 +8,11 @@ processes = []
 [build]
   [build.args]
     BUNDLER_VERSION = "2.3.18"
-    NODE_VERSION = "14"
     RUBY_VERSION = "3.1.1"
+    SERVER_COMMAND = "bin/rails fly:server"
 
 [env]
   PORT = "9999"
-  SERVER_COMMAND = "nginx"
   RAILS_DB_VOLUME = "/mnt/databases"
 
 [mounts]

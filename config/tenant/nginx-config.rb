@@ -116,6 +116,11 @@ if restart
 end
 
 __END__
+<% if @region -%>
+passenger_default_user root;
+passenger_default_group root;
+
+<% end -%>
 server {
   listen 9999;
   port_in_redirect off;
