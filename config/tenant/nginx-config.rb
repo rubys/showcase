@@ -119,9 +119,19 @@ __END__
 server {
   listen 9999;
   port_in_redirect off;
+<% if ENV['FLY_APP_NAME'] -%>
+  server_name <%= ENV['FLY_APP_NAME'] %>.fly.dev;
+<% else -%>
   server_name localhost;
+<% end -%>
   rewrite ^/(showcase)?$ /showcase/ redirect;
+  rewrite ^/assets/ /showcase/assets/ last;
 
+<% if @region -%>
+  access_log /dev/stdout;
+  error_log /dev/stdout info;
+
+<% end -%>
   # Authentication
 <% if File.exist? "#{@dbpath}/htpasswd" -%>
   satisfy any;
