@@ -37,27 +37,55 @@ showcases.each do |year, list|
     if info[:events]
       info[:events].each do |subtoken, subinfo|
         @tenants << OpenStruct.new(
-          owner: info[:name],
-          name:  info[:name] + ' - ' + subinfo[:name] ,
-          label: "#{year}-#{token}-#{subtoken}",
-          scope: "#{year}/#{token}/#{subtoken}",
-          logo:  info[:logo],
+          owner:  info[:name],
+          region: info[:region],
+          name:   info[:name] + ' - ' + subinfo[:name] ,
+          label:  "#{year}-#{token}-#{subtoken}",
+          scope:  "#{year}/#{token}/#{subtoken}",
+          logo:   info[:logo],
         )
       end
     else
       @tenants << OpenStruct.new(
-        owner: info[:name],
-        name:  info[:name],
-        label: "#{year}-#{token}",
-        scope: "#{year}/#{token}",
-        logo:  info[:logo],
+        owner:  info[:name],
+        region: info[:region],
+        name:   info[:name],
+        label:  "#{year}-#{token}",
+        scope:  "#{year}/#{token}",
+        logo:   info[:logo],
       )
     end
   end
 end
 
+@region = ENV['FLY_REGION']
+years = showcases.select {|year, sites| sites.any? {|name, site| site[:region] == @region}}.
+  map do |year, sites|
+    sites.select! {|name, site| site[:region] == @region}
+    sites = sites.map do |name, site| 
+      if site[:events]
+        name + '/(' + site[:events].keys.join('|') + ')'
+      else
+        name
+      end
+    end
+
+    if sites.length == 1
+      year.to_s + '/' + sites.first
+    else
+      year.to_s + '/(' + sites.join('|') + ')'
+    end
+  end
+
+if years.length == 1
+  @cables = years.first
+else
+  @cables = '(' + years.join('|') + ')'
+end
+
 @dbpath = ENV.fetch('RAILS_DB_VOLUME') { "#{@git_path}/db" }
 @tenants.each do |tenant|
+  next if @region and tenant.region and @region != tenant.region
   ENV['RAILS_APP_DB'] = tenant.label
   system 'bin/rails db:create' unless File.exist? "#{@dbpath}/#{tenant.label}.sqlite3"
   system 'bin/rails db:migrate'
@@ -102,6 +130,9 @@ server {
 
   set $realm "Showcase";
   if ($request_uri ~ "^/showcase/(assets/|cable$|docs/|password/|publish/)") { set $realm off; }
+  <%- if @region -%>
+  if ($request_uri ~ "^/showcase/<%= @cables %>/cable$") { set $realm off; }
+  <%- end -%>
   if ($request_uri ~ "^/showcase/[-\w]+\.\w+$") { set $realm off; }
   if ($request_uri ~ "^/showcase/\d+/\w+/(\w+/)?public/") { set $realm off; }
   auth_basic $realm;
@@ -122,7 +153,14 @@ server {
   passenger_env_var RAILS_APP_CABLE wss://rubix.intertwingly.net<%= ROOT %>/cable;
 <% @tenants.each do |tenant| %>
   # <%= tenant.name %>
+<% if @region and tenant.scope -%>
+  rewrite <%= ROOT %>/<%= tenant.scope %>/cable <%= ROOT %>/cable last;
+<% end -%>
   location <%= ROOT %>/<%= tenant.scope %> {
+<% if @region and tenant.region and @region != tenant.region -%>
+    return 409 "wrong region\n";
+    add_header Fly-Replay region=<%= tenant.region %> always;
+<% else -%>
     root <%= @git_path %>/public;
     passenger_app_group_name showcase-<%= tenant.label %>;
     passenger_env_var RAILS_APP_OWNER <%= tenant.owner.inspect %>;
@@ -141,6 +179,7 @@ server {
 <% end -%>
 <% end -%>
     passenger_env_var PIDFILE <%= @git_path %>/tmp/pids/<%= tenant.label %>.pid;
+<% end -%>
   }
 <% end %>
   # Action cable (shared by all apps on this server listen port)

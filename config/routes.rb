@@ -2,10 +2,9 @@ Rails.application.routes.draw do
   get "/docs/", to: "docs#page", trailing_slash: true, defaults: {page: 'index'}
   get "/docs/*page", to: "docs#page"
 
-  # if ENV['RAILS_RELATIVE_URL_ROOT'].present?
-  #   mount ActionCable.server => "#{ENV['RAILS_RELATIVE_URL_ROOT']}/cable"
-  # end
-  mount ActionCable.server => "/showcase/cable"
+  unless ENV['FLY_REGION']
+    mount ActionCable.server => "/showcase/cable"
+  end
  
   scope ENV.fetch("RAILS_APP_SCOPE", '') do
 

@@ -2,6 +2,7 @@
 2022:                                                                           
   annapolis:
     :name: Annapolis
+    :region: iad
     :logo: arthur-murray-logo.gif
     :events:                                          
       :medalball:                                     
@@ -12,19 +13,25 @@
         :name: Gratitude Gala
   cary:
     :name: Cary
+    :region: iad
     :logo: arthur-murray-logo.gif
   charlotte:
     :name: Charlotte
+    :region: iad
     :logo: arthur-murray-logo.gif
   harrisburg:                                                                   
     :name: Harrisburg
+    :region: iad
     :logo: arthur-murray-logo.gif
   kennesaw:                                                                   
     :name: Kennesaw
+    :region: iad
     :logo: arthur-murray-logo.gif
   pinehurst:
     :name: Pinehurst
+    :region: iad
     :logo: carolina-dance-works.jpg
   vabeach:                                                                   
     :name: Virginia Beach
+    :region: iad
     :logo: arthur-murray-logo.gif

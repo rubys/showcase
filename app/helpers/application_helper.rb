@@ -23,7 +23,13 @@ module ApplicationHelper
     host = request.env['HTTP_X_FORWARDED_HOST'] || request.env["HTTP_HOST"]
     scope = request.env['RAILS_APP_SCOPE']
     root = request.env['RAILS_RELATIVE_URL_ROOT']
-    websocket = "#{scheme.sub('http', 'ws')}://#{host}#{root}/cable"
+
+    if ENV['FLY_REGION'] and scope
+      websocket = "#{scheme.sub('http', 'ws')}://#{host}#{root}/#{scope}/cable"
+    else
+      websocket = "#{scheme.sub('http', 'ws')}://#{host}#{root}/cable"
+    end
+
     "<meta name=\"action-cable-url\" content=\"#{websocket}\" />".html_safe
   end
 
