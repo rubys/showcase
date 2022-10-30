@@ -28,4 +28,4 @@ RUN SECRET_KEY_BASE=`bin/rails secret` \
   bin/rails assets:precompile
 
 USER root
-CMD ["/home/app/showcase/bin/init"]
+CMD ["/home/app/showcase/bin/rails", "fly:server"]

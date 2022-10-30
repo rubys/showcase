@@ -27,6 +27,4 @@ chown -R root:root /etc/nginx/sites-enabled
 mkdir -p /var/run/dbus
 dbus-daemon --system
 
-fallocate -l 1024M /_swapfile && mkswap /_swapfile && chmod 0600 /_swapfile && swapon /_swapfile && cat /proc/swaps
-
 /sbin/my_init
