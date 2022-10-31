@@ -7,17 +7,16 @@ processes = []
 
 [build]
   [build.args]
-    BUNDLER_VERSION = "2.3.18"
-    RUBY_VERSION = "3.1.1"
+    BUNDLER_VERSION = "2.3.24"
+    RUBY_VERSION = "3.1.2"
     SERVER_COMMAND = "bin/rails fly:server"
 
 [env]
   PORT = "9999"
-  RAILS_DB_VOLUME = "/mnt/databases"
 
 [mounts]
   source="smooth_databases"
-  destination="/mnt/databases"
+  destination="/mnt/volume"
 
 [experimental]
   allowed_public_ports = []

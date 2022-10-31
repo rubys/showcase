@@ -17,9 +17,7 @@ namespace :fly do
   #  - full access to secrets, databases
   #  - failures here result in VM being stated, shutdown, and rolled back
   #    to last successful deploy (if any).
-  task :server => :swapfile do
-    sh Rails.application.root.join('bin/init').to_s
-
+  task :server => %i(swapfile tenants dbus) do
     Bundler.with_original_env do
       sh "foreman start --procfile=Procfile.fly"
     end
@@ -38,5 +36,26 @@ namespace :fly do
     sh 'echo 10 > /proc/sys/vm/swappiness'
     sh 'swapon /swapfile'
     sh 'echo 1 > /proc/sys/vm/overcommit_memory'
+  end
+
+  # set up regional databases and storage
+  task :tenants do
+    ENV['RAILS_DB_VOLUME'] = "/mnt/volume/db"
+    mkdir_p ENV['RAILS_DB_VOLUME']
+
+    ENV['RAILS_STORAGE'] = '/mnt/volume/storage'
+    mkdir_p ENV['RAILS_STORAGE']
+
+    if not File.exist? "#{ENV['RAILS_DB_VOLUME']}/htpasswd"
+      sh "htpasswd -b -c #{ENV['RAILS_DB_VOLUME']}/htpasswd bootstrap password"
+    end
+
+    ruby 'config/tenant/nginx-config.rb'
+  end
+
+  # needed for chrome
+  task :dbus do
+    mkdir_p '/var/run/dbus'
+    sh 'dbus-daemon --system'
   end
 end

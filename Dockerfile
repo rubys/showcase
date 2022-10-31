@@ -80,7 +80,7 @@ RUN apt-get install -y dirmngr gnupg apt-transport-https ca-certificates curl &&
 RUN curl https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
  && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list
 
-ARG DEPLOY_PACKAGES="file vim curl gzip nginx passenger libnginx-mod-http-passenger sqlite3 libsqlite3-0 google-chrome-stable ruby-foreman redis-server rsync"
+ARG DEPLOY_PACKAGES="file vim curl gzip nginx passenger libnginx-mod-http-passenger sqlite3 libsqlite3-0 google-chrome-stable ruby-foreman redis-server apache2-utils openssh-client rsync"
 ENV DEPLOY_PACKAGES=${DEPLOY_PACKAGES}
 
 RUN --mount=type=cache,id=prod-apt-cache,sharing=locked,target=/var/cache/apt \
