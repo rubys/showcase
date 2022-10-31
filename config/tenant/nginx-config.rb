@@ -120,6 +120,8 @@ __END__
 passenger_default_user root;
 passenger_default_group root;
 
+passenger_log_file /dev/stdout;
+
 <% end -%>
 server {
   listen 9999;
@@ -132,11 +134,6 @@ server {
   rewrite ^/(showcase)?$ /showcase/ redirect;
   rewrite ^/assets/ /showcase/assets/ last;
 
-<% if @region -%>
-  access_log /dev/stdout;
-  error_log /dev/stdout info;
-
-<% end -%>
   # Authentication
 <% if File.exist? "#{@dbpath}/htpasswd" -%>
   satisfy any;
