@@ -34,16 +34,9 @@ module ApplicationHelper
   end
 
   def favicon_link
-    scheme = (request.env['HTTP_X_FORWARDED_PROTO'] || request.env["rack.url_scheme"]).split(',').last
-    host = request.env['HTTP_X_FORWARDED_HOST'] || request.env["HTTP_HOST"]
-    scope = request.env['RAILS_APP_SCOPE']
     root = request.env['RAILS_RELATIVE_URL_ROOT']
 
-    if scope
-      favicon = "#{root}/#{scope}/intertwingly.png"
-    else
-      favicon = "#{root}/intertwingly.png"
-    end
+    favicon = "#{root}/intertwingly.png"
 
     "<link rel='icon' type='image/png' href='#{favicon}'>".html_safe
   end
