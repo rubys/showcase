@@ -107,8 +107,9 @@ COPY --from=gems /usr/local/bundle /usr/local/bundle
 RUN rm /etc/nginx/sites-enabled/default && \
     sed -i 's/user .*;/user root;/' /etc/nginx/nginx.conf && \
     sed -i '/^include/i include /etc/nginx/main.d/*.conf;' /etc/nginx/nginx.conf && \
-    sed -i 's/access_log\s.*;/access_log \/dev\/stdout;/' /etc/nginx/nginx.conf && \
+    sed -i 's/access_log\s.*;/access_log \/dev\/stdout main;/' /etc/nginx/nginx.conf && \
     sed -i 's/error_log\s.*;/error_log \/dev\/stderr info;/' /etc/nginx/nginx.conf && \
+    sed -i "/access_log/i\ \n\tlog_format main '\$http_fly_client_ip - \$remote_user [\$time_local] "\$request" '\n\t'\$status \$body_bytes_sent \"\$http_referer\" \"\$http_user_agent\"';" /etc/nginx/nginx.conf && \
     mkdir /etc/nginx/main.d && \
     echo 'env RAILS_MASTER_KEY;' >> /etc/nginx/main.d/env.conf &&\
     echo 'env RAILS_LOG_TO_STDOUT;' >> /etc/nginx/main.d/env.conf

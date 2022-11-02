@@ -4,7 +4,7 @@ require 'erb'
 require 'yaml'
 require 'ostruct'
 
-HOST = 'rubix.intertwingly.net'
+HOST = ENV['FLY_APP_NAME'] ? "#{ENV['FLY_APP_NAME']}.fly.dev" : 'rubix.intertwingly.net'
 ROOT = '/showcase'
 
 if File.exist? '/opt/homebrew/etc/nginx'
@@ -159,10 +159,13 @@ server {
   passenger_ruby <%= RbConfig.ruby %>;
   passenger_friendly_error_pages on;
   passenger_min_instances 0;
+  passenger_set_header X-Request-Id $request_id;
   passenger_env_var RAILS_RELATIVE_URL_ROOT <%= ROOT %>;
+<% unless @region -%>
   passenger_env_var RAILS_PROXY_HOST https://rubix.intertwingly.net/;
+<% end -%>
   passenger_env_var RAILS_APP_REDIS showcase_production;
-  passenger_env_var RAILS_APP_CABLE wss://rubix.intertwingly.net<%= ROOT %>/cable;
+  passenger_env_var RAILS_APP_CABLE wss://<%= HOST %><%= ROOT %>/cable;
 <% @tenants.each do |tenant| %>
   # <%= tenant.name %>
 <% if @region and tenant.scope -%>
