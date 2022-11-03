@@ -37,6 +37,9 @@ RUN mkdir /app
 WORKDIR /app
 RUN mkdir -p tmp/pids
 
+RUN gem update --system --no-document && \
+    gem install -N bundler -v ${BUNDLER_VERSION}
+
 #######################################################################
 
 # install packages only needed at build time
@@ -57,9 +60,6 @@ RUN --mount=type=cache,id=dev-apt-cache,sharing=locked,target=/var/cache/apt \
 # install gems
 
 FROM build_deps as gems
-
-RUN gem update --system --no-document && \
-    gem install -N bundler -v ${BUNDLER_VERSION}
 
 COPY Gemfile* ./
 RUN bundle install &&  rm -rf vendor/bundle/ruby/*/cache
