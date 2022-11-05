@@ -15,7 +15,7 @@ processes = []
   PORT = "9999"
 
 [mounts]
-  source="smooth_databases"
+  source="smooth_volume"
   destination="/mnt/volume"
 
 [experimental]
