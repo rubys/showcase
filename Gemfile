@@ -86,4 +86,4 @@ gem "puppeteer-ruby", "~> 0.44.1"
 
 gem "kramdown", "~> 2.4"
 
-gem "fly.io-rails", "~> 0.2.2"
+gem "fly.io-rails", git: "https://github.com/rubys/fly.io-rails.git"

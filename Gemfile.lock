@@ -1,3 +1,12 @@
+GIT
+  remote: https://github.com/rubys/fly.io-rails.git
+  revision: 5ea0ad52f6b207308f6e4972547e9b89704ccaa0
+  specs:
+    fly.io-rails (0.2.2)
+      fly-ruby
+      nats-pure
+      toml
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -98,10 +107,6 @@ GEM
     ffi (1.15.5)
     fly-ruby (0.5.1)
       rack (~> 2.0)
-    fly.io-rails (0.2.2)
-      fly-ruby
-      nats-pure
-      toml
     globalid (1.0.0)
       activesupport (>= 5.0)
     i18n (1.12.0)
@@ -247,7 +252,7 @@ DEPENDENCIES
   combine_pdf (~> 1.0)
   debug
   fast_excel (~> 0.4.0)
-  fly.io-rails (~> 0.2.2)
+  fly.io-rails!
   importmap-rails
   jbuilder
   kramdown (~> 2.4)
