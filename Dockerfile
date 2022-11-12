@@ -71,6 +71,5 @@ RUN SECRET_KEY_BASE=1 bin/rails fly:build
 # start server
 ENV PORT 8080
 ENV RAILS_LOG_TO_STDOUT true
-ARG SERVER_COMMAND="bin/rails fly:server"
-ENV SERVER_COMMAND ${SERVER_COMMAND}
-CMD ${SERVER_COMMAND}
+
+CMD ["bin/rails", "fly:server"]
