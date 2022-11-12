@@ -72,7 +72,7 @@ GEM
     bootsnap (1.13.0)
       msgpack (~> 1.2)
     builder (3.2.4)
-    capybara (3.37.1)
+    capybara (3.38.0)
       addressable
       matrix
       mini_mime (>= 0.1.3)
@@ -96,6 +96,12 @@ GEM
     fast_excel (0.4.0)
       ffi (> 1.9, < 2)
     ffi (1.15.5)
+    fly-ruby (0.5.1)
+      rack (~> 2.0)
+    fly.io-rails (0.2.2)
+      fly-ruby
+      nats-pure
+      toml
     globalid (1.0.0)
       activesupport (>= 5.0)
     i18n (1.12.0)
@@ -125,17 +131,19 @@ GEM
     mini_mime (1.1.2)
     minitest (5.16.3)
     msgpack (1.6.0)
+    nats-pure (2.2.1)
     net-imap (0.3.1)
       net-protocol
     net-pop (0.1.2)
       net-protocol
     net-protocol (0.1.3)
       timeout
-    net-smtp (0.3.2)
+    net-smtp (0.3.3)
       net-protocol
     nio4r (2.5.8)
     nokogiri (1.13.9-arm64-darwin)
       racc (~> 1.4)
+    parslet (2.0.0)
     public_suffix (5.0.0)
     puma (5.6.5)
       nio4r (~> 2.0)
@@ -185,7 +193,7 @@ GEM
     rqrcode_core (1.2.0)
     ruby-rc4 (0.1.5)
     rubyzip (2.3.2)
-    selenium-webdriver (4.5.0)
+    selenium-webdriver (4.6.1)
       childprocess (>= 0.5, < 5.0)
       rexml (~> 3.2, >= 3.2.5)
       rubyzip (>= 1.2.2, < 3.0)
@@ -198,12 +206,14 @@ GEM
       activesupport (>= 5.2)
       sprockets (>= 3.0.0)
     sqlite3 (1.5.3-arm64-darwin)
-    stimulus-rails (1.1.0)
+    stimulus-rails (1.1.1)
       railties (>= 6.0.0)
-    tailwindcss-rails (2.0.16-arm64-darwin)
+    tailwindcss-rails (2.0.21-arm64-darwin)
       railties (>= 6.0.0)
     thor (1.2.1)
     timeout (0.3.0)
+    toml (0.3.0)
+      parslet (>= 1.8.0, < 3.0.0)
     turbo-rails (1.3.2)
       actionpack (>= 6.0.0)
       activejob (>= 6.0.0)
@@ -225,7 +235,7 @@ GEM
     websocket-extensions (0.1.5)
     xpath (3.2.0)
       nokogiri (~> 1.8)
-    zeitwerk (2.6.1)
+    zeitwerk (2.6.6)
 
 PLATFORMS
   arm64-darwin-21
@@ -237,6 +247,7 @@ DEPENDENCIES
   combine_pdf (~> 1.0)
   debug
   fast_excel (~> 0.4.0)
+  fly.io-rails (~> 0.2.2)
   importmap-rails
   jbuilder
   kramdown (~> 2.4)

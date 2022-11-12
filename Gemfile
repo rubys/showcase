@@ -85,3 +85,5 @@ gem "combine_pdf", "~> 1.0"
 gem "puppeteer-ruby", "~> 0.44.1"
 
 gem "kramdown", "~> 2.4"
+
+gem "fly.io-rails", "~> 0.2.2"
