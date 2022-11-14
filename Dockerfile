@@ -12,7 +12,6 @@ WORKDIR /app
 RUN gem update --system --no-document && \
     bundle config set app_config .bundle && \
     bundle config set without 'development test' && \
-    bundle config set path vendor/bundle && \
     gem install -N bundler -v 2.3.23
 
 #######################################################################
@@ -38,9 +37,13 @@ FROM build_deps as gems
 
 COPY Gemfile* ./
 
-RUN bundle lock --add-platform x86_64-linux && \
+RUN --mount=type=cache,id=dev-gem-cache,sharing=locked,target=/app/.cache \
+    bundle lock --add-platform x86_64-linux && \
+    bundle config set path .cache && \
     bundle install && \
-    rm -rf /tmp/bundle/ruby/*/cache
+    mkdir -p vendor && \
+    bundle config set path vendor && \
+    cp -ar .cache/* vendor
 
 #######################################################################
 
