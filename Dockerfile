@@ -10,40 +10,23 @@ RUN mkdir /app
 WORKDIR /app
 
 RUN gem update --system --no-document && \
-    bundle config set app_config .bundle && \
-    bundle config set without 'development test' && \
     gem install -N bundler -v 2.3.23
 
 #######################################################################
 
-# install packages only needed at build time
+# Install gems
 
-FROM base as build_deps
+FROM base as gems
 
 COPY bin bin
 COPY config config
 COPY lib/tasks lib/tasks
+COPY Gemfile* ./
 
 RUN --mount=type=cache,id=dev-apt-cache,sharing=locked,target=/var/cache/apt \
     --mount=type=cache,id=dev-apt-lib,sharing=locked,target=/var/lib/apt \
-    rake -f lib/tasks/fly.rake fly:build_deps && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
-
-#######################################################################
-
-# install gems
-
-FROM build_deps as gems
-
-COPY Gemfile* ./
-
-RUN --mount=type=cache,id=dev-gem-cache,sharing=locked,target=/app/.cache \
-    bundle lock --add-platform x86_64-linux && \
-    bundle config set path .cache && \
-    bundle install && \
-    mkdir -p vendor && \
-    bundle config set path vendor && \
-    cp -ar .cache/* vendor
+    --mount=type=cache,id=dev-gem-cache,sharing=locked,target=/app/.cache \
+    rake -f lib/tasks/fly.rake fly:build_gems
 
 #######################################################################
 
@@ -60,7 +43,6 @@ RUN --mount=type=cache,id=prod-apt-cache,sharing=locked,target=/var/cache/apt \
 
 # copy installed gems
 COPY --from=gems /app /app
-COPY --from=gems /usr/lib/fullstaq-ruby/versions /usr/lib/fullstaq-ruby/versions
 COPY --from=gems /usr/local/bundle /usr/local/bundle
 
 #######################################################################

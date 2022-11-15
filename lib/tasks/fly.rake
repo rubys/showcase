@@ -59,11 +59,21 @@ namespace :fly do
     sh 'dbus-daemon --system'
   end
 
-  task :build_deps do
+  task :build_gems do
     build_packages = %w{git build-essential wget curl gzip xz-utils libsqlite3-dev zlib1g-dev}
-
     sh 'apt-get update -qq'
     sh "apt-get install --no-install-recommends -y #{build_packages.join(' ')}"
+    sh "rm -rf /var/lib/apt/lists /var/cache/apt/archives"
+
+    sh "bundle config set app_config .bundle"
+    sh "bundle config set without 'development test'"
+
+    sh "bundle lock --add-platform x86_64-linux"
+    sh "bundle config set path .cache"
+    sh "bundle install"
+    sh "mkdir -p vendor"
+    sh "bundle config set path vendor"
+    sh "cp -ar .cache/* vendor"
   end
 
   task :install do
