@@ -12,6 +12,8 @@ more common packages at the top.
 
 Once this setup is complete, when you add new people to the event you will have the opportunity to select packages and options.
 
+If, by chance, you add a new package after you have added people, there is a "Select People" button associated with every package that can be used to retroactively add them to the to package you just created.
+
 ## Invoicing
 
  * From the publish page there is a button you can use to generate invoices for all studios.  You can print it directly from here or download it and email it.
