@@ -160,7 +160,11 @@ a scheduled heat time will be added to each heat.
            <td class="row"><%= heat.dance.name %>
            <% end %>
            <% end %>
+           <% if @backnums %>
            <td class="row"><%= heat.back || 'TBD' %>
+           <% else %>
+           <td>
+           <% end %>
            <%
             if @column_order == 1 or heat.follow.type == 'Professional'
               p1, p2 = heat.lead, heat.follow

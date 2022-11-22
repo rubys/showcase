@@ -18,6 +18,7 @@ class HeatsController < ApplicationController
       sort
 
     event = Event.last
+    @backnums = event.backnums
     @ballrooms = event.ballrooms
     @track_ages = event.track_ages
     @column_order = event.column_order
