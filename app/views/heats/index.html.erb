@@ -92,7 +92,9 @@ a scheduled heat time will be added to each heat.
         <col width="5%">
         <% end %>
         <col width="2%">
+        <% if @backnums %>
         <col width="5%">
+        <% end %>
         <col width="20%">
         <col width="20%">
         <col width="15%">
@@ -107,7 +109,9 @@ a scheduled heat time will be added to each heat.
         <th>
         <th>
         <% end %>
+        <% if @backnums %>
         <th>
+        <% end %>
         <th>
         <th>
         <th>
@@ -162,8 +166,6 @@ a scheduled heat time will be added to each heat.
            <% end %>
            <% if @backnums %>
            <td class="row"><%= heat.back || 'TBD' %>
-           <% else %>
-           <td>
            <% end %>
            <%
             if @column_order == 1 or heat.follow.type == 'Professional'
