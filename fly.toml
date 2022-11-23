@@ -15,8 +15,8 @@ processes = []
   PORT = "9999"
 
 [mounts]
-  source="smooth_volume"
-  destination="/mnt/volume"
+  source = "smooth_volume"
+  destination = "/mnt/volume"
 
 [experimental]
   allowed_public_ports = []
