@@ -102,10 +102,12 @@
   </div>
 
   <table class="mt-8">
+  <% if person.package_id %>
   <tr>
     <th align="left" class="pr-8">Registration:
-    <th align="left"><%= number_to_currency @registration %> per person</th>
+    <th align="left"><%= number_to_currency person.package.price %> per person</th>
   </tr>
+  <% end %>
   <% unless @event.student_package_description.empty? %>
   <tr>
     <td colspan="2" class="whitespace-pre-wrap pt-4"><%= @event.student_package_description %>
@@ -131,10 +133,12 @@
    <tr>
     <th align="left" class="pr-8">Invoice:
   </tr>
+  <% if person.package_id %>
   <tr>
     <td class="pr-8">Registration:
-    <td align="right"><%= number_to_currency @registration %></td>
+    <td align="right"><%= number_to_currency person.package.price %></td>
   </tr>
+  <% end %>
   <tr>
     <td>Freestyles
     <td align="right"><%= number_to_currency @heat_cost * (dances.fetch('Open', 0) + dances.fetch('Closed', 0)) %></th>
