@@ -166,7 +166,7 @@ class SolosController < ApplicationController
     target = Solo.find(params[:target].to_i)
 
     category = source.heat.dance.solo_category
-    solos = Solo.order(:order).joins(heat: :dance).where(dance: {solo_category_id: category.id})
+    solos = Solo.order(:order).joins(heat: :dance).where(dance: {solo_category_id: category&.id})
 
     if source.order > target.order
       slice = solos.where(order: target.order..source.order)
@@ -187,7 +187,7 @@ class SolosController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream { 
-        id = helpers.dom_id category
+        id = category ? helpers.dom_id(category) : 'category_0'
         heats = solos.map(&:heat)
 
         render turbo_stream: turbo_stream.replace(id, 

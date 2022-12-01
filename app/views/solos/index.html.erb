@@ -30,7 +30,7 @@
     <tr>
       <td class="text-2xl pt-4" colspan="7"><%= cat&.name %>
     </tr>
-    <%= render partial: 'cat', locals: {heats: heats, id: cat && dom_id(cat) } %>
+    <%= render partial: 'cat', locals: {heats: heats, id: cat ? dom_id(cat) : 'category_0' } %>
   <% end %>
   </table>
 </div>
