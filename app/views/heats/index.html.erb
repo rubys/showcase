@@ -230,6 +230,7 @@ a scheduled heat time will be added to each heat.
         <td class="text-right row pr-4">Solos
         <td>
         <% @solos.each do |heat| %>
+        <% next if heat < 0 %>
         <a href="#heat-<%= heat %>"><%= heat %></a>
         <% end %>
         </td>

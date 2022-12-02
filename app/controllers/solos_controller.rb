@@ -176,8 +176,17 @@ class SolosController < ApplicationController
       new_order = slice.map(&:order).rotate(-1)
     end
 
+    scheduled = slice.select {|solo| solo.heat.number > 0}
+    heat_numbers = scheduled.map {|solo| solo.heat.number}.sort
+    new_heat_number = slice.map(&:order).zip(heat_numbers).to_h
+
     Solo.transaction do
       slice.zip(new_order).each do |solo, order|
+        if new_heat_number[order]
+          solo.heat.number = new_heat_number[order]
+          solo.heat.save!
+        end
+
         solo.order = order
         solo.save! validate: false
       end
