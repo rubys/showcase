@@ -123,6 +123,7 @@ Rails.application.routes.draw do
       get 'djlist', on: :collection
       post 'drop', on: :collection
       post 'sort_level', on: :collection
+      get 'critiques', on: :collection
     end
 
     resources :formations
