@@ -134,6 +134,18 @@ tbody::after {
 <% @judges.each do |judge| %>
 <% @solos.each do |category, heats| %>
 <% heats.each do |heat| %>
+<%
+subject = heat.entry.subject
+partner = heat.entry.partner(subject)
+
+if partner.type == "Student"
+  student = subject.join(partner)
+  teacher = heat.entry.instructor.display_name
+else
+  student = subject.display_name
+  teacher = partner.display_name
+end
+%>
 <div class="WordSection1 page">
 
 <p class=MsoNormal align=center style='text-align:center'><span
@@ -159,11 +171,11 @@ border-right:none;padding:10.0pt 0in 10.0pt 0in'>
 
 <p class=MsoNormal><span style='font-size:14.0pt;font-family:"Times New Roman",serif'>&nbsp;</span></p>
 
-<p class=MsoNormal><span class='label1'>Date:</span><span class='value'><%= @event.date %></span><span class='label2'>Student:</span><span class='value'><%= heat.entry.subject.display_name %></span></p>
+<p class=MsoNormal><span class='label1'>Date:</span><span class='value'><%= @event.date %></span><span class='label2'>Student:</span><span class='value'><%= student %></span></p>
 
 <p class=MsoNormal><span class='label1'>Studio:</span><span class='value'><%= heat.entry.subject.studio.name %></span><span class='label2'>Standard:</span><span class='value'><%= heat.entry.level.name %></span></p>
 
-<p class=MsoNormal><span class='label1'>Teacher:</span><span class='value'><%= heat.entry.partner(heat.entry.subject).display_name %></span><span class='label2'>Dance:</span><span class='value'><%= heat.dance.name %><% if heat.solo.combo_dance%>/ <%= heat.solo.combo_dance.name %><% end %></span></p>
+<p class=MsoNormal><span class='label1'>Teacher:</span><span class='value'><%= teacher %></span><span class='label2'>Dance:</span><span class='value'><%= heat.dance.name %><% if heat.solo.combo_dance%>/ <%= heat.solo.combo_dance.name %><% end %></span></p>
 
 <p class=MsoNormal><span style='font-size:14.0pt;font-family:"Times New Roman",serif'>&nbsp;</span></p>
 
