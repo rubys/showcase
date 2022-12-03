@@ -1,6 +1,3 @@
-<html>
-
-<head>
 <meta http-equiv=Content-Type content="text/html; charset=windows-1252">
 <meta name=Generator content="Microsoft Word 15 (filtered)">
 <style>
@@ -60,21 +57,89 @@ div.WordSection1
 	min-width: 2in;
 }
 -->
+
+tbody {
+    page-break-inside: avoid;
+    page-break-before: avoid;
+    page-break-after: avoid;
+}
+
+tbody::after {
+  content: '';
+  display: block;
+  margin-bottom: 1.5em;
+  page-break-before: auto;
+  page-break-after: auto;
+}
+
+.page {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  page-break-inside: avoid;
+  min-width: 7.5in;
+  max-height: 10in;
+}
+
+.page .number {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.page .rotate {
+  position: absolute;
+  top: 0.5in;
+  left: 1in;
+  font-size: 40px;
+  transform: rotate(-30deg);
+  font-weight: bold;
+  -webkit-text-stroke: 0.5px #4338CA;
+  text-stroke: 0.5px #4338CA;
+  font-family: 'Bevan Regular';
+}
+
+.page .rotate-shadow {
+  position: absolute;
+  opacity: 75%;
+  color: #AAA;
+  top: 0.8in;
+  left: 1.35in;
+  font-size: 20px;
+  transform: rotate(-30deg);
+  text-shadow: #000 0 0 3px;
+}
+
+.page header {
+}
+
+.page .content {
+  overflow-y: hidden;
+}
+
+.page footer {
+}
+
+@page :right {
+  margin-left: 2cm;
+  margin-right: 1.5cm;
+}
+
+@page :left {
+  margin-left: 2cm;
+  margin-right: 1.5cm;
+}
 </style>
-
-</head>
-
-<body lang=EN-US style='word-wrap:break-word'>
 
 <% @judges.each do |judge| %>
 <% @solos.each do |category, heats| %>
 <% heats.each do |heat| %>
-<div class=WordSection1>
+<div class="WordSection1 page">
 
 <p class=MsoNormal align=center style='text-align:center'><span
 style='position:absolute;z-index:251659264;right:0px;margin-right:20px;
 margin-top:9px;width:268px;height:57px'>Solo # <%= heat.number %></span>
-<%= image_tag showcase_logo %></p>
+<%= image_tag showcase_logo, class: 'mx-auto' %></p>
 
 <p class=MsoNormal>&nbsp;</p>
 
@@ -87,8 +152,8 @@ style='font-size:22.0pt;line-height:150%;font-family:"Times New Roman",serif'><%
 <div style='border-top:double black 1.5pt;border-left:none;border-bottom:double black 1.5pt;
 border-right:none;padding:10.0pt 0in 10.0pt 0in'>
 
-<p class=MsoIntenseQuote style='margin-top:.25in;margin-right:0in;margin-bottom:
-.25in;margin-left:0in'>ROUTINE SCORING SHEET</p>
+<p class=MsoIntenseQuote style='margin-top:.2in;margin-right:0in;margin-bottom:
+.2in;margin-left:0in'>ROUTINE SCORING SHEET</p>
 
 </div>
 
@@ -96,11 +161,7 @@ border-right:none;padding:10.0pt 0in 10.0pt 0in'>
 
 <p class=MsoNormal><span class='label1'>Date:</span><span class='value'><%= @event.date %></span><span class='label2'>Student:</span><span class='value'><%= heat.entry.subject.display_name %></span></p>
 
-<p class=MsoNormal><span style='font-size:14.0pt;font-family:"Times New Roman",serif'>&nbsp;</span></p>
-
 <p class=MsoNormal><span class='label1'>Studio:</span><span class='value'><%= heat.entry.subject.studio.name %></span><span class='label2'>Standard:</span><span class='value'><%= heat.entry.level.name %></span></p>
-
-<p class=MsoNormal><span style='font-size:14.0pt;font-family:"Times New Roman",serif'>&nbsp;</span></p>
 
 <p class=MsoNormal><span class='label1'>Teacher:</span><span class='value'><%= heat.entry.partner(heat.entry.subject).display_name %></span><span class='label2'>Dance:</span><span class='value'><%= heat.dance.name %><% if heat.solo.combo_dance%>/ <%= heat.solo.combo_dance.name %><% end %></span></p>
 
@@ -173,7 +234,3 @@ style='font-size:16.0pt'>COMMENTS</span></p>
 <% end %>
 <% end %>
 <% end %>
-
-</body>
-
-</html>

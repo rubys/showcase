@@ -1,6 +1,7 @@
 class SolosController < ApplicationController
   before_action :set_solo, only: %i[ show edit update destroy ]
   include EntryForm
+  include Printable
   include ActiveStorage::SetCurrent
 
   # GET /solos or /solos.json
@@ -263,7 +264,15 @@ class SolosController < ApplicationController
     index
     @judges = Person.where(type: 'Judge').all
     @event = Event.first
-    render :critique, layout: false
+    @layout = 'mx-0'
+    @nologo = true
+
+    respond_to do |format|
+      format.html { render :critique }
+      format.pdf do
+        render_as_pdf basename: "solo-critiques"
+      end
+    end
   end
 
   private
