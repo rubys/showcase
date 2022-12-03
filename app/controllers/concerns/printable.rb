@@ -237,7 +237,7 @@ module Printable
     url = URI.parse(request.url.sub(/\.pdf($|\?)/, '.html\\1'))
     url.scheme = 'http'
     url.hostname = 'localhost'
-    url.port = ENV['PORT'] || request.headers['SERVER_PORT']
+    url.port = (ENV['FLY_APP_NAME'] && ENV['PORT']) || request.headers['SERVER_PORT']
 
     if RUBY_PLATFORM =~ /darwin/
       chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
