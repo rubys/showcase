@@ -37,7 +37,7 @@ span.IntenseQuoteChar
 	{font-size:12.0pt;
 	font-family:"Calibri",sans-serif;}
 div.WordSection1
-	{page:WordSection1;}
+	{margin-left: 0.1in; page:WordSection1;}
 .label1, .label2, .label3 {
 	font-size: 14.0pt;
 	font-family:"Times New Roman",serif;
@@ -55,6 +55,13 @@ div.WordSection1
 .value {
 	display: inline-block;
 	min-width: 2in;
+}
+.right {
+  display: flex;
+  margin-left: auto;
+  margin-right: 0;
+  max-width: 3in;
+  justify-content: center;
 }
 -->
 
@@ -121,12 +128,12 @@ tbody::after {
 }
 
 @page :right {
-  margin-left: 2cm;
+  margin-left: 1cm;
   margin-right: 1.5cm;
 }
 
 @page :left {
-  margin-left: 2cm;
+  margin-left: 1cm;
   margin-right: 1.5cm;
 }
 </style>
@@ -153,19 +160,15 @@ style='position:absolute;z-index:251659264;right:0px;margin-right:20px;
 margin-top:9px;width:268px;height:57px'>Solo # <%= heat.number %></span>
 <%= image_tag showcase_logo, style: "height: 100px", class: 'mx-auto' %></p>
 
-<p class=MsoNormal>&nbsp;</p>
-
-<p class=MsoNormal>&nbsp;</p>
-
-<p class=MsoNormal align=center style='text-align:center;line-height:150%'><span
-style='font-size:22.0pt;line-height:150%;font-family:"Times New Roman",serif'><%=
+<p class=MsoNormal align=center style='text-align:center;margin: 0.3in'><span
+style='font-size:22.0pt;font-family:"Times New Roman",serif'><%=
 @event.name %></span></p>
 
 <div style='border-top:double black 1.5pt;border-left:none;border-bottom:double black 1.5pt;
-border-right:none;padding:10.0pt 0in 10.0pt 0in'>
+border-right:none;padding:0in'>
 
-<p class=MsoIntenseQuote style='margin-top:.2in;margin-right:0in;margin-bottom:
-.2in;margin-left:0in'>ROUTINE SCORING SHEET</p>
+<p class=MsoIntenseQuote style='margin-top:.1in;margin-right:0in;margin-bottom:
+.1in;margin-left:0in'>ROUTINE SCORING SHEET</p>
 
 </div>
 
@@ -188,26 +191,17 @@ style='font-weight:normal'>Technique </span><span style='font-size:12.0pt;
 font-weight:normal'>(Footwork, Movement &amp; Control)</span></span><span
 style='font-weight:normal'>Value (25 points) ___________</span></p>
 
-<p class=MsoIntenseQuote align=left style='margin:0in;text-align:left'><span
-style='font-weight:normal'>&nbsp;</span></p>
-
-<p class=MsoIntenseQuote align=left style='margin:0px 0px 0px 0.1in;text-align:left'><span class='label3'><span
+<p class=MsoIntenseQuote align=left style='margin:15px 0px 0px 0.1in;text-align:left'><span class='label3'><span
 style='font-weight:normal'>Execution </span><span style='font-size:12.0pt;
 font-weight:normal'>(Physical Skill &amp; General Performance)</span></span><span
 style='font-weight:normal'>Value (25 points) ___________</span></p>
 
-<p class=MsoIntenseQuote align=left style='margin:0in;text-align:left'><span
-style='font-weight:normal'>&nbsp;</span></p>
-
-<p class=MsoIntenseQuote align=left style='margin:0px 0px 0px 0.1in;text-align:left'><span class='label3'><span
+<p class=MsoIntenseQuote align=left style='margin:15px 0px 0px 0.1in;text-align:left'><span class='label3'><span
 style='font-weight:normal'>Poise </span><span style='font-size:12.0pt;
 font-weight:normal'>(Poise, Posture, Hold &amp; Self-Confidence)</span></span><span
 style='font-weight:normal'>Value (25 points) ___________</span></p>
 
-<p class=MsoIntenseQuote align=left style='margin:0in;text-align:left'><span
-style='font-weight:normal'>&nbsp;</span></p>
-
-<p class=MsoIntenseQuote align=left style='margin:0px 0px 0px 0.1in;text-align:left'><span class='label3'><span
+<p class=MsoIntenseQuote align=left style='margin:15px 0px 0px 0.1in;text-align:left'><span class='label3'><span
 style='font-weight:normal'>Showmanship</span><span style='font-size:12.0pt;
 font-weight:normal'> (Entrance, Exit, Style, Personality &amp; Appeal)</span></span><span
 style='font-weight:normal'>Value (25 points)</span> ___________</p>
@@ -235,11 +229,15 @@ style='font-size:16.0pt'>COMMENTS</span></p>
 
 <p class=MsoNormal>&nbsp;</p>
 
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
 <p class=MsoNormal align=right style='text-align:right'>&nbsp;</p>
 
-<div style='min-width: 4in; float: right; text-align:center'>
-<div class=label3 style="border-bottom: 1px solid black"><%= judge.display_name %></div>
-<div>Adjudicator</div>
+<div>
+<div class="right text-xl" style="border-bottom: 1px solid black"><%= judge.display_name %></div>
+<div class="right">Adjudicator</div>
 </div>
 
 </div>
