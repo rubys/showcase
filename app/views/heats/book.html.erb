@@ -16,6 +16,7 @@ tbody::after {
 .page {
   position: relative;
   display: grid;
+  overflow: hidden;
   grid-template-rows: auto 1fr auto;
   page-break-inside: avoid;
   min-width: 7.5in;
@@ -59,6 +60,9 @@ tbody::after {
 }
 
 .page footer {
+  position: absolute;
+  bottom: 0;
+  right: 0;
 }
 
 @page :right {
