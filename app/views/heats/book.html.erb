@@ -16,7 +16,6 @@ tbody::after {
 .page {
   position: relative;
   display: grid;
-  overflow: hidden;
   grid-template-rows: auto 1fr auto;
   page-break-inside: avoid;
   min-width: 7.5in;
@@ -31,7 +30,7 @@ tbody::after {
 
 .page .rotate {
   position: absolute;
-  top: 0.5in;
+  top: 0.2in;
   left: 1in;
   font-size: 40px;
   transform: rotate(-30deg);
@@ -45,7 +44,7 @@ tbody::after {
   position: absolute;
   opacity: 75%;
   color: #AAA;
-  top: 0.8in;
+  top: 0.5in;
   left: 1.35in;
   font-size: 20px;
   transform: rotate(-30deg);
@@ -60,9 +59,6 @@ tbody::after {
 }
 
 .page footer {
-  position: absolute;
-  bottom: 0;
-  right: 0;
 }
 
 @page :right {
@@ -141,8 +137,7 @@ tbody::after {
     <% if @type == 'judge' and heats.first.category == 'Solo' %>
     <div class="page">
     <span class="number"><%= number %></span>
-    <span class="rotate-shadow">Solo</span>
-    <span class="rotate">Solo</span>
+
 
     <header>
     <div class="mb-4">
@@ -155,6 +150,9 @@ tbody::after {
       </p>
       
       <p class="mt-2 text-center" style="font-family: 'Bevan Regular'"><%= @event.date %></p>
+
+      <span class="rotate-shadow">Solo</span>
+      <span class="rotate">Solo</span>
     </div>
 
     <%
