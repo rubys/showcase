@@ -63,6 +63,28 @@ div.WordSection1
   max-width: 3in;
   justify-content: center;
 }
+.page .rotate {
+  position: absolute;
+  top: 0.2in;
+  left: 1in;
+  font-size: 40px;
+  transform: rotate(-30deg);
+  font-weight: bold;
+  -webkit-text-stroke: 0.5px #4338CA;
+  text-stroke: 0.5px #4338CA;
+  font-family: 'Bevan Regular';
+}
+
+.page .rotate-shadow {
+  position: absolute;
+  opacity: 75%;
+  color: #AAA;
+  top: 0.5in;
+  left: 1.35in;
+  font-size: 20px;
+  transform: rotate(-30deg);
+  text-shadow: #000 0 0 3px;
+}
 -->
 
 tbody {
@@ -164,31 +186,55 @@ style='position:absolute;z-index:251659264;right:0px;margin-right:20px;
 margin-top:9px;width:268px;height:57px'>Solo # <%= heat.number %></span>
 <%= image_tag showcase_logo, style: "height: 100px", class: 'mx-auto' %></p>
 
-<p class=MsoNormal align=center style='text-align:center;margin: 0.3in'><span
+<p style='text-align:center;margin-top: 0.3in'><span
 style='font-size:22.0pt;font-family:"Times New Roman",serif'><%=
 @event.name %></span></p>
+<p style='text-align:center;margin-bottom: 0.3in'><span
+style='font-size:12.0pt;font-family:"Times New Roman",serif'><%=
+@event.date %></span></p>
 
-<div style='border-top:double black 1.5pt;border-left:none;border-bottom:double black 1.5pt;
-border-right:none;padding:0in'>
+      <span class="rotate-shadow">Solo</span>
+      <span class="rotate">Solo</span>
 
-<p class=MsoIntenseQuote style='margin-top:.1in;margin-right:0in;margin-bottom:
-.1in;margin-left:0in'>ROUTINE SCORING SHEET</p>
+    <%
+      if @column_order == 1 or heat.follow.type == 'Professional'
+        dancers = [heat.lead, heat.follow]
+      else
+        dancers = [heat.follow, heat.lead]
+      end
 
-</div>
+      studio = dancers.first.studio.name
 
-<p class=MsoNormal><span style='font-size:14.0pt;font-family:"Times New Roman",serif'>&nbsp;</span></p>
+      heat.solo.formations.each do |formation|
+        dancers << formation.person if formation.on_floor
+      end
 
-<p class=MsoNormal><span class='label1'>Date:</span><span class='value'><%= @event.date %></span><span class='label2'>Student:</span><span class='value'><%= student %></span></p>
+      if dancers.length == 2
+        dancers = dancers.first.join(dancers.last)
+      else
+        dancers.map! &:display_name
+        dancers[-1] = "and #{dancers.last}"
+        dancers = dancers.join(', ')
+      end
+    %>
 
-<p class=MsoNormal><span class='label1'>Studio:</span><span class='value'><%= heat.entry.subject.studio.name %></span><span class='label2'>Standard:</span><span class='value'><%= heat.entry.level.name %></span></p>
+    <div class="mb-4">
+    <div class="text-xl float-right"><b>Studio</b>: <%= studio %></div>
+    <div class="text-xl"><b>Standard</b>: <%= heat.entry.level.name %></div>
+    </div>
 
-<p class=MsoNormal><span class='label1'>Teacher:</span><span class='value'><%= teacher %></span><span class='label2'>Dance:</span><span class='value'><%= heat.dance.name %><% if heat.solo.combo_dance%>/ <%= heat.solo.combo_dance.name %><% end %></span></p>
-
-<p class=MsoNormal><span style='font-size:14.0pt;font-family:"Times New Roman",serif'>&nbsp;</span></p>
+   
+    <div class="text-xl mb-4 grid grid-cols-2" style="grid-template-columns: auto 1fr"><span><b>Names</b>:&nbsp;</span><span><%= dancers %></span></div>
+    <div class="text-xl"><b>Dance</b>: <%= heat.dance.name %>
+    <% if heat.solo.combo_dance%>
+    / <%= heat.solo.combo_dance.name %>
+    <% end %>
+    </div>
+    </header>
 
 <div style='border-top:double black 1.5pt;border-left:none;border-bottom:double black 1.5pt;
 border-right:none;padding:20.0pt 0in 20.0pt 0in;margin-left:-9.35pt;margin-right:
-4.3pt'>
+4.3pt; margin-top: 12pt'>
 
 <p class=MsoIntenseQuote align=left style='margin:0px 0px 0px 0.1in;text-align:left'><span class='label3'><span
 style='font-weight:normal'>Technique </span><span style='font-size:12.0pt;

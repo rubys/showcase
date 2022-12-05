@@ -266,15 +266,40 @@ class SolosController < ApplicationController
     @event = Event.first
     @layout = 'mx-0'
     @nologo = true
+  end
+
+  def critiques0
+    critiques
 
     respond_to do |format|
-      format.html { render :critique }
+      format.html { render :critique0 }
       format.pdf do
         render_as_pdf basename: "solo-critiques"
       end
     end
   end
 
+  def critiques1
+    critiques
+
+    respond_to do |format|
+      format.html { render :critique1 }
+      format.pdf do
+        render_as_pdf basename: "solo-critiques"
+      end
+    end
+  end
+
+  def critiques2
+    critiques
+
+    respond_to do |format|
+      format.html { render :critique2 }
+      format.pdf do
+        render_as_pdf basename: "solo-critiques"
+      end
+    end
+  end
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_solo
