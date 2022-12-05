@@ -72,15 +72,12 @@ tbody::after {
 }
 </style>
 
-<div class="mx-auto md:w-2/3 w-full print:w-full">
-
 <% @judges.each do |judge| %>
 <% @solos.each do |category, heats| %>
   <% cat = category || 'uncategorized' %>
-  <div class="w-full">
     <% heats.each do |heat| %>
     <% if heat.category == 'Solo' %>
-    <div class="page">
+    <div class="page mx-auto md:w-2/3 w-full print:w-full">
     <span class="number"><%= heat.number %></span>
 
 
