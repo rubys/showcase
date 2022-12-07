@@ -5,6 +5,10 @@ export default class extends Controller {
   connect() {
     let checkboxes = this.element.querySelectorAll('input[type=checkbox]');
     for (let checkbox of [...checkboxes]) {
+      checkbox.addEventListener('change', event => {
+        checkbox.focus();  // needed for safari
+      });
+
       checkbox.addEventListener("keydown", event => {
         let input = document.createElement('input');
         input.setAttribute('type', 'text');
