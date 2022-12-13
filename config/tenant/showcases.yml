@@ -1,5 +1,9 @@
 ---
 2023:                                                                           
+  harrisburg:                                                                   
+    :name: Harrisburg
+    :region: iad
+    :logo: arthur-murray-logo.gif
   raleigh:
     :name: Raleigh
     :region: iad
@@ -32,10 +36,6 @@
     :name: Kennesaw
     :region: iad
     :logo: arthur-murray-logo.gif
-  pinehurst:
-    :name: Pinehurst
-    :region: iad
-    :logo: carolina-dance-works.jpg
   vabeach:                                                                   
     :name: Virginia Beach
     :region: iad
