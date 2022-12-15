@@ -18,7 +18,7 @@
   </thead>
   <% @solos.each do |solo| %>
     <% heat = solo.heat %>
-    <% next if heat.number <= 0 %>
+    <% next if heat.number < 0 %>
     <tr class="hover:bg-yellow-200 group py-2" id="<%= dom_id solo %>">
        <td class="text-center py-6"><%= heat.number %>
        <% if heat.category == 'Solo' and solo.combo_dance %>
