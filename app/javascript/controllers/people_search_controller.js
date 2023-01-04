@@ -24,8 +24,7 @@ document.body.parentNode.addEventListener('keydown', event => {
   console.log(event.key)
   if (event.key != 'Escape') return;
 
-  let focus = document.activeElement;
-  if (focus.nodeName != 'BODY') return;
+  if (document.querySelectorAll('input[type=text], textarea, select').length != 0) return;
 
   let home = document.querySelector('a[rel=home]');
   if (!home) return;
