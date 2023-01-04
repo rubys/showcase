@@ -10,7 +10,12 @@
   </ul>
   </div>
 
-  <h1 class="text-center font-bold text-4xl mb-8"><%= @title || 'People' %></h1>
+  <h1 class="text-center font-bold text-4xl mb-4"><%= @title || 'People' %></h1>
+
+  <% unless @title %>
+  <input type="search" name="search" placeholder="search" autofocus data-controller="people-search"
+    class="mt-0 mb-4 block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mx-auto">
+  <% end %>
 
   <table class="table-fixed mx-auto">
   <thead>
