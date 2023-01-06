@@ -150,7 +150,7 @@ module Printable
         Entry.joins(:lead).where(people: {type: 'Student', studio: studio})).uniq
 
       @dances = studio.people.order(:name).map do |person|
-        purchases = (person.package&.price || 0) + person.options.map(&:option).map(&:price).sum
+        purchases = (@registration || person.package&.price || 0) + person.options.map(&:option).map(&:price).sum
         [person, {dances: 0, cost: 0, purchases: purchases}]
       end.to_h
 

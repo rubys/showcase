@@ -101,11 +101,11 @@ class StudiosController < ApplicationController
 
   def student_invoices
     @student = true
+    @registration = @studio.student_registration_cost
     generate_invoice([@studio], true)
 
     event = Event.first
 
-    @registration = @studio.student_registration_cost
     @heat_cost = @studio.student_heat_cost || @studio.heat_cost || event.heat_cost || 0
     @solo_cost = @studio.student_solo_cost || @studio.solo_cost || event.solo_cost || 0
     @multi_cost = @studio.student_multi_cost || @studio.multi_cost || event.multi_cost || 0

@@ -136,7 +136,7 @@
   <% if person.package_id %>
   <tr>
     <td class="pr-8">Registration:
-    <td align="right"><%= number_to_currency person.package.price %></td>
+    <td align="right"><%= number_to_currency @registration || person.package.price %></td>
   </tr>
   <% end %>
   <tr>
