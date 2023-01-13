@@ -23,7 +23,7 @@
 <ul class="list-disc list-inside">
   <% @options.each do |option, count| %>
     <% next if count == 0 %>
-    <li><%= option.name %>: <%= count %></li>
+    <li><%= link_to option.name, people_package_path(option.id) %>: <%= count %></li>
   <% end %>
 </ul>
 <% end %>
@@ -32,12 +32,12 @@
 
 <ul class="list-disc list-inside">
   <% @people.sort.each do |type, people| %>
-    <li><%= type %>: <%= people.length %></li>
+    <li><%= link_to type, people_path(type: type) %>: <%= people.length %></li>
 
     <% if %w(Professional Student).include? type %>
     <ul class="ml-4 list-disc list-inside">
       <% people.group_by {|person| person.role}.sort.each do |role, people| %>
-        <li><%= role %>: <%= people.length %></li>
+        <li><%= link_to role, people_path(type: type, role: role) %>: <%= people.length %></li>
       <% end %>
     </ul>
     <% end %>
@@ -49,7 +49,7 @@
 
 <ul class="list-disc list-inside">
   <% @people['Student'].group_by {|person| person.level}.sort.each do |level, people| %>
-    <li><%= level.name %>: <%= people.length %></li>
+    <li><%= link_to level.name, people_path(level: level.id) %>: <%= people.length %></li>
   <% end %>
 </ul>
 
@@ -58,7 +58,7 @@
 
 <ul class="list-disc list-inside">
   <% @people['Student'].group_by {|person| person.age}.sort.each do |age, people| %>
-    <li><%= age.category %> (<%= age.description %>): <%= people.length %></li>
+    <li><%= link_to age.category, people_path(age: age.id) %> (<%= age.description %>): <%= people.length %></li>
   <% end %>
 </ul>
 <% end %>

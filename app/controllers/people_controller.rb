@@ -86,7 +86,37 @@ class PeopleController < ApplicationController
 
   # GET /people or /people.json
   def index
-    @people ||= Person.includes(:studio).order(sort_order)
+    if not @people
+      @people ||= Person.includes(:studio).order(sort_order)
+
+      title = []
+      where = {}
+
+      if params[:age]
+        age_id = params[:age].to_i
+        where[:age] = age_id
+        title << "Age #{Age.find(age_id).description}"
+      end
+
+      if params[:level]
+        level_id = params[:level].to_i
+        where[:level] = level_id
+        title << Level.find(level_id).name
+      end
+
+      if params[:type]
+        where[:type] = params[:type]
+        title << params[:type]
+      end
+
+      if params[:role]
+        where[:role] = params[:role]
+        title << params[:role]
+      end
+
+      @title = title.join(' ') unless title.empty?
+      @people = @people.where(where) unless where.empty?
+    end
 
     @heats = {}
     @solos = {}
