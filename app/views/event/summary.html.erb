@@ -11,7 +11,7 @@
     <ul class="ml-4 list-disc list-inside">
     <% packages.each do |package, count| %>
       <% next if count == 0 %>
-      <li><%= package.name %>: <%= count %></li>
+      <li><%= link_to package.name, people_package_path(package.id) %>: <%= count %></li>
     <% end %>
     </ul>
   <% end %>

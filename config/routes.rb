@@ -73,6 +73,7 @@ Rails.application.routes.draw do
     end
 
     match "/people/certificates", to: 'people#certificates', via: %i(get post)
+    get "/people/package/:package_id", to: "people#package", as: 'people_package'
     resources :people do
       get 'backs', on: :collection
       post 'backs', on: :collection, action: 'assign_backs'

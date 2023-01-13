@@ -223,6 +223,15 @@ class PeopleController < ApplicationController
     end
   end
 
+  def package
+    package_id = params[:package_id].to_i
+    package = Billable.find(package_id)
+    @people = package.people.includes(:studio).order(:name)
+    @title = "#{package.type} - #{package.name}"
+
+    index
+  end
+
   # GET /people/1 or /people/1.json
   def show
     Dance.all
