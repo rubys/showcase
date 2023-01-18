@@ -35,8 +35,9 @@
   </table>
 </div>
 
-<div class="my-4 text-center">
-  <%= up_link 'Sort by level', sort_level_solos_path, class: "btn-blue", method: :post %>
+<div class="mt-4 grid grid-cols-2 justify-items-center">
+  <%= up_link 'Sort by level', sort_level_solos_path, class: "inline btn-blue", method: :post %>
+  <%= up_link 'Randomize', sort_gap_solos_path, class: "inline btn-blue", method: :post %>
 </div>
 
 </div>

@@ -234,6 +234,7 @@ class SolosController < ApplicationController
 
   def sort_level
     solos = {}
+    order = []
 
     Solo.order(:order).each do |solo|
       cat = solo.heat.dance.solo_category
@@ -241,7 +242,6 @@ class SolosController < ApplicationController
       solos[cat] << solo
     end
 
-    order = []
     solos.each do |cat, solos|
       order += solos.sort_by {|solo| solo.heat.entry.level_id}
     end
@@ -257,6 +257,97 @@ class SolosController < ApplicationController
 
     respond_to do |format|
       format.html { redirect_to solos_path, notice: 'solos sorted by level' }
+    end
+  end
+
+  def sort_gap
+    order = []
+    notice = nil
+
+    64.times do |pass|
+      notice = "solos remixed" # #{pass}
+      solos = {}
+      order = []
+
+      Solo.all.shuffle.each do |solo|
+        cat = solo.heat.dance.solo_category
+        solos[cat] ||= []
+        solos[cat] << solo
+      end
+
+      solos.each do |cat, solos|
+        participants = {}
+        solos.each do |solo|
+          entry = solo.heat.entry
+          participants[entry.lead] ||= []
+          participants[entry.lead] << solo
+          participants[entry.follow] ||= []
+          participants[entry.follow] << solo
+        end
+
+        weights = solos.map {|solo| [solo, 0]}.to_h
+
+        singles = []
+
+        participants.each do |person, solos|
+          singles << solos.first if solos.length == 1
+        end
+
+        singles.sort_by! {|solo| solo.heat.entry.level_id}
+
+        participants.each do |person, solos|
+          if solos.length == 1
+            weights[solos.first] += (singles.find_index(solos.first).to_f + 1) / (singles.length + 1)
+          else
+            solos.sort_by! {|solo| solo.heat.entry.level_id}
+            solos.each_with_index do |solo, index|
+              weights[solo] += (index.to_f + 1) / (solos.length + 1)
+            end
+          end
+        end
+
+        weights = weights.to_a.sort_by {|solo, weight| weight}.to_h
+        IO.write('/Users/rubys/tmp/weights.out', JSON.pretty_generate(weights.map {|solo, n| [solo.heat.dance.name, n]}))
+
+        order += weights.keys
+      end
+
+      if pass < 20
+        break if (0..order.length-4).all? do |i|
+          e1 = order[i].heat.entry
+          e2 = order[i+1].heat.entry
+          e3 = order[i+2].heat.entry
+          e4 = order[i+3].heat.entry
+          [e1.lead_id, e1.follow_id, e2.lead_id, e2.follow_id, e3.lead_id, e3.follow_id, e4.lead_id, e4.follow_id].uniq.length == 8
+        end
+      elsif pass < 40
+        break if (0..order.length-3).all? do |i|
+          e1 = order[i].heat.entry
+          e2 = order[i+1].heat.entry
+          e3 = order[i+2].heat.entry
+          [e1.lead_id, e1.follow_id, e2.lead_id, e2.follow_id, e3.lead_id, e3.follow_id].uniq.length == 6
+        end
+      else
+        break if (0..order.length-2).all? do |i|
+          e1 = order[i].heat.entry
+          e2 = order[i+1].heat.entry
+          [e1.lead_id, e1.follow_id, e2.lead_id, e2.follow_id].uniq.length == 4
+        end
+        boom if pass == 63
+      end
+    end
+
+    Solo.transaction do
+      order.zip(1..).each do |solo, order|
+        solo.order = order
+        solo.save! validate: false
+      end
+
+      raise ActiveRecord::Rollback unless order.all? {|solo| solo.valid?}
+    end
+
+    respond_to do |format|
+      format.html { redirect_to solos_path, notice: notice  }
     end
   end
 
