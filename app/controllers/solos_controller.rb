@@ -262,79 +262,105 @@ class SolosController < ApplicationController
 
   def sort_gap
     order = []
-    notice = nil
+    notice = "solos remixed"
+    solos = {}
 
-    64.times do |pass|
-      notice = "solos remixed" # #{pass}
-      solos = {}
-      order = []
+    Solo.all.each do |solo|
+      cat = solo.heat.dance.solo_category
+      solos[cat] ||= []
+      solos[cat] << solo
+    end
 
-      Solo.all.shuffle.each do |solo|
-        cat = solo.heat.dance.solo_category
-        solos[cat] ||= []
-        solos[cat] << solo
+    solos.each do |cat, solos|
+      participants = {}
+      solos.shuffle.sort_by {|solo| solo.heat.entry.level_id}.each do |solo|
+        entry = solo.heat.entry
+        participants[entry.lead] ||= []
+        participants[entry.lead] << solo
+        participants[entry.follow] ||= []
+        participants[entry.follow] << solo
       end
 
-      solos.each do |cat, solos|
-        participants = {}
-        solos.each do |solo|
-          entry = solo.heat.entry
-          participants[entry.lead] ||= []
-          participants[entry.lead] << solo
-          participants[entry.follow] ||= []
-          participants[entry.follow] << solo
+      weights = solos.map {|solo| [solo, 0]}.to_h
+
+      singles = []
+      levels = Level.maximum(:id)
+
+      participants.each do |person, solos|
+        singles << solos.first if solos.length == 1
+      end
+
+      singles.sort_by! {|solo| solo.heat.entry.level_id}
+
+      participants.each do |person, solos|
+        if solos.length == 1
+          weights[solos.first] += (singles.find_index(solos.first).to_f + 1) / (levels + 1)
+        else
+          solos.sort_by! {|solo| solo.heat.entry.level_id}
+          solos.each_with_index do |solo, index|
+            weights[solo] += (index.to_f + 1) / (solos.length + 1)
+          end
         end
+      end
 
-        weights = solos.map {|solo| [solo, 0]}.to_h
+      weights = weights.to_a.sort_by {|solo, weight| weight}.to_h
 
-        singles = []
+      solo_count = solos.count.to_f
+      ideal = solo_count / participants.values.map(&:length).max
 
-        participants.each do |person, solos|
-          singles << solos.first if solos.length == 1
-        end
+      cat_order = weights.keys
+      
+      solo_count.to_i.times do |iteration|
+        new_order = []
 
-        singles.sort_by! {|solo| solo.heat.entry.level_id}
+        last_seen = participants.map {|person| [person, nil]}.to_h
 
-        participants.each do |person, solos|
-          if solos.length == 1
-            weights[solos.first] += (singles.find_index(solos.first).to_f + 1) / (singles.length + 1)
-          else
-            solos.sort_by! {|solo| solo.heat.entry.level_id}
-            solos.each_with_index do |solo, index|
-              weights[solo] += (index.to_f + 1) / (solos.length + 1)
+        cat_order.reverse! if iteration % 2 == 1
+        solo1 = cat_order.first
+        solo2 = nil
+        entry1 = solo1.heat.entry
+        last_seen[entry1.lead] = -1
+        last_seen[entry1.follow] = -1
+
+        cat_order[1..].each_with_index do |solo2, index|
+
+          weight1 = entry1.level_id
+          [entry1.lead, entry1.follow].each do |person|
+            count = participants[person].length
+            if count > 1
+              seen = last_seen[person]
+              span = seen ? index-seen : index
+              weight1 += ideal - span
             end
+          end
+
+          entry2 = solo2.heat.entry
+          weight2 = entry2.level_id
+          [entry2.lead, entry2.follow].each do |person|
+            count = participants[person].length
+            if count > 1
+              seen = last_seen[person]
+              span = seen ? index-seen : index
+              weight2 += ideal - span
+            end
+            last_seen[person] = index
+          end
+
+          if weight2 < weight1
+            new_order << solo2
+          else
+            new_order << solo1
+            solo1, entry1 = solo2, entry2
           end
         end
 
-        weights = weights.to_a.sort_by {|solo, weight| weight}.to_h
-        IO.write('/Users/rubys/tmp/weights.out', JSON.pretty_generate(weights.map {|solo, n| [solo.heat.dance.name, n]}))
-
-        order += weights.keys
+        new_order << solo1
+        break if new_order == cat_order
+        new_order.reverse! if iteration % 2 == 1
+        cat_order = new_order
       end
 
-      if pass < 20
-        break if (0..order.length-4).all? do |i|
-          e1 = order[i].heat.entry
-          e2 = order[i+1].heat.entry
-          e3 = order[i+2].heat.entry
-          e4 = order[i+3].heat.entry
-          [e1.lead_id, e1.follow_id, e2.lead_id, e2.follow_id, e3.lead_id, e3.follow_id, e4.lead_id, e4.follow_id].uniq.length == 8
-        end
-      elsif pass < 40
-        break if (0..order.length-3).all? do |i|
-          e1 = order[i].heat.entry
-          e2 = order[i+1].heat.entry
-          e3 = order[i+2].heat.entry
-          [e1.lead_id, e1.follow_id, e2.lead_id, e2.follow_id, e3.lead_id, e3.follow_id].uniq.length == 6
-        end
-      else
-        break if (0..order.length-2).all? do |i|
-          e1 = order[i].heat.entry
-          e2 = order[i+1].heat.entry
-          [e1.lead_id, e1.follow_id, e2.lead_id, e2.follow_id].uniq.length == 4
-        end
-        boom if pass == 63
-      end
+      order += cat_order
     end
 
     Solo.transaction do
