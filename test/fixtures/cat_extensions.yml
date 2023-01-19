@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  category: one
+  part: 1
+  order: 1
+  day: MyString
+  time: MyString
+
+two:
+  category: two
+  part: 1
+  order: 1
+  day: MyString
+  time: MyString

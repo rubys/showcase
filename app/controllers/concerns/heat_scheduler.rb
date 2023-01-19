@@ -158,9 +158,10 @@ module HeatScheduler
     end
 
     new_order = []
+    extensions = {}
 
-    if Event.last.intermix
-      cats.each do |cat, groups|
+    cats.each do |cat, groups|
+      if Event.last.intermix
         dances = groups.group_by {|group| [group.dcat, group.dance.id]}
         candidates = []
 
@@ -171,19 +172,42 @@ module HeatScheduler
           end
         end
 
-        new_order += candidates.sort_by {|candidate| candidate[0..2]}.map(&:last) +
-          solos[cat].sort_by {|group| group.first.solo.order} +
-          multis[cat]
+        groups = candidates.sort_by {|candidate| candidate[0..2]}.map(&:last)
       end
-    else
-      cats.each do |cat, groups|
-        new_order += groups +
-          solos[cat].sort_by {|group| group.first.solo.order} +
-          multis[cat]
+
+      groups +=
+        solos[cat].sort_by {|group| group.first.solo.order} +
+        multis[cat]
+
+      if cat
+        if cat.heats and groups.length > cat.heats
+          extensions_needed = 1 # (groups.length.to_f / cat.heats).ceil - 1
+        else
+          extensions_needed = 0
+        end
+
+        extensions_found = cat.extensions.order(:part).all.to_a
+
+        while extensions_found.length > extensions_needed
+          extensions_found.pop.destroy!
+        end
+
+        while extensions_needed > extensions_found.length
+          order = [Category.maximum(:order), CatExtension.maximum(:order)].compact.max + 1
+          extensions_found << CatExtension.create!(category: cat, order: order, part: extensions_found.length + 2)
+        end
+
+        if extensions_needed > 0
+          extensions[extensions_found.first] = groups[cat.heats..]
+          groups = groups[..cat.heats-1]
+        end
+
+        cats[cat] = groups
       end
     end
 
-    new_order
+    cats.merge! extensions
+    cats.sort_by {|cat, groups| cat&.order || 999}.map(&:last).flatten
   end
 
   class Group

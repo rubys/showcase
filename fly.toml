@@ -23,6 +23,12 @@ processes = []
   auto_rollback = true
 
 [[services]]
+  internal_port = 2222
+  protocol = "tcp"
+  [[services.ports]]
+    port = 2222
+
+[[services]]
   http_checks = []
   internal_port = 9999
   processes = ["app"]

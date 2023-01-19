@@ -80,7 +80,7 @@ RUN apt-get install -y dirmngr gnupg apt-transport-https ca-certificates curl &&
 RUN curl https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
  && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list
 
-ARG DEPLOY_PACKAGES="file vim curl gzip nginx passenger libnginx-mod-http-passenger sqlite3 libsqlite3-0 google-chrome-stable ruby-foreman redis-server apache2-utils openssh-client rsync"
+ARG DEPLOY_PACKAGES="file vim curl gzip nginx passenger libnginx-mod-http-passenger sqlite3 libsqlite3-0 google-chrome-stable ruby-foreman redis-server apache2-utils openssh-server rsync libxlsxwriter-dev"
 ENV DEPLOY_PACKAGES=${DEPLOY_PACKAGES}
 
 RUN --mount=type=cache,id=prod-apt-cache,sharing=locked,target=/var/cache/apt \
@@ -102,6 +102,12 @@ COPY --from=gems /usr/lib/fullstaq-ruby/versions /usr/lib/fullstaq-ruby/versions
 COPY --from=gems /usr/local/bundle /usr/local/bundle
 
 #######################################################################
+
+# configure sshd
+RUN sed -i 's/^#\s*Port.*/Port 2222/' /etc/ssh/sshd_config && \
+    sed -i 's/^#\s*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config && \
+    mkdir /var/run/sshd && \
+    chmod 0755 /var/run/sshd
 
 # configure nginx/passenger
 RUN rm /etc/nginx/sites-enabled/default && \

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_10_15_184926) do
+ActiveRecord::Schema[7.0].define(version: 2023_01_19_174433) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -65,6 +65,18 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_15_184926) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "cat_extensions", force: :cascade do |t|
+    t.integer "category_id", null: false
+    t.integer "start_heat"
+    t.integer "part"
+    t.integer "order"
+    t.string "day"
+    t.string "time"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category_id"], name: "index_cat_extensions_on_category_id"
+  end
+
   create_table "categories", force: :cascade do |t|
     t.string "name"
     t.integer "order"
@@ -74,6 +86,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_15_184926) do
     t.datetime "updated_at", null: false
     t.integer "ballrooms"
     t.integer "max_heat_size"
+    t.integer "heats"
   end
 
   create_table "dances", force: :cascade do |t|
@@ -292,6 +305,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_15_184926) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "cat_extensions", "categories"
   add_foreign_key "dances", "categories", column: "closed_category_id"
   add_foreign_key "dances", "categories", column: "multi_category_id"
   add_foreign_key "dances", "categories", column: "open_category_id"

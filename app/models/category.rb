@@ -8,6 +8,9 @@ class Category < ApplicationRecord
   has_many :multi_dances, dependent: :destroy,
     class_name: 'Dance', foreign_key: :multi_category_id
 
+  has_many :extensions, dependent: :destroy,
+    class_name: 'CatExtension'
+
   validates :name, presence: true, uniqueness: true
   validates :order, presence: true, uniqueness: true
 

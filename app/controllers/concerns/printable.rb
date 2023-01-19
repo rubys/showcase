@@ -13,7 +13,8 @@ module Printable
         [number, heats.sort_by { |heat| [heat.back || 0, heat.entry.lead.type] } ]
       end
 
-    @categories = Category.order(:order).map {|category| [category.name, category]}.to_h
+    @categories = (Category.all + CatExtension.all).sort_by {|cat| cat.order}.
+      map {|category| [category.name, category]}.to_h
 
     # copy start time/date to subsequent entries
     last_cat = nil

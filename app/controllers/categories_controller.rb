@@ -7,7 +7,7 @@ class CategoriesController < ApplicationController
   def index
     generate_agenda
     @agenda = @agenda.to_h
-    @categories = Category.order(:order)
+    @categories = (Category.all + CatExtension.all).sort_by {|cat| cat.order}
     @locked = Event.last.locked?
   end
 
@@ -33,6 +33,7 @@ class CategoriesController < ApplicationController
     if params[:category][:customize] != '1'
       params[:category][:ballrooms] = ''
       params[:category][:max_heat_size] = ''
+      params[:category][:heats] = ''
     end
 
     @category = Category.new(category_params)
@@ -58,6 +59,7 @@ class CategoriesController < ApplicationController
     if params[:category][:customize] != '1'
       params[:category][:ballrooms] = ''
       params[:category][:max_heat_size] = ''
+      params[:category][:heats] = ''
     end
 
     respond_to do |format|
@@ -136,7 +138,7 @@ class CategoriesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def category_params
-      params.require(:category).permit(:name, :order, :day, :time, :ballrooms, :max_heat_size)
+      params.require(:category).permit(:name, :order, :day, :time, :ballrooms, :max_heat_size, :heats)
     end
 
     def form_init
