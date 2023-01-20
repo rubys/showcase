@@ -69,7 +69,7 @@ module HeatScheduler
       groups.each_with_index do |group, index|
         group.each do |heat|
           heat.number = index + 1
-          heat.save
+          heat.save validate: false
         end
       end
     end
