@@ -158,7 +158,7 @@ module HeatScheduler
     end
 
     new_order = []
-    extensions = {}
+    agenda = {}
 
     cats.each do |cat, groups|
       if Event.last.intermix
@@ -198,16 +198,26 @@ module HeatScheduler
         end
 
         if extensions_needed > 0
-          extensions[extensions_found.first] = groups[cat.heats..]
+          agenda[extensions_found.first] = groups[cat.heats..]
           groups = groups[..cat.heats-1]
         end
-
-        cats[cat] = groups
       end
+
+      agenda[cat] = groups
     end
 
-    cats.merge! extensions
-    cats.sort_by {|cat, groups| cat&.order || 999}.map(&:last).flatten
+    cats = agenda.to_a.sort_by {|cat, groups| cat&.order || 999}.to_h
+
+    heat = 1
+    cats.each do |cat, groups|
+      if cat.instance_of? CatExtension
+        cat.update! start_heat: heat
+      end
+
+      heat += groups.length
+    end
+
+    cats.values.flatten
   end
 
   class Group

@@ -58,7 +58,7 @@ another heat is still possible, even when the agenda is locked.
     <% @categories.each do |cat| %>
       <tr class="hover:bg-yellow-200" draggable="true" data-drag-id="<%= cat.id %>">
         <% heats = @agenda[cat.name] %>
-        <td class="row text-black font-medium"><%= link_to cat.name, edit_category_path(cat.id) %></a>
+        <td class="row text-black font-medium"><%= link_to cat.name, edit_category_path(cat.id, part: cat.part) %></a>
         <% if heats %>
         <% entries += (count = heats.map {|number, ballrooms| ballrooms.values.flatten.length}.sum) %>
         <td class="row text-right"><%= count %>

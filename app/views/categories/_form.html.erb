@@ -30,7 +30,7 @@ start times for each heat will show up on the heats page.
 
   <div class="my-5">
     <%= form.label :name %>
-    <%= form.text_field :name, required: true,
+    <%= form.text_field :name, required: true, disabled: !category.instance_of?(Category),
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
@@ -44,7 +44,7 @@ start times for each heat will show up on the heats page.
     <%= form.text_field :time, placeholder: '1 pm', class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
-  <% unless false %>
+  <% if category.instance_of? Category %>
   <div data-controller="category-override">
   <div class="my-5">
     <%= form.check_box :customize, class: 'entry-count h-10',
@@ -78,7 +78,6 @@ start times for each heat will show up on the heats page.
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
   </div>
-  <% end %>
   
 <%= render partial: 'categories/dances',
   locals: {form: form, title: 'CLOSED CATEGORY', dances: @dances, category: 'Closed'} %>
@@ -92,6 +91,8 @@ start times for each heat will show up on the heats page.
 <% unless @multis.empty? %>
 <%= render partial: 'categories/dances',
   locals: {form: form, title: 'MULTI CATEGORY', dances: @multis, category: 'Multi'} %>
+<% end %>
+
 <% end %>
 
   <div class="inline">

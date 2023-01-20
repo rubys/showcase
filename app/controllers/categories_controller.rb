@@ -133,7 +133,11 @@ class CategoriesController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_category
-      @category = Category.find(params[:id])
+      if params[:part]
+        @category = CatExtension.find(params[:id])
+      else
+        @category = Category.find(params[:id])
+      end
     end
 
     # Only allow a list of trusted parameters through.

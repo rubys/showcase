@@ -18,7 +18,7 @@ class Heat < ApplicationRecord
   end
 
   def dance_category
-    if dance.heat_length or category == 'Multi'
+    cat = if dance.heat_length or category == 'Multi'
       dance.multi_category
     elsif category == "Open"
       dance.open_category
@@ -26,6 +26,16 @@ class Heat < ApplicationRecord
       dance.solo_category
     else
       dance.closed_category
+    end
+
+    if cat.heats = nil or cat.extensions.empty?
+      cat
+    elsif cat.extensions.first.start_heat == nil or number == nil
+      cat
+    elsif number < cat.extensions.first.start_heat
+      cat
+    else
+      cat.extensions.first
     end
   end
 

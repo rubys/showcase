@@ -16,4 +16,8 @@ class Category < ApplicationRecord
 
   validates :day, chronic: true, allow_blank: true
   validates :time, chronic: true, allow_blank: true
+
+  def part
+    nil
+  end
 end

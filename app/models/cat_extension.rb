@@ -4,4 +4,8 @@ class CatExtension < ApplicationRecord
   def name
     "#{category.name} - Part #{part}"
   end
+
+  def ballrooms
+    category.ballrooms
+  end
 end
