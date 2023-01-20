@@ -90,14 +90,25 @@ class CategoriesController < ApplicationController
 
   # POST /categories/drop
   def drop
-    source = Category.find(params[:source].to_i)
-    target = Category.find(params[:target].to_i)
+    if params[:source].include? '-'
+      source = CatExtension.find(params[:source].split('-').first.to_i)
+    else
+      source = Category.find(params[:source].to_i)
+    end
+
+    if params[:target].include? '-'
+      source = CatExtension.find(params[:target].split('-').first.to_i)
+    else
+      target = Category.find(params[:target].to_i)
+    end
+
+    categories = (Category.all.to_a + CatExtension.all.to_a).sort_by(&:order)
 
     if source.order > target.order
-      categories = Category.where(order: target.order..source.order).order(:order)
+      categories = categories.select {|cat| (target.order..source.order).include? cat.order}
       new_order = categories.map(&:order).rotate(1)
     else
-      categories = Category.where(order: source.order..target.order).order(:order)
+      categories = categories.select {|cat| (source.order..target.order).include? cat.order}
       new_order = categories.map(&:order).rotate(-1)
     end
 
