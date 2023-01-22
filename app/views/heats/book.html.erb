@@ -1,23 +1,17 @@
 <style>
 tbody {
-    page-break-inside: avoid;
-    page-break-before: avoid;
-    page-break-after: avoid;
 }
 
 tbody::after {
   content: '';
   display: block;
   margin-bottom: 1.5em;
-  page-break-before: auto;
-  page-break-after: auto;
 }
 
 .page {
   position: relative;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  page-break-inside: avoid;
   min-width: 7.5in;
   max-height: 10in;
 }
@@ -124,13 +118,14 @@ tbody::after {
   <% @agenda.each do |cat, heats| %>
   <div style="page-break-after: always"></div>
 
+  <div class="w-full">
+
   <% unless @type == 'judge' and heats.all? {|number, ballrooms| ballrooms.values.flatten.first.category == 'Solo'} %>
   <div class="mt-8 mb-2 flex justify-between items-center" id="cat-<%= cat.downcase.gsub(' ', '-') %>">
     <h1 class="font-bold text-4xl"><%= cat %></h1>
   </div>
   <% end %>
 
-  <div class="w-full">
     <% heats.each do |number, ballrooms| %>
     <% heats = ballrooms.values.flatten %>
     <% heat = heats.first %>
