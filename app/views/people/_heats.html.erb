@@ -25,10 +25,20 @@
   </tr>
   </thead>
   <tbody>
+  <% day = @start && @start.compact.min.day %>
   <% heatlist = @heatlist[person] %>
   <% @heats.each do |number, heats| %>
   <% heats.each do |heat| %>
     <% next unless heatlist.include? heat.id %>
+    <% if @start && @start[number]&.day != day %>
+    <tr>
+    <td colspan="6" class="p-1">
+    </tr>
+    <tr>
+    <td colspan="6" class="p-1 border-solid border-t-2 border-gray-400">
+    </tr>
+    <% day = @start[number]&.day %>
+    <% end %>
     <% ballrooms = heat.dance_category&.ballrooms || @ballrooms %>
     <tr class="text-sm">
       <% if @start %>
