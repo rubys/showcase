@@ -83,9 +83,10 @@ a scheduled heat time will be added to each heat.
   <div class="min-w-full">
     <% heats.each do |number, ballrooms| %>
     <% heats = ballrooms.map(&:last).flatten %>
+    <% dance = heats.first.dance_id == heats.last.dance_id ? heats.first.dance_id : 0 %>
     <table class="break-inside-avoid text-sm mt-4 table-fixed">
       <colgroup>
-        <% if number != 0 %>
+        <% if number == 0 && heats.first.dance_id == heats.last.dance_id %>
         <col width="1%">
         <% else %>
         <col width="5%">
@@ -103,7 +104,7 @@ a scheduled heat time will be added to each heat.
       </colgroup>
       <thead>
         <td>
-        <% if number != 0 %>
+        <% if number != 0 || heats.first.dance_id != heats.last.dance_id%>
         <th width="5">
         <% else %>
         <th>
@@ -127,9 +128,14 @@ a scheduled heat time will be added to each heat.
       <% end %>
         <td></td>
         <td colspan="9" class="text-xl pt-4">Heat <%= number %>: 
-          <%= heats.first.category %> <%= heats.first.dance.name %>
+          <%= heats.first.category %>
+          <% if heats.first.dance_id == heats.last.dance_id %>
+          <%= heats.first.dance.name %>
           <% if heats.first.category == 'Solo' and heats.first.solo.combo_dance%>
           / <%= heats.first.solo.combo_dance.name %>
+          <% end %>
+          <% else %>
+          <%= cat %>
           <% end %>
           <% if @start %>
           <span class="text-base text-slate-400">- <%= @start[number]&.strftime("%-I:%M %P") %></span>
@@ -148,6 +154,14 @@ a scheduled heat time will be added to each heat.
       <% end %>
 
       <% heats.each_with_index do |heat, index| %>
+         <% if heat.dance_id != dance %>
+           <tr>
+             <td>
+             <td></td>
+             <td colspan="8" class="text-s pt-2"><%= heat.dance.name %></td>
+          </tr>
+          <% dance = heat.dance_id %>
+         <% end %>
          <% if heat.number < 0 %>
          <tr id="<%= dom_id heat %>" class="line-through opacity-50">
          <% else %>

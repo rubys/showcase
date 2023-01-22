@@ -10,7 +10,7 @@ module Printable
 
     @heats = @heats.to_a.group_by {|heat| heat.number.abs}.
       map do |number, heats|
-        [number, heats.sort_by { |heat| [heat.back || 0, heat.entry.lead.type] } ]
+        [number, heats.sort_by { |heat| [heat.dance_id, heat.back || 0, heat.entry.lead.type] } ]
       end
 
     @categories = (Category.all + CatExtension.all).sort_by {|cat| cat.order}.

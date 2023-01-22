@@ -155,10 +155,15 @@ Swiping left and right on mobile devices and tablets also work.
     </thead>
     <% lastcat = nil %>
     <% @ballrooms.each do |ballroom, subjects| %>
-       <% if ballroom.to_s == 'B' %>
+      <% dance = subjects.first.dance_id %> 
+      <% if ballroom.to_s == 'B' %>
         <tr><td colspan="10" class="bg-black"></tr>
       <% end %>
       <% subjects.each do |subject| %>
+      <% if subject.dance_id != dance %>
+      <tr><td colspan="10" class="bg-gray-400"></tr>
+      <% dance = subject.dance_id %>
+      <% end %>
       <% subcat = "#{subject.entry.subject_category(@track_ages)} - #{subject.entry.level.initials}" %>
       <% if @sort == 'level' and lastcat and subcat != lastcat %>
       <tr>

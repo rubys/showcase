@@ -17,7 +17,7 @@ class ScoresController < ApplicationController
     @style = params[:style] || 'cards'
     @sort = params[:sort] || 'back'
 
-    @heats = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance)
+    @heats = Heat.all.where(number: 1..).order(:dance_id, :number).group(:number).includes(:dance)
 
     @agenda = @heats.group_by(&:dance_category).map do |category, heats|
       [heats.map {|heat| heat.number}.min, category&.name]
@@ -44,7 +44,11 @@ class ScoresController < ApplicationController
       @scores = []
     else
       category = @subjects.first.category
-      @dance = "#{category} #{@subjects.first.dance.name}"
+      if @subjects.first.dance_id == @subjects.last.dance_id
+        @dance = "#{category} #{@subjects.first.dance.name}"
+      else
+        @dance = "#{category} #{@subjects.first.dance_category.name}"
+      end
       if category == 'Open' and @event.open_scoring == 'G'
         @scores = SCORES['Closed'].dup
       elsif category == 'Multi' and @event.multi_scoring == 'G'
@@ -69,7 +73,7 @@ class ScoresController < ApplicationController
       end
     end
 
-    @subjects.sort_by! {|heat| heat.entry.lead.back || 0}
+    @subjects.sort_by! {|heat| [heat.dance_id, heat.entry.lead.back || 0]}
     ballrooms = @subjects.first.dance_category&.ballrooms || @event.ballrooms
     @ballrooms = assign_rooms(ballrooms, @subjects)
 

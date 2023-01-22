@@ -241,10 +241,15 @@ tbody::after {
       <% if number and number > 0 %>
       <tr>
         <td></td>
-        <td colspan="9" class="text-lg">Heat <%= number %>: 
-          <%= heats.first.category %> <%= heats.first.dance.name %>
+        <td colspan="9" class="text-lg">Heat <%= number %>:
+          <%= heats.first.category %> 
+          <% if heats.first.dance_id == heats.last.dance_id %>
+          <%= heats.first.dance.name %>
           <% if heats.first.category == 'Solo' and heats.first.solo.combo_dance%>
           / <%= heats.first.solo.combo_dance.name %>
+          <% end %>
+          <% else %>
+          <%= cat %>
           <% end %>
           <% if @start %>
           <span class="text-base" style="opacity: 50%">- <%= @start[number]&.strftime("%-I:%M %P") %></span>
@@ -261,7 +266,15 @@ tbody::after {
            <td colspan="8" class="text-xs pt-2">Ballroom <%= ballroom %></td>
          </tr>
          <% end %>
+         <% dance = heats.first.dance_id == heats.last.dance_id ? heats.first.dance_id : 0 %>
          <% heats.each do |heat| %>
+          <% if heat.dance_id != dance %>
+           <tr>
+             <td>
+             <td colspan="8" class="text-s pt-2"><%= heat.dance.name %></td>
+          </tr>
+          <% dance = heat.dance_id %>
+         <% end %>
          <% if heat.number < 0 %>
          <tr class="font-base line-through opacity-50" id="<%= dom_id heat %>">
          <% else %>
