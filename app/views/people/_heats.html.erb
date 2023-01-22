@@ -18,9 +18,9 @@
     <td class="row-head">Time
     <% end %>
     <td class="row-head">Heat
-    <td class="row-head">Type
-    <td class="row-head">Dance
     <td class="row-head">Partner
+    <td class="row-head">Dance
+    <td class="row-head">Type
     <td class="row-head">Category
   </tr>
   </thead>
@@ -35,18 +35,18 @@
       <td class="text-right pr-4"><%= @start[number]&.strftime("%-I:%M") %></td>
       <% end %>
       <td class="text-center"><%= heat.number %>
-      <% if ballrooms == 2 %>
-      - <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
-      <% elsif ballrooms == 3 %>
-      - <%= heats.index(heat) >= heats.length/2 ? 'B' : 'A' %>
-      <% end %>
-      <td><div class="mx-4"><%= heat.category %>
-      <td><div class="mx-4"><%= heat.dance.name %></div>
       <% if heat.entry.lead != person %>
       <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div>
       <% elsif heat.entry.follow != person %>
       <td><div class="mx-4"><%= link_to heat.entry.follow.display_name, heat.entry.follow %></div>
       <% end %>
+      <% if ballrooms == 2 %>
+      - <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
+      <% elsif ballrooms == 3 %>
+      - <%= heats.index(heat) >= heats.length/2 ? 'B' : 'A' %>
+      <% end %>
+      <td><div class="mx-4"><%= heat.dance.name %></div>
+      <td><div class="mx-4"><%= heat.category %>
       <td class="text-center"><%= heat.entry.subject_lvlcat(@track_ages) %>
     </tr>
   <% end %>
