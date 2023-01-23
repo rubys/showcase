@@ -212,7 +212,7 @@ a scheduled heat time will be added to each heat.
            <td class="row text-center"><%= heat.entry.subject_category(@track_ages) %>
            <td class="row"><%= link_to heat.studio.name, heat.studio %>
            <td>
-           <form method="get" action="<%= edit_heat_path(heat) %>">
+          <form method="get" action="<%= heat.solo ? (heat.solo.formations.empty? ? edit_solo_path(heat.solo) : edit_formation_path(heat.solo)) : edit_heat_path(heat) %>">
           <input type="hidden" name="primary" value="<%= heat.subject.id %>">
           <input type="hidden" name="return_to" value="<%= heats_path(anchor: dom_id(heat)) %>">
           <button type="submit" class='group-hover:inline hidden x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium'>Edit</button>

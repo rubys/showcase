@@ -1,5 +1,5 @@
 <div>
-<%= form_with(model: solo, id: 'solo-form', class: "contents") do |form| %>
+<%= form_with(model: solo, id: 'solo-form', class: "contents", data: {turbo: return_to == nil}) do |form| %>
   <% if solo.errors.any? %>
     <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
       <h2><%= pluralize(solo.errors.count, "error") %> prohibited this solo from being saved:</h2>
@@ -69,6 +69,10 @@
   </div>
   <% end %>
 </div>
+
+<% if return_to %>
+<input type="hidden" name="return-to" value="<%= return_to %>">
+<% end %>
 <% end %>
 
 <div class="mx-auto flex">

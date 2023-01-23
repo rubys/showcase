@@ -145,7 +145,7 @@ class SolosController < ApplicationController
 
     respond_to do |format|
       if @solo.update(solo_params)
-        format.html { redirect_to @person,
+        format.html { redirect_to params['return-to'] || @person,
           notice: "#{formation.empty? ? 'Solo' : 'Formation'} was successfully updated." }
         format.json { render :show, status: :ok, location: @solo }
       else
