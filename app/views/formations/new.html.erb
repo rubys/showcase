@@ -8,6 +8,6 @@
   <h1 class="text-center font-bold text-4xl">New <%= @formation ? 'Formation' : 'Solo' %></h1>
   <% end %>
 
-  <%= render "solos/form", solo: @solo %>
+  <%= render "solos/form", solo: @solo, return_to: nil %>
   </div>
 </div>

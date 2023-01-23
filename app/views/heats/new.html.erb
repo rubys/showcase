@@ -5,7 +5,7 @@
   <h1 class="text-center font-bold text-4xl">New Heat</h1>
   <% end %>
 
-  <%= render "form", heat: @heat %>
+  <%= render "form", heat: @heat, return_to: nil %>
 
   <div class="mx-auto flex">
     <input type="submit" class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" form="heat-form" value="Create Heat">
