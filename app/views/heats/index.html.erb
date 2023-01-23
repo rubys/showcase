@@ -83,6 +83,7 @@ a scheduled heat time will be added to each heat.
   <div class="min-w-full">
     <% heats.each do |number, ballrooms| %>
     <% heats = ballrooms.map(&:last).flatten %>
+    <% tally = heats.map {|heat| e=heat.entry; [e.lead_id, e.follow_id]}.flatten.tally %>
     <% dance = heats.first.dance_id == heats.last.dance_id ? heats.first.dance_id : 0 %>
     <table class="break-inside-avoid text-sm mt-4 table-fixed">
       <colgroup>
@@ -188,7 +189,8 @@ a scheduled heat time will be added to each heat.
               p1, p2 = heat.follow, heat.lead
             end
            %>
-           <td class="row"><%= link_to p1.display_name, polymorphic_path(p1, anchor: 'heats') %>
+           <td class="row <%= tally[p1.id] > 1 ? 'text-white bg-red-600' : '' %>">
+           <%= link_to p1.display_name, polymorphic_path(p1, anchor: 'heats') %>
            <% if heat.category == 'Solo' and not heat.solo.formations.empty? %>
            <% heat.solo.formations.each_with_index do |formation, index| %>
            <% if index % 2 == 0 and formation.on_floor %>
@@ -196,7 +198,9 @@ a scheduled heat time will be added to each heat.
            <% end %>
            <% end %>
            <% end %>
-           <td class="row"><%= link_to p2.display_name, polymorphic_path(p2, anchor: 'heats') %>
+           <% if tally[p1.id] > 1 %><span class="text-white bg-red-600"><% end %>
+           <td class="row <%= tally[p2.id] > 1 ? 'text-white bg-red-600' : '' %>">
+           <%= link_to p2.display_name, polymorphic_path(p2, anchor: 'heats') %>
             <% if heat.category == 'Solo' and not heat.solo.formations.empty? %>
            <% heat.solo.formations.each_with_index do |formation, index| %>
            <% if index % 2 == 1 and formation.on_floor %>
