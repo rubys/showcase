@@ -253,6 +253,20 @@ class PeopleController < ApplicationController
     end
   end
 
+
+  # GET /people/back-numbers
+  def back_numbers
+    @event = Event.first
+    @people = Person.where.not(back: nil).order(:back).to_a
+
+    respond_to do |format|
+      format.html { render layout: false }
+      format.pdf do
+        render_as_pdf basename: "back-numbers"
+      end
+    end
+  end
+
   def package
     package_id = params[:package_id].to_i
     package = Billable.find(package_id)
