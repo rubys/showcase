@@ -33,7 +33,7 @@
        <% unless solo.artist.blank? %><li><%= solo.artist %><% end %>
        <% if solo.song_file.attached? %>
        <li>
-         <audio controls style="display: inline">
+         <audio controls preload="auto" style="display: inline">
            <source src=<%= solo.song_file.url %> type=<%= solo.song_file.content_type %>>
          </audio>
        </li>
