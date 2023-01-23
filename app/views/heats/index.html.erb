@@ -164,9 +164,9 @@ a scheduled heat time will be added to each heat.
           <% dance = heat.dance_id %>
          <% end %>
          <% if heat.number < 0 %>
-         <tr id="<%= dom_id heat %>" class="line-through opacity-50">
+         <tr id="<%= dom_id heat %>" class="group line-through opacity-50">
          <% else %>
-         <tr id="<%= dom_id heat %>">
+         <tr id="<%= dom_id heat %>" class="group">
          <% end %>
            <td></td>
            <% if number != 0 %>
@@ -211,6 +211,13 @@ a scheduled heat time will be added to each heat.
            <td class="row"><%= heat.entry.level.name %>
            <td class="row text-center"><%= heat.entry.subject_category(@track_ages) %>
            <td class="row"><%= link_to heat.studio.name, heat.studio %>
+           <td>
+           <form method="get" action="<%= edit_heat_path(heat) %>">
+          <input type="hidden" name="primary" value="<%= heat.subject.id %>">
+          <input type="hidden" name="return_to" value="<%= heats_path(anchor: dom_id(heat)) %>">
+          <button type="submit" class='group-hover:inline hidden x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium'>Edit</button>
+          </form>
+          </td>
          </tr>
       <% end %>
       <% end %>

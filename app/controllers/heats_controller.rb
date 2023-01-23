@@ -128,7 +128,8 @@ class HeatsController < ApplicationController
 
     respond_to do |format|
       if @heat.update(heat_params)
-        format.html { redirect_to person_path(@person), notice: "Heat was successfully updated." }
+        format.html { redirect_to params['return-to'] || person_path(@person),
+          notice: "Heat was successfully updated." }
         format.json { render :show, status: :ok, location: @heat }
       else
         edit
