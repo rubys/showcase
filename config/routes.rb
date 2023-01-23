@@ -81,6 +81,7 @@ Rails.application.routes.draw do
       get 'students', on: :collection
       get 'professionals', on: :collection
       get 'labels', on: :collection
+      get 'back-numbers', on: :collection, action: 'back_numbers'
       get 'guests', on: :collection
       get 'heats', on: :collection
       get 'heats', on: :member, action: 'individual_heats'
