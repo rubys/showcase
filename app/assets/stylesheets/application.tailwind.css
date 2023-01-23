@@ -102,5 +102,25 @@
    border-t dark:border-slate-600 font-medium pt-2
    text-slate-600 dark:text-slate-600 text-right
   }
+
+  .open-fb { @apply
+    m-2 rounded-lg py-1 bg-gray-100 inline-block font-medium text-center
+  }
+
+  .open-fb span { @apply
+    hidden lg:block
+  }
+
+  .open-fb abbr { @apply
+    block lg:hidden
+  }
+
+  .good .open-fb.selected { @apply
+   bg-green-400
+  }
+
+  .bad .open-fb.selected { @apply
+   bg-red-400
+  }
 }
 @import 'actiontext.css';

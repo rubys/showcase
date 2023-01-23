@@ -17,7 +17,7 @@ class ScoresController < ApplicationController
     @style = params[:style] || 'cards'
     @sort = params[:sort] || 'back'
 
-    @heats = Heat.all.where(number: 1..).order(:dance_id, :number).group(:number).includes(:dance)
+    @heats = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance)
 
     @agenda = @heats.group_by(&:dance_category).map do |category, heats|
       [heats.map {|heat| heat.number}.min, category&.name]
@@ -51,6 +51,8 @@ class ScoresController < ApplicationController
       end
       if category == 'Open' and @event.open_scoring == 'G'
         @scores = SCORES['Closed'].dup
+      elsif category == 'Open' and @event.open_scoring == '+'
+        @scores = []
       elsif category == 'Multi' and @event.multi_scoring == 'G'
         @scores = SCORES['Closed'].dup
       else
@@ -85,7 +87,7 @@ class ScoresController < ApplicationController
       end
     end
 
-    @scores << ''
+    @scores << '' unless @scores.length == 0
  
     @heat = Heat.find_by(number: @number)
 

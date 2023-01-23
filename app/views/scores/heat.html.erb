@@ -3,7 +3,7 @@
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
-  <h1 class="grow font-bold text-4xl pt-1 pb-3 text-center">
+  <h1 class="grow font-bold text-4xl pt-1 pb-3 text-center mx-8">
     <%= link_to judge_heatlist_path(judge: @judge, anchor: dom_id(@heat), style: @style), rel: 'up' do %>
       <span>Heat <%= @number %>:<br class="block sm:hidden"> <%= @dance %>
       <% if @heat.solo&.combo_dance_id %>
@@ -128,7 +128,7 @@ Swiping left and right on mobile devices and tablets also work.
     </div>
 
   </div>
-  <% elsif @style == 'radio' || @style == 'emcee' %>
+  <% elsif @style == 'radio' || @style == 'emcee' || @scores.empty? %>
     <div class="grow flex flex-col border-2 border-slate-400 overflow-y-auto">
     <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>
     <table class="table-auto border-separate border-spacing-y-1 mx-4">
@@ -139,7 +139,7 @@ Swiping left and right on mobile devices and tablets also work.
         <th class="text-left border-b-2 border-black" rowspan="2">Partner
         <th class="text-left border-b-2 border-black" rowspan="2">Category
         <th class="text-left border-b-2 border-black" rowspan="2">Studio
-      <% unless @style == 'emcee' %>  
+      <% unless @style == 'emcee' or @scores.empty? %>
       <% if @event.open_scoring == '#' %>
         <th class="text-center border-b-2 border-black">Score
       <% else %>
@@ -176,7 +176,7 @@ Swiping left and right on mobile devices and tablets also work.
       <% else %>
       <tr class="hover:bg-yellow-200 line-through opacity-50">
       <% end %>
-        <td class="py-2"><%= subject.lead.back %>
+        <td class="py-2 font-bold text-xl"><%= subject.lead.back %>
         <% if subject.lead.type == 'Student' %>
         <td><%= subject.follow.display_name %>
         <td><%= subject.lead.display_name %>
@@ -198,8 +198,40 @@ Swiping left and right on mobile devices and tablets also work.
         <% end %>
         <% end %>
         <% end %>
-        <% end %>
       </tr>
+      <% if @style != 'emcee' and @scores.empty? %>
+      <tr data-controller="open-feedback" class="open-fb-row">
+      <td colspan="5">
+      <div class="grid grid-cols-2 w-full divide-x-2 divide-black">
+        <div class="grid grid-cols-5 good">
+          <button class="open-fb"><abbr>DF</abbr><span>Dance Frame</span></button>
+          <button class="open-fb"><abbr>T</abbr><span>Timing</span></button>
+          <button class="open-fb"><abbr>LF</abbr><span>Lead/&ZeroWidthSpace;Follow</span></button>
+          <button class="open-fb"><abbr>CM</abbr><span>Cuban Motion</span></button>
+          <button class="open-fb"><abbr>RF</abbr><span>Rise & Fall</span></button>
+          <button class="open-fb"><abbr>FW</abbr><span>Footwork</span></button>
+          <button class="open-fb"><abbr>B</abbr><span>Balance</span></button>
+          <button class="open-fb"><abbr>AS</abbr><span>Arm Styling</span></button>
+          <button class="open-fb"><abbr>CB</abbr><span>Contra-Body</span></button>
+          <button class="open-fb"><abbr>FC</abbr><span>Floor Craft</span></button>
+        </div>
+        <div class="grid grid-cols-5 bad">
+          <button class="open-fb"><abbr>DF</abbr><span>Dance Frame</span></button>
+          <button class="open-fb"><abbr>T</abbr><span>Timing</span></button>
+          <button class="open-fb"><abbr>LF</abbr><span>Lead/&ZeroWidthSpace;Follow</span></button>
+          <button class="open-fb"><abbr>CM</abbr><span>Cuban Motion</span></button>
+          <button class="open-fb"><abbr>RF</abbr><span>Rise & Fall</span></button>
+          <button class="open-fb"><abbr>FW</abbr><span>Footwork</span></button>
+          <button class="open-fb"><abbr>B</abbr><span>Balance</span></button>
+          <button class="open-fb"><abbr>AS</abbr><span>Arm Styling</span></button>
+          <button class="open-fb"><abbr>CB</abbr><span>Contra-Body</span></button>
+          <button class="open-fb"><abbr>FC</abbr><span>Floor Craft</span></button>        </div>
+      </div>
+      </td>
+      </tr>
+      <% end %>
+
+    <% end %>
     <% end %>
     </table>
     </div>
