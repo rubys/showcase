@@ -79,7 +79,8 @@ class CategoriesController < ApplicationController
   def toggle_lock
     event = Event.first
     event.update(locked: !event.locked)
-    redirect_to categories_url, notice: "Agenda #{event.locked ? '' : 'un'}locked."
+    redirect_to params[:return_to] || categories_url,
+      notice: "Agenda #{event.locked ? '' : 'un'}locked."
   end
 
   # POST /categories/redo

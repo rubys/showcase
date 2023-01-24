@@ -34,8 +34,14 @@ a scheduled heat time will be added to each heat.
 </ul>
 </div>
 
+
 <div class="flex justify-between items-center">
-  <h1 class="font-bold text-4xl">Agenda</h1>
+<div class="float-left">
+<%= link_to toggle_lock_categories_path(return_to: heats_path), data: { turbo_method: "post" } do %>
+<%= image_tag @locked ? 'Padlock-bronze-closed.svg' : 'Padlock-bronze-open.svg', height: 60, width: 60 %>
+<% end %>
+</div>
+  <h1 class="text-center font-bold text-4xl">Agenda</h1>
   <div>
   <%= link_to 'Solos', solos_path, class: "btn-green print:hidden" %>
   <%= up_link 'Redo', redo_heats_path, class: "btn-blue print:hidden", method: :post, disabled: @locked %>
