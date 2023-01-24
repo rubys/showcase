@@ -97,6 +97,7 @@ class HeatsController < ApplicationController
     @level = @heat.entry.level_id
     @instructor = @heat.entry.instructor_id
     @ballroom = Event.exists?(ballrooms: 2..) || Category.exists?(ballrooms: 2..)
+    @locked = Event.last.locked
   end
 
   # POST /heats or /heats.json

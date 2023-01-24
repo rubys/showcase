@@ -5,6 +5,16 @@
   <h1 class="text-center font-bold text-4xl">Edit Heat</h1>
   <% end %>
 
+  <div data-controller="info-box">
+  <div class="info-button">&#x24D8;</div>
+  <ul class="info-box">
+  <li>Click the lock symbol on the agenda page to enable editing of heat numbers.
+  <li class="text-red-600 font-bold">Pushing <span class="x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium">redo</span> will reset all heat numbers.
+  <li>If you want to insert a heat between two heats, use decimal numbers.
+  <li>If you are making many changes on the same entry form, consider editing the entry instead.
+  </ul>
+  </div>
+
   <%= render "form", heat: @heat, return_to: params['return_to'] %>
 
   <div class="mx-auto flex">

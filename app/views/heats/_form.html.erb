@@ -18,6 +18,7 @@
     <div class="my-5">
       <%= form.label :number, 'Heat number' %>
       <%= form.text_field :number, pattern: '^\s*\d+(\.\d+|\d+_)?\s*$',
+        disabled: !@locked,
         class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
     </div>
 
