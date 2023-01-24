@@ -23,7 +23,7 @@
     
     <% @people.each_with_index do |person, index| %>
     <div class="break-inside-avoid h-screen w-screen">
-    <div style="min-height: 25%; background-color: <%= person.type == "Professional" ? 'red' : 'blue' %>; display: flex; justify-content: center; align-items: center">
+    <div style="min-height: 25%; background-color: <%= person.type == "Professional" ? 'blue' : 'red' %>; display: flex; justify-content: center; align-items: center">
     <%= image_tag 'arthur-murray-dance-studio.png', style: "height: 20vh" %>
     </div>
     <div style="min-height: 50%; font-size: 50vh; text-align: center; line-height: 50vh; font-weight: bold; font-family: arial"><%= person.back %></div>
