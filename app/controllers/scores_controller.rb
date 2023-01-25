@@ -60,18 +60,27 @@ class ScoresController < ApplicationController
       end
     end
 
-    student_results = Score.where(judge: @judge, heat: @subjects, slot: @slot).
-      map {|score| [score.heat, score.value]}.to_h
+    scores = Score.where(judge: @judge, heat: @subjects, slot: @slot).all
+    student_results = scores.map {|score| [score.heat, score.value]}.to_h
 
     @results = {}
     @subjects.each do |subject|
       score = student_results[subject] || ''
       if @style == 'radio' and @subjects.first.category != 'Solo' 
-        @results[subject] = score 
+        @results[subject] = score
       else
         score = student_results[subject] || ''
         @results[score] ||= []
         @results[score] << subject
+      end
+    end
+
+    if @event.open_scoring = '+' and @subjects.first.category == 'Open'
+      @good = {}
+      @bad = {}
+      scores.each do |score|
+        @good[score.heat_id] = score.good
+        @bad[score.heat_id] = score.bad
       end
     end
 
@@ -154,6 +163,34 @@ class ScoresController < ApplicationController
     else
       score.destroy
       render json: score
+    end
+  end
+
+  def post_feedback
+    judge = Person.find(params[:judge].to_i)
+    heat = Heat.find(params[:heat].to_i)
+    slot = params[:slot]&.to_i
+
+    score = Score.find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
+    if ApplicationRecord.readonly?
+      render json: 'database is readonly', status: :service_unavailable
+    else
+      if params.include? :good
+        score.good = params[:good]
+      elsif params.include? :bad
+        score.bad = params[:bad]
+      else
+        render json: params, status: :bad_request
+        return
+      end
+
+      keep = score.good || score.bad || score.comments || score.value
+
+      if keep ? score.save : score.delete
+        render json: score.as_json
+      else
+        render json: score.errors, status: :unprocessable_entity
+      end
     end
   end
 
