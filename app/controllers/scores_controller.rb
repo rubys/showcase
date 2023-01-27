@@ -470,13 +470,13 @@ class ScoresController < ApplicationController
 
     def student_results
       scores = {
-        'Followers' => Score.joins(heat: {entry: [:follow]}).
+        'Followers' => Score.joins(heat: {entry: [:lead, :follow]}).
           group(:value, :follow_id).
-          where(follow: {type: 'Student'}).
+          where(follow: {type: 'Student'}, lead: {type: 'Professional'}).
           count(:value),
-        'Leaders' => Score.joins(heat: {entry: [:lead]}).
+        'Leaders' => Score.joins(heat: {entry: [:lead, :follow]}).
           group(:value, :lead_id).
-          where(lead: {type: 'Student'}).
+          where(lead: {type: 'Student'}, follow: {type: 'Professional'}).
           count(:value),
         'Couples' => Score.joins(heat: {entry: [:lead, :follow]}).
           group(:value, :follow_id, :lead_id).
