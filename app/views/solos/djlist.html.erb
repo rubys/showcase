@@ -20,25 +20,26 @@
   <% @heats.each do |heat| %>
     <% next if heat.number <= 0 %>
     <tr class="hover:bg-yellow-200" id="<%= dom_id heat.solo %>">
-       <td class="text-center"><%= heat.number %>
-       <% if heat.category == 'Solo' and heat.solo.combo_dance %>
-       <td class="row"><%= link_to heat.dance.name, edit_dance_path(heat.dance) %> / 
+       <td class="text-center"><div style="line-height: 5rem"><%= heat.number %>
+       <td class="row">
+       <ul class="list-none">
+       <li><% if heat.category == 'Solo' and heat.solo.combo_dance %>
+       <%= link_to heat.dance.name, edit_dance_path(heat.dance) %> / 
        <%= link_to heat.solo.combo_dance.name, edit_dance_path(heat.solo.combo_dance) %>
        <% else %>
-       <td class="row"><%= link_to heat.dance.name, edit_dance_path(heat.dance) %>
-       <% end %>
-       <td>
-       <ul>
+       <%= link_to heat.dance.name, edit_dance_path(heat.dance) %>
+       <% end %></li>
        <% unless heat.solo.song.blank? %><li><%= heat.solo.song %><% end %>
        <% unless heat.solo.artist.blank? %><li><%= heat.solo.artist %><% end %>
+       </ul>
        <% if heat.solo.song_file.attached? %>
-       <li>
+       <td>
          <audio controls preload="auto" style="display: inline">
            <source src=<%= heat.solo.song_file.url %> type=<%= heat.solo.song_file.content_type %>>
          </audio>
-       </li>
+       <% else %>
+       <td class="bg-red-200">
        <% end %>
-       </ul>
        <td class="row"><%= link_to heat.lead.display_name, polymorphic_path(heat.lead, anchor: 'heats') %>
        <% heat.solo.formations.each_with_index do |formation, index| %>
          <% if index % 2 == 0 and formation.on_floor %>
