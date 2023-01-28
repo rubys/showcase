@@ -366,7 +366,7 @@ export default class extends Controller {
         this.commentsTarget.disabled = true;
 
         this.post({
-          heat: parseInt(this.commentTarget.dataset.heat),
+          heat: parseInt(this.commentsTarget.dataset.heat),
           test: 'data',
           comments: this.commentsTarget.value
         }).then(response => {
