@@ -15,12 +15,6 @@ body.docs {
   }
 }
 
-.docs .icon {
-  position: absolute;
-  right: 16px;
-  top: 16px;
-}
-
 .docs p {
   margin: 0.8em 0;
 }
