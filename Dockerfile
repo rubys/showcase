@@ -17,7 +17,7 @@
 # We recommend using the highest patch level for better security and
 # performance.
 
-ARG RUBY_VERSION=3.1.2
+ARG RUBY_VERSION=3.2.0
 ARG VARIANT=jemalloc-slim
 FROM quay.io/evl.ms/fullstaq-ruby:${RUBY_VERSION}-${VARIANT} as base
 
@@ -80,7 +80,7 @@ RUN apt-get install -y dirmngr gnupg apt-transport-https ca-certificates curl &&
 RUN curl https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
  && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list
 
-ARG DEPLOY_PACKAGES="file vim curl gzip nginx passenger libnginx-mod-http-passenger sqlite3 libsqlite3-0 google-chrome-stable ruby-foreman redis-server apache2-utils openssh-server rsync libxlsxwriter-dev"
+ARG DEPLOY_PACKAGES="file vim curl gzip nginx passenger libnginx-mod-http-passenger sqlite3 libsqlite3-0 google-chrome-stable ruby-foreman redis-server apache2-utils openssh-server rsync"
 ENV DEPLOY_PACKAGES=${DEPLOY_PACKAGES}
 
 RUN --mount=type=cache,id=prod-apt-cache,sharing=locked,target=/var/cache/apt \
@@ -119,6 +119,10 @@ RUN rm /etc/nginx/sites-enabled/default && \
     mkdir /etc/nginx/main.d && \
     echo 'env RAILS_MASTER_KEY;' >> /etc/nginx/main.d/env.conf &&\
     echo 'env RAILS_LOG_TO_STDOUT;' >> /etc/nginx/main.d/env.conf
+RUN mkdir /var/run/passenger-instreg
+
+RUN mkdir /root/.ssh && \
+    echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC8yIJ1gPtLXWSTH5bJXk+5VaO8QlvQ5KBdMvY1yzqBf8OI23rBI1j9yrXL175FDHCCTI80tx8DVsvegA2pdh2oYX4pyYpSpy01d0dQJrDuBHA1ii9+bIqP6gq4TPajZi97nXtKnjIh2sfGXSxwzkNC3J5MX6xXeDvCFGFDWDVaTJhg6PGP/D5FfkKqWMIzztvwvGsXcNg4oyzYQlDQWr5QLDK+9BmY/JgROArC/Feo3y8M8n/u2lpLGgAb21RgdJhcjT8qCuqtKtFIolM9MPQmU5s7YtSsTsXLHB1midVouta/VCK+4DdFkdapsDbj+LsPST1AEhN9pMrtotXUSFJR rubys@rubixb > /root/.ssh/authorized_keys
 
 # Deploy your application
 COPY . .
