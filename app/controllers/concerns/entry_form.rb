@@ -20,10 +20,17 @@ module EntryForm
       when 'Follower'
           ['Leader']
       else
+        if entry and entry.follow == @person
+          @role = 'Follower'
+        else
+          @role = 'Leader'
+        end
+
         ['Leader', 'Follower']
       end
 
       seeking = ['Leader', 'Follower'] if @formation
+      @seeking = seeking
 
       instructors = Person.where(type: 'Professional', studio: studios, 
         role: [*seeking, 'Both']).order(:name)
@@ -37,6 +44,10 @@ module EntryForm
       spouse = @avail.find {|person| person.name.start_with? surname}
       @avail = ([spouse] + @avail).uniq if spouse
       @avail.delete(@person)
+
+      if @person.role == 'Both'
+        @boths = @avail.select {|person| person.role == 'Both'}.map(&:id)
+      end
 
       @avail = @avail.map {|person| [person.display_name, person.id]}.to_h
       @instructors = Person.where(type: 'Professional', studio: studios).
@@ -60,13 +71,14 @@ module EntryForm
 
   def find_or_create_entry(params)
     @person = Person.find(params[:primary])
+    partner = Person.find(params[:partner])
 
-    if @person.role == "Follower"
-      lead = Person.find(params[:partner])
+    if @person.role == "Follower" || partner.role == 'Leader' || params[:role] == 'Follower'
+      lead = partner
       follow = @person
     else
       lead = @person
-      follow = Person.find(params[:partner])
+      follow = partner
     end
 
     if lead.type == 'Professional' or follow.type == 'Professional'

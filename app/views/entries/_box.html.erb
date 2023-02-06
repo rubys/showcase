@@ -10,6 +10,11 @@
 
   <% target = (@formation ? 'formation' : 'entry-box') + '-target' %>
 
+  <% if @role %>
+  <%= form.select :role, %w{Leader Follower}, {selected: @role}, data: {target => 'role', boths: @boths.to_json },
+    class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'role' %>
+  <% end %>
+
   <% if @person %>
   <%= form.hidden_field :primary, value: @person.id, data: {target => 'primary'} %>
   <%= form.select :partner, @avail, {selected: @partner}, data: {target => 'partner', action: 'change->entry-box#reveal'},
@@ -37,10 +42,10 @@
   <% end %>
 
   <% unless @track_ages == false %>
-  <%= form.select :age, @ages, {selected: @age},
+  <%= form.select :age, @ages, {selected: @age}, title: 'age',
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %>
   <% end %>
 
-  <%= form.select :level, @levels, {selected: @level},
+  <%= form.select :level, @levels, {selected: @level}, title: 'level',
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>
 </div>
