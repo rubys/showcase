@@ -1,5 +1,9 @@
 ---
 2023:                                                                           
+  charlotte:
+    :name: Charlotte
+    :region: iad
+    :logo: arthur-murray-logo.gif
   harrisburg:                                                                   
     :name: Harrisburg
     :region: iad
