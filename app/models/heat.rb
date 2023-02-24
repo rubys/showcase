@@ -28,7 +28,7 @@ class Heat < ApplicationRecord
       dance.closed_category
     end
 
-    if cat.heats = nil or cat.extensions.empty?
+    if !cat or cat.heats == nil or cat.extensions.empty?
       cat
     elsif cat.extensions.first.start_heat == nil or number == nil
       cat
