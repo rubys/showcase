@@ -1,5 +1,16 @@
 ---
 2023:                                                                           
+  annapolis:
+    :name: Annapolis
+    :region: iad
+    :logo: arthur-murray-logo.gif
+    :events:
+      :medalball:
+        :name: Metal Ball
+      :chesapeakeclassic:
+        :name: Chesapeake Classic
+      :gratitudegala:
+        :name: Gratitude Gala
   charlotte:
     :name: Charlotte
     :region: iad
