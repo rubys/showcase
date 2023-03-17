@@ -23,6 +23,10 @@
     :name: Raleigh
     :region: iad
     :logo: arthur-murray-logo.gif
+  richmond:
+    :name: Richmond
+    :region: iad
+    :logo: arthur-murray-logo.gif
 2022:                                                                           
   annapolis:
     :name: Annapolis
