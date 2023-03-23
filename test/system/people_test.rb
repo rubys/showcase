@@ -7,7 +7,7 @@ class PeopleTest < ApplicationSystemTestCase
 
   test "visiting the index" do
     visit people_url
-    assert_selector "h1", text: "People"
+    assert_selector "h1", text: "Event Participants"
   end
 
   test "should create person" do
