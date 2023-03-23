@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_01_24_233129) do
+ActiveRecord::Schema[7.0].define(version: 2023_03_23_024334) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -87,6 +87,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_24_233129) do
     t.integer "ballrooms"
     t.integer "max_heat_size"
     t.integer "heats"
+    t.boolean "routines"
+    t.integer "duration"
   end
 
   create_table "dances", force: :cascade do |t|
@@ -258,6 +260,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_24_233129) do
     t.datetime "updated_at", null: false
     t.string "song"
     t.string "artist"
+    t.integer "category_override_id"
+    t.index ["category_override_id"], name: "index_solos_on_category_override_id"
     t.index ["combo_dance_id"], name: "index_solos_on_combo_dance_id"
     t.index ["heat_id"], name: "index_solos_on_heat_id"
   end
@@ -335,6 +339,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_24_233129) do
   add_foreign_key "person_options", "people"
   add_foreign_key "scores", "heats"
   add_foreign_key "scores", "people", column: "judge_id"
+  add_foreign_key "solos", "categories", column: "category_override_id"
   add_foreign_key "solos", "dances", column: "combo_dance_id"
   add_foreign_key "solos", "heats"
   add_foreign_key "studio_pairs", "studios", column: "studio1_id"
