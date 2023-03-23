@@ -19,6 +19,10 @@ if [[ $# -gt 0 ]]; then
   if [[ $# -gt 1 ]]; then
     export HTTP_X_REMOTE_USER=$2
   fi
+
+  if [[ $1 -eq "test" ]]; then
+    RAILS_ENV=test bin/rails db:prepare db:fixtures:load
+  fi
 fi
 
 foreman start -f Procfile.dev

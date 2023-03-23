@@ -81,9 +81,26 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should reorder categories" do
+    get categories_url
+    
+    assert_response :success
+
+    assert_select 'tr td:first-child a' do |links|
+      assert_equal [
+        "Unscheduled",
+        "Closed American Smooth",
+        "Open American Smooth - Part 1",
+        "Closed American Smooth - Part 1",
+        "Closed American Rhythm",
+        "All Arounds",
+        "Open American Smooth",
+        "Open American Rhythm" 
+      ], links.map(&:text)
+    end
+
     post drop_categories_url, as: :turbo_stream, params: {
-      source: categories(:three).id,
-      target: categories(:one).id
+      source: categories(:one).id,
+      target: categories(:four).id
     }
       
     assert_response :success
@@ -92,16 +109,18 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
       assert_equal [
         "Unscheduled",
         "Closed American Rhythm",
-        "Closed American Smooth",
+        "Open American Smooth - Part 1",
+        "Closed American Smooth - Part 1",
         "All Arounds",
         "Open American Smooth",
-        "Open American Rhythm" 
+        "Open American Rhythm",
+        "Closed American Smooth" 
       ], links.map(&:text)
     end
 
-    assert_equal 2, categories(:three).order
-    categories(:three).reload
-    assert_equal 1, categories(:three).order
+    assert_equal 1, categories(:one).order
+    categories(:one).reload
+    assert_equal 5, categories(:one).order
   end
 
   test "should destroy category" do
