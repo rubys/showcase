@@ -64,14 +64,14 @@ a scheduled heat time will be added to each heat.
     <% @agenda.each do |cat, heats| %>
       <tr>
         <td class="row"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a>
-        <td class="row text-right"><a href="#heat-<%= heats.first.first %>"><%= heats.first.first %></a>
-        <td class="row text-right"><a href="#heat-<%= heats.last.first %>"><%= heats.last.first %></a>
-        <% if @start and @start[heats.first.first] %>
+        <td class="row text-right"><a href="#heat-<%= heats.first&.first %>"><%= heats.first&.first %></a>
+        <td class="row text-right"><a href="#heat-<%= heats.last&.first %>"><%= heats.last&.first %></a>
+        <% if @start and @cat_start[cat] %>
         <% unless @oneday %>
-        <td class="row"><%= Date::DAYNAMES[@start[heats.first.first]&.wday || 7] %>
+        <td class="row"><%= Date::DAYNAMES[@cat_start[cat]&.wday || 7] %>
         <% end %>
-        <td class="row"><%= @start[heats.first.first]&.strftime("%I:%M %P") %>
-        <td class="row"><%= @finish[heats.last.first]&.strftime("%I:%M %P") %>
+        <td class="row"><%= @cat_start[cat]&.strftime("%I:%M %P") %>
+        <td class="row"><%= @cat_finish[cat]&.strftime("%I:%M %P") %>
         <% elsif not @categories[cat]&.day.blank? and not @oneday %>
         <td class="row"><%= @categories[cat].day %>
         <% end %>
@@ -80,6 +80,7 @@ a scheduled heat time will be added to each heat.
   </table>
 
   <% @agenda.each do |cat, heats| %>
+  <% next if heats.empty? %>
   <div style="page-break-after: always"></div>
 
   <div class="mt-8 flex justify-between items-center" id="cat-<%= cat.downcase.gsub(' ', '-') %>">

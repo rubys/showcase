@@ -50,60 +50,83 @@ module Printable
       end
     end
 
+    @oneday = @categories.values.map(&:day).uniq.length <= 1
+
+    # sort heats into categories
+
     @agenda = {}
-    @start = [] if start
-    @finish = [] if start
-    last_cat = nil
+
+    @agenda['Unscheduled'] = []
+    @categories.each do |name, cat|
+      @agenda[name] = []
+    end
+    @agenda['Uncategorized'] = []
 
     @heats.each do |number, heats|
       if number == 0
-        @agenda['Unscheduled'] ||= []
         @agenda['Unscheduled'] << [number, {nil => heats}]
       else
         cat = heats.first.dance_category
         ballrooms = cat&.ballrooms || event.ballrooms || 1
-
-        if cat and start
-          cat = @categories[cat.name]
-
-          if cat != last_cat and not cat.day.blank?
-            yesterday = Chronic.parse('yesterday', now: start)
-            day = Chronic.parse(cat.day, now: yesterday, guess: false)&.begin || start
-            start = day if day > start and day < start + 86_400
-          end
-
-          if not cat.time.blank?
-            if cat != last_cat
-              time = Chronic.parse(cat.time, now: start) || start
-              start = time if time and time > start
-            end
-
-            @start[number] ||= start
-
-            if heats.first.dance.heat_length
-              start += heat_length * heats.first.dance.heat_length
-            elsif heats.any? {|heat| heat.number > 0}
-              if heats.length == 1 and heats.first.category == 'Solo'
-                start += solo_length
-              else
-                start += heat_length
-              end
-            end
-
-            @finish[number] ||= start
-          end
-
-          last_cat = cat
-        end
         
         cat = cat&.name || 'Uncategorized'
-
-        @agenda[cat] ||= []
         @agenda[cat] << [number, assign_rooms(ballrooms, heats)]
       end
     end
 
-    @oneday = @categories.values.map(&:day).uniq.length <= 1
+    @agenda.delete 'Unscheduled' if @agenda['Unscheduled'].empty?
+    @agenda.delete 'Uncategorized' if @agenda['Uncategorized'].empty?
+
+    # assign start and finish times
+
+    if start
+      @start = []
+      @finish = []
+
+      @cat_start = {}
+      @cat_finish = {}
+
+      @agenda.each do |name, heats|
+        cat = @categories[name]
+
+        if cat and not cat.day.blank?
+          yesterday = Chronic.parse('yesterday', now: start)
+          day = Chronic.parse(cat.day, now: yesterday, guess: false)&.begin || start
+          start = day if day > start and day < start + 86_400
+        end
+
+        if cat and not cat.time.blank?
+          time = Chronic.parse(cat.time, now: start) || start
+          start = time if time and time > start
+        end
+
+        @cat_start[name] = start
+
+        heats.each do |number, ballrooms|
+          heats = ballrooms.values.flatten
+
+          @start[number] ||= start
+
+          if heats.first.dance.heat_length
+            start += heat_length * heats.first.dance.heat_length
+          elsif heats.any? {|heat| heat.number > 0}
+            if heats.length == 1 and heats.first.category == 'Solo'
+              start += solo_length
+            else
+              start += heat_length
+            end
+          end
+
+          @finish[number] ||= start
+        end
+
+        if cat.duration
+          @cat_finish[name] = [start, @cat_start[name] + cat.duration*60].max
+        else
+          @cat_finish[name] = start
+        end
+      end
+    end
   end
 
   def assign_rooms(ballrooms, heats)
