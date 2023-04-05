@@ -137,6 +137,10 @@ class SolosController < ApplicationController
       @solo.combo_dance = Dance.find(solo[:combo_dance_id].to_i)
     end
 
+    if solo[:category_override_id]
+      @solo.category_override = Category.find(solo[:category_override_id].to_i)
+    end
+
     if not formation.empty? or not @solo.formations.empty?
       @solo.formations.each do |record|
         if not formation.include? record.person_id

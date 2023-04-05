@@ -113,11 +113,12 @@ when most dances for an individual are with one instructor but one or two are ch
     </table>
 
     <% if @solos.length > 0 %>
+    <% @solos.group_by {|solo| solo.solo.category_override_id ? 'Routine' : 'Solo'}.each do |type, solos| %>
 
-    <table id="solos">
-    <caption class="text-left font-bold pt-8 text-3xl pb-5">Solos</caption>
+    <table id="<%= type.downcase %>s">
+    <caption class="text-left font-bold pt-8 text-3xl pb-5"><%= type %>s</caption>
 
-    <% instructor = @solos.any? do |heat| 
+    <% instructor = solos.any? do |heat| 
       not heat.solo.instructors(@person).empty?
     end %>
 
@@ -134,7 +135,7 @@ when most dances for an individual are with one instructor but one or two are ch
     </thead>
 
     <tbody>
-      <% @solos.each do |heat| %>
+      <% solos.each do |heat| %>
         <% entry = heat.entry %>
           <% if heat.number < 0 %>
           <tr class="group line-through opacity-50">
@@ -175,8 +176,8 @@ when most dances for an individual are with one instructor but one or two are ch
       <% end %>
     </tbody>
   </table>
-
-    <% end %>
+  <% end %>
+  <% end %>
 
     <table>
       <caption class="text-left font-bold pt-8 text-3xl pb-5">Dances</caption>
