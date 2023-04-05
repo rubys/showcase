@@ -300,6 +300,8 @@ class PeopleController < ApplicationController
     @entries = partners
     @partners = partners.keys
 
+    @routines = !Category.where(routines: true).blank?
+
     @heats = Heat.joins(:entry).
       includes(:dance, entry: [:lead, :follow]).
       where(entry: {lead: @person}).

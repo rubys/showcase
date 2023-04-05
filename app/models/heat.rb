@@ -23,7 +23,7 @@ class Heat < ApplicationRecord
     elsif category == "Open"
       dance.open_category
     elsif category == "Solo"
-      dance.solo_category
+      solo.category_override || dance.solo_category
     else
       dance.closed_category
     end

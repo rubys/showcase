@@ -35,6 +35,14 @@
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <% unless @overrides.blank? %>
+  <div class="my-5">
+    <%= form.label :category_override_id, 'Category' %>
+    <%= form.select :category_override_id, @overrides, {include_blank: false},
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  <% end %>
+
   <div class="my-5">
     <%= form.label :song %>
     <%= form.text_field :song, 
@@ -77,16 +85,16 @@
 
 <div class="mx-auto flex">
   <input type="submit" class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" form="solo-form"
-    value="<%= (solo.persisted? ? 'Update' : 'Create') + ' ' + (@formation ? 'Formation' : 'Solo') %>">
+    value="<%= (solo.persisted? ? 'Update' : 'Create') + ' ' + (@formation ? 'Formation' : (@overrides.blank? ? 'Solo' : 'Routine')) %>">
   <% if solo.id %>
   <% if solo.heat.number < 0 %>
-  <%= up_link "Restore this #{@formation ? 'formation' : 'solo'}",
+  <%= up_link "Restore this #{@formation ? 'formation' : (@overrides.blank? ? 'solo' : 'routine')}",
     solo_path(solo), class: 'text-center btn-grey h-full my-0', method: :delete, params: {primary: @person} %>
   <% elsif solo.heat.number > 0 %>
-  <%= up_link "Scratch this #{@formation ? 'formation' : 'solo'}",
+  <%= up_link "Scratch this #{@formation ? 'formation' : (@overrides.blank? ? 'solo' : 'routine')}",
     solo_path(solo), class: 'text-center btn-grey h-full my-0', method: :delete, params: {primary: @person} %>
   <% else %>
-  <%= up_link "Remove this #{@formation ? 'formation' : 'solo'}",
+  <%= up_link "Remove this #{@formation ? 'formation' : (@overrides.blank? ? 'solo' : 'routine')}",
     solo_path(solo), class: 'text-center btn-grey h-full my-0', method: :delete,
     params: {primary: @person}, form: { data: { turbo_confirm: 'Are you sure?' }} %>
   <% end %>

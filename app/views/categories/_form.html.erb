@@ -44,6 +44,16 @@ start times for each heat will show up on the heats page.
     <%= form.text_field :time, placeholder: '1 pm', class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <div class="my-5">
+    <%= form.label :duration, 'Minimum Duration (minutes)' %>
+    <%= form.text_field :duration, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+    <div class="my-5">
+    <%= form.check_box :routines, class: 'entry-count h-10' %>
+    <%= form.label :routines, '"Agenda Item for "Routines" (include all dances)' %>
+  </div>
+
   <% if category.instance_of? Category %>
   <div data-controller="category-override">
   <div class="my-5">

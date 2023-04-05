@@ -37,6 +37,10 @@ class SolosController < ApplicationController
 
     form_init(params[:primary])
 
+    if params[:routine]
+      @overrides = Category.where(routines: true).map {|category| [category.name, category.id]}
+    end
+
     @dances = Dance.order(:name).all.map {|dance| [dance.name, dance.id]}
 
     @partner = nil
@@ -57,6 +61,10 @@ class SolosController < ApplicationController
     @level = @solo.heat.entry.level_id
     @dance = @solo.heat.dance.id
     @number = @solo.heat.number
+
+    if @solo.category_override_id
+      @overrides = Category.where(routines: true).map {|category| [category.name, category.id]}
+    end
 
     @heat = params[:heat]
   end
@@ -79,6 +87,10 @@ class SolosController < ApplicationController
 
     if solo[:combo_dance_id] != ''
       @solo.combo_dance = Dance.find(solo[:combo_dance_id].to_i)
+    end
+
+    if solo[:category_override_id]
+      @solo.category_override = Category.find(solo[:category_override_id].to_i)
     end
 
     @solo.order = (Solo.maximum(:order) || 0) + 1

@@ -36,6 +36,9 @@ when most dances for an individual are with one instructor but one or two are ch
     <%= up_link 'Add heats', new_entry_path(primary: @person), class: "btn-blue" %>
     <%= up_link 'Add solo', new_solo_path(primary: @person), class: "btn-blue my-2" %>
     <%= up_link 'Add formation', new_formation_path(primary: @person), class: "btn-blue" %>
+    <% if @routines %>
+    <%= up_link 'Add routine', new_solo_path(primary: @person, routine: true), class: "btn-blue" %>
+    <% end %>
     </div>
     <% end %>
 
@@ -353,6 +356,9 @@ when most dances for an individual are with one instructor but one or two are ch
       <%= up_link 'Add heats', new_entry_path(primary: @person), class: "btn-blue" %>
       <%= up_link 'Add solo', new_solo_path(primary: @person), class: "btn-blue" %>
       <%= up_link 'Add formation', new_formation_path(primary: @person), class: "btn-blue" %>
+      <% if @routines %>
+      <%= up_link 'Add routine', new_solo_path(primary: @person, routine: true), class: "btn-blue" %>
+      <% end %>
     </div>
 
     <div class="mt-4 mx-auto">
