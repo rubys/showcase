@@ -9,7 +9,7 @@ class SolosController < ApplicationController
     @solos = {}
 
     Solo.order(:order).each do |solo|
-      cat = solo.heat.dance.solo_category
+      cat = solo.heat.dance_category
       @solos[cat] ||= []
       @solos[cat] << solo.heat
     end
