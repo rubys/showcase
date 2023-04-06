@@ -120,7 +120,7 @@ module Printable
           @finish[number] ||= start
         end
 
-        if ca&t.duration
+        if cat&.duration
           @cat_finish[name] = [start, @cat_start[name] + cat.duration*60].max
         else
           @cat_finish[name] = start
