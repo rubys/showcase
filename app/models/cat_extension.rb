@@ -8,4 +8,8 @@ class CatExtension < ApplicationRecord
   def ballrooms
     category.ballrooms
   end
+
+  def duration
+    nil
+  end
 end
