@@ -183,8 +183,8 @@ class SolosController < ApplicationController
     target = Solo.find(params[:target].to_i)
 
     category = source.heat.solo.category_override
-      solos = Solo.order(:order).where(category_override_id: category.id)
     if category
+      solos = Solo.order(:order).where(category_override_id: category.id)
     else 
       category = source.heat.dance.solo_category
       solos = Solo.order(:order).joins(heat: :dance).where(dance: {solo_category_id: category&.id})
