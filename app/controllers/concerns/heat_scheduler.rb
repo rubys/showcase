@@ -10,16 +10,26 @@ module HeatScheduler
 
     # extract heats
     @heats = Heat.eager_load(
+      :solo,
       dance: [:open_category, :closed_category, :solo_category, :multi_category],
       entry: [{lead: :studio}, {follow: :studio}]
     )
 
     # convert relevant data to numbers
     heat_categories = {'Closed' => 0, 'Open' => 1, 'Solo' => 2, 'Multi' => 3}
+    routines = Category.where(routines: true).all.zip(4..).map {|cat, num| [cat.id, num]}.to_h
 
     heats = @heats.map {|heat|
-      [heat.dance.order,
-       heat_categories[heat.category],
+      if heat.solo&.category_override_id
+        category = routines[heat.solo.category_override_id]
+        order = 1000 + category
+      else
+        category = heat_categories[heat.category]
+        order = heat.dance.order
+      end
+
+      [order,
+       category,
        heat.entry.level_id,
        heat.entry.age_id,
        heat
@@ -145,15 +155,18 @@ module HeatScheduler
     solos = (categories.map {|cat| [cat, []]} + [[nil, []]]).to_h
     multis = (categories.map {|cat| [cat, []]} + [[nil, []]]).to_h
 
+    puts 'ZZZ2'
     groups.each do |group|
-      if group.dcat == 'Open'
+      dcat = group.dcat
+
+      if dcat == 'Open'
         cats[group.dance.open_category] << group
-      elsif group.dcat == 'Solo'
+      elsif dcat == 'Solo'
         solos[group.dance.solo_category] << group
-      elsif group.dcat == 'Multi'
+      elsif dcat == 'Multi'
         multis[group.dance.multi_category] << group
       else
-        cats[group.dance.closed_category] << group
+        cats[group.override || group.dance.closed_category] << group
       end
     end
 
@@ -245,6 +258,10 @@ module HeatScheduler
       @group.first.dance
     end
 
+    def override
+      @group.first.solo&.category_override
+    end
+
     def dcat
       case @min_dcat
       when 0
@@ -284,7 +301,7 @@ module HeatScheduler
     def match?(dance, dcat, level, age, heat)
       return false unless @dance == dance
       return false unless @dcat == dcat or @@category > 0
-      return false if dcat == 2 # Solo
+      return false if heat.category == 'Solo'
       return true
     end
 
@@ -307,7 +324,7 @@ module HeatScheduler
       return if heat.follow.exclude_id and @participants.include? heat.follow.exclude
 
       return false unless @dance == dance
-      return false if dcat == 2 and @group.length > 0 # Solo
+      return false if heat.category == 'Solo' and @group.length > 0
       return false unless (dcat-@max_dcat).abs <= @@category
       return false unless (dcat-@min_dcat).abs <= @@category
       return false unless (level-@max_level).abs <= @@level
