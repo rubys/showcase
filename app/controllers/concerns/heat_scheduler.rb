@@ -22,7 +22,7 @@ module HeatScheduler
     heats = @heats.map {|heat|
       if heat.solo&.category_override_id
         category = routines[heat.solo.category_override_id]
-        order = 1000 + category
+        order = 1000 + heat.solo.order
       else
         category = heat_categories[heat.category]
         order = heat.dance.order
