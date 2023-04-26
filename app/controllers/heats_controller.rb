@@ -23,6 +23,8 @@ class HeatsController < ApplicationController
     @track_ages = event.track_ages
     @column_order = event.column_order
     @locked = event.locked?
+
+    @renumber = Heat.distinct.order(:number).pluck(:number).zip(1..).any? {|n, i| n != i}
   end
 
   def mobile
@@ -77,6 +79,21 @@ class HeatsController < ApplicationController
   def redo
     schedule_heats
     redirect_to heats_url, notice: "#{Heat.maximum(:number).to_i} heats generated."
+  end
+
+  def renumber
+    newnumbers = Heat.distinct.order(:number).pluck(:number).zip(1..).to_h
+    count = newnumbers.select {|n, i| n != i}.length
+
+    Heat.transaction do
+      Heat.all.each do |heat|
+        if heat.number != newnumbers[heat.number.to_f]
+          heat.number = newnumbers[heat.number.to_f]
+          heat.save
+        end
+      end
+    end
+    redirect_to heats_url, notice: "#{count} heats renumbered."
   end
 
   # GET /heats/new

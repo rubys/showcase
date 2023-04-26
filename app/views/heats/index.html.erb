@@ -45,6 +45,9 @@ a scheduled heat time will be added to each heat.
   <div>
   <%= link_to 'Solos', solos_path, class: "btn-green print:hidden" %>
   <%= up_link 'Redo', redo_heats_path, class: "btn-blue print:hidden", method: :post, disabled: @locked %>
+  <% if @renumber %>
+  <%= up_link 'Renumber', renumber_heats_path, class: "btn-blue print:hidden", method: :post, disabled: @locked %>
+  <% end %>
   </div>
 </div>
 
