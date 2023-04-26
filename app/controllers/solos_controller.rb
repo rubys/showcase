@@ -16,7 +16,7 @@ class SolosController < ApplicationController
 
     sort_order = Category.pluck(:name, :order).to_h
 
-    @solos = @solos.sort_by {|cat, heats| sort_order[cat&.name]}
+    @solos = @solos.sort_by {|cat, heats| sort_order[cat&.name || '']}
 
     @track_ages = Event.last.track_ages
   end
