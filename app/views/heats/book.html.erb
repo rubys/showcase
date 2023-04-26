@@ -81,10 +81,10 @@ tbody::after {
 </div>
 
 <div class="justify-between items-center">
-  <h1 class="font-bold text-4xl" style="font-family: 'Bevan Regular'">Agenda</h1>
+  <h1 class="font-bold text-xl text-center" style="font-family: 'Bevan Regular'">Agenda</h1>
 </div>
 
-  <table class="table-fixed mt-4 ml-6 mb-8">
+  <table class="table-fixed mt-4 mx-auto mb-0">
     <tr>
       <th class="row-head">Category
       <th colspan="2" class="row-head">Heats
@@ -106,8 +106,8 @@ tbody::after {
         <% unless @oneday %>
         <td class="row"><%= @start && Date::DAYNAMES[@cat_start[cat]&.wday || 7] %>
         <% end %>
-        <td class="row"><%= @start && @cat_start[cat]&.strftime("%I:%M %P") %>
-        <td class="row"><%= @finish && @cat_finish[cat]&.strftime("%I:%M %P") %>
+        <td class="row text-right"><%= @start && @cat_start[cat]&.strftime("%l:%M %P") %>
+        <td class="row text-right"><%= @finish && @cat_finish[cat]&.strftime("%l:%M %P") %>
         <% elsif not @categories[cat]&.day.blank? and not @oneday %>
         <td class="row"><%= @categories[cat].day %>
         <% end %>

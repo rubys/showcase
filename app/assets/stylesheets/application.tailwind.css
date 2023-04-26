@@ -90,7 +90,7 @@
   }
 
   .row { @apply
-     p-2 pl-8 text-slate-500 dark:text-slate-400
+     p-1 pl-4 text-slate-500 dark:text-slate-400
   }
 
   .row-foot { @apply
