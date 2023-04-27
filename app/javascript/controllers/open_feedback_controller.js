@@ -18,20 +18,18 @@ export default class extends Controller {
       let abbr = button.querySelector('abbr');
       if (span && abbr) {
         abbr.title = span.textContent;
-        if (abbr.textContent == button.parentElement.dataset.value) {
+        let feedback = button.parentElement.dataset.value.split(' ');
+        if (feedback.includes(abbr.textContent)) {
           button.classList.add('selected');
         }
       }
 
       button.addEventListener('click', event => {
-
-
         const token = document.querySelector('meta[name="csrf-token"]').content;
         const score = document.querySelector('div[data-controller=score]');
 
         let feedbackType = button.parentElement.classList.contains('good') ? 'good' : 'bad';
         let feedbackValue = button.querySelector('abbr').textContent;
-        if (button.classList.contains("selected")) feedbackValue = null;
 
         const feedback = {
           heat: parseInt(this.element.dataset.heat),
@@ -48,23 +46,29 @@ export default class extends Controller {
           credentials: 'same-origin',
           redirect: 'follow',
           body: JSON.stringify(feedback)
-        }).then(response => {
+        }).then(response => response.ok ? response.text() : JSON.stringify({error: response.statusText}))
+        .then(response => {
+          response = JSON.parse(response);
           let error = document.querySelector('div[data-score-target=error]');
     
-          if (response.ok) {
+          if (!response.error) {
             error.style.display = 'none';
 
-            for (let unselect of button.parentElement.querySelectorAll('button')) {
-              if (unselect != button) unselect.classList.remove('selected');
-            }
-
-            if (feedbackValue == null) {
-              button.classList.remove('selected');
-            } else {
-              button.classList.add('selected');
+            let sections = button.parentElement.parentElement.children;
+            for (let section of sections) {
+              let feedbackType =  section.classList.contains('good') ? 'good' : 'bad';
+              let feedback = (response[feedbackType] || '').split(' ');
+            
+              for (let button of section.querySelectorAll('button')) {
+                if (feedback.includes(button.querySelector('abbr').textContent)) {
+                  button.classList.add('selected');
+                } else {
+                  button.classList.remove('selected');
+                }
+              }
             }
           } else {
-            error.textContent = response.statusText;
+            error.textContent = response.error;
             error.style.display = 'block';
           }
     

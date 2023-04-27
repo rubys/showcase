@@ -176,9 +176,29 @@ class ScoresController < ApplicationController
       render json: 'database is readonly', status: :service_unavailable
     else
       if params.include? :good
-        score.good = params[:good]
+        feedback = score.good.to_s.split(' ')
+        unless feedback.delete(params[:good])
+          feedback << params[:good]
+          feedback.sort!
+        end 
+        score.good = feedback.empty? ? nil : feedback.join(' ')
+
+        feedback = score.bad.to_s.split(' ')
+        if feedback.delete(params[:good])
+          score.bad = feedback.empty? ? nil : feedback.join(' ')
+        end
       elsif params.include? :bad
-        score.bad = params[:bad]
+        feedback = score.bad.to_s.split(' ')
+        unless feedback.delete(params[:bad])
+          feedback << params[:bad]
+          feedback.sort!
+        end 
+        score.bad = feedback.empty? ? nil : feedback.join(' ')
+
+        feedback = score.good.to_s.split(' ')
+        if feedback.delete(params[:bad])
+          score.good = feedback.empty? ? nil : feedback.join(' ')
+        end
       else
         render json: params, status: :bad_request
         return
