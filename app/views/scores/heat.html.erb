@@ -199,13 +199,6 @@ Swiping left and right on mobile devices and tablets also work.
         <% end %>
         <% end %>
       </tr>
-      <tr>
-        <td>
-        <td colspan="4">
-        <textarea data-score-target="comments" data-heat="<%= subject.id %>"
-          class="resize-none block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-          ><%= @comments[subject.id] %></textarea>
-      </tr>
       <% if @style != 'emcee' and @scores.empty? %>
       <tr data-controller="open-feedback" class="open-fb-row" data-heat="<%= subject.id %>" data-feedback-action="<%= post_feedback_path(judge: @judge) %>">
       <td colspan="5">
@@ -235,6 +228,14 @@ Swiping left and right on mobile devices and tablets also work.
           <button class="open-fb"><abbr>FC</abbr><span>Floor Craft</span></button>        </div>
       </div>
       </td>
+      </tr>
+      <% else %>
+      <tr>
+        <td>
+        <td colspan="4">
+        <textarea data-score-target="comments" data-heat="<%= subject.id %>"
+          class="resize-none block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+          ><%= @comments[subject.id] %></textarea>
       </tr>
       <% end %>
 
