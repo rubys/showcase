@@ -150,8 +150,14 @@ class ScoresController < ApplicationController
     if ApplicationRecord.readonly?
       render json: 'database is readonly', status: :service_unavailable
     elsif params[:comments]
-      score.comments = params[:comments]
-      if score.save
+      if params[:comments].empty?
+        score.comments = nil
+      else
+        score.comments = params[:comments]
+      end
+
+      keep = score.good || score.bad || score.comments || score.value
+      if keep ? score.save : score.delete
         render json: score.as_json
       else
         render json: score.errors, status: :unprocessable_entity

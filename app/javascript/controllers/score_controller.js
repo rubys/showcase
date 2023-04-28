@@ -434,5 +434,15 @@ export default class extends Controller {
         })
       });
     }
+
+    // auto resize tabular (open, closed) textarea comments
+    for (let textarea of document.querySelectorAll("table textarea")) {
+      if (!textarea.dataset.scoreTarget === 'comments') continue;
+      textarea.rows = Math.max(textarea.value.split("\n").length, 2);
+
+      textarea.addEventListener('input', () => {
+        textarea.rows = Math.max(textarea.value.split("\n").length, 2);
+      })
+    }
   }
 }
