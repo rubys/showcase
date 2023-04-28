@@ -46,13 +46,14 @@
     <% end %>
   </tbody>
 
-  <% if @heats.select {|heat| heat.scores.any? {|score| score.comments}} %>
-  <% @heats.each do |heat| %>
+  <% commented = @heats.select {|heat| heat.scores.any? {|score| score.comments}} %>
+  <% if commented %>
+  <% commented.each do |heat| %>
   <% next unless [heat.entry.lead, heat.entry.follow].include? person %>
   <% next unless heat.scores.any? {|score| score.comments} %>
   <tbody>
     <tr>
-      <td colspan="5" class="text-center py-4 font-bold text-xl">Solo comments
+      <td colspan="5" class="text-center py-4 font-bold text-xl"><%= commented.all? {|heat| heat.category == 'Solo'} ? "Solo comments" : "Judge Comments" %>
     </tr>
     <% heat.scores.each do |score| %>
     <% next unless score.comments %>
