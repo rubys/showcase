@@ -102,6 +102,9 @@ class ScoresController < ApplicationController
 
     if @heat.category == 'Solo'
       @comments = Score.where(judge: @judge, heat: @subjects.first).first&.comments
+    else
+      @comments = Score.where(judge: @judge, heat: @subjects).
+        map {|score| [score.heat_id, score.comments]}.to_h
     end
 
     options = {style: @style, sort: @sort}

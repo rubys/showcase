@@ -362,22 +362,24 @@ export default class extends Controller {
 
     // wire up comments and scores for solos
     if (this.hasCommentsTarget) {
-      this.commentsTarget.addEventListener('change', event => {
-        this.commentsTarget.disabled = true;
+      for (let comment of this.commentsTargets) {
+        comment.addEventListener('change', event => {
+          comment.disabled = true;
 
-        this.post({
-          heat: parseInt(this.commentsTarget.dataset.heat),
-          test: 'data',
-          comments: this.commentsTarget.value
-        }).then(response => {
-          this.commentsTarget.disabled = false;
-          if (response.ok) {
-            this.commentsTarget.style.backgroundColor = null;
-          } else {
-            this.commentsTarget.style.backgroundColor = '#F00';
-          }
-        })
-      });
+          this.post({
+            heat: parseInt(comment.dataset.heat),
+            test: 'data',
+            comments: comment.value
+          }).then(response => {
+            comment.disabled = false;
+            if (response.ok) {
+              comment.style.backgroundColor = null;
+            } else {
+              comment.style.backgroundColor = '#F00';
+            }
+          })
+        });
+      }
     }
 
     for (let button of this.element.querySelectorAll('input[type=radio]')) {
