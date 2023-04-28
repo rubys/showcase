@@ -39,8 +39,14 @@ export default class extends Controller {
         } else {
           this.nextSubject();
         }
-      } else if (this.hasCommentsTarget && document.activeElement == this.commentsTarget) {
-        this.scoreTargets[0].focus();
+      } else if (this.hasCommentsTarget && this.commentsTargets.includes(document.activeElement)) {
+        if (this.commentsTargets.length > 1) {
+          let index = this.commentsTargets.indexOf(document.activeElement) + 1;
+          if (index >= this.commentsTargets.length) index = 0;
+          this.commentsTargets[index].focus();
+        } else {
+          this.scoreTargets[0].focus();
+        }
       } else {
         let index = this.scoreTargets.findIndex(target => target == document.activeElement);
         if (this.hasCommentsTarget && (this.scoreTargets.length < 2 || index == -1)) {
