@@ -131,7 +131,7 @@ tbody::after {
     <% heats = ballrooms.values.flatten %>
     <% heat = heats.first %>
     <% if @type == 'judge' and heats.first.category == 'Solo' %>
-    <div class="page">
+    <div class="page break-before-page">
     <span class="number"><%= number %></span>
 
 
@@ -189,7 +189,7 @@ tbody::after {
 
     <div class="mt-4 content truncate text-base">
     <div><b class="text-xl" style="font-family: 'Bevan Regular'">Comments:</b> <span class="whitespace-pre underline"><%= ' ' * 400 %></span></div>
-    <% 20.times do %>
+    <% 12.times do %>
     <div>&nbsp</div>
     <div><span class="whitespace-pre underline"><%= ' ' * 400 %></span></div>
     <% end %>
