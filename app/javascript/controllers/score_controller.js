@@ -440,7 +440,7 @@ export default class extends Controller {
       textarea.rows = 1;
       textarea.style.height = textarea.scrollHeight + 'px';
 
-      textarea.addEventListener('input', () => {
+      textarea.addEventListener('change', () => {
         textarea.style.height = 0;
         textarea.style.height = textarea.scrollHeight + 'px';
       })
