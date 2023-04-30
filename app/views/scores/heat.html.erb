@@ -112,7 +112,7 @@ Swiping left and right on mobile devices and tablets also work.
     <% end %>
     <% else %>
     <label><b>Comments:</b></label>
-    <textarea data-score-target="comments" data-heat="<%= @heat.id %>" 
+    <textarea disabled data-score-target="comments" data-heat="<%= @heat.id %>" 
       class="grow block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full"
     ><%= @comments %></textarea>
 
@@ -229,11 +229,11 @@ Swiping left and right on mobile devices and tablets also work.
       </div>
       </td>
       </tr>
-      <% else %>
+      <% elsif @event.judge_comments %>
       <tr>
         <td>
         <td colspan="4">
-        <textarea data-score-target="comments" data-heat="<%= subject.id %>"
+        <textarea disabled data-score-target="comments" data-heat="<%= subject.id %>"
           class="resize-none block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
           ><%= @comments[subject.id] %></textarea>
       </tr>

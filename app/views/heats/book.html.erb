@@ -328,10 +328,12 @@ tbody::after {
            <td>
              <div class="w-24 pt-4 border-b-2 border-black">&nbsp;</div>
            </td>
+           <% if @event.judge_comments %>
            <tr class="pt-2">
            <td colspan="2">
            <td colspan="4" class="mr-4 h-20 border-2 rounded-lg">
            </tr>
+           <% end %>
            <% end %>
          </tr>
          <% end %>

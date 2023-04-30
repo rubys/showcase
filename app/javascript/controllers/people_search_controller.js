@@ -21,7 +21,6 @@ export default class extends Controller {
 }
 
 document.body.parentNode.addEventListener('keydown', event => {
-  console.log(event.key)
   if (event.key != 'Escape') return;
 
   if (document.querySelectorAll('input[type=text], textarea, select').length != 0) return;

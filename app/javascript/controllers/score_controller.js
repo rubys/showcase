@@ -7,11 +7,7 @@ export default class extends Controller {
   static targets = ["error", "comments", "score"];
 
   keydown = event => {
-    let form = false;
-    if (this.hasCommentsTarget && this.commentsTarget == document.activeElement) form = true;
-    for (let target of this.scoreTargets) {
-      if (target == document.activeElement) form == true;
-    }
+    let form = ["INPUT", "TEXTAREA"].includes(document.activeElement.nodeName);
 
     if (event.key == 'ArrowRight') {
       if (form) return;
@@ -368,7 +364,28 @@ export default class extends Controller {
 
     // wire up comments and scores for solos
     if (this.hasCommentsTarget) {
+      this.commentTimeout = null;
+
       for (let comment of this.commentsTargets) {
+        comment.disabled = false;
+
+        comment.addEventListener('input', event => {
+          comment.classList.remove('bg-gray-50');
+          comment.classList.add('bg-yellow-200');
+
+          if (this.commentTimeout) clearTimeout(this.commentTimeout);
+
+          this.commentTimeout = setTimeout(() => {
+            for (let comment of this.commentsTargets) {
+              if (comment.textarea !== comment.value) {
+                comment.dispatchEvent(new Event("change"));
+              }
+            }
+
+            this.commentTimeout = null;
+          }, 10000)
+        });
+
         comment.addEventListener('change', event => {
           comment.disabled = true;
 
@@ -378,6 +395,11 @@ export default class extends Controller {
             comments: comment.value
           }).then(response => {
             comment.disabled = false;
+            comment.classList.add('bg-gray-50');
+            comment.classList.remove('bg-yellow-200');
+
+            comment.textarea = comment.value;
+
             if (response.ok) {
               comment.style.backgroundColor = null;
             } else {

@@ -3,6 +3,14 @@
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
+  <ul class="info-box block">
+    <li>Be sure to do a dry run before the event.
+    <li>While entering comments, the input area will have a <span class="bg-yellow-200 p-1">yellow</span> background until
+    the data is sent to the server.  Pressing ESC, tabbing to the next field, clicking outside the box,
+    or waiting 10 seconds will cause the data to be sent.
+    <li>Even if you are planning on having judges enter scores in realtime during the application, it is best to print out paper copies in case of application or network failures.
+  </ul>
+
   <h1 class="font-bold text-4xl"><%= link_to @judge.display_name, person_path(@judge) %></h1>
 
   <div class="float-right w-60" title="<%= judge_heatlist_url(@judge, style: @style, sort: @sort) %>">

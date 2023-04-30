@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_03_23_024334) do
+ActiveRecord::Schema[7.0].define(version: 2023_04_30_173328) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -153,6 +153,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_23_024334) do
     t.string "student_package_description"
     t.string "payment_due"
     t.string "multi_scoring", default: "1"
+    t.boolean "judge_comments", default: false
   end
 
   create_table "formations", force: :cascade do |t|
