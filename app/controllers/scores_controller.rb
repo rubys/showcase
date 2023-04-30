@@ -34,7 +34,8 @@ class ScoresController < ApplicationController
   def heat
     @event = Event.first
     @judge = Person.find(params[:judge].to_i)
-    @number = params[:heat].to_i
+    @number = params[:heat].to_f
+    @number = @number.to_i if @number == @number.to_i
     @slot = params[:slot]&.to_i
     @style = params[:style] || 'cards'
     @subjects = Heat.where(number: @number).includes(
@@ -112,10 +113,16 @@ class ScoresController < ApplicationController
 
     options = {style: @style, sort: @sort}
 
+    heats = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance)
+    agenda = heats.group_by(&:dance_category).
+      sort_by {|category, heats| [category.order, heats.map(&:number).min]}
+    heats = agenda.to_h.values.flatten
+    index = heats.index {|heat| heat.number == @heat.number}
+
     if @heat.dance.heat_length and (@slot||0) < @heat.dance.heat_length
       @next = judge_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||0)+1, **options)
     else
-      @next = Heat.where(number: @number+1...).order(:number).first
+      @next = index + 1 >= heats.length ? nil : heats[index + 1]
       if @next
         if @next.dance.heat_length
           @next = judge_heat_slot_path(judge: @judge, heat: @next.number, slot: 1, **options)
@@ -128,7 +135,7 @@ class ScoresController < ApplicationController
     if @heat.dance.heat_length and (@slot||0) > 1
       @prev = judge_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||2)-1, style: @style, **options)
     else
-      @prev = Heat.where(number: 1...@number).order(:number).last
+      @prev = index > 0 ? heats[index - 1] : nil
       if @prev
         if @prev.dance.heat_length
           @prev = judge_heat_slot_path(judge: @judge, heat: @prev.number, slot: @prev.dance.heat_length, **options)

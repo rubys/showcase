@@ -111,8 +111,8 @@ Rails.application.routes.draw do
     end
 
     get '/scores/:judge/heatlist', to: 'scores#heatlist', as: 'judge_heatlist'
-    get '/scores/:judge/heat/:heat', to: 'scores#heat', as: 'judge_heat'
-    get '/scores/:judge/heat/:heat/:slot', to: 'scores#heat', as: 'judge_heat_slot'
+    get '/scores/:judge/heat/:heat', to: 'scores#heat', as: 'judge_heat', heat: /\d+\.?\d*/
+    get '/scores/:judge/heat/:heat/:slot', to: 'scores#heat', as: 'judge_heat_slot', heat: /\d+\.?\d*/
     post '/scores/:judge/post', to: 'scores#post', as: 'post_score'
     post '/scores/:judge/sort', to: 'scores#sort', as: 'sort_scores'
     post '/scores/:judge/post-feedback', to: 'scores#post_feedback', as: 'post_feedback'
