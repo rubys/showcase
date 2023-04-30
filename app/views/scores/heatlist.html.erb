@@ -5,7 +5,7 @@
 
   <div data-controller="info-box">
   <div class="info-button">&#x24D8;</div>
-  <ul class="info-box block">
+  <ul class="info-box<% if @style != 'emcee' %> block<% end %>">
     <li>Be sure to do a dry run before the event.
     <li>While entering comments, the input area will have a <span class="bg-yellow-200 p-1">yellow</span> background until
     the data is sent to the server.  Pressing ESC, tabbing to the next field, clicking outside the box,

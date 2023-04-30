@@ -19,8 +19,11 @@ class ScoresController < ApplicationController
 
     @heats = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance)
 
-    @agenda = @heats.group_by(&:dance_category).map do |category, heats|
-      [heats.map {|heat| heat.number}.min, category&.name]
+    @agenda = @heats.group_by(&:dance_category).
+      sort_by {|category, heats| [category.order, heats.map(&:number).min]}
+    @heats = @agenda.to_h.values.flatten
+    @agenda = @agenda.map do |category, heats|
+      [heats.map(&:number).min, category&.name]
     end.to_h
 
     @scored = Score.includes(:heat).where(judge: @judge).group_by {|score| score.heat.number}
