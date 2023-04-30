@@ -3,6 +3,8 @@
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
+  <div data-controller="info-box">
+  <div class="info-button">&#x24D8;</div>
   <ul class="info-box block">
     <li>Be sure to do a dry run before the event.
     <li>While entering comments, the input area will have a <span class="bg-yellow-200 p-1">yellow</span> background until
@@ -10,6 +12,7 @@
     or waiting 10 seconds will cause the data to be sent and the yellow background removed.
     <li>Even if you are planning on having judges enter scores in realtime during the application, it is best to print out paper copies in case of application or network failures.
   </ul>
+  </div>
 
   <h1 class="font-bold text-4xl"><%= link_to @judge.display_name, person_path(@judge) %></h1>
 

@@ -4,6 +4,9 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   connect() {
     let box = this.element.querySelector('.info-box');
+
+    box.style.display = getComputedStyle(box).display;
+
     this.element.querySelector('.info-button').addEventListener('click', () => {
       if (box.style.display == 'block') {
         box.style.display = 'none';
