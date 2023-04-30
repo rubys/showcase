@@ -48,13 +48,14 @@
 
   <% commented = @heats.select {|heat| heat.scores.any? {|score| score.comments}} %>
   <% if commented %>
-  <% commented.each do |heat| %>
-  <% next unless [heat.entry.lead, heat.entry.follow].include? person %>
-  <% next unless heat.scores.any? {|score| score.comments} %>
   <tbody>
     <tr>
       <td colspan="5" class="text-center py-4 font-bold text-xl"><%= commented.all? {|heat| heat.category == 'Solo'} ? "Solo comments" : "Judge Comments" %>
     </tr>
+  <% commented.each do |heat| %>
+  <% next unless [heat.entry.lead, heat.entry.follow].include? person %>
+  <% next unless heat.scores.any? {|score| score.comments} %>
+
     <% heat.scores.each do |score| %>
     <% next unless score.comments %>
     <tr>
@@ -62,8 +63,8 @@
       <td colspan="4"><%= score.comments %>
     </tr>
     <% end %>
-  </tbody>
   <% end %>
+  </tbody>
   <% end %>
 </table>
 
@@ -91,10 +92,10 @@
       <td></td>
       <% else %>
       <% @judges.each do |judge| %>
-        <td class="text-center"><%= heat.scores.select {|score| score.judge == judge}.sort_by(&:slot).map(&:good).join(' ') %>
+        <td class="text-left"><%= heat.scores.select {|score| score.judge == judge}.sort_by(&:slot).map(&:good).join(' | ') %>
       <% end %>
       <% @judges.each do |judge| %>
-        <td class="text-center"><%= heat.scores.select {|score| score.judge == judge}.sort_by(&:slot).map(&:bad).join(' ') %>
+        <td class="text-left"><%= heat.scores.select {|score| score.judge == judge}.sort_by(&:slot).map(&:bad).join(' | ') %>
       <% end %>
       <% end %>
       <td><div class="mx-4"><%= heat.category %> <%= heat.dance.name %></div>
