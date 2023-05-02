@@ -24,7 +24,7 @@ class HeatsController < ApplicationController
     @column_order = event.column_order
     @locked = event.locked?
 
-    @renumber = Heat.distinct.order(:number).pluck(:number).zip(1..).any? {|n, i| n != i}
+    @renumber = Heat.distinct.where(number: 0.1..).order(:number).pluck(:number).zip(1..).any? {|n, i| n != i}
   end
 
   def mobile
@@ -82,7 +82,7 @@ class HeatsController < ApplicationController
   end
 
   def renumber
-    newnumbers = Heat.distinct.order(:number).pluck(:number).zip(1..).to_h
+    newnumbers = Heat.distinct.where(number: 0.1..).order(:number).pluck(:number).zip(1..).to_h
     count = newnumbers.select {|n, i| n != i}.length
 
     Heat.transaction do
