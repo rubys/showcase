@@ -3,9 +3,10 @@ import { Controller } from "@hotwired/stimulus"
 // Connects to data-controller="drop"
 export default class extends Controller {
   connect() {
-    let targets = [...this.element.querySelectorAll(':scope > *[data-drag-id]')].map (node => node.dataset.dragId);
+    let dragable = [...this.element.querySelectorAll('*[data-drag-id]')];
+    let targets = dragable.map (node => node.dataset.dragId);
 
-    for (let child of this.element.children) {
+    for (let child of dragable) {
       child.style.cursor = 'grab';
 
       if (child.draggable) {

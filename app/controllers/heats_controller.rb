@@ -96,6 +96,29 @@ class HeatsController < ApplicationController
     redirect_to heats_url, notice: "#{count} heats renumbered."
   end
 
+  def drop
+    source = Heat.find(params[:source])
+    target = Heat.find(params[:target])
+
+    source.number = target.number
+    source.save!
+
+    respond_to do |format|
+      format.turbo_stream {
+        cat = source.dance_category
+        generate_agenda
+        heats = @agenda[cat.name]
+        @locked = Event.last.locked?
+
+        render turbo_stream: turbo_stream.replace("cat-#{ cat.name.downcase.gsub(' ', '-') }",
+          render_to_string(partial: 'category', layout: false, locals: {cat: cat.name, heats: heats})
+        )
+      }
+
+      format.html { redirect_to heats_url }
+    end
+  end
+
   # GET /heats/new
   def new
     @heat ||= Heat.new
