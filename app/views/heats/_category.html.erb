@@ -1,5 +1,7 @@
 <div id="cat-<%= cat.downcase.gsub(' ', '-') %>"
-  <% if @locked %> data-controller="drop" data-drop-action="<%= drop_heats_path %>"<% end %>>
+  <% if @locked %>
+    data-controller="heat-order" data-renumber-action="<%= renumber_heats_path %>"
+    data-controller="drop" data-drop-action="<%= drop_heats_path %>"<% end %>>
   <div class="mt-8 flex justify-between items-center">
     <h1 class="font-bold text-4xl"><%= cat %></h1>
   </div>
@@ -52,7 +54,7 @@
       <tr>
       <% end %>
         <td></td>
-        <td colspan="9" class="text-xl pt-4">Heat <%= number %>: 
+        <td colspan="9" class="text-xl pt-4">Heat <span class="heat-humber"><%= number %></span>: 
           <%= heats.first.category %>
           <% if heats.first.dance_id == heats.last.dance_id %>
           <%= heats.first.dance.name %>

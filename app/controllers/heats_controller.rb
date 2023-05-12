@@ -82,6 +82,22 @@ class HeatsController < ApplicationController
   end
 
   def renumber
+    source = nil
+
+    if params['before']
+      before = params['before'].to_f
+      after = params['after'].to_f - 0.0001
+
+      heats = Heat.where(number: before)
+      source = heats.first
+      Heat.transaction do
+        heats.each do |heat|
+          heat.number = after
+          heat.save
+        end
+      end
+    end
+
     newnumbers = Heat.distinct.where(number: 0.1..).order(:number).pluck(:number).zip(1..).to_h
     count = newnumbers.select {|n, i| n != i}.length
 
@@ -93,7 +109,25 @@ class HeatsController < ApplicationController
         end
       end
     end
-    redirect_to heats_url, notice: "#{count} heats renumbered."
+
+    if source
+      respond_to do |format|
+        format.turbo_stream {
+          cat = source.dance_category
+          generate_agenda
+          heats = @agenda[cat.name]
+          @locked = Event.last.locked?
+
+          render turbo_stream: turbo_stream.replace("cat-#{ cat.name.downcase.gsub(' ', '-') }",
+            render_to_string(partial: 'category', layout: false, locals: {cat: cat.name, heats: heats})
+          )
+        }
+
+        format.html { redirect_to heats_url }
+      end
+    else
+      redirect_to heats_url, notice: "#{count} heats renumbered."
+    end
   end
 
   def drop
@@ -198,7 +232,6 @@ class HeatsController < ApplicationController
       notice = "Heat was successfully removed."
     end
     
-
     respond_to do |format|
       format.html { redirect_to params[:primary] ? person_url(params[:primary]) : heats_url, 
         status: 303, notice: notice }
