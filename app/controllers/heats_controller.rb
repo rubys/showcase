@@ -86,7 +86,8 @@ class HeatsController < ApplicationController
 
     if params['before']
       before = params['before'].to_f
-      after = params['after'].to_f - 0.0001
+      after = params['after'].to_f
+      after += (before < after) ? 0.0001 : -0.0001
 
       heats = Heat.where(number: before)
       source = heats.first
