@@ -155,7 +155,6 @@ module HeatScheduler
     solos = (categories.map {|cat| [cat, []]} + [[nil, []]]).to_h
     multis = (categories.map {|cat| [cat, []]} + [[nil, []]]).to_h
 
-    puts 'ZZZ2'
     groups.each do |group|
       dcat = group.dcat
 
@@ -175,13 +174,17 @@ module HeatScheduler
 
     cats.each do |cat, groups|
       if Event.last.intermix
-        dances = groups.group_by {|group| [group.dcat, group.dance.id]}
+        dances = groups.group_by {|group| [group.dcat, group.dance.order]}
         candidates = []
+
+        max = dances.values.map(&:length).max || 1
+        offset = 0.5/(max + 1)
 
         dances.each do |id, groups|
           denominator = groups.length.to_f + 1
           groups.each_with_index do |group, index|
-            candidates << [(index+1)/denominator] + id + [group]
+            slot = (((index+1.0)/denominator - offset)/offset/2).to_i
+            candidates << [slot] + id + [group]
           end
         end
 
