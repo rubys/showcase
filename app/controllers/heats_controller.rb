@@ -87,14 +87,17 @@ class HeatsController < ApplicationController
     if params['before']
       before = params['before'].to_f
       after = params['after'].to_f
-      after += (before < after) ? 0.0001 : -0.0001
-
       heats = Heat.where(number: before)
       source = heats.first
-      Heat.transaction do
-        heats.each do |heat|
-          heat.number = after
-          heat.save
+
+      if before > 0 && after > 0
+        after += (before < after) ? 0.0001 : -0.0001
+
+        Heat.transaction do
+          heats.each do |heat|
+            heat.number = after
+            heat.save
+          end
         end
       end
     end

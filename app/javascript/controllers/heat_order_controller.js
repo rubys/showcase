@@ -7,10 +7,19 @@ export default class extends Controller {
     for (let heat of heats) {
       heat.addEventListener('click', () => {
         let input = document.createElement('input');
-        input.style.width="3em";
         input.value = heat.textContent;
+        input.style.textAlign = "center";
         heat.after(input);
         heat.style.display = 'none';
+
+        input.addEventListener('focus', () => {
+          input.style.width = "3em";
+        });
+
+        input.addEventListener('blur', () => {
+          input.style.width = input.value.length + "ch";
+        });
+
         input.focus();
         const token = document.querySelector('meta[name="csrf-token"]').content;
 
