@@ -15,6 +15,10 @@
     :name: Charlotte
     :region: iad
     :logo: arthur-murray-logo.gif
+  clearwater:
+    :name: Clearwater
+    :region: iad
+    :logo: arthur-murray-logo.gif
   durham:
     :name: Durham
     :region: iad
