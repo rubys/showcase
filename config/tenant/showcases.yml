@@ -39,6 +39,10 @@
     :name: Richmond
     :region: iad
     :logo: arthur-murray-logo.gif
+  vabeach:                                                                   
+    :name: Virginia Beach
+    :region: iad
+    :logo: arthur-murray-logo.gif
 2022:                                                                           
   annapolis:
     :name: Annapolis
