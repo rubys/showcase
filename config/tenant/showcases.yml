@@ -39,6 +39,10 @@
     :name: Richmond
     :region: iad
     :logo: arthur-murray-logo.gif
+  sugarland:
+    :name: Sugar Land
+    :region: iad
+    :logo: arthur-murray-logo.gif
   vabeach:                                                                   
     :name: Virginia Beach
     :region: iad
