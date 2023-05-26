@@ -57,7 +57,7 @@
   <% end %>
 
   <div class="inline">
-    <%= form.submit (billable.persisted? ? 'Update' : 'Create') + ' ' + @type,
+    <%= form.submit (billable.persisted? ? 'Update' : 'Create') + ' ' + @type.to_s,
       class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
   </div>
 <% end %>

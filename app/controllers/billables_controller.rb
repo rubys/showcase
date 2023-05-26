@@ -54,7 +54,7 @@ class BillablesController < ApplicationController
           notice: "#{@billable.name} was successfully created." }
         format.json { render :show, status: :created, location: @billable }
       else
-        new
+        edit
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @billable.errors, status: :unprocessable_entity }
       end
