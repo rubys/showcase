@@ -92,7 +92,7 @@ module Printable
         if cat and not cat.day.blank?
           yesterday = Chronic.parse('yesterday', now: start)
           day = Chronic.parse(cat.day, now: yesterday, guess: false)&.begin || start
-          start = day if day > start and day < start + 86_400
+          start = day if day > start and day < start + 3*86_400
         end
 
         if cat and not cat.time.blank?
@@ -121,7 +121,7 @@ module Printable
         end
 
         if cat&.duration
-          @cat_finish[name] = [start, @cat_start[name] + cat.duration*60].max
+          start = @cat_finish[name] = [start, @cat_start[name] + cat.duration*60].max
         else
           @cat_finish[name] = start
         end
