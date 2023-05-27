@@ -101,6 +101,8 @@ class HeatsController < ApplicationController
         # find unique heat numbers 
         numbers = heats.map(&:number).map(&:abs).sort.uniq
 
+        solos = {}
+
         if numbers.include? after
           # heat number in use: rotate
           mappings = before < after ?
@@ -114,13 +116,34 @@ class HeatsController < ApplicationController
         # convert to hash, including scratches
         mappings += mappings.map {|a, b| [-a, -b]}
         mappings = mappings.to_h
+
+        # determine solo order numbers
+        solos = {}
+        heats.each do |heat|
+          order = heat.solo&.order
+          if order && mappings[heat.number]
+            solos[heat.number] = order
+          end
+        end
+
+        # only reorder solos if ALL solos that are to be moved have mappings
+        unless heats.all? {|heat| not heat.solo or mappings[heat.number] == nil or solos[heat.number]}
+          solos = {}
+        end
         
         # apply mapping
         Heat.transaction do
           heats.each do |heat|
             if mappings[heat.number]
               heat.number = mappings[heat.number]
-              heat.save
+              heat.save(validate: false)
+
+              if heat.solo && solos[heat.number]
+                heat.solo.order = solos[heat.number]
+                heat.solo.save(validate: false)
+              else
+                heat.save
+              end
             end
           end
         end

@@ -28,7 +28,7 @@
   </thead>
   <% @solos.each do |cat, heats| %>
     <tr>
-      <td class="text-2xl pt-4" colspan="7"><%= cat&.name %>
+      <td class="text-2xl pt-4" colspan="7"><%= cat&.name || 'Uncategorized' %>
     </tr>
     <%= render partial: 'cat', locals: {heats: heats, id: cat ? dom_id(cat) : 'category_0' } %>
   <% end %>
