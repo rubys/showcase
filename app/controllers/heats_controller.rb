@@ -119,11 +119,12 @@ class HeatsController < ApplicationController
         format.turbo_stream {
           cat = source.dance_category
           generate_agenda
-          heats = @agenda[cat.name]
+          catname = cat&.name || 'Uncategorized'
+          heats = @agenda[catname]
           @locked = Event.last.locked?
 
-          render turbo_stream: turbo_stream.replace("cat-#{ cat.name.downcase.gsub(' ', '-') }",
-            render_to_string(partial: 'category', layout: false, locals: {cat: cat.name, heats: heats})
+          render turbo_stream: turbo_stream.replace("cat-#{ catname.downcase.gsub(' ', '-') }",
+            render_to_string(partial: 'category', layout: false, locals: {cat: catname, heats: heats})
           )
         }
 
