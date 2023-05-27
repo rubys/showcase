@@ -91,25 +91,51 @@ class HeatsController < ApplicationController
       source = heats.first
 
       if before > 0 && after > 0
-        after += (before < after) ? 0.0001 : -0.0001
+        # get a list of all affected heats, including scratches         
+        heats = Heat.where(number: [
+          Range.new(*[before, after].sort),
+          Range.new(*[-before , -after].sort)
+        ])
 
+        # find unique heat numbers 
+        numbers = heats.map(&:number).map(&:abs).sort.uniq
+
+        if numbers.include? after
+          # heat number in use: rotate
+          mappings = before < after ?
+            numbers.zip(numbers.rotate(-1)) :
+            numbers.zip(numbers.rotate)
+        else
+          # heat number not in use: take it
+          mappings = [[before == before.to_i ? before.to_i : before, after]]
+        end
+
+        # convert to hash, including scratches
+        mappings += mappings.map {|a, b| [-a, -b]}
+        mappings = mappings.to_h
+        
+        # apply mapping
         Heat.transaction do
           heats.each do |heat|
-            heat.number = after
-            heat.save
+            if mappings[heat.number]
+              heat.number = mappings[heat.number]
+              heat.save
+            end
           end
         end
       end
-    end
+    
+    else
 
-    newnumbers = Heat.distinct.where(number: 0.1..).order(:number).pluck(:number).zip(1..).to_h
-    count = newnumbers.select {|n, i| n != i}.length
+      newnumbers = Heat.distinct.where(number: 0.1..).order(:number).pluck(:number).zip(1..).to_h
+      count = newnumbers.select {|n, i| n != i}.length
 
-    Heat.transaction do
-      Heat.all.each do |heat|
-        if heat.number != newnumbers[heat.number.to_f]
-          heat.number = newnumbers[heat.number.to_f]
-          heat.save
+      Heat.transaction do
+        Heat.all.each do |heat|
+          if heat.number != newnumbers[heat.number.to_f]
+            heat.number = newnumbers[heat.number.to_f]
+            heat.save
+          end
         end
       end
     end
