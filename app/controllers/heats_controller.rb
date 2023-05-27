@@ -24,7 +24,8 @@ class HeatsController < ApplicationController
     @column_order = event.column_order
     @locked = event.locked?
 
-    @renumber = Heat.distinct.where(number: 0.1..).order(:number).pluck(:number).zip(1..).any? {|n, i| n != i}
+    @renumber = Heat.distinct.where.not(number: 0).pluck(:number).
+      map(&:abs).sort.uniq.zip(1..).any? {|n, i| n != i}
   end
 
   def mobile
