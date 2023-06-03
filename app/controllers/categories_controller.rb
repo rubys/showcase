@@ -25,6 +25,9 @@ class CategoriesController < ApplicationController
 
   # GET /categories/1/edit
   def edit
+    generate_agenda
+    @day_placeholder = Date::DAYNAMES[@cat_start[@category.name]&.wday || 7]
+
     form_init
   end
 
