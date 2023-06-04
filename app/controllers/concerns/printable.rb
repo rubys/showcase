@@ -199,7 +199,7 @@ module Printable
 
         entry.heats.each do |heat|
           category = heat.category
-          category = heat.dance_category.name if heat.dance_category.cost_override
+          category = heat.dance_category.name if heat.dance_category&.cost_override
           category = heat.dance.name if heat.dance.cost_override
 
           if entry.lead.type == 'Student' and @dances[entry.lead]
