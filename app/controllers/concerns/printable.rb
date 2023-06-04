@@ -153,6 +153,16 @@ module Printable
 
     @invoices = {}
 
+    overrides = {}
+
+    Category.where.not(cost_override: nil).each do |category|
+      overrides[category.name] = category.cost_override
+    end
+
+    Dance.where.not(cost_override: nil).each do |dance|
+      overrides[dance.name] = dance.cost_override
+    end
+
     studios.each do |studio|
       @cost = {
         'Closed' => studio.heat_cost || @event.heat_cost || 0,
@@ -170,6 +180,8 @@ module Printable
         }
       end
 
+      @cost.merge! overrides
+
       entries = (Entry.joins(:follow).where(people: {type: 'Student', studio: studio}) +
         Entry.joins(:lead).where(people: {type: 'Student', studio: studio})).uniq
 
@@ -186,21 +198,25 @@ module Printable
         end
 
         entry.heats.each do |heat|
+          category = heat.category
+          category = heat.dance_category.name if heat.dance_category.cost_override
+          category = heat.dance.name if heat.dance.cost_override
+
           if entry.lead.type == 'Student' and @dances[entry.lead]
             @dances[entry.lead][:dances] += 1 / split
-            @dances[entry.lead][:cost] += @cost[heat.category] / split
+            @dances[entry.lead][:cost] += @cost[category] / split
 
             if @student
-              @dances[entry.lead][heat.category] = (@dances[entry.lead][heat.category] || 0) + 1/split
+              @dances[entry.lead][category] = (@dances[entry.lead][category] || 0) + 1/split
             end
           end
 
           if entry.follow.type == 'Student' and @dances[entry.follow]
             @dances[entry.follow][:dances] += 1 / split
-            @dances[entry.follow][:cost] += @cost[heat.category] / split
+            @dances[entry.follow][:cost] += @cost[category] / split
 
             if @student
-              @dances[entry.follow][heat.category] = (@dances[entry.follow][heat.category] || 0) + 1/split
+              @dances[entry.follow][category] = (@dances[entry.follow][category] || 0) + 1/split
             end
           end
         end

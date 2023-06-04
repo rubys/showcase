@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_04_30_173328) do
+ActiveRecord::Schema[7.0].define(version: 2023_06_03_231658) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -89,6 +89,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_30_173328) do
     t.integer "heats"
     t.boolean "routines"
     t.integer "duration"
+    t.decimal "cost_override", precision: 7, scale: 2
   end
 
   create_table "dances", force: :cascade do |t|
@@ -103,6 +104,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_30_173328) do
     t.integer "heat_length"
     t.integer "row"
     t.integer "col"
+    t.decimal "cost_override", precision: 7, scale: 2
     t.index ["closed_category_id"], name: "index_dances_on_closed_category_id"
     t.index ["multi_category_id"], name: "index_dances_on_multi_category_id"
     t.index ["open_category_id"], name: "index_dances_on_open_category_id"

@@ -98,7 +98,6 @@ class StudiosController < ApplicationController
     end
   end
 
-
   def student_invoices
     @student = true
     @registration = @studio.student_registration_cost

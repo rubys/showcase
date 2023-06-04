@@ -102,6 +102,7 @@
   </div>
 
   <table class="mt-8">
+  <tbody>
   <% if person.package_id %>
   <tr>
     <th align="left" class="pr-8">Registration:
@@ -122,12 +123,15 @@
     <th align="left"><%= number_to_currency @solo_cost %> per entry</th>
   </tr>
     <tr>
-    <th align="left" class="pr-8">3 Dance Event:
+    <th align="left" class="pr-8">Multi Dance Event:
     <th align="left"><%= number_to_currency @multi_cost %> per entry</th>
   </tr>
+  </tbody>
   </table>
 
   <hr class="border-2 border-black mt-8 mb-20">
+
+  <div class="break-inside-avoid">
 
   <table class="float-right">
    <tr>
@@ -176,4 +180,5 @@
   <% invoice[:entries].each do |names, entries| %>
     <%= render "entry", names: names, entries: entries, studio: studio.name, invoice: :studio %>
   <% end %>
+  </div>
   <% end %>

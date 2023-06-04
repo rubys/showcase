@@ -26,7 +26,7 @@ class CategoriesController < ApplicationController
   # GET /categories/1/edit
   def edit
     generate_agenda
-    @day_placeholder = Date::DAYNAMES[@cat_start[@category.name]&.wday || 7]
+    @day_placeholder = Date::DAYNAMES[@cat_start&.dig(@category.name)&.wday || 7]
 
     form_init
   end
@@ -157,7 +157,7 @@ class CategoriesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def category_params
-      params.require(:category).permit(:name, :order, :day, :time, :ballrooms, :max_heat_size, :heats, :duration, :routines)
+      params.require(:category).permit(:name, :order, :day, :time, :ballrooms, :max_heat_size, :heats, :duration, :routines, :cost_override)
     end
 
     def form_init

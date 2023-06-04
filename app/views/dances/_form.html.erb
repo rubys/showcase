@@ -47,5 +47,12 @@ Changing the name here will change it everywhere.
   <%= form.label :solo_category_id %>
   <%= form.select :solo_category_id, @categories, {include_blank: true},
      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
-</div>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :cost_override, 'Cost Override (if different)' %>
+    <%= form.number_field :cost_override, step: :any,
+      value: form.object.cost_override.to_f == 0 ? '' : number_to_currency(form.object.cost_override.to_f, delimiter: '', unit: ''),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
 <% end %>

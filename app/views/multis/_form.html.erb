@@ -45,6 +45,13 @@ categories, make a separate multi-dance for each.
        class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <div class="my-5">
+    <%= form.label :cost_override, 'Cost Override (if different)' %>
+    <%= form.number_field :cost_override, step: :any,
+      value: form.object.cost_override.to_f == 0 ? '' : number_to_currency(form.object.cost_override.to_f, delimiter: '', unit: ''),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
 <div class="mx-auto w-full flex flex-wrap">
   <div class="mx-auto flex flex-wrap">
     <h1 class="w-full text-center bg-yellow-400 mb-4">Dances</h1>

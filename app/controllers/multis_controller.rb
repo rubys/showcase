@@ -92,7 +92,7 @@ class MultisController < ApplicationController
     # Only allow a list of trusted parameters through.
     def dance_params
       params.require(:dance).permit(:name,
-        :heat_length, :multi_category_id, :dances, multi: {})
+        :heat_length, :multi_category_id, :dances, :cost_override, multi: {})
     end
 
     def update_multis dances
