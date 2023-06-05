@@ -160,6 +160,12 @@ server {
   passenger_friendly_error_pages on;
   passenger_min_instances 0;
   passenger_set_header X-Request-Id $request_id;
+<% if ENV['GEM_HOME'] -%>
+  passenger_env_var GEM_HOME <%= ENV['GEM_HOME'] %>;
+<% end -%>
+<% if ENV['GEM_PATH'] -%>
+  passenger_env_var GEM_HOME <%= ENV['GEM_PATH'] %>;
+<% end -%>
   passenger_env_var RAILS_RELATIVE_URL_ROOT <%= ROOT %>;
 <% unless @region -%>
   passenger_env_var RAILS_PROXY_HOST https://rubix.intertwingly.net/;
