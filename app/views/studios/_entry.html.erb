@@ -33,7 +33,7 @@
        end 
        
        cost_category = category
-       cost_category = heat.dance_category.name if heat.dance_category.cost_override
+       cost_category = heat.dance_category.name if heat.dance_category&.cost_override
        cost_category = heat.dance.name if heat.dance.cost_override
        %>
     <tr class="text-sm">
