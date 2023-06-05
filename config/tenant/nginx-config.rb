@@ -164,7 +164,7 @@ server {
   passenger_env_var GEM_HOME <%= ENV['GEM_HOME'] %>;
 <% end -%>
 <% if ENV['GEM_PATH'] -%>
-  passenger_env_var GEM_HOME <%= ENV['GEM_PATH'] %>;
+  passenger_env_var GEM_PATH <%= ENV['GEM_PATH'] %>;
 <% end -%>
   passenger_env_var RAILS_RELATIVE_URL_ROOT <%= ROOT %>;
 <% unless @region -%>
