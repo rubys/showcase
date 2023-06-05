@@ -27,10 +27,6 @@
     :name: Harrisburg
     :region: iad
     :logo: arthur-murray-logo.gif
-  matthews:
-    :name: Matthews House
-    :region: iad
-    :logo: ras.jpg
   raleigh:
     :name: Raleigh
     :region: iad
