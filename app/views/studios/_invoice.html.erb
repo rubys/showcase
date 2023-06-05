@@ -82,7 +82,6 @@
   </table>
   <% end %>
 
-
   <% if @student %>
   <% studio.people.order(:name).each do |person| %>
   <% next if @student and person.type != 'Student' %>
@@ -114,6 +113,7 @@
     <td colspan="2" class="whitespace-pre-wrap pt-4"><%= @event.student_package_description %>
   </tr>
   <% end %>
+  <% if @cost.length <= 4 %>
   <tr>
     <th align="left">Freestyles:
     <th align="left"><%= number_to_currency @heat_cost %> per entry</th>
@@ -122,10 +122,14 @@
     <th align="left">Routines:
     <th align="left"><%= number_to_currency @solo_cost %> per entry</th>
   </tr>
+  <% if @multi_cost and @multi_cost > 0 %>
+  </tr>
     <tr>
     <th align="left" class="pr-8">Multi Dance Event:
     <th align="left"><%= number_to_currency @multi_cost %> per entry</th>
   </tr>
+  <% end %>
+  <% end %>
   </tbody>
   </table>
 
