@@ -16,6 +16,8 @@ Rails.application.routes.draw do
 
       get "/:year", to: 'event#showcases', year: /\d+/
       get "/:year", to: 'event#showcases', year: /\d+/
+
+      get "logs", to: 'event#logs'
     else
       root 'event#root'
     end

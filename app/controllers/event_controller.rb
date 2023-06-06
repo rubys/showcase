@@ -1,5 +1,8 @@
 require 'open3'
 require 'zlib'
+require 'fileutils'
+require 'time'
+require 'erb'
 
 class EventController < ApplicationController
   include DbQuery
@@ -196,6 +199,66 @@ class EventController < ApplicationController
     else
       EventController.logo = nil
     end
+  end
+
+  def logs
+    Bundler.with_original_env do
+      @passenger = `/opt/homebrew/bin/passenger-status`
+    end
+
+    @logs = []
+
+    last_time = File.expand_path('~/logs/scu.time')
+
+    start = File.stat(last_time).mtime rescue Time.now
+
+    list = [
+      'people/studio_list',
+      '/certificates',
+      '/drop',
+      '/people/type',
+      '/people/package'
+    ]
+
+    logdir = '/opt/homebrew/var/log/nginx'
+    logs = Dir["#{logdir}/access.log*"].sort_by {|name| (name[/\d+/]||99999999).to_i}.reverse
+    logs.each do |log|
+      users = `#{log.include?('z')?'z':''}egrep "\\d - \\w+ \\[" #{log} | grep -v /assets/ | grep -v ' - rubys \\['`
+      unless users.empty?
+	users.split("\n").reverse.each do |line|
+	  time = Time.parse(line[/\[(.*?)\]/, 1].sub(':', ' ')) rescue Time.now
+
+	  line = ERB::Util.h(line)
+
+	  line.sub! /&quot;([A-Z]+) (\S+) (\S+)&quot; (\d+)/ do
+	    method, path, protocol, status = $1, $2, $3, $4
+	    if status == '200' and method == 'GET'
+	    elsif status == '302' and method == 'POST'
+	    elsif status == '303' and method == 'DELETE'
+	    elsif status == '304' and method == 'GET'
+	    elsif status == '204' and method == 'POST' and path.end_with? '/start_heat'
+	    elsif status == '200' and method == 'POST' and list.any? {|str| path.end_with? str}
+	    elsif status == '200' and method == 'POST' and path =~ %r{/scores/\d+/post$}
+	    elsif status == '101' and method == 'GET' and path.end_with? '/cable'
+	    else
+	      status = "<span style='background-color: orange'>#{status}</span>"
+	    end
+	    "\"#{method} <a href='#{path}'>#{path}</a> #{protocol}\" #{status}"
+	  end
+
+	  if time > start
+	    @logs << "<span style='background-color: yellow'>#{line}</span>"
+	  else
+	    @logs << line
+	  end
+	end
+	break
+      end
+    end
+
+    FileUtils.touch last_time
+
+    render layout: false
   end
 
   def publish
