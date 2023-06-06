@@ -47,7 +47,7 @@ Rails.application.configure do
 
   if ENV['RAILS_PROXY_HOST'].present?
     config.action_cable.allowed_request_origins = [
-      ENV['RAILS_PROXY_HOST'].chomp('/')
+      'https://' + ENV['RAILS_PROXY_HOST'].chomp('/')
     ]
   end
 
