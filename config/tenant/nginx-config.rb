@@ -110,7 +110,8 @@ if restart
     system "passenger-config restart-app #{@git_path}"
   end
 
-  if File.exist?('/run/nginx.pid') or File.exist?('/opt/homebrew/var/run/nginx.pid')
+  pids = %w{/run/nginx.pid /run/nginx/nginx.pid /opt/homebrew/var/run/nginx.pid}
+  if pids.any? {|file| File.exist? file}
     system 'nginx -s reload'
   end
 end

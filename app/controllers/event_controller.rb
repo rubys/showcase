@@ -203,12 +203,17 @@ class EventController < ApplicationController
 
   def logs
     Bundler.with_original_env do
-      @passenger = `/opt/homebrew/bin/passenger-status`
+      if File.exist? '/opt/homebrew/bin/passenger-status'
+        @passenger = `/opt/homebrew/bin/passenger-status`
+      else
+        @passenger = `passenger-status`
+      end
     end
 
     @logs = []
 
     last_time = File.expand_path('~/logs/scu.time')
+    FileUtils.mkdir_p File.dirname(last_time)
 
     start = File.stat(last_time).mtime rescue Time.now
 
@@ -220,10 +225,14 @@ class EventController < ApplicationController
       '/people/package'
     ]
 
-    logdir = '/opt/homebrew/var/log/nginx'
+    logdir = '/var/log/nginx'
+    if Dir.exist? '/opt/homebrew/var/log/nginx'
+      logdir = '/opt/homebrew/var/log/nginx' 
+    end
+
     logs = Dir["#{logdir}/access.log*"].sort_by {|name| (name[/\d+/]||99999999).to_i}.reverse
     logs.each do |log|
-      users = `#{log.include?('z')?'z':''}egrep "\\d - \\w+ \\[" #{log} | grep -v /assets/ | grep -v ' - rubys \\['`
+      users = `#{log.include?('z')?'z':''}egrep "[0-9] - \\w+ \\[" #{log} | grep -v /assets/ | grep -v ' - rubys \\['`
       unless users.empty?
 	users.split("\n").reverse.each do |line|
 	  time = Time.parse(line[/\[(.*?)\]/, 1].sub(':', ' ')) rescue Time.now
