@@ -8,7 +8,7 @@ ROOT = '/showcase'
 
 HOST = if ENV['FLY_APP_NAME']
    "#{ENV['FLY_APP_NAME']}.fly.dev"
-elsif ENV['HOSTNAME'] =~ /^ubuntu/
+elsif `hostname` =~ /^ubuntu/
   'hetzner.intertwingly.net'
 else
   'rubix.intertwingly.net'
