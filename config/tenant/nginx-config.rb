@@ -4,8 +4,15 @@ require 'erb'
 require 'yaml'
 require 'ostruct'
 
-HOST = ENV['FLY_APP_NAME'] ? "#{ENV['FLY_APP_NAME']}.fly.dev" : 'rubix.intertwingly.net'
 ROOT = '/showcase'
+
+HOSTNAME = if ENV['FLY_APP_NAME']
+   "#{ENV['FLY_APP_NAME']}.fly.dev"
+elsif ENV['HOSTNAME'] =~ /^ubuntu/
+  'hetzner.intertwingly.net'
+else
+  'rubix.intertwingly.net'
+end
 
 if File.exist? '/opt/homebrew/etc/nginx'
   NGINX_CONF = '/opt/homebrew/etc/nginx/servers'
