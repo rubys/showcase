@@ -6,7 +6,7 @@ require 'ostruct'
 
 ROOT = '/showcase'
 
-HOSTNAME = if ENV['FLY_APP_NAME']
+HOST = if ENV['FLY_APP_NAME']
    "#{ENV['FLY_APP_NAME']}.fly.dev"
 elsif ENV['HOSTNAME'] =~ /^ubuntu/
   'hetzner.intertwingly.net'
@@ -176,7 +176,7 @@ server {
 <% end -%>
   passenger_env_var RAILS_RELATIVE_URL_ROOT <%= ROOT %>;
 <% unless @region -%>
-  passenger_env_var RAILS_PROXY_HOST https://rubix.intertwingly.net/;
+  passenger_env_var RAILS_PROXY_HOST <%= HOST %>;
 <% end -%>
   passenger_env_var RAILS_APP_REDIS showcase_production;
   passenger_env_var RAILS_APP_CABLE wss://<%= HOST %><%= ROOT %>/cable;
