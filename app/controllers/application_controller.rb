@@ -19,6 +19,17 @@ class ApplicationController < ActionController::Base
       end
     end
 
+    def authenticate_user_or_studio(studio)
+      get_authentication
+
+      return unless Rails.env.production?
+      return if request.local?
+
+      authenticate_or_request_with_http_basic do |id, password|
+        User.authorized?(@authuser) or User.authorized?(@authuser, studio)
+      end
+    end
+
     def get_authentication
       if request.headers['HTTP_AUTHORIZATION']
         @authuser = Base64.decode64(request.headers['HTTP_AUTHORIZATION'].split(' ')[1]).split(':').first

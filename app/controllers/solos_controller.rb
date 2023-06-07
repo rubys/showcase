@@ -4,6 +4,11 @@ class SolosController < ApplicationController
   include Printable
   include ActiveStorage::SetCurrent
 
+  skip_before_action :authenticate_user, only: %i[ show edit update ]
+  before_action only: %i[ show edit update ] do
+    authenticate_user_or_studio(@solo.heat.entry.follow.studio.name)
+  end
+
   # GET /solos or /solos.json
   def index
     @solos = {}

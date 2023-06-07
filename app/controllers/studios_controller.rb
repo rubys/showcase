@@ -4,6 +4,11 @@ class StudiosController < ApplicationController
 
   before_action :set_studio, only: %i[ show edit update unpair destroy heats scores invoice student_invoices send_invoice solos ]
 
+  skip_before_action :authenticate_user, only: :solos
+  before_action only: :solos do
+    authenticate_user_or_studio(@studio.name)
+  end
+
   # GET /studios or /studios.json
   def index
     @studios = Studio.all.order(:name).to_a
@@ -62,7 +67,7 @@ class StudiosController < ApplicationController
   def solos
     @studios = [@studio] + @studio.pairs
     @solos = Solo.includes(heat: {entry: [:lead, :follow]}).where(follow: {studio_id: @studios}).
-      or(Solo.includes(heat: {entry: [:lead, :follow]}).where(follow: {studio_id: @studios})).
+      or(Solo.includes(heat: {entry: [:lead, :follow]}).where(lead: {studio_id: @studios})).
       order('number')
   end
 
