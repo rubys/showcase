@@ -8,9 +8,9 @@ For that reason, I have a [hot backup](https://hetzner.intertwingly.net/showcase
 running on [Hetzner](https://www.hetzner.com/) in [Ashburn, VA](https://www.hetzner.com/news/11-21-usa-cloud/).  Important things to understand:
 
    * This is running the exact same software
-   * Ten minutes after the last time you visit a page or made an update your entire event database will be uploaded to this machine, so the data there is very much up to date.  This will occur continuously until and unless you make an update on the Hertner machine, and will resume once you make an update on my Mac Mini.
+   * Ten minutes after the last time you visit a page or made an update your entire event database will be uploaded to this machine, so the data there is kept up to date.  This will occur continuously until and unless you make an update on the Hertner machine, and will resume once you make an update on my Mac Mini.
 
-What this means is: **don't use the Hetzner machine unless there is a problem, and one you switch don't switch back unti I can resynchonize the data, otherwise you can lose data.**
+What this means is: **don't use the Hetzner machine unless there is a problem, and one you switch don't switch back unti I can resynchonize the databases, otherwise you can lose data.**
 
 To use the Hetzer machine, go to the [hetzner showcase](https://hetzner.intertwingly.net/showcase/), and find your event.
 
