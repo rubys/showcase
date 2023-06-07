@@ -99,6 +99,11 @@
     params: {primary: @person}, form: { data: { turbo_confirm: 'Are you sure?' }} %>
   <% end %>
   <% end %>
+
+  <% if return_to %>
+  <%= link_to 'Back to solos', return_to, class: "text-center rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  <% else %>
   <%= link_to 'Back to student', @person, class: "text-center rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  <% end %>
 </div>
 </div>
