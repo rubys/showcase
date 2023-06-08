@@ -52,7 +52,7 @@
          <% end %>
        <% end %>
        <td class="px-4">
-         <form method="get" action="<%= edit_solo_path(solo) %>" data-turbo=false>
+         <form method="get" action="<%= solo.formations.empty? ? edit_solo_path(solo) : edit_formation_path(solo) %>" data-turbo=false>
          <input type="hidden" name="return-to" value=<%= solos_studio_path(@studio) %>>
          <button type="submit" class='group-hover:inline hidden x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium'>Edit</button>
          </form>
