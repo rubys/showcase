@@ -52,10 +52,10 @@ class User < ApplicationRecord
         next unless auth_sites.include?(info[:name]) or  auth_sites.include?('index')
         if info[:events]
           info[:events].each do |subtoken, subinfo|
-            events << "#{root}/#{year}/#{token}/#{subtoken}".squeeze('/')
+            events << "#{root}/#{year}/#{token}/#{subtoken}/".squeeze('/')
           end
         else
-          events << "#{root}/#{year}/#{token}".squeeze('/')
+          events << "#{root}/#{year}/#{token}/".squeeze('/')
         end
       end
     end
