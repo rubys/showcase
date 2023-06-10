@@ -19,6 +19,15 @@
     :name: Clearwater
     :region: iad
     :logo: arthur-murray-logo.gif
+    :events:
+      :glassslipper:
+        :name: Glass Slipper Gala
+      :nationaldance:
+        :name: National Dance Day
+      :snowball:
+        :name: Snowball
+      :flamingoopener:
+        :name: Flamingo Opener
   durham:
     :name: Durham
     :region: iad
