@@ -1,59 +1,22 @@
-# fly.toml file generated for smooth on 2022-08-08T10:02:20-04:00
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
 app = "smooth"
-kill_signal = "SIGINT"
-kill_timeout = 5
-processes = []
+primary_region = "iad"
+console_command = "/rails/bin/rails console"
 
-[build]
-  [build.args]
-    BUNDLER_VERSION = "2.3.24"
-    RUBY_VERSION = "3.1.2"
-    SERVER_COMMAND = "bin/rails fly:server"
-
-[env]
-  PORT = "9999"
-
-[mounts]
+[[mounts]]
   source = "smooth_volume"
-  destination = "/mnt/volume"
+  destination = "/data"
 
-[experimental]
-  allowed_public_ports = []
-  auto_rollback = true
-
-[[services]]
-  internal_port = 2222
-  protocol = "tcp"
-  [[services.ports]]
-    port = 2222
-
-[[services]]
-  http_checks = []
-  internal_port = 9999
-  processes = ["app"]
-  protocol = "tcp"
-  script_checks = []
-  [services.concurrency]
-    hard_limit = 25
-    soft_limit = 20
-    type = "connections"
-
-  [[services.ports]]
-    force_https = true
-    handlers = ["http"]
-    port = 80
-
-  [[services.ports]]
-    handlers = ["tls", "http"]
-    port = 443
-
-  [[services.tcp_checks]]
-    grace_period = "1s"
-    interval = "15s"
-    restart_limit = 0
-    timeout = "2s"
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
 
 [[statics]]
-  guest_path = "/app/public"
+  guest_path = "/rails/public"
   url_prefix = "/"
+

@@ -85,3 +85,5 @@ gem "combine_pdf", "~> 1.0"
 gem "puppeteer-ruby", "~> 0.44.1"
 
 gem "kramdown", "~> 2.4"
+
+gem "dockerfile-rails", "~> 1.4", :group => :development, :git => "https://github.com/fly-apps/dockerfile-rails.git"
