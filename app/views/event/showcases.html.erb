@@ -16,13 +16,17 @@ can click on it to see helpful hints.</li>
 </div>
 
 <% @showcases.each do |year, sites| %>
-  <h2 class="font-bold text-2xl mt-4 mb-2"><%= year %></h2>
+  <a href="<%= "#{@scope}/#{year}".squeeze('/') %>/">
+    <h2 class="font-bold text-2xl mt-4 mb-2"><%= year %></h2>
+  </a>
 
   <ul class="mt-2 list-disc list-inside">
     <% sites.each do |token, info| %>
     <li>
       <% if info[:events] %>
-      <span class="text-xl"><%= info[:name] %><span>
+      <a href="<%= "#{@scope}/#{year}/#{token}".squeeze('/') %>/">
+        <span class="text-xl"><%= info[:name] %><span>
+      </a>
       <ul class="my-2 ml-8 list-disc list-inside">
       <% info[:events].each do |subtoken, info| %>
         <li>
