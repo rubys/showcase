@@ -18,6 +18,15 @@ class EventController < ApplicationController
     @event = Event.last
 
     @heats = Heat.where(number: 1..).distinct.count(:number)
+
+    # event navigation
+    events = User.auth_event_list(@authuser)
+    this_event = root_path.chomp('/')
+    index = events.find_index(this_event)
+    if index
+      @prev = events[index-1] unless index == 0
+      @next = events[index+1] unless index == events.length - 1
+    end
   end
 
   def settings
@@ -164,7 +173,7 @@ class EventController < ApplicationController
     end
 
     @showcases.each do |year, sites|
-      if auth
+      if auth and false # disable
         sites.select! do |token, value|
           auth.include? token
         end

@@ -37,6 +37,32 @@ class User < ApplicationRecord
     @@auth_event
   end
 
+  # list of events this user has access to
+  def self.auth_event_list(userid=ENV["HTTP_X_REMOTE_USER"])
+    load_auth
+    auth_sites = @@auth_studio[userid]
+    logger.info sites: auth_sites
+    showcases = YAML.load_file('config/tenant/showcases.yml')
+
+    root = ENV.fetch('RAILS_RELATIVE_URL_ROOT', '')
+
+    events = []
+    showcases.reverse_each do |year, sites|
+      sites.each do |token, info|
+        next unless auth_sites.include?(info[:name]) or  auth_sites.include?('index')
+        if info[:events]
+          info[:events].each do |subtoken, subinfo|
+            events << "#{root}/#{year}/#{token}/#{subtoken}".squeeze('/')
+          end
+        else
+          events << "#{root}/#{year}/#{token}".squeeze('/')
+        end
+      end
+    end
+
+    events
+  end
+
   private
 
     def self.load_auth

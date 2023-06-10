@@ -14,6 +14,12 @@
   </ul>
 </div>
 
+<span data-controller="event-navigation">
+  <a rel="up" href=".."></a>
+  <% if @prev %><a rel="prev" href="<%= @prev %>"></a><% end %>
+  <% if @next %><a rel="next" href="<%= @next %>"></a><% end %>
+</span>
+
   <h1 class="font-bold text-center text-4xl"><%= @event.name %></h1>
 
   <p class="mt-4 text-center"><%= @event.location.to_s.lines.first.chomp %></p>
