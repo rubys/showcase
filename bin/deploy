@@ -1,0 +1,63 @@
+#!/usr/bin/env ruby
+
+require 'fileutils'
+
+# openssh: install authorized key and host keys
+if ENV['FLY_APP_NAME']
+  VOLUME = File.dirname(ENV.fetch('RAILS_DB_VOLUME', '/data/db'))
+
+  FileUtils.mkdir_p "#{VOLUME}/.ssh"
+  Dir.chdir "#{VOLUME}/.ssh" do
+    # install authorized key to allow ssh in
+    if File.exist? "authorized_keys"
+      if not Dir.exist? "/home/rails/.ssh"
+	FileUtils.mkdir_p "/home/rails/.ssh"
+	FileUtils.chmod 0700, "/home/rails/.ssh"
+	FileUtils.chown "rails", "rails", "/home/rails/.ssh"
+      end
+
+      if not File.exist? "/home/rails/.ssh/authorized_keys"
+	FileUtils.cp "authorized_keys", "/home/rails/.ssh/authorized_keys"
+	FileUtils.chown "rails", "rails", "/home/rails/.ssh/authorized_keys"
+      end
+    end
+
+    # ensure host keys remain stable 
+    host_keys = Dir['ssh_host*']
+    if host_keys.empty?
+      # generate new keys
+      Dir["/etc/ssh/ssh_host*.key"].each do key
+	type = key[/.*_(\w+)_key/, 1]
+	FileUtils.rm [key, "{key}.pub"]
+	system "ssh-keygen -q -N '' -t #{type} -f #{key}"
+      end
+
+      # save keys on volume
+      FileUtils.cp Dir["/etc/ssh/ssh_host*"], Dir.pwd
+    else
+      # restore keys from volume
+      host_keys.each do |key|
+	if File.read(key) != File.read("/etc/ssh/#{key}")
+	  FileUtils.cp key, "/etc/ssh/#{key}", preserve: true
+	end
+      end
+    end
+  end
+end
+
+# set up nginx and run migrations
+Dir.chdir File.dirname(__dir__) do
+  system "#{RbConfig.ruby} ./config/tenant/nginx-config.rb"
+end
+
+if ENV['FLY_APP_NAME']
+  # change ownership of data files
+  FileUtils.chown_R 'rails', 'rails', [
+    ENV['RAILS_DB_VOLUME'],
+    ENV['RAILS_STORAGE']
+  ]
+
+  # Configure memory for redis
+  # https://redis.io/docs/getting-started/faq/#background-saving-fails-with-a-fork-error-on-linux
+  File.write '/proc/sys/vm/overcommit_memory', '1'
+end
