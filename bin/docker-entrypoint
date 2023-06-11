@@ -1,0 +1,7 @@
+#!/bin/bash -e
+
+if [ "${*}" == "foreman start --procfile=Procfile.fly" ]; then
+  ./config/tenant/nginx-config.rb
+fi
+
+exec "${@}"

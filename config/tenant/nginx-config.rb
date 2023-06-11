@@ -2,6 +2,7 @@
 
 require 'erb'
 require 'yaml'
+require 'fileutils'
 require 'ostruct'
 
 ROOT = '/showcase'
@@ -91,17 +92,18 @@ else
 end
 
 @dbpath = ENV.fetch('RAILS_DB_VOLUME') { "#{@git_path}/db" }
+FileUtils.mkdir_p @dbpath
 @tenants.each do |tenant|
   next if @region and tenant.region and @region != tenant.region
   ENV['RAILS_APP_DB'] = tenant.label
-  system 'bin/rails db:create' unless File.exist? "#{@dbpath}/#{tenant.label}.sqlite3"
-  system 'bin/rails db:migrate'
+  ENV['DATABASE_URL'] = "sqlite3://#{@dbpath}/#{tenant.label}.sqlite3"
+  system 'bin/rails db:prepare'
 
   count = `sqlite3 #{@dbpath}/#{tenant.label}.sqlite3 "select count(*) from events"`.to_i
   system 'bin/rails db:seed' if count == 0
 
   storage = File.join(@storage, tenant.label)
-  Dir.mkdir storage unless Dir.exist? storage
+  FileUtils.mkdir_p storage unless Dir.exist? storage
 end
 
 old_conf = IO.read(SHOWCASE_CONF) rescue ''
@@ -132,13 +134,14 @@ passenger_log_file /dev/stdout;
 
 <% end -%>
 server {
-  listen 9999;
-  port_in_redirect off;
 <% if ENV['FLY_APP_NAME'] -%>
+  listen 3000;
   server_name <%= ENV['FLY_APP_NAME'] %>.fly.dev;
 <% else -%>
+  listen 9999;
   server_name localhost;
 <% end -%>
+  port_in_redirect off;
   rewrite ^/(showcase)?$ /showcase/ redirect;
   rewrite ^/assets/ /showcase/assets/ last;
 
@@ -194,6 +197,7 @@ server {
     passenger_app_group_name showcase-<%= tenant.label %>;
     passenger_env_var RAILS_APP_OWNER <%= tenant.owner.inspect %>;
 <% if ENV['RAILS_DB_VOLUME'] -%>
+    passenger_env_var DATABASE_URL sqlite3://<%= "#{ENV['RAILS_DB_VOLUME']}/#{tenant.label}.sqlite3" %>;
     passenger_env_var RAILS_DB_VOLUME <%= ENV['RAILS_DB_VOLUME'] %>;
 <% end -%>
     passenger_env_var RAILS_STORAGE <%= File.join(@storage, tenant.label) %>;

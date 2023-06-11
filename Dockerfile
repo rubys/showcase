@@ -58,7 +58,7 @@ RUN apt-get update -qq && \
       gpg --dearmor > /etc/apt/trusted.gpg.d/phusion.gpg && \
     bash -c 'echo deb https://oss-binaries.phusionpassenger.com/apt/passenger $(source /etc/os-release; echo $VERSION_CODENAME) main > /etc/apt/sources.list.d/passenger.list' && \
     apt-get update -qq && \
-    apt-get install --no-install-recommends -y chromium chromium-sandbox curl libnginx-mod-http-passenger nginx passenger procps redis sqlite3 && \
+    apt-get install --no-install-recommends -y chromium chromium-sandbox curl libnginx-mod-http-passenger nginx openssh-server passenger procps redis-server rsync ruby-foreman sqlite3 vim && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # configure nginx and passenger
@@ -83,12 +83,26 @@ RUN useradd rails --create-home --shell /bin/bash && \
     mkdir /data && \
     chown -R rails:rails db log storage tmp /data
 
+# configure redis
+RUN sed -i 's/^daemonize yes/daemonize no/' /etc/redis/redis.conf &&\
+  sed -i 's/^bind/# bind/' /etc/redis/redis.conf &&\
+  sed -i 's/^protected-mode yes/protected-mode no/' /etc/redis/redis.conf &&\
+  sed -i 's/^logfile/# logfile/' /etc/redis/redis.conf 
+
+# configure sshd
+RUN sed -i 's/^#\s*Port.*/Port 2222/' /etc/ssh/sshd_config && \
+    sed -i 's/^#\s*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config && \
+    mkdir /var/run/sshd && \
+    chmod 0755 /var/run/sshd
+
 # Deployment options
 ENV DATABASE_URL="sqlite3:///data/production.sqlite3" \
     PUPPETEER_EXECUTABLE_PATH="/usr/bin/chromium" \
     PUPPETEER_RUBY_NO_SANDBOX="1" \
+    RAILS_DB_VOLUME="/data/db" \
     RAILS_LOG_TO_STDOUT="1" \
-    RAILS_SERVE_STATIC_FILES="true"
+    RAILS_SERVE_STATIC_FILES="true" \
+    RAILS_STORAGE="/data/storage"
 
 # Entrypoint prepares the database.
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]
@@ -96,4 +110,4 @@ ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
 VOLUME /data
-CMD ["nginx"]
+CMD ["foreman", "start", "--procfile=Procfile.fly"]

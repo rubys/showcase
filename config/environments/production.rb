@@ -108,6 +108,9 @@ Rails.application.configure do
   # Do not dump schema after migrations.
   config.active_record.dump_schema_after_migration = false
 
+  # Yes, we are running sqlite3 in production, deal with it
+  config.active_record.sqlite3_production_warning=false
+
   # scoped storage
   if ENV['RAILS_APP_SCOPE']
     config.active_storage.routes_prefix = File.join(ENV['RAILS_APP_SCOPE'], 'storage')

@@ -1,0 +1,11 @@
+# configure redis
+RUN sed -i 's/^daemonize yes/daemonize no/' /etc/redis/redis.conf &&\
+  sed -i 's/^bind/# bind/' /etc/redis/redis.conf &&\
+  sed -i 's/^protected-mode yes/protected-mode no/' /etc/redis/redis.conf &&\
+  sed -i 's/^logfile/# logfile/' /etc/redis/redis.conf 
+
+# configure sshd
+RUN sed -i 's/^#\s*Port.*/Port 2222/' /etc/ssh/sshd_config && \
+    sed -i 's/^#\s*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config && \
+    mkdir /var/run/sshd && \
+    chmod 0755 /var/run/sshd

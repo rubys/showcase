@@ -41,7 +41,6 @@ class User < ApplicationRecord
   def self.auth_event_list(userid=ENV["HTTP_X_REMOTE_USER"])
     load_auth
     auth_sites = @@db ? @@auth_studio[userid] : []
-    logger.info sites: auth_sites
     showcases = YAML.load_file('config/tenant/showcases.yml')
 
     root = ENV.fetch('RAILS_RELATIVE_URL_ROOT', '')

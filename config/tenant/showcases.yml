@@ -13,11 +13,11 @@
         :name: Gratitude Gala
   charlotte:
     :name: Charlotte
-    :region: iad
+    :region: atl
     :logo: arthur-murray-logo.gif
   clearwater:
     :name: Clearwater
-    :region: iad
+    :region: mia
     :logo: arthur-murray-logo.gif
     :events:
       :glassslipper:
@@ -46,7 +46,7 @@
     :logo: arthur-murray-logo.gif
   sugarland:
     :name: Sugar Land
-    :region: iad
+    :region: dfw
     :logo: arthur-murray-logo.gif
   vabeach:                                                                   
     :name: Virginia Beach
@@ -70,7 +70,7 @@
     :logo: arthur-murray-logo.gif
   charlotte:
     :name: Charlotte
-    :region: iad
+    :region: atl
     :logo: arthur-murray-logo.gif
   harrisburg:                                                                   
     :name: Harrisburg
@@ -78,7 +78,7 @@
     :logo: arthur-murray-logo.gif
   kennesaw:                                                                   
     :name: Kennesaw
-    :region: iad
+    :region: atl
     :logo: arthur-murray-logo.gif
   vabeach:                                                                   
     :name: Virginia Beach
