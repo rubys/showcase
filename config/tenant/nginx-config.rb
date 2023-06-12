@@ -67,6 +67,7 @@ showcases.each do |year, list|
 end
 
 @region = ENV['FLY_REGION']
+
 years = showcases.select {|year, sites| sites.any? {|name, site| site[:region] == @region}}.
   map do |year, sites|
     sites.select! {|name, site| site[:region] == @region}
@@ -182,10 +183,9 @@ server {
   passenger_env_var RAILS_PROXY_HOST <%= HOST %>;
 <% end -%>
   passenger_env_var RAILS_APP_REDIS showcase_production;
-  passenger_env_var RAILS_APP_CABLE wss://<%= HOST %><%= ROOT %>/cable;
 <% @tenants.each do |tenant| %>
   # <%= tenant.name %>
-<% if @region and tenant.scope -%>
+<% if @region and @region == tenant.region and tenant.scope.to_s != '' -%>
   rewrite <%= ROOT %>/<%= tenant.scope %>/cable <%= ROOT %>/cable last;
 <% end -%>
   location <%= ROOT %>/<%= tenant.scope %> {
