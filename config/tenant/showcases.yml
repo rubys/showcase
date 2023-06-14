@@ -36,6 +36,10 @@
     :name: Harrisburg
     :region: iad
     :logo: arthur-murray-logo.gif
+  lakeview:
+    :name: Lakeview
+    :region: ord
+    :logo: arthur-murray-logo.gif
   raleigh:
     :name: Raleigh
     :region: iad
