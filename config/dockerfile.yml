@@ -4,6 +4,7 @@
 options:
   migrate: bin/deploy
   passenger: true
+  platform: linux/amd64
   procfile: Procfile.fly
   packages:
     deploy:
