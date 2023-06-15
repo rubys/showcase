@@ -15,6 +15,10 @@
     :name: Charlotte
     :region: atl
     :logo: arthur-murray-logo.gif
+  chicago:
+    :name: Chicago
+    :region: ord
+    :logo: arthur-murray-logo.gif
   clearwater:
     :name: Clearwater
     :region: mia
@@ -31,6 +35,10 @@
   durham:
     :name: Durham
     :region: iad
+    :logo: arthur-murray-logo.gif
+  glenview:
+    :name: Glenview
+    :region: ord
     :logo: arthur-murray-logo.gif
   harrisburg:                                                                   
     :name: Harrisburg
