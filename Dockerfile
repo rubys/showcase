@@ -2,7 +2,7 @@
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version and Gemfile
 ARG RUBY_VERSION=3.2.2
-FROM registry.docker.com/library/ruby:$RUBY_VERSION-slim as base
+FROM --platform=linux/amd64 registry.docker.com/library/ruby:$RUBY_VERSION-slim as base
 
 # Rails app lives here
 WORKDIR /rails
@@ -61,7 +61,12 @@ FROM base
 
 # Install packages needed for deployment
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y chromium chromium-sandbox curl dnsutils libnginx-mod-http-passenger nginx openssh-server procps redis-server rsync ruby-foreman sqlite3 vim && \
+    apt-get install --no-install-recommends -y curl gnupg && \
+    curl https://dl-ssl.google.com/linux/linux_signing_key.pub | \
+      gpg --dearmor > /etc/apt/trusted.gpg.d/google-archive.gpg && \
+    echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list && \
+    apt-get update -qq && \
+    apt-get install --no-install-recommends -y curl dnsutils google-chrome-stable libnginx-mod-http-passenger nginx openssh-server procps redis-server rsync ruby-foreman sqlite3 vim && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # configure nginx and passenger
@@ -105,7 +110,7 @@ RUN sed -i 's/^#\s*Port.*/Port 2222/' /etc/ssh/sshd_config && \
 
 # Deployment options
 ENV DATABASE_URL="sqlite3:///data/production.sqlite3" \
-    PUPPETEER_EXECUTABLE_PATH="/usr/bin/chromium" \
+    PUPPETEER_EXECUTABLE_PATH="/usr/bin/google-chrome" \
     PUPPETEER_RUBY_NO_SANDBOX="1" \
     RAILS_DB_VOLUME="/data/db" \
     RAILS_LOG_TO_STDOUT="1" \

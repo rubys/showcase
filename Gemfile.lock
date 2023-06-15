@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/fly-apps/dockerfile-rails.git
-  revision: 5b788f7942f796c654f404389d34a6c045e63bb8
+  revision: 9fea5414e73be6a3121f44aae72c1ab15c42c6bd
   specs:
     dockerfile-rails (1.4.2)
       rails
