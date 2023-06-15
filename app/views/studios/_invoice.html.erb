@@ -135,9 +135,7 @@
 
   <hr class="border-2 border-black mt-8 mb-20">
 
-  <div class="break-inside-avoid">
-
-  <table class="float-right">
+  <table class="float-right break-inside-avoid">
    <tr>
     <th align="left" class="pr-8">Invoice:
   </tr>
@@ -184,5 +182,4 @@
   <% invoice[:entries].each do |names, entries| %>
     <%= render "entry", names: names, entries: entries, studio: studio.name, invoice: :studio %>
   <% end %>
-  </div>
   <% end %>
