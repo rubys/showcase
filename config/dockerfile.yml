@@ -6,6 +6,7 @@ options:
   passenger: true
   platform: linux/amd64
   procfile: Procfile.fly
+  variant: slim-bullseye
   packages:
     deploy:
     - sqlite3

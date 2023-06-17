@@ -122,6 +122,15 @@ pid file = /var/run/rsyncd.pid
   read only = no
   hosts allow = *
   list = yes
+
+[ssh]
+  path = /data/.ssh
+  comment = Ssh config
+  uid = root
+  gid = root
+  read only = no
+  hosts allow = *
+  list = yes
 EOF
 
 # Deployment options
