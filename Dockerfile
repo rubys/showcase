@@ -2,7 +2,7 @@
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version and Gemfile
 ARG RUBY_VERSION=3.2.2
-FROM --platform=linux/amd64 registry.docker.com/library/ruby:$RUBY_VERSION-slim as base
+FROM --platform=linux/amd64 ruby:$RUBY_VERSION-slim-bullseye as base
 
 # Rails app lives here
 WORKDIR /rails
@@ -107,6 +107,22 @@ RUN sed -i 's/^#\s*Port.*/Port 2222/' /etc/ssh/sshd_config && \
     sed -i 's/^#\s*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config && \
     mkdir /var/run/sshd && \
     chmod 0755 /var/run/sshd
+
+# configure rsync
+COPY <<-"EOF" /etc/rsyncd.conf
+lock file = /var/run/rsync.lock
+log file = /var/log/rsyncd.log
+pid file = /var/run/rsyncd.pid
+
+[data]
+  path = /data
+  comment = Showcase data
+  uid = rails
+  gid = rails
+  read only = no
+  hosts allow = *
+  list = yes
+EOF
 
 # Deployment options
 ENV DATABASE_URL="sqlite3:///data/production.sqlite3" \

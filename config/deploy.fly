@@ -10,3 +10,28 @@ RUN sed -i 's/^#\s*Port.*/Port 2222/' /etc/ssh/sshd_config && \
     sed -i 's/^#\s*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config && \
     mkdir /var/run/sshd && \
     chmod 0755 /var/run/sshd
+
+# configure rsync
+COPY <<-"EOF" /etc/rsyncd.conf
+lock file = /var/run/rsync.lock
+log file = /var/log/rsyncd.log
+pid file = /var/run/rsyncd.pid
+
+[data]
+  path = /data
+  comment = Showcase data
+  uid = rails
+  gid = rails
+  read only = no
+  hosts allow = *
+  list = yes
+
+[ssh]
+  path = /data/.ssh
+  comment = Ssh config
+  uid = root
+  gid = root
+  read only = no
+  hosts allow = *
+  list = yes
+EOF

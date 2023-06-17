@@ -2,11 +2,39 @@
 
 require 'fileutils'
 
-# openssh: install authorized key and host keys
 if ENV['FLY_APP_NAME']
-  VOLUME = File.dirname(ENV.fetch('RAILS_DB_VOLUME', '/data/db'))
+  # start rsync daemon
+  system "rsync --daemon"
 
+  VOLUME = File.dirname(ENV.fetch('RAILS_DB_VOLUME', '/data/db'))
   FileUtils.mkdir_p "#{VOLUME}/.ssh"
+
+  if ENV['FLY_REGION'] != ENV['PRIMARY_REGION']
+    source = "rsync://#{ENV['PRIMARY_REGION']}.#{ENV['FLY_APP_NAME']}.internal"
+
+    # get authorized keys
+    authkeys = "#{VOLUME}/.ssh/authorized_keys"
+    if not File.exist? authkeys
+      system *%W(
+        rsync
+        -av
+        #{source}/ssh/authorized_keys
+        #{authkeys}
+      )
+    end
+
+    # synch databases and storage
+    system *%W(
+      rsync
+      -av
+      --update
+      #{source}#{VOLUME}/db
+      #{source}#{VOLUME}/storage
+      #{VOLUME}
+    )
+  end
+
+  # openssh: install authorized key and host keys
   Dir.chdir "#{VOLUME}/.ssh" do
     # install authorized key to allow ssh in
     if File.exist? "authorized_keys"
