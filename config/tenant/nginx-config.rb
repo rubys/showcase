@@ -133,6 +133,8 @@ passenger_default_group root;
 
 passenger_log_file /dev/stdout;
 
+passenger_ctl hook_detached_process /rails/bin/passenger-hook;
+
 <% end -%>
 server {
 <% if ENV['FLY_APP_NAME'] -%>

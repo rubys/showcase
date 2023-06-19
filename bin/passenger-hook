@@ -1,0 +1,35 @@
+#!/usr/bin/env ruby
+
+require 'socket'
+
+status = `passenger-status`
+
+# get a list of processe, excluding cable processes
+processes = status[/^Processes\s*:\s*(\d*)/, 1].to_i
+cable = status[/^showcase-cable.*?\n\n/m]
+processes -= 1 if cable and cable =~ /Sessions:\s*[1-9]/
+
+if processes == 0
+  # get a list of ip addresses for running instances, with the primary region first
+  addrs = [
+    *`dig +short -t aaaa #{ENV['PRIMARY_REGION']}.#{ENV['FLY_APP_NAME']}.internal`.split,
+    *`dig +short -t aaaa global.#{ENV['FLY_APP_NAME']}.internal`.split,
+  ].uniq
+
+  host = Socket.ip_address_list.map {|addr| addr.getnameinfo.first}.
+    grep(/%eth0/).map {|addr| addr.split('%').first}
+
+  addrs.each do |addr|
+    next if host.include? addr
+
+    system *%W[
+      rsync
+      -av
+      --update
+      /data/db
+      /data/storage
+      rsync://[#{addr}]/data/
+    ]
+  end
+end
+  
