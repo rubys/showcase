@@ -355,6 +355,7 @@ export default class extends Controller {
       let container = document.querySelector('.max-h-full');
 
       function resize() {
+        if (!container) return;
         container.style.maxHeight = `${document.documentElement.clientHeight}px`;
       }
 
