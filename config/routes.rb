@@ -149,4 +149,6 @@ Rails.application.routes.draw do
     match "/password/verify", to: 'users#password_verify', via: %i[get patch]
     resources :users
   end
+
+  post '/showcase/events/console', to: 'event#console'
 end

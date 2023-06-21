@@ -9,6 +9,7 @@ class EventController < ApplicationController
   include ActiveStorage::SetCurrent
 
   skip_before_action :authenticate_user, only: %i[ counter, showcases ]
+  skip_before_action :verify_authenticity_token, only: :console
 
   def root
     @judges = Person.where(type: 'Judge')
@@ -549,5 +550,15 @@ class EventController < ApplicationController
 
       redirect_to root_path, notice: "#{params[:file].original_filename} was successfully imported."
     end
+  end
+
+  def console
+    body = request.body.read
+    begin
+      logger.info JSON.pretty_generate(JSON.parse(body))
+    rescue
+      logger.warn body
+    end
+    render status: 200, json: {result: 'OK'}
   end
 end
