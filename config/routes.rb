@@ -151,4 +151,5 @@ Rails.application.routes.draw do
   end
 
   post '/showcase/events/console', to: 'event#console'
+  post '/events/console', to: 'event#console'
 end
