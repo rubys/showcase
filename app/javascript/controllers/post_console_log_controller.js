@@ -7,6 +7,8 @@ export default class extends Controller {
 }
 
 function postLog(log) {
+  log.location = window.location
+
   fetch('/showcase/events/console', {
     method: 'POST',
     body: JSON.stringify(log)
@@ -20,8 +22,14 @@ window.onerror = function (error, url, line) {
   postLog({
     type: "exception",
     timeStamp: TS(),
-    value: { error: error.toString(), url: url.toString(), line: line.toString() }
+    value: {
+      error: error.toString(),
+      stack: (error.stack || '').toString().trim().split("\n"),
+      url: url.toString(),
+      line: line.toString()
+    }
   })
+
   return false;
 }
 window.onunhandledrejection = function (e) {
