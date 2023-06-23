@@ -21,9 +21,9 @@
     <% slots = @heat.dance.multi_children.group_by {|multi| multi.slot} %>
     <% if slots.length > 1 %>
     <%= slots[@slot].sort_by {|multi| multi.dance.order}.map {|multi| multi.dance.name}.join(' / ') %>
-    <% elsif slots.values.last.length == @heat.dance.heat_length %>
+    <% elsif slots.values.last&.length == @heat.dance.heat_length %>
     <%= slots.values.last.sort_by {|multi| multi.dance.order}[@slot - 1].dance.name %>
-    <% else %>
+    <% elsif slots.values.last %>
     <%= slots.values.last.sort_by {|multi| multi.dance.order}.map {|multi| multi.dance.name}.join(' / ') %>
     <% end %>
     </div>

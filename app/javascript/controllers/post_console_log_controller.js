@@ -7,7 +7,7 @@ export default class extends Controller {
 }
 
 function postLog(log) {
-  log.location = window.location
+  log.location = window.location.href
 
   fetch('/showcase/events/console', {
     method: 'POST',
