@@ -45,7 +45,7 @@
       <td class="text-right pr-4"><%= @start[number]&.strftime("%-I:%M") %></td>
       <% end %>
       <td class="text-center"><%= heat.number %>
-      <% unless %w(Solo Multi).include? heat.category %>
+      <% unless heat.category == 'Solo' %>
       <% if ballrooms == 2 %>
       - <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
       <% elsif ballrooms == 3 %>
