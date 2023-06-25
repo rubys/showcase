@@ -1,7 +1,7 @@
 <table class="" style="break-before: page">
   <thead>
     <tr>
-      <td colspan="6" class="font-bold pt-8 text-3xl pb-5" >
+      <td colspan="11" class="font-bold pt-8 text-3xl pb-5" >
         <%= person.name %>
         <span class="font-normal text-base float-right">
           <%= @event.name %>
@@ -46,15 +46,20 @@
     <% end %>
   </tbody>
 
-  <% commented = @heats.select {|heat| heat.scores.any? {|score| score.comments}} %>
-  <% if commented %>
+
+  <% commented = @heats.select do |heat| 
+      next unless [heat.entry.lead, heat.entry.follow].include? person
+      next unless heat.scores.any? {|score| score.comments}
+      heat.scores.any? {|score| !score.comments.blank?}
+    end
+  %>
+  <% unless commented.empty? %>
   <tbody>
     <tr>
       <td colspan="5" class="text-center py-4 font-bold text-xl"><%= commented.all? {|heat| heat.category == 'Solo'} ? "Solo comments" : "Judge Comments" %>
     </tr>
   <% commented.each do |heat| %>
-  <% next unless [heat.entry.lead, heat.entry.follow].include? person %>
-  <% next unless heat.scores.any? {|score| score.comments} %>
+    <tr><td><%= heat.inspect %>
 
     <% heat.scores.each do |score| %>
     <% next unless score.comments %>
