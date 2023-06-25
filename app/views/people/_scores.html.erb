@@ -59,8 +59,6 @@
       <td colspan="5" class="text-center py-4 font-bold text-xl"><%= commented.all? {|heat| heat.category == 'Solo'} ? "Solo comments" : "Judge Comments" %>
     </tr>
   <% commented.each do |heat| %>
-    <tr><td><%= heat.inspect %>
-
     <% heat.scores.each do |score| %>
     <% next unless score.comments %>
     <tr>
