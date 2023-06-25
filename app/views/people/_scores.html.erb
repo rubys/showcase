@@ -10,10 +10,12 @@
     </tr>
     <tr>
       <td class="row-head">Heat
+      <% if @heats.any? {|heat| heat.scores.any? {|score| score.value}} %>
       <td class="row-head" colspan="<%= [@judges.length, 1].max %>">Scores
+      <% end %>
       <td class="row-head">Dance
       <td class="row-head">Partner
-      <td class="row-head" colspan="3">Lvl/Cat
+      <td class="row-head" colspan="3">Cat/Lvl
     </tr>
   </thead>
   <tbody>
@@ -24,7 +26,7 @@
       <td class="text-center"><%= heat.number %>
       <% if @judges.empty? %>
       <td></td>
-      <% else %>
+      <% elsif @heats.any? {|heat| heat.scores.any? {|score| score.value}} %>
       <% @judges.each do |judge| %>
         <td class="text-center"><%= heat.scores.select {|score| score.judge == judge}.sort_by(&:slot).map(&:value).join(' ') %>
       <% end %>
@@ -46,7 +48,6 @@
     <% end %>
   </tbody>
 
-
   <% commented = @heats.select do |heat| 
       next unless [heat.entry.lead, heat.entry.follow].include? person
       next unless heat.scores.any? {|score| score.comments}
@@ -54,10 +55,17 @@
     end
   %>
   <% unless commented.empty? %>
-  <tbody>
+  </table>
+  <h2 class="text-center py-4 font-bold text-xl"><%= commented.all? {|heat| heat.category == 'Solo'} ? "Solo comments" : "Judge Comments" %></h2>
+  <table>
+  <thead>
     <tr>
-      <td colspan="5" class="text-center py-4 font-bold text-xl"><%= commented.all? {|heat| heat.category == 'Solo'} ? "Solo comments" : "Judge Comments" %>
+      <td class="row-head">Heat
+      <td class="row-head">Comments
     </tr>
+  </thead>
+  <tbody>
+
   <% commented.each do |heat| %>
     <% heat.scores.each do |score| %>
     <% next unless score.comments %>
