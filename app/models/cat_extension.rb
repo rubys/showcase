@@ -12,4 +12,8 @@ class CatExtension < ApplicationRecord
   def duration
     nil
   end
+
+  def cost_override
+    category.cost_override
+  end
 end
