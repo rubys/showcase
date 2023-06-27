@@ -11,6 +11,11 @@ RUN sed -i 's/^#\s*Port.*/Port 2222/' /etc/ssh/sshd_config && \
     mkdir /var/run/sshd && \
     chmod 0755 /var/run/sshd
 
+# Authorize rails user to run passenger-status
+COPY <<-"EOF" /etc/sudoers.d/rails
+rails ALL=(root) NOPASSWD: /usr/sbin/passenger-status
+EOF
+
 # configure rsync
 COPY <<-"EOF" /etc/rsyncd.conf
 lock file = /var/run/rsync.lock

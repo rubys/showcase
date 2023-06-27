@@ -25,6 +25,7 @@ Rails.application.routes.draw do
     get '/env', to: 'event#env'
     get '/auth', to: 'event#auth'
     get '/instructions', to: 'event#instructions'
+    get '/landing', to: 'event#landing'
     get '/event.xlsx', to: "event#index", as: 'event_spreadsheet'
     get '/event.sqlite3', to: "event#database", as: 'event_database'
 

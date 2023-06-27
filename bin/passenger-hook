@@ -2,7 +2,11 @@
 
 require 'socket'
 
-status = `passenger-status`
+if Process.uid == 0
+  status = `passenger-status`
+else
+  status = `sudo /usr/sbin/passenger-status`
+end
 
 # get a list of processe, excluding cable processes
 processes = status[/^Processes\s*:\s*(\d*)/, 1].to_i

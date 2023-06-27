@@ -11,6 +11,10 @@ class EventController < ApplicationController
   skip_before_action :authenticate_user, only: %i[ counter, showcases ]
   skip_before_action :verify_authenticity_token, only: :console
 
+  def landing
+    @nologo = true
+  end
+
   def root
     @judges = Person.where(type: 'Judge')
     @djs    = Person.where(type: 'DJ')

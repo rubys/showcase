@@ -16,6 +16,7 @@ options:
     - rsync
     - openssh-server
     - dnsutils
+    - sudo
   envs:
     deploy:
       RAILS_STORAGE: "/data/storage"

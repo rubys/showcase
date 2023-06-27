@@ -34,6 +34,11 @@ if ENV['FLY_APP_NAME']
     )
   end
 
+  # openssh: fly environment variables
+  IO.write '/etc/environment',
+    ENV.select{|key, value| key =~ /^FLY_*|PRIMARY_REGION/}.
+    map {|key, value| "#{key}=#{value}\n"}.join
+
   # openssh: install authorized key and host keys
   Dir.chdir "#{VOLUME}/.ssh" do
     # install authorized key to allow ssh in

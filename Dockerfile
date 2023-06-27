@@ -66,7 +66,7 @@ RUN apt-get update -qq && \
       gpg --dearmor > /etc/apt/trusted.gpg.d/google-archive.gpg && \
     echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list && \
     apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl dnsutils google-chrome-stable libnginx-mod-http-passenger nginx openssh-server procps redis-server rsync ruby-foreman sqlite3 vim && \
+    apt-get install --no-install-recommends -y curl dnsutils google-chrome-stable libnginx-mod-http-passenger nginx openssh-server procps redis-server rsync ruby-foreman sqlite3 sudo vim && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # configure nginx and passenger
@@ -107,6 +107,11 @@ RUN sed -i 's/^#\s*Port.*/Port 2222/' /etc/ssh/sshd_config && \
     sed -i 's/^#\s*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config && \
     mkdir /var/run/sshd && \
     chmod 0755 /var/run/sshd
+
+# Authorize rails user to run passenger-status
+COPY <<-"EOF" /etc/sudoers.d/rails
+rails ALL=(root) NOPASSWD: /usr/sbin/passenger-status
+EOF
 
 # configure rsync
 COPY <<-"EOF" /etc/rsyncd.conf
