@@ -155,6 +155,7 @@ Swiping left and right on mobile devices and tablets also work.
     </thead>
     <% lastcat = nil %>
     <% @ballrooms.each do |ballroom, subjects| %>
+      <% next if subjects.empty? %>
       <% dance = subjects.first.dance_id %> 
       <% if ballroom.to_s == 'B' %>
         <tr><td colspan="10" class="bg-black"></tr>
