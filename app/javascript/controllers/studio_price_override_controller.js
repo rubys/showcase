@@ -10,7 +10,6 @@ export default class extends Controller {
 
   hideShow = () => {
     for (let input of this.element.querySelectorAll('input[type=number]')) {
-      console.log(input.id);
       input.parentElement.style.display = this.checkbox.checked ? 'block' : 'none';
       input.disabled = !this.checkbox.checked;
     }
