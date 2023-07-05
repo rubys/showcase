@@ -1,5 +1,9 @@
 ---
 2023:                                                                           
+  alexandria:
+    :name: Alexandria
+    :region: iad
+    :logo: arthur-murray-logo.gif
   annapolis:
     :name: Annapolis
     :region: iad
