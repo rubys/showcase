@@ -78,8 +78,8 @@ server {
 }
 EOF
 RUN echo "daemon off;" >> /etc/nginx/nginx.conf && \
-    sed -i 's/access_log\s.*;/access_log \/dev\/stdout;/' /etc/nginx/nginx.conf && \
-    sed -i 's/error_log\s.*;/error_log \/dev\/stderr info;/' /etc/nginx/nginx.conf && \
+    sed -i 's/access_log\s.*;/access_log stdout;/' /etc/nginx/nginx.conf && \
+    sed -i 's/error_log\s.*;/error_log stderr info;/' /etc/nginx/nginx.conf && \
     sed -i 's/user www-data/user rails/' /etc/nginx/nginx.conf && \
     mkdir /var/run/passenger-instreg
 
