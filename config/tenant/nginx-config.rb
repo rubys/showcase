@@ -139,6 +139,7 @@ passenger_ctl hook_detached_process /rails/bin/passenger-hook;
 server {
 <% if ENV['FLY_APP_NAME'] -%>
   listen 3000;
+  listen [::]:3000;
   server_name <%= ENV['FLY_APP_NAME'] %>.fly.dev;
 <% else -%>
   listen 9999;
