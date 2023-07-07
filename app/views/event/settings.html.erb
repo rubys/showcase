@@ -179,8 +179,7 @@ on the floor at the same time.
 </p>
 
 <p class="mb-2">
-With the sliders all the way to the left, Open and Closed heats are never
-on the floor at the same time, Full Bronze students can only be on the floor
+With the slider<% if @event.track_ages %>s<% end %> all the way to the left, Full Bronze students can only be on the floor
 with other Full Bronze students.
 <% if @event.track_ages %>
 And people in age category B1 can only
@@ -189,7 +188,7 @@ be on the floor with others in the same age category.
 </p>
 
 <p class="mb-2">
-With the sliders all the way to the right, Open and Closed heats can be 
+With the slider<% if @event.track_ages %>s<% end %> all the way to the right, Open and Closed heats can be 
 on the floor at the same time, Newcomers can be on the dance floor at the
 same time as Full Gold students.
 <% if @event.track_ages %>
@@ -204,17 +203,19 @@ And people in any age category can be on the floor at the same time.
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+<!--
   <div class="my-5">
     <%= form.label :heat_range_cat, 'open/closed' %>
     <%= form.range_field :heat_range_cat, min: 0, max: 1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+-->
 
   <div class="my-5">
     <%= form.label :heat_range_level, 'level' %>
     <%= form.range_field :heat_range_level, min: 0, max: @levels-1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
-  <% if @track_ages %>
+  <% if @event.track_ages %>
   <div class="my-5">
     <%= form.label :heat_range_age, 'age' %>
     <%= form.range_field :heat_range_age, min: 0, max: @ages-1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
