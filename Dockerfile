@@ -64,9 +64,9 @@ RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y curl gnupg && \
     curl https://dl-ssl.google.com/linux/linux_signing_key.pub | \
       gpg --dearmor > /etc/apt/trusted.gpg.d/google-archive.gpg && \
-    echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list && \
+    echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list && \
     apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl dnsutils google-chrome-stable libnginx-mod-http-passenger nginx openssh-server procps redis-server rsync ruby-foreman sqlite3 sudo vim && \
+    apt-get install --no-install-recommends -y curl dnsutils google-chrome-stable libnginx-mod-http-passenger nginx openssh-server poppler-utils procps redis-server rsync ruby-foreman sqlite3 sudo vim && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # configure nginx and passenger

@@ -17,7 +17,12 @@ To use the Hetzer machine, go to the [hetzner showcase](https://hetzner.intertwi
 ---
 
 I'm also testing deployment on [fly.io](https://fly.io/) which will
-allow me to deploy on servers around the word.
+allow me to deploy on servers around the word.  The new site will be
+[smooth.fly.dev](https://smooth.fly.dev/), and is currently deployed
+at the following sites: ATL, DFW, IAD, MIA, and ORD.  Events will
+automatically be hosted at the nearest site.
+
+---
 
 I've provided [installation instructions](https://github.com/rubys/showcase#getting-up-and-running---bare-metal-one-event)
 for those that wish to run this themselves.  If you have a machine that is capable of running a spreadsheet and

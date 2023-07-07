@@ -277,15 +277,17 @@ module Printable
     url = URI.parse(request.url.sub(/\.pdf($|\?)/, '.html\\1'))
     url.scheme = 'http'
     url.hostname = 'localhost'
-    url.port = (ENV['FLY_APP_NAME'] && ENV['PORT']) || request.headers['SERVER_PORT']
+    url.port = (ENV['FLY_APP_NAME'] && 3000) || request.headers['SERVER_PORT']
 
     if RUBY_PLATFORM =~ /darwin/
       chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+      headless="--headless"
     else
-      chrome="google-chrome"
+      chrome="google-chrome-stable"
+      headless="--headless=new"
     end
 
-    system chrome, '--headless', '--disable-gpu', '--print-to-pdf-no-header',
+    system chrome, headless, '--disable-gpu', '--no-pdf-header-footer',
       "--no-sandbox", "--print-to-pdf=#{tmpfile.path}", url.to_s
 
     unless concat.empty?
