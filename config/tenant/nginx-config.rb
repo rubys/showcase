@@ -136,6 +136,15 @@ passenger_log_file /dev/stdout;
 passenger_ctl hook_detached_process /rails/bin/passenger-hook;
 
 <% end -%>
+<% if ENV['FLY_APP_NAME'] -%>
+# logging
+log_format  main  '$http_x_forwarded_for - $remote_user [$time_local] "$request" '
+  '$status $body_bytes_sent "$http_referer" '
+  '"$http_user_agent"';
+error_log /dev/stderr;
+access_log /dev/stdout main;
+
+<% end -%>
 server {
 <% if ENV['FLY_APP_NAME'] -%>
   listen 3000;
