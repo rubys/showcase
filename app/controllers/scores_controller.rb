@@ -480,28 +480,32 @@ class ScoresController < ApplicationController
     instructor_results.each do |(score, instructor), count|
       person = people[instructor]
 
-      value = SCORES['Closed'].index score
-      if value
-        category = 'Closed'
-      else
-        category = 'Open'
-        value = SCORES['Open'].index score
-        next unless value
-      end
-
       @scores[person] ||= {
         'Open' => SCORES['Open'].map {0},
         'Closed' => SCORES['Closed'].map {0},
         'points' => 0
       }
 
-      @scores[person][category][value] += count
-      @scores[person]['points'] += count * WEIGHTS[value]
+      if @open_scoring == '#'
+        @scores[person]['points'] += score.to_i
+      else
+        value = SCORES['Closed'].index score
+        if value
+          category = 'Closed'
+        else
+          category = 'Open'
+          value = SCORES['Open'].index score
+          next unless value
+        end
+
+        @scores[person][category][value] += count
+        @scores[person]['points'] += count * WEIGHTS[value]
+      end
     end
 
     if request.post?
       render turbo_stream: turbo_stream.replace("instructor-scores",
-        render_to_string(partial: 'instructor', layout: false)
+        render_to_string(partial: 'instructors', layout: false)
       )
     end
   end
