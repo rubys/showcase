@@ -79,7 +79,7 @@ class ScoresController < ApplicationController
       end
     end
 
-    if @event.open_scoring = '+' and @subjects.first.category == 'Open'
+    if @event.open_scoring == '+' and @subjects.first.category == 'Open'
       @good = {}
       @bad = {}
       scores.each do |score|
