@@ -303,10 +303,12 @@ class ScoresController < ApplicationController
   def by_studio
     @open_scoring = Event.first.open_scoring
     levels = Level.order(:id).all
+    total = Struct.new(:name).new('Total')
 
     @last_score_update = Score.maximum(:updated_at)
 
     @scores = levels.map {|level| [level, {}]}.to_h
+    @scores[total] = {}
 
     people = Person.where(type: 'Student').
       map {|person| [person.id, person]}.to_h
@@ -326,10 +328,15 @@ class ScoresController < ApplicationController
             'count' => 0
           }
 
-          @scores[level][studio]['count'] += count
+          @scores[total][studio] ||= {
+            'points' => 0,
+            'count' => 0
+          }
+
+          points = 0
 
           if @open_scoring == '#'
-            @scores[level][studio]['points'] += count * score.to_i
+            points = count * score.to_i
           else
             value = SCORES['Closed'].index score
             if value
@@ -340,8 +347,16 @@ class ScoresController < ApplicationController
             end
 
             if value
-              @scores[level][studio]['points'] += count * WEIGHTS[value]
+              points = count * WEIGHTS[value]
             end
+          end
+
+          if points > 0
+            @scores[level][studio]['count'] += count
+            @scores[level][studio]['points'] += points
+
+            @scores[total][studio]['count'] += count
+            @scores[total][studio]['points'] += points
           end
         end
       end
