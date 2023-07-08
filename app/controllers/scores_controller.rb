@@ -300,6 +300,60 @@ class ScoresController < ApplicationController
     end
   end
 
+  def by_studio
+    @open_scoring = Event.first.open_scoring
+    levels = Level.order(:id).all
+
+    @last_score_update = Score.maximum(:updated_at)
+
+    @scores = levels.map {|level| [level, {}]}.to_h
+
+    people = Person.where(type: 'Student').
+      map {|person| [person.id, person]}.to_h
+    levels = Level.all.map {|level| [level.id, level]}.to_h
+
+    student_results.each do |group, scores|
+      scores.each do |(score, *students), count|
+        students = students.map {|student| people[student]}
+        count = count.to_f / students.length
+
+        students.each do |student|
+          level = student.level
+          studio = student.studio.name
+
+          @scores[level][studio] ||= {
+            'points' => 0,
+            'count' => 0
+          }
+
+          @scores[level][studio]['count'] += count
+
+          if @open_scoring == '#'
+            @scores[level][studio]['points'] += count * score.to_i
+          else
+            value = SCORES['Closed'].index score
+            if value
+              category = 'Closed'
+            else
+              category = 'Open'
+              value = SCORES['Open'].index score
+            end
+
+            if value
+              @scores[level][studio]['points'] += count * WEIGHTS[value]
+            end
+          end
+        end
+      end
+    end
+
+    if request.post?
+      render turbo_stream: turbo_stream.replace("scores-by-studio",
+        render_to_string(partial: 'by_studio', layout: false)
+      )
+    end
+  end
+
   def by_age
     @open_scoring = Event.first.open_scoring
     ages = Age.order(:id).all
