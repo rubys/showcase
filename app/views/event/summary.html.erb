@@ -54,7 +54,7 @@
 </ul>
 
 <% if @track_ages %>
-<h2 class="font-bold text-2xl my-4">Students, by agex s</h2>
+<h2 class="font-bold text-2xl my-4">Students, by age</h2>
 
 <ul class="list-disc list-inside">
   <% @people['Student'].group_by {|person| person.age}.sort.each do |age, people| %>
