@@ -43,3 +43,5 @@
 !/app/assets/builds/.keep
 
 scans/
+
+/config/credentials/production.key
