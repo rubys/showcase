@@ -98,6 +98,13 @@ Rails.application.configure do
   if ENV["RAILS_LOG_TO_STDOUT"].present?
     logger           = ActiveSupport::Logger.new(STDOUT)
     logger.formatter = config.log_formatter
+
+    log_volume = ENV['RAILS_LOG_VOLUME']
+    if log_volume
+      volume_logger  = ActiveSupport::Logger.new("#{log_volume}/#{ENV['RAILS_APP_DB']}.log", 3)
+      logger         = logger.extend ActiveSupport::Logger.broadcast(volume_logger)
+    end
+
     config.logger    = ActiveSupport::TaggedLogging.new(logger)
   elsif ENV["RAILS_APP_DB"].present?
     logger = ActiveSupport::Logger.new("log/#{ENV['RAILS_APP_DB']}.log")

@@ -92,6 +92,9 @@ else
   @cables = '(' + years.join('|') + ')'
 end
 
+log_volume = ENV['RAILS_LOG_VOLUME']
+FileUtils.mkdir_p log_volume if log_volume
+
 @dbpath = ENV.fetch('RAILS_DB_VOLUME') { "#{@git_path}/db" }
 FileUtils.mkdir_p @dbpath
 @tenants.each do |tenant|
@@ -191,6 +194,9 @@ server {
   passenger_env_var GEM_PATH <%= ENV['GEM_PATH'] %>;
 <% end -%>
   passenger_env_var RAILS_RELATIVE_URL_ROOT <%= ROOT %>;
+<% if ENV['RAILS_LOG_VOLUME'] -%>
+  passenger_env_var RAILS_LOG_VOLUME <%= ENV['RAILS_LOG_VOLUME'] %>;
+<% end -%>
 <% unless @region -%>
   passenger_env_var RAILS_PROXY_HOST <%= HOST %>;
 <% end -%>

@@ -23,5 +23,6 @@ options:
     deploy:
       RAILS_STORAGE: "/data/storage"
       RAILS_DB_VOLUME: "/data/db"
+      RAILS_LOG_VOLUME: "/data/log"
   instructions:
     deploy: config/deploy.fly
