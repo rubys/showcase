@@ -6,6 +6,7 @@ options:
   passenger: true
   platform: linux/amd64
   procfile: Procfile.fly
+  sentry: true
   swap: 2G
   variant: slim-bullseye
   packages:
