@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/fly-apps/dockerfile-rails.git
-  revision: 520a8fbdcc982df5f35a988555a6114eb119b2df
+  revision: 29c5c79981f0f39d3ae6c35773749dba46db890e
   specs:
     dockerfile-rails (1.5.1)
       rails
@@ -205,6 +205,11 @@ GEM
       rexml (~> 3.2, >= 3.2.5)
       rubyzip (>= 1.2.2, < 3.0)
       websocket (~> 1.0)
+    sentry-rails (5.10.0)
+      railties (>= 5.0)
+      sentry-ruby (~> 5.10.0)
+    sentry-ruby (5.10.0)
+      concurrent-ruby (~> 1.0, >= 1.0.2)
     sprockets (4.2.0)
       concurrent-ruby (~> 1.0)
       rack (>= 2.2.4, < 4)
@@ -270,6 +275,8 @@ DEPENDENCIES
   redis (~> 4.0)
   rqrcode (~> 2.1)
   selenium-webdriver
+  sentry-rails (~> 5.10)
+  sentry-ruby (~> 5.10)
   sprockets-rails
   sqlite3 (~> 1.4)
   stimulus-rails

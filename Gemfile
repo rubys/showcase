@@ -87,3 +87,7 @@ gem "puppeteer-ruby", "~> 0.44.1"
 gem "kramdown", "~> 2.4"
 
 gem "dockerfile-rails", "~> 1.4", :group => :development, :git => "https://github.com/fly-apps/dockerfile-rails.git"
+
+gem "sentry-ruby", "~> 5.10"
+
+gem "sentry-rails", "~> 5.10"
