@@ -106,7 +106,7 @@
            <% end %>
            <% end %>
            <% if @backnums %>
-           <td class="row"><%= heat.back || 'TBD' %>
+           <td class="row"><% if heat.back -%><%= heat.back %><% else %><%= link_to 'TBD', backs_people_path %><% end %>
            <% end %>
            <%
             if @column_order == 1 or heat.follow.type == 'Professional'
