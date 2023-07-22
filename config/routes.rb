@@ -28,6 +28,10 @@ Rails.application.routes.draw do
     get '/landing', to: 'event#landing'
     get '/event.xlsx', to: "event#index", as: 'event_spreadsheet'
     get '/event.sqlite3', to: "event#database", as: 'event_database'
+    get '/regions/', to: "event#regions"
+    get '/regions/:region', to: "event#region", as: 'region', trailing_slash: true
+    get '/regions/:region/logs/:file', to: "event#region_log", as: "region_log",
+      constraints: { file: /[-\w.]+/ }
 
     scope 'public' do
       get 'heats', to: 'heats#mobile', as: 'public_heats'

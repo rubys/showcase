@@ -10,7 +10,7 @@ test -e public/assets && bin/rake assets:clobber
 
 if [[ $# -gt 0 ]]; then
   DIR="$( dirname -- "${BASH_SOURCE[0]}"; )";   # Get the directory name
-  DIR="$( realpath -e -- "$DIR"; )";    # Resolve its full path if need be
+  DIR="$( readlink -f "$DIR"; )";    # Resolve its full path if need be
   BASE="$(realpath $DIR/..)"
 
   export RAILS_APP_DB=$(basename -s .sqlite3 $1)

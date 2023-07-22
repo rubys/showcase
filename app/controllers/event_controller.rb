@@ -215,6 +215,43 @@ class EventController < ApplicationController
     end
   end
 
+  def regions
+    showcases = YAML.load_file('config/tenant/showcases.yml')
+
+    @regions = {}
+
+    showcases.each do |year, list| 
+      list.each  do |city, defn|
+        region = defn[:region]
+        @regions[region] ||= []
+        @regions[region] << defn[:name]
+      end
+    end
+
+    @regions.each {|region, cities| cities.sort!.uniq!}
+    @regions = @regions.to_a.sort.to_h
+  end
+
+  def region
+    @region = params[:region]
+    @passenger_status = ''
+    @passenger_status = `sudo passenger-status` if ENV['FLY_REGION']
+
+    logdir = Rails.root.join('log').to_s
+    logdir = '/data/log' if Dir.exist?('/data/log')
+
+    @logs = Dir["#{logdir}/*"].map {|file|
+      [File.stat(file).mtime, File.basename(file)]
+    }.sort
+  end
+
+  def region_log
+    region = params[:region]
+    file = params[:file]
+
+    render plain: IO.read(Rails.root.join('log', file).to_s)
+  end
+
   def logs
     Bundler.with_original_env do
       if File.exist? '/opt/homebrew/bin/passenger-status'

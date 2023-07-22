@@ -1,0 +1,12 @@
+<div class="mx-auto">
+
+<h1 class="mt-8 text-center font-bold text-4xl mb-8">Regions</h1>
+
+<ul class="mt-2 list-inside">
+<% @regions.each do |region, cities| %>
+<li><span class="w-10 text-2xl inline-block"><%= link_to region, region_path(region) %></span>
+<span class="text-slate-500">(<%= cities.join(", ") %>)</span>
+<% end %>
+</ul>
+
+</div>

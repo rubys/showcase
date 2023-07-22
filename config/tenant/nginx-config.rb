@@ -40,6 +40,7 @@ index = OpenStruct.new(
 )
 
 @tenants = [index]
+@regions = Set.new
 showcases.each do |year, list|
   list.each do |token, info|
     if info[:events]
@@ -52,6 +53,8 @@ showcases.each do |year, list|
           scope:  "#{year}/#{token}/#{subtoken}",
           logo:   info[:logo],
         )
+
+        @regions << info[:region]
       end
     else
       @tenants << OpenStruct.new(
@@ -233,6 +236,26 @@ server {
 <% end -%>
   }
 <% end %>
+<% if ENV['FLY_REGION'] -%>
+<% @regions.each do |region| -%>
+<% if region == ENV['FLY_REGION'] -%>
+  location /showcase/regions/<%= region %>/logs/ {
+    types {
+      text/plain log;
+    }
+
+    autoindex on;
+    alias /data/log/;
+  }
+<% else -%>
+  location /showcase/regions/<%= region %>/ {
+    return 409 "wrong region\n";
+    add_header Fly-Replay region=<%= region %> always;
+  }
+<% end -%>
+
+<% end -%> 
+<% end -%>
   # Action cable (shared by all apps on this server listen port)
   location <%= ROOT %>/cable {
     root <%= @git_path %>/public;

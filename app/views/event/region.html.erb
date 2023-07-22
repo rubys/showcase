@@ -1,0 +1,23 @@
+<div class="mx-auto">
+
+<h1 class="mt-8 text-center font-bold text-4xl mb-8">
+<span class="text-blue-600"><%= @region %></span> Region</h1>
+
+<% unless @passenger_status.empty? %>
+<h2 class="mt-8 font-bold text-2xl mb-8">Passenger Status</h2>
+<pre class="text-sm">
+<%= @passenger_status %>
+</pre>
+<h2 class="mt-8 font-bold text-2xl mb-8">Logs</h2>
+<% end %>
+
+<table class="table table-auto border-separate border-spacing-x-8 border-spacing-y-2">
+<% @logs.reverse.each do |mtime, log| %>
+<tr>
+<td><%= link_to log, region_log_path(@region, log) %>
+<td><%= mtime %>
+</tr>
+<% end %>
+</table>
+
+</div>
