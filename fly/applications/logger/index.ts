@@ -43,7 +43,7 @@ app.get("/", async (req, res) => {
   let results: string[] = [];
 
   while (logs.length > 0) {
-    const log = logs.shift();
+    const log = logs.pop();
     if (!log?.endsWith('.log')) continue;
 
     const rl = readline.createInterface({
