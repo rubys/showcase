@@ -12,7 +12,7 @@ On the main page for your event is a settings button.  This will take you to a p
 
 This information is used to schedule heats, invoice students and studios, provide titles on pages that you print, and provide a background for counter display(s) at the event.
 
-If you are going to make use of the invoicing feature of this application it is best to set up packages and options before adding studios and people.  See [Invoicing](./Invoicing) for more details.
+If you are going to make use of the invoicing feature of this application it is best to set up packages and options before adding studios and people.  See [Invoicing](../tasks/Invoicing) for more details.
 
 <a id="dances"></a>
 
