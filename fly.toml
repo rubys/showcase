@@ -4,6 +4,7 @@
 app = "smooth"
 primary_region = "iad"
 console_command = "/rails/bin/rails console"
+swap_size_mb = 2048
 
 [[mounts]]
   source = "smooth_volume"
@@ -25,4 +26,3 @@ console_command = "/rails/bin/rails console"
 [[statics]]
   guest_path = "/rails/public"
   url_prefix = "/"
-
