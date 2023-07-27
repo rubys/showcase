@@ -5,7 +5,7 @@
 <ul class="mt-2 list-inside">
 <% @regions.each do |region, cities| %>
 <li><span class="w-10 text-2xl inline-block"><%= link_to region, region_path(region) %></span>
-<span class="text-slate-500">(<%= cities.join(", ") %>)</span>
+<span class="text-slate-500">(<%= cities.map {|city| link_to city, studio_events_path(@cities[city])}.join(", ").html_safe %>)</span>
 <% end %>
 </ul>
 

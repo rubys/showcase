@@ -172,10 +172,24 @@ class EventController < ApplicationController
         end
       end
 
-      if @showcases.empty? or @showcases.all? {|year, sites| sites.empty?}
-        raise ActiveRecord::RecordNotFound
+    end
+
+    @studio = params[:studio]
+    if @studio
+      @showcases.each do |year, sites|
+        sites.select! {|token, info| token == @studio}
       end
     end
+
+    @region = params[:region]
+    if @region
+      @showcases.each do |year, sites|
+        sites.select! {|token, info| info[:region] == @region}
+      end
+    end
+
+    @showcases.select! {|year, sites| !sites.empty?}
+    raise ActiveRecord::RecordNotFound if @showcases.empty?
 
     @showcases.each do |year, sites|
       if auth and false # disable
@@ -219,9 +233,11 @@ class EventController < ApplicationController
     showcases = YAML.load_file('config/tenant/showcases.yml')
 
     @regions = {}
+    @cities = {}
 
     showcases.each do |year, list| 
       list.each  do |city, defn|
+        @cities[defn[:name]] = city
         region = defn[:region]
         @regions[region] ||= []
         @regions[region] << defn[:name]

@@ -3,7 +3,13 @@
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
+  <% if @region %>
+  <h1 class="mt-8 text-center font-bold text-4xl mb-8"><span class="text-blue-600"><%= @region %></span> Region</h1>
+  <% elsif @studio %>
+  <h1 class="mt-8 text-center font-bold text-4xl mb-8"><span class="text-blue-600"><%= @studio %></span> Events</h1>
+  <% else %>
   <h1 class="mt-8 text-center font-bold text-4xl mb-8">Index of Showcases</h1>
+  <% end %>
 
 <div data-controller="info-box">
   <div class="info-button">&#x24D8;</div>
@@ -62,6 +68,9 @@ can click on it to see helpful hints.</li>
 <%= link_to 'Users', users_path, class: 'btn-blue' %>
 <% if ENV['FLY_REGION'] %>
 <%= link_to 'Regions', regions_path, class: 'btn-blue' %>
+<% if @region %>
+<%= link_to 'Status', region_status_path(@region), class: 'btn-blue' %>
+<% end %>
 <% end %>
 <%= link_to 'Import', import_event_index_path, class: 'btn-blue' %>
 <% end %>

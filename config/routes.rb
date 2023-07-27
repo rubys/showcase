@@ -17,6 +17,9 @@ Rails.application.routes.draw do
       get "/:year", to: 'event#showcases', year: /\d+/
       get "/:year", to: 'event#showcases', year: /\d+/
 
+      get "/regions/:region", to: 'event#showcases', as: 'region'
+      get "/studios/:studio", to: 'event#showcases', as: 'studio_events'
+
       get "logs", to: 'event#logs'
     else
       root 'event#root'
@@ -29,7 +32,7 @@ Rails.application.routes.draw do
     get '/event.xlsx', to: "event#index", as: 'event_spreadsheet'
     get '/event.sqlite3', to: "event#database", as: 'event_database'
     get '/regions/', to: "event#regions"
-    get '/regions/:region', to: "event#region", as: 'region', trailing_slash: true
+    get '/regions/:region/status', to: "event#region", as: 'region_status'
     get '/regions/:region/logs/:file', to: "event#region_log", as: "region_log",
       constraints: { file: /[-\w.]+/ }
 
