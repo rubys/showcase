@@ -5,6 +5,7 @@
 
 app = "smooth-logger"
 primary_region = "iad"
+swap_size_mb = 1024
 
 [[mounts]]
   source = "log"
