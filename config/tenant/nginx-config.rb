@@ -44,6 +44,8 @@ index = OpenStruct.new(
 @regions = Set.new
 showcases.each do |year, list|
   list.each do |token, info|
+    @regions << info[:region]
+
     if info[:events]
       info[:events].each do |subtoken, subinfo|
         @tenants << OpenStruct.new(
@@ -54,8 +56,6 @@ showcases.each do |year, list|
           scope:  "#{year}/#{token}/#{subtoken}",
           logo:   info[:logo],
         )
-
-        @regions << info[:region]
       end
     else
       @tenants << OpenStruct.new(
@@ -238,7 +238,7 @@ server {
   }
 <% end %>
 <% if ENV['FLY_REGION'] -%>
-<% @regions.each do |region| -%>
+<% @regions.to_a.sort.each do |region| -%>
 <% if region == ENV['FLY_REGION'] -%>
   location /showcase/regions/<%= region %>/logs/ {
     types {
