@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'erb'
+require 'set'
 require 'yaml'
 require 'fileutils'
 require 'ostruct'
