@@ -60,6 +60,11 @@
     :name: Richmond
     :region: iad
     :logo: arthur-murray-logo.gif
+    :events:
+      :medalball:
+        :name: Medal Ball
+      :teammatch:
+        :name: Team Match
   sugarland:
     :name: Sugar Land
     :region: dfw
