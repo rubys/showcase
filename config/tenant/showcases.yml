@@ -65,6 +65,10 @@
         :name: Medal Ball
       :teammatch:
         :name: Team Match
+  salem:
+    :name: Salem
+    :region: sea
+    :logo: arthur-murray-logo.gif
   sugarland:
     :name: Sugar Land
     :region: dfw
