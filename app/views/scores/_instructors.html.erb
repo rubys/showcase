@@ -27,7 +27,7 @@
     <% @scores.sort_by {|person, results| results['points']}.reverse.each do |person, results| %>
     <tr>
       <td class="row-main text-right"><%= results['points'] %>
-      <td class="row-main"><%= link_to person.display_name , person %></td>
+      <td class="row-main"><%= link_to person&.display_name || 'nil', person %></td>
       <% if @open_scoring != '#' %>
       <% results['Closed'].each do |score| %>
       <td class="row text-right px-4 bg-slate-200"><%= score == 0 ? '' : score %></td>

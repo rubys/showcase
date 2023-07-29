@@ -362,6 +362,16 @@ class ScoresController < ApplicationController
       end
     end
 
+    @scores.each do |level, studios|
+      studios.each do |name, results|
+        if results['count'] == 0 || results['points'] == nil
+          results['avg'] = 0
+        else
+          results['avg'] = results['points'].to_f / results['count']
+        end
+      end
+    end
+
     if request.post?
       render turbo_stream: turbo_stream.replace("scores-by-studio",
         render_to_string(partial: 'by_studio', layout: false)

@@ -23,11 +23,11 @@
           <th class="row-head">Name
           <% if @open_scoring != '#' %>
           <% ScoresController::SCORES['Closed'].each do |score| %>
-          <th class="row-head bg-slate-200"><%= score.round %>
+          <th class="row-head bg-slate-200"><%= score %>
           <% end %>
           <% if @open_scoring != 'G' %>
           <% ScoresController::SCORES['Open'].each do |score| %>
-          <th class="row-head"><%= score.round %>
+          <th class="row-head"><%= @open_scoring == '#' ? score.round : score %>
           <% end %>
           <% end %>
           <% end %>
@@ -38,11 +38,11 @@
           <td class="row-main text-right"><%= number_with_delimiter results['points'].round %>
           <td class="row-main"><%= studio %></td>
           <% if @open_scoring != '#' %>
-          <% results['Closed'].each do |score| %>
+          <% (results['Closed'] || []).each do |score| %>
           <td class="row text-right px-4 bg-slate-200"><%= score == 0 ? '' : score.round %></td>
           <% end %>
           <% if @open_scoring != 'G' %>
-          <% results['Open'].each do |score| %>
+          <% (results['Open'] || []).each do |score| %>
           <td class="row text-right px-4"><%= score == 0 ? '' : score.round %></td>
           <% end %>
           <% end %>
@@ -60,7 +60,7 @@
   <% @scores.each do |level, studios| %>
       <% next if studios.empty? %>
 
-      <h2 class="font-bold pt-4 text-2xl pb-5"><%= level.name %></h2>
+      <h2 class="font-bold pt-4 text-2xl pb-5"><%= level.name == 'Total' ? "Overall Averages" : level.name %></h2>
       <table class="mb-8">
         <thead>
           <% if @open_scoring == '1' %>
@@ -76,26 +76,26 @@
           <th class="row-head">Name
           <% if @open_scoring != '#' %>
           <% ScoresController::SCORES['Closed'].each do |score| %>
-          <th class="row-head bg-slate-200"><%= score.round %>
+          <th class="row-head bg-slate-200"><%= score %>
           <% end %>
           <% if @open_scoring != 'G' %>
           <% ScoresController::SCORES['Open'].each do |score| %>
-          <th class="row-head"><%= score.round %>
+          <th class="row-head"><%= @open_scoring == '#' ? score.round : score %>
           <% end %>
           <% end %>
           <% end %>
           </tr>
         </thead>
-      <% studios.sort_by {|studio, results| results['points'].to_f / results['count']}.reverse.each do |studio, results| %>
+      <% studios.sort_by {|studio, results| results['avg']}.reverse.each do |studio, results| %>
         <tr>
-          <td class="row-main text-right"><%= number_with_precision results['points'].to_f / results['count'], precision: 2 %>
+          <td class="row-main text-right"><%= number_with_precision results['avg'], precision: 2 %>
           <td class="row-main"><%= studio %></td>
           <% if @open_scoring != '#' %>
-          <% results['Closed'].each do |score| %>
+          <% (results['Closed'] || []).each do |score| %>
           <td class="row text-right px-4 bg-slate-200"><%= score == 0 ? '' : score.round %></td>
           <% end %>
           <% if @open_scoring != 'G' %>
-          <% results['Open'].each do |score| %>
+          <% (results['Open'] || []).each do |score| %>
           <td class="row text-right px-4"><%= score == 0 ? '' : score.round %></td>
           <% end %>
           <% end %>
