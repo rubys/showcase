@@ -115,7 +115,7 @@ class ScoresController < ApplicationController
 
     heats = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance)
     agenda = heats.group_by(&:dance_category).
-      sort_by {|category, heats| [category.order, heats.map(&:number).min]}
+      sort_by {|category, heats| [category&.order || 0, heats.map(&:number).min]}
     heats = agenda.to_h.values.flatten
     index = heats.index {|heat| heat.number == @heat.number}
 
