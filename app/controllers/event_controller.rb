@@ -8,7 +8,7 @@ class EventController < ApplicationController
   include DbQuery
   include ActiveStorage::SetCurrent
 
-  skip_before_action :authenticate_user, only: %i[ counter, showcases ]
+  skip_before_action :authenticate_user, only: %i[ counter showcases regions ]
   skip_before_action :verify_authenticity_token, only: :console
 
   def landing
