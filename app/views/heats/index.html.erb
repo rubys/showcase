@@ -34,7 +34,6 @@ a scheduled heat time will be added to each heat.
 </ul>
 </div>
 
-
 <div class="flex justify-between items-center">
 <div class="float-left">
 <%= link_to toggle_lock_categories_path(return_to: heats_path), data: { turbo_method: "post" } do %>
@@ -66,7 +65,11 @@ a scheduled heat time will be added to each heat.
     </tr>
     <% @agenda.each do |cat, heats| %>
       <tr>
+        <% if %w(Uncategorized Unscheduled).include? cat %>
+        <td class="row text-red-600 font-bold"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a>
+        <% else %>
         <td class="row"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a>
+        <% end %>
         <td class="row text-right"><a href="#heat-<%= heats.first&.first %>"><%= heats.first&.first %></a>
         <td class="row text-right"><a href="#heat-<%= heats.last&.first %>"><%= heats.last&.first %></a>
         <% if @start and @cat_start[cat] %>
@@ -81,6 +84,24 @@ a scheduled heat time will be added to each heat.
       </tr>
     <% end %>
   </table>
+
+<% unless @issues.empty? %>
+<div class="ml-6 mb-8">
+<h2 class="text-red-600 font-bold text-2xl">Issues:</h1>
+<ul class="list-disc list-inside ml-4">
+<% @issues.each do |heat, issues| %>
+<% issues.each do |person_id, count| %>
+<li>
+  <a href="#heat-<%= heat %>">Heat <%= heat %></a>:
+  <%= link_to Person.find(person_id).display_name, person_path(person_id) %>
+  is on the floor
+  <%= count == 2 ? "twice" : "#{count} times" %>
+</li>
+<% end %>
+<% end %>
+</ul>
+</div>
+<% end%>
 
   <% @agenda.each do |cat, heats| %>
   <% next if heats.empty? %>

@@ -26,6 +26,13 @@ class HeatsController < ApplicationController
 
     @renumber = Heat.distinct.where.not(number: 0).pluck(:number).
       map(&:abs).sort.uniq.zip(1..).any? {|n, i| n != i}
+
+    @issues = @heats.map {|number, heats|
+      [number, heats.map {|heat| 
+        e=heat.entry
+        [e.lead_id, e.follow_id]}.flatten.tally.select {|person, count| count > 1}
+      ]
+    }.select {|number, issues| !issues.empty?}
   end
 
   def mobile

@@ -50,7 +50,7 @@ another heat is still possible, even when the agenda is locked.
     <% heat_count += @agenda['Unscheduled'].count %>
     <tbody>
     <tr>
-      <td class="row"><%= link_to 'Unscheduled', heats_path(anchor: 'cat-unscheduled') %>
+      <td class="row text-red-600"><%= link_to 'Unscheduled', heats_path(anchor: 'cat-unscheduled') %>
       <td class="row text-right"><%= count %>
       <td class="row text-right"><%= @agenda['Unscheduled'].count %>
     </tr>
@@ -86,7 +86,7 @@ another heat is still possible, even when the agenda is locked.
     <% entry_count += (count = @agenda['Uncategorized'].map {|heat| heat.last.map {|ballroom, heats| heats.length}.sum}.sum) %>
     <tbody>
     <tr>
-      <td class="row"><%= link_to 'Uncategorized', heats_path(anchor: 'cat-uncategorized'), data: { turbo: false } %>
+      <td class="row text-red-600"><%= link_to 'Uncategorized', heats_path(anchor: 'cat-uncategorized'), data: { turbo: false } %>
       <td class="row text-right"><%= count %>
       <td class="row text-right"><%= @agenda['Uncategorized'].count %>
     </tr>

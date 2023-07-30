@@ -3,7 +3,11 @@
     data-controller="heat-order" data-renumber-action="<%= renumber_heats_path %>"
     data-controller="drop" data-drop-action="<%= drop_heats_path %>"<% end %>>
   <div class="mt-8 flex justify-between items-center">
+    <% if %w(Uncategorized Unscheduled).include? cat %>
+    <h1 class="row text-red-600 text-4xl"><%= cat %></h1>
+    <% else %>
     <h1 class="font-bold text-4xl"><%= cat %></h1>
+    <% end %>
   </div>
 
   <div class="min-w-full">
