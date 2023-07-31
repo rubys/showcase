@@ -25,23 +25,26 @@ const pattern = new RegExp([
 
 const app = express();
 
+app.use('/logs', express.static('/logs'))
+
+const appName = process.env.FLY_APP_NAME;
+
+const REGIONS: string[] = await new Promise((resolve, reject) => {
+  let dig = `dig +short -t txt regions.${appName}.internal`
+
+  exec(dig, async (err, stdout, stderr) => {
+    if (err) {
+      reject(err)
+    } else {
+      resolve(JSON.parse(stdout).trim().split(","))
+    }
+  })
+})
 
 app.get("/regions/:region", async (request, response, next) => {
   let { region } = request.params;
 
-  let dig = `dig +short -t txt regions.${appName}.internal`
-
-  let regions: string[] = await new Promise((resolve, reject) => {
-    exec(dig, async (err, stdout, stderr) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve(JSON.parse(stdout).trim().split(","))
-      }
-    })
-  })
-
-  if (!regions.includes(region)) {
+  if (!REGIONS.includes(region)) {
     response.status(404).send('Not found')
   } else if (region === process.env.FLY_REGION) {
     request.url = '/'
@@ -70,10 +73,12 @@ app.get("/", async (req, res) => {
     if (error) console.error(error)
   })
 
-  const logs = await fs.promises.readdir(LOGS);
+  let logs = await fs.promises.readdir(LOGS);
   logs.sort();
 
   let results: string[] = [];
+
+  results.push('</pre>')
 
   while (logs.length > 0) {
     const log = logs.pop();
@@ -122,16 +127,36 @@ app.get("/", async (req, res) => {
     if (results.length > 0) break;
   }
 
+  results.push('<pre>')
+
+  results.push("</p>")
+  for (const region of REGIONS) {
+    if (region != process.env.FLY_REGION) {
+      results.push(`<a href="/regions/${region}">${region}</a>`)
+    }
+  }
+  results.push("<p>")
+
+  results.push("</p>")
+  logs = await fs.promises.readdir(LOGS);
+  logs.sort();
+  for (const log of logs.reverse()) {
+    if (log.match(/^2\d\d\d-\d\d-\d\d\.log$/)) {
+      results.push(`<a href=/logs/${log}>${log}</a>`)
+    }
+  }
+  results.push("<p>")
+
+  results.push(`<h2>${process.env.FLY_REGION}</h2>`)
+
   res.send(`
     <!DOCTYPE html>
     <style>
       a {color: black; text-decoration: none}
     </style>
-    <pre>${results.reverse().join("\n")}</pre>
+    ${results.reverse().join("\n")}
   `)
 })
-
-const appName = process.env.FLY_APP_NAME;
 
 // update lastVisit on all machines
 async function fetchOthers() {
