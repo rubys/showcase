@@ -140,7 +140,7 @@ app.get("/", async (req, res) => {
   results.push("</p>")
   logs = await fs.promises.readdir(LOGS);
   logs.sort();
-  for (const log of logs.reverse()) {
+  for (const log of logs) {
     if (log.match(/^2\d\d\d-\d\d-\d\d\.log$/)) {
       results.push(`<a href=/logs/${log}>${log}</a>`)
     }
