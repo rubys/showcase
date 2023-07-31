@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { exec } from "node:child_process"
 import readline from 'node:readline';
 import path from 'node:path';
 import express from "express";
@@ -24,7 +25,38 @@ const pattern = new RegExp([
 
 const app = express();
 
+
+app.get("/regions/:region", async (request, response, next) => {
+  let { region } = request.params;
+
+  let dig = `dig +short -t txt regions.${appName}.internal`
+
+  let regions: string[] = await new Promise((resolve, reject) => {
+    exec(dig, async (err, stdout, stderr) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(JSON.parse(stdout).trim().split(","))
+      }
+    })
+  })
+
+  if (!regions.includes(region)) {
+    response.status(404).send('Not found')
+  } else if (region === process.env.FLY_REGION) {
+    request.url = '/'
+    next()
+  } else {
+    response.set('Fly-Replay', `region=${region}`)
+    response.status(409).send("wrong region\n")
+  }
+})
+
 app.get("/", async (req, res) => {
+  // if (req.headers['x-forwarded-port']) {
+  //   fetchOthers().catch(console.error)
+  // }
+
   let lastVisit = "0";
   try {
     lastVisit = fs.statSync(VISITTIME).mtime.toISOString()
@@ -98,6 +130,33 @@ app.get("/", async (req, res) => {
     <pre>${results.reverse().join("\n")}</pre>
   `)
 })
+
+const appName = process.env.FLY_APP_NAME;
+
+// update lastVisit on all machines
+async function fetchOthers() {
+  let dig = `dig +short -t txt vms.${appName}.internal`
+
+  return new Promise((resolve, reject) => {
+    exec(dig, async (err, stdout, stderr) => {
+      if (err) {
+        reject(err)
+      } else {
+        let machines = JSON.parse(stdout).trim().split(",")
+          .map((txt: String) => txt.split(' ')[0])
+
+        for await (let machine of machines) {
+          if (machine === process.env.FLY_MACHINE_ID) continue
+
+          await fetch(`http://${machine}.vm.${appName}.internal:3000/`)
+            .catch(console.error)
+        }
+
+        resolve(null)
+      }
+    })
+  })
+}
 
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}...`);

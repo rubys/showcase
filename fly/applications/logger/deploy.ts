@@ -9,7 +9,7 @@ const VOLUME = '/logs'
 const env = { ...process.env }
 
 // create log user for ssh
-await exec("useradd log --create-home --shell /bin/bash")
+await exec("useradd log --create-home --shell /bin/bash").catch(console.error)
 let { uid, gid } = fs.statSync(HOME) 
 
 // allocate swap space
@@ -25,7 +25,7 @@ fs.writeFileSync(
   "/etc/environment",
   Object.entries(process.env)
     .filter(([key, _]) => /^FLY_*|PRIMARY_REGION/m.test(key))
-    .map((key, value) => (`${key}=${value}\n`)).join()
+    .map(([key, value]) => (`${key}=${value}\n`)).join('')
 )
 
 // openssh: install authorized key and host keys
