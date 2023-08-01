@@ -132,14 +132,6 @@ app.get("/", async (req, res) => {
   results.push('<pre>')
 
   results.push("</p>")
-  for (const region of REGIONS) {
-    if (region != FLY_REGION) {
-      results.push(`<a href="/regions/${region}/">${region}/</a>`)
-    }
-  }
-  results.push("<p>")
-
-  results.push("</p>")
   logs = await fs.promises.readdir(LOGS);
   logs.sort();
   for (const log of logs) {
@@ -149,7 +141,16 @@ app.get("/", async (req, res) => {
   }
   results.push("<p>")
 
-  results.push(`<h2>${FLY_REGION}</h2>`)
+  results.push(`</h2>`)
+  results.push(`</small>`)
+  for (const region of REGIONS) {
+    if (region != FLY_REGION) {
+      results.push(`<a href="/regions/${region}/">${region}</a>`)
+    }
+  }
+  results.push(`<small style="font-weight: normal">`)
+  results.push(`smooth.fly.dev logs: ${FLY_REGION}`)
+  results.push(`<h2>`)
 
   res.send(`
     <!DOCTYPE html>
