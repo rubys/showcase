@@ -25,9 +25,9 @@ const pattern = new RegExp([
 
 const app = express();
 
-app.use('/logs', express.static('/logs'))
-
 const appName = process.env.FLY_APP_NAME;
+
+const FLY_REGION = process.env.FLY_REGION;
 
 const REGIONS: string[] = await new Promise((resolve, reject) => {
   let dig = `dig +short -t txt regions.${appName}.internal`
@@ -41,19 +41,21 @@ const REGIONS: string[] = await new Promise((resolve, reject) => {
   })
 })
 
-app.get("/regions/:region", async (request, response, next) => {
+app.get("/regions/:region/(*)", async (request, response, next) => {
   let { region } = request.params;
 
   if (!REGIONS.includes(region)) {
     response.status(404).send('Not found')
-  } else if (region === process.env.FLY_REGION) {
-    request.url = '/'
+  } else if (region === FLY_REGION) {
+    if (request.params[0] === '') request.url = '/'
     next()
   } else {
     response.set('Fly-Replay', `region=${region}`)
     response.status(409).send("wrong region\n")
   }
 })
+
+app.use(`/regions/${FLY_REGION}/logs`, express.static('/logs'))
 
 app.get("/", async (req, res) => {
   // if (req.headers['x-forwarded-port']) {
@@ -131,8 +133,8 @@ app.get("/", async (req, res) => {
 
   results.push("</p>")
   for (const region of REGIONS) {
-    if (region != process.env.FLY_REGION) {
-      results.push(`<a href="/regions/${region}">${region}</a>`)
+    if (region != FLY_REGION) {
+      results.push(`<a href="/regions/${region}/">${region}/</a>`)
     }
   }
   results.push("<p>")
@@ -142,12 +144,12 @@ app.get("/", async (req, res) => {
   logs.sort();
   for (const log of logs) {
     if (log.match(/^2\d\d\d-\d\d-\d\d\.log$/)) {
-      results.push(`<a href=/logs/${log}>${log}</a>`)
+      results.push(`<a href=/regions/${FLY_REGION}/logs/${log}>${log.replace('.log', '')}</a>`)
     }
   }
   results.push("<p>")
 
-  results.push(`<h2>${process.env.FLY_REGION}</h2>`)
+  results.push(`<h2>${FLY_REGION}</h2>`)
 
   res.send(`
     <!DOCTYPE html>
