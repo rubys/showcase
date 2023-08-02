@@ -9,16 +9,21 @@ const VOLUME = '/logs'
 const env = { ...process.env }
 
 // create log user for ssh
-await exec("useradd log --create-home --shell /bin/bash").catch(console.error)
+if (!fs.existsSync("/home/log")) {
+  await exec("useradd log --create-home --shell /bin/bash")
+    .catch(console.error)
+}
 let { uid, gid } = fs.statSync(HOME) 
 
 // allocate swap space
-await exec('fallocate -l 1G /swapfile')
-await exec('chmod 0600 /swapfile')
-await exec('mkswap /swapfile')
-fs.writeFileSync('/proc/sys/vm/swappiness', '10')
-await exec('swapon /swapfile')
-fs.writeFileSync('/proc/sys/vm/overcommit_memory', '1')
+if (!fs.existsSync("/swapfile")) {
+  await exec('fallocate -l 1G /swapfile')
+  await exec('chmod 0600 /swapfile')
+  await exec('mkswap /swapfile')
+  fs.writeFileSync('/proc/sys/vm/swappiness', '10')
+  await exec('swapon /swapfile')
+  fs.writeFileSync('/proc/sys/vm/overcommit_memory', '1')
+}
 
 // openssh: fly environment variables
 fs.writeFileSync(
