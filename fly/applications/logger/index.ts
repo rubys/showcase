@@ -29,20 +29,35 @@ const appName = process.env.FLY_APP_NAME;
 
 const FLY_REGION = process.env.FLY_REGION;
 
-const REGIONS: string[] = await new Promise((resolve, reject) => {
-  let dig = `dig +short -t txt regions.${appName}.internal`
+let lastRegionCheck = 0
+let lastRegions: string[] = []
 
-  exec(dig, async (err, stdout, stderr) => {
-    if (err) {
-      reject(err)
-    } else {
-      resolve(JSON.parse(stdout).trim().split(","))
-    }
-  })
-})
+async function getRegions(): Promise<string[]> {
+  let checkTime = new Date().getTime()
+
+  if (checkTime - lastRegionCheck > 60000) {
+    lastRegions = await new Promise((resolve, reject) => {
+      let dig = `dig +short -t txt regions.${appName}.internal`
+
+      exec(dig, async (err, stdout, stderr) => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve(JSON.parse(stdout).trim().split(","))
+        }
+      })
+    })
+
+    lastRegionCheck = checkTime
+  }
+
+  return lastRegions
+}
 
 app.get("/regions/:region/(*)", async (request, response, next) => {
   let { region } = request.params;
+
+  const REGIONS = await getRegions()
 
   if (!REGIONS.includes(region)) {
     response.status(404).send('Not found')
@@ -140,6 +155,8 @@ app.get("/", async (req, res) => {
     }
   }
   results.push("<p>")
+
+  const REGIONS = await getRegions()
 
   results.push(`</h2>`)
   results.push(`</small>`)
