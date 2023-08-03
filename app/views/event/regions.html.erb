@@ -1,6 +1,16 @@
 <div class="mx-auto">
 
-<h1 class="mt-8 text-center font-bold text-4xl mb-8"><a href="https://fly.io/docs/reference/regions/">Regions</a></h1>
+<div data-controller="info-box">
+  <div class="info-button">&#x24D8;</div>
+  <ul class="info-box">
+  <li>When you see an &#x24D8; in the top left corner of the page, you
+can click on it to see helpful hints.</li>
+  <li>Click on it again to dismiss the hints.</li>
+  <li>Click a city below to get started.</li>
+  </ul>
+</div>
+
+<h1 class="mt-8 text-center font-bold text-4xl mb-8"><a href="https://fly.io/docs/reference/regions/">Showcase Regions</a></h1>
 
 <ul class="mt-2 list-inside">
 <% @regions.each do |region, cities| %>
@@ -8,5 +18,21 @@
 <span class="text-slate-500">(<%= cities.map {|city| link_to city, studio_events_path(@cities[city])}.join(", ").html_safe %>)</span>
 <% end %>
 </ul>
+
+<p class="mt-4">Click on the <span class="text-emerald-600">&#x24D8;</span> in the top
+    left corner of this page to see helpful hints.</p>
+
+<p class="mt-4 text-right">
+See:
+<%= link_to 'docs', docs_path %>,
+<a href="https://github.com/rubys/showcase#readme">code</a>,
+<a href="https://github.com/rubys/showcase/issues">issues</a>.
+</p>
+
+<%= link_to 'Index', root_path, class: 'btn-blue' %>
+<% if User.index_auth? @authuser %>
+<%= link_to 'Users', users_path, class: 'btn-blue' %>
+<%= link_to 'Import', import_event_index_path, class: 'btn-blue' %>
+<% end %>
 
 </div>

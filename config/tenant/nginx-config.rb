@@ -162,7 +162,12 @@ server {
   server_name localhost;
 <% end -%>
   port_in_redirect off;
+<% if ENV['FLY_REGION'] -%>
+  rewrite ^/$ /showcase/regions/ redirect;
+  rewrite ^/showcase$ /showcase/ redirect;
+<% else -%>
   rewrite ^/(showcase)?$ /showcase/ redirect;
+<% end -%>
   rewrite ^/assets/ /showcase/assets/ last;
 
   # Authentication
