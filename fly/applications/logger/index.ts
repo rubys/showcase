@@ -70,10 +70,12 @@ app.get("/regions/:region/(*)", async (request, response, next) => {
 
 app.use(`/regions/${FLY_REGION}/logs`, express.static('/logs'))
 
+let timeout = 0;
 app.get("/", async (req, res) => {
-  // if (req.headers['x-forwarded-port']) {
-  //   fetchOthers().catch(console.error)
-  // }
+  if (req.headers['x-forwarded-port']) {
+    if (timeout !== 0) clearTimeout(timeout)
+    timeout = +setTimeout(() => fetchOthers().catch(console.error), 1000)
+  }
 
   let lastVisit = "0";
   try {
