@@ -4,8 +4,6 @@ import readline from 'node:readline';
 import path from 'node:path';
 import express from "express";
 import escape from "escape-html";
-import "./deploy"
-import "./logfiler"
 
 const PORT = 3000;
 const HOST = "https://smooth.fly.dev"

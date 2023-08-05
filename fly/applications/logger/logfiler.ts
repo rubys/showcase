@@ -41,14 +41,15 @@ fs.mkdirSync("/logs", { recursive: true });
         // skip log entries from builders
         if (data.fly.app.name.match(/^fly-builder-/)) continue;
 
+        // skip logs from THIS app
+        if (data.fly.app.name === process.env.FLY_APP_NAME) continue;
+
         // skip static file miss log messages
         if (data.message.endsWith("\u001b[31mERROR\u001b[0m No such file or directory (os error 2)")) continue;
 
-        // avoid recursion when reporting errors
+        // report errors to this apps's log
         let reportError: NoParamCallback = error => {
-          if (error && data.fly.app.instance.name !== process.env.FLY_APP_NAME) {
-            console.log(error)
-          }
+          if (error) console.error(error)
         }
 
         // build log file name using timestamp
@@ -57,15 +58,16 @@ fs.mkdirSync("/logs", { recursive: true });
 
         // if log file is not already open, open it
         if (name != current.name) {
+          current.name = name;
           if (current.file) fs.close(current.file, reportError);
           current.file = fs.openSync(name, 'a+');
-          current.name = name;
 
           // Prune oldest files once we have a full week
           fs.readdir("/logs", (error, files) => {
             if (error)
               reportError(error);
             else {
+              files = files.filter(file => file.startsWith('2'))
               files.sort();
               while (files.length > 8) {
                 const file = files.unshift();

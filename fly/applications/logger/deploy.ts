@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import process from "node:process"
@@ -84,6 +82,14 @@ fs.chmodSync(`/var/run/sshd`, 0o755)
 
 // spawn sshd
 exec("/usr/sbin/sshd -D")
+  .finally(() => process.exit(1))
+
+// spawn web
+exec("bun index.ts")
+  .finally(() => process.exit(1))
+
+// spawn log filer
+exec("bun logfiler.ts")
   .finally(() => process.exit(1))
 
 // run command and throw on error
