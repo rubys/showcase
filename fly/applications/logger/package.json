@@ -24,7 +24,8 @@
         "procps",
         "vim",
         "openssh-server",
-        "dnsutils"
+        "dnsutils",
+        "rsync"
       ]
     }
   }
