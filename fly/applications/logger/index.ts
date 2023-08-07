@@ -121,7 +121,7 @@ app.get("/", async (req, res) => {
 
         let log = [
           match[4].replace(' +0000', 'Z'),
-          `<span style="color: maroon">${match[1]}</span>`,
+          `<a href="https://smooth.fly.dev/showcase/regions/${match[1]}/status"><span style="color: maroon">${match[1]}</span></a>`,
           status,
           match[2].split(',')[0],
           `<span style="color: blue">${match[3]}</span>`,
