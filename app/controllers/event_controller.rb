@@ -161,6 +161,15 @@ class EventController < ApplicationController
     @showcases = YAML.load_file('config/tenant/showcases.yml')
     logos = Set.new
 
+    regions = {}
+    @showcases.each do |year, list| 
+      list.each  do |city, defn|
+        region = defn[:region]
+        regions[region] ||= []
+        regions[region] << defn[:name]
+      end
+    end
+
     if params[:year]
       @showcases.select! {|year, sites| year.to_s == params[:year]}
 
@@ -171,7 +180,6 @@ class EventController < ApplicationController
           end
         end
       end
-
     end
 
     @studio = params[:studio]
@@ -226,6 +234,21 @@ class EventController < ApplicationController
       EventController.logo = logos.first 
     else
       EventController.logo = nil
+    end
+
+    @up = '.'
+    if params[:studio] || params[:city]
+      if params[:year]
+        @up = studio_events_path(params[:studio] || params[:city])
+      else
+        region = @showcases.values.first.values.first[:region]
+        @up = region_path(region)
+      end
+    elsif params[:region]
+      regions = regions.keys.sort
+      index = regions.find_index(params[:region])
+      @prev = region_path(regions[index-1]) if index > 0
+      @next = region_path(regions[index+1]) if index < regions.length-1
     end
   end
 

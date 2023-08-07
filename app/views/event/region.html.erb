@@ -15,7 +15,7 @@
 <% @logs.reverse.each do |mtime, log| %>
 <tr>
 <td><%= link_to log, region_log_path(@region, log) %>
-<td><%= mtime %>
+<td class="text-sm font-mono"><%= mtime %>
 </tr>
 <% end %>
 </table>

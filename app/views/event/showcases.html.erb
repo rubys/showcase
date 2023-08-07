@@ -21,6 +21,12 @@ can click on it to see helpful hints.</li>
   </ul>
 </div>
 
+<span data-controller="event-navigation">
+  <a rel="up" href="<%= @up %>"></a>
+  <% if @prev %><a rel="prev" href="<%= @prev %>"></a><% end %>
+  <% if @next %><a rel="next" href="<%= @next %>"></a><% end %>
+</span>
+
 <% @showcases.each do |year, sites| %>
   <a href="<%= "#{@scope}/#{year}".squeeze('/') %>/">
     <h2 class="font-bold text-2xl mt-4 mb-2"><%= year %></h2>
