@@ -70,8 +70,8 @@ fs.mkdirSync("/logs", { recursive: true });
               files = files.filter(file => file.startsWith('2'))
               files.sort();
               while (files.length > 8) {
-                const file = files.unshift();
-                fs.unlink(`/logs/${file}`, reportError)
+                const file = files.shift();
+                fs.unlink(`/logs/${file}`, reportError);
               }
             }
           })
