@@ -32,6 +32,19 @@ class EventController < ApplicationController
       @prev = events[index-1] unless index == 0
       @next = events[index+1] unless index == events.length - 1
     end
+
+    owner = ENV['RAILS_APP_OWNER']
+    scope = ENV['RAILS_APP_SCOPE']
+    root = ENV['RAILS_RELATIVE_URL_ROOT']
+    if owner and scope and root
+      events = Event.list.select {|event| event.owner == owner}
+      index = events.find_index {|event| event.scope == scope}
+      if index
+        @up = File.join(root, 'studios', events[index].studio)
+        @prev = File.join(root, events[index-1].scope) unless index == 0
+        @next = File.join(root, events[index+1].scope) unless index == events.length - 1
+      end
+    end
   end
 
   def settings

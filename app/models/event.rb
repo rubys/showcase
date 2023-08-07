@@ -7,11 +7,12 @@ class Event < ApplicationRecord
 
     results = []
 
-    showcases.each do |year, list|
+    showcases.sort.each do |year, list|
       list.each do |token, info|
         if info[:events]
           info[:events].each do |subtoken, subinfo|
             results << OpenStruct.new(
+              studio: token,
               owner:  info[:name],
               region: info[:region],
               name:   info[:name] + ' - ' + subinfo[:name] ,
@@ -22,6 +23,7 @@ class Event < ApplicationRecord
           end
         else
           results << OpenStruct.new(
+            studio: token,
             owner:  info[:name],
             region: info[:region],
             name:   info[:name],

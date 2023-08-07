@@ -15,7 +15,7 @@
 </div>
 
 <span data-controller="event-navigation">
-  <a rel="up" href=".."></a>
+  <a rel="up" href="<%= @up || ".." %>"></a>
   <% if @prev %><a rel="prev" href="<%= @prev %>"></a><% end %>
   <% if @next %><a rel="next" href="<%= @next %>"></a><% end %>
 </span>
