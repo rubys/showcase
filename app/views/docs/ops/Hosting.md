@@ -19,7 +19,7 @@ To use the Hetzer machine, go to the [hetzner showcase](https://hetzner.intertwi
 I'm also testing deployment on [fly.io](https://fly.io/) which will
 allow me to deploy on servers around the word.  The new site will be
 [smooth.fly.dev](https://smooth.fly.dev/), and is currently deployed
-at the following sites: ATL, DFW, IAD, MIA, and ORD.  Events will
+at the following sites: ATL, DFW, IAD, MIA, ORD, and SEA.  Events will
 automatically be hosted at the nearest site.  Deployment to a
 new [region](https://fly.io/docs/reference/regions/) can be done in
 a matter of minutes.

@@ -12,6 +12,8 @@ can click on it to see helpful hints.</li>
 
 <h1 class="mt-8 text-center font-bold text-4xl mb-8"><a href="https://fly.io/docs/reference/regions/">Showcase Regions</a></h1>
 
+<%= render "map" %>
+
 <ul class="mt-2 list-inside">
 <% @regions.each do |region, cities| %>
 <li><span class="w-10 text-2xl inline-block"><%= link_to region, region_path(region) %></span>
