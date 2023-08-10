@@ -267,6 +267,7 @@ class EventController < ApplicationController
 
   def regions
     showcases = YAML.load_file('config/tenant/showcases.yml')
+    @map = YAML.load_file('config/tenant/map.yml')
 
     @regions = {}
     @cities = {}

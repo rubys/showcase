@@ -1,0 +1,161 @@
+---
+regions:
+  atl:
+    name: Atlanta, Georgia
+    x: '326.2178486373975'
+    y: '175.33647072371951'
+    width: '2'
+    height: '25'
+    r: '0'
+    rx: '0'
+    ry: '0'
+    fill: "#ffd700"
+    stroke: "#ffffff"
+    style: 'opacity: 0.8; cursor: pointer;'
+    opacity: '0.8'
+    transform: matrix(0.487,0,0,0.487,173.7623,96.3601)
+    class: sm_location sm_location_0
+  dfw:
+    name: Dallas, Texas
+    x: '214.80886127709041'
+    y: '189.59822680365096'
+    width: '2'
+    height: '25'
+    r: '0'
+    rx: '0'
+    ry: '0'
+    fill: "#ffd700"
+    stroke: "#ffffff"
+    style: 'opacity: 0.8; cursor: pointer;'
+    opacity: '0.8'
+    transform: matrix(0.487,0,0,0.487,116.6094,103.6764)
+    class: sm_location sm_location_1
+  iad:
+    name: Ashburn, Virginia
+    x: '376.22798777096847'
+    y: '110.18072756616789'
+    width: '2'
+    height: '25'
+    r: '0'
+    rx: '0'
+    ry: '0'
+    fill: "#ffd700"
+    stroke: "#ffffff"
+    style: 'opacity: 0.8; cursor: pointer;'
+    opacity: '0.8'
+    transform: matrix(0.487,0,0,0.487,199.4175,62.9352)
+    class: sm_location sm_location_2
+  mia:
+    name: Miami, Florida
+    x: '376.9372137384821'
+    y: '253.00028326229034'
+    width: '2'
+    height: '25'
+    r: '0'
+    rx: '0'
+    ry: '0'
+    fill: "#ffd700"
+    stroke: "#ffffff"
+    style: 'opacity: 0.8; cursor: pointer;'
+    opacity: '0.8'
+    transform: matrix(0.487,0,0,0.487,199.7813,136.2016)
+    class: sm_location sm_location_3
+  ord:
+    name: Chicago, Illinois
+    x: '288.49402313451185'
+    y: '90.39994759153693'
+    width: '2'
+    height: '25'
+    r: '0'
+    rx: '0'
+    ry: '0'
+    fill: "#ffd700"
+    stroke: "#ffffff"
+    style: 'opacity: 0.8; cursor: pointer;'
+    opacity: '0.8'
+    transform: matrix(0.487,0,0,0.487,154.4099,52.7877)
+    class: sm_location sm_location_4
+  sea:
+    name: Seattle, Washington
+    x: '37.17787120134615'
+    y: '6.530077302973762'
+    width: '2'
+    height: '25'
+    r: '0'
+    rx: '0'
+    ry: '0'
+    fill: "#ffd700"
+    stroke: "#ffffff"
+    style: 'opacity: 0.8; cursor: pointer;'
+    opacity: '0.8'
+    transform: matrix(0.487,0,0,0.487,25.4847,9.7624)
+    class: sm_location sm_location_5
+studios:
+  alexandria:
+    x: '387.28262954012'
+    y: '118.56479586421804'
+    transform: matrix(0.487,0,0,0.487,201.241,63.3887)
+  annapolis:
+    x: '391.3694373194988'
+    y: '115.8462633115947'
+    transform: matrix(0.487,0,0,0.487,203.3375,61.9941)
+  cary:
+    x: '379.0754551051185'
+    y: '152.7358745537847'
+    transform: matrix(0.487,0,0,0.487,197.0307,80.9185)
+  charlotte:
+    x: '362.6133924085938'
+    y: '161.72511822725977'
+    transform: matrix(0.487,0,0,0.487,188.5857,85.53)
+  chicago:
+    x: '298.0293971595663'
+    y: '98.73567944756309'
+    transform: matrix(0.487,0,0,0.487,155.4541,53.2164)
+  clearwater:
+    x: '356.68730390675023'
+    y: '241.05485505955258'
+    transform: matrix(0.487,0,0,0.487,185.5456,126.2261)
+  durham:
+    x: '377.69780906118166'
+    y: '150.78078218147795'
+    transform: matrix(0.487,0,0,0.487,196.324,79.9155)
+  glenview:
+    x: '296.5406251954049'
+    y: '96.79982973170733'
+    transform: matrix(0.487,0,0,0.487,154.6903,52.2233)
+  harrisburg:
+    x: '385.4385961519026'
+    y: '103.21061242859675'
+    transform: matrix(0.487,0,0,0.487,200.295,55.512)
+  kennesaw:
+    x: '331.71796932868864'
+    y: '178.98849224289083'
+    transform: matrix(0.487,0,0,0.487,172.7363,94.3861)
+  lakeview:
+    x: '294.80128438431655'
+    y: '95.07368362836428'
+    transform: matrix(0.487,0,0,0.487,153.7981,51.3378)
+  raleigh:
+    x: '380.25224633436886'
+    y: '152.56910925236866'
+    transform: matrix(0.487,0,0,0.487,197.6344,80.833)
+  richmond:
+    x: '386.77402891525946'
+    y: '132.3325233691049'
+    transform: matrix(0.487,0,0,0.487,200.9801,70.4516)
+  salem:
+    x: '31.52591890484338'
+    y: '37.99659988196654'
+    transform: matrix(0.487,0,0,0.487,18.7378,22.0573)
+  sugarland:
+    x: '235.14996044297854'
+    y: '231.65043508073364'
+    transform: matrix(0.487,0,0,0.487,123.1969,121.4017)
+  vabeach:
+    x: '399.8419444853883'
+    y: '138.097272057694'
+    transform: matrix(0.487,0,0,0.487,207.6839,73.4089)
+  woodlands:
+    x: '236.49568600318509'
+    y: '226.0210949100328'
+    transform: matrix(0.487,0,0,0.487,123.8873,118.5138)
