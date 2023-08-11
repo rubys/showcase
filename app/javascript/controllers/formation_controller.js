@@ -20,36 +20,39 @@ export default class extends Controller {
     for (let add of adds) {
       add.addEventListener('click', event => {
         let lastBox = this.boxes[this.boxes.length - 1];
-        if (lastBox.childElementCount >= this.boxes.length) {
-          let box = lastBox.cloneNode(true);
 
-          if (add.dataset.list) {
-            for (let option of box.querySelectorAll('option')) {
-              if (option.value != 'x') {
-                option.remove();
-              }
-            }
+        let box = lastBox.cloneNode(true);
 
-            for (let [name, id] of Object.entries(JSON.parse(add.dataset.list)).reverse()) {
-              if (name.includes(',')) {
-                let parts = name.split(/,\s*/);
-                name = [...parts.slice(-1), ...parts.slice(0, 1)].join(' ')
-              }
-
-              let option = document.createElement('option');
-              option.value = id;
-              option.textContent = name;
-              box.prepend(option);
+        if (add.dataset.list) {
+          for (let option of box.querySelectorAll('option')) {
+            if (option.value != 'x') {
+              option.remove();
             }
           }
 
-          box.id = box.id.replace(/\d+/, n => parseInt(n) + 1);
-          box.setAttribute('name', box['name'].replace(/\d+/, n => parseInt(n) + 1));
-          box.addEventListener('change', this.preventDupes);
+          for (let [name, id] of Object.entries(JSON.parse(add.dataset.list)).reverse()) {
+            if (name.includes(',')) {
+              let parts = name.split(/,\s*/);
+              name = [...parts.slice(-1), ...parts.slice(0, 1)].join(' ')
+            }
 
-          lastBox.parentNode.insertBefore(box, lastBox.nextSibling);
-          this.boxes.push(box);
-          this.preventDupes();
+            let option = document.createElement('option');
+            option.value = id;
+            option.textContent = name;
+            box.prepend(option);
+          }
+        }
+
+        box.id = box.id.replace(/\d+/, n => parseInt(n) + 1);
+        box.setAttribute('name', box['name'].replace(/\d+/, n => parseInt(n) + 1));
+        box.addEventListener('change', this.preventDupes);
+
+        lastBox.parentNode.insertBefore(box, lastBox.nextSibling);
+        this.boxes.push(box);
+        this.preventDupes();
+
+        if ([...box.children].every(child => child.disabled || child.value === 'x')) {
+          this.boxes.pop().remove()
         }
       })
     }
