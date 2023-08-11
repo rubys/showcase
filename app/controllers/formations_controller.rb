@@ -24,6 +24,10 @@ class FormationsController < ApplicationController
     @age = @person&.age_id
     @level = @person&.level_id
     @on_floor = true
+
+    # if there is only one instructor, select a student as a partner so
+    # the instructors box can be filled in
+    @partner = @students.first.id if @instructors.length == 1
   end
 
   # GET /formations/1/edit
