@@ -11,17 +11,29 @@ export default class extends Controller {
     this.boxes = [this.primaryTarget, this.partnerTarget].concat(this.instructorTargets);
     this.preventDupes();
 
+    // if there is only one instructor, that instructor can't be the partner
+    if (this.instructors.length == 1) {
+      for (let option of this.partnerTarget.querySelectorAll('option')) {
+        if (option.value == this.instructors[0]) {
+          option.disabled = true
+        }
+      }
+    }
+
     for (let box of this.boxes) {
       box.addEventListener('change', this.preventDupes);
       let option = document.createElement('option');
       option.textContent = '--delete--';
       option.setAttribute('value', 'x');
+      if (box == this.instructorTarget || box == this.partnerTarget) option.disabled = true;
       box.appendChild(option);
     }
 
     let adds = this.element.querySelectorAll('div.absolute a');
     for (let add of adds) {
       add.addEventListener('click', event => {
+        if (add.style.opacity) return;
+
         let lastBox = this.boxes[this.boxes.length - 1];
 
         let base = add.textContent.includes('instructor') ? this.instructorTarget : this.partnerTarget
@@ -32,6 +44,8 @@ export default class extends Controller {
           for (let option of box.querySelectorAll('option')) {
             if (option.value != 'x') {
               option.remove();
+            } else {
+              option.disabled = false
             }
           }
 
@@ -72,10 +86,11 @@ export default class extends Controller {
     let taken = [];
     if (this.boxes.length <= 3) taken.push('x');
     for (let box of this.boxes) {
+      let avail = "";
       for (let option of box.querySelectorAll('option')) {
         if (taken.includes(option.value)) {
           option.disabled = true;
-          if (option.value == box.value) box.value = null;
+          if (option.value == box.value) box.value = avail;
         } else if (option.value == 'x') {
           if (!box.value) {
             this.boxes = this.boxes.filter(item => item != box);
@@ -83,7 +98,8 @@ export default class extends Controller {
           }
         } else {
           option.disabled = false;
-          if (!box.value || box.value == 'x') box.value = option.value;
+          avail ||= option.value;
+          if (!box.value && box.value == 'x') box.value = avail;
         }
       }
 
