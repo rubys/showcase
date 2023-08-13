@@ -5,6 +5,9 @@ export default class extends Controller {
   static targets = ["primary", "partner", "instructor"];
 
   connect() {
+    this.students = [...this.partnerTarget.querySelectorAll('option')].map(option => option.value)
+    this.instructors = [...this.instructorTarget.querySelectorAll('option')].map(option => option.value)
+
     this.boxes = [this.primaryTarget, this.partnerTarget].concat(this.instructorTargets);
     this.preventDupes();
 
@@ -21,7 +24,9 @@ export default class extends Controller {
       add.addEventListener('click', event => {
         let lastBox = this.boxes[this.boxes.length - 1];
 
-        let box = lastBox.cloneNode(true);
+        let base = add.textContent.includes('instructor') ? this.instructorTarget : this.partnerTarget
+
+        let box = base.cloneNode(true);
 
         if (add.dataset.list) {
           for (let option of box.querySelectorAll('option')) {
@@ -83,6 +88,24 @@ export default class extends Controller {
       }
 
       taken.push(box.value);
+    }
+
+    let adds = this.element.querySelectorAll('div.absolute a');
+
+    if (this.instructors.every(instructor => taken.includes(instructor))) {
+      adds[0].style.cursor = "not-allowed"
+      adds[0].style.opacity = "50%"
+    } else {
+      adds[0].style.cursor = ""
+      adds[0].style.opacity = ""
+    }
+
+    if (this.students.every(student => taken.includes(student) || this.instructors.includes(student))) {
+      adds[1].style.cursor = "not-allowed"
+      adds[1].style.opacity = "50%"
+    } else {
+      adds[1].style.cursor = ""
+      adds[1].style.opacity = ""
     }
   }
 }

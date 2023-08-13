@@ -27,7 +27,7 @@ class FormationsController < ApplicationController
 
     # if there is only one instructor, select a student as a partner so
     # the instructors box can be filled in
-    @partner = @students.first.id if @instructors.length == 1
+    @partner = @students.find {|student| student.id != @person.id}.id if @instructors.length == 1
   end
 
   # GET /formations/1/edit
