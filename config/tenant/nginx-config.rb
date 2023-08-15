@@ -215,11 +215,16 @@ server {
 <% if @region and @region == tenant.region and tenant.scope.to_s != '' -%>
   rewrite <%= ROOT %>/<%= tenant.scope %>/cable <%= ROOT %>/cable last;
 <% end -%>
-  location <%= ROOT %>/<%= tenant.scope %> {
 <% if @region and tenant.region and @region != tenant.region -%>
+  location <%= ROOT %>/<%= tenant.scope %>/cable {
     return 409 "wrong region\n";
     add_header Fly-Replay region=<%= tenant.region %> always;
+  }
+  location <%= ROOT %>/<%= tenant.scope %> {
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_pass http://<%= tenant.region %>.<%= ENV['FLY_APP_NAME'] %>.internal:3000<%= ROOT %>/<%= tenant.scope %>;
 <% else -%>
+  location <%= ROOT %>/<%= tenant.scope %> {
     root <%= @git_path %>/public;
     passenger_app_group_name showcase-<%= tenant.label %>;
     passenger_env_var RAILS_APP_OWNER <%= tenant.owner.inspect %>;
