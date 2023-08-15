@@ -9,7 +9,7 @@ require 'ostruct'
 ROOT = '/showcase'
 
 HOST = if ENV['FLY_APP_NAME']
-   "#{ENV['FLY_APP_NAME']}.fly.dev"
+  "#{ENV['FLY_APP_NAME']}.fly.dev"
 elsif `hostname` =~ /^ubuntu/
   'hetzner.intertwingly.net'
 else
@@ -213,7 +213,7 @@ server {
   <%- if @region -%>
   if ($request_uri ~ "^/showcase/<%= @cables %>/cable$") { set $realm off; }
   <%- end -%>
-  if ($request_uri ~ "^/showcase/<%= @indexes %>/$") { set $realm off; }
+  if ($request_uri ~ "^/showcase/<%= @indexes %>/?$") { set $realm off; }
   if ($request_uri ~ "^/showcase/[-\w]+\.\w+$") { set $realm off; }
   if ($request_uri ~ "^/showcase/\d+/\w+/(\w+/)?public/") { set $realm off; }
   auth_basic $realm;

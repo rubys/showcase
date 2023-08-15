@@ -15,7 +15,8 @@ Rails.application.routes.draw do
       get "/:year/:city/", to: 'event#showcases', year: /\d+/
 
       get "/:year", to: 'event#showcases', year: /\d+/
-      get "/:year/", to: 'event#showcases', year: /\d+/, as: 'year'
+      get "/:year/", to: 'event#showcases', year: /\d+/, as: 'year',
+        trailing_slash: true
 
       get "/regions/:region", to: 'event#showcases', as: 'region'
       get "/studios/:studio", to: 'event#showcases', as: 'studio_events'
