@@ -262,6 +262,14 @@ class EventController < ApplicationController
       index = regions.find_index(params[:region])
       @prev = region_path(regions[index-1]) if index > 0
       @next = region_path(regions[index+1]) if index < regions.length-1
+    elsif params[:year]
+      @up = '..'
+      showcases = YAML.load_file('config/tenant/showcases.yml')
+      years = showcases.keys.map(&:to_s).reverse
+      STDERR.puts years.inspect
+      index = years.find_index(params[:year])
+      @prev = year_path(years[index-1]) if index > 0
+      @next = year_path(years[index+1]) if index < years.length-1
     end
   end
 
