@@ -212,8 +212,8 @@ server {
   if ($request_uri ~ "^/showcase/(assets/|cable$|docs/|password/|publish/|regions/(<%= @regions.join('|') %>|)$|$)") { set $realm off; }
   <%- if @region -%>
   if ($request_uri ~ "^/showcase/<%= @cables %>/cable$") { set $realm off; }
-  if ($request_uri ~ "^/showcase/<%= @indexes %>/$") { set $realm off; }
   <%- end -%>
+  if ($request_uri ~ "^/showcase/<%= @indexes %>/$") { set $realm off; }
   if ($request_uri ~ "^/showcase/[-\w]+\.\w+$") { set $realm off; }
   if ($request_uri ~ "^/showcase/\d+/\w+/(\w+/)?public/") { set $realm off; }
   auth_basic $realm;
