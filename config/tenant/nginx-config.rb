@@ -41,6 +41,7 @@ index = OpenStruct.new(
 )
 
 @tenants = [index]
+@studios = showcases.values.map(&:keys).flatten.uniq.sort
 @regions = Set.new
 showcases.each do |year, list|
   list.each do |token, info|
@@ -209,7 +210,7 @@ server {
   allow ::1;
 
   set $realm "Showcase";
-  if ($request_uri ~ "^/showcase/(assets/|cable$|docs/|password/|publish/|regions/(<%= @regions.join('|') %>|)$|$)") { set $realm off; }
+  if ($request_uri ~ "^/showcase/(assets/|cable$|docs/|password/|publish/|regions/(<%= @regions.join('|') %>)$|studios/(<%= @studios.join('|') %>)$|$)") { set $realm off; }
   <%- if @region -%>
   if ($request_uri ~ "^/showcase/<%= @cables %>/cable$") { set $realm off; }
   <%- end -%>
