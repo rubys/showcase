@@ -1,4 +1,4 @@
-if ENV["SENTRY_DSN"]
+if ENV["SENTRY_DSN"] and ENV["RAILS_APP_OWNER"]
 
 Sentry.init do |config|
   config.dsn = ENV["SENTRY_DSN"]
