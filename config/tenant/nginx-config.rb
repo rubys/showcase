@@ -53,6 +53,7 @@ showcases.each do |year, list|
           owner:  info[:name],
           region: info[:region],
           name:   info[:name] + ' - ' + subinfo[:name] ,
+          base:   "#{year}-#{token}",
           label:  "#{year}-#{token}-#{subtoken}",
           scope:  "#{year}/#{token}/#{subtoken}",
           logo:   info[:logo],
@@ -137,14 +138,36 @@ FileUtils.mkdir_p @dbpath
 @tenants.each do |tenant|
   next if @region and tenant.region and @region != tenant.region
   ENV['RAILS_APP_DB'] = tenant.label
-  ENV['DATABASE_URL'] = "sqlite3://#{@dbpath}/#{tenant.label}.sqlite3"
+  database = "#{@dbpath}/#{tenant.label}.sqlite3"
+
+  if tenant.base and not File.exist?(database)
+    basedb = "#{@dbpath}/#{tenant.base}.sqlite3"
+    if File.exist?(basedb) and not File.symlink?(basedb)
+      File.rename basedb, database
+      Dir.chdir @dbpath do
+        File.symlink File.basename(database), File.basename(basedb)
+      end
+    end
+  end
+
+  ENV['DATABASE_URL'] = "sqlite3://#{database}"
   system 'bin/rails db:prepare'
 
   count = `sqlite3 #{@dbpath}/#{tenant.label}.sqlite3 "select count(*) from events"`.to_i
   system 'bin/rails db:seed' if count == 0
 
   storage = File.join(@storage, tenant.label)
-  FileUtils.mkdir_p storage unless Dir.exist? storage
+  if not Dir.exist?(storage)
+    basestore = File.join(@storage, tenant.base) if tenant.base
+    if basestore and File.exist?(basestore) and not File.symlink?(basestore)
+      File.rename basestore, storage
+      Dir.chdir @storage do
+        File.symlink File.basename(storage), File.basename(basestore)
+      end
+    else
+      FileUtils.mkdir_p storage unless Dir.exist? storage
+    end
+  end
 end
 
 old_conf = IO.read(SHOWCASE_CONF) rescue ''
