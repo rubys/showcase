@@ -141,7 +141,7 @@ app.get("/", async (req, res) => {
       });
     });
 
-    if (results.length > 0) break;
+    if (results.length > 1) break;
   }
 
   results.push('<pre>')
