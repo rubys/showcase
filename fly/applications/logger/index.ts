@@ -94,6 +94,7 @@ app.get("/", async (req, res) => {
   logs.sort();
 
   let results: string[] = [];
+  let previous: string[] = [];
 
   results.push('</pre>')
 
@@ -141,7 +142,12 @@ app.get("/", async (req, res) => {
       });
     });
 
-    if (results.length > 1) break;
+    if (previous.length > 0) results.push(...previous);
+
+    if (results.length > 40) break;
+
+    previous = results;
+    results = [ previous.shift() ];
   }
 
   results.push('<pre>')
