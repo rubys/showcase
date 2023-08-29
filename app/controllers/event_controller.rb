@@ -22,7 +22,8 @@ class EventController < ApplicationController
 
     @event = Event.last
 
-    @heats = Heat.where(number: 1..).distinct.count(:number)
+    @heats = Heat.where.not(number: ..0).distinct.count(:number)
+    @unscheduled = Heat.where(number: 0).count
 
     # event navigation
     events = User.auth_event_list(@authuser)

@@ -24,7 +24,11 @@
 
   <p class="mt-4 text-center"><%= @event.location.to_s.lines.first.to_s.chomp %></p>
   <p class="mt-2 text-center"><%= @event.date %></p>
-  <p class="mt-2 text-center"><%= pluralize(@heats, 'heat') %></p>
+  <p class="mt-2 text-center"><%= pluralize(@heats, 'heat') %>
+  <% if @unscheduled > 0 -%>
+  + <%= @unscheduled %> unscheduled
+  <% end -%>
+  </p>
 
   <h2 class="font-bold text-2xl mt-4 mb-2"><%= @judges.length == 1 ? 'Judge' : 'Judges' %></h2>
   <ul class="list-disc list-inside">
