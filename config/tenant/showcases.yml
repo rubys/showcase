@@ -9,11 +9,11 @@
     :region: iad
     :logo: arthur-murray-logo.gif
     :events:
-      :medalball:
+      medalball:
         :name: Metal Ball
-      :chesapeakeclassic:
+      chesapeakeclassic:
         :name: Chesapeake Classic
-      :gratitudegala:
+      gratitudegala:
         :name: Gratitude Gala
   charlotte:
     :name: Charlotte
@@ -28,13 +28,13 @@
     :region: mia
     :logo: arthur-murray-logo.gif
     :events:
-      :glassslipper:
+      glassslipper:
         :name: Glass Slipper Gala
-      :nationaldance:
+      nationaldance:
         :name: National Dance Day
-      :snowball:
+      snowball:
         :name: Snowball
-      :flamingoopener:
+      flamingoopener:
         :name: Flamingo Opener
   durham:
     :name: Durham
@@ -60,14 +60,19 @@
     :name: Raleigh
     :region: iad
     :logo: arthur-murray-logo.gif
+    :events:
+      night-in-paris:
+        :name: A Night In Paris
+      team-match:
+        :name: Team Match
   richmond:
     :name: Richmond
     :region: iad
     :logo: arthur-murray-logo.gif
     :events:
-      :medalball:
+      medalball:
         :name: Medal Ball
-      :teammatch:
+      teammatch:
         :name: Team Match
   salem:
     :name: Salem
