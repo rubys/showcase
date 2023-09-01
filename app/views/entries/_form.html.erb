@@ -30,15 +30,8 @@ entry in the common case.
 
 <%= render partial: 'entries/box', locals: {form: form} %>
 
-<%= render partial: 'entries/dances',
-  locals: {form: form, title: 'CLOSED CATEGORY', dances: @dances, category: 'Closed'} %>
-
-<%= render partial: 'entries/dances',
-  locals: {form: form, title: 'OPEN CATEGORY', dances: @dances, category: 'Open'} %>
-
-<% unless @multis.empty? %>
-<%= render partial: 'entries/dances',
-  locals: {form: form, title: 'MULTI CATEGORY', dances: @multis, category: 'Multi'} %>
+<% @agenda.each do |agenda| %>
+<%= render partial: 'entries/dances', locals: agenda.merge(form: form) %>
 <% end %>
 <% end %>
 

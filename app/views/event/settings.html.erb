@@ -115,19 +115,24 @@
   </div>
 
   <div class="my-5">
-    <%= form.label :judge_comments, 'Judge comments:' %>
     <%= form.check_box :judge_comments, class: 'entry-count h-10' %>
+    <%= form.label :judge_comments, 'Enable Judge comments?' %>
   </div>
 
   <div class="my-5">
-    <%= form.label :backnums, 'Leaders assigned back numbers:' %>
     <%= form.check_box :backnums, class: 'entry-count h-10' %>
+    <%= form.label :backnums, 'Use back numbers?' %>
   </div>
 
   <div class="my-5">
-    <%= form.label :backnums, 'Track student ages:' %>
     <%= form.check_box :track_ages, class: 'entry-count h-10' %>
+    <%= form.label :track_ages, 'Track student ages?' %>
   </div>
+
+  <!-- div class="my-5">
+    <%= form.check_box :agenda_based_entries, class: 'entry-count h-10' %>
+    <%= form.label :agenda_based_entries, 'Match entry forms to agenda?' %>
+  </div -->
 
   <div class="my-5">
     <%= form.label :counter_art %>

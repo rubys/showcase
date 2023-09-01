@@ -20,7 +20,12 @@
           <% else %>
           <%= form.text_field field, class: "entry-count", value: value %>
           <% end %>
+          <% if category == 'Multi' -%>
+          <%= form.label field, h(dance.name).split(' - ').join(' -<br>').html_safe,
+            class: 'mt-2 flex items-center justify-center' %>
+          <% else -%>
           <%= form.label field, dance.name, class: 'mt-2 flex items-center justify-center' %>
+          <% end -%>
         </div>
       <% end %>
     </div>

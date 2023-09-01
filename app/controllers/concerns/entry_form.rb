@@ -62,7 +62,7 @@ module EntryForm
     @ages = Age.all.order(:id).map {|age| [age.description, age.id]}
     @levels = Level.all.order(:id).map {|level| [level.name, level.id]}
 
-    @entries = {'Closed' => {}, 'Open' => {}, 'Multi' => {}}
+    @entries = {'Closed' => {}, 'Open' => {}, 'Multi' => {}, 'Solo' => {}}
 
     @columns = Dance.maximum(:col) || 4
 

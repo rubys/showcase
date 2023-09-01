@@ -16,21 +16,19 @@ class EntriesController < ApplicationController
     @entry ||= Entry.new
 
     form_init(params[:primary])
+    agenda_init
 
     @partner = nil
     @age = @person.age_id
     @level = @person.level_id
 
-    @dances = Dance.order(:order).where(heat_length: nil)
-    @multis = Dance.order(:order).where.not(heat_length: nil)
+    agenda_init
   end
 
   # GET /entries/1/edit
   def edit
     form_init(params[:primary], @entry)
-
-    @dances = Dance.order(:order).where(heat_length: nil)
-    @multis = Dance.order(:order).where.not(heat_length: nil)
+    agenda_init
     
     @partner = @entry.partner(@person).id
     @age = @entry.age_id
@@ -166,6 +164,61 @@ class EntriesController < ApplicationController
     # Only allow a list of trusted parameters through.
     def entry_params
       params.require(:entry).permit(:count, :dance_id, :lead_id, :follow_id)
+    end
+
+    def agenda_init
+      dances = Dance.order(:order).where(heat_length: nil)
+      multis = Dance.order(:order).where.not(heat_length: nil)
+
+      # current restrictions: no category contains a mix of open/closed/solos/etc, and no
+      # category is a "routines" category.
+      cat_ids = %i{open_category_id closed_category_id solo_category_id multi_category_id}
+      used = []
+      clean = (Category.where(routines: true).count == 0)
+      all = dances + multis
+      cat_ids.each do |id|
+        cats = all.map(&id).compact.uniq
+        clean = false if cats.any? {|cat| used.include? cat}
+        used += cats
+      end
+  
+      if clean and Event.first.agenda_based_entries
+        dance_ids = {
+          open_dances: "Open",
+          closed_dances: "Closed",
+          solo_dances: "Solo",
+          multi_dances: "Multi"
+        }
+
+        @agenda = []
+        Category.order(:order).each do |cat|
+          xdances = []
+          category = nil
+          dance_ids.each do |id, name|
+            xdances = cat.send(id).order(:order)
+            if xdances.length > 0
+              category = name
+              break
+            end
+          end
+
+          STDERR.puts category
+          if category == 'Multi'
+            @agenda.push(title: cat.name, dances: xdances, category: 'Multi')
+          else
+            @agenda.push(title: cat.name, dances: xdances, category: 'Solo')
+          end
+        end
+      else
+        @agenda = [
+          {title: 'CLOSED CATEGORY', dances: dances, category: 'Closed'},
+          {title: 'OPEN CATEGORY', dances: dances, category: 'Open'}
+        ]
+    
+        unless multis.empty?
+          @agenda.push({title: 'MULTI CATEGORY', dances: multis, category: 'Multi'})
+        end
+      end
     end
 
     def tally_entry
