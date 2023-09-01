@@ -32,10 +32,12 @@
         :name: Glass Slipper Gala
       nationaldance:
         :name: National Dance Day
-      snowball:
-        :name: Snowball
       flamingoopener:
         :name: Flamingo Opener
+      flamingo-fright:
+        :name: Flamingo Fright Festival
+      snowball:
+        :name: Snowball
   durham:
     :name: Durham
     :region: iad
