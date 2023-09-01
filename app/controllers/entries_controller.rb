@@ -192,22 +192,17 @@ class EntriesController < ApplicationController
 
         @agenda = []
         Category.order(:order).each do |cat|
-          xdances = []
+          dances = []
           category = nil
           dance_ids.each do |id, name|
-            xdances = cat.send(id).order(:order)
-            if xdances.length > 0
+            dances = cat.send(id).order(:order)
+            if dances.length > 0
               category = name
               break
             end
           end
 
-          STDERR.puts category
-          if category == 'Multi'
-            @agenda.push(title: cat.name, dances: xdances, category: 'Multi')
-          else
-            @agenda.push(title: cat.name, dances: xdances, category: 'Solo')
-          end
+          @agenda.push(title: cat.name, dances: dances, category: category)
         end
       else
         @agenda = [
@@ -222,10 +217,9 @@ class EntriesController < ApplicationController
     end
 
     def tally_entry
-      @entries = {'Closed' => {}, 'Open' => {}, 'Multi' => {}}
+      @entries = {'Closed' => {}, 'Open' => {}, 'Multi' => {}, 'Solo' => {}}
 
       @entries.merge!(@entry.heats.
-        select {|heat| heat.category != 'Solo'}.
         group_by {|heat| heat.category}.map do |category, heats|
         [category, heats.group_by {|heat| heat.dance.name}]
       end.to_h)
@@ -235,11 +229,12 @@ class EntriesController < ApplicationController
       tally_entry
 
       @total = 0
-      %w(Closed Open Multi).each do |category|
+      %w(Closed Open Multi Solo).each do |category|
         Dance.all.each do |dance|
+          next unless entry[:entries][category]
           heats = @entries[category][dance.name] || []
           was = new ? 0 : heats.count {|heat| heat.number >= 0}
-          wants = entry[:entries][category] ? entry[:entries][category][dance.name].to_i : 0
+          wants = entry[:entries][category][dance.name].to_i
           if wants != was
             @total += (wants - was).abs
   
@@ -257,12 +252,19 @@ class EntriesController < ApplicationController
               if heat
                 heat.update(number: -heat.number)
               else
-                Heat.create({
+                @heat = Heat.create({
                   number: 0, 
                   entry: @entry,
                   category: category,
                   dance: dance
                 })
+
+                if category == 'Solo'
+                  solo = Solo.new()
+                  solo.heat = @heat
+                  solo.order = (Solo.maximum(:order) || 0) + 1
+                  solo.save!
+                end
               end
             end
           end

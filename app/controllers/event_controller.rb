@@ -267,7 +267,6 @@ class EventController < ApplicationController
       @up = '..'
       showcases = YAML.load_file('config/tenant/showcases.yml')
       years = showcases.keys.map(&:to_s).reverse
-      STDERR.puts years.inspect
       index = years.find_index(params[:year])
       @prev = year_path(years[index-1]) if index > 0
       @next = year_path(years[index+1]) if index < years.length-1
