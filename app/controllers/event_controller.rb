@@ -16,9 +16,9 @@ class EventController < ApplicationController
   end
 
   def root
-    @judges = Person.where(type: 'Judge')
-    @djs    = Person.where(type: 'DJ')
-    @emcees = Person.where(type: 'Emcee')
+    @judges = Person.where(type: 'Judge').order(:name)
+    @djs    = Person.where(type: 'DJ').order(:name)
+    @emcees = Person.where(type: 'Emcee').order(:name)
 
     @event = Event.last
 
@@ -49,9 +49,9 @@ class EventController < ApplicationController
   end
 
   def settings
-    @judges = Person.where(type: 'Judge')
-    @djs    = Person.where(type: 'DJ')
-    @emcees = Person.where(type: 'Emcee')
+    @judges = Person.where(type: 'Judge').order(:name)
+    @djs    = Person.where(type: 'DJ').order(:name)
+    @emcees = Person.where(type: 'Emcee').order(:name)
 
     @event ||= Event.last
     
