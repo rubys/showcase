@@ -58,6 +58,11 @@
     :name: Lakeview
     :region: ord
     :logo: arthur-murray-logo.gif
+    :events:
+      showcase:
+        :name: Showcase
+      showcase-rounds:
+        :name: Showcase Rounds
   raleigh:
     :name: Raleigh
     :region: iad
