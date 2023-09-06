@@ -110,11 +110,7 @@ end
 
 years = showcases.map do |year, sites|
   sites = sites.map do |name, site| 
-    if site[:events]
-      name + '/(' + site[:events].keys.join('|') + ')'
-    else
-      nil
-    end
+    name + '/' if site[:events]
   end.compact
 
   if sites.length == 0
