@@ -3,6 +3,9 @@ class Person < ApplicationRecord
 
   validates :name, presence: true, uniqueness: true
   validates :back, allow_nil: true, uniqueness: true
+
+  validates :name, format: { without: /&/, message: 'only one name per person' }
+  validates :name, format: { without: / and /, message: 'only one name per person' }
   
   belongs_to :studio, optional: false
   belongs_to :level, optional: true
