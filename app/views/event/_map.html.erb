@@ -245,7 +245,7 @@
    <% @cities.sort.each do |name, token| -%>
    <% point = @map['studios'][token] %>
    <% next unless point %>
-   <a xlink:title="<%= name %>" href="http://localhost:3000/studios/<%= token %>">
+   <a xlink:title="<%= name %>" href="https://smooth.fly.dev/studios/<%= token %>">
      <rect x="<%= point['x'] %>" y="<%= point['y'] %>" width="10" height="10" r="0" rx="0" ry="0" fill="#000080" stroke="#ffffff" style="opacity: 0.8; cursor: pointer;" stroke-width="2.5" opacity="0.8" transform="<%= point['transform'] %>"/>
    </a>
    <% end %>
