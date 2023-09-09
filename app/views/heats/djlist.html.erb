@@ -3,21 +3,23 @@
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
-        <h1 class="font-bold text-4xl">
-          DJ dance list
-        </h1>
+  <h1 class="py-4 text-2xl w-full font-bold">
+  <%= image_tag showcase_logo, class: "float-right w-12" %>
+  DJ dance list
+  </h1>
 
-  <table>
+  <table class="w-full break-before-avoid">
+
+      
       <% @heats.each do |heat| %>
         <% next if heat.number == 0 %>
         <% if @agenda[heat.number] %>
         <% if heat.number != 1 %>
         </tbody>
         </table>
-        <table>
+        <table class="break-inside-avoid-page w-full">
         <% end %>
         <thead>
-
         <tr class="text-black">
           <td colspan="2" class="py-4 text-2xl"><%= @agenda[heat.number] %></td>
         </tr>

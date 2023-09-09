@@ -50,6 +50,9 @@ class HeatsController < ApplicationController
       [heats.map {|heat| heat.number}.min, category&.name]
     end.to_h
 
+    @layout = ''
+    @nologo = true
+
     respond_to do |format|
       format.html
       format.pdf do
