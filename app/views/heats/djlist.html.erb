@@ -9,8 +9,6 @@
   </h1>
 
   <table class="w-full break-before-avoid">
-
-      
       <% @heats.each do |heat| %>
         <% next if heat.number == 0 %>
         <% if @agenda[heat.number] %>
