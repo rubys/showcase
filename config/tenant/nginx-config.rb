@@ -131,6 +131,26 @@ FileUtils.mkdir_p log_volume if log_volume
 
 @dbpath = ENV.fetch('RAILS_DB_VOLUME') { "#{@git_path}/db" }
 FileUtils.mkdir_p @dbpath
+
+old_conf = IO.read(SHOWCASE_CONF) rescue ''
+new_conf = ERB.new(DATA.read, trim_mode: '-').result(binding)
+
+if new_conf != old_conf
+  IO.write SHOWCASE_CONF, new_conf
+  restart = true
+end
+
+if restart
+  if old_conf.include? @git_path
+    system "passenger-config restart-app #{@git_path}"
+  end
+
+  pids = %w{/run/nginx.pid /run/nginx/nginx.pid /opt/homebrew/var/run/nginx.pid}
+  if pids.any? {|file| File.exist? file}
+    system 'nginx -s reload'
+  end
+end
+
 @tenants.each do |tenant|
   next if @region and tenant.region and @region != tenant.region
   ENV['RAILS_APP_DB'] = tenant.label
@@ -163,25 +183,6 @@ FileUtils.mkdir_p @dbpath
     else
       FileUtils.mkdir_p storage unless Dir.exist? storage
     end
-  end
-end
-
-old_conf = IO.read(SHOWCASE_CONF) rescue ''
-new_conf = ERB.new(DATA.read, trim_mode: '-').result(binding)
-
-if new_conf != old_conf
-  IO.write SHOWCASE_CONF, new_conf
-  restart = true
-end
-
-if restart
-  if old_conf.include? @git_path
-    system "passenger-config restart-app #{@git_path}"
-  end
-
-  pids = %w{/run/nginx.pid /run/nginx/nginx.pid /opt/homebrew/var/run/nginx.pid}
-  if pids.any? {|file| File.exist? file}
-    system 'nginx -s reload'
   end
 end
 
