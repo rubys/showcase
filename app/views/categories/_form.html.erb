@@ -58,8 +58,15 @@ start times for each heat will show up on the heats page.
 
   <div class="my-5">
     <%= form.check_box :routines, class: 'entry-count h-10' %>
-    <%= form.label :routines, 'Agenda Item for "Routines" (include all dances)' %>
+    <%= form.label :routines, 'Agenda Item for "Routines" (include all dances)?' %>
   </div>
+
+  <% if @pro_option %>
+  <div class="my-5">
+    <%= form.check_box :pro, class: 'entry-count h-10' %>
+    <%= form.label :pro, 'Professionals only?' %>
+  </div>
+  <% end %>
 
   <% if category.instance_of? Category %>
   <div data-controller="category-override">
@@ -67,7 +74,7 @@ start times for each heat will show up on the heats page.
     <%= form.check_box :customize, class: 'entry-count h-10',
       data: {'category-override-target' => "toggle"},
       checked: !!(category.ballrooms || category.max_heat_size || category.heats) %>
-    <%= form.label :customize, 'Customize ballroom and heat size' %>
+    <%= form.label :customize, 'Customize ballroom and heat size?' %>
   </div>
 
   <div class="my-5" data-category-override-target="form">

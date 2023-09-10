@@ -10,6 +10,15 @@ class Category < ApplicationRecord
   has_many :multi_dances, dependent: :nullify,
     class_name: 'Dance', foreign_key: :multi_category_id
 
+  has_many :pro_open_dances, dependent: :nullify,
+    class_name: 'Dance', foreign_key: :pro_open_category_id
+  has_many :pro_closed_dances, dependent: :nullify,
+    class_name: 'Dance', foreign_key: :pro_closed_category_id
+  has_many :pro_solo_dances, dependent: :nullify,
+    class_name: 'Dance', foreign_key: :pro_solo_category_id
+  has_many :pro_multi_dances, dependent: :nullify,
+    class_name: 'Dance', foreign_key: :pro_multi_category_id
+
   has_many :extensions, dependent: :destroy,
     class_name: 'CatExtension'
 

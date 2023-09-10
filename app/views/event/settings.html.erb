@@ -130,6 +130,11 @@
   </div>
 
   <div class="my-5">
+    <%= form.check_box :pro_heats, class: 'entry-count h-10' %>
+    <%= form.label :pro_heats, 'Include pro heats?' %>
+  </div>
+
+  <div class="my-5">
     <%= form.check_box :agenda_based_entries, class: 'entry-count h-10' %>
     <%= form.label :agenda_based_entries, 'Match entry forms to agenda?' %>
   </div>

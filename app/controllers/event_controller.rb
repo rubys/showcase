@@ -109,7 +109,7 @@ class EventController < ApplicationController
     ok = @event.update params.require(:event).permit(:name, :theme, :location, :date, :heat_range_cat, :heat_range_level, :heat_range_age,
       :intermix, :ballrooms, :column_order, :backnums, :track_ages, :heat_length, :solo_length, :open_scoring, :multi_scoring,
       :heat_cost, :solo_cost, :multi_cost, :max_heat_size, :package_required, :student_package_description, :payment_due,
-      :counter_art, :judge_comments, :agenda_based_entries)
+      :counter_art, :judge_comments, :agenda_based_entries, :pro_heats)
 
     if @event.open_scoring != old_open_scoring and @event.open_scoring != '#' and @event.open_scoring != '#'
       map = {

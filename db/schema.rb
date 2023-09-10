@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_09_01_183948) do
+ActiveRecord::Schema[7.0].define(version: 2023_09_09_234512) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -90,6 +90,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_01_183948) do
     t.boolean "routines"
     t.integer "duration"
     t.decimal "cost_override", precision: 7, scale: 2
+    t.boolean "pro", default: false
   end
 
   create_table "dances", force: :cascade do |t|
@@ -105,9 +106,17 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_01_183948) do
     t.integer "row"
     t.integer "col"
     t.decimal "cost_override", precision: 7, scale: 2
+    t.integer "pro_open_category_id"
+    t.integer "pro_closed_category_id"
+    t.integer "pro_solo_category_id"
+    t.integer "pro_multi_category_id"
     t.index ["closed_category_id"], name: "index_dances_on_closed_category_id"
     t.index ["multi_category_id"], name: "index_dances_on_multi_category_id"
     t.index ["open_category_id"], name: "index_dances_on_open_category_id"
+    t.index ["pro_closed_category_id"], name: "index_dances_on_pro_closed_category_id"
+    t.index ["pro_multi_category_id"], name: "index_dances_on_pro_multi_category_id"
+    t.index ["pro_open_category_id"], name: "index_dances_on_pro_open_category_id"
+    t.index ["pro_solo_category_id"], name: "index_dances_on_pro_solo_category_id"
     t.index ["solo_category_id"], name: "index_dances_on_solo_category_id"
   end
 
@@ -157,6 +166,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_01_183948) do
     t.string "multi_scoring", default: "1"
     t.boolean "judge_comments", default: false
     t.boolean "agenda_based_entries", default: false
+    t.boolean "pro_heats", default: false
   end
 
   create_table "formations", force: :cascade do |t|
@@ -319,6 +329,10 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_01_183948) do
   add_foreign_key "dances", "categories", column: "closed_category_id"
   add_foreign_key "dances", "categories", column: "multi_category_id"
   add_foreign_key "dances", "categories", column: "open_category_id"
+  add_foreign_key "dances", "categories", column: "pro_closed_category_id"
+  add_foreign_key "dances", "categories", column: "pro_multi_category_id"
+  add_foreign_key "dances", "categories", column: "pro_open_category_id"
+  add_foreign_key "dances", "categories", column: "pro_solo_category_id"
   add_foreign_key "dances", "categories", column: "solo_category_id"
   add_foreign_key "entries", "ages"
   add_foreign_key "entries", "levels"
