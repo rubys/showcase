@@ -45,7 +45,7 @@ class CategoriesController < ApplicationController
 
     respond_to do |format|
       if @category.save
-        update_dances(params[:category][:include])
+        update_dances(params[:category][:include], params[:category][:pro])
 
         format.html { redirect_to categories_url, notice: "#{@category.name} was successfully created." }
         format.json { render :show, status: :created, location: @category }
@@ -67,7 +67,7 @@ class CategoriesController < ApplicationController
 
     respond_to do |format|
       if @category.update(category_params)
-        update_dances(params[:category][:include])
+        update_dances(params[:category][:include], params[:category][:pro])
 
         format.html { redirect_to categories_url, notice: "#{@category.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @category }
@@ -157,7 +157,7 @@ class CategoriesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def category_params
-      params.require(:category).permit(:name, :order, :day, :time, :ballrooms, :max_heat_size, :heats, :duration, :routines, :cost_override, :pro)
+      params.require(:category).permit(:name, :order, :day, :time, :ballrooms, :max_heat_size, :heats, :duration, :routines, :cost_override,)
     end
 
     def form_init
@@ -169,20 +169,38 @@ class CategoriesController < ApplicationController
 
       if @category.id
         dances.each do |dance|
-          if dance.open_category_id == @category.id
-            @entries['Open'][dance.name] = true
-          end
+          if @category.pro
+            if dance.pro_open_category_id == @category.id
+              @entries['Open'][dance.name] = true
+            end
 
-          if dance.closed_category_id == @category.id
-            @entries['Closed'][dance.name] = true
-          end
+            if dance.pro_closed_category_id == @category.id
+              @entries['Closed'][dance.name] = true
+            end
 
-          if dance.solo_category_id == @category.id
-            @entries['Solo'][dance.name] = true
-          end
+            if dance.pro_solo_category_id == @category.id
+              @entries['Solo'][dance.name] = true
+            end
 
-          if dance.multi_category_id == @category.id
-            @entries['Multi'][dance.name] = true
+            if dance.pro_multi_category_id == @category.id
+              @entries['Multi'][dance.name] = true
+            end
+          else
+            if dance.open_category_id == @category.id
+              @entries['Open'][dance.name] = true
+            end
+
+            if dance.closed_category_id == @category.id
+              @entries['Closed'][dance.name] = true
+            end
+
+            if dance.solo_category_id == @category.id
+              @entries['Solo'][dance.name] = true
+            end
+
+            if dance.multi_category_id == @category.id
+              @entries['Multi'][dance.name] = true
+            end
           end
         end
       end
@@ -190,40 +208,108 @@ class CategoriesController < ApplicationController
       @pro_option = Event.first.pro_heats
     end
 
-    def update_dances(include)
+    def update_dances(include, pro)
       @total = 0
 
       Dance.all.each do |dance|
-        if dance.open_category == @category
-          if include['Open'][dance.name].to_i == 0
+        if pro == "1"
+          if dance.open_category == @category
             dance.open_category = nil
           end
-        elsif include['Open'][dance.name].to_i == 1
-          dance.open_category = @category
-        end
 
-        if dance.closed_category == @category
-          if include['Closed'][dance.name].to_i == 0
+          if dance.closed_category == @category
             dance.closed_category = nil
           end
-        elsif include['Closed'][dance.name].to_i == 1
-          dance.closed_category = @category
-        end
 
-        if dance.solo_category == @category
-          if include['Solo'][dance.name].to_i == 0
+          if dance.solo_category == @category
             dance.solo_category = nil
           end
-        elsif include['Solo'][dance.name].to_i == 1
-          dance.solo_category = @category
-        end
 
-        if dance.multi_category == @category
-          if include['Multi'][dance.name].to_i == 0
+          if dance.multi_category == @category
             dance.multi_category = nil
           end
-        elsif include['Multi'] and include['Multi'][dance.name].to_i == 1
-          dance.multi_category = @category
+
+          if dance.pro_open_category == @category
+            if include['Open'][dance.name].to_i == 0
+              dance.pro_open_category = nil
+            end
+          elsif include['Open'][dance.name].to_i == 1
+            dance.pro_open_category = @category
+          end
+
+          if dance.pro_closed_category == @category
+            if include['Closed'][dance.name].to_i == 0
+              dance.pro_closed_category = nil
+            end
+          elsif include['Closed'][dance.name].to_i == 1
+            dance.pro_closed_category = @category
+          end
+
+          if dance.pro_solo_category == @category
+            if include['Solo'][dance.name].to_i == 0
+              dance.pro_solo_category = nil
+            end
+          elsif include['Solo'][dance.name].to_i == 1
+            dance.pro_solo_category = @category
+          end
+
+          if dance.pro_multi_category == @category
+            if include['Multi'][dance.name].to_i == 0
+              dance.pro_multi_category = nil
+            end
+          elsif include['Multi'] and include['Multi'][dance.name].to_i == 1
+            dance.pro_multi_category = @category
+          end
+
+        else
+
+          if dance.pro_open_category == @category
+            dance.pro_open_category = nil
+          end
+
+          if dance.pro_closed_category == @category
+            dance.pro_closed_category = nil
+          end
+
+          if dance.pro_solo_category == @category
+            dance.pro_solo_category = nil
+          end
+
+          if dance.pro_multi_category == @category
+            dance.pro_ßmulti_category = nil
+          end
+
+          if dance.open_category == @category
+            if include['Open'][dance.name].to_i == 0
+              dance.open_category = nil
+            end
+          elsif include['Open'][dance.name].to_i == 1
+            dance.open_category = @category
+          end
+
+          if dance.closed_category == @category
+            if include['Closed'][dance.name].to_i == 0
+              dance.closed_category = nil
+            end
+          elsif include['Closed'][dance.name].to_i == 1
+            dance.closed_category = @category
+          end
+
+          if dance.solo_category == @category
+            if include['Solo'][dance.name].to_i == 0
+              dance.solo_category = nil
+            end
+          elsif include['Solo'][dance.name].to_i == 1
+            dance.solo_category = @category
+          end
+
+          if dance.multi_category == @category
+            if include['Multi'][dance.name].to_i == 0
+              dance.multi_category = nil
+            end
+          elsif include['Multi'] and include['Multi'][dance.name].to_i == 1
+            dance.multi_category = @category
+          end
         end
 
         if dance.changed?
