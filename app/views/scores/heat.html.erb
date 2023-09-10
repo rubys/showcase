@@ -94,7 +94,7 @@ Swiping left and right on mobile devices and tablets also work.
 
     <div class="mb-4">
     <div class="float-right"><b>Studio</b>: <%= studio %></div>
-    <div><b >Level</b>: <%= @heat.entry.level.name %></div>
+    <div><b >Level</b>: <%= @heat.entry.level_name %></div>
     </div>
 
     <div class="mb-4"><span><b>Names</b>:&nbsp;</span><span><%= dancers %></span></div>
@@ -165,7 +165,7 @@ Swiping left and right on mobile devices and tablets also work.
       <tr><td colspan="10" class="bg-gray-400"></tr>
       <% dance = subject.dance_id %>
       <% end %>
-      <% subcat = "#{subject.entry.subject_category(@track_ages)} - #{subject.entry.level.initials}" %>
+      <% subcat = subject.entry.pro ? 'Pro' : "#{subject.entry.subject_category(@track_ages)} - #{subject.entry.level.initials}" %>
       <% if @sort == 'level' and lastcat and subcat != lastcat %>
       <tr>
         <td class="h-4"></td>

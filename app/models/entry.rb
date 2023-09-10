@@ -22,6 +22,8 @@ class Entry < ApplicationRecord
   end
 
   def subject_category(show_ages = true)
+    return '-' if pro
+
     if show_ages
       if follow.type == 'Professional' or not follow.age_id
         "G - #{age.category}"
@@ -42,6 +44,8 @@ class Entry < ApplicationRecord
   end
 
   def subject_lvlcat(show_ages = true)
+    return '-' if pro
+
     if show_ages
       if follow.type == 'Professional'
         "G - #{level.initials} - #{age.category}"

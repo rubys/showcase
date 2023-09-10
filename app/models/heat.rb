@@ -19,11 +19,11 @@ class Heat < ApplicationRecord
 
   def dance_category
     cat = if dance.heat_length or category == 'Multi'
-      dance.multi_category
+      entry.pro ? dance.pro_multi_category : dance.multi_category
     elsif category == "Open"
-      dance.open_category
+      entry.pro ? dance.pro_open_category : dance.open_category
     elsif category == "Solo"
-      solo.category_override || dance.solo_category
+      solo.category_override || entry.pro ? dance.pro_solo_cateogry : dance.solo_category
     else
       dance.closed_category
     end

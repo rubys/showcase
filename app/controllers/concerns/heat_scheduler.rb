@@ -25,6 +25,7 @@ module HeatScheduler
         order = 1000 + heat.solo.order
       else
         category = heat_categories[heat.category]
+        category += 4 if heat.entry.pro
         order = heat.dance.order
       end
 
@@ -164,6 +165,14 @@ module HeatScheduler
         solos[group.dance.solo_category] << group
       elsif dcat == 'Multi'
         multis[group.dance.multi_category] << group
+      elsif dcat == 'Pro Open'
+        cats[group.dance.pro_open_category] << group
+      elsif dcat == 'Pro Closed'
+        cats[group.dance.pro_closed_category] << group
+      elsif dcat == 'Pro Solo'
+        solos[group.dance.pro_solo_category] << group
+      elsif dcat == 'Pro Multi'
+        multis[group.dance.pro_multi_category] << group
       else
         cats[group.override || group.dance.closed_category] << group
       end
@@ -275,6 +284,14 @@ module HeatScheduler
         'Solo'
       when 3
         'Multi'
+      when 4
+        'Pro Closed'
+      when 5
+        'Pro Open'
+      when 6
+        'Pro Solo'
+      when 7
+        'Pro Multi'
       else
         '?'
       end
@@ -290,6 +307,14 @@ module HeatScheduler
         dance&.solo_category
       when 3
         dance&.multi_category
+      when 4
+        dance&.pro_closed_category
+      when 5
+        dance&.pro_open_category
+      when 6
+        dance&.pro_solo_category
+      when 7
+        dance&.pro_multi_category
       else
         nil
       end

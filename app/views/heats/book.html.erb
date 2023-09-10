@@ -175,7 +175,7 @@ tbody::after {
 
     <div class="mb-4">
     <div class="text-xl float-right"><b style="font-family: 'Bevan Regular'">Studio</b>: <%= studio %></div>
-    <div class="text-xl"><b style="font-family: 'Bevan Regular'">Level</b>: <%= heat.entry.level.name %></div>
+    <div class="text-xl"><b style="font-family: 'Bevan Regular'">Level</b>: <%= heat.entry.level_name %></div>
     </div>
 
    
@@ -320,7 +320,7 @@ tbody::after {
            <% if @type == 'judge' %>
            <td class="pl-4 text-center"><%= heat.entry.subject_lvlcat(@track_ages) %>
            <% else %>
-           <td class="pl-4"><%= heat.entry.level.name %>
+           <td class="pl-4"><%= heat.entry.level_name %>
            <!-- td class="pl-4 text-center"><%= heat.entry.subject_category(@track_ages) %> -->
            <% end %>
            <td class="pl-4"><%= link_to heat.studio.name.gsub(/\s-/, "\xA0-"), heat.studio %>
