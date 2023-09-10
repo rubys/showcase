@@ -34,10 +34,15 @@ module EntryForm
 
       instructors = Person.where(type: 'Professional', studio: studios, 
         role: [*seeking, 'Both']).order(:name)
-      @students = Person.where(type: 'Student', studio: @person.studio, 
-        role: [*seeking, 'Both']).order(:name) +
-        Person.where(type: 'Student', studio: @person.studio.pairs,
-        role: [*seeking, 'Both']).order(:name)
+
+      if @person.type == "Professional"
+        @students = []
+      else
+        @students = Person.where(type: 'Student', studio: @person.studio, 
+          role: [*seeking, 'Both']).order(:name) +
+          Person.where(type: 'Student', studio: @person.studio.pairs,
+          role: [*seeking, 'Both']).order(:name)
+      end
 
       @avail = instructors + @students
       surname = @person.name.split(',').first + ','

@@ -3,9 +3,11 @@
     <div class="absolute top-0 right-0 flex flex-col">
     <a class="btn-blue ml-auto cursor-pointer w-full"
       data-list="<%= @instructors.to_json %>">Add instructor</a>
+    <% if @person&.type == "Student" %>  
     <a class="btn-blue ml-auto cursor-pointer w-full"
       data-list="<%= @students.map {|person| [person.name, person.id]}.to_h.to_json %>">Add student</a>
     </div>
+    <% end %>
   <% end %>
 
   <% target = (@formation ? 'formation' : 'entry-box') + '-target' %>
@@ -41,6 +43,7 @@
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'instructor' %>
   <% end %>
 
+  <% if @person&.type == "Student" %>
   <% unless @track_ages == false %>
   <%= form.select :age, @ages, {selected: @age}, title: 'age',
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %>
@@ -48,4 +51,7 @@
 
   <%= form.select :level, @levels, {selected: @level}, title: 'level',
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>
+  <% else %>
+  <p class ="mt-8"></p>
+  <% end %>
 </div>

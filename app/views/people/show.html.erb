@@ -40,6 +40,12 @@ when most dances for an individual are with one instructor but one or two are ch
     <%= up_link 'Add routine', new_solo_path(primary: @person, routine: true), class: "btn-blue" %>
     <% end %>
     </div>
+    <% elsif @person.type == "Professional" and @event.pro_heats %>
+    <div class="float-right flex flex-col justify-end">
+    <%= up_link 'Add pro heats', new_entry_path(primary: @person), class: "btn-purple" %>
+    <%= up_link 'Add pro solo', new_solo_path(primary: @person), class: "btn-purple my-2" %>
+    <%= up_link 'Add pro formation', new_formation_path(primary: @person), class: "btn-purple" %>
+    </div>
     <% end %>
 
     <%= render @person %>
