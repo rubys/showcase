@@ -95,9 +95,9 @@ when most dances for an individual are with one instructor but one or two are ch
               <% if instructor %>
               <td class="row"><%= link_to_if entry.instructor_id, entry.instructor&.display_name, entry.instructor %>
               <% end %>
-              <td class="row"><%= entry.level.name %>
+              <td class="row"><%= entry.level_name %>
               <% if @track_ages %>
-              <td class="row"><%= entry.age.category %>
+              <td class="row"><%= entry.age_category %>
               <% end %>
               <td>
               <form method="get" action="<%= edit_entry_path(entry) %>">

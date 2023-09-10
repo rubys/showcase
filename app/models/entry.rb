@@ -65,6 +65,18 @@ class Entry < ApplicationRecord
     follow == person ? lead : follow 
   end
 
+  def pro
+    follow.type != 'Student' and lead.type != 'Student'
+  end
+
+  def level_name
+    pro ? 'Professional' : level.name
+  end
+
+  def age_category
+    pro ? '-' : age.category
+  end
+
 private
 
   def has_one_instructor
@@ -78,7 +90,7 @@ private
     elsif instructors > 1
       if instructor_id
         errors.add :instructor_id, 'Entry already has an instructor'
-      else
+      elsif not Event.first.pro_heats
         errors.add :lead_id, 'All entries must include a student'
       end
     elsif instructor_id and instructor.type != 'Professional'

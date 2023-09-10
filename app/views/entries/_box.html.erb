@@ -52,6 +52,7 @@
   <%= form.select :level, @levels, {selected: @level}, title: 'level',
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>
   <% else %>
+  <%= form.hidden_field :level, value: Level.maximum(:id) %>
   <p class ="mt-8"></p>
   <% end %>
 </div>

@@ -170,9 +170,16 @@ class EntriesController < ApplicationController
       dances = Dance.order(:order).where(heat_length: nil)
       multis = Dance.order(:order).where.not(heat_length: nil)
 
+      pro = @person&.type == 'Professional'
+
       # current restrictions: no category contains a mix of open/closed/solos/etc, and no
       # category is a "routines" category.
-      cat_ids = %i{open_category_id closed_category_id solo_category_id multi_category_id}
+      if pro
+        cat_ids = %i{pro_open_category_id pro_closed_category_id pro_solo_category_id pro_multi_category_id}
+      else
+        cat_ids = %i{open_category_id closed_category_id solo_category_id multi_category_id}
+      end
+
       used = []
       clean = (Category.where(routines: true).count == 0)
       all = dances + multis
@@ -182,16 +189,26 @@ class EntriesController < ApplicationController
         used += cats
       end
   
-      if clean and Event.first.agenda_based_entries
-        dance_ids = {
-          open_dances: "Open",
-          closed_dances: "Closed",
-          solo_dances: "Solo",
-          multi_dances: "Multi"
-        }
+      if clean and (pro or Event.first.agenda_based_entries)
+        if pro
+          dance_ids = {
+            pro_open_dances: "Open",
+            pro_closed_dances: "Closed",
+            pro_solo_dances: "Solo",
+            pro_multi_dances: "Multi"
+          }
+        else
+          dance_ids = {
+            open_dances: "Open",
+            closed_dances: "Closed",
+            solo_dances: "Solo",
+            multi_dances: "Multi"
+          }
+        end
 
         @agenda = []
         Category.order(:order).each do |cat|
+          next if cat.pro ^ pro
           dances = []
           category = nil
           dance_ids.each do |id, name|
