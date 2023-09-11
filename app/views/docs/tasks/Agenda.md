@@ -15,6 +15,19 @@ Within a category heats are ordered by the order of dances on the dance page, wh
 
 If you have heat entries entered and have set times between heats in the settings, there is a redo button at the top of the agenda page that allows you to schedule heats.
 
+## Pro shows and Pro heats<a id=pro></a>
+
+Some events will have professional shows and professional heats.  This can be enabled by
+checking the "Include pro heats?" option in the settings.
+
+Once enabled, you will need to define one or more agenda categories which have the
+"Professionals only?" option checked for that category.  As with amateur categories,
+check the dances are available for that category.
+
+Finally, create entries, solos, and formations by going to the page for a professional
+participant in the event.  When creating entries for freestyle heats, only the dances
+that were previously defined in a professional category will be available for selection.
+
 ## Making changes
 
  * If you click on an agenda item you can edit any field and click on Update category at the bottom.
