@@ -30,6 +30,15 @@ entry in the common case.
 
 <%= render partial: 'entries/box', locals: {form: form} %>
 
+<% if @agenda.length == 0 %>
+<div class="bg-red-50 text-red-500 px-3 py-2 mb-4 font-medium rounded-lg mt-3">
+  No <u><%= link_to 'agenda categories',  categories_path %></u> 
+  <% if @person&.type == 'Professional' %>
+  defined with <b class="text-black">Professionals only?</b> checked.
+  <% end %>
+</div>
+<% end %>
+
 <% @agenda.each do |agenda| %>
 <%= render partial: 'entries/dances', locals: agenda.merge(form: form) %>
 <% end %>
