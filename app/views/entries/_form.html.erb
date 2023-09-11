@@ -17,7 +17,12 @@
 <div data-controller="info-box">
 <div class="info-button">&#x24D8;</div>
 <ul class="info-box">
+<% if @person.type == 'Professional' %>
+<li>You can control what dances show up on this list by creating <%= link_to 'Agenda', categories_path, class: 'x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium' %> categories
+with <b class="text-black">Professionals only?</b> checked.
+<% else %>
 <li>You can control what dances show up on this list from the <%= link_to 'Dance', dances_path, class: 'x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium' %> page.
+<% end %>
 <li>Clicking on an empty box will check the box.  Clicking again will uncheck it.  A check represents a single dance.  This makes for quick data
 entry in the common case.
 <li>Clicking on an empty box and then typing a number will enter that number a the number of heats for that dance.
@@ -45,7 +50,8 @@ entry in the common case.
 <% end %>
 
 <div class="mx-auto grid grid-cols-3 gap-x-1">
-  <input type="submit" class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" form="entry-form"
+  <input type="submit" class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" form="entry-form"
+    <%= @agenda.length == 0 ? 'disabled' : '' %>
     value="<%= (entry.persisted? ? 'Update' : 'Create') + ' Entry' %>">
   <% if entry.id %>
   <% if entry.heats.any? {|heat| heat.number < 0} %>
