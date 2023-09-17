@@ -15,6 +15,21 @@ regions:
     opacity: '0.8'
     transform: matrix(0.487,0,0,0.487,173.7623,96.3601)
     class: sm_location sm_location_0
+  bos:
+    name: Boston, Massachusetts
+    x: '417.76395153936994'
+    y: '63.18938243130964'
+    width: '2'
+    height: '25'
+    r: '0'
+    rx: '0'
+    ry: '0'
+    fill: "#ffd700"
+    stroke: "#ffffff"
+    style: 'opacity: 0.8; cursor: pointer;'
+    opacity: '0.8'
+    transform: matrix(0.487,0,0,0.487,220.7254,38.8287)
+    class: sm_location sm_location_0
   dfw:
     name: Dallas, Texas
     x: '214.80886127709041'
@@ -99,6 +114,10 @@ studios:
     x: '391.3694373194988'
     y: '115.8462633115947'
     transform: matrix(0.487,0,0,0.487,203.3375,61.9941)
+  cambridge:
+    x: '424.87118241684567'
+    y: '70.70978916588541'
+    transform: matrix(0.487,0,0,0.487,220.5239,38.8391)
   cary:
     x: '379.0754551051185'
     y: '152.7358745537847'
@@ -123,6 +142,10 @@ studios:
     x: '296.5406251954049'
     y: '96.79982973170733'
     transform: matrix(0.487,0,0,0.487,154.6903,52.2233)
+  greenhills:
+    x: '310.334389001436'
+    y: '159.08385839898108'
+    transform: matrix(0.487,0,0,0.487,161.7665,84.175)
   harrisburg:
     x: '385.4385961519026'
     y: '103.21061242859675'
