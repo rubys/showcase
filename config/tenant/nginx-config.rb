@@ -74,6 +74,22 @@ end
 
 @region = ENV['FLY_REGION']
 
+if @region
+  @tenants << OpenStruct.new(
+    owner:  'Demo',
+    region: 'dfw',
+    name:   'demo',
+    base:   "demo",
+    label:  "demo",
+    scope:  "demo",
+    logo:   "intertwingly.png",
+  )
+
+  FileUtils.mkdir_p "/demo/db"
+  FileUtils.mkdir_p "/demo/storage/demo"
+  FileUtils.chown_R 'rails', 'rails', "/demo"
+end
+
 years = showcases.select {|year, sites| sites.any? {|name, site| site[:region] == @region}}.
   map do |year, sites|
     sites.select! {|name, site| site[:region] == @region}
@@ -230,7 +246,7 @@ server {
   allow ::1;
 
   set $realm "Showcase";
-  if ($request_uri ~ "^/showcase/(assets/|cable$|docs/|password/|publish/|regions/(<%= @regions.join('|') %>)?$|studios/(<%= @studios.join('|') %>)$|$)") { set $realm off; }
+  if ($request_uri ~ "^/showcase/(assets/|cable$|demo/|docs/|password/|publish/|regions/(<%= @regions.join('|') %>)?$|studios/(<%= @studios.join('|') %>)$|$)") { set $realm off; }
   <%- if @region -%>
   if ($request_uri ~ "^/showcase/<%= @cables %>/cable$") { set $realm off; }
   <%- end -%>
@@ -282,11 +298,17 @@ server {
     root <%= @git_path %>/public;
     passenger_app_group_name showcase-<%= tenant.label %>;
     passenger_env_var RAILS_APP_OWNER <%= tenant.owner.inspect %>;
+<% if tenant.owner == "Demo" &&  ENV['RAILS_DB_VOLUME'] -%>
+    passenger_env_var DATABASE_URL sqlite3:///demo/db/<%= tenant.label %>.sqlite3;
+    passenger_env_var RAILS_DB_VOLUME /demo/db;
+    passenger_env_var RAILS_STORAGE <%= File.join('/demo/storage', tenant.label) %>;
+<% else -%>
 <% if ENV['RAILS_DB_VOLUME'] -%>
     passenger_env_var DATABASE_URL sqlite3://<%= "#{ENV['RAILS_DB_VOLUME']}/#{tenant.label}.sqlite3" %>;
     passenger_env_var RAILS_DB_VOLUME <%= ENV['RAILS_DB_VOLUME'] %>;
 <% end -%>
     passenger_env_var RAILS_STORAGE <%= File.join(@storage, tenant.label) %>;
+<% end -%>
     passenger_env_var RAILS_APP_DB <%= tenant.label %>;
 <% if tenant.label == 'index' -%>
     passenger_env_var RAILS_SERVE_STATIC_FILES true;
