@@ -6,6 +6,9 @@ if ENV['FLY_APP_NAME']
   # start rsync daemon
   system "rsync --daemon"
 
+  FileUtils.mkdir_p ENV['RAILS_DB_VOLUME']
+  FileUtils.mkdir_p ENV['RAILS_STORAGE']
+
   # change ownership of data files
   FileUtils.chown_R 'rails', 'rails', [
     ENV['RAILS_DB_VOLUME'],
