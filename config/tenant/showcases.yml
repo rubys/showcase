@@ -15,6 +15,10 @@
         :name: Chesapeake Classic
       gratitudegala:
         :name: Gratitude Gala
+  austin:
+    :name: Austin
+    :region: dfw
+    :logo: arthur-murray-logo.gif
   charlotte:
     :name: Charlotte
     :region: atl
