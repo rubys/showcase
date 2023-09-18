@@ -79,7 +79,6 @@ if @region
     owner:  'Demo',
     region: 'dfw',
     name:   'demo',
-    base:   "demo",
     label:  "demo",
     scope:  "demo",
     logo:   "intertwingly.png",
@@ -88,6 +87,7 @@ if @region
   FileUtils.mkdir_p "/demo/db"
   FileUtils.mkdir_p "/demo/storage/demo"
   FileUtils.chown_R 'rails', 'rails', "/demo"
+  File.symlink "/data/db/index.sqlite3", "/demo/db/index.sqlite3"
 end
 
 years = showcases.select {|year, sites| sites.any? {|name, site| site[:region] == @region}}.
@@ -171,6 +171,7 @@ end
   next if @region and tenant.region and @region != tenant.region
   ENV['RAILS_APP_DB'] = tenant.label
   database = "#{@dbpath}/#{tenant.label}.sqlite3"
+  database = "/demo/db/#{tenant.label}.sqlite3" if tenant.owner == "Demo"
 
   if tenant.base and not File.exist?(database)
     basedb = "#{@dbpath}/#{tenant.base}.sqlite3"

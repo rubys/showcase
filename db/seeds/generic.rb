@@ -2,6 +2,10 @@ require 'yaml'
 
 config = YAML.load(IO.read "#{__dir__}/generic.yaml")
 
+if ENV['RAILS_APP_DB'] == 'demo'
+  config[:settings][:event][:name] = 'Demo Event'
+end
+
 ###
 
 Event.delete_all
