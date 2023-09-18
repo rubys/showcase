@@ -4,8 +4,13 @@ If you are an event owner, only yourself, myself, and only the studios you indic
 wish to be allowed access.  The only pages that do **not** require a password to
 access are the mobile and counter pages.
 
-At the moment, only studios and individual dance companies can request access.  The information
-I need is an email address and a contact name.  Once this is received, I will assign a
+At the moment, only studios and individual dance companies can request access.  The information I need is:
+
+  * A studio name
+  * A contact name
+  * An email address
+
+Once this is received, I will assign a
 user id, and send a password reset request to the email address.  This email will
 contain a link to a form that allows the user id to be changed, and a password to be
 set.
