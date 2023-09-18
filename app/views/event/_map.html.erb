@@ -238,6 +238,7 @@
     <tspan dy="7.5000085449218545">AS</tspan>
   </text>
    <% @map['regions'].each do |token, region| -%>
+   <% next unless @regions[token] %>
    <a xlink:title="<%= region['name'] %>" href="https://smooth.fly.dev/showcase/regions/<%= token %>">
      <rect x="<%= region['x'] %>" y="<%= region['y'] %>" width="25" height="25" r="0" rx="0" ry="0" fill="#ffd700" stroke="#ffffff" style="opacity: 0.8; cursor: pointer;" stroke-width="2" opacity="0.8" transform="<%= region['transform'] %>"></rect>
    </a>
