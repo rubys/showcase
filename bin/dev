@@ -20,7 +20,7 @@ if [[ $# -gt 0 ]]; then
     export HTTP_X_REMOTE_USER=$2
   fi
 
-  if [[ $1 -eq "test" ]]; then
+  if [[ "$1" = "test" ]]; then
     RAILS_ENV=test bin/rails db:prepare db:fixtures:load
   fi
 fi
