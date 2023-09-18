@@ -180,7 +180,7 @@ class UsersController < ApplicationController
       if (@@encryptor.decrypt_and_verify(params[:admin].to_s) == dom_id(@user) rescue false)
         params.require(:user).permit(:userid, :password, :password_confirmation, :email, :name1, :name2, :token, :link, :sites)
       else
-        params.require(:user).permit(:userid, :password, :password_confirmation, :email, :name1, :name2)
+        params.require(:user).permit(:userid, :password, :password_confirmation, :email, :name1, :name2, :sites)
       end
     end
 
