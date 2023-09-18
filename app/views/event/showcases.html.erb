@@ -33,7 +33,7 @@ can click on it to see helpful hints.</li>
   </a>
 
   <ul class="mt-2 list-disc list-inside">
-    <% sites.each do |token, info| %>
+    <% sites.sort_by {|token, info| info[:name]}.each do |token, info| %>
     <li>
       <% if info[:events] %>
       <a href="<%= "#{@scope}/#{year}/#{token}".squeeze('/') %>/">

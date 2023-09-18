@@ -106,6 +106,14 @@ regions:
     transform: matrix(0.487,0,0,0.487,25.4847,9.7624)
     class: sm_location sm_location_5
 studios:
+  austin:
+    x: 215.3392061770942
+    y: 224.60104201344728
+    transform: matrix(0.487,0,0,0.487,113.034,117.7853)
+  westlake:
+    x: 214.78019774309408
+    y: 223.85988316690455
+    transform: transform="matrix(0.487,0,0,0.487,112.7472,117.4051)"
   alexandria:
     x: '387.28262954012'
     y: '118.56479586421804'
