@@ -186,7 +186,7 @@ end
   ENV['DATABASE_URL'] = "sqlite3://#{database}"
   system 'bin/rails db:prepare'
 
-  count = `sqlite3 #{@database} "select count(*) from events"`.to_i
+  count = `sqlite3 #{database} "select count(*) from events"`.to_i
   if count == 0
     system 'bin/rails db:seed'
 
