@@ -35,5 +35,17 @@ if processes == 0
       rsync://[#{addr}]/data/
     ]
   end
+
+  demo = '/demo/db/demo.sqlite3'
+
+  # keep track of when demo was last updated
+  if File.exist? demo
+    if File.exist? "#{demo}.time"
+      if File.mtime(demo) > File.mtime("#{demo}.time")
+        FileUtils.touch "#{demo}.time"
+      end
+    elsif File.mtime(demo) > File.mtime("#{demo}.seed")
+      FileUtils.touch "#{demo}.time"
+    end
+  end
 end
-  

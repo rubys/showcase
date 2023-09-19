@@ -62,7 +62,7 @@ class EventController < ApplicationController
     @options = Billable.where(type: 'Option').order(:order)
 
     if Studio.pluck(:name).all? {|name| name == 'Event Staff'}
-      clone
+      clone unless ENV['RAILS_APP_OWNER'] == 'Demo'
     end
   end
 

@@ -13,6 +13,7 @@ class ApplicationController < ActionController::Base
 
       return unless Rails.env.production?
       return if request.local?
+      return if ENV['RAILS_APP_OWNER'] == 'Demo'
 
       authenticate_or_request_with_http_basic do |id, password| 
         User.authorized? @authuser
