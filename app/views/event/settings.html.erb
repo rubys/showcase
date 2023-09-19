@@ -74,6 +74,21 @@
   </div>
 
   <div class="my-5">
+    <%= form.label :counter_art %>
+    <% if @event.counter_art.attached? and not Rails.env.test? %>
+    <%= image_tag @event.counter_art.url, style: 'height: 5em' %>
+    <% end %>
+    <%= form.file_field :counter_art, 
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="inline">
+    <%= form.submit value: 'Save', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  </div>
+
+  <h1 class="mt-16 font-bold text-4xl mb-6" id="staff">Event Options</h1>
+
+  <div class="my-5">
   <%= form.label :column_order, 'Heat list column order' %>
   <ul class="ml-6">
   <li class="my-2"><%= form.radio_button :column_order, 1 %> Lead, Follow
@@ -114,9 +129,15 @@
   </ul>
   </div>
 
+
+  <div class="my-5">
+    <%= form.check_box :intermix, class: 'entry-count h-10' %>
+    <%= form.label :intermix, 'Intermix dances within category:' %>
+  </div>
+
   <div class="my-5">
     <%= form.check_box :judge_comments, class: 'entry-count h-10' %>
-    <%= form.label :judge_comments, 'Enable Judge comments?' %>
+    <%= form.label :judge_comments, 'Enable judge comments?' %>
   </div>
 
   <div class="my-5">
@@ -137,15 +158,6 @@
   <div class="my-5">
     <%= form.check_box :agenda_based_entries, class: 'entry-count h-10' %>
     <%= form.label :agenda_based_entries, 'Match entry forms to agenda?' %>
-  </div>
-
-  <div class="my-5">
-    <%= form.label :counter_art %>
-    <% if @event.counter_art.attached? and not Rails.env.test? %>
-    <%= image_tag @event.counter_art.url, style: 'height: 5em' %>
-    <% end %>
-    <%= form.file_field :counter_art, 
-      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
   <div class="inline">
@@ -233,11 +245,6 @@ And people in any age category can be on the floor at the same time.
   <% else %>
     <%= form.hidden_field :heat_range_age, value: @ages-1 %>
   <% end %>
-
-  <div class="my-5">
-    <%= form.label :intermix, 'Intermix dances within category:' %>
-    <%= form.check_box :intermix, class: 'entry-count h-10' %>
-  </div>
 
   <div class="inline">
     <%= form.submit value: 'Save', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
