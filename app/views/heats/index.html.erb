@@ -74,10 +74,10 @@ a scheduled heat time will be added to each heat.
         <td class="row text-right"><a href="#heat-<%= heats.last&.first %>"><%= heats.last&.first %></a>
         <% if @start and @cat_start[cat] %>
         <% unless @oneday %>
-        <td class="row"><%= Date::DAYNAMES[@cat_start[cat]&.wday || 7] %>
+        <td class="row"><%= cat == 'Unscheduled' ? '' : Date::DAYNAMES[@cat_start[cat]&.wday || 7] %>
         <% end %>
-        <td class="row"><%= @cat_start[cat]&.strftime("%I:%M %P") %>
-        <td class="row"><%= @cat_finish[cat]&.strftime("%I:%M %P") %>
+        <td class="row"><%= cat == 'Unscheduled' ? '' : @cat_start[cat]&.strftime("%I:%M %P") %>
+        <td class="row"><%= cat == 'Unscheduled' ? '' : @cat_finish[cat]&.strftime("%I:%M %P") %>
         <% elsif not @categories[cat]&.day.blank? and not @oneday %>
         <td class="row"><%= @categories[cat].day %>
         <% end %>
