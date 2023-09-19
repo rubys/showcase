@@ -36,6 +36,9 @@ module EntryForm
         role: [*seeking, 'Both']).order(:name)
 
       if @person.type == "Professional"
+        more = Person.where(type: 'Professional',
+          role: [*seeking, 'Both']).order(:name) - instructors
+        instructors += more
         @students = []
       else
         @students = Person.where(type: 'Student', studio: @person.studio, 

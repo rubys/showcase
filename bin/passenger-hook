@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'socket'
+require 'fileutils'
 
 if Process.uid == 0
   status = `passenger-status`
