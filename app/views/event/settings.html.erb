@@ -83,10 +83,10 @@
   </div>
 
   <div class="inline">
-    <%= form.submit value: 'Save', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+    <%= form.button 'Save', name: 'anchor', value: 'description', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
   </div>
 
-  <h1 class="mt-16 font-bold text-4xl mb-6" id="staff">Event Options</h1>
+  <h1 class="mt-16 font-bold text-4xl mb-6" id="options">Event Options</h1>
 
   <div class="my-5">
   <%= form.label :column_order, 'Heat list column order' %>
@@ -161,7 +161,7 @@
   </div>
 
   <div class="inline">
-    <%= form.submit value: 'Save', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+    <%= form.button 'Save', name: 'anchor', value: 'options', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
   </div>
 <% end %>
 
@@ -247,7 +247,7 @@ And people in any age category can be on the floor at the same time.
   <% end %>
 
   <div class="inline">
-    <%= form.submit value: 'Save', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+    <%= form.button 'Save', name: 'anchor', value: 'adjust', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
   </div>  
 <% end %>
 

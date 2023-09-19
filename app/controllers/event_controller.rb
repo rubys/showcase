@@ -155,6 +155,7 @@ class EventController < ApplicationController
       anchor = 'description' if params[:event][:name]
       anchor = 'prices' if params[:event][:heat_cost]
       anchor = 'adjust' if params[:event][:intermix]
+      anchor = params[:anchor] if params[:anchor]
       redirect_to settings_event_index_path(anchor: anchor), notice: "Event was successfully updated."
     else
       settings
