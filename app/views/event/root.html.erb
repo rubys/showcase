@@ -14,6 +14,10 @@
   </ul>
 </div>
 
+<% if ENV['RAILS_APP_DB'] == "demo" -%>
+<span class="absolute text-5xl -rotate-45 text-purple-600">Demo</span>
+<% end -%>
+
 <span data-controller="event-navigation">
   <a rel="up" href="<%= @up || ".." %>"></a>
   <% if @prev %><a rel="prev" href="<%= @prev %>"></a><% end %>
@@ -75,4 +79,16 @@
   <a href="https://github.com/rubys/showcase#readme">code</a>,
   <a href="https://github.com/rubys/showcase/issues">issues</a>.
   </p>
+
+<% if @heats == 0 && @unscheduled == 0 -%>
+<p class="mt-4">Click on the <span class="text-emerald-600">ⓘ</span> in the top
+left corner of this page to see helpful hints.</p>
+
+<% end -%>
+<% if ENV['RAILS_APP_DB'] == "demo" -%>
+<p class="mt-4 p-2 border border-red-600 rounded-md">
+All data entered in this demo event is visible to everyone, and will be discarded about an hour after this
+demo is last accessed, or when a new version of the showcase software is deployed, whichever comes first.
+</p>
+<% end %>
 </div>

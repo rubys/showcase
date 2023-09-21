@@ -100,7 +100,7 @@ Rails.application.configure do
     logger.formatter = config.log_formatter
 
     log_volume = ENV['RAILS_LOG_VOLUME']
-    if log_volume
+    if log_volume and Dir.exist?(log_volume)
       volume_logger  = ActiveSupport::Logger.new("#{log_volume}/#{ENV['RAILS_APP_DB']}.log", 3)
       logger         = logger.extend ActiveSupport::Logger.broadcast(volume_logger)
     end
