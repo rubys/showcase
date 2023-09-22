@@ -75,7 +75,11 @@
 
   <p class="mt-4 text-right">
   See:
+  <% if @heats == 0 && @unscheduled == 0 -%>
+  <%= link_to 'docs', docs_path, class: 'font-bold text-xl text-purple-600' %>,
+  <% else -%>
   <%= link_to 'docs', docs_path %>,
+  <% end -%>
   <a href="https://github.com/rubys/showcase#readme">code</a>,
   <a href="https://github.com/rubys/showcase/issues">issues</a>.
   </p>
