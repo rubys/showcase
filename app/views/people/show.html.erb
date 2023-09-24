@@ -324,6 +324,12 @@ when most dances for an individual are with one instructor but one or two are ch
     <% end %>
 
     <% if @person.type == 'Judge' %>
+    <% if @event.assign_judges > 0 %>
+    <div class="mt-4" data-controller="assign-judges" data-present-url=<%= toggle_present_person_path %>>
+      <span class="mx-4">On floor?</span>
+      <input type='checkbox' name="active" <% if @person.present %>checked <% end %>class="w-6 h-6 mr-3">
+    </div>
+    <% end %>
     <% sort = @person.judge&.sort || 'back'%>
     <div class="mt-4 mx-auto">
     <% if @event.open_scoring == '#' %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_09_09_234512) do
+ActiveRecord::Schema[7.0].define(version: 2023_09_23_182922) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -24,8 +24,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_09_234512) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
-    t.integer "record_id", null: false
-    t.integer "blob_id", null: false
+    t.bigint "record_id", null: false
+    t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
     t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
     t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
@@ -44,7 +44,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_09_234512) do
   end
 
   create_table "active_storage_variant_records", force: :cascade do |t|
-    t.integer "blob_id", null: false
+    t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
@@ -167,6 +167,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_09_234512) do
     t.boolean "judge_comments", default: false
     t.boolean "agenda_based_entries", default: false
     t.boolean "pro_heats", default: false
+    t.integer "assign_judges", default: 0
   end
 
   create_table "formations", force: :cascade do |t|
@@ -236,6 +237,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_09_234512) do
     t.datetime "updated_at", null: false
     t.integer "exclude_id"
     t.integer "package_id"
+    t.boolean "present", default: true
     t.index ["age_id"], name: "index_people_on_age_id"
     t.index ["exclude_id"], name: "index_people_on_exclude_id"
     t.index ["level_id"], name: "index_people_on_level_id"

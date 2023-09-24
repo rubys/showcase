@@ -2,7 +2,7 @@ class PeopleController < ApplicationController
   include Printable
   
   before_action :set_person, only: 
-    %i[ show edit update destroy get_entries post_entries ]
+    %i[ show edit update destroy get_entries post_entries toggle_present ]
 
   def heats
     event = Event.last
@@ -532,6 +532,18 @@ class PeopleController < ApplicationController
         edit
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @person.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  def toggle_present
+    logger.info params.inspect
+
+    respond_to do |format|
+      if @person.update({present: !@person.present})
+        format.json { render json: { present: @person.present } }
+      else
+        format.json { render json: { present: @person.present }, status: :unprocessable_entity }
       end
     end
   end

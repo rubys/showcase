@@ -149,6 +149,8 @@ class ScoresController < ApplicationController
     @nologo = true
     @backnums = @event.backnums
     @track_ages = @event.track_ages
+
+    @assign_judges = @event.assign_judges > 0 && @heat.category != 'Solo' && Person.where(type: 'Judge').count > 1
   end
 
   def post

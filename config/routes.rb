@@ -107,6 +107,7 @@ Rails.application.routes.draw do
       post 'studio_list', on: :collection, action: 'studio_list'
       get 'invoice', on: :member
       get 'staff', on: :collection
+      post 'toggle_present', on: :member
     end
 
     resources :studios do
