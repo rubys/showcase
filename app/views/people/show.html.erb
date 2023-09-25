@@ -339,6 +339,12 @@ when most dances for an individual are with one instructor but one or two are ch
     <%= link_to 'Score heats - radio', judge_heatlist_path(judge: @person, style: 'radio', sort: sort), class: "btn-purple" %>
     <% end %>
     </div>
+    <% if @event.assign_judges > 0 %>
+    <div class="mt-4 flex">
+    <%= button_to 'Assign judges', assign_judges_person_path(@person), class: "btn-blue" %>
+    <%= button_to 'Reset assignments', reset_assignments_person_path(@person), class: "btn-pale-blue" %>
+    </div>
+    <% end %>
     <div class="mt-4 mx-auto">
     <%= link_to 'Scores by level', by_level_scores_path , class: "btn-pale-green" %>
     <%= link_to 'Scores by age', by_age_scores_path , class: "btn-pale-green" %>

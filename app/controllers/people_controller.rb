@@ -548,6 +548,30 @@ class PeopleController < ApplicationController
     end
   end
 
+  def assign_judges
+    Score.where(value: nil, comments: nil, good: nil, bad: nil).delete_all
+
+    judges = Person.where(type: 'Judge', present: true).pluck(:id).shuffle
+    scored = Score.joins(:heat).distinct.where.not(heats: {number: ...0}).pluck(:number)
+    unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).pluck(:id)
+
+    queue = []
+    Score.transaction do
+      unscored.each do |heat_id|
+        queue = judges.dup if queue.empty?
+        Score.create! heat_id: heat_id, judge_id: queue.pop
+      end
+    end
+
+    redirect_to person_path(params[:id]), notice: "#{unscored.count} entries assigned to #{judges.count} judges."
+  end
+
+  def reset_assignments
+    Score.where(value: nil, comments: nil, good: nil, bad: nil).delete_all
+
+    redirect_to person_path(params[:id]), :notice => "Assignments cleared"
+  end
+
   # DELETE /people/1 or /people/1.json
   def destroy
     studio = @person.studio

@@ -108,6 +108,8 @@ Rails.application.routes.draw do
       get 'invoice', on: :member
       get 'staff', on: :collection
       post 'toggle_present', on: :member
+      post 'assign_judges', on: :member
+      post 'reset_assignments', on: :member
     end
 
     resources :studios do

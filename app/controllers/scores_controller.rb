@@ -26,7 +26,9 @@ class ScoresController < ApplicationController
       [heats.map(&:number).min, category&.name]
     end.to_h
 
-    @scored = Score.includes(:heat).where(judge: @judge).group_by {|score| score.heat.number}
+    @scored = Score.includes(:heat).where(judge: @judge).
+      select {|score| score.value || score.comments || score.good || score.bad}.
+      group_by {|score| score.heat.number}
     @count = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance).count
   end
 
@@ -93,7 +95,12 @@ class ScoresController < ApplicationController
     @ballrooms = assign_rooms(ballrooms, @subjects)
 
     @sort = params[:sort] || 'back'
-    if @sort == 'level'
+    if @event.assign_judges > 0
+      @subjects.sort_by! do |subject|
+        entry = subject.entry
+        [subject.scores.any? {|score| score.judge_id == @judge.id} ? 0 : 1, entry.lead.back || 0]
+      end
+    elsif @sort == 'level'
       @subjects.sort_by! do |subject|
         entry = subject.entry
         [entry.level_id || 0, entry.age_id || 0, entry.lead.back || 0]
@@ -150,7 +157,7 @@ class ScoresController < ApplicationController
     @backnums = @event.backnums
     @track_ages = @event.track_ages
 
-    @assign_judges = @event.assign_judges > 0 && @heat.category != 'Solo' && Person.where(type: 'Judge').count > 1
+    @assign_judges = false # @event.assign_judges > 0 && @heat.category != 'Solo' && Person.where(type: 'Judge').count > 1
   end
 
   def post
@@ -168,13 +175,13 @@ class ScoresController < ApplicationController
         score.comments = params[:comments]
       end
 
-      keep = score.good || score.bad || score.comments || score.value
+      keep = score.good || score.bad || score.comments || score.value || Event.first.assign_judges > 0
       if keep ? score.save : score.delete
         render json: score.as_json
       else
         render json: score.errors, status: :unprocessable_entity
       end
-    elsif not params[:score].blank? or not score.comments.blank?
+    elsif not params[:score].blank? or not score.comments.blank? or Event.first.assign_judges > 0
       score.value = params[:score]
       if score.save
         render json: score.as_json
@@ -225,7 +232,7 @@ class ScoresController < ApplicationController
         return
       end
 
-      keep = score.good || score.bad || score.comments || score.value
+      keep = score.good || score.bad || score.comments || score.value || Event.first.assign_judges > 0
 
       if keep ? score.save : score.delete
         render json: score.as_json

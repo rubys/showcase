@@ -180,7 +180,11 @@ Swiping left and right on mobile devices and tablets also work.
       <% else %>
       <tr class="hover:bg-yellow-200 line-through opacity-50">
       <% end %>
-        <td class="py-2 font-bold text-xl"><%= subject.lead.back %>
+        <% if @event.assign_judges > 0 && subject.scores.any? {|score| score.judge_id == @judge.id} %>
+        <td class="py-2 font-bold text-xl"><span class="border-2 border-red-600 px-2 rounded-full"><%= subject.lead.back %></span>
+        <% else %>
+        <td class="py-2 text-xl"><%= subject.lead.back %>
+        <% end %>
         <% if subject.lead.type == 'Student' %>
         <td><%= subject.follow.display_name %>
         <td><%= subject.lead.display_name %>
