@@ -157,6 +157,7 @@ Swiping left and right on mobile devices and tablets also work.
       </tr>
     </thead>
     <% lastcat = nil %>
+    <% lastassign = true %>
     <% @ballrooms.each do |ballroom, subjects| %>
       <% next if subjects.empty? %>
       <% dance = subjects.first.dance_id %> 
@@ -169,18 +170,20 @@ Swiping left and right on mobile devices and tablets also work.
       <% dance = subject.dance_id %>
       <% end %>
       <% subcat = subject.entry.pro ? 'Pro' : "#{subject.entry.subject_category(@track_ages)} - #{subject.entry.level.initials}" %>
-      <% if @sort == 'level' and lastcat and subcat != lastcat %>
+      <% assign = @event.assign_judges > 0 && subject.scores.any? {|score| score.judge_id == @judge.id} %>
+      <% if (@sort == 'level' and lastcat and subcat != lastcat) || (@event.assign_judges > 0 && assign != lastassign && lastcat) %>
       <tr>
-        <td class="h-4"></td>
+        <td class="<% if @event.judge_comments %>h-12<% else %>h-4<% end %>"></td>
       </tr>
       <% end %>
       <% lastcat = subcat %>
+      <% lastassign = assign %>
       <% if subject.number > 0 %>
       <tr class="hover:bg-yellow-200">
       <% else %>
       <tr class="hover:bg-yellow-200 line-through opacity-50">
       <% end %>
-        <% if @event.assign_judges > 0 && subject.scores.any? {|score| score.judge_id == @judge.id} %>
+        <% if @event.assign_judges > 0 && assign %>
         <td class="py-2 font-bold text-xl"><span class="border-2 border-red-600 px-2 rounded-full"><%= subject.lead.back %></span>
         <% else %>
         <td class="py-2 text-xl"><%= subject.lead.back %>
