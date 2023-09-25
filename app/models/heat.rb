@@ -9,6 +9,7 @@ class Heat < ApplicationRecord
   def number
     return @number if @number
     value = super
+    value = 0 if value.nil?
     @number = value.to_i == value ? value.to_i : value
   end
 
