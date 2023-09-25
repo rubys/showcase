@@ -1,4 +1,9 @@
 ---
+2024:                                                                           
+  raleigh:
+    :name: Raleigh
+    :region: iad
+    :logo: arthur-murray-logo.gif
 2023:                                                                           
   alexandria:
     :name: Alexandria
