@@ -17,7 +17,8 @@
 <div class="flex flex-1 w-screen overflow-y-auto">
 <table class="w-full table-auto">
   <% @heats.each do |number, heats| %>
-  <% ballrooms = heats.first.dance_category.ballrooms || @event.ballrooms %>
+  <% next if number == 0 %>
+  <% ballrooms = heats.first.dance_category&.ballrooms || @event.ballrooms %>
   <% ballroom = ballrooms == 1 ? '' : 'A' %>
   <thead>
   <tr class="bg-slate-200">
