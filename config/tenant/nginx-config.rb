@@ -241,6 +241,7 @@ server {
 <% if ENV['FLY_REGION'] -%>
   rewrite ^/$ /showcase/regions/ redirect;
   rewrite ^/showcase$ /showcase/ redirect;
+  rewrite ^/showcase/demo$ /showcase/demo/ redirect;
 <% else -%>
   rewrite ^/(showcase)?$ /showcase/ redirect;
 <% end -%>

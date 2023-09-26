@@ -28,6 +28,10 @@
     :name: Charlotte
     :region: atl
     :logo: arthur-murray-logo.gif
+  carmel:
+    :name: Carmel
+    :region: ord
+    :logo: arthur-murray-logo.gif
   chicago:
     :name: Chicago
     :region: ord
