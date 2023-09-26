@@ -108,7 +108,7 @@
     <th align="left"><%= number_to_currency person.package.price %> per person</th>
   </tr>
   <% end %>
-  <% unless @event.student_package_description.empty? %>
+  <% unless @event.student_package_description.blank? %>
   <tr>
     <td colspan="2" class="whitespace-pre-wrap pt-4"><%= @event.student_package_description %>
   </tr>
