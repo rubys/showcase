@@ -106,6 +106,10 @@
     :name: Salem
     :region: sea
     :logo: arthur-murray-logo.gif
+  sydney:
+    :name: Sydney
+    :region: syd
+    :logo: arthur-murray-logo.gif
   sugarland:
     :name: Sugar Land
     :region: dfw
