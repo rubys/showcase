@@ -24,6 +24,14 @@
         </thead>
         <tbody>
         <% end %>
+        <% if heat.category == "Multi" %>
+        <% heat.dance.multi_children.each_with_index do |multi, i| %>
+        <tr <% if i == 0 %>id="<%= dom_id heat %>"<% end %> class="text-black">
+          <td><%= heat.number %> - Part <%= i+1 %>
+          <td><%= "#{heat.category} #{heat.dance.name} - #{multi.dance.name}" %>
+        </tr>
+        <% end %>
+        <% else %>
         <tr id="<%= dom_id heat %>" class="text-black">
           <td><%= heat.number %>
           <% if heat.solo %>
@@ -34,6 +42,7 @@
           <td><%= "#{heat.category} #{heat.dance.name}" %>
           <% end %>
         </tr>
+        <% end %>
       <% end %>
     </tbody>
   </table>
