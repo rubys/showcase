@@ -240,7 +240,8 @@ Swiping left and right on mobile devices and tablets also work.
       </div>
       </td>
       </tr>
-      <% elsif @event.judge_comments and @style != 'emcee' %>
+      <% end %>
+      <% if @event.judge_comments and @style != 'emcee' %>
       <tr>
         <td>
         <td colspan="4">

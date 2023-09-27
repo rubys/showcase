@@ -13,6 +13,18 @@ export default class extends Controller {
       previous.classList.remove('bg-yellow-200');
     });
 
+    let next = this.element.nextElementSibling;
+
+    if (next.querySelector('textarea')) {
+      next.addEventListener('mouseenter', () => {
+        previous.classList.add('bg-yellow-200');
+      });
+  
+      next.addEventListener('mouseleave', () => {
+        previous.classList.remove('bg-yellow-200');
+      });
+    }
+
     for (let button of this.element.querySelectorAll('button')) {
       let span = button.querySelector('span');
       let abbr = button.querySelector('abbr');
