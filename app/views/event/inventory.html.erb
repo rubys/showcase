@@ -1,0 +1,26 @@
+<div class="w-full mx-12">
+
+<table class="table-auto w-full">
+<thead>
+<tr>
+<th align="left">Studio
+<th align="left">Event
+<th align="left"><%= link_to "Date",  inventory_path %>
+<th align="right"><%= link_to "People",  inventory_path(sort: 'people') %>
+<th align="right"><%= link_to "Heats",  inventory_path(sort: 'heats') %>
+<th align="right"><%= link_to "Entries", inventory_path(sort: 'entries') %>
+<tr>
+</thead>
+<tbody>
+<% @events.each do |event| %>
+<tr>
+  <td><%= event[:studio] %>
+  <td><%= event[:name] %>
+  <td><%= event[:date] %>
+  <td align="right"><%= event[:people] %>
+  <td align="right"><%= event[:heats] %>
+  <td align="right"><%= event[:entries] %>
+<% end %>
+</tbody>
+</table>
+</div>

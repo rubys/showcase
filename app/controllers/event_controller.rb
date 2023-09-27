@@ -274,6 +274,55 @@ class EventController < ApplicationController
     end
   end
 
+  def inventory
+    showcases
+
+    @events = []
+
+    @showcases.each do |year, sites|
+      sites.each do |token, info|
+        if info[:events]
+          info[:events].each do |subtoken, subinfo|
+            subinfo[:db] = "#{year}-#{token}-#{subtoken}"
+            subinfo[:studio] = info[:name]
+            subinfo[:year] = year
+            @events << subinfo
+          end
+        else
+          info[:db] = "#{year}-#{token}"
+          info[:studio] = info[:name]
+          info[:name] = nil
+          info[:year] = year
+          @events << info
+        end
+      end
+    end
+
+    @events.each do |event|
+      if event["date"].blank?
+        event[:date] = event[:year].to_s
+      else
+        date = event["date"].sub(/(^|[a-z]+ )?\d+\s*[-&]\s*\d+/) {|str| str.sub(/\s*[-&]\s*.*/, '')}
+        event[:date] = Chronic.parse(date, now: Time.local(event[:year], 1, 1)).to_date.iso8601
+      end
+
+      event[:name] ||= dbquery(event[:db], 'events', 'name').first.values.first
+
+      event[:people] = dbquery(event[:db], 'people', 'count(id)').first.values.first
+      event[:entries] = dbquery(event[:db], 'heats', 'count(id)', 'number > 0').first.values.first
+      event[:heats] = dbquery(event[:db], 'heats', 'count(distinct number)', 'number > 0').first.values.first
+    end
+
+    @events.sort_by! {|event| event[:studio]}
+    @events.reverse!
+    @events.sort_by! {|event| event[:date]}
+    @events.reverse!
+
+    @events.sort_by! {|event| -event[:heats].to_i} if params[:sort] == 'heats'
+    @events.sort_by! {|event| -event[:people].to_i} if params[:sort] == 'people'
+    @events.sort_by! {|event| -event[:entries].to_i} if params[:sort] == 'entries'
+  end
+
   def regions
     showcases = YAML.load_file('config/tenant/showcases.yml')
     @map = YAML.load_file('config/tenant/map.yml')

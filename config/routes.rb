@@ -22,6 +22,7 @@ Rails.application.routes.draw do
       get "/studios/:studio", to: 'event#showcases', as: 'studio_events'
 
       get "logs", to: 'event#logs'
+      get "inventory", to: 'event#inventory'
     else
       root 'event#root'
     end
