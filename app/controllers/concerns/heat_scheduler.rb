@@ -4,6 +4,9 @@ module HeatScheduler
   def schedule_heats
     Group.set_knobs
 
+    # reset judge assignments
+    Score.where(value: nil, comments: nil, good: nil, bad: nil).delete_all
+
     # remove all scratches and orphaned entries
     Heat.where(number: ...0).each {|heat| heat.destroy}
     Entry.includes(:heats).where(heats: {id: nil}).each {|entry| entry.destroy}
