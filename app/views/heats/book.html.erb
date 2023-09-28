@@ -255,6 +255,9 @@ tbody::after {
           <% if @start %>
           <span class="text-base" style="opacity: 50%">- <%= @start[number]&.strftime("%-I:%M %P") %></span>
           <% end %>
+          <% if @type == 'judge' %>
+          <span class="text-base" style="opacity: 50%">(<%= ballrooms.values.flatten.length %> entries)</span>
+          <% end %>
         </td>
       </tr>
       <% end %>
