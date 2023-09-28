@@ -106,6 +106,10 @@
     :name: Salem
     :region: sea
     :logo: arthur-murray-logo.gif
+  sarasota:
+    :name: Sarasota
+    :region: mia
+    :logo: arthur-murray-logo.gif
   sydney:
     :name: Sydney
     :region: syd
