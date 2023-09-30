@@ -8,6 +8,7 @@ class PeopleController < ApplicationController
     event = Event.last
     @ballrooms = event.ballrooms
     @track_ages = event.track_ages
+    @font_size = event.font_size
     heat_sheets
 
     respond_to do |format|
@@ -19,8 +20,10 @@ class PeopleController < ApplicationController
   end
 
   def individual_heats
-    @ballrooms = Event.last.ballrooms
-    @track_ages = Event.last.track_ages
+    event = Event.last
+    @ballrooms = event.ballrooms
+    @track_ages = event.track_ages
+    @font_size = event.font_size
     @people = [set_person]
     heat_sheets
 
@@ -34,6 +37,7 @@ class PeopleController < ApplicationController
 
   def scores
     score_sheets
+    @font_size = @event.font_size
 
     respond_to do |format|
       format.html { render 'people/scores' }
@@ -46,6 +50,7 @@ class PeopleController < ApplicationController
   def individual_scores
     @people = [set_person]
     score_sheets
+    @font_size = @event.font_size
 
     respond_to do |format|
       format.html { render 'people/scores' }
@@ -209,6 +214,7 @@ class PeopleController < ApplicationController
   def staff
     @professionals = Person.includes(:studio).where(type: 'Professional').order(sort_order)
     @staff = Studio.find(0)
+    @font_size = Event.first.font_size
 
     respond_to do |format|
       format.html { render }

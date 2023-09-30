@@ -409,6 +409,7 @@ class SolosController < ApplicationController
     @event = Event.first
     @layout = 'mx-0'
     @nologo = true
+    @font-size = @event.font_size
   end
 
   def critiques0

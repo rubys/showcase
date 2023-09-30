@@ -163,7 +163,7 @@
   </tr>
   </table>
 
-   <% unless @event.payment_due.empty? %>
+   <% unless @event.payment_due.blank? %>
   <ul class="font-bold">
   <li>Registration and Payment Due:
   <li><%= @event.payment_due %>

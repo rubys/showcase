@@ -52,6 +52,7 @@ class HeatsController < ApplicationController
 
     @layout = ''
     @nologo = true
+    @font_size = Event.first.font_size
 
     respond_to do |format|
       format.html
@@ -67,6 +68,7 @@ class HeatsController < ApplicationController
     @event = Event.last
     @ballrooms = Event.last.ballrooms
     index
+    @font_size = @event.font_size
 
     respond_to do |format|
       format.html

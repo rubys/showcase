@@ -16,11 +16,20 @@
   <ul class="ml-8">
   <li class="my-2"><%= link_to "Heats", @public_url.to_s + '/heats', class: "btn-green w-60" %>
   <li class="my-2"><%= link_to "Counter", @public_url.to_s + '/counter', class: "btn-green w-60" %>
-  <a href="<%= qrcode_event_index_path %>">
+
   <div class="float-right w-1/3">
+  <a href="<%= qrcode_event_index_path %>">
   <%= RQRCode::QRCode.new(@public_url.to_s + '/heats').as_svg(viewbox: true).html_safe %>
-  </div>
   </a>
+
+  <%= form_with model: @event, data: {controller: "autoform"} do |form| %>
+  <div class="my-16">
+  <%= form.label :font_size %>
+  <%= form.text_field :font_size, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  <% end %>
+  </div>
+
   </ul>
 
   <h2 class="font-bold text-2xl my-8">Print</h1>

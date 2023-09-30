@@ -24,6 +24,7 @@ class StudiosController < ApplicationController
 
   def invoices
     index
+    @font_size = @event.font_size
 
     respond_to do |format|
       format.html
@@ -55,6 +56,7 @@ class StudiosController < ApplicationController
   def heats
     @people = Person.where(type: ['Student', 'Professional'], studio: @studio).order(:name)
     heat_sheets
+    @font_size = @event.font_size
 
     respond_to do |format|
        format.html { render 'people/heats' }
@@ -74,6 +76,7 @@ class StudiosController < ApplicationController
   def scores
     @people = @studio.people
     score_sheets
+    @font_size = @event.font_size
 
     solos = Solo.includes(heat: {entry: [:lead, :follow]}).where(follow: {studio_id: @studio}).
       or(Solo.includes(heat: {entry: [:lead, :follow]}).where(follow: {studio_id: @studio})).
@@ -94,6 +97,7 @@ class StudiosController < ApplicationController
 
   def invoice
     generate_invoice([@studio])
+    @font_size = @event.font_size
 
     respond_to do |format|
       format.html
@@ -109,6 +113,7 @@ class StudiosController < ApplicationController
     generate_invoice([@studio], true)
 
     event = Event.first
+    font_size = event.font_size
 
     @heat_cost = @studio.student_heat_cost || @studio.heat_cost || event.heat_cost || 0
     @solo_cost = @studio.student_solo_cost || @studio.solo_cost || event.solo_cost || 0
