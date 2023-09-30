@@ -260,7 +260,7 @@ server {
   <%- end -%>
   if ($request_uri ~ "^/showcase/<%= @indexes %>/?$") { set $realm off; }
   if ($request_uri ~ "^/showcase/[-\w]+\.\w+$") { set $realm off; }
-  if ($request_uri ~ "^/showcase/\d+/\w+/(\w+/)?public/") { set $realm off; }
+  if ($request_uri ~ "^/showcase/\d+/\w+/([-\w+]/)?public/") { set $realm off; }
   auth_basic $realm;
   auth_basic_user_file <%= @dbpath %>/htpasswd;
 <% else -%>
