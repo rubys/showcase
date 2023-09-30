@@ -51,6 +51,10 @@
         :name: Flamingo Fright Festival
       snowball:
         :name: Snowball
+  dayton:
+    :name: Dayton
+    :region: ord
+    :logo: arthur-murray-logo.gif
   durham:
     :name: Durham
     :region: iad
