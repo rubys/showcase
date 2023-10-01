@@ -126,7 +126,7 @@ class ScoresController < ApplicationController
     heats = agenda.to_h.values.flatten
     index = heats.index {|heat| heat.number == @heat.number}
 
-    if @heat.dance.heat_length and (@slot||0) < @heat.dance.heat_length
+    if @heat.dance.heat_length and (@slot||0) < @heat.dance.heat_length * (@heat.dance.semi_finals ? 2 : 1)
       @next = judge_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||0)+1, **options)
     else
       @next = index + 1 >= heats.length ? nil : heats[index + 1]

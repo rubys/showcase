@@ -17,12 +17,18 @@
 
     <% if @heat.dance.heat_length %>
     <div class="text-2xl font-normal">
+    <% if not @heat.dance.semi_finals %>
     Dance <%= @slot %> of <%= @heat.dance.heat_length %>:
+    <% elsif @slot <= @heat.dance.heat_length %>
+    Semi-final <%= @slot %> of <%= @heat.dance.heat_length %>:
+    <% else %>
+    Final <%= @slot - @heat.dance.heat_length %> of <%= @heat.dance.heat_length %>:
+    <% end %>
     <% slots = @heat.dance.multi_children.group_by {|multi| multi.slot} %>
     <% if slots.length > 1 %>
     <%= slots[@slot].sort_by {|multi| multi.dance.order}.map {|multi| multi.dance.name}.join(' / ') %>
     <% elsif slots.values.last&.length == @heat.dance.heat_length %>
-    <%= slots.values.last.sort_by {|multi| multi.dance.order}[@slot - 1].dance.name %>
+    <%= slots.values.last.sort_by {|multi| multi.dance.order}[(@slot - 1) % @heat.dance.heat_length].dance.name %>
     <% elsif slots.values.last %>
     <%= slots.values.last.sort_by {|multi| multi.dance.order}.map {|multi| multi.dance.name}.join(' / ') %>
     <% end %>
@@ -145,6 +151,13 @@ Swiping left and right on mobile devices and tablets also work.
       <% unless @style == 'emcee' or @scores.empty? %>
       <% if @event.open_scoring == '#' %>
         <th class="text-center border-b-2 border-black">Score
+      <% elsif @heat.dance.semi_finals %>
+        <th class="text-center" colspan="<%= @scores.length %>%>">Callback?
+      </tr>
+      <tr>
+        <% @scores.each do |score| %>
+          <th class="border-b-2 border-black">
+        <% end %>
       <% else %>
         <th class="text-center" colspan="<%= @scores.length %>%>">Score
       </tr>
@@ -203,6 +216,8 @@ Swiping left and right on mobile devices and tablets also work.
           <input data-score-target="score" class="text-center w-20 h-10 border-2 invalid:border-red-600" pattern="^\d\d$"
             name="<%= subject.id %>" value="<%= @results[subject] %>"%>
         </div>
+        <% elsif subject.dance.semi_finals %>
+        <td class="text-center"><input type="checkbox" name="<%= subject.id %>" value="<%= @results[subject] %>"<%= @results[subject].empty? ? '' : ' checked' %>>
         <% else %>
         <% @scores.each do |score| %>
         <td class="text-center"><input type="radio" name="<%= subject.id %>" value="<%= score %>"<%= @results[subject]==score ? ' checked' : '' %>>

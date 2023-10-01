@@ -411,12 +411,12 @@ export default class extends Controller {
       }
     }
 
-    for (let button of this.element.querySelectorAll('input[type=radio]')) {
+    for (let button of this.element.querySelectorAll('input[type=radio],input[type=checkbox]')) {
       button.addEventListener('change', event => {
         this.post({
           heat: parseInt(button.name),
           slot: this.element.dataset.slot && parseInt(this.element.dataset.slot),
-          score: button.value
+          score: button.type == "radio" ? button.value : (button.checked ? 1 : "")
         }).then(response => {
           button.disabled = false;
           if (response.ok) {

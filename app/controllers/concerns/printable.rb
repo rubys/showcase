@@ -109,6 +109,9 @@ module Printable
 
           if heats.first.dance.heat_length
             start += heat_length * heats.first.dance.heat_length
+            if heats.first.dance.semi_finals
+              start += heat_length * heats.first.dance.heat_length
+            end
           elsif heats.any? {|heat| heat.number > 0}
             if heats.length == 1 and heats.first.category == 'Solo'
               start += solo_length

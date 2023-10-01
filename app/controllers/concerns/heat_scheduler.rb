@@ -32,12 +32,25 @@ module HeatScheduler
         order = heat.dance.order
       end
 
-      [order,
-       category,
-       heat.entry.level_id,
-       heat.entry.age_id,
-       heat
-      ]}
+      if heat.dance.semi_finals
+        # don't split semi-finals by level, age
+        [
+          order,
+          category,
+          1,
+          1,
+          heat
+        ]
+      else
+        [
+          order,
+          category,
+          heat.entry.level_id,
+          heat.entry.age_id,
+          heat
+        ]
+      end
+    }
 
     heats = Group.sort(heats)
 
@@ -101,6 +114,7 @@ module HeatScheduler
   end
 
   def rebalance(assignments, subgroups, max)
+    return if subgroups.first.dance&.semi_finals
     while subgroups.length * max < assignments.length
       subgroups.unshift Group.new
     end
@@ -270,7 +284,7 @@ module HeatScheduler
     end
 
     def dance
-      @group.first.dance
+      @group.first&.dance
     end
 
     def override

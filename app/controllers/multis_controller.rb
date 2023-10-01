@@ -41,7 +41,7 @@ class MultisController < ApplicationController
 
   # POST /multi/categories/:category or /multi/categories/:category.json
   def create
-    @dance = Dance.new(dance_params.except(:multi))
+    @dance = Dance.new(dance_params.except(:multi, :semi_finals))
 
     @dance.order = (Dance.maximum(:order) || 0) + 1
 
@@ -92,7 +92,7 @@ class MultisController < ApplicationController
     # Only allow a list of trusted parameters through.
     def dance_params
       params.require(:dance).permit(:name,
-        :heat_length, :multi_category_id, :dances, :cost_override, multi: {})
+        :heat_length, :multi_category_id, :dances, :cost_override, :semi_finals, multi: {})
     end
 
     def update_multis dances

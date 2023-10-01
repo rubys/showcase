@@ -25,11 +25,26 @@
         <tbody>
         <% end %>
         <% if heat.category == "Multi" %>
+        <% if heat.dance.semi_finals %>
+        <% heat.dance.multi_children.each_with_index do |multi, i| %>
+        <tr <% if i == 0 %>id="<%= dom_id heat %>"<% end %> class="text-black">
+          <td><%= heat.number %> - Semi <%= i+1 %>
+          <td><%= "#{heat.category} #{heat.dance.name} - #{multi.dance.name}" %>
+        </tr>
+        <% end%>
+        <% heat.dance.multi_children.each_with_index do |multi, i| %>
+        <tr <% if i == 0 %>id="<%= dom_id heat %>"<% end %> class="text-black">
+          <td><%= heat.number %> - Final <%= i+1 %>
+          <td><%= "#{heat.category} #{heat.dance.name} - #{multi.dance.name}" %>
+        </tr>
+        <% end%>
+        <% else %>
         <% heat.dance.multi_children.each_with_index do |multi, i| %>
         <tr <% if i == 0 %>id="<%= dom_id heat %>"<% end %> class="text-black">
           <td><%= heat.number %> - Part <%= i+1 %>
           <td><%= "#{heat.category} #{heat.dance.name} - #{multi.dance.name}" %>
         </tr>
+        <% end%>
         <% end %>
         <% else %>
         <tr id="<%= dom_id heat %>" class="text-black">

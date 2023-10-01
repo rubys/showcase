@@ -52,6 +52,11 @@ categories, make a separate multi-dance for each.
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <div class="my-5">
+    <%= form.check_box :semi_finals, class: 'entry-count h-10' %>
+    <%= form.label :semi_finals, 'Semi finals?' %>
+  </div>
+
 <div class="mx-auto w-full flex flex-wrap">
   <div class="mx-auto flex flex-wrap">
     <h1 class="w-full text-center bg-yellow-400 mb-4">Dances</h1>
