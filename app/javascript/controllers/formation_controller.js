@@ -87,14 +87,20 @@ export default class extends Controller {
     if (this.boxes.length <= 3) taken.push('x');
     for (let box of this.boxes) {
       let avail = "";
-      for (let option of box.querySelectorAll('option')) {
+      let options = box.querySelectorAll('option');
+      for (let option of options) {
         if (taken.includes(option.value)) {
           option.disabled = true;
           if (option.value == box.value) box.value = avail;
         } else if (option.value == 'x') {
           if (!box.value) {
-            this.boxes = this.boxes.filter(item => item != box);
-            box.remove();
+            let option = [...options].find(option => !option.disabled && option.value !== 'x');
+            if (option) {
+              box.value = option.value
+            } else {
+              this.boxes = this.boxes.filter(item => item != box);
+              box.remove();
+            }
           }
         } else {
           option.disabled = false;
