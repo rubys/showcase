@@ -30,3 +30,12 @@ I've provided [installation instructions](https://github.com/rubys/showcase#gett
 for those that wish to run this themselves.  If you have a machine that is capable of running a spreadsheet and
 a web browser you can run this yourself, but security, backups, and network access will be items you will need
 to address.
+
+Understandably, most will opt to use my host (and in the future hosts).  Just be aware that
+for security reaons I don't currently allow users to do the following:
+
+  * Allocate new events
+  * Set/reset passwords
+  * Change who can access individual events
+
+For these actions, contact me via email, text, or facebook.
