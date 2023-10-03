@@ -8,7 +8,7 @@ class EventController < ApplicationController
   include DbQuery
   include ActiveStorage::SetCurrent
 
-  skip_before_action :authenticate_user, only: %i[ counter showcases regions ]
+  skip_before_action :authenticate_user, only: %i[ counter showcases regions console ]
   skip_before_action :verify_authenticity_token, only: :console
 
   def landing
@@ -706,12 +706,16 @@ class EventController < ApplicationController
   end
 
   def console
-    body = request.body.read
-    begin
-      logger.info JSON.pretty_generate(JSON.parse(body))
-    rescue
-      logger.warn body
+    if request.post?
+      body = request.body.read
+      begin
+        logger.info JSON.pretty_generate(JSON.parse(body))
+      rescue
+        logger.warn body
+      end
+      render status: 200, json: {result: 'OK'}
+    else
+      root
     end
-    render status: 200, json: {result: 'OK'}
   end
 end

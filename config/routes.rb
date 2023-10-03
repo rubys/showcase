@@ -28,6 +28,7 @@ Rails.application.routes.draw do
     end
 
     get '/env', to: 'event#env'
+    get '/console', to: 'event#console' if Rails.env.development?
     get '/auth', to: 'event#auth'
     get '/instructions', to: 'event#instructions'
     get '/landing', to: 'event#landing'
