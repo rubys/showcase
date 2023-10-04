@@ -90,6 +90,21 @@ regions:
     opacity: '0.8'
     transform: matrix(0.487,0,0,0.487,154.4099,52.7877)
     class: sm_location sm_location_4
+  sjc:
+    name: San Jose, California
+    x: "9.379825342455536"
+    y: "110.21935933445955"
+    width: '2'
+    height: '25'
+    r: '0'
+    rx: '0'
+    ry: '0'
+    fill: "#ffd700"
+    stroke: "#ffffff"
+    style: 'opacity: 0.8; cursor: pointer;'
+    opacity: '0.8'
+    transform: "matrix(0.487,0,0,0.487,11.2244,62.955)"
+    class: sm_location sm_location_5
   sea:
     name: Seattle, Washington
     x: '37.17787120134615'
@@ -174,6 +189,10 @@ studios:
     x: '294.80128438431655'
     y: '95.07368362836428'
     transform: matrix(0.487,0,0,0.487,153.7981,51.3378)
+  livermore:
+    x: "18.912081034600877"
+    y: "114.59911979262097"
+    transform: "matrix(0.487,0,0,0.487,12.2669,61.3543)"
   raleigh:
     x: '380.25224633436886'
     y: '152.56910925236866'
