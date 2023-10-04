@@ -84,6 +84,10 @@
         :name: Showcase
       showcase-rounds:
         :name: Showcase Rounds
+  livermore:
+    :name: Livermore
+    :region: sjc
+    :logo: arthur-murray-logo.gif
   raleigh:
     :name: Raleigh
     :region: iad
