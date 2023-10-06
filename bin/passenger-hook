@@ -2,6 +2,8 @@
 
 require 'socket'
 require 'fileutils'
+require 'uri'
+require 'net/http'
 
 if Process.uid == 0
   status = `passenger-status`
@@ -37,9 +39,18 @@ if processes == 0
     ]
   end
 
-  demo = '/demo/db/demo.sqlite3'
+  # run webhook
+  uri = URI('https://rubix.intertwingly.net/webhook/showcase')
+  res = Net::HTTP.get_response(uri)
+  if res.is_a?(Net::HTTPSuccess)
+    puts res.body 
+  else
+    STDERR.puts res
+    STDERR.puts res.body 
+  end
 
   # keep track of when demo was last updated
+  demo = '/demo/db/demo.sqlite3'
   if File.exist? demo
     if File.exist? "#{demo}.time"
       if File.mtime(demo) > File.mtime("#{demo}.time")
