@@ -4,25 +4,29 @@ This application is currently hosted on a Mac Mini in the attic of
 my house outside of Raleigh, North Carolina.  Capacity is not an issue,
 but power and network failures may temporarily prevent access at times.
 
-For that reason, I have a [hot backup](https://hetzner.intertwingly.net/showcase/)
-running on [Hetzner](https://www.hetzner.com/) in [Ashburn, VA](https://www.hetzner.com/news/11-21-usa-cloud/).  Important things to understand:
+---
+
+For that reason, I'm testing deployment on [fly.io](https://fly.io/) which will
+allow me to deploy on servers around the word.  The new site will be
+[smooth.fly.dev](https://smooth.fly.dev/), and is currently deployed
+at the following sites: ATL, DFW, IAD, MIA, ORD, SEA, SJC, and SYD.  Events will
+automatically be hosted at the nearest site.  Deployment to a
+new [region](https://fly.io/docs/reference/regions/) can be done in
+a matter of minutes.  Important things to understand:
 
    * This is running the exact same software
-   * Five minutes after the last time you visit a page or made an update your entire event database will be uploaded to this machine, so the data there is kept up to date.  This will occur continuously until and unless you make an update on the Hertner machine, and will resume once you make an update on my Mac Mini.
+   * Five minutes after the last time anybody visits a page or made an update on any machine, all databases will be backed up and uploaded to all other machines, so the data everywhere is kept up to date.
 
-What this means is: **don't use the Hetzner machine unless there is a problem, and one you switch don't switch back unti I can resynchonize the databases, otherwise you can lose data.**
-
-To use the Hetzer machine, go to the [hetzner showcase](https://hetzner.intertwingly.net/showcase/), and find your event.
+What this means is: **don't switch machines unless there is a problem, and one you switch don't switch back unti you have verified that the database has your latest updates, otherwise you can lose data.**
 
 ---
 
-I'm also testing deployment on [fly.io](https://fly.io/) which will
-allow me to deploy on servers around the word.  The new site will be
-[smooth.fly.dev](https://smooth.fly.dev/), and is currently deployed
-at the following sites: ATL, DFW, IAD, MIA, ORD, and SEA.  Events will
-automatically be hosted at the nearest site.  Deployment to a
-new [region](https://fly.io/docs/reference/regions/) can be done in
-a matter of minutes.
+I also have a [hot backup](https://hetzner.intertwingly.net/showcase/)
+running on [Hetzner](https://www.hetzner.com/) in [Ashburn, VA](https://www.hetzner.com/news/11-21-usa-cloud/).
+
+---
+
+
 
 ---
 
