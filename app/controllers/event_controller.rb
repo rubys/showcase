@@ -340,7 +340,19 @@ class EventController < ApplicationController
     end
 
     @regions.each {|region, cities| cities.sort!.uniq!}
-    @regions = @regions.to_a.sort.to_h
+      
+    (@map["regions"].values + @map['studios'].values).each do |point|
+      if point['transform']
+        x = point['x'].to_f
+        y = point['y'].to_f
+        transform = point['transform'][/\d.*\d/].split(',').map(&:to_f)
+        point['x'] = x * transform[0] + y * transform[2] + transform[4]
+        point['y'] = x * transform[1] + y * transform[3] + transform[5]
+        point.delete('transform')
+      end
+    end
+
+    @map['regions']
   end
 
   def region
