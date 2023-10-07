@@ -22,7 +22,7 @@ What this means is: **don't switch machines unless there is a problem, and one y
 ---
 
 I also have a [hot backup](https://hetzner.intertwingly.net/showcase/)
-running on [Hetzner](https://www.hetzner.com/) in [Ashburn, VA](https://www.hetzner.com/news/11-21-usa-cloud/).
+running on [Hetzner](https://www.hetzner.com/) in [Ashburn, VA](https://www.hetzner.com/news/11-21-usa-cloud/).  This machine will receive updates from all other machines, but updates made on this machine won't be synchronized back.
 
 ---
 
