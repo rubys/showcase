@@ -364,7 +364,7 @@ when most dances for an individual are with one instructor but one or two are ch
     <% if @person.type == 'DJ' %>
     <div class="mt-4 mx-auto">
     <%= link_to 'Solos', djlist_solos_path, class: "btn-purple" %>
-    <%= link_to 'Heats', djlist_heats_path, class: "btn-blue" %>
+    <%= link_to 'Heats', djlist_heats_path(format: :pdf), class: "btn-blue" %>
     </div>
     <% end %>
 
