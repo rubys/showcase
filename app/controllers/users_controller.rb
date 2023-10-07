@@ -207,8 +207,12 @@ class UsersController < ApplicationController
       return if Rails.env.test?
       dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
       contents = User.order(:password).pluck(:password).join("\n")
-      return if contents == (IO.read "#{dbpath}/htpasswd" rescue '')
-      IO.write "#{dbpath}/htpasswd", contents
+
+      if contents != (IO.read "#{dbpath}/htpasswd" rescue '')
+        IO.write "#{dbpath}/htpasswd", contents
+      end
+
+      spawn "bin/user-update"
     end
 
     @@encryptor = ActiveSupport::MessageEncryptor.new(ENV['RAILS_MASTER_KEY'] || IO.read('config/master.key'))

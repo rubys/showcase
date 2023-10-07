@@ -1,0 +1,34 @@
+#!/usr/bin/env ruby
+
+if ENV['FLY_APP_NAME']
+  # get a list of ip addresses for running instances
+  addrs = 
+    `dig +short -t aaaa global.#{ENV['FLY_APP_NAME']}.internal`.split
+
+  # remove current region from the list
+  addrs -=
+    `dig +short -t aaaa #{ENV['FLY_REGION']}.#{ENV['FLY_APP_NAME']}.internal`.split
+
+  # rsync htpasswd and index.sqlite3 to each instance
+  addrs.each do |addr|
+    system *%W[
+      rsync
+      -av
+      --update
+      /data/db/htpasswd
+      /data/db/index.sqlite3
+      rsync://[#{addr}]/data/db
+    ]
+  end
+else
+  system *%W[
+    rsync
+    -av
+    --update
+    db/htpasswd
+    db/index.sqlite3
+    smooth:///data/db
+  ]
+
+  system "ssh smooth /rails/bin/user-update"
+end
