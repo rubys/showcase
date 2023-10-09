@@ -1,0 +1,10 @@
+{
+  "name": "mapper",
+  "type": "module",
+  "dependencies": {
+    "d3-geo": "^3.1.0",
+    "shapefile": "^0.6.6",
+    "yaml": "^2.3.2",
+    "yauzl-promise": "^4.0.0"
+  }
+}

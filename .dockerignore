@@ -32,6 +32,8 @@
 
 # Ignore assets.
 /node_modules/
+/utils/mapper/node_modules/
+/utils/mapper/*.zip
 /app/assets/builds/*
 !/app/assets/builds/.keep
 /public/assets
