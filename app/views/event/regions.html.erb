@@ -18,14 +18,20 @@ can click on it to see helpful hints.</li>
 
 <h1 class="mt-8 text-center font-bold text-4xl mb-8"><a href="https://fly.io/docs/reference/regions/">Showcase Sites</a></h1>
 
-<div class="float-right flex flex-col justify-end">
-  <%= link_to 'Demo', "https://smooth.fly.dev/showcase/demo/", class: "btn-green" %>
-  <%= up_link 'Documentation', docs_path, class: "btn-green my-2" %>
+<div class="flex w-full">
+<div class="flex-auto">
+<%= render "map" %>
 </div>
 
-<%= render "map" %>
+<div class="flex-none">
+<div class="flex flex-col justify-end">
+  <%= link_to 'Demo', "https://smooth.fly.dev/showcase/demo/", class: "btn-green" %>
+  <%= link_to 'Documentation', docs_path, class: "btn-green my-2" %>
+</div>
+</div>
+</div>
 
-<table class="table-auto">
+<table class="table-auto mt-8">
 <% @regions.each do |region, cities| %>
   <tr>
     <td><span class="w-10 text-2xl inline-block"><%= link_to region, region_path(region) %></span>

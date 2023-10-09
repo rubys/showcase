@@ -72,7 +72,7 @@ can click on it to see helpful hints.</li>
 
 <% if User.index_auth? @authuser %>
 <%= link_to 'Users', users_path, class: 'btn-blue' %>
-<% if ENV['FLY_REGION'] %>
+<% if ENV['FLY_REGION'] || Rails.env.development? %>
 <%= link_to 'Regions', regions_path, class: 'btn-blue' %>
 <% if @region %>
 <%= link_to 'Status', region_status_path(@region), class: 'btn-blue' %>
