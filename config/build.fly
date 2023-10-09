@@ -1,0 +1,5 @@
+# minify js controllers and target older browsers
+RUN curl -fsSL https://esbuild.github.io/dl/latest | sh && \
+    mv esbuild /usr/local/bin && \
+    cd app/javascript/controllers && \
+    /usr/local/bin/esbuild *_controller.js --outdir=. --allow-overwrite --minify --target=es2020 --sourcemap
