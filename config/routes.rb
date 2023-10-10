@@ -23,6 +23,8 @@ Rails.application.routes.draw do
 
       get "logs", to: 'event#logs'
       get "/inventory", to: 'event#inventory'
+
+      match "/upload" => "event#upload", via: [:get, :post]
     else
       root 'event#root'
     end

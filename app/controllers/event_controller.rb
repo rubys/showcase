@@ -102,6 +102,18 @@ class EventController < ApplicationController
     @track_ages = Event.last.track_ages
   end
 
+  def upload
+    if request.post?
+      file = params[:user][:file]
+      name = File.basename(file.original_filename)
+      dest = File.join('tmp', 'uploads', name)
+      FileUtils.mkdir_p File.dirname(dest)
+      IO.binwrite dest, file.read
+
+      redirect_to root_path, notice: "#{file.original_filename} was successfully uploaded."
+    end
+  end
+
   def update
     @event = Event.last
     old_open_scoring = @event.open_scoring
