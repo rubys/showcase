@@ -8,17 +8,17 @@
     <h1 class="text-xl pb-5">(<%= pluralize(@heats, "heat")%>, <%= pluralize(@songs.length, "song")%>)</h1>
 
   <% unless @songs.empty? %>
-  <% includes_artists = @songs.any? {|song| not song.artist.blank?} %>
+  <% @includes_artists = @songs.any? {|song| not song.artist.blank?} %>
   <div class="min-w-full">
   <table class="mt-4 table-auto mx-auto">
   <thead>
     <th class="row-head">Title
-    <% if includes_artists %>
+    <% if @includes_artists %>
     <th class="row-head">Artist
     <% end %>
     <th class="row-head">Song
   </thead>
-  <%= render 'list', locals: {includes_artists: includes_artists} %>
+  <%= render 'list', locals: {includes_artists: @includes_artists} %>
   </table>
 </div>
 <% end %>

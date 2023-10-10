@@ -13,6 +13,11 @@
     <% end %>
     <% if @style == 'emcee' and @heat.category != 'Solo' %>
     <div class="font-normal"><%= @subjects.length %> <%= 'couple'.pluralize @subjects.length %> on the floor</div>
+    <% if @song %>
+    <audio controls preload="auto" style="display: inline">
+      <source src=<%= @song.song_file.url %> type=<%= @song.song_file.content_type %>>
+    </audio>
+    <% end %>
     <% end %>
 
     <% if @heat.dance.heat_length %>

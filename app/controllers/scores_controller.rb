@@ -2,6 +2,8 @@ class ScoresController < ApplicationController
   include Printable
   before_action :set_score, only: %i[ show edit update destroy ]
 
+  include ActiveStorage::SetCurrent
+
   SCORES = {
     "Open" => %w(1 2 3 F),
     "Closed" => %w(B S G GH).reverse,
@@ -150,6 +152,11 @@ class ScoresController < ApplicationController
           @prev = judge_heat_path(judge: @judge, heat: @prev.number, **options)
         end
       end
+    end
+
+    if @style == 'emcee' and @heat.dance.songs.length > 0
+      index = Heat.joins(:entry).where(dance_id: 1).distinct.order(:number).pluck(:number).index(@heat.number)
+      @song = @heat.dance.songs[index % @heat.dance.songs.length]
     end
 
     @layout = 'mx-0 px-5'
