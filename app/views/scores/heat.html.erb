@@ -17,6 +17,7 @@
     <audio controls preload="auto" style="display: inline">
       <source src=<%= @song.song_file.url %> type=<%= @song.song_file.content_type %>>
     </audio>
+    <div class="font-normal text-sm"><%= @song.title %><% unless @song.artist.blank? %>- <%= @song.artist %><% end %></div>
     <% end %>
     <% end %>
 

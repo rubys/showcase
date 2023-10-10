@@ -155,7 +155,7 @@ class ScoresController < ApplicationController
     end
 
     if @style == 'emcee' and @heat.dance.songs.length > 0
-      index = Heat.joins(:entry).where(dance_id: 1).distinct.order(:number).pluck(:number).index(@heat.number)
+      index = Heat.joins(:entry).where(dance_id: @heat.dance_id).distinct.order(:number).pluck(:number).index(@heat.number)
       @song = @heat.dance.songs[index % @heat.dance.songs.length]
     end
 
