@@ -6,6 +6,7 @@ class DancesController < ApplicationController
     @dances = Dance.includes(:open_category, :closed_category, :solo_category, :multi_category).order(:order).all
     @heats = Heat.where(number: 1..).group(:dance_id).distinct.count(:number)
     @entries = Heat.where(number: 1..).group(:dance_id).count
+    @songs = Song.group(:dance_id).count
   end
 
   # GET /dances/1 or /dances/1.json

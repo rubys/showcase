@@ -24,6 +24,9 @@ using the Arrange button at the bottom of this page.
         <th class="row-head">Categories
         <th class="row-head">Entries
         <th class="row-head">Heats
+        <% unless @songs.empty? %>
+        <th class="row-head">Songs
+        <% end %>
       </tr>
     </thead>
     <tbody data-controller="drop" data-drop-action="<%= drop_dances_path %>">
@@ -41,6 +44,15 @@ using the Arrange button at the bottom of this page.
         </td>
         <td class="row text-right"><%= @entries[dance.id] || 0 %></td>
         <td class="row text-right"><%= @heats[dance.id] || 0 %></td>
+        <% unless @songs.empty? %>
+        <% if !@songs[dance.id] || (@songs[dance.id] < (@heats[dance.id] || 0)) %>
+        <td class="row text-right text-red-600 font-bold">
+        <% else %>
+        <td class="row text-right">
+        <% end %>
+        <%= link_to @songs[dance.id] || 0, dance_songlist_path(dance) %>
+        </td>
+        <% end %>
       </tr>
     <% end %>
     <tr>
@@ -51,6 +63,11 @@ using the Arrange button at the bottom of this page.
       <td class="border-t-2 border-gray-200 row text-right">
         <%= @dances.map {|dance| dance.heat_length ? 0 : @heats[dance.id] || 0}.sum %>
       </td>
+      <% unless @songs.empty? %>
+      <td class="border-t-2 border-gray-200 row text-right">
+        <%= @songs.values.sum %>
+      </td>
+      <% end %>
     </tr>
     </tbody>
   </table>
