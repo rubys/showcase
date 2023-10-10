@@ -23,10 +23,14 @@ Events typically have entry forms.  On that form there generally is a list of da
 
 On the main page is a dances button.  This will take you to a page where you can add or remove dances.  Once this list is correct, click the Arrange button at the bottom to take you to a page where you can arrange dances in columns to match your form.  Arrange dances using drag and drop.  Click Save once complete.
 
-For most larger events this is enough to get started.  Some smaller events may only have open or only have closed routines,
+For most larger events this is enough to get started.  For smaller events:
+
+  * Some events may only have open or only have closed routines,
 or may want to only allow a subset of the dances for different categories.  If you have requirements along these lines
 proceed to the [agenda task](../tasks/Agenda), define an agenda, and then click on _Match entry forms to agenda?_ in
 the settings.
+  * Some events don't have DJs that bring their own equipment and songs.  For these events, it is possible to upload
+    songs to be played by the [Emcee](./Emcee).
 
 <a id="invite"></a>
 

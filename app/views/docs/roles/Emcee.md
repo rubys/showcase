@@ -12,6 +12,10 @@ buttons can be used to advance to the previous and next heats.  Clicking on the
 Heat at the top will take you back to the heat list which is useful if heats
 ever are done out of order.
 
+For events where the Event Organizer has uploaded songs for dances, you will
+see controls for playing the song associated with the current heat immediately
+above the list of participants on the floor.
+
 Pressing the space bar on a page with an individual heat will update
 monitors containing the heat number and will cause lists shown on
 mobile devices to advance.
