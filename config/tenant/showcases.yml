@@ -4,6 +4,10 @@
     :name: Raleigh
     :region: iad
     :logo: arthur-murray-logo.gif
+  slc:
+    :name: Salt Lake City
+    :region: sea
+    :logo: arthur-murray-logo.gif
 2023:                                                                           
   alexandria:
     :name: Alexandria
