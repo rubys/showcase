@@ -1,0 +1,53 @@
+<div class="mx-auto md:w-2/3 w-full flex">
+  <div class="mx-auto">
+    <% if notice.present? %>
+      <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+    <% end %>
+
+    <h1 class="font-bold text-4xl pb-3"><%= @dance.name %> songs</h1>
+    <h1 class="text-xl pb-5">(<%= pluralize(@heats, "heat")%>, <%= pluralize(@songs.length, "song")%>)</h1>
+
+  <% unless @songs.empty? %>
+  <% includes_artists = @songs.any? {|song| not song.artist.blank?} %>
+  <div class="min-w-full">
+  <table class="mt-4 table-auto mx-auto">
+  <thead>
+    <th class="row-head">Title
+    <% if includes_artists %>
+    <th class="row-head">Artist
+    <% end %>
+    <th class="row-head">Song
+  </thead>
+  <% @songs.each do |song| %>
+    <tr class="hover:bg-yellow-200" id="<%= dom_id song %>">
+       <td class="row"><%= link_to song.title, edit_song_path(song) %>
+       <% if includes_artists %>
+       <td class="row"><%= song.artist %>
+       <% end %>
+       <% if song.song_file.attached? %>
+       <td>
+         <audio controls preload="auto" style="display: inline">
+           <source src=<%= song.song_file.url %> type=<%= song.song_file.content_type %>>
+         </audio>
+       <% else %>
+       <td class="bg-red-200">
+       <% end %>
+    </tr>
+  <% end %>
+  </table>
+</div>
+<% end %>
+
+    <h2 class="font-bold text-2xl my-4">Upload songs</h1>
+    <form method="post" enctype="multipart/form-data" action=<%= dance_song_upload_url %>>
+    <input type="hidden" name="dance" value="<%= @dance.id %>">
+    <%= file_field :song, :files, multiple: true %>
+    <%= button_tag 'Upload', name: 'anchor', value: 'description', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+    </form>
+
+    <div class="mt-4">
+    <%= link_to 'Back to dance', dance_path(@dance), class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+    </div>
+  </div>
+
+</div>

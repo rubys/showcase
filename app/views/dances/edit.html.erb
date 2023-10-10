@@ -5,6 +5,7 @@
 
   <div class="mx-auto flex">
     <input type="submit" class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" form="dance-form" value="Update Dance">
+    <%= link_to "Songs", dance_songlist_path(@dance), class: "ml-2 rounded-lg py-3 px-5 bg-green-600 text-white inline-block font-medium cursor-pointer" %>
     <%= up_link 'Remove this dance', dance_path(@dance), class: 'btn-grey my-0',
       method: :delete, disabled: @locked, form: { data: { turbo_confirm: 'Are you sure?' }} %>  
     <%= link_to "Back to dances", dances_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>

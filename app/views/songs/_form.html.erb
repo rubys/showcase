@@ -1,0 +1,52 @@
+<%= form_with(model: song, id: 'song-form', class: "contents") do |form| %>
+  <% if song.errors.any? %>
+    <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
+      <h2><%= pluralize(song.errors.count, "error") %> prohibited this song from being saved:</h2>
+
+      <ul>
+        <% song.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="my-5">
+    <%= form.label :dance_id %>
+    <%= form.select :dance_id, @dances, {selected: song.dance_id},
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :title %>
+    <%= form.text_field :title, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :artist %>
+    <%= form.text_field :artist, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <% if song.song_file.attached? %>
+  <div class="my-5">
+    <audio controls preload="auto" style="display: inline">
+      <source src=<%= song.song_file.url %> type=<%= song.song_file.content_type %>>
+    </audio>
+  </div>
+  <% end %>
+<% end %>
+
+<div class="mx-auto flex">
+  <input type="submit" class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" form="song-form"
+    value="<%= (song.persisted? ? 'Update' : 'Create') + ' Song' %>">
+
+  <% if song.persisted? %>
+  <%= up_link 'Remove this song', song_path(song), class: 'btn-grey my-0',
+      method: :delete, form: {data: { turbo_confirm: 'Are you sure?' }} %>
+  <%= link_to 'Back to dance', dance_songlist_path(song.dance), class: "text-center rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  <% else %>
+  <%= link_to 'Back to songs', songs_path, class: "text-center rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  <% end %>
+
+ 
+</div>

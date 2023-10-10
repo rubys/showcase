@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :songs
   get "/docs/", to: "docs#page", trailing_slash: true, defaults: {page: 'index'}
   get "/docs/*page", to: "docs#page"
 
@@ -77,6 +78,8 @@ Rails.application.routes.draw do
       get 'couples', on: :collection
     end
 
+    get '/dances/:dance/songs', to: 'songs#dancelist', as: 'dance_songlist'
+    post '/dances/:dance/upload-songs', to: 'songs#upload', as: 'dance_song_upload'
     resources :dances do
       post 'drop', on: :collection
       get 'form', on: :collection
