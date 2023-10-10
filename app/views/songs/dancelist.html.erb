@@ -18,22 +18,7 @@
     <% end %>
     <th class="row-head">Song
   </thead>
-  <% @songs.each do |song| %>
-    <tr class="hover:bg-yellow-200" id="<%= dom_id song %>">
-       <td class="row"><%= link_to song.title, edit_song_path(song) %>
-       <% if includes_artists %>
-       <td class="row"><%= song.artist %>
-       <% end %>
-       <% if song.song_file.attached? %>
-       <td>
-         <audio controls preload="auto" style="display: inline">
-           <source src=<%= song.song_file.url %> type=<%= song.song_file.content_type %>>
-         </audio>
-       <% else %>
-       <td class="bg-red-200">
-       <% end %>
-    </tr>
-  <% end %>
+  <%= render 'list', locals: {includes_artists: includes_artists} %>
   </table>
 </div>
 <% end %>

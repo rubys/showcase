@@ -1,0 +1,18 @@
+<tbody data-controller="drop" data-drop-action="<%= drop_songs_path %>" id="dancelist">
+  <% @songs.each do |song| %>
+    <tr class="hover:bg-yellow-200" draggable="true" data-drag-id="<%= song.id %>" id="<%= dom_id song %>">
+        <td class="row"><%= link_to song.title, edit_song_path(song) %>
+        <% if @includes_artists %>
+        <td class="row"><%= song.artist %>
+        <% end %>
+        <% if song.song_file.attached? %>
+        <td>
+          <audio controls preload="<%= @preload %>" style="display: inline">
+            <source src=<%= song.song_file.url %> type=<%= song.song_file.content_type %>>
+          </audio>
+        <% else %>
+        <td class="bg-red-200">
+        <% end %>
+    </tr>
+  <% end %>
+</tbody>

@@ -68,6 +68,7 @@ class SongsController < ApplicationController
     @dance = Dance.find(params[:dance])
     @heats = @dance.heats.select(:number).distinct.count
     @songs = @dance.songs.order(:order)
+    @preload = 'auto'
   end
 
   def upload
@@ -90,6 +91,42 @@ class SongsController < ApplicationController
     end
 
     redirect_to dance_songlist_url(dance), notice: ""#{helpers.pluralize count, 'Song'} successfully uploaded."
+  end
+
+  # POST /dances/drop
+  def drop
+    source = Song.find(params[:source].to_i)
+    target = Song.find(params[:target].to_i)
+
+    if source.order > target.order
+      songs = Song.where(order: target.order..source.order).order(:order)
+      new_order = songs.map(&:order).rotate(1)
+    else
+      songs = Song.where(order: source.order..target.order).order(:order)
+      new_order = songs.map(&:order).rotate(-1)
+    end
+
+    Song.transaction do
+      songs.zip(new_order).each do |song, order|
+        song.order = order
+        song.save! validate: false
+      end
+
+      raise ActiveRecord::Rollback unless songs.all? {|song| song.valid?}
+    end
+
+    index
+    flash.now.notice = "#{source.title} was successfully moved."
+
+    params[:dance] = source.dance_id
+    dancelist
+    @preload = 'none'
+
+    respond_to do |format|
+      format.turbo_stream { render turbo_stream: turbo_stream.replace('dancelist', 
+        render_to_string(partial: 'list', layout: false))}
+      format.html { redirect_to dance_songlist_url(source.dance) }
+    end
   end
 
   private

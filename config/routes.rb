@@ -1,5 +1,4 @@
 Rails.application.routes.draw do
-  resources :songs
   get "/docs/", to: "docs#page", trailing_slash: true, defaults: {page: 'index'}
   get "/docs/*page", to: "docs#page"
 
@@ -154,6 +153,10 @@ Rails.application.routes.draw do
       get 'critiques0', on: :collection
       get 'critiques1', on: :collection
       get 'critiques2', on: :collection
+    end
+
+    resources :songs do
+      post 'drop', on: :collection
     end
 
     resources :formations
