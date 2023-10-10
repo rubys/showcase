@@ -45,7 +45,7 @@ using the Arrange button at the bottom of this page.
         <td class="row text-right"><%= @entries[dance.id] || 0 %></td>
         <td class="row text-right"><%= @heats[dance.id] || 0 %></td>
         <% unless @songs.empty? %>
-        <% if !@songs[dance.id] || (@songs[dance.id] < (@heats[dance.id] || 0)) %>
+        <% if (@songs[dance.id] || 0) < (@heats[dance.id] || 0) %>
         <td class="row text-right text-red-600 font-bold">
         <% else %>
         <td class="row text-right">
