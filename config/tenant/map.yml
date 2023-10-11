@@ -11,6 +11,12 @@ regions:
     y: 136.21037396552526
     lat: 42.3656
     lon: -71.0098
+  den:
+    name: Denver, Colorado
+    lat: 39.8563
+    lon: -104.6764
+    x: 365.58616660537814
+    y: 222.60615761059194
   dfw:
     name: Dallas, Texas
     x: 472.4489858805158
