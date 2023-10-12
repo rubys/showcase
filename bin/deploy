@@ -18,17 +18,12 @@ if ENV['FLY_APP_NAME']
   # Configure memory for redis
   # https://redis.io/docs/getting-started/faq/#background-saving-fails-with-a-fork-error-on-linux
   File.write '/proc/sys/vm/overcommit_memory', '1'
-end
 
-# set up nginx and run migrations
-Dir.chdir File.dirname(__dir__) do
-  system "#{RbConfig.ruby} ./config/tenant/nginx-config.rb"
-end
-
-if ENV['FLY_APP_NAME']
+  # setup volume, .ssh directories
   VOLUME = File.dirname(ENV.fetch('RAILS_DB_VOLUME', '/data/db'))
   FileUtils.mkdir_p "#{VOLUME}/.ssh"
 
+  # Sync data from primary region
   if ENV['FLY_REGION'] != ENV['PRIMARY_REGION']
     source = "rsync://#{ENV['PRIMARY_REGION']}.#{ENV['FLY_APP_NAME']}.internal"
 
@@ -96,4 +91,9 @@ if ENV['FLY_APP_NAME']
       end
     end
   end
+end
+
+# set up nginx and run migrations
+Dir.chdir File.dirname(__dir__) do
+  system "#{RbConfig.ruby} ./config/tenant/nginx-config.rb"
 end
