@@ -62,8 +62,9 @@ export default class extends Controller {
           }
         }
 
-        box.id = box.id.replace(/\d+/, n => parseInt(n) + 1);
-        box.setAttribute('name', box['name'].replace(/\d+/, n => parseInt(n) + 1));
+        box.id = `solo_formation[${this.boxes.length-1}]`
+        box.setAttribute('name', `solo[formation[${this.boxes.length}]]`);
+        box.removeAttribute('data-formation-target')
         box.addEventListener('change', this.preventDupes);
 
         lastBox.parentNode.insertBefore(box, lastBox.nextSibling);
