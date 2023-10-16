@@ -3,7 +3,7 @@
 
 <ul>
 <% User.authlist.sort.each do |user| %>
-<li><%= user %>
+<li><%= user =~ /\A\w+\z/ ? user : user.inspect %>
 <% end %>
 </ul>
 
