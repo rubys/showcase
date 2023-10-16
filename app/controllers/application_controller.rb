@@ -15,9 +15,7 @@ class ApplicationController < ActionController::Base
       return if request.local?
       return if ENV['RAILS_APP_OWNER'] == 'Demo'
 
-      authenticate_or_request_with_http_basic do |id, password| 
-        User.authorized? @authuser
-      end
+      forbidden unless User.authorized?(@authuser)
     end
 
     def authenticate_user_or_studio(studio)
@@ -26,9 +24,7 @@ class ApplicationController < ActionController::Base
       return unless Rails.env.production?
       return if request.local?
 
-      authenticate_or_request_with_http_basic do |id, password|
-        User.authorized?(@authuser) or User.authorized?(@authuser, studio)
-      end
+      forbidden unless User.authorized?(@authuser) or User.authorized?(@authuser, studio)
     end
 
     def get_authentication
@@ -37,6 +33,16 @@ class ApplicationController < ActionController::Base
       else
         @authuser = request.headers["HTTP_X_REMOTE_USER"]
         @authuser ||= ENV["HTTP_X_REMOTE_USER"]
+      end
+    end
+
+    def forbidden
+      if @authuser and not params[:login]
+        render file: File.expand_path('public/403.html', Rails.root), layout: false
+      else
+        authenticate_or_request_with_http_basic do |id, password|
+          false
+        end
       end
     end
 end
