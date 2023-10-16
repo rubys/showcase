@@ -38,7 +38,8 @@ class ApplicationController < ActionController::Base
 
     def forbidden
       if @authuser and not params[:login]
-        render file: File.expand_path('public/403.html', Rails.root), layout: false
+        render file: File.expand_path('public/403.html', Rails.root),
+          layout: false, status: :forbidden
       else
         authenticate_or_request_with_http_basic do |id, password|
           false
