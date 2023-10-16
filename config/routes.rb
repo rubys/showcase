@@ -142,6 +142,7 @@ Rails.application.routes.draw do
       match 'by-level', on: :collection, action: :by_level, via: %i(get post)
       match 'by-age', on: :collection, action: :by_age, via: %i(get post)
       match 'multis', on: :collection, action: :multis, via: %i(get post)
+      match 'pros', on: :collection, action: :pros, via: %i(get post)
       match 'instructor', on: :collection, via: %i(get post)
     end
 

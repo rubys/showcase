@@ -83,6 +83,9 @@
 <% if @multi > 0 %>
 <%= link_to 'Multi Scores', multis_scores_path , class: "btn-pale-green" %>
 <% end %>
+<% if @pro_heats %>
+<%= link_to 'Pro Scores', pros_scores_path , class: "btn-pale-green" %>
+<% end %>
 </div>
 
 </div>

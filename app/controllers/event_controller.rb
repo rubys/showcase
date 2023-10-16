@@ -98,6 +98,7 @@ class EventController < ApplicationController
     end
 
     @multi = Dance.where.not(multi_category: nil).count
+    @pro_heats = Event.last.pro_heats
 
     @track_ages = Event.last.track_ages
   end

@@ -496,6 +496,48 @@ class ScoresController < ApplicationController
     end
   end
 
+  def pros
+    scores = Score.joins(heat: {entry: [:lead, :follow]}).where(lead: {type: 'Professional'}, follow: {type: 'Professional'})
+    hscores = scores.group_by {|score| score.heat.number}
+    dances = hscores.values.map(&:first).map {|score| [score.heat.number, score.heat.dance.name]}.to_h
+    categories = hscores.values.map(&:first).map {|score| [score.heat.number, score.heat.dance_category.name]}.to_h
+
+    if categories.values.uniq.length >= dances.values.uniq.length
+      names = categories
+    else
+      names = dances
+    end
+
+    @score_range = SCORES[scores.first.heat.category]
+
+    @scores = {}
+    hscores.each do |number, scores|
+      name = names[number]
+      @scores[name] = {}
+
+      scores.each do |score|
+        entry = score.heat.entry
+
+        @scores[name][entry] ||= {
+          'Values' => @score_range.map {0},
+          'points' => 0
+        }
+
+        value = @score_range.index score.value
+        if value
+          @scores[name][entry]['Values'][value] += 1
+          @scores[name][entry]['points'] += WEIGHTS[value]
+        end
+      end
+    end
+
+    if request.post?
+      render turbo_stream: turbo_stream.replace("pros-scores",
+        render_to_string(partial: 'pros', layout: false)
+      )
+    end
+  end
+
   def instructor
     @open_scoring = Event.first.open_scoring
     @scores = {}

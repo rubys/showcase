@@ -1,0 +1,14 @@
+<div class="mx-auto md:w-5/6 w-full flex">
+  <div class="mx-auto">
+    <% if notice.present? %>
+      <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+    <% end %>
+
+    <%= turbo_stream_from "live-scores-#{ENV['RAILS_APP_DB']}" %>
+    <%= render partial: "last_update", locals: {action: pros_scores_path, timestamp: @last_score_update} %>
+
+    <%= render "pros" %>
+
+    <%= link_to 'Back to summary', summary_event_index_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  </div>
+</div>
