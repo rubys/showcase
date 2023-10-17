@@ -1,4 +1,4 @@
-import { Controller } from "@hotwired/stimulus"
+import { Controller } from "@hotwired/stimulus";
 
 // Connects to data-controller="assign-judges"
 export default class extends Controller {
@@ -10,16 +10,16 @@ export default class extends Controller {
       event.preventDefault();
 
       fetch(this.element.dataset.presentUrl, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'X-CSRF-Token': token,
-          'Content-Type': 'application/json'
+          "X-CSRF-Token": token,
+          "Content-Type": "application/json"
         },
-        credentials: 'same-origin',
-        redirect: 'follow'
+        credentials: "same-origin",
+        redirect: "follow"
       })
-      .then (response => response.json())
-      .then(json => event.target.checked = json.present)
-    })
+        .then (response => response.json())
+        .then(json => event.target.checked = json.present);
+    });
   }
 }

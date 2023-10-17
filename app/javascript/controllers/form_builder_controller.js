@@ -1,41 +1,41 @@
-import { Controller } from "@hotwired/stimulus"
+import { Controller } from "@hotwired/stimulus";
 
 // Connects to data-controller="form-builder"
 export default class extends Controller {
   connect() {
-    this.columns = document.getElementById('columns');
-    this.dances = document.getElementById('dances');
-    this.columns.addEventListener('change', event => {
+    this.columns = document.getElementById("columns");
+    this.dances = document.getElementById("dances");
+    this.columns.addEventListener("change", _event => {
       this.reflow();
-      this.dances.style.gridTemplateColumns = `repeat(${columns.value}, 1fr)`;
+      this.dances.style.gridTemplateColumns = `repeat(${this.columns.value}, 1fr)`;
     });
 
     for (let child of this.dances.children) {
       if (child.draggable) {
-        child.addEventListener('dragstart', event => {
-          event.dataTransfer.setData('application/drag-id', child.dataset.id);
+        child.addEventListener("dragstart", event => {
+          event.dataTransfer.setData("application/drag-id", child.dataset.id);
           event.dataTransfer.effectAllowed = "move";
           child.style.opacity = 0.4;
         });
 
-        child.addEventListener('dragend', event => {
+        child.addEventListener("dragend", _event => {
           child.style.opacity = 1;
-          child.style.cursor = 'default';
+          child.style.cursor = "default";
         });
 
-        child.addEventListener('dragover', event => {
+        child.addEventListener("dragover", event => {
           event.dataTransfer.dropEffect = "move";
           event.preventDefault();
           return true;
         });
 
-        child.addEventListener('drop', this.drop);
+        child.addEventListener("drop", this.drop);
       }
     }
 
     this.reflow();
 
-    document.getElementById('save').addEventListener('click', this.save)
+    document.getElementById("save").addEventListener("click", this.save);
   }
 
   reflow() {
@@ -55,11 +55,11 @@ export default class extends Controller {
     rows+=2;
 
     for (let i=this.dances.childElementCount; i < columns * rows; i++) {
-      let div = document.createElement('div');
-      div.textContent = '\xA0';
-      div.addEventListener('drop', this.drop);
+      let div = document.createElement("div");
+      div.textContent = "\xA0";
+      div.addEventListener("drop", this.drop);
 
-      div.addEventListener('dragover', event => {
+      div.addEventListener("dragover", event => {
         event.dataTransfer.dropEffect = "move";
         event.preventDefault();
         return true;
@@ -71,9 +71,9 @@ export default class extends Controller {
     let dances = [...this.dances.children];
 
     for (let dance of dances) {
-      if (dance.style.gridRow != '' && dance.style.gridColumn != '') {
+      if (dance.style.gridRow != "" && dance.style.gridColumn != "") {
         if (parseInt(dance.style.gridColumn) <= columns) continue;
-      };
+      }
 
       let found = false;
       for (let row=1; !found; row++) {
@@ -99,12 +99,12 @@ export default class extends Controller {
     [source.style.gridColumn, target.style.gridColumn] =
       [target.style.gridColumn, source.style.gridColumn];
 
-    document.getElementById('notice').textContent = '';
+    document.getElementById("notice").textContent = "";
 
     this.reflow();
 
     event.preventDefault();
-  }
+  };
 
   save = () => {
     const token = document.querySelector('meta[name="csrf-token"]').content;
@@ -117,17 +117,17 @@ export default class extends Controller {
     }
 
     fetch(this.element.action, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'X-CSRF-Token': token,
-        'Content-Type': 'application/json'
+        "X-CSRF-Token": token,
+        "Content-Type": "application/json"
       },
-      credentials: 'same-origin',
-      redirect: 'follow',
+      credentials: "same-origin",
+      redirect: "follow",
       body: JSON.stringify({dance: positions})
     }).then (response => response.text())
-    .then(text => {document.getElementById('notice').textContent = text});
+      .then(text => {document.getElementById("notice").textContent = text;});
 
     event.preventDefault();
-  }
+  };
 }

@@ -1,6 +1,6 @@
-import { Controller } from "@hotwired/stimulus"
+import { Controller } from "@hotwired/stimulus";
 
-const HIGHLIGHT = 'bg-yellow-200';
+const HIGHLIGHT = "bg-yellow-200";
 
 // Connects to data-controller="score"
 export default class extends Controller {
@@ -9,24 +9,24 @@ export default class extends Controller {
   keydown = event => {
     let form = ["INPUT", "TEXTAREA"].includes(document.activeElement.nodeName);
 
-    if (event.key == 'ArrowRight') {
+    if (event.key == "ArrowRight") {
       if (form) return;
-      let link = document.querySelector('a[rel=next]')
+      let link = document.querySelector("a[rel=next]");
       if (link) link.click();
-    } else if (event.key == 'ArrowLeft') {
+    } else if (event.key == "ArrowLeft") {
       if (form) return;
-      let link = document.querySelector('a[rel=prev]')
+      let link = document.querySelector("a[rel=prev]");
       if (link) link.click();
-    } else if (event.key == 'ArrowUp') {
+    } else if (event.key == "ArrowUp") {
       if (form) return;
       this.moveUp();
-    } else if (event.key == 'ArrowDown') {
+    } else if (event.key == "ArrowDown") {
       this.moveDown();
-    } else if (event.key == 'Escape') {
+    } else if (event.key == "Escape") {
       this.unselect();
       this.unhighlight();
       if (document.activeElement) document.activeElement.blur();
-    } else if (event.key == 'Tab') {
+    } else if (event.key == "Tab") {
       event.preventDefault();
       event.stopPropagation();
       if (this.subjects.size > 0) {
@@ -53,41 +53,41 @@ export default class extends Controller {
           this.scoreTargets[index+1].focus();
         }
       }
-    } else if (event.key == ' ' || event.key == 'Enter') {
+    } else if (event.key == " " || event.key == "Enter") {
       if (form) return;
       fetch(this.element.dataset.startAction, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'X-CSRF-Token': this.token,
-          'Content-Type': 'application/json'
+          "X-CSRF-Token": this.token,
+          "Content-Type": "application/json"
         },
-        credentials: 'same-origin',
-        redirect: 'follow',
+        credentials: "same-origin",
+        redirect: "follow",
         body: JSON.stringify({
           heat: parseInt(this.element.dataset.heat)
         })
-      })
+      });
     }
-  }
+  };
 
   touchstart = event => {
     this.touchStart = event.touches[0];
-  }
+  };
 
   touchend = event => {
     let direction = this.swipe(event);
 
-    if (direction == 'right') {
-      let link = document.querySelector('a[rel=prev]')
+    if (direction == "right") {
+      let link = document.querySelector("a[rel=prev]");
       if (link) link.click();
-    } else if (direction == 'left') {
-      let link = document.querySelector('a[rel=next]')
+    } else if (direction == "left") {
+      let link = document.querySelector("a[rel=next]");
       if (link) link.click();
-    } else if (direction == 'up') {
-      let link = document.querySelector('a[rel=up]')
+    } else if (direction == "up") {
+      let link = document.querySelector("a[rel=up]");
       if (link) link.click();
     }
-  }
+  };
 
   swipe(event) {
     if (!this.touchStart) return false;
@@ -111,21 +111,21 @@ export default class extends Controller {
 
   unselect() {
     if (!this.selected) return;
-    this.selected.style.borderColor = '';
-    this.selected.style.borderWidth = '';
+    this.selected.style.borderColor = "";
+    this.selected.style.borderWidth = "";
     this.selected = null;
   }
 
   select(subject) {
     this.unselect();
     this.selected = subject;
-    subject.style.borderColor = 'black';
-    subject.style.borderWidth = '3px';
+    subject.style.borderColor = "black";
+    subject.style.borderWidth = "3px";
   }
 
   unhighlight() {
     for (let score of this.scores) {
-      score.classList.remove(HIGHLIGHT)
+      score.classList.remove(HIGHLIGHT);
     }
   }
 
@@ -174,12 +174,12 @@ export default class extends Controller {
     if (!source) return;
     let parent = source.parentElement;
 
-    let back = source.querySelector('span');
+    let back = source.querySelector("span");
     source.style.opacity = 1;
     back.style.opacity = 0.5;
 
     let before = [...score.children].find(child => (
-      child.draggable && child.querySelector('span').textContent >= back.textContent
+      child.draggable && child.querySelector("span").textContent >= back.textContent
     ));
 
     if (before) {
@@ -191,41 +191,41 @@ export default class extends Controller {
     this.post({
       heat: parseInt(source.dataset.heat),
       slot: this.element.dataset.slot && parseInt(this.element.dataset.slot),
-      score: score.dataset.score || ''
+      score: score.dataset.score || ""
     }).then(response => {
       back.style.opacity = 1;
       if (response.ok) {
-        back.classList.remove('text-red-500')
+        back.classList.remove("text-red-500");
       } else {
         parent.appendChild(source);
-        back.classList.add('text-red-500');
+        back.classList.add("text-red-500");
       }
-    })
+    });
   }
 
   post = results => {
     return fetch(this.element.dataset.dropAction, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'X-CSRF-Token': this.token,
-        'Content-Type': 'application/json'
+        "X-CSRF-Token": this.token,
+        "Content-Type": "application/json"
       },
-      credentials: 'same-origin',
-      redirect: 'follow',
+      credentials: "same-origin",
+      redirect: "follow",
       body: JSON.stringify(results)
     }).then(response => {
       let error = this.errorTarget;
 
       if (response.ok) {
-        error.style.display = 'none';
+        error.style.display = "none";
       } else {
         error.textContent = response.statusText;
-        error.style.display = 'block';
+        error.style.display = "block";
       }
 
       return response;
-    })
-  }
+    });
+  };
 
   moveUp() {
     if (!this.selected) return;
@@ -250,18 +250,18 @@ export default class extends Controller {
   }
 
   disconnect() {
-    document.body.removeEventListener('keydown', this.keydown);
-    document.body.removeEventListener('touchstart', this.touchstart);
-    document.body.removeEventListener('touchend', this.touchend);
+    document.body.removeEventListener("keydown", this.keydown);
+    document.body.removeEventListener("touchstart", this.touchstart);
+    document.body.removeEventListener("touchend", this.touchend);
   }
 
   connect() {
     this.token = document.querySelector('meta[name="csrf-token"]').content;
 
-    this.subjects = [...this.element.querySelectorAll('*[draggable=true]')];
+    this.subjects = [...this.element.querySelectorAll("*[draggable=true]")];
 
     let backs = this.subjects.map((element, index) => (
-      {index, back: parseInt(element.querySelector('span').textContent || 1)}
+      {index, back: parseInt(element.querySelector("span").textContent || 1)}
     ));
 
     backs.sort((a, b) => {
@@ -278,30 +278,30 @@ export default class extends Controller {
       .map(element => [element.id, element])
     );
 
-    this.scores = [...this.element.querySelectorAll('*[data-score]')];
+    this.scores = [...this.element.querySelectorAll("*[data-score]")];
 
     this.selected = null;
     this.mouseStart = null;
 
-    document.body.addEventListener('keydown', this.keydown);
-    document.body.addEventListener('touchstart', this.touchstart);
-    document.body.addEventListener('touchend', this.touchend);
+    document.body.addEventListener("keydown", this.keydown);
+    document.body.addEventListener("touchstart", this.touchstart);
+    document.body.addEventListener("touchend", this.touchend);
 
     for (let subject of this.subjects.values()) {
-      subject.addEventListener('dragstart', event => {
+      subject.addEventListener("dragstart", event => {
         this.select(subject);
         subject.style.opacity = 0.4;
-        event.dataTransfer.setData('application/drag-id', subject.id);
+        event.dataTransfer.setData("application/drag-id", subject.id);
         event.dataTransfer.effectAllowed = "move";
       });
 
-      subject.addEventListener('mouseup', event => {
+      subject.addEventListener("mouseup", event => {
         event.stopPropagation();
         this.toggle(subject);
         this.unhighlight();
       });
 
-      subject.addEventListener('touchend', event => {
+      subject.addEventListener("touchend", event => {
         if (this.swipe(event)) return;
         event.preventDefault();
         this.toggle(subject);
@@ -309,55 +309,55 @@ export default class extends Controller {
     }
 
     for (let score of this.scores) {
-      score.addEventListener('dragover', event => {
+      score.addEventListener("dragover", event => {
         event.preventDefault();
         return true;
       });
 
-      score.addEventListener('dragenter', event => {
+      score.addEventListener("dragenter", event => {
         score.classList.add(HIGHLIGHT);
         event.preventDefault();
       });
 
-      score.addEventListener('mouseover', event => {
+      score.addEventListener("mouseover", _event => {
         if (this.selected) score.classList.add(HIGHLIGHT);
       });
 
-      score.addEventListener('mouseout', event => {
+      score.addEventListener("mouseout", _event => {
         if (this.selected) score.classList.remove(HIGHLIGHT);
       });
 
-      score.addEventListener('dragleave', event => {
+      score.addEventListener("dragleave", _event => {
         score.classList.remove(HIGHLIGHT);
       });
 
-      score.addEventListener('drop', event => {
+      score.addEventListener("drop", event => {
         score.classList.remove(HIGHLIGHT);
         let source = event.dataTransfer.getData("application/drag-id");
         this.move(document.getElementById(source), score);
-      })
+      });
 
-      score.addEventListener('mouseup', event => {
-        this.move(this.selected, score)
-      })
+      score.addEventListener("mouseup", _event => {
+        this.move(this.selected, score);
+      });
 
-      score.addEventListener('touchend', event => {
+      score.addEventListener("touchend", event => {
         if (this.swipe(event)) return;
         event.preventDefault();
-        this.move(this.selected, score)
+        this.move(this.selected, score);
         this.unhighlight();
-      })
+      });
     }
 
     // mobile device viewport height is unreliable - use clientHeight
     let overflow = document.body.getBoundingClientRect().height - document.documentElement.clientHeight;
     if (overflow > 0) {
-      let container = document.querySelector('.max-h-full');
+      let container = document.querySelector(".max-h-full");
 
-      function resize() {
+      let resize= () => {
         if (!container) return;
         container.style.maxHeight = `${document.documentElement.clientHeight}px`;
-      }
+      };
 
       window.addEventListener("resize", resize);
       resize();
@@ -370,9 +370,9 @@ export default class extends Controller {
       for (let comment of this.commentsTargets) {
         comment.disabled = false;
 
-        comment.addEventListener('input', event => {
-          comment.classList.remove('bg-gray-50');
-          comment.classList.add('bg-yellow-200');
+        comment.addEventListener("input", _event => {
+          comment.classList.remove("bg-gray-50");
+          comment.classList.add("bg-yellow-200");
 
           if (this.commentTimeout) clearTimeout(this.commentTimeout);
 
@@ -384,35 +384,35 @@ export default class extends Controller {
             }
 
             this.commentTimeout = null;
-          }, 10000)
+          }, 10000);
         });
 
-        comment.addEventListener('change', event => {
+        comment.addEventListener("change", _event => {
           comment.disabled = true;
 
           this.post({
             heat: parseInt(comment.dataset.heat),
-            test: 'data',
+            test: "data",
             comments: comment.value
           }).then(response => {
             comment.disabled = false;
-            comment.classList.add('bg-gray-50');
-            comment.classList.remove('bg-yellow-200');
+            comment.classList.add("bg-gray-50");
+            comment.classList.remove("bg-yellow-200");
 
             comment.textarea = comment.value;
 
             if (response.ok) {
               comment.style.backgroundColor = null;
             } else {
-              comment.style.backgroundColor = '#F00';
+              comment.style.backgroundColor = "#F00";
             }
-          })
+          });
         });
       }
     }
 
-    for (let button of this.element.querySelectorAll('input[type=radio],input[type=checkbox]')) {
-      button.addEventListener('change', event => {
+    for (let button of this.element.querySelectorAll("input[type=radio],input[type=checkbox]")) {
+      button.addEventListener("change", _event => {
         this.post({
           heat: parseInt(button.name),
           slot: this.element.dataset.slot && parseInt(this.element.dataset.slot),
@@ -420,17 +420,16 @@ export default class extends Controller {
         }).then(response => {
           button.disabled = false;
           if (response.ok) {
-            button.classList.remove('border-red-500')
+            button.classList.remove("border-red-500");
           } else {
-            parent.appendChild(source);
-            button.classList.add('border-red-500');
+            button.classList.add("border-red-500");
           }
-        })
-      })
+        });
+      });
     }
 
     for (let target of this.scoreTargets) {
-      target.addEventListener('change', event => {
+      target.addEventListener("change", _event => {
         target.disabled = true;
 
         let data;
@@ -438,13 +437,13 @@ export default class extends Controller {
           data = {
             heat: parseInt(this.commentsTarget.dataset.heat),
             score: target.value
-          }
+          };
         } else {
           data = {
             heat: parseInt(target.name),
             slot: this.element.dataset.slot && parseInt(this.element.dataset.slot),
             score: target.value
-          }
+          };
         }
 
         this.post(data).then(response => {
@@ -452,21 +451,21 @@ export default class extends Controller {
           if (response.ok) {
             target.style.backgroundColor = null;
           } else {
-            target.style.backgroundColor = '#F00';
+            target.style.backgroundColor = "#F00";
           }
-        })
+        });
       });
     }
     // auto resize tabular (open, closed) textarea comments
     for (let textarea of document.querySelectorAll("table textarea")) {
-      if (!textarea.dataset.scoreTarget === 'comments') continue;
+      if (!textarea.dataset.scoreTarget === "comments") continue;
       textarea.rows = 1;
-      textarea.style.height = textarea.scrollHeight + 'px';
+      textarea.style.height = textarea.scrollHeight + "px";
 
-      textarea.addEventListener('input', () => {
+      textarea.addEventListener("input", () => {
         textarea.style.height = 0;
-        textarea.style.height = textarea.scrollHeight + 'px';
-      })
+        textarea.style.height = textarea.scrollHeight + "px";
+      });
     }
   }
 }

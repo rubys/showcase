@@ -1,4 +1,4 @@
-import { Controller } from "@hotwired/stimulus"
+import { Controller } from "@hotwired/stimulus";
 
 // Connects to data-controller="live-scores"
 export default class extends Controller {
@@ -10,17 +10,17 @@ export default class extends Controller {
     observer.observe(this.element, config);
   }
 
-  reload = event => {
-    fetch(this.element.getAttribute('action'), {
-      method: 'POST',
+  reload = _event => {
+    fetch(this.element.getAttribute("action"), {
+      method: "POST",
       headers: {
-	'X-CSRF-Token': this.token,
-	'Content-Type': 'application/json'
+        "X-CSRF-Token": this.token,
+        "Content-Type": "application/json"
       },
-      credentials: 'same-origin',
-      redirect: 'follow',
-      body: ''
+      credentials: "same-origin",
+      redirect: "follow",
+      body: ""
     }).then (response => response.text())
-    .then(html => Turbo.renderStreamMessage(html));
-  }
+      .then(html => Turbo.renderStreamMessage(html));
+  };
 }

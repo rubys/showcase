@@ -1,41 +1,40 @@
-import { Controller } from "@hotwired/stimulus"
+import { Controller } from "@hotwired/stimulus";
 
 // Connects to data-controller="heat-search"
 export default class extends Controller {
   static targets = ["input", "nav"];
 
   keydown = event => {
-    if (event.key == 'ArrowRight') {
-      let link = document.querySelector('div[rel=next]');
+    if (event.key == "ArrowRight") {
+      let link = document.querySelector("div[rel=next]");
       if (link) link.click();
-    } else if (event.key == 'ArrowLeft') {
-      let link = document.querySelector('div[rel=prev]');
+    } else if (event.key == "ArrowLeft") {
+      let link = document.querySelector("div[rel=prev]");
       if (link) link.click();
     }
-  }
+  };
 
   disconnect() {
-    document.body.removeEventListener('keydown', this.keydown);
+    document.body.removeEventListener("keydown", this.keydown);
   }
 
   connect() {
-    document.body.addEventListener('keydown', this.keydown);
+    document.body.addEventListener("keydown", this.keydown);
 
     let input = this.inputTarget;
-    let search = this.search.bind(this);
 
     this.page = 1;
 
     this.heats = [];
     let rows = null;
-    for (let tr of this.element.querySelectorAll('tr')) {
-      if (tr.parentElement.nodeName == 'THEAD') {
+    for (let tr of this.element.querySelectorAll("tr")) {
+      if (tr.parentElement.nodeName == "THEAD") {
         rows = [];
         let head = tr.parentElement;
-        let number = head.querySelector('span').textContent;
+        let number = head.querySelector("span").textContent;
         this.heats.push({ number, head, rows });
       } else {
-        let text = tr.querySelector('td[data-index]').textContent.toLowerCase();
+        let text = tr.querySelector("td[data-index]").textContent.toLowerCase();
         rows.push([text, tr]);
       }
     }
@@ -45,18 +44,18 @@ export default class extends Controller {
 
     const observer = new MutationObserver(this.seek);
     const config = { attributes: true, childList: true, subtree: true };
-    let currentHeat = document.getElementById('current-heat');
+    let currentHeat = document.getElementById("current-heat");
     observer.observe(currentHeat.parentElement, config);
 
-    input.addEventListener('input', event => {
-      this.search(input.value)
+    input.addEventListener("input", _event => {
+      this.search(input.value);
     });
 
-    this.element.querySelector('div[rel=prev').addEventListener('click', () => {
+    this.element.querySelector("div[rel=prev").addEventListener("click", () => {
       if (this.page > 1) this.setPage(this.page - 1);
     });
 
-    this.element.querySelector('div[rel=next').addEventListener('click', () => {
+    this.element.querySelector("div[rel=next").addEventListener("click", () => {
       if (this.page < this.totalPages) this.setPage(this.page + 1);
     });
   }
@@ -67,7 +66,7 @@ export default class extends Controller {
   }
 
   seek = () => {
-    let currentHeat = document.getElementById('current-heat').textContent.trim();
+    let currentHeat = document.getElementById("current-heat").textContent.trim();
 
     let heat = this.heats.find(heat => heat.number == currentHeat);
 
@@ -75,15 +74,15 @@ export default class extends Controller {
       currentHeat = parseInt(currentHeat);
       heat = this.heats.find(heat => (
         parseInt(heat.number) > currentHeat && heat.show?.length
-      ))
+      ));
     }
 
     if (heat?.page && heat.page != this.page) this.setPage(heat.page);
 
-    if (heat && heat.head.style.display != 'none') {
+    if (heat && heat.head.style.display != "none") {
       heat.head.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }
+  };
 
   search = (value) => {
     value = value.toLowerCase();
@@ -107,15 +106,15 @@ export default class extends Controller {
 
       heat.page = pages;
       counter += heat.show.length;
-    };
+    }
 
     if (this.page > pages) {
       this.page = pages;
-    };
+    }
 
     this.totalPages = pages;
     this.navigate();
-  }
+  };
 
   navigate() {
     let pages = this.totalPages;
@@ -126,16 +125,16 @@ export default class extends Controller {
       }
 
       if (show.length > 0) {
-        head.style.display = 'table-header-group';
+        head.style.display = "table-header-group";
       } else {
-        head.style.display = 'none';
+        head.style.display = "none";
       }
 
       for (let [_text, tr] of rows) {
         if (show.includes(tr)) {
-          tr.style.display = 'table-row';
+          tr.style.display = "table-row";
         } else {
-          tr.style.display = 'none';
+          tr.style.display = "none";
         }
       }
     }
@@ -148,38 +147,38 @@ export default class extends Controller {
     }
 
     const addPage = (page) => {
-      let div = document.createElement('div');
-      div.classList.add('border', 'py-2', 'px-2');
+      let div = document.createElement("div");
+      div.classList.add("border", "py-2", "px-2");
       div.textContent = page;
-      let li = document.createElement('li');
-      li.classList.add('mx-4');
+      let li = document.createElement("li");
+      li.classList.add("mx-4");
       if (page == this.page) {
-        div.classList.add('bg-black', 'text-orange-300');
-      } else if (typeof page == 'number') {
-        li.addEventListener('click', () => { this.setPage(page) })
+        div.classList.add("bg-black", "text-orange-300");
+      } else if (typeof page == "number") {
+        li.addEventListener("click", () => { this.setPage(page); });
       }
       li.appendChild(div);
       navTarget.insertBefore(li, next);
-    }
+    };
 
     if (this.page < 5) {
       if (pages < 7) {
         for (let page = 1; page <= pages; page++) addPage(page);
       } else {
         for (let page = 1; page <= 5; page++) addPage(page);
-        addPage('...');
+        addPage("...");
         addPage(pages);
       }
     } else {
       addPage(1);
-      addPage('...');
+      addPage("...");
       if (this.page + 3 >= pages) {
         for (let page = this.page - 1; page <= pages; page++) addPage(page);
       } else {
         addPage(this.page - 1);
         addPage(this.page);
         addPage(this.page + 1);
-        addPage('...');
+        addPage("...");
         addPage(pages);
       }
     }

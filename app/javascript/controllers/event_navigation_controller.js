@@ -1,50 +1,50 @@
-import { Controller } from "@hotwired/stimulus"
+import { Controller } from "@hotwired/stimulus";
 
 // Connects to data-controller="event-navigation"
 export default class extends Controller {
   connect() {
-    document.body.addEventListener('keydown', this.keydown);
-    document.body.addEventListener('touchstart', this.touchstart);
-    document.body.addEventListener('touchend', this.touchend);
+    document.body.addEventListener("keydown", this.keydown);
+    document.body.addEventListener("touchstart", this.touchstart);
+    document.body.addEventListener("touchend", this.touchend);
   }
 
   disconnect() {
-    document.body.removeEventListener('keydown', this.keydown);
-    document.body.removeEventListener('touchstart', this.touchstart);
-    document.body.removeEventListener('touchend', this.touchend);
+    document.body.removeEventListener("keydown", this.keydown);
+    document.body.removeEventListener("touchstart", this.touchstart);
+    document.body.removeEventListener("touchend", this.touchend);
   }
 
   keydown = event => {
-    if (event.key == 'ArrowRight') {
-      let link = document.querySelector('a[rel=next]')
+    if (event.key == "ArrowRight") {
+      let link = document.querySelector("a[rel=next]");
       if (link) link.click();
-    } else if (event.key == 'ArrowLeft') {
-      let link = document.querySelector('a[rel=prev]')
+    } else if (event.key == "ArrowLeft") {
+      let link = document.querySelector("a[rel=prev]");
       if (link) link.click();
-    } else if (event.key == 'ArrowUp') {
-      let link = document.querySelector('a[rel=up]')
+    } else if (event.key == "ArrowUp") {
+      let link = document.querySelector("a[rel=up]");
       if (link) link.click();
     }
-  }
+  };
 
   touchstart = event => {
     this.touchStart = event.touches[0];
-  }
+  };
 
   touchend = event => {
     let direction = this.swipe(event);
 
-    if (direction == 'right') {
-      let link = document.querySelector('a[rel=prev]')
+    if (direction == "right") {
+      let link = document.querySelector("a[rel=prev]");
       if (link) link.click();
-    } else if (direction == 'left') {
-      let link = document.querySelector('a[rel=next]')
+    } else if (direction == "left") {
+      let link = document.querySelector("a[rel=next]");
       if (link) link.click();
-    } else if (direction == 'up') {
-      let link = document.querySelector('a[rel=up]')
+    } else if (direction == "up") {
+      let link = document.querySelector("a[rel=up]");
       if (link) link.click();
     }
-  }
+  };
 
   swipe(event) {
     if (!this.touchStart) return false;
