@@ -268,6 +268,7 @@ module Printable
     @judges = Person.where(type: 'Judge').order(:name)
     @people ||= Person.joins(:studio).where(type: 'Student').order('studios.name, name')
     @heats = Heat.includes(:scores, :dance, entry: [:level, :age, :lead, :follow]).all.order(:number)
+    @formations = Formation.joins(solo: :heat).where(on_floor: true).pluck(:person_id, :number)
     @layout = 'mx-0 px-5'
     @nologo = true
     @event = Event.last

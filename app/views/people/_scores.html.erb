@@ -20,7 +20,7 @@
   </thead>
   <tbody>
     <% @heats.each do |heat| %>
-    <% next unless [heat.entry.lead, heat.entry.follow].include? person %>
+    <% next unless [heat.entry.lead, heat.entry.follow].include?(person) or @formations.any? {|id, number| id == person.id && number == heat.number} %>
     <% next if heat.category == 'Open' and @event.open_scoring == '+' %>
     <tr class="text-sm">
       <td class="text-center"><%= heat.number %>
@@ -32,11 +32,15 @@
       <% end %>
       <% end %>
       <td><div class="mx-4"><%= heat.category %> <%= heat.dance.name %></div>
+      <% if @formations.any? {|id, number| number == heat.number} %>
+      <td><div class="mx-4">Multiple</div>
+      <% else %>
       <% if heat.entry.lead != person %>
       <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div>
       <% end %>
       <% if heat.entry.follow != person %>
       <td><div class="mx-4"><%= link_to heat.entry.follow.display_name, heat.entry.follow %></div>
+      <% end %>
       <% end %>
       <% lvlcat = heat.entry.subject_lvlcat.split(/\s*-\s*/) %>
       <td class="pl-4 text-right"><%= lvlcat[0] %>
@@ -49,7 +53,7 @@
   </tbody>
 
   <% commented = @heats.select do |heat| 
-      next unless [heat.entry.lead, heat.entry.follow].include? person
+      next unless [heat.entry.lead, heat.entry.follow].include?(person) or @formations.any? {|id, number| id == person.id && number == heat.number}
       next unless heat.scores.any? {|score| score.comments}
       heat.scores.any? {|score| !score.comments.blank?}
     end
