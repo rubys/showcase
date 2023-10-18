@@ -1,6 +1,6 @@
 <div class="w-screen">
   <% @people.each do |person| %>
-    <% next unless @heats.any? {|heat| [heat.entry.lead, heat.entry.follow].include? person} %>
+    <% next unless @heats.any? {|heat| [heat.entry.lead, heat.entry.follow].include? person} or @formations.any? {|id, number| id == person.id} %>
     <%= render "people/scores", person: person %>
   <% end %>
 </div>
