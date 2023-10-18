@@ -26,4 +26,5 @@ options:
       RAILS_DB_VOLUME: "/data/db"
       RAILS_LOG_VOLUME: "/data/log"
   instructions:
+    build: config/build.fly
     deploy: config/deploy.fly

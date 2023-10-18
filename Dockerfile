@@ -32,7 +32,7 @@ FROM base as build
 
 # Install packages needed to build gems
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git pkg-config
+    apt-get install --no-install-recommends -y build-essential pkg-config
 
 # Build options
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
@@ -48,6 +48,11 @@ RUN passenger-config build-native-support
 
 # Copy application code
 COPY --link . .
+
+# Install esbuild
+RUN curl -fsSL https://esbuild.github.io/dl/latest | sh && \
+    mv esbuild /usr/local/bin
+
 
 # Precompile bootsnap code for faster boot times
 RUN bundle exec bootsnap precompile app/ lib/
