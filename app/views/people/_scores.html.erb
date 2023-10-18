@@ -46,7 +46,7 @@
       <td class="pl-4 text-right"><%= lvlcat[0] %>
       <td class="pl-1">- <%= lvlcat[1] %>
       <% if @track_ages %>
-      - <td class="text-left"><%= lvlcat[2].strip %>
+      - <td class="text-left"><%= lvlcat[2]&.strip %>
       <% end %>
     </tr>
     <% end %>

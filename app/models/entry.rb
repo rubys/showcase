@@ -44,7 +44,7 @@ class Entry < ApplicationRecord
   end
 
   def subject_lvlcat(show_ages = true)
-    return '-' if pro
+    return '- PRO -' if pro
 
     if show_ages
       if follow.type == 'Professional'
