@@ -50,8 +50,8 @@ RUN passenger-config build-native-support
 COPY --link . .
 
 # Install esbuild
-RUN curl -fsSL https://esbuild.github.io/dl/latest | sh && \
-    mv esbuild /usr/local/bin
+RUN chdir /usr/local/bin && \
+    curl -fsSL https://esbuild.github.io/dl/latest | sh
 
 
 # Precompile bootsnap code for faster boot times
