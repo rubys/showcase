@@ -38,11 +38,18 @@
           <td><%= "#{heat.category} #{heat.dance.name} - #{multi.dance.name}" %>
         </tr>
         <% end%>
-        <% else %>
-        <% heat.dance.multi_children.each_with_index do |multi, i| %>
+        <% elsif heat.dance.multi_children.length > 0 %>
+        <% 0.upto(heat.dance.heat_length-1) do |i| multi=heat.dance.multi_children[i % heat.dance.multi_children.length] %>
         <tr <% if i == 0 %>id="<%= dom_id heat %>"<% end %> class="text-black">
           <td><%= heat.number %> - Part <%= i+1 %>
           <td><%= "#{heat.category} #{heat.dance.name} - #{multi.dance.name}" %>
+        </tr>
+        <% end%>
+        <% else %>
+        <% 0.upto(heat.dance.heat_length-1) do |i| %>
+        <tr <% if i == 0 %>id="<%= dom_id heat %>"<% end %> class="text-black">
+          <td><%= heat.number %> - Part <%= i+1 %>
+          <td><%= "#{heat.category} #{heat.dance.name}" %>
         </tr>
         <% end%>
         <% end %>
