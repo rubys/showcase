@@ -33,7 +33,12 @@
       <% end %>
       <td><div class="mx-4"><%= heat.category %> <%= heat.dance.name %></div>
       <% if @formations.any? {|id, number| number == heat.number} %>
-      <td><div class="mx-4">Multiple</div>
+      <td><ul>
+      <% ids = (@formations.select {|id, number| number == heat.number}.map(&:first) + [heat.entry.lead_id, heat.entry.follow_id]) - [person.id]
+      Person.where(id: ids).order(:name).each do |dancer| %>
+      <li><div class="mx-4"><%= link_to dancer.display_name, dancer %></div>
+      <% end %>
+      </ul></td>
       <% else %>
       <% if heat.entry.lead != person %>
       <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div>
