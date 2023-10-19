@@ -9,6 +9,12 @@ class EntriesTest < ApplicationSystemTestCase
     visit person_url(people(:Kathryn))
     click_on "Add heats", match: :first
 
+    assert has_no_button?('Create Entry')
+
+    select "Arthur Murray", from: "entry[partner]"
+
+    assert has_button?('Create Entry')
+
     within page.find('h2', text: 'CLOSED CATEGORY').sibling('div') do
       check "Tango"
       check "Rumba"

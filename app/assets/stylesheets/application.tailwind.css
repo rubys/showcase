@@ -24,6 +24,7 @@
 
   .entry-count { @apply
     shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-12
+    disabled:opacity-50 disabled:cursor-not-allowed
      ml-4 mr-2
   }
 

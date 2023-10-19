@@ -19,6 +19,21 @@ export default class extends Controller {
     }
 
     this.instructorTarget.style.display = "none";
+
+    let form = this.element.closest('form');
+    if (this.partnerTarget.value === "") {
+      for (let box of document.querySelectorAll('input[type=text],input[type=checkbox],input[type=submit]')) {
+        box.disabled = true;
+      }
+      
+      return;
+    } else {
+      for (let box of document.querySelectorAll('input[type=text],input[type=checkbox],input[type=submit]')) {
+        box.disabled = false;
+      }
+
+    }
+
     if (this.instructorTarget.querySelector(`option[value="${this.partnerTarget.value}"]`)) return;
     if (this.instructorTarget.querySelector(`option[value="${this.primaryTarget.value}"]`)) return;
     this.instructorTarget.style.display = "block";
