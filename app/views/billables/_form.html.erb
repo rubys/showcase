@@ -39,7 +39,7 @@
   <ul class="mb-8">
   <% @options.each do |option, checked| %>
   <li>
-    <%= form.check_box "options[#{option.id}]", class: "entry-count h-10", checked: checked %>
+    <%= form.check_box "options][#{option.id}", class: "entry-count h-10", checked: checked %>
     <%= option.name %>
   </li>
   <% end %>
@@ -49,7 +49,7 @@
   <ul class="mb-8">
   <% @packages.each do |package, checked| %>
   <li>
-    <%= form.check_box "packages[#{package.id}]", class: "entry-count h-10", checked: checked %>
+    <%= form.check_box "packages][#{package.id}", class: "entry-count h-10", checked: checked %>
     <%= package.type %>: <%= package.name %>
   </li>
   <% end %>

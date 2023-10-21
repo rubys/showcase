@@ -67,7 +67,7 @@ categories, make a separate multi-dance for each.
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
     <% end %>
       <% @dances.each do |dance| %>
-        <% field = "multi[#{dance.name}]" %>
+        <% field = "multi][#{dance.name}" %>
         <% if dance.row and dance.col %>
         <div class="my-5 flex flex-row" style="grid-row:<%= dance.row %>; grid-column:<%= dance.col %>">
         <% else %>

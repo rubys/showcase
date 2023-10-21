@@ -31,10 +31,10 @@
   <% if @formation %>
    <% @formation.each_with_index do |instructor, index| %>
    <% if @students.any? {|student| student.id == instructor} %>
-   <%= form.select "formation[#{index+1}]", @students.map {|person| [person.display_name, person.id]}, {selected: instructor}, data: {target => 'instructor'},
+   <%= form.select "formation][#{index+1}", @students.map {|person| [person.display_name, person.id]}, {selected: instructor}, data: {target => 'instructor'},
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'student' %>
    <% else %>
-   <%= form.select "formation[#{index+1}]", @instructors, {selected: instructor}, data: {target => 'instructor'},
+   <%= form.select "formation][#{index+1}", @instructors, {selected: instructor}, data: {target => 'instructor'},
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'instructor' %>
    <% end %>
    <% end %>
