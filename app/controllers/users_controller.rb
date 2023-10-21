@@ -212,7 +212,7 @@ class UsersController < ApplicationController
         IO.write "#{dbpath}/htpasswd", contents
       end
 
-      spawn "bin/user-update"
+      spawn 'bundle', 'exec', Rails.root.join('bin/user-update').to_s
     end
 
     @@encryptor = ActiveSupport::MessageEncryptor.new(ENV['RAILS_MASTER_KEY'] || IO.read('config/master.key'))
