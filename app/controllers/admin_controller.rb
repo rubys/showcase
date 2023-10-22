@@ -1,20 +1,22 @@
 class AdminController < ApplicationController
   def index
   end
-  
+
   def regions
+    fly = File.join(Dir.home, '.fly/bin/flyctl')
+
     deployed = File.join(Rails.root, 'tmp', 'deployed.json')
     regions = File.join(Rails.root, 'tmp', 'regions.json')
 
     thread1 = Thread.new do
-      stdout, status = Open3.capture2('fly', 'regions', 'list', '--json')
+      stdout, status = Open3.capture2(fly, 'regions', 'list', '--json')
       if status.success? and stdout != (IO.read deployed rescue nil)
         IO.write deployed, stdout
       end
     end
 
     thread2 = Thread.new do
-      stdout, status = Open3.capture2('fly', 'platform', 'regions', '--json')
+      stdout, status = Open3.capture2(fly, 'platform', 'regions', '--json')
       if status.success? and stdout != (IO.read regions rescue nil)
         IO.write regions, stdout
       end
