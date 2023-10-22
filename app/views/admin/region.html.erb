@@ -1,0 +1,31 @@
+<div id="<%= @code %>">
+  <h1 class="font-bold text-4xl">Region <span class="text-blue"><%= @code %></span></h1>
+
+  <p class="my-5">
+    <strong class="block font-bold mb-1">Name:</strong>
+    <span class="pl-6"><%= @region['Name'] %></span>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-bold mb-1">Latitude:</strong>
+    <span class="pl-6"><%= @region['Latitude'] %></span>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-bold mb-1">Longitude:</strong>
+    <span class="pl-6"><%= @region['Longitude'] %></span>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-bold mb-1">Gateway Available:</strong>
+    <span class="pl-6"><%= @region['GatewayAvailable'] %></span>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-bold mb-1">Requires Paid Plan:</strong>
+    <span class="pl-6"><%= @region['RequiresPaidPlan'] %></span>
+  </p>
+
+  <%= link_to "Delete", ".", class: "rounded-lg py-3 px-5 bg-orange-400 inline-block font-medium" %>
+  <%= link_to "Back to Regions", regions_path, class: "btn-green" %>
+</div>

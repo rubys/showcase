@@ -178,6 +178,7 @@ Rails.application.routes.draw do
   post '/events/console', to: 'event#console'
 
   get 'admin/', to: "admin#index"
-  get 'admin/regions', to: 'admin#regions'
+  get 'admin/regions', to: 'admin#regions',  trailing_slash: true
+  get 'agmin/regions/:code', to: 'admin#show_region', as: 'show_region'
   get 'admin/new-region', to: 'admin#new_region'
 end
