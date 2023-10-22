@@ -1,0 +1,37 @@
+<div class="mx-auto">
+  <% if notice.present? %>
+    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+  <% end %>
+
+  <div class="flex justify-between items-center">
+    <h1 class="mx-auto font-bold text-4xl pb-5">Regions</h1>
+  </div>
+
+  <div id="studios" class="min-w-full">
+    <table class="table-fixed mx-auto">
+    <thead>
+      <tr>
+        <td class="row-head">Code
+        <td class="row-head">Location
+        <td class="row-head">Latitude
+        <td class="row-head">Longitude
+      </tr>
+    </thead>
+    <tbody>
+    <% @deployed.each do |code, region| %>
+      <tr>
+        <td class="text-center"><%= code %></td>
+        <td class="text-left"><%= region['Name'] %></td>
+        <td class="text-right"><%= '%.4f' % region['Latitude'].to_f %></td>
+        <td class="text-right"><%= '%.4f' % region['Longitude'].to_f %></td>
+      </tr>
+    <% end %>
+    </tbody>
+    </table>
+  </div>
+
+  <div class="mt-4 flex justify-between items-center">
+    <%= up_link 'New region', admin_new_region_path, class: "btn-blue" %>
+    <%= link_to "Back to Index", root_path, class: "btn-green" %>
+  </div>
+</div>
