@@ -32,6 +32,7 @@ class AdminController < ApplicationController
   end
 
   def show_region
+    @primary_region = Tomlrb.load_file('fly.toml')['primary_region'] || 'iad'
     @code = params[:code]
     logger.info @code
     @region = JSON.parse(IO.read(REGIONS)).

@@ -54,6 +54,7 @@
 
   .btn-orange { @apply
    m-2 rounded-lg py-3 px-5 bg-yellow-400 inline-block font-medium
+   disabled:opacity-50 disabled:cursor-not-allowed
    text-center
   }
 

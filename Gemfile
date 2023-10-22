@@ -91,3 +91,5 @@ gem "dockerfile-rails"
 gem "sentry-ruby", "~> 5.10"
 
 gem "sentry-rails", "~> 5.10"
+
+gem "tomlrb", "~> 2.0"

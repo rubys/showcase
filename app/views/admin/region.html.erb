@@ -1,5 +1,5 @@
-<div id="<%= @code %>">
-  <h1 class="font-bold text-4xl">Region <span class="text-blue"><%= @code %></span></h1>
+<div class="mx-auto md:w-2/3 w-full flex flex-col" id="<%= @code %>">
+  <h1 class="font-bold text-4xl">Region <span class="text-blue-600"><%= @code %></span></h1>
 
   <p class="my-5">
     <strong class="block font-bold mb-1">Name:</strong>
@@ -26,6 +26,10 @@
     <span class="pl-6"><%= @region['RequiresPaidPlan'] %></span>
   </p>
 
-  <%= link_to "Delete", ".", class: "rounded-lg py-3 px-5 bg-orange-400 inline-block font-medium" %>
-  <%= link_to "Back to Regions", regions_path, class: "btn-green" %>
+  <div>
+  <div class="inline-block ml-2">
+  <%= button_to "Delete", ".", class: "btn-orange", disabled: (@code == @primary_region)  %>
+  </div>
+  <%= link_to "Back to Regions", admin_regions_path, class: "btn-green" %>
+  </div>
 </div>
