@@ -76,8 +76,10 @@ can click on it to see helpful hints.</li>
 <% if @region %>
 <%= link_to 'Status', region_status_path(@region), class: 'btn-blue' %>
 <% else %>
-<%= link_to 'Admin', admin_path, class: 'btn-orange' %>
+<%= link_to 'Admin', "https://rubix.intertwingly.net/showcase/admin/", class: 'btn-orange' %>
 <% end %>
+<% else %>
+<%= link_to 'Admin', "https://rubix.intertwingly.net/showcase/admin/", class: 'btn-orange' %>
 <% end %>
 <% end %>
 </div>
