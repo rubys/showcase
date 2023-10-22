@@ -52,7 +52,11 @@ See:
 
 <%= link_to 'Index', root_path, class: 'btn-blue' %>
 <% if User.index_auth? @authuser %>
+<% if  Rails.env.development? %>
+<%= link_to 'Admin', admin_path, class: 'btn-orange' %>
+<% else %>
 <%= link_to 'Admin', "https://rubix.intertwingly.net/showcase/admin/", class: 'btn-orange' %>
+<% end %>
 <% end %>
 
 </div>

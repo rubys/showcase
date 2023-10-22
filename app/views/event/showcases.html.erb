@@ -75,6 +75,8 @@ can click on it to see helpful hints.</li>
 <%= link_to 'Regions', regions_path, class: 'btn-blue' %>
 <% if @region %>
 <%= link_to 'Status', region_status_path(@region), class: 'btn-blue' %>
+<% elsif  Rails.env.development? %>
+<%= link_to 'Admin', admin_path, class: 'btn-orange' %>
 <% else %>
 <%= link_to 'Admin', "https://rubix.intertwingly.net/showcase/admin/", class: 'btn-orange' %>
 <% end %>
