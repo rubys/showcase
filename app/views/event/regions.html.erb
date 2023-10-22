@@ -52,8 +52,7 @@ See:
 
 <%= link_to 'Index', root_path, class: 'btn-blue' %>
 <% if User.index_auth? @authuser %>
-<%= link_to 'Users', users_path, class: 'btn-blue' %>
-<%= link_to 'Import', import_event_index_path, class: 'btn-blue' %>
+<%= link_to 'Admin', admin_path, class: 'btn-orange' %>
 <% end %>
 
 </div>
