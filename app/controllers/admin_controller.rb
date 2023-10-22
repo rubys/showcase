@@ -1,4 +1,7 @@
 class AdminController < ApplicationController
+  def index
+  end
+  
   def regions
     deployed = File.join(Rails.root, 'tmp', 'deployed.json')
     regions = File.join(Rails.root, 'tmp', 'regions.json')

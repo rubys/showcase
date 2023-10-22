@@ -176,4 +176,8 @@ Rails.application.routes.draw do
 
   post '/showcase/events/console', to: 'event#console'
   post '/events/console', to: 'event#console'
+
+  get 'admin/', to: "admin#index"
+  get 'admin/regions', to: 'admin#regions'
+  get 'admin/new-region', to: 'admin#new_region'
 end

@@ -1,0 +1,49 @@
+<div class="mx-auto md:w-2/3 lg:w-1/2">
+
+<div data-controller="info-box">
+  <div class="info-button">&#x24D8;</div>
+  <ul class="info-box">
+  <li>Edit event information on the Settings page.
+  <li>Add Studios, then add Professionals, Guests, and Students to Studios</li>
+  <li>Review Dances, then add Heats and Solos to Students.
+  <li>Define Agenda, then redo Heats.</li>
+  <li>A form to assign back numbers to all leaders can be found on the Backs page.</li>
+  <li>Publish when closer to the event.</li>
+  <li>Enter scores from the judges pages.</li>
+  <li>Click on the logo on the top right at any time to return to this page.
+  </ul>
+</div>
+
+<% if ENV['RAILS_APP_DB'] == "demo" -%>
+<span class="absolute text-5xl -rotate-45 text-purple-600 border-2 p-2 border-purple-600 rounded-xl">Demo</span>
+<% end -%>
+
+<span data-controller="event-navigation">
+  <a rel="up" href="<%= @up || ".." %>"></a>
+  <% if @prev %><a rel="prev" href="<%= @prev %>"></a><% end %>
+  <% if @next %><a rel="next" href="<%= @next %>"></a><% end %>
+</span>
+
+  <h1 class="font-bold text-center text-4xl">Showcase Administration</h1>
+
+  <div class="mt-8 grid grid-cols-3 gap-1">
+    <%= link_to 'Users', users_path, class: "btn-green" %>
+    <%= link_to "Regions", admin_regions_path, class: "btn-blue" %>
+    <%= link_to "Studios", heats_path, class: "btn-green" %>
+
+    <%= link_to 'Import', import_event_index_path, class: "btn-pale-blue" %>
+    <%= link_to "Rubix",  "https://rubix.intertwingly.net/scu", class: "btn-pale-orange" %>
+    <%= link_to "Graftana", "https://fly-metrics.net/d/fly-app/fly-app?orgId=110534&var-app=smooth", class: "btn-pale-blue" %>
+
+    <%= link_to "Sentry", "https://dance-showcase-fc53d34a.sentry.io/issues/?project=4505553528946688", class: "btn-grey" %>
+    <%= link_to "Logs",  "https://smooth-logger.fly.dev/", class: "btn-pale-orange" %>
+    <%= link_to "Dashboard", "https://fly.io/apps/smooth", class: "btn-grey" %>
+  </div>
+
+  <p class="mt-4 text-right">
+  See:
+  <%= link_to 'docs', docs_path %>,
+  <a href="https://github.com/rubys/showcase#readme">code</a>,
+  <a href="https://github.com/rubys/showcase/issues">issues</a>.
+  </p>
+</div>
