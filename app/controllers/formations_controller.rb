@@ -17,6 +17,8 @@ class FormationsController < ApplicationController
     @formation = [nil]
 
     form_init(params[:primary])
+    @levels.push ["All Levels", 0]
+    @ages.push ["All Ages", 0]
 
     @dances = Dance.order(:name).all.map {|dance| [dance.name, dance.id]}
 
@@ -34,6 +36,8 @@ class FormationsController < ApplicationController
   def edit
     @formation = @solo.formations.map {|record| record.person_id}
     form_init(params[:primary], @solo.heat.entry)
+    @levels.push ["All Levels", 0]
+    @ages.push ["All Ages", 0]
 
     @partner = @solo.heat.entry.partner(@person).id
 

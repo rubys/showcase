@@ -95,11 +95,25 @@ module EntryForm
       instructor = params[:instructor]
     end
 
+    level = Level.where(id: params[:level]).first
+    if not level and params[:level] == '0'
+      level = Level.create!(id: 0, name: 'All Levels')
+    end
+
+    if not params[:age]
+      age = Age.order(:order).first
+    else
+      age = Age.where(id: params[:age]).first
+      if not age and params[:age] == '0'
+        age = Age.create!(id: 0, category: '*', description: 'All Ages')
+      end
+    end
+
     Entry.find_or_initialize_by(
       lead: lead,
       follow: follow,
-      age_id: params[:age] || Age.order(:order).pluck(:id).first,
-      level_id: params[:level],
+      age: age,
+      level: level,
       instructor_id: instructor
     )
   end
