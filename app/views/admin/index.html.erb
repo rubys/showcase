@@ -25,7 +25,8 @@
 </span>
 
   <h1 class="font-bold text-center text-4xl">Showcase Administration</h1>
-
+  <p class="text-center mt-2"><%= link_to pluralize(@cities, 'City'), regions_path %> -
+  <%= link_to pluralize(@events, 'Event'), inventory_path %></p>
   <div class="mt-8 grid grid-cols-3 gap-1">
     <%= link_to 'Users', users_path, class: "btn-green" %>
     <%= link_to "Regions", admin_regions_path, class: "btn-blue" %>

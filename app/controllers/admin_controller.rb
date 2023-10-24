@@ -3,6 +3,23 @@ class AdminController < ApplicationController
   REGIONS = File.join(Rails.root, 'tmp', 'regions.json')
 
   def index
+    showcases = YAML.load_file('config/tenant/showcases.yml')
+
+    cities = Set.new
+    @events = 0
+
+    showcases.each do |year, info|
+      info.each do |city, defn|
+        cities << city
+        if defn[:events]
+          @events += defn[:events].length
+        else
+          @events += 1
+        end
+      end
+    end
+
+    @cities = cities.count
   end
 
   def regions
