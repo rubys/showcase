@@ -79,7 +79,7 @@ module Printable
 
     # assign start and finish times
 
-    if start
+    if start and event.include_times
       @start = []
       @finish = []
 
