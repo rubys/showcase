@@ -93,3 +93,5 @@ gem "sentry-ruby", "~> 5.10"
 gem "sentry-rails", "~> 5.10"
 
 gem "tomlrb", "~> 2.0"
+
+gem "ansi-to-html", "~> 0.0.3"

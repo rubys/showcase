@@ -68,6 +68,7 @@ GEM
       tzinfo (~> 2.0)
     addressable (2.8.5)
       public_suffix (>= 2.0.2, < 6.0)
+    ansi-to-html (0.0.3)
     bindex (0.8.1)
     bootsnap (1.16.0)
       msgpack (~> 1.2)
@@ -262,6 +263,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  ansi-to-html (~> 0.0.3)
   bootsnap
   capybara
   chronic (~> 0.10.2)

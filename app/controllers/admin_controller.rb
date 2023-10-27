@@ -51,10 +51,20 @@ class AdminController < ApplicationController
   def show_region
     @primary_region = Tomlrb.load_file('fly.toml')['primary_region'] || 'iad'
     @code = params[:code]
-    logger.info @code
     @region = JSON.parse(IO.read(REGIONS)).
       find {|region| region['Code'] == @code}
-    logger.info @region
     render :region
+  end
+
+  def new_region
+    @stream = OutputChannel.register do |params|
+      ["bin/new_region.rb", params["region"]]
+    end
+
+    regions
+
+    @regions = JSON.parse(IO.read(REGIONS)).
+      select {|region| not @deployed.keys.include?(region['Code'])}.
+      map {|region| [region['Name'], region['Code']]}.to_h
   end
 end
