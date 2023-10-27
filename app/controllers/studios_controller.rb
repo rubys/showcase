@@ -177,7 +177,7 @@ class StudiosController < ApplicationController
   def new
     @studio ||= Studio.new
     @pairs = @studio.pairs
-    @avail = Studio.all.map {|studio| studio.name}
+    @avail = Studio.where.not(name: "Event Staff").map {|studio| studio.name}
     @cost_override = !!(@studio.heat_cost || @studio.solo_cost || @studio.multi_cost)
     @student_cost_override = !!(@studio.student_heat_cost || @studio.student_solo_cost || @studio.student_multi_cost)
 
@@ -204,6 +204,8 @@ class StudiosController < ApplicationController
   # GET /studios/1/edit
   def edit
     new
+
+    @avail.select! {|studio| studio != @studio.name and not @pairs.any? {|pair| pair.name == studio}}
     @locked = Event.last.locked?
   end
 
