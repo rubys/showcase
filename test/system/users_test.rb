@@ -25,7 +25,7 @@ class UsersTest < ApplicationSystemTestCase
     fill_in "Userid", with: @user.userid + '2'
     click_on "Create User"
 
-    assert_text "MyString12 was successfully created"
+    assert_text "joe2 was successfully created"
     click_on "Back"
   end
 
@@ -44,7 +44,7 @@ class UsersTest < ApplicationSystemTestCase
     fill_in "Userid", with: @user.userid 
     click_on "Update User"
 
-    assert_text "MyString1 was successfully updated"
+    assert_text "joe was successfully updated"
     click_on "Back"
   end
 
@@ -52,6 +52,6 @@ class UsersTest < ApplicationSystemTestCase
     visit user_url(@user)
     click_on "Destroy this user", match: :first
 
-    assert_text "MyString1 was successfully removed"
+    assert_text "joe was successfully removed"
   end
 end

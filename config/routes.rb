@@ -25,7 +25,14 @@ Rails.application.routes.draw do
       get "/inventory", to: 'event#inventory'
 
       match "/upload" => "event#upload", via: [:get, :post]
+
+      get 'admin/', to: "admin#index"
+      get 'admin/regions', to: 'admin#regions',  trailing_slash: true
+      get 'agmin/regions/:code', to: 'admin#show_region', as: 'show_region'
+      get 'admin/new-region', to: 'admin#new_region'
+
     else
+      get 'admin/', to: "admin#index" if ENV['RAILS_ENV'] == 'test'
       root 'event#root'
     end
 
@@ -172,13 +179,10 @@ Rails.application.routes.draw do
     match "/password/reset", to: 'users#password_reset', via: %i(get post)
     match "/password/verify", to: 'users#password_verify', via: %i[get patch]
     resources :users
+    resources :showcases
+    resources :locations
   end
 
   post '/showcase/events/console', to: 'event#console'
   post '/events/console', to: 'event#console'
-
-  get 'admin/', to: "admin#index"
-  get 'admin/regions', to: 'admin#regions',  trailing_slash: true
-  get 'agmin/regions/:code', to: 'admin#show_region', as: 'show_region'
-  get 'admin/new-region', to: 'admin#new_region'
 end

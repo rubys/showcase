@@ -1,0 +1,35 @@
+<div class="mx-auto">
+  <% if notice.present? %>
+    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+  <% end %>
+
+  <div class="flex justify-between items-center">
+    <h1 class="mx-auto font-bold text-4xl pb-5">Studios</h1>
+  </div>
+
+  <div id="studios" class="min-w-full">
+    <table class="table-fixed mx-auto">
+    <thead>
+      <tr>
+        <td class="row-head">Identifier
+        <td class="row-head">Name
+        <td class="row-head">Owner
+      </tr>
+    </thead>
+    <tbody>
+    <% @locations.each do |studio| %>
+      <tr>
+        <td class="text-black font-medium"><%= link_to studio.key, edit_location_path(studio) %></td>
+        <td class="text-black font-medium px-4"><%= link_to studio.name, edit_location_path(studio) %></td>
+        <td class=""><% if studio.user %><%= link_to studio.user.name1, edit_user_path(studio.user) %><% end %></td>
+      </tr>
+    <% end %>
+    </tbody>
+    </table>
+  </div>
+
+  <div class="mt-4 flex justify-between items-center">
+    <%= up_link 'New studio', new_location_path, class: "btn-blue" %>
+    <%= link_to "Back to Admin", admin_path, class: "btn-green" %>
+  </div>
+</div>

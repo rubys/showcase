@@ -1,19 +1,19 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  userid: MyString1
+  userid: joe
   password: MyString
   email: MyString1@example.com
-  name1: MyString
+  name1: Joe
   name2: MyString
   link: http://example.comf/MyString
   sites: Two
 
 two:
-  userid: MyString2
+  userid: jane
   password: MyString
   email: MyString2@example.com
-  name1: MyString
+  name1: Jane
   name2: MyString
   token: MyString
   link: http://example.comf/MyString

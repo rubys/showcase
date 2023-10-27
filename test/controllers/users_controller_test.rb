@@ -47,6 +47,6 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
 
     assert_response 303
     assert_redirected_to users_url
-    assert_equal flash[:notice], 'MyString1 was successfully removed.'
+    assert_equal flash[:notice], 'joe was successfully removed.'
   end
 end

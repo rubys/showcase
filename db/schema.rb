@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_10_25_173707) do
+ActiveRecord::Schema[7.0].define(version: 2023_10_27_142506) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -209,6 +209,18 @@ ActiveRecord::Schema[7.0].define(version: 2023_10_25_173707) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "locations", force: :cascade do |t|
+    t.string "key"
+    t.string "name"
+    t.string "logo"
+    t.float "latitude"
+    t.float "longitude"
+    t.integer "user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_locations_on_user_id"
+  end
+
   create_table "multis", force: :cascade do |t|
     t.integer "parent_id", null: false
     t.integer "dance_id", null: false
@@ -269,6 +281,16 @@ ActiveRecord::Schema[7.0].define(version: 2023_10_25_173707) do
     t.string "bad"
     t.index ["heat_id"], name: "index_scores_on_heat_id"
     t.index ["judge_id"], name: "index_scores_on_judge_id"
+  end
+
+  create_table "showcases", force: :cascade do |t|
+    t.integer "year"
+    t.string "key"
+    t.string "name"
+    t.integer "location_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["location_id"], name: "index_showcases_on_location_id"
   end
 
   create_table "solos", force: :cascade do |t|
@@ -359,6 +381,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_10_25_173707) do
   add_foreign_key "heats", "dances"
   add_foreign_key "heats", "entries"
   add_foreign_key "judges", "people"
+  add_foreign_key "locations", "users"
   add_foreign_key "multis", "dances"
   add_foreign_key "multis", "dances", column: "parent_id"
   add_foreign_key "package_includes", "billables", column: "option_id"
@@ -372,6 +395,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_10_25_173707) do
   add_foreign_key "person_options", "people"
   add_foreign_key "scores", "heats"
   add_foreign_key "scores", "people", column: "judge_id"
+  add_foreign_key "showcases", "locations"
   add_foreign_key "solos", "categories", column: "category_override_id"
   add_foreign_key "solos", "dances", column: "combo_dance_id"
   add_foreign_key "solos", "heats"

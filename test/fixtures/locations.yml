@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  key: florida
+  name: Florida
+  latitude: 1.5
+  longitude: 1.5
+  user: two
+
+two:
+  key: texas
+  name: Texas
+  latitude: 1.5
+  longitude: 1.5
+  user: two
