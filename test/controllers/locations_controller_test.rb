@@ -35,7 +35,7 @@ class LocationsControllerTest < ActionDispatch::IntegrationTest
 
   test "should update location" do
     patch location_url(@location), params: { location: { key: @location.key, latitude: @location.latitude, longitude: @location.longitude, name: @location.name, user_id: @location.user_id } }
-    assert_redirected_to location_url(@location)
+    assert_redirected_to locations_url
   end
 
   test "should destroy location" do
