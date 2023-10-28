@@ -21,7 +21,8 @@ if [[ $# -gt 0 ]]; then
   fi
 
   if [[ "$1" = "test" ]]; then
-    RAILS_ENV=test bin/rails db:prepare db:fixtures:load
+    export RAILS_ENV=test
+    bin/rails db:prepare db:fixtures:load
   elif [[ "$1" = "demo" ]]; then
     rm -f db/demo.sqlite3
     bin/rails db:prepare db:seed
