@@ -12,20 +12,23 @@ class LocationsController < ApplicationController
 
   # GET /locations/new
   def new
-    @location = Location.new
-    edit
+    @location ||= Location.new
+
+    @users = User.order(:userid).pluck(:userid, :name1, :name2, :id).
+    map do |userid, name1, name2, id|
+      if name2.empty?
+        ["#{userid}: #{name1}", id]
+      else
+        ["#{userid}: #{name1}/#{name2}", id]
+      end
+    end
   end
 
   # GET /locations/1/edit
   def edit
-    @users = User.order(:userid).pluck(:userid, :name1, :name2, :id).
-      map do |userid, name1, name2, id|
-        if name2.empty?
-          ["#{userid}: #{name1}", id]
-        else
-          ["#{userid}: #{name1}/#{name2}", id]
-        end
-      end
+    new
+
+    @showcases = @location.showcases.order(:year, :order).reverse.group_by(&:year)
   end
 
   # POST /locations or /locations.json

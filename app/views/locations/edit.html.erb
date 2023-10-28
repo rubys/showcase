@@ -5,4 +5,20 @@
 
   <%= link_to "Show this location", @location, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
   <%= link_to "Back to locations", locations_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+
+  <h1 class="mt-8 font-bold text-4xl">Showcases</h1>
+
+  <% @showcases.each do |year, showcases| %>
+  <a href="<%= "#{@scope}/#{year}".squeeze('/') %>/">
+    <h2 class="font-bold text-2xl mt-4 mb-2"><%= year %></h2>
+  </a>
+
+  <ul class="mt-2 list-disc list-inside">
+    <% showcases.each do |showcase| %>
+    <li>
+      <span class="text-xl"><%= link_to showcase.name, edit_showcase_path(showcase) %><span>
+    </li>
+    <% end %>
+  </ul>
+<% end %>
 </div>
