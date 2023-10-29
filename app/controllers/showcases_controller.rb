@@ -23,6 +23,8 @@ class ShowcasesController < ApplicationController
   def create
     @showcase = Showcase.new(showcase_params)
 
+    @showcase.order = (Showcase.maximum(:order) || 0) + 1
+
     respond_to do |format|
       if @showcase.save
         format.html { redirect_to showcase_url(@showcase), notice: "Showcase was successfully created." }
