@@ -14,13 +14,13 @@ class ShowcasesTest < ApplicationSystemTestCase
     visit showcases_url
     click_on "New showcase"
 
-    fill_in "Key", with: @showcase.key
-    fill_in "Name", with: @showcase.name
-    fill_in "Location", with: @showcase.location_id
+    fill_in "Key", with: @showcase.key+'2'
+    fill_in "Name", with: @showcase.name+'2'
+    select @showcase.location.name, from: "Location"
     fill_in "Year", with: @showcase.year
     click_on "Create Showcase"
 
-    assert_text "Showcase was successfully created"
+    assert_text "MyString2 was successfully created"
     click_on "Back"
   end
 
@@ -30,11 +30,11 @@ class ShowcasesTest < ApplicationSystemTestCase
 
     fill_in "Key", with: @showcase.key
     fill_in "Name", with: @showcase.name
-    fill_in "Location", with: @showcase.location_id
+    select @showcase.location.name, from: "Location"
     fill_in "Year", with: @showcase.year
     click_on "Update Showcase"
 
-    assert_text "Showcase was successfully updated"
+    assert_text "MyString was successfully updated"
     click_on "Back"
   end
 
@@ -42,6 +42,6 @@ class ShowcasesTest < ApplicationSystemTestCase
     visit showcase_url(@showcase)
     click_on "Destroy this showcase", match: :first
 
-    assert_text "Showcase was successfully destroyed"
+    assert_text "MyString was successfully destroyed"
   end
 end

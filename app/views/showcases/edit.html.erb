@@ -2,7 +2,12 @@
   <h1 class="font-bold text-4xl">Editing showcase</h1>
 
   <%= render "form", showcase: @showcase %>
-
-  <%= link_to "Show this showcase", @showcase, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  
+  <div class="mx-auto flex">
+  <input type="submit" form="showcase-form" value="Update Showcase"
+    class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer">
+  <%= up_link 'Remove this showcase', showcase_path(@showcase), class: 'btn-orange my-0',
+      method: :delete, form: {data: { turbo_confirm: 'Are you sure?' }} %>
   <%= link_to "Back to showcases", showcases_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  </div>
 </div>

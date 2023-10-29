@@ -13,6 +13,10 @@
 
   <h1 class="mt-8 font-bold text-4xl">Showcases</h1>
 
+  <% if notice.present? %>
+    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+  <% end %>
+
   <% @showcases.each do |year, showcases| %>
   <a href="<%= "#{@scope}/#{year}".squeeze('/') %>/">
     <h2 class="font-bold text-2xl mt-4 mb-2"><%= year %></h2>
@@ -26,4 +30,6 @@
     <% end %>
   </ul>
 <% end %>
+
+<%= up_link 'New showcase', new_showcase_path(location: @location), class: 'btn-blue mt-4' %>
 </div>

@@ -17,10 +17,11 @@ class ShowcasesControllerTest < ActionDispatch::IntegrationTest
 
   test "should create showcase" do
     assert_difference("Showcase.count") do
-      post showcases_url, params: { showcase: { key: @showcase.key, name: @showcase.name, location_id: @showcase.location_id, year: @showcase.year } }
+      post showcases_url, params: { showcase: { key: @showcase.key+'2', name: @showcase.name+'2', location_id: @showcase.location_id, year: @showcase.year } }
     end
 
-    assert_redirected_to showcase_url(Showcase.last)
+    assert_redirected_to edit_location_url(@showcase.location)
+    assert_equal flash[:notice], 'MyString2 was successfully created.'
   end
 
   test "should show showcase" do
@@ -35,7 +36,8 @@ class ShowcasesControllerTest < ActionDispatch::IntegrationTest
 
   test "should update showcase" do
     patch showcase_url(@showcase), params: { showcase: { key: @showcase.key, name: @showcase.name, location_id: @showcase.location_id, year: @showcase.year } }
-    assert_redirected_to showcase_url(@showcase)
+    assert_redirected_to edit_location_url(@showcase.location)
+    assert_equal flash[:notice], 'MyString was successfully updated.'
   end
 
   test "should destroy showcase" do
@@ -43,6 +45,8 @@ class ShowcasesControllerTest < ActionDispatch::IntegrationTest
       delete showcase_url(@showcase)
     end
 
-    assert_redirected_to showcases_url
+    assert_response 303
+    assert_redirected_to edit_location_url(@showcase.location)
+    assert_equal flash[:notice], 'MyString was successfully destroyed.'
   end
 end
