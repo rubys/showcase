@@ -14,14 +14,14 @@ class LocationsTest < ApplicationSystemTestCase
     visit locations_url
     click_on "New studio"
 
-    fill_in "Key", with: @location.key
+    fill_in "Key", with: @location.key + '2'
     fill_in "Latitude", with: @location.latitude
     fill_in "Longitude", with: @location.longitude
-    fill_in "Name", with: @location.name
+    fill_in "Name", with: @location.name + '2'
     select @location.user.name1, from: "Owner/Contact"
-    click_on "Create Location"
+    click_on "Create Studio"
 
-    assert_text "Location was successfully created"
+    assert_text "Florida2 was successfully created"
     click_on "Back"
   end
 
@@ -36,7 +36,7 @@ class LocationsTest < ApplicationSystemTestCase
     select @location.user.name1, from: "Owner/Contact"
     click_on "Update Location"
 
-    assert_text "Location was successfully updated"
+    assert_text "Florida was successfully updated"
     click_on "Back"
   end
 
@@ -44,6 +44,6 @@ class LocationsTest < ApplicationSystemTestCase
     visit location_url(@location)
     click_on "Destroy this location", match: :first
 
-    assert_text "Location was successfully destroyed"
+    assert_text "Florida was successfully destroyed"
   end
 end

@@ -3,8 +3,13 @@
 
   <%= render "form", location: @location %>
 
-  <%= link_to "Show this location", @location, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  <div class="mx-auto flex">
+  <input type="submit" form="location-form" value="Update Location"
+    class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer">
+  <%= up_link 'Remove this location', location_path(@location), class: 'btn-orange my-0',
+      method: :delete, form: {data: { turbo_confirm: 'Are you sure?' }} %>
   <%= link_to "Back to locations", locations_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  </div>
 
   <h1 class="mt-8 font-bold text-4xl">Showcases</h1>
 

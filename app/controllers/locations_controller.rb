@@ -3,7 +3,7 @@ class LocationsController < ApplicationController
 
   # GET /locations or /locations.json
   def index
-    @locations = Location.all
+    @locations = Location.order(:key).all
   end
 
   # GET /locations/1 or /locations/1.json
@@ -37,9 +37,10 @@ class LocationsController < ApplicationController
 
     respond_to do |format|
       if @location.save
-        format.html { redirect_to location_url(@location), notice: "Location was successfully created." }
+        format.html { redirect_to locations_url, notice: "#{@location.name} was successfully created." }
         format.json { render :show, status: :created, location: @location }
       else
+        new
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @location.errors, status: :unprocessable_entity }
       end
@@ -50,9 +51,10 @@ class LocationsController < ApplicationController
   def update
     respond_to do |format|
       if @location.update(location_params)
-        format.html { redirect_to locations_url, notice: "Location was successfully updated." }
+        format.html { redirect_to locations_url, notice: "#{@location.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @location }
       else
+        edit
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @location.errors, status: :unprocessable_entity }
       end
@@ -64,7 +66,7 @@ class LocationsController < ApplicationController
     @location.destroy
 
     respond_to do |format|
-      format.html { redirect_to locations_url, notice: "Location was successfully destroyed." }
+      format.html { redirect_to locations_url, notice: "#{@location.name} was successfully destroyed.", status: 303 }
       format.json { head :no_content }
     end
   end

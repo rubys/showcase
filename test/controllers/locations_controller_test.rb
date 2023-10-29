@@ -17,10 +17,11 @@ class LocationsControllerTest < ActionDispatch::IntegrationTest
 
   test "should create location" do
     assert_difference("Location.count") do
-      post locations_url, params: { location: { key: @location.key, latitude: @location.latitude, longitude: @location.longitude, name: @location.name, user_id: @location.user_id } }
+      post locations_url, params: { location: { key: @location.key+'2', latitude: @location.latitude, longitude: @location.longitude, name: @location.name+'2', user_id: @location.user_id } }
     end
 
-    assert_redirected_to location_url(Location.last)
+    assert_redirected_to locations_url
+    assert_equal flash[:notice], 'Florida2 was successfully created.'
   end
 
   test "should show location" do
@@ -36,6 +37,7 @@ class LocationsControllerTest < ActionDispatch::IntegrationTest
   test "should update location" do
     patch location_url(@location), params: { location: { key: @location.key, latitude: @location.latitude, longitude: @location.longitude, name: @location.name, user_id: @location.user_id } }
     assert_redirected_to locations_url
+    assert_equal flash[:notice], 'Florida was successfully updated.'
   end
 
   test "should destroy location" do
@@ -43,6 +45,8 @@ class LocationsControllerTest < ActionDispatch::IntegrationTest
       delete location_url(@location)
     end
 
+    assert_response 303
     assert_redirected_to locations_url
+    assert_equal flash[:notice], 'Florida was successfully destroyed.'
   end
 end
