@@ -175,9 +175,12 @@ module HeatScheduler
 
     groups.each do |group|
       dcat = group.dcat
+      next unless group.first
 
       if dcat == 'Open'
         cats[group.dance.open_category] << group
+      elsif dcat == 'Closed'
+        cats[group.dance.closed_category] << group
       elsif dcat == 'Solo'
         solos[group.dance.solo_category] << group
       elsif dcat == 'Multi'
@@ -288,7 +291,7 @@ module HeatScheduler
     end
 
     def override
-      @group.first.solo&.category_override
+      @group.first&.solo&.category_override
     end
 
     def dcat
