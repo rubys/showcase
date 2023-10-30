@@ -3,6 +3,8 @@ module Configurator
   DBPATH = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
 
   def generate_map
+    return if Rails.env.test?
+
     deployed = JSON.parse(IO.read 'tmp/deployed.json')['ProcessGroupRegions'].
       find {|process| process['Name'] == 'app'}["Regions"]
     regions = JSON.parse(IO.read 'tmp/regions.json').
@@ -35,6 +37,8 @@ module Configurator
   end
 
   def generate_showcases
+    return if Rails.env.test?
+
     deployed = JSON.parse(IO.read 'tmp/deployed.json')['ProcessGroupRegions'].
       find {|process| process['Name'] == 'app'}["Regions"]
     regions = JSON.parse(IO.read 'tmp/regions.json').
