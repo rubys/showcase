@@ -19,7 +19,7 @@
 
   <% if @person %>
   <%= form.hidden_field :primary, value: @person.id, data: {target => 'primary'} %>
-  <%= form.select :partner, @avail, {include_blank: @entry&.new_record?, selected: nil}, data: {target => 'partner', action: 'change->entry-box#reveal'},
+  <%= form.select :partner, @avail, {include_blank: @entry&.new_record?, selected: @partner}, data: {target => 'partner', action: 'change->entry-box#reveal'},
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'partner' %>
   <% else %>
   <%= form.select :primary, @followers, {selected: @partner}, data: {target  => 'primary', action: 'change->entry-box#reveal'},
