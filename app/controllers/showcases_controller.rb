@@ -1,4 +1,5 @@
 class ShowcasesController < ApplicationController
+  include Configurator
   before_action :set_showcase, only: %i[ show edit update destroy ]
 
   # GET /showcases or /showcases.json
@@ -41,6 +42,8 @@ class ShowcasesController < ApplicationController
 
     respond_to do |format|
       if @showcase.save
+        generate_showcases
+
         format.html { redirect_to edit_location_url(@showcase.location),
           notice: "#{@showcase.name} was successfully created." }
         format.json { render :show, status: :created, location: @showcase }
@@ -56,6 +59,8 @@ class ShowcasesController < ApplicationController
   def update
     respond_to do |format|
       if @showcase.update(showcase_params)
+        generate_showcases
+
         format.html { redirect_to edit_location_url(@showcase.location),
           notice: "#{@showcase.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @showcase }
@@ -70,6 +75,7 @@ class ShowcasesController < ApplicationController
   # DELETE /showcases/1 or /showcases/1.json
   def destroy
     @showcase.destroy
+    generate_showcases
 
     respond_to do |format|
       format.html { redirect_to edit_location_url(@showcase.location), status: 303,

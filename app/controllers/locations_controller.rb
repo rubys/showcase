@@ -1,4 +1,6 @@
 class LocationsController < ApplicationController
+  include Configurator
+
   before_action :set_location, only: %i[ show edit update destroy ]
 
   # GET /locations or /locations.json
@@ -37,6 +39,9 @@ class LocationsController < ApplicationController
 
     respond_to do |format|
       if @location.save
+        generate_showcases
+        generate_map
+
         format.html { redirect_to locations_url, notice: "#{@location.name} was successfully created." }
         format.json { render :show, status: :created, location: @location }
       else
@@ -51,6 +56,9 @@ class LocationsController < ApplicationController
   def update
     respond_to do |format|
       if @location.update(location_params)
+        generate_showcases
+        generate_map
+
         format.html { redirect_to locations_url, notice: "#{@location.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @location }
       else
@@ -66,6 +74,9 @@ class LocationsController < ApplicationController
     @location.destroy
 
     respond_to do |format|
+      generate_showcases
+      generate_map
+      
       format.html { redirect_to locations_url, notice: "#{@location.name} was successfully destroyed.", status: 303 }
       format.json { head :no_content }
     end

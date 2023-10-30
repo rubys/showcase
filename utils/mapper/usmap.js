@@ -6,7 +6,9 @@ import shapefile from 'shapefile'
 import * as d3 from "d3-geo"
 import * as yaml from "yaml"
 
-let files = yaml.parse(fs.readFileSync("files.yml", "utf-8"))
+process.chdir(new URL('.', import.meta.url).pathname)
+
+let files = yaml.parse(fs.readFileSync('files.yml', "utf-8"))
 
 const projection = d3.geoAlbersUsa()
 
@@ -127,7 +129,8 @@ let map = yaml.parse(oldYaml)
 let points = { ...map.regions, ...map.studios }
 for (let point of Object.values(points)) {
   if (!point.lat || !point.lon) continue
-  [point.x, point.y] = projection([point.lon, point.lat])
+  let dot = projection([point.lon, point.lat])
+  if (dot) [point.x, point.y] = dot
   delete point.transform
 }
 
