@@ -1,5 +1,5 @@
 ---
-2024:                                                                           
+2024:
   raleigh:
     :name: Raleigh
     :region: iad
@@ -8,7 +8,7 @@
     :name: Salt Lake City
     :region: den
     :logo: arthur-murray-logo.gif
-2023:                                                                           
+2023:
   alexandria:
     :name: Alexandria
     :region: iad
@@ -28,13 +28,13 @@
     :name: Austin
     :region: dfw
     :logo: arthur-murray-logo.gif
-  charlotte:
-    :name: Charlotte
-    :region: atl
-    :logo: arthur-murray-logo.gif
   carmel:
     :name: Carmel
     :region: ord
+    :logo: arthur-murray-logo.gif
+  charlotte:
+    :name: Charlotte
+    :region: atl
     :logo: arthur-murray-logo.gif
   chicago:
     :name: Chicago
@@ -71,11 +71,11 @@
     :name: Nashville-Green Hills
     :region: atl
     :logo: arthur-murray-logo.gif
-  harrisburg:                                                                   
+  harrisburg:
     :name: Harrisburg
     :region: iad
     :logo: arthur-murray-logo.gif
-  kennesaw:                                                                   
+  kennesaw:
     :name: Kennesaw
     :region: atl
     :logo: arthur-murray-logo.gif
@@ -122,15 +122,15 @@
     :name: Sarasota
     :region: mia
     :logo: arthur-murray-logo.gif
-  sydney:
-    :name: Sydney
-    :region: syd
-    :logo: arthur-murray-logo.gif
   sugarland:
     :name: Sugar Land
     :region: dfw
     :logo: arthur-murray-logo.gif
-  vabeach:                                                                   
+  sydney:
+    :name: Sydney
+    :region: syd
+    :logo: arthur-murray-logo.gif
+  vabeach:
     :name: Virginia Beach
     :region: iad
     :logo: arthur-murray-logo.gif
@@ -138,17 +138,17 @@
     :name: Woodlands
     :region: dfw
     :logo: arthur-murray-logo.gif
-2022:                                                                           
+2022:
   annapolis:
     :name: Annapolis
     :region: iad
     :logo: arthur-murray-logo.gif
-    :events:                                          
-      :medalball:                                     
-        :name: Metal Ball                             
-      :chesapeakeclassic:
+    :events:
+      medalball:
+        :name: Metal Ball
+      chesapeakeclassic:
         :name: Chesapeake Classic
-      :gratitudegala:
+      gratitudegala:
         :name: Gratitude Gala
   cary:
     :name: Cary
@@ -158,15 +158,15 @@
     :name: Charlotte
     :region: atl
     :logo: arthur-murray-logo.gif
-  harrisburg:                                                                   
+  harrisburg:
     :name: Harrisburg
     :region: iad
     :logo: arthur-murray-logo.gif
-  kennesaw:                                                                   
+  kennesaw:
     :name: Kennesaw
     :region: atl
     :logo: arthur-murray-logo.gif
-  vabeach:                                                                   
+  vabeach:
     :name: Virginia Beach
     :region: iad
     :logo: arthur-murray-logo.gif
