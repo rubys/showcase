@@ -77,6 +77,8 @@ app.get("/", async (req, res) => {
     timeout = +setTimeout(() => fetchOthers().catch(console.error), 1000)
   }
 
+  let filter = (req.query.filter !== 'off');
+
   let lastVisit = "0";
   try {
     lastVisit = fs.statSync(VISITTIME).mtime.toISOString()
@@ -120,8 +122,10 @@ app.get("/", async (req, res) => {
 
         let link = `<a href="${HOST}${match[6]}">${match[6]}</a>`;
 
+        if (filter && (match[3] === '-' || match[3] === 'rubys')) return;
+
         let log = [
-          match[4].replace(' +0000', 'Z'),
+          `<time>${match[4].replace(' +0000', 'Z')}</time>`,
           `<a href="https://smooth.fly.dev/showcase/regions/${match[1]}/status"><span style="color: maroon">${match[1]}</span></a>`,
           status,
           match[2].split(',')[0],
@@ -147,7 +151,7 @@ app.get("/", async (req, res) => {
     if (results.length > 40) break;
 
     previous = results;
-    results = [ previous.shift() ];
+    results = [ previous.shift() as string ];
   }
 
   results.push('<pre>')
@@ -166,6 +170,12 @@ app.get("/", async (req, res) => {
 
   results.push(`</h2>`)
   results.push(`</small>`)
+
+  results.push(`<span style="float: right">
+  <input name="filter" type="checkbox"${filter ? " checked" : ""}>
+  filter
+  </span>`)
+
   for (const region of REGIONS) {
     if (region != FLY_REGION) {
       results.push(`<a href="/regions/${region}/">${region}</a>`)
@@ -181,6 +191,27 @@ app.get("/", async (req, res) => {
       a {color: black; text-decoration: none}
     </style>
     ${results.reverse().join("\n")}
+    <script>
+      for (let time of document.querySelectorAll('time')) {
+        let text = time.textContent;
+        let match = text.match(${/^(\d+)\/(\w+)\/(\d+):\d+:\d+:\d+Z/})
+        if (!match) continue
+        let date = new Date([match[2], match[1], match[3]].join(' '))
+        date = new Date(date.toISOString().slice(0,11) + text.slice(12,21))
+        time.setAttribute('datetime', date.toISOString())
+        time.setAttribute('title', text.slice(0,21))
+        time.textContent = date.toLocaleString().replace(',', '')
+      }
+
+      let filter = document.querySelector('input[name=filter]')
+      filter.addEventListener("click", () => {
+        let url = new URL(window.location)
+        let search = url.searchParams
+        search.set('filter',  filter.checked ? "on" : "off")
+        url.search = search.toString()
+        location = url
+      })
+      </script>
   `)
 })
 
