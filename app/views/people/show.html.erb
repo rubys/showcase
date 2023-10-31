@@ -219,6 +219,11 @@ when most dances for an individual are with one instructor but one or two are ch
             <%= @entries[partner].map {|entries| entries.active_heats.size}.sum %>
           </td>
         <% end %>
+        <% if @partners.length > 1 %>
+        <td class="border-t-2 border-gray-200 row text-center">
+          <%= @entries.values.flatten.map {|entries| entries.active_heats.size}.sum %>
+        </td>
+        <% end %>
       </tr>
       </tbody>
     </table>
