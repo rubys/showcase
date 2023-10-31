@@ -32,12 +32,24 @@
     <%= link_to "Regions", admin_regions_path, class: "btn-blue" %>
     <%= link_to "Studios", locations_path, class: "btn-green" %>
 
+    <div></div>
     <%= link_to 'Import', import_event_index_path, class: "btn-pale-blue" %>
-    <%= link_to "Rubix",  "https://rubix.intertwingly.net/scu", class: "btn-pale-orange" %>
-    <%= link_to "Graftana", "https://fly-metrics.net/d/fly-app/fly-app?orgId=110534&var-app=smooth", class: "btn-pale-blue" %>
+    <div></div>
+
+    <div class="my-4"></div><div></div><div></div>
+
+    <%= link_to "rubix", "https://rubix.intertwingly.net/showcase/", class: "btn-pale-green" %>
+    <%= link_to "hetzner", "https://hetzner.intertwingly.net/showcase/", class: "btn-pale-green" %>
+    <%= link_to "fly", "https://smooth.fly.dev/showcase/regions/", class: "btn-pale-green" %>
+
+    <%= link_to "Logs",  "https://rubix.intertwingly.net/scu", class: "btn-pale-orange" %>
+    <%= link_to "Logs",  "https://rubix.intertwingly.net/scu2", class: "btn-pale-orange" %>
+    <%= link_to "Logs",  "https://smooth-logger.fly.dev/", class: "btn-pale-orange" %>
+
+    <div class="my-4"></div><div></div><div></div>
 
     <%= link_to "Sentry", "https://dance-showcase-fc53d34a.sentry.io/issues/?project=4505553528946688", class: "btn-grey" %>
-    <%= link_to "Logs",  "https://smooth-logger.fly.dev/", class: "btn-pale-orange" %>
+    <%= link_to "Graftana", "https://fly-metrics.net/d/fly-app/fly-app?orgId=110534&var-app=smooth", class: "btn-pale-blue" %>
     <%= link_to "Dashboard", "https://fly.io/apps/smooth", class: "btn-grey" %>
   </div>
 
