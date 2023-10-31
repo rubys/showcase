@@ -195,6 +195,9 @@ when most dances for an individual are with one instructor but one or two are ch
           <%= link_to partner.first_name, partner %>
         </td>
       <% end %>
+      <% if @partners.length > 1 %>
+        <td class="row-head-main text-gray-400">Total</td>
+      <% end %>
       </thead>
 
       <tbody>
@@ -203,6 +206,9 @@ when most dances for an individual are with one instructor but one or two are ch
         <td><%= dance.name %></td>
         <% @partners.each do |partner| %>
           <td class="row text-center"><%= partners[partner] %></td>
+        <% end %>
+        <% if @partners.length > 1 %>
+        <td class="row text-center"><%= partners.values.sum %></td>
         <% end %>
       </tr>
       <% end %>

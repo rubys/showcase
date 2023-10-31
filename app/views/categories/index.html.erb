@@ -101,6 +101,14 @@ another heat is still possible, even when the agenda is locked.
       <td class="border-t-2 border-gray-200 row text-right">
         <%= heat_count %>
       </td>
+      <% if @start && !@start.compact.empty? %>
+      <% unless @oneday %>
+      <th class="border-t-2">
+      <% end %>
+      <th class="border-t-2" colspan="2">
+      <% elsif not @oneday %>
+      <th class="border-t-2">
+      <% end %>
     </tr>
     </tfoot>
   </table>
