@@ -182,7 +182,7 @@ app.get("/", async (req, res) => {
     }
   }
   results.push(`<small style="font-weight: normal">`)
-  results.push(`smooth.fly.dev logs: ${FLY_REGION}`)
+  results.push(`<a href="https://smooth.fly.dev/">smooth.fly.dev</a> logs: ${FLY_REGION}`)
   results.push(`<h2>`)
 
   res.send(`
