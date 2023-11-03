@@ -32,6 +32,7 @@ Rails.application.routes.draw do
       get 'admin/regions/:code', to: 'admin#show_region', as: 'show_region'
       delete 'admin/regions/:code', to: 'admin#destroy_region', as: 'destroy_region'
       get 'admin/new-region', to: 'admin#new_region'
+      get 'admin/apply', to: 'admin#apply'
 
     else
       get 'admin/', to: "admin#index" if ENV['RAILS_ENV'] == 'test'

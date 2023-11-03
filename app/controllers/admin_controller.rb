@@ -61,7 +61,7 @@ class AdminController < ApplicationController
 
   def show_region
     @primary_region = Tomlrb.load_file('fly.toml')['primary_region'] || 'iad'
-    @pending = JSON.parse(IO.read(DEPLOYED))['pending']
+    @pending = JSON.parse(IO.read(DEPLOYED))['pending'] || {}
     @code = params[:code]
     @region = JSON.parse(IO.read(REGIONS)).
       find {|region| region['Code'] == @code}
@@ -133,5 +133,20 @@ class AdminController < ApplicationController
     @stream = OutputChannel.register do |params|
       ["bin/new_region.rb", params["region"]]
     end
+
+    system "bin/rails runner bin/showcases > tmp/showcases.yml"
+
+    before = YAML.load_file('config/tenant/showcases.yml').values.reduce {|a, b| a.merge(b)}
+    after = YAML.load_file('tmp/showcases.yml').values.reduce {|a, b| a.merge(b)}
+
+    @move = {}
+    after.to_a.sort.each do |site, info|
+      was = before[site]
+      next unless was
+      next if was[:region] == info[:region]
+      @move[site] = {from: was[:region], to: info[:region]}
+    end
+
+    @pending = JSON.parse(IO.read(DEPLOYED))['pending'] || {}
   end
 end

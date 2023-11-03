@@ -1,0 +1,54 @@
+<div class="mx-auto md:w-2/3 w-full" data-controller="submit">
+
+<h1 class="text-4xl font-extrabold text-center">Apply Changes</h1>
+
+<% unless @pending['add'].blank? %>
+<h2 class="font-bold text-2xl mt-4 mb-2">Add regions</h2>
+<ul class="ml-8 list-disc list-outside">
+<% @pending['add'].sort.each do |region| %>
+<li><%= region %>
+<% end %>
+</ul>
+<% end %>
+
+<% unless @move.blank? %>
+<h2 class="font-bold text-2xl mt-4 mb-2">Move Sites</h2>
+<table>
+<thead>
+<tr>
+  <th class="row-head">Site
+  <th class="row-head">From
+  <th class="row-head">To
+</tr>
+</thead>
+<tbody>
+<% @move.each do |site, change| %>
+<tr>
+  <td class="row"><%= site %>
+  <td class="row"><%= change[:from] %>
+  <td class="row"><%= change[:to] %>
+</tr>
+<% end %>
+</tbody>
+</table>
+<% end %>
+
+<% unless @pending['delete'].blank? %>
+<h2 class="font-bold text-2xl mt-4 mb-2">Delete regions</h2>
+<ul class="ml-8 list-disc list-outside">
+<% @pending['delete'].sort.each do |region| %>
+<li><%= region %>
+<% end %>
+</ul>
+<% end %>
+
+<button data-submit-target="submit"
+  class="flex mx-auto bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border-2 rounded-xl my-4">submit</button>
+
+<div class="border-2 border-black rounded-xl p-2 hidden">
+<div data-submit-target="output" data-stream="<%= @stream %>"
+  class="w-full mx-auto overflow-y-auto h-auto font-mono text-sm max-h-[25rem] min-h-[25rem]">
+</div>
+</div>
+
+</div>
