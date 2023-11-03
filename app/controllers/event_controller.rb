@@ -651,7 +651,7 @@ class EventController < ApplicationController
           end
 
           excludes.each do |id, exclude|
-            person.find(id).update(exlude_id: exclude)
+            Person.find(id).update(exlude_id: exclude)
           end
         end
 
