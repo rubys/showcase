@@ -19,7 +19,13 @@
     </thead>
     <tbody>
     <% @deployed.each do |code, region| %>
+      <% if @pending['delete']&.include? code %>
+      <tr class="line-through opacity-50" title="pending deletion">
+      <% elsif @pending['add']&.include? code %>
+      <tr class="italic font-bold opacity-50" title="pending addition">
+      <% else %>
       <tr>
+      <% end %>
         <td class="text-center"><%= link_to code, show_region_path(code) %></td>
         <td class="text-left"><%= region['Name'] %></td>
         <td class="text-right"><%= '%.4f' % region['Latitude'].to_f %></td>
@@ -32,6 +38,6 @@
 
   <div class="mt-4 flex justify-between items-center">
     <%= up_link 'New region', admin_new_region_path, class: "btn-blue" %>
-    <%= link_to "Back to Index", root_path, class: "btn-green" %>
+    <%= link_to "Back to Admin", admin_path, class: "btn-green" %>
   </div>
 </div>

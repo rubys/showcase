@@ -28,7 +28,13 @@
 
   <div>
   <div class="inline-block ml-2">
-  <%= button_to "Delete", ".", class: "btn-orange", disabled: (@code == @primary_region)  %>
+  <% if (@pending['delete'] || []).include? @region['Code'] %>
+  <%= button_to "Add", admin_regions_path(code: @region['Code']), method: :post,
+    class: "btn-orange", disabled: (@code == @primary_region)  %>
+  <% else %>
+  <%= button_to "Delete", destroy_region_path(@region['Code']), method: :delete,
+    class: "btn-orange", disabled: (@code == @primary_region)  %>
+  <% end %>
   </div>
   <%= link_to "Back to Regions", admin_regions_path, class: "btn-green" %>
   </div>

@@ -1,17 +1,21 @@
-<div class="w-full" data-controller="submit">
+<div class="w-full">
 
 <h1 class="text-4xl font-extrabold text-center">New Region</h1>
 
-<%= select_tag "region", options_for_select(@regions), data: {"submit-target": "input"},
+<%= form_with url: admin_regions_path, method: "post" do %>
+
+<%= select_tag "code", options_for_select(@regions),
   class: "appearance-none mt-4 mx-auto block bg-gray-200 text-gray-700 border rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white" %>
 
-<button data-submit-target="submit"
-  class="flex mx-auto bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border-2 rounded-xl my-4">submit</button>
+<input type="submit" value="submit"
+  class="flex mx-auto bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border-2 rounded-xl my-4">
 
 <div class="border-2 border-black rounded-xl p-2 hidden">
 <div data-submit-target="output" data-stream="<%= @stream %>"
   class="w-full mx-auto overflow-y-auto h-auto font-mono text-sm max-h-[25rem] min-h-[25rem]">
 </div>
 </div>
+
+<% end %>
 
 </div>

@@ -28,7 +28,9 @@ Rails.application.routes.draw do
 
       get 'admin/', to: "admin#index"
       get 'admin/regions', to: 'admin#regions',  trailing_slash: true
-      get 'agmin/regions/:code', to: 'admin#show_region', as: 'show_region'
+      post 'admin/regions', to: 'admin#create_region',  trailing_slash: true
+      get 'admin/regions/:code', to: 'admin#show_region', as: 'show_region'
+      delete 'admin/regions/:code', to: 'admin#destroy_region', as: 'destroy_region'
       get 'admin/new-region', to: 'admin#new_region'
 
     else

@@ -26,8 +26,17 @@ class AdminController < ApplicationController
     fly = File.join(Dir.home, '.fly/bin/flyctl')
 
     thread1 = Thread.new do
+      original = IO.read DEPLOYED rescue '{}'
+      pending = JSON.parse(original)["pending"]
       stdout, status = Open3.capture2(fly, 'regions', 'list', '--json')
-      if status.success? and stdout != (IO.read DEPLOYED rescue nil)
+
+      if pending
+        deployed = JSON.parse(stdout)
+        deployed["pending"] = pending
+        stdout = JSON.pretty_generate(deployed)
+      end
+
+      if status.success? and stdout != original
         IO.write DEPLOYED, stdout
       end
     end
@@ -42,29 +51,87 @@ class AdminController < ApplicationController
     thread1.join
     thread2.join
 
+    deployed = JSON.parse(IO.read(DEPLOYED))
     @regions = JSON.parse(IO.read(REGIONS))
-    @deployed = JSON.parse(IO.read(DEPLOYED))['ProcessGroupRegions'].
-      find {|process| process['Name'] == 'app'}["Regions"].sort.
+    @pending = deployed["pending"] || {}
+    @deployed = (deployed['ProcessGroupRegions'].
+      find {|process| process['Name'] == 'app'}["Regions"]+ (@pending['add'] || [])).sort.
       map {|code| [code, @regions.find {|region| region['Code'] == code}]}.to_h
   end
 
   def show_region
     @primary_region = Tomlrb.load_file('fly.toml')['primary_region'] || 'iad'
+    @pending = JSON.parse(IO.read(DEPLOYED))['pending']
     @code = params[:code]
     @region = JSON.parse(IO.read(REGIONS)).
       find {|region| region['Code'] == @code}
     render :region
   end
 
+  def destroy_region
+    code = params[:code]
+    deployed = JSON.parse(IO.read(DEPLOYED))
+    deployed["pending"] ||= {}
+    deployed["pending"]["delete"] ||= []
+    if deployed["pending"]["add"]&.include? code
+      deployed["pending"]["add"].delete code
+      IO.write(DEPLOYED, JSON.pretty_generate(deployed))
+      notice = "Region #{code} pending addition undone."
+    elsif not deployed["pending"]["delete"].include? code
+      deployed["pending"]["delete"] << code
+      IO.write(DEPLOYED, JSON.pretty_generate(deployed))
+      notice = "Region #{code} deletion pending."
+    else
+      notice = "Region #{code} already pending deletion."
+    end
+
+    respond_to do |format|
+      format.html { redirect_to admin_regions_url, status: 303, notice: notice }
+      format.json { head :no_content }
+    end
+  end
+
   def new_region
+    deployed = JSON.parse(IO.read(DEPLOYED))
+    pending = deployed["pending"]
+    deployed = deployed['ProcessGroupRegions'].
+      find {|process| process['Name'] == 'app'}["Regions"]
+    if pending
+      deployed += pending["add"] || []
+      deployed -= pending["delete"] || []
+    end  
+
+    @regions = JSON.parse(IO.read(REGIONS)).
+      select {|region| not deployed.include?(region['Code'])}.
+      map {|region| [region['Name'], region['Code']]}.to_h
+  end
+
+  def create_region
+    code = params[:code]
+    deployed = JSON.parse(IO.read(DEPLOYED))
+    deployed["pending"] ||= {}
+    deployed["pending"]["add"] ||= []
+    if deployed["pending"]["delete"]&.include? code
+      deployed["pending"]["delete"].delete code
+      IO.write(DEPLOYED, JSON.pretty_generate(deployed))
+      notice = "Region #{code} pending deletion undone."
+    elsif not deployed["pending"]["add"].include? code
+      deployed["pending"]["add"] << code
+      IO.write(DEPLOYED, JSON.pretty_generate(deployed))
+      notice = "Region #{code} addition pending."
+    else
+      notice = "Region #{code} already pending deletion."
+    end
+
+    respond_to do |format|
+      format.html { redirect_to admin_regions_url, status: 303, notice: notice }
+      format.json { head :no_content }
+    end
+  end
+
+  def apply
     @stream = OutputChannel.register do |params|
       ["bin/new_region.rb", params["region"]]
     end
-
-    regions
-
-    @regions = JSON.parse(IO.read(REGIONS)).
-      select {|region| not @deployed.keys.include?(region['Code'])}.
-      map {|region| [region['Name'], region['Code']]}.to_h
   end
 end
