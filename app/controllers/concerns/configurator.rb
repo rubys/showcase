@@ -32,8 +32,6 @@ module Configurator
     unless (IO.read(file) rescue nil) == output
       IO.write file, output
     end
-
-    system 'node utils/mapper/usmap.js'
   end
 
   def generate_showcases

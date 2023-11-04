@@ -33,6 +33,18 @@ class AdminController < ApplicationController
       if pending
         deployed = JSON.parse(stdout)
         deployed["pending"] = pending
+
+        regions = deployed['ProcessGroupRegions'].
+          find {|process| process['Name'] == 'app'}["Regions"]
+
+        (pending['add'] || []).dup.each do |region|
+          pending['add'].remove(region) if regions.include? region
+        end
+
+        (pending['delete'] || []).dup.each do |region|
+          pending['delete'].remove(region) unless regions.include? region
+        end
+
         stdout = JSON.pretty_generate(deployed)
       end
 
@@ -131,7 +143,7 @@ class AdminController < ApplicationController
 
   def apply
     @stream = OutputChannel.register do |params|
-      ["bin/new_region.rb", params["region"]]
+      [RbConfig.ruby, "bin/apply-changes.rb"]
     end
 
     Bundler.with_original_env do

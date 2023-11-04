@@ -2,6 +2,8 @@
 
 <h1 class="text-4xl font-extrabold text-center">Apply Changes</h1>
 
+<% changes = false %>
+
 <% unless @pending['add'].blank? %>
 <h2 class="font-bold text-2xl mt-4 mb-2">Add regions</h2>
 <ul class="ml-8 list-disc list-outside">
@@ -9,6 +11,7 @@
 <li><%= region %>
 <% end %>
 </ul>
+<% changes = true %>
 <% end %>
 
 <% unless @move.blank? %>
@@ -31,6 +34,7 @@
 <% end %>
 </tbody>
 </table>
+<% changes = true %>
 <% end %>
 
 <% unless @pending['delete'].blank? %>
@@ -40,6 +44,11 @@
 <li><%= region %>
 <% end %>
 </ul>
+<% changes = true %>
+<% end %>
+
+<% unless changes %>
+<div class="mt-4 text-center">No changes to apply</div>
 <% end %>
 
 <button data-submit-target="submit"
