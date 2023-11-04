@@ -135,7 +135,7 @@ class AdminController < ApplicationController
     end
 
     Bundler.with_original_env do
-      system "RAILS_APP_DB=index bin/rails runner bin/showcases > tmp/showcases.yml"
+      system "RAILS_APP_DB=index #{RbConfig.ruby} bin/rails runner bin/showcases > tmp/showcases.yml"
     end
 
     before = YAML.load_file('config/tenant/showcases.yml').values.reduce {|a, b| a.merge(b)}
