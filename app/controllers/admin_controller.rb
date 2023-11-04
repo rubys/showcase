@@ -161,6 +161,28 @@ class AdminController < ApplicationController
       @move[site] = {from: was[:region], to: info[:region]}
     end
 
+    @showcases = parse_showcases('tmp/showcases.yml') - parse_showcases('config/tenant/showcases.yml')
+
     @pending = JSON.parse(IO.read(DEPLOYED))['pending'] || {}
+  end
+
+private
+
+  def parse_showcases(file)
+    showcases = []
+
+    YAML.load_file(file).each do |year, studios|
+      studios.each do |token, studio|
+        if studio[:events]
+          studio[:events].each do |event, info|
+            showcases << [year, token, info[:name]]
+          end
+        else
+          showcases << [year, token, 'Showcase']
+        end
+      end
+    end
+
+    showcases
   end
 end

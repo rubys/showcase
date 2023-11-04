@@ -37,6 +37,29 @@
 <% changes = true %>
 <% end %>
 
+<% unless @showcases.blank? %>
+<h2 class="font-bold text-2xl mt-4 mb-2">Events added/changed</h2>
+<table>
+<thead>
+<tr>
+  <th class="row-head">Yera
+  <th class="row-head">Site
+  <th class="row-head">Event
+</tr>
+</thead>
+<tbody>
+<% @showcases.each do |showcase| %>
+<tr>
+  <td class="row"><%= showcase[0] %>
+  <td class="row"><%= showcase[1] %>
+  <td class="row"><%= showcase[2] %>
+</tr>
+<% end %>
+</tbody>
+</table>
+<% changes = true %>
+<% end %>
+
 <% unless @pending['delete'].blank? %>
 <h2 class="font-bold text-2xl mt-4 mb-2">Delete regions</h2>
 <ul class="ml-8 list-disc list-outside">
