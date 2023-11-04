@@ -134,7 +134,9 @@ class AdminController < ApplicationController
       ["bin/new_region.rb", params["region"]]
     end
 
-    system "RAILS_APP_DB=index bin/rails runner bin/showcases > tmp/showcases.yml"
+    Bundler.with_original_env do
+      system "RAILS_APP_DB=index bin/rails runner bin/showcases > tmp/showcases.yml"
+    end
 
     before = YAML.load_file('config/tenant/showcases.yml').values.reduce {|a, b| a.merge(b)}
     after = YAML.load_file('tmp/showcases.yml').values.reduce {|a, b| a.merge(b)}
