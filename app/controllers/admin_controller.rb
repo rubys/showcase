@@ -1,5 +1,5 @@
 class AdminController < ApplicationController
-  include configurator
+  include Configurator
 
   DEPLOYED = File.join(Rails.root, 'tmp', 'deployed.json')
   REGIONS = File.join(Rails.root, 'tmp', 'regions.json')
