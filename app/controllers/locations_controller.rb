@@ -31,6 +31,8 @@ class LocationsController < ApplicationController
     new
 
     @showcases = @location.showcases.order(:year, :order).reverse.group_by(&:year)
+
+    @auth = User.order(:userid).select {|user| user.sites.split(',').include? 'Raleigh'}
   end
 
   # POST /locations or /locations.json

@@ -19,5 +19,14 @@
 
   <%= render "showcases" %>
 
+  <h1 class="mt-8 font-bold text-4xl">Authorization</h1>
+
+  <ul class="mt-2 list-disc list-inside">
+  <% @auth.each do |user| %>
+    <li><%=link_to user.userid, edit_user_path(user) %>
+  <% end %>
+  </ul>
+
+
 <%= up_link 'New showcase', new_showcase_path(location: @location), class: 'btn-blue mt-4' %>
 </div>
