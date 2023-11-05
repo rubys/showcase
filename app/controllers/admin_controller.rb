@@ -148,13 +148,9 @@ class AdminController < ApplicationController
       [RbConfig.ruby, "bin/apply-changes.rb"]
     end
 
-    Bundler.with_original_env do
-      system "RAILS_APP_DB=index #{RbConfig.ruby} bin/rails runner bin/showcases.rb > tmp/showcases.yml"
-    end
-
     generate_showcases
     before = YAML.load_file('config/tenant/showcases.yml').values.reduce {|a, b| a.merge(b)}
-    after = YAML.load_file('tmp/showcases.yml').values.reduce {|a, b| a.merge(b)}
+    after = YAML.load_file('db/showcases.yml').values.reduce {|a, b| a.merge(b)}
 
     @move = {}
     after.to_a.sort.each do |site, info|
@@ -164,7 +160,7 @@ class AdminController < ApplicationController
       @move[site] = {from: was[:region], to: info[:region]}
     end
 
-    @showcases = parse_showcases('tmp/showcases.yml') - parse_showcases('config/tenant/showcases.yml')
+    @showcases = parse_showcases('db/showcases.yml') - parse_showcases('config/tenant/showcases.yml')
 
     @pending = JSON.parse(IO.read(DEPLOYED))['pending'] || {}
   end
