@@ -1,4 +1,6 @@
 class AdminController < ApplicationController
+  include configurator
+
   DEPLOYED = File.join(Rails.root, 'tmp', 'deployed.json')
   REGIONS = File.join(Rails.root, 'tmp', 'regions.json')
 
@@ -150,6 +152,7 @@ class AdminController < ApplicationController
       system "RAILS_APP_DB=index #{RbConfig.ruby} bin/rails runner bin/showcases.rb > tmp/showcases.yml"
     end
 
+    generate_showcases
     before = YAML.load_file('config/tenant/showcases.yml').values.reduce {|a, b| a.merge(b)}
     after = YAML.load_file('tmp/showcases.yml').values.reduce {|a, b| a.merge(b)}
 
