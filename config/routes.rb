@@ -182,7 +182,9 @@ Rails.application.routes.draw do
     match "/password/reset", to: 'users#password_reset', via: %i(get post)
     match "/password/verify", to: 'users#password_verify', via: %i[get patch]
     resources :users
-    resources :showcases
+    resources :showcases do
+      post 'drop', on: :collection
+    end
     resources :locations
   end
 

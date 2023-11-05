@@ -1,0 +1,15 @@
+<div id="showcases">
+<% @showcases.each do |year, showcases| %>
+  <a href="<%= "#{@scope}/#{year}".squeeze('/') %>/">
+    <h2 class="font-bold text-2xl mt-4 mb-2"><%= year %></h2>
+  </a>
+
+  <ul class="mt-2 list-disc list-inside" data-controller="drop" data-drop-action="<%= drop_showcases_path %>">
+    <% showcases.reverse.each do |showcase| %>
+    <li draggable="true" data-drag-id="<%= showcase.id %>">
+      <span class="text-xl"><%= link_to showcase.name, edit_showcase_path(showcase) %><span>
+    </li>
+    <% end %>
+  </ul>
+<% end %>
+</div>

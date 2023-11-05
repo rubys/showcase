@@ -84,6 +84,41 @@ class ShowcasesController < ApplicationController
     end
   end
 
+    # POST /showcases/drop
+    def drop
+      source = Showcase.find(params[:source].to_i)
+      target = Showcase.find(params[:target].to_i)
+  
+      if source.order > target.order
+        showcases = Showcase.where(order: target.order..source.order).order(:order)
+        new_order = showcases.map(&:order).rotate(1)
+      else
+        showcases = Showcase.where(order: source.order..target.order).order(:order)
+        new_order = showcases.map(&:order).rotate(-1)
+      end
+  
+      Showcase.transaction do
+        showcases.zip(new_order).each do |dance, order|
+          dance.order = order
+          dance.save! validate: false
+        end
+  
+        raise ActiveRecord::Rollback unless showcases.all? {|dance| dance.valid?}
+      end
+
+      generate_showcases
+  
+      flash.now.notice = "#{source.name} was successfully moved."
+
+      @showcases = source.location.showcases.order(:year, :order).reverse.group_by(&:year)
+  
+      respond_to do |format|
+        format.turbo_stream { render turbo_stream: turbo_stream.replace('showcases', 
+          render_to_string(partial: 'locations/showcases')) }
+        format.html { redirect_to showcases_url }
+      end
+    end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_showcase

@@ -17,19 +17,7 @@
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
-  <% @showcases.each do |year, showcases| %>
-  <a href="<%= "#{@scope}/#{year}".squeeze('/') %>/">
-    <h2 class="font-bold text-2xl mt-4 mb-2"><%= year %></h2>
-  </a>
-
-  <ul class="mt-2 list-disc list-inside">
-    <% showcases.each do |showcase| %>
-    <li>
-      <span class="text-xl"><%= link_to showcase.name, edit_showcase_path(showcase) %><span>
-    </li>
-    <% end %>
-  </ul>
-<% end %>
+  <%= render "showcases" %>
 
 <%= up_link 'New showcase', new_showcase_path(location: @location), class: 'btn-blue mt-4' %>
 </div>

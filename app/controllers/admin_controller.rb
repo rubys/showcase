@@ -174,11 +174,11 @@ private
     YAML.load_file(file).each do |year, studios|
       studios.each do |token, studio|
         if studio[:events]
-          studio[:events].each do |event, info|
-            showcases << [year, token, info[:name]]
+          studio[:events].each_with_index do |(event, info), index|
+            showcases << [year, token, info[:name], index]
           end
         else
-          showcases << [year, token, 'Showcase']
+          showcases << [year, token, 'Showcase', -1]
         end
       end
     end
