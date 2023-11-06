@@ -1,5 +1,6 @@
 class LocationsController < ApplicationController
   include Configurator
+  include DbQuery
 
   before_action :set_location, only: %i[ show edit update destroy ]
 
@@ -32,7 +33,26 @@ class LocationsController < ApplicationController
 
     @showcases = @location.showcases.order(:year, :order).reverse.group_by(&:year)
 
-    @auth = User.order(:userid).select {|user| user.sites.split(',').include? 'Raleigh'}
+    studios = []
+    dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
+    Dir["#{dbpath}/20*.sqlite3"].each do |db|
+      next unless db =~ /^#{dbpath}\/\d+-#{@location.key}[-.]/
+      studios += dbquery(File.basename(db, '.sqlite3'), 'studios', 'name')
+    end
+
+    locations = Location.joins(:user).pluck(:name, :userid).to_h
+
+    studios = studios.uniq.map {|studio| locations[studio['name']]}.compact.sort
+
+    @checked = {}
+    @auth = User.order(:userid).select do |user|
+      if user.sites.split(',').include? @location.name
+        @checked[user.id] = true
+      else
+        studios.include?(user.userid) or user.sites.split(',').include? @location.name
+      end
+    end
+
   end
 
   # POST /locations or /locations.json
@@ -43,6 +63,13 @@ class LocationsController < ApplicationController
       if @location.save
         generate_showcases
         generate_map
+
+        sites = @location.user.sites.to_s.split(',')
+        unless sites.include? @location.name
+          sites.push @location.name
+          @location.user.sites = sites.join(',')
+          @location.user.save!
+        end
 
         format.html { redirect_to locations_url, notice: "#{@location.name} was successfully created." }
         format.json { render :show, status: :created, location: @location }

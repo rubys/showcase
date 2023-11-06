@@ -21,7 +21,7 @@ class UsersController < ApplicationController
   def new
     @user ||= User.new
     @admin = @@encryptor.encrypt_and_sign(dom_id(@user))
-    load_studios
+    load_studios(@user.sites.to_s.split(','), @user.userid)
   end
 
   # GET /users/1/edit
@@ -76,6 +76,31 @@ class UsersController < ApplicationController
         format.json { render json: @user.errors, status: :unprocessable_entity }
       end
     end
+  end
+
+  def update_location
+    location = Location.find(params[:location])
+
+    params[:auth].each do |user_id, auth|
+      user = User.find(user_id)
+      sites = user.sites.split(',')
+
+      if auth == "0"
+        if sites.include? location.name
+          sites.delete(location.name)
+          user.sites = sites.join(',')
+          user.save!
+        end
+      else
+        unless sites.include? location.name
+          sites.push(location.name)
+          user.sites = sites.join(',')
+          user.save!
+        end
+      end
+    end
+
+    redirect_to edit_location_url(location.id, anchor: 'authorization')
   end
 
   # DELETE /users/1 or /users/1.json
@@ -184,18 +209,23 @@ class UsersController < ApplicationController
       end
     end
 
-    def load_studios
+    def load_studios(studios=[], site=nil)
       if Rails.env.test?
         @studios = Studio.pluck(:name)
         return
       end
 
-      @studios = YAML.load_file('config/tenant/showcases.yml').values.
+      # @studios = studios
+      @studios = studios.map {|name| {name: name}}
+      @studios += YAML.load_file('config/tenant/showcases.yml').values.
         map {|hash| hash.values}.flatten
 
-      dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
-      Dir["#{dbpath}/20*.sqlite3"].each do |db|
-        @studios += dbquery(File.basename(db, '.sqlite3'), 'studios', 'name')
+      if site
+        dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
+        Dir["#{dbpath}/20*.sqlite3"].each do |db|
+          next unless db =~ /^#{dbpath}\/\d+-#{site}[-.]/
+          @studios += dbquery(File.basename(db, '.sqlite3'), 'studios', 'name')
+        end
       end
 
       @studios = @studios.map {|studio| studio['name'] || studio[:name]}.uniq.sort

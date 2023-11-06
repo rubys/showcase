@@ -18,15 +18,20 @@
   <% end %>
 
   <%= render "showcases" %>
+ 
+  <%= up_link 'New showcase', new_showcase_path(location: @location), class: 'btn-blue mt-4' %>
 
-  <h1 class="mt-8 font-bold text-4xl">Authorization</h1>
+  <h1 class="mt-8 font-bold text-4xl" id="authorization">Authorization</h1>
 
-  <ul class="mt-2 list-disc list-inside">
+  <%= form_with url: locations_users_path, data: {turbo: false} do |form| %>
+  <%= form.hidden_field :location, value: @location.id %>
   <% @auth.each do |user| %>
-    <li><%=link_to user.userid, edit_user_path(user) %>
+  <div class="my-5">
+    <%= form.check_box "auth[#{user.id}]", class: 'entry-count h-8', checked: @checked[user.id] %>
+    <%= form.label "auth[#{user.id}]", user.userid, class: 'text-xl align-middle pt-2' %>
+  </div>
   <% end %>
-  </ul>
+  <%= form.submit 'Save', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  <% end %>
 
-
-<%= up_link 'New showcase', new_showcase_path(location: @location), class: 'btn-blue mt-4' %>
 </div>
