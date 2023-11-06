@@ -2,17 +2,19 @@
 require 'json'
 require 'tomlrb'
 
+fly = File.join(Dir.home, '.fly/bin/flyctl')
+
 primary_region = Tomlrb.parse(IO.read 'fly.toml')['primary_region']
 
 pending = JSON.parse(IO.read(DEPLOYED))['pending'] || {}
 
 if pending['add'] and not pending['add'].empty?
-  machines = JSON.parse(`fly machines list --json`)
+  machines = JSON.parse("#{fly} machines list --json")
   primary = machines.find {|machine| machine['region'] == primary_region}
 end
 
 (pending['add'] || []).each do |region|
-  exit 1 unless system "fly machine clone #{primary} --region #{region}"
+  exit 1 unless system "#{fly} machine clone #{primary} --region #{region}"
 end
 
 if File.exist? 'db/map.yml'
@@ -31,9 +33,9 @@ if File.exist? 'db/showcases.yml'
   end
 end
 
-exit 1 unless system "fly deploy"
+exit 1 unless system "#{fly} deploy"
 
 (pending['delete'] || []).each do |region|
   machine = machines.find {|machine| machine['region'] == primary_region}
-  exit 1 unless system "fly machine destroy --force #{primary} --region #{region}"
+  exit 1 unless system "#{fly} machine destroy --force #{primary} --region #{region}"
 end
