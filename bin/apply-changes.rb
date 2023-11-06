@@ -6,7 +6,7 @@ fly = File.join(Dir.home, '.fly/bin/flyctl')
 
 primary_region = Tomlrb.parse(IO.read 'fly.toml')['primary_region']
 
-pending = JSON.parse(IO.read(DEPLOYED))['pending'] || {}
+pending = JSON.parse(IO.read('tmp/deployed.yml'))['pending'] || {}
 
 if pending['add'] and not pending['add'].empty?
   machines = JSON.parse("#{fly} machines list --json")
