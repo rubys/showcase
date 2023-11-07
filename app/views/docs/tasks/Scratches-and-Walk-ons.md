@@ -8,5 +8,10 @@ The key difference is that you will **not** want to click on redo on either the 
 
 Heat numbers in this application are numeric, but should you wish to split a heat or reorder a solo, feel free to assign heat numbers with decimals (such as `40.1`).
 
+As an alternative to editing indidivual heat numbers, you can use drag and drop with individual couples.  This is
+more convenient, but generally only works well if the heats are close together.
+
+If, by accident, you schedule the same person on the floor twice in one heat, that name will show up in red.
+
 Judges, Emcees, DJs and participants using the mobile application will see the live version of the schedule.  For example, if there is a scratch the Emcee will see "5 couples on the floor" if there previously were 6.
 
