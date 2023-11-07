@@ -144,9 +144,7 @@ class AdminController < ApplicationController
   end
 
   def apply
-    @stream = OutputChannel.register do |params|
-      [RbConfig.ruby, "bin/apply-changes.rb"]
-    end
+    @stream = OutputChannel.register(:apply)
 
     generate_showcases
     before = YAML.load_file('config/tenant/showcases.yml').values.reduce {|a, b| a.merge(b)}

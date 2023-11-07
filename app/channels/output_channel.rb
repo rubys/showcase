@@ -1,14 +1,22 @@
 require 'open3'
 
 class OutputChannel < ApplicationCable::Channel
+  REGISTRY = Rails.root.join('tmp/tokens.yaml')
+
+  COMMANDS = {
+    apply: ->(params) {
+      [RbConfig.ruby, "bin/apply-changes.rb"]
+    }
+  }
+
   def subscribed
     @stream = params[:stream]
     @pid = nil
-    stream_from @stream if @@registry[@stream]
+    stream_from @stream if self.class.registry[@stream]
   end
 
   def command(data)
-    block = @@registry[@stream]
+    block = COMMANDS[self.class.registry[@stream]]
     run(block.call(data)) if block
   end
 
@@ -17,13 +25,22 @@ class OutputChannel < ApplicationCable::Channel
   end
 
 private
-  @@registry = {}
+  def self.registry
+    YAML.load_file(REGISTRY) rescue {}
+  end
 
   BLOCK_SIZE = 4096
 
-  def self.register(&block)
+  def self.register(command)
     token = SecureRandom.base64(15)
-    @@registry[token] = block
+
+    registry = self.registry.to_a
+    regitry.pop while registry.length > 12
+    registry = registry.to_h
+
+    registry[token] = command
+    IO.write REGISTRY, YAML.dump(registry)
+
     token
   end
 
