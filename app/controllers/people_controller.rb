@@ -82,7 +82,7 @@ class PeopleController < ApplicationController
       pdf.pages.zip(@people) do |page, person|
         page.textbox person.display_name, height: params[:height].to_i, width: params[:width].to_i,
           y: params[:y].to_i, x: params[:x].to_i, font: :'Times-Bold', font_size: params['font-size'].to_i,
-          font_color: [1, 1, 1]
+          font_color: [0, 0, 0]
       end
 
       send_data pdf.to_pdf, disposition: 'inline', filename: "certificates.pdf",
