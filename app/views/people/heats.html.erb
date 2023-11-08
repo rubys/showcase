@@ -1,4 +1,8 @@
+ZZZZs
+
 <div class="w-screen">
+  asdf
+  <%= @people.inspect %>
   <% @people.each do |person| %>
     <% next if @heatlist[person].empty? %>
     <%= render "people/heats", person: person %>

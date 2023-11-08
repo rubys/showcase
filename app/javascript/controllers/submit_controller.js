@@ -1,9 +1,10 @@
 import { Controller } from "@hotwired/stimulus"
 import consumer from 'channels/consumer'
+import xterm from 'xterm';
 
 // Connects to data-controller="submit"
 export default class extends Controller {
-  static targets = [ "input", "submit", "output" ]
+  static targets = ["input", "submit", "output"]
 
   connect() {
     this.submitTarget.addEventListener('click', event => {
@@ -23,15 +24,13 @@ export default class extends Controller {
         connected() {
           this.perform("command", params)
           outputTarget.parentNode.classList.remove("hidden")
+
+          this.terminal = new xterm.Terminal()
+          this.terminal.open(outputTarget)
         },
 
         received(data) {
-          let div = document.createElement("div")
-          div.setAttribute("class", "pb-2 break-all overflow-x-hidden")
-          div.innerHTML = data
-          let bottom = outputTarget.scrollHeight - outputTarget.scrollTop - outputTarget.clientHeight
-          outputTarget.appendChild(div)
-          if (bottom == 0) div.scrollIntoView()
+          this.terminal.write(data)
         }
       })
     })

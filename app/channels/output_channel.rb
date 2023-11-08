@@ -1,4 +1,4 @@
-require 'open3'
+require 'pty'
 
 class OutputChannel < ApplicationCable::Channel
   REGISTRY = Rails.root.join('tmp/tokens.yaml')
@@ -35,7 +35,7 @@ private
     token = SecureRandom.base64(15)
 
     registry = self.registry.to_a
-    regitry.pop while registry.length > 12
+    registry.pop while registry.length > 12
     registry = registry.to_h
 
     registry[token] = command
@@ -49,41 +49,19 @@ private
   end
 
   def run(command)
-    Open3.popen3(*command) do |stdin, stdout, stderr, wait_thr|
-      @pid = wait_thr.pid
-      files = [stdout, stderr]
-      stdin.close_write
+    PTY.spawn *command do |read, write, pid|
+      @pid = pid
+      write.close
     
-      part = { stdout => "", stderr => "" }
+      transmit read.readpartial(BLOCK_SIZE) while not read.eof
     
-      until files.all? {|file| file.eof} do
-        ready = IO.select(files)
-        next unless ready
-        ready[0].each do |f|
-          lines = f.read_nonblock(BLOCK_SIZE).split("\n", -1)
-          next if lines.empty?
-          lines[0] = part[f] + lines[0] unless part[f].empty?
-          part[f] = lines.pop()
-          lines.each {|line| transmit html(line)}
-          rescue EOFError => e
-        end
-      end
-    
-      part.values.each do |part|
-        transmit html(part) unless part.empty?
-      end
-
-      files.each {|file| file.close}
-
-      @pid = nil
-    
+    rescue EOFError
     rescue Interrupt
     rescue => e
       puts e.to_s
       
     ensure
-      files.each {|file| file.close}
-      @pid = nil
+      read.close
     end    
   end
 end
