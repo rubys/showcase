@@ -184,10 +184,17 @@ class HeatsController < ApplicationController
           catname = cat&.name || 'Uncategorized'
           heats = @agenda[catname]
           @locked = Event.last.locked?
+          @renumber = Heat.distinct.where.not(number: 0).pluck(:number).
+            map(&:abs).sort.uniq.zip(1..).any? {|n, i| n != i}
 
-          render turbo_stream: turbo_stream.replace("cat-#{ catname.downcase.gsub(' ', '-') }",
-            render_to_string(partial: 'category', layout: false, locals: {cat: catname, heats: heats})
-          )
+          render turbo_stream: [
+            turbo_stream.replace("cat-#{ catname.downcase.gsub(' ', '-') }",
+              render_to_string(partial: 'category', layout: false, locals: {cat: catname, heats: heats})
+            ),
+            turbo_stream.replace("renumber",
+              render_to_string(partial: 'renumber')
+            ),
+          ]
         }
 
         format.html { redirect_to heats_url }
