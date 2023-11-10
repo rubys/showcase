@@ -40,11 +40,11 @@ class AdminController < ApplicationController
           find {|process| process['Name'] == 'app'}["Regions"]
 
         (pending['add'] || []).dup.each do |region|
-          pending['add'].remove(region) if regions.include? region
+          pending['add'].delete(region) if regions.include? region
         end
 
         (pending['delete'] || []).dup.each do |region|
-          pending['delete'].remove(region) unless regions.include? region
+          pending['delete'].delete(region) unless regions.include? region
         end
 
         stdout = JSON.pretty_generate(deployed)
