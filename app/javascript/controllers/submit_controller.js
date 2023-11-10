@@ -31,7 +31,11 @@ export default class extends Controller {
         },
 
         received(data) {
-          this.terminal.write(data)
+          if (data === "\u0004") {
+            this.disconnected()
+          } else {
+            this.terminal.write(data)
+          }
         },
 
         disconnected() {

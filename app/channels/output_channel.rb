@@ -18,6 +18,8 @@ class OutputChannel < ApplicationCable::Channel
   def command(data)
     block = COMMANDS[self.class.registry[@stream]]
     run(block.call(data)) if block
+
+    transmit "\u0004"
     stop_stream_from @stream
     @pid = nil
   end

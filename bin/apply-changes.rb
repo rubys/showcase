@@ -2,7 +2,6 @@
 require 'json'
 require 'tomlrb'
 
-
 fly = File.join(Dir.home, '.fly/bin/flyctl')
 
 primary_region = Tomlrb.parse(IO.read 'fly.toml')['primary_region']
@@ -34,7 +33,9 @@ if File.exist? 'db/showcases.yml'
   end
 end
 
-exit 1 unless system "#{fly} deploy"
+unless `git st | grep -v "^?? "`.empty?
+  exit 1 unless system "#{fly} deploy"
+end
 
 (pending['delete'] || []).each do |region|
   machines = JSON.parse(`#{fly} machines list --json`)
