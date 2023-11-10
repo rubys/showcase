@@ -38,6 +38,6 @@ exit 1 unless system "#{fly} deploy"
 
 (pending['delete'] || []).each do |region|
   machines = JSON.parse(`#{fly} machines list --json`)
-  machine = machines.find {|machine| machine['region'] == primary_region}
-  exit 1 unless system "#{fly} machine destroy --force #{machine} --region #{region}"
+  machine = machines.find {|machine| machine['region'] == region}
+  exit 1 unless system "#{fly} machine destroy --force #{machine}" if machine
 end

@@ -10,7 +10,7 @@ export default class extends Controller {
     this.submitTarget.addEventListener('click', event => {
       event.preventDefault()
 
-      const { outputTarget } = this
+      const { outputTarget, submitTarget } = this
 
       const params = {}
       for (const input of this.inputTargets) {
@@ -23,6 +23,7 @@ export default class extends Controller {
       }, {
         connected() {
           this.perform("command", params)
+          submitTarget.disabled=true
           outputTarget.parentNode.classList.remove("hidden")
 
           this.terminal = new xterm.Terminal()
@@ -31,6 +32,10 @@ export default class extends Controller {
 
         received(data) {
           this.terminal.write(data)
+        },
+
+        disconnected() {
+          submitTarget.disabled=false
         }
       })
     })
