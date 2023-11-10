@@ -14,7 +14,7 @@ if pending['add'] and not pending['add'].empty?
 end
 
 (pending['add'] || []).each do |region|
-  exit 1 unless system "#{fly} machine clone #{primary} --region #{region}"
+  exit 1 unless system "#{fly} machine clone #{primary['id']} --region #{region}"
 end
 
 if File.exist? 'db/map.yml'
@@ -40,5 +40,5 @@ end
 (pending['delete'] || []).each do |region|
   machines = JSON.parse(`#{fly} machines list --json`)
   machine = machines.find {|machine| machine['region'] == region}
-  exit 1 unless system "#{fly} machine destroy --force #{machine}" if machine
+  exit 1 unless system "#{fly} machine destroy --force #{machine['id']}" if machine
 end
