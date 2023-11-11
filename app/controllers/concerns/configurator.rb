@@ -37,8 +37,19 @@ module Configurator
   def generate_showcases
     return if Rails.env.test?
 
-    deployed = JSON.parse(IO.read 'tmp/deployed.json')['ProcessGroupRegions'].
+    deployed = JSON.parse(IO.read 'tmp/deployed.json')
+    pending = deployed['pending'] || {}
+    deployed = deployed['ProcessGroupRegions'].
       find {|process| process['Name'] == 'app'}["Regions"]
+
+    (pending['add'] || []).each do |region|
+      deployed.push(region) unless deployed.include? region
+    end
+
+    (pending['delete'] || []).each do |region|
+      deployed.delete(region)
+    end
+
     regions = JSON.parse(IO.read 'tmp/regions.json').
       map {|region| [region['Code'], [region["Latitude"], region["Longitude"]]]}.
       select {|region, geo| deployed.include? region}
