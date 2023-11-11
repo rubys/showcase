@@ -1,5 +1,9 @@
   <% if @renumber %>
+  <% if @locked %>
+  <%= up_link 'Renumber', renumber_heats_path, class: "btn-blue print:hidden", id: 'renumber', method: :post, data: { turbo_confirm: 'Are you sure?' } %>
+  <% else %>
   <%= up_link 'Renumber', renumber_heats_path, class: "btn-blue print:hidden", id: 'renumber', method: :post %>
+  <% end %>
   <% else %>
   <%= up_link 'Renumber', renumber_heats_path, class: "hidden btn-blue print:hidden", id: 'renumber', method: :post %>
   <% end %>
