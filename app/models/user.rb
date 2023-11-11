@@ -13,6 +13,8 @@ class User < ApplicationRecord
       return true if @@auth_studio[userid]&.include?(site)
       load_auth
       @@auth_studio[userid]&.include?(site)
+    elsif ENV['RAILS_APP_OWNER'] == 'index'
+      self.index_auth(userid)
     else
       return true if @@auth_event.include?(userid) 
       load_auth
