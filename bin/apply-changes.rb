@@ -14,7 +14,7 @@ if pending['add'] and not pending['add'].empty?
 end
 
 (pending['add'] || []).each do |region|
-  exit 1 unless system "#{fly} machine clone #{primary['id']} --region #{region}"
+  exit 1 unless system "#{fly} machine clone #{primary['id']} --region #{region} --verbose"
 end
 
 if File.exist? 'db/map.yml'
@@ -33,12 +33,12 @@ if File.exist? 'db/showcases.yml'
   end
 end
 
-unless `git st | grep -v "^?? "`.empty?
+unless `git status --short | grep -v "^?? "`.empty?
   exit 1 unless system "#{fly} deploy"
 end
 
 (pending['delete'] || []).each do |region|
   machines = JSON.parse(`#{fly} machines list --json`)
   machine = machines.find {|machine| machine['region'] == region}
-  exit 1 unless system "#{fly} machine destroy --force #{machine['id']}" if machine
+  exit 1 unless system "#{fly} machine destroy --force #{machine['id']} --verbose" if machine
 end

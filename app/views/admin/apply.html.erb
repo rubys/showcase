@@ -2,6 +2,8 @@
 
 <h1 class="text-4xl font-extrabold text-center">Apply Changes</h1>
 
+<div class="my-4 min-w-full flex flex-col items-center">
+
 <% changes = false %>
 
 <% unless @pending['add'].blank? %>
@@ -70,9 +72,17 @@
 <% changes = true %>
 <% end %>
 
+<% unless `git status --short | grep -v "^?? "`.empty? %>
+<h2 class="font-bold text-2xl mt-4 mb-2">Code changes</h2>
+<pre><%= `git status --short | grep -v "^?? "` %></pre>
+<% changes = true %>
+<% end %>
+
 <% unless changes %>
 <div class="mt-4 text-center">No changes to apply</div>
 <% end %>
+
+</div>
 
 <button data-submit-target="submit"
   class="flex mx-auto bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border-2 rounded-xl my-4 disabled:opacity-50 disabled:cursor-not-allowed"">submit</button>
@@ -83,4 +93,10 @@
 </div>
 </div>
 
+  <div class="mt-4 min-w-full flex flex-col items-center">
+    <div>
+    <%= link_to 'Refresh', admin_apply_path, class: "btn-blue" %>
+    <%= link_to "Back to Admin", admin_path, class: "btn-green" %>
+    </div>
+  </div>
 </div>
