@@ -16,7 +16,14 @@
   <body>
 
     <% unless @nologo %>
-    <%= link_to root_path.chomp('/') + '/', rel: 'home' do %>
+    <% if ENV['RAILS_APP_DB'] != 'index'
+         home, opts = root_path.chomp('/') + '/', {rel: 'home'}
+      elsif ENV['FLY_REGION'] || Rails.env.development?
+         home, opts = regions_path, {}
+      else
+        home, opts = root_path.chomp('/') + '/', {}
+      end %>
+    <%= link_to home, opts do %>
       <%= image_tag showcase_logo, class: "absolute right-4 top-4 w-28 -z-20" %>
     <% end %>
     <% end %>
