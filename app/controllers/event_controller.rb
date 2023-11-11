@@ -389,6 +389,12 @@ class EventController < ApplicationController
   end
 
   def logs
+    unless User.index_auth?(@authuser)
+      render file: File.expand_path('public/403-index.html', Rails.root),
+        layout: false, status: :forbidden
+      return
+    end
+
     Bundler.with_original_env do
       if File.exist? '/opt/homebrew/bin/passenger-status'
         @passenger = `/opt/homebrew/bin/passenger-status`
