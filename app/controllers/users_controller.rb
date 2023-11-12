@@ -120,7 +120,17 @@ class UsersController < ApplicationController
       @users = User.order(:userid).pluck(:userid, :id).to_h
       @user = User.where(userid: @authuser).first.id if @authuser
       @user = User.find(params[:user]).id if @user = params[:user]
-      @link = User.find(@user).link if @user
+
+      if @user
+        user = User.find(@user)
+        @link = user.link
+
+        if @link.blank?
+          location = user.locations.first
+          @link = "https://smooth.fly.dev/showcase/studios/#{location.key}" if location
+        end
+      end
+
       render :request_reset
     else
       user = @user = User.find(params[:id])
