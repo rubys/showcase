@@ -159,5 +159,14 @@
       </tbody>
     </table>
     <% end %>
+
+    <% if @locked and cat == "Unscheduled" %>
+    <%= up_link 'Schedule', schedule_heats_path, class: "mx-8 btn-blue", method: :post %>
+    <p class="mx-8 px-8">
+    This button will attempt to add the unscheduled <%= pluralize(heats.length, 'heat') %> to existing heats without changing anything else.
+    If this can't be done without exceeding maximum heat sizes, putting the same dancer on the floor twice, or
+    other reason, the heat will remain unscheduled.
+    </p>
+    <% end %>
   </div>
 </div>

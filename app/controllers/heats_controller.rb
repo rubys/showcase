@@ -313,6 +313,55 @@ class HeatsController < ApplicationController
     end
   end
 
+  # attempt to schedule unscheduled heats when locked
+  def schedule_unscheduled
+    event = Event.first
+    unscheduled = Heat.joins(:entry).where(number: 0)
+
+    scheduled = {true => 0, false => 0}
+
+    unscheduled.each do |heat|
+      level = heat.entry.level_id
+
+      avail = Heat.joins(:entry).where(dance_id: heat.dance_id, category: heat.category).group('number').
+        pluck('number, AVG(entries.level_id) as avg_level, COUNT(heats.id) as count').
+        sort_by {|number, level, count| (level - heat.entry.level_id).abs}
+
+      avail.each do |number, level, count|
+        on_floor = Entry.joins(:heats).where(heats: {number: number}).pluck(:lead_id, :follow_id).flatten
+        next if on_floor.include?(heat.entry.lead_id) || on_floor.include?(heat.entry.follow_id)
+
+        category = heat.dance_category
+        next if count >= (category&.max_heat_size || event.max_heat_size || 9999)
+
+        ballrooms = category&.ballrooms || event.ballrooms
+        if ballrooms == 2
+          if heats.entry.lead.type == 'Student'
+            heat.ballroom = 'B'
+          else
+            heat.ballroom = 'B'
+          end
+        end
+
+        heat.number = number
+        heat.save!
+        break
+      end
+
+      scheduled[heat.number != 0.0] += 1
+    end
+
+    if scheduled[false] == 0
+      notice = "#{scheduled[true]} heats scheduled"
+    elsif scheduled[true] == 0
+      notice = "no heats scheduled"
+    else
+      notice = "#{scheduled[true]} heats scheduled; #{scheduled[false]} heats not scheduled"
+    end
+
+    redirect_to heats_url, notice: notice
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_heat
