@@ -99,6 +99,8 @@ class AdminController < ApplicationController
       notice = "Region #{code} already pending deletion."
     end
 
+    generate_map
+
     respond_to do |format|
       format.html { redirect_to admin_regions_url, status: 303, notice: notice }
       format.json { head :no_content }
@@ -137,6 +139,8 @@ class AdminController < ApplicationController
       notice = "Region #{code} already pending deletion."
     end
 
+    generate_map
+
     respond_to do |format|
       format.html { redirect_to admin_regions_url, status: 303, notice: notice }
       format.json { head :no_content }
@@ -161,6 +165,12 @@ class AdminController < ApplicationController
     @showcases = parse_showcases('db/showcases.yml') - parse_showcases('config/tenant/showcases.yml')
 
     @pending = JSON.parse(IO.read(DEPLOYED))['pending'] || {}
+
+    regions = deployed['ProcessGroupRegions'].
+      find {|process| process['Name'] == 'app'}["Regions"]
+
+    (pending['add'] ||= []).select! {|region| !regions.include? region}
+    (pending['delete'] ||= []).select! {|region| regions.include? region}
   end
 
 private

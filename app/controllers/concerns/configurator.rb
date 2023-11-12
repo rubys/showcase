@@ -5,8 +5,7 @@ module Configurator
   def generate_map
     return if Rails.env.test?
 
-    deployed = JSON.parse(IO.read 'tmp/deployed.json')['ProcessGroupRegions'].
-      find {|process| process['Name'] == 'app'}["Regions"]
+    deployed = new_regions
     regions = JSON.parse(IO.read 'tmp/regions.json').
       select {|region| deployed.include? region['Code']}
 
@@ -37,18 +36,7 @@ module Configurator
   def generate_showcases
     return if Rails.env.test?
 
-    deployed = JSON.parse(IO.read 'tmp/deployed.json')
-    pending = deployed['pending'] || {}
-    deployed = deployed['ProcessGroupRegions'].
-      find {|process| process['Name'] == 'app'}["Regions"]
-
-    (pending['add'] || []).each do |region|
-      deployed.push(region) unless deployed.include? region
-    end
-
-    (pending['delete'] || []).each do |region|
-      deployed.delete(region)
-    end
+    deployed = new_regions
 
     regions = JSON.parse(IO.read 'tmp/regions.json').
       map {|region| [region['Code'], [region["Latitude"], region["Longitude"]]]}.
@@ -123,6 +111,23 @@ private
     c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
 
     d = 6371 * c * (miles ? 1 / 1.6 : 1)
+  end
+
+  def new_regions
+    deployed = JSON.parse(IO.read 'tmp/deployed.json')
+    pending = deployed['pending'] || {}
+    deployed = deployed['ProcessGroupRegions'].
+      find {|process| process['Name'] == 'app'}["Regions"]
+
+    (pending['add'] || []).each do |region|
+      deployed.push(region) unless deployed.include? region
+    end
+
+    (pending['delete'] || []).each do |region|
+      deployed.delete(region)
+    end
+
+    deployed
   end
 
 end
