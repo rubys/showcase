@@ -65,8 +65,10 @@
   %>
   <% unless commented.empty? %>
   </table>
+
+  <div class="break-inside-avoid">
   <h2 class="text-center py-4 font-bold text-xl"><%= commented.all? {|heat| heat.category == 'Solo'} ? "Solo comments" : "Judge Comments" %></h2>
-  <table>
+  <table class="table-auto">
   <thead>
     <tr>
       <td class="row-head">Heat
@@ -80,13 +82,14 @@
     <% next unless score.comments %>
     <tr>
       <td class="text-center"><%= heat.number %>
-      <td colspan="4"><%= score.comments %>
+      <td class="px-2"><%= score.comments %>
     </tr>
     <% end %>
   <% end %>
   </tbody>
   <% end %>
 </table>
+</div>
 
 <% if @event.open_scoring == '+' and @heats.any? {|heat| [heat.entry.lead, heat.entry.follow].include? person and heat.category == 'Open'} %>
 <table class="mt-8" style="break-inside: avoid">
