@@ -27,6 +27,10 @@ class ApplicationController < ActionController::Base
       forbidden unless User.authorized?(@authuser) or User.authorized?(@authuser, studio)
     end
 
+    def show_detailed_exceptions?
+      User.index_auth?(@authuser)
+    end
+
     def get_authentication
       if request.headers['HTTP_AUTHORIZATION']
         @authuser = Base64.decode64(request.headers['HTTP_AUTHORIZATION'].split(' ')[1]).split(':').first
