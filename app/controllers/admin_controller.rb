@@ -166,12 +166,11 @@ class AdminController < ApplicationController
 
     deployed = JSON.parse(IO.read(DEPLOYED))
     @pending = deployed['pending'] || {}
-
     regions = deployed['ProcessGroupRegions'].
       find {|process| process['Name'] == 'app'}["Regions"]
 
-    (pending['add'] ||= []).select! {|region| !regions.include? region}
-    (pending['delete'] ||= []).select! {|region| regions.include? region}
+    (@pending['add'] ||= []).select! {|region| !regions.include? region}
+    (@pending['delete'] ||= []).select! {|region| regions.include? region}
   end
 
 private
