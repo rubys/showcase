@@ -164,7 +164,8 @@ class AdminController < ApplicationController
 
     @showcases = parse_showcases('db/showcases.yml') - parse_showcases('config/tenant/showcases.yml')
 
-    @pending = JSON.parse(IO.read(DEPLOYED))['pending'] || {}
+    deployed = JSON.parse(IO.read(DEPLOYED))
+    @pending = deployed['pending'] || {}
 
     regions = deployed['ProcessGroupRegions'].
       find {|process| process['Name'] == 'app'}["Regions"]
