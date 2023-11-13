@@ -183,15 +183,18 @@ end
     end
   end
 
-  ENV['DATABASE_URL'] = "sqlite3://#{database}"
-  system 'bin/rails db:prepare'
+  if @region
+    # only run migrations in one place - fly.io; rely on rsync to update others
+    ENV['DATABASE_URL'] = "sqlite3://#{database}"
+    system 'bin/rails db:prepare'
 
-  count = `sqlite3 #{database} "select count(*) from events"`.to_i
-  if count == 0
-    system 'bin/rails db:seed'
+    count = `sqlite3 #{database} "select count(*) from events"`.to_i
+    if count == 0
+      system 'bin/rails db:seed'
 
-    if tenant.owner == "Demo"
-      FileUtils.cp database, "#{database}.seed", preserve: true
+      if tenant.owner == "Demo"
+        FileUtils.cp database, "#{database}.seed", preserve: true
+      end
     end
   end
 

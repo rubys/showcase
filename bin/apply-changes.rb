@@ -42,3 +42,7 @@ end
   machine = machines.find {|machine| machine['region'] == region}
   exit 1 unless system "#{fly} machine destroy --force #{machine['id']} --verbose" if machine
 end
+
+unless `git status --short | grep -v "^?? "`.empty?
+  exit 1 unless system 'git commit -a -m "apply configuration changes"'
+end
