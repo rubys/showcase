@@ -5,6 +5,12 @@ require 'fileutils'
 require 'uri'
 require 'net/http'
 
+MARKTIME = "/data/db/.time"
+
+latest = Dir["/data/db/2*.sqlite3"].map {|name| File.mtime(name)}.max
+exit 0 if File.exist?(MARKTIME) && File.mtime(MARKTIME) >= latest
+FileUtils.touch MARKTIME
+
 if Process.uid == 0
   status = `passenger-status`
 else
