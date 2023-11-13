@@ -87,6 +87,7 @@ if @region
   FileUtils.mkdir_p "/demo/db"
   FileUtils.mkdir_p "/demo/storage/demo"
   FileUtils.chown_R 'rails', 'rails', "/demo"
+  FileUtils.rm_f "/demo/db/index.sqlite3"
   File.symlink "/data/db/index.sqlite3", "/demo/db/index.sqlite3"
 end
 
