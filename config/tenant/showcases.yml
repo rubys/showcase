@@ -4,6 +4,10 @@
     :name: Raleigh
     :region: iad
     :logo: arthur-murray-logo.gif
+  richmond:
+    :name: Richmond
+    :region: iad
+    :logo: arthur-murray-logo.gif
   slc:
     :name: Salt Lake City
     :region: sjc
