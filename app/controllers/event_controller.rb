@@ -315,7 +315,7 @@ class EventController < ApplicationController
       if event["date"].blank?
         event[:date] = event[:year].to_s
       else
-        date = event["date"].sub(/(^|[a-z]+ )?\d+\s*[-&]\s*\d+/) {|str| str.sub(/\s*[-&]\s*.*/, '')}
+        date = event["date"].sub(/(^|[a-z]+ )?\d+\s*[-&]\s*\d+( |,|$)/) {|str| str.sub(/\s*[-&]\s*.*/, ' ')}
         event[:date] = Chronic.parse(date, now: Time.local(event[:year], 1, 1)).to_date.iso8601
       end
 
