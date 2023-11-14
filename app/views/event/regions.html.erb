@@ -54,8 +54,11 @@ See:
 <% if User.index_auth? @authuser %>
 <% if  Rails.env.development? %>
 <%= link_to 'Admin', admin_path, class: 'btn-orange' %>
-<% else %>
+<% else if @authuser and User.index_auth(@authuer) %>
 <%= link_to 'Admin', "https://rubix.intertwingly.net/showcase/admin/", class: 'btn-orange' %>
+<% else %>
+<%= link_to 'Admin', "https://rubix.intertwingly.net/showcase/admin/", class: 'btn-orange cursor-not-allowed' %>
+<% end %>
 <% end %>
 <% end %>
 
