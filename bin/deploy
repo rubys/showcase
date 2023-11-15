@@ -101,27 +101,29 @@ Dir.chdir File.dirname(__dir__) do
 end
 
 # Sync databases back to primary region
-if Dir["#{VOLUME}/db/2*.sqlite3"].map {|name| File.mtime(name)}.max > latest
-  if ENV['FLY_REGION'] != ENV['PRIMARY_REGION']
-    dest = "rsync://#{ENV['PRIMARY_REGION']}.#{ENV['FLY_APP_NAME']}.internal"
+if ENV['FLY_APP_NAME']
+  if Dir["#{VOLUME}/db/2*.sqlite3"].map {|name| File.mtime(name)}.max > latest
+    if ENV['FLY_REGION'] != ENV['PRIMARY_REGION']
+      dest = "rsync://#{ENV['PRIMARY_REGION']}.#{ENV['FLY_APP_NAME']}.internal"
 
-    # synch databases and storage
-    system *%W(
-      rsync
-      -av
-      --update
-      #{VOLUME}/db/
-      #{dest}#{VOLUME}/db/
-    )
+      # synch databases and storage
+      system *%W(
+        rsync
+        -av
+        --update
+        #{VOLUME}/db/
+        #{dest}#{VOLUME}/db/
+      )
+    end
+
+    # run webhook
+    uri = URI('https://rubix.intertwingly.net/webhook/showcase')
+    res = Net::HTTP.get_response(uri)
+    if res.is_a?(Net::HTTPSuccess)
+      puts res.body 
+    else
+      STDERR.puts res
+      STDERR.puts res.body 
+    end
   end
-
-   # run webhook
-   uri = URI('https://rubix.intertwingly.net/webhook/showcase')
-   res = Net::HTTP.get_response(uri)
-   if res.is_a?(Net::HTTPSuccess)
-     puts res.body 
-   else
-     STDERR.puts res
-     STDERR.puts res.body 
-   end
 end

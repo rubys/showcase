@@ -2,6 +2,8 @@ class Event < ApplicationRecord
   validates :date, chronic: true, allow_blank: true
   has_one_attached :counter_art
 
+  belongs_to :solo_level, class_name: 'Level', optional: true
+
   def self.list
     showcases = YAML.load_file("#{__dir__}/../../config/tenant/showcases.yml")
 

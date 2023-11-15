@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_10_28_131227) do
+ActiveRecord::Schema[7.0].define(version: 2023_11_15_014415) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -171,6 +171,10 @@ ActiveRecord::Schema[7.0].define(version: 2023_10_28_131227) do
     t.integer "assign_judges", default: 0
     t.string "font_size", default: "100%"
     t.boolean "include_times", default: true
+    t.boolean "include_open", default: true
+    t.boolean "include_closed", default: true
+    t.integer "solo_level_id"
+    t.index ["solo_level_id"], name: "index_events_on_solo_level_id"
   end
 
   create_table "formations", force: :cascade do |t|
@@ -377,6 +381,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_10_28_131227) do
   add_foreign_key "entries", "people", column: "follow_id"
   add_foreign_key "entries", "people", column: "instructor_id"
   add_foreign_key "entries", "people", column: "lead_id"
+  add_foreign_key "events", "levels", column: "solo_level_id"
   add_foreign_key "formations", "people"
   add_foreign_key "formations", "solos"
   add_foreign_key "heats", "dances"

@@ -151,6 +151,16 @@
   </div>
 
   <div class="my-5">
+    <%= form.check_box :include_open, class: 'entry-count h-10' %>
+    <%= form.label :include_open, 'Include open freestyles?' %>
+  </div>
+
+  <div class="my-5">
+    <%= form.check_box :include_closed, class: 'entry-count h-10' %>
+    <%= form.label :include_closed, 'Include closed freestyles?' %>
+  </div>
+
+  <div class="my-5">
     <%= form.check_box :pro_heats, class: 'entry-count h-10' %>
     <%= form.label :pro_heats, 'Include pro heats?' %>
   </div>
@@ -239,7 +249,7 @@ And people in any age category can be on the floor at the same time.
 
   <div class="my-5">
     <%= form.label :heat_range_level, 'level' %>
-    <%= form.range_field :heat_range_level, min: 0, max: @levels-1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+    <%= form.range_field :heat_range_level, min: 0, max: @levels.length-1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
   <% if @event.track_ages %>
@@ -266,5 +276,17 @@ and heats that you have entered so far.
 <%= link_to 'Ages', ages_event_index_path, class: 'btn-grey' %>
 <%= link_to 'Levels', levels_event_index_path, class: 'btn-grey' %>
 <%= link_to 'Dances', dances_event_index_path, class: 'btn-grey' %>
+
+<%= form_with model: @event, data: {turbo: false} do |form| %>
+  <div class="my-5">
+    <%= form.label :solo_level_id, "Solo levels start with:" %>
+    <%= form.select :solo_level_id, @levels, {include_blank: true},
+       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="inline">
+    <%= form.button 'Save', name: 'anchor', value: 'adjust', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  </div>  
+<% end %>
 
 </div>

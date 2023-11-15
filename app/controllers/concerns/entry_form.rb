@@ -1,5 +1,6 @@
 module EntryForm
   def form_init(id = nil, entry = nil)
+    event = Event.first
     @person ||= Person.find(id) if id
 
     if entry and @person&.type != 'Student'
@@ -69,12 +70,19 @@ module EntryForm
 
     @ages = Age.all.order(:id).map {|age| [age.description, age.id]}
     @levels = Level.all.order(:id).map {|level| [level.name, level.id]}
+    if event.solo_level_id
+      if @solo
+        @levels.select! {|name, id| id >= event.solo_level_id}
+      else
+        @levels.select! {|name, id| id < event.solo_level_id}
+      end
+    end
 
     @entries = {'Closed' => {}, 'Open' => {}, 'Multi' => {}, 'Solo' => {}}
 
     @columns = Dance.maximum(:col) || 4
 
-    @track_ages = Event.first.track_ages
+    @track_ages = event.track_ages
   end
 
   def find_or_create_entry(params)

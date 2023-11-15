@@ -660,6 +660,9 @@ class PeopleController < ApplicationController
 
       @ages = Age.all.order(:id).map {|age| [age.description, age.id]}
       @levels = Level.all.order(:id).map {|level| [level.name, level.id]}
+      if @event.solo_level_id
+        @levels.select! {|name, id| id < @event.solo_level_id}
+      end
 
       @exclude = Person.where(studio: @person.studio).order(:name).to_a
       @exclude.delete(@person)

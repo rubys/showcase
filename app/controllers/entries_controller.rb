@@ -167,8 +167,13 @@ class EntriesController < ApplicationController
     end
 
     def agenda_init
+      event = Event.first
+
       dances = Dance.order(:order).where(heat_length: nil)
       multis = Dance.order(:order).where.not(heat_length: nil)
+
+      @include_open = event.include_open
+      @include_closed = event.include_closed
 
       pro = @person&.type == 'Professional'
 
@@ -189,7 +194,7 @@ class EntriesController < ApplicationController
         used += cats
       end
   
-      if clean and (pro or Event.first.agenda_based_entries)
+      if clean and (pro or event.agenda_based_entries)
         if pro
           dance_ids = {
             pro_open_dances: "Open",
