@@ -102,12 +102,16 @@ start times for each heat will show up on the heats page.
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
   </div>
-  
+
+<% if @include_closed %>
 <%= render partial: 'categories/dances',
   locals: {form: form, title: 'CLOSED CATEGORY', dances: @dances, category: 'Closed'} %>
+<% end %>
 
+<% if @include_open %>
 <%= render partial: 'categories/dances',
   locals: {form: form, title: 'OPEN CATEGORY', dances: @dances, category: 'Open'} %>
+<% end %>
 
 <%= render partial: 'categories/dances',
   locals: {form: form, title: 'SOLOS CATEGORY', dances: @dances, category: 'Solo'} %>

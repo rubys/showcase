@@ -205,7 +205,10 @@ class CategoriesController < ApplicationController
         end
       end
 
-      @pro_option = Event.first.pro_heats
+      event = Event.first
+      @pro_option = event.pro_heats
+      @include_open = event.include_open || Heat.where(category: 'Open').size > 0
+      @include_closed = event.include_closed || Heat.where(category: 'Closed').size > 0
     end
 
     def update_dances(include, pro)
