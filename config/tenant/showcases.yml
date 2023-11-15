@@ -92,6 +92,10 @@
     :name: Livermore
     :region: sjc
     :logo: arthur-murray-logo.gif
+  montreal:
+    :name: Montreal
+    :region: iad
+    :logo: arthur-murray-logo.gif
   raleigh:
     :name: Raleigh
     :region: iad
@@ -110,8 +114,6 @@
         :name: Medal Ball
       teammatch:
         :name: Team Match
-      nouveau-duo:
-        :name: Nouveau Duo
   roanoke:
     :name: Roanoke
     :region: iad
