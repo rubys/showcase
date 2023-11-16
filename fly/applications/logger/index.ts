@@ -2,24 +2,15 @@ import fs from 'node:fs';
 import { exec } from "node:child_process"
 import readline from 'node:readline';
 import path from 'node:path';
+
 import express from "express";
 import escape from "escape-html";
 
-const PORT = 3000;
-const HOST = "https://smooth.fly.dev"
-const LOGS = '/logs';
-const VISITTIME = `${LOGS}/.time`
+import { pattern, filtered, format } from "./view.ts";
 
-const pattern = new RegExp([
-  /(\w+) /,                          // region (#1)
-  /\[\w+\] /,                        // log level
-  /[\d:]+ web\.1\s* \| /,            // time, procfile source
-  /([\d:a-fA-F, .]+) /,              // ip addresses (#2)
-  /- (-|\w+) /,                      // - user (#3)
-  /\[([\w\/: +-]+)\] /,              // time (#4)
-  /"(\w+) (\/showcase\S*) (.*?)" /,  // method (#5), url (#6), protocol (#7)
-  /(\d+) (\d+.*$)/,                  // status (#8), length, rest (#9)
-].map(r => r.source).join(''))
+const PORT = 3000
+const LOGS = '/logs'
+const VISITTIME = `${LOGS}/.time`
 
 const app = express();
 
@@ -120,29 +111,19 @@ app.get("/", async (req, res) => {
           status = `<span style="background-color: orange">${status}</span>`
         }
 
-        let link = `<a href="${HOST}${match[6]}">${match[6]}</a>`;
+        if (filter && filtered(match)) return
 
-        if (filter && (match[3] === '-' || match[3] === 'rubys')) return;
-
-        let log = [
-          `<time>${match[4].replace(' +0000', 'Z')}</time>`,
-          `<a href="https://smooth.fly.dev/showcase/regions/${match[1]}/status"><span style="color: maroon">${match[1]}</span></a>`,
-          status,
-          match[2].split(',')[0],
-          `<span style="color: blue">${match[3]}</span>`,
-          `"${match[5]} ${link} ${match[7]}"`,
-          escape(match[9])
-        ].join(' ');
+        let log = format(match)
 
         if (line > lastVisit) {
           log = `<span style="background-color: yellow">${log}</span>`
         }
 
-        results.push(log);
+        results.push(log)
       });
 
       rl.on('close', () => {
-        resolve(null);
+        resolve(null)
       });
     });
 
@@ -241,5 +222,5 @@ async function fetchOthers() {
 }
 
 app.listen(PORT, () => {
-  console.log(`Listening on port ${PORT}...`);
-});
+  console.log(`Listening on port ${PORT}...`)
+})

@@ -84,12 +84,8 @@ fs.chmodSync(`/var/run/sshd`, 0o755)
 exec("/usr/sbin/sshd -D")
   .finally(() => process.exit(1))
 
-// spawn web
-exec("bun index.ts")
-  .finally(() => process.exit(1))
-
-// spawn log filer
-exec("bun logfiler.ts")
+// spawn web and logfiler
+exec("bun server.ts")
   .finally(() => process.exit(1))
 
 // run command and throw on error
