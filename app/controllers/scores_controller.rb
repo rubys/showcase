@@ -508,7 +508,7 @@ class ScoresController < ApplicationController
       names = dances
     end
 
-    @score_range = SCORES[scores.first.heat.category]
+    @score_range = SCORES[scores.first&.heat&.category || 'Open']
 
     @scores = {}
     hscores.each do |number, scores|
