@@ -57,7 +57,7 @@
 <h2 class="font-bold text-2xl my-4">Students, by age</h2>
 
 <ul class="list-disc list-inside">
-  <% @people['Student'].group_by {|person| person.age}.sort.each do |age, people| %>
+  <% @people['Student'].select {|person| person.age}.group_by {|person| person.age}.sort.each do |age, people| %>
     <li><%= link_to "#{age.category} (#{age.description})", people_path(age: age.id) %>: <%= people.length %></li>
   <% end %>
 </ul>
