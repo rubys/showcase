@@ -62,7 +62,7 @@ export default class extends Controller {
           }
         }
 
-        box.id = `solo_formation[${this.boxes.length-1}]`;
+        box.id = `solo_formation[${this.boxes.length - 1}]`;
         box.setAttribute("name", `solo[formation[${this.boxes.length}]]`);
         box.removeAttribute("data-formation-target");
         box.addEventListener("change", this.preventDupes);
@@ -123,12 +123,14 @@ export default class extends Controller {
       adds[0].style.opacity = "";
     }
 
-    if (this.students.every(student => taken.includes(student) || this.instructors.includes(student))) {
-      adds[1].style.cursor = "not-allowed";
-      adds[1].style.opacity = "50%";
-    } else {
-      adds[1].style.cursor = "";
-      adds[1].style.opacity = "";
+    if (adds[1]) {
+      if (this.students.every(student => taken.includes(student) || this.instructors.includes(student))) {
+        adds[1].style.cursor = "not-allowed";
+        adds[1].style.opacity = "50%";
+      } else {
+        adds[1].style.cursor = "";
+        adds[1].style.opacity = "";
+      }
     }
   };
 }

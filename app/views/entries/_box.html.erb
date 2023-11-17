@@ -3,6 +3,7 @@
     <div class="absolute top-0 right-0 flex flex-col">
     <a class="btn-blue ml-auto cursor-pointer w-full"
       data-list="<%= @instructors.to_json %>">Add instructor</a>
+    </div>
     <% if @person&.type == "Student" %>  
     <a class="btn-blue ml-auto cursor-pointer w-full"
       data-list="<%= @students.map {|person| [person.name, person.id]}.to_h.to_json %>">Add student</a>
