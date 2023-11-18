@@ -1,7 +1,7 @@
 import { connect, StringCodec } from "nats";
 import fs from 'node:fs';
 
-import { pattern, highlight, format } from "./view.ts"
+import { pattern, highlight, filtered, format } from "./view.ts"
 import { broadcast } from "./websocket.ts"
 
 fs.mkdirSync("/logs", { recursive: true });
@@ -94,7 +94,7 @@ fs.mkdirSync("/logs", { recursive: true });
         current.active = true;
 
         let match = log.match(pattern)
-        if (match) broadcast(highlight(format(match)))
+        if (match) broadcast(highlight(format(match)), filtered(match))
       }
 
       console.log("log nats subscription closed");

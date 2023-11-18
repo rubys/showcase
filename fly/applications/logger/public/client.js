@@ -56,8 +56,12 @@ function openws() {
 
   ws.onmessage = (event) => {
     try {
+      let data = JSON.parse(event.data)
+
+      if (data.filtered && filter.checked) return
+
       let span = document.createElement('span')
-      span.innerHTML = event.data
+      span.innerHTML = data.message
 
       let pre = document.querySelector('pre')
 

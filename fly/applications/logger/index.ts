@@ -7,11 +7,9 @@ import express from "express"
 
 import { startWs } from './websocket.ts'
 
-import { pattern, filtered, format, highlight } from "./view.ts";
+import { pattern, filtered, format, highlight, visit, LOGS } from "./view.ts";
 
 const PORT = 3000
-const LOGS = '/logs'
-const VISITTIME = `${LOGS}/.time`
 
 const app = express();
 
@@ -72,18 +70,7 @@ app.get("/", async (req, res) => {
 
   let filter = (req.query.filter !== 'off');
 
-  let lastVisit = "0";
-  try {
-    lastVisit = fs.statSync(VISITTIME).mtime.toISOString()
-  } catch (e) {
-    if (!(e instanceof Error && 'code' in e) || e.code != 'ENOENT') throw e;
-    fs.closeSync(fs.openSync(VISITTIME, 'a'));
-  }
-
-  let time = new Date();
-  fs.utimes(VISITTIME, time, time, error => {
-    if (error) console.error(error)
-  })
+  let lastVisit = visit()
 
   let logs = await fs.promises.readdir(LOGS);
   logs.sort();

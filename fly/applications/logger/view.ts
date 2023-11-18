@@ -1,5 +1,9 @@
-import escape from "escape-html";
+import fs from 'node:fs'
 
+import escape from "escape-html"
+
+export const LOGS = '/logs'
+const VISITTIME = `${LOGS}/.time`
 const HOST = "https://smooth.fly.dev"
 
 // lines to be selected to be send to the browser
@@ -39,6 +43,25 @@ export function format(match: RegExpMatchArray) {
   ].join(' ')
 }
 
+// indicate that a line is new by setting the background color
 export function highlight(log: string) {
   return `<span style="background-color: yellow">${log}</span>`
+}
+
+export function visit() {
+  let lastVisit = "0"
+
+  try {
+    lastVisit = fs.statSync(VISITTIME).mtime.toISOString()
+  } catch (e) {
+    if (!(e instanceof Error && 'code' in e) || e.code != 'ENOENT') throw e;
+    fs.closeSync(fs.openSync(VISITTIME, 'a'))
+  }
+
+  let time = new Date();
+  fs.utimes(VISITTIME, time, time, error => {
+    if (error) console.error(error)
+  })
+
+  return lastVisit
 }
