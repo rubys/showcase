@@ -1,6 +1,9 @@
 import { connect, StringCodec } from "nats";
 import fs from 'node:fs';
 
+import { pattern, highlight, format } from "./view.ts"
+import { broadcast } from "./websocket.ts"
+
 fs.mkdirSync("/logs", { recursive: true });
 
 (async () => {
@@ -84,11 +87,14 @@ fs.mkdirSync("/logs", { recursive: true });
           data.fly.region,
           `[${data.log.level}]`,
           data.message
-        ].join(' ') + "\n";
+        ].join(' ')
 
         // write entry to disk
-        fs.write(current.file, log, reportError);
+        fs.write(current.file, log + "\n", reportError);
         current.active = true;
+
+        let match = log.match(pattern)
+        if (match) broadcast(highlight(format(match)))
       }
 
       console.log("log nats subscription closed");

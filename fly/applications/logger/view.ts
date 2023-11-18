@@ -1,3 +1,5 @@
+import escape from "escape-html";
+
 const HOST = "https://smooth.fly.dev"
 
 // lines to be selected to be send to the browser
@@ -18,7 +20,6 @@ export function filtered(match: RegExpMatchArray) {
 }
 
 // formatted log entry
-
 export function format(match: RegExpMatchArray) {
   let status = match[8];
   if (!status.match(/200|101|30[234]/)) {
@@ -36,4 +37,8 @@ export function format(match: RegExpMatchArray) {
     `"${match[5]} ${link} ${match[7]}"`,
     escape(match[9])
   ].join(' ')
+}
+
+export function highlight(log: string) {
+  return `<span style="background-color: yellow">${log}</span>`
 }

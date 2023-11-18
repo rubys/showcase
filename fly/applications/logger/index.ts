@@ -1,12 +1,13 @@
-import fs from 'node:fs';
+import fs from 'node:fs'
 import { exec } from "node:child_process"
-import readline from 'node:readline';
-import path from 'node:path';
+import readline from 'node:readline'
+import path from 'node:path'
 
-import express from "express";
-import escape from "escape-html";
+import express from "express"
 
-import { pattern, filtered, format } from "./view.ts";
+import { startWs } from './websocket.ts'
+
+import { pattern, filtered, format, highlight } from "./view.ts";
 
 const PORT = 3000
 const LOGS = '/logs'
@@ -14,9 +15,9 @@ const VISITTIME = `${LOGS}/.time`
 
 const app = express();
 
-const appName = process.env.FLY_APP_NAME;
+const appName = process.env.FLY_APP_NAME
 
-const FLY_REGION = process.env.FLY_REGION;
+const FLY_REGION = process.env.FLY_REGION
 
 let lastRegionCheck = 0
 let lastRegions: string[] = []
@@ -51,7 +52,7 @@ app.get("/regions/:region/(*)", async (request, response, next) => {
   if (!REGIONS.includes(region)) {
     response.status(404).send('Not found')
   } else if (region === FLY_REGION) {
-    if (request.params[0] === '') request.url = '/'
+    request.url = '/' + request.params[0]
     next()
   } else {
     response.set('Fly-Replay', `region=${region}`)
@@ -59,7 +60,8 @@ app.get("/regions/:region/(*)", async (request, response, next) => {
   }
 })
 
-app.use(`/regions/${FLY_REGION}/logs`, express.static('/logs'))
+app.use('/logs', express.static('/logs'))
+app.use('/static', express.static('./public'))
 
 let timeout = 0;
 app.get("/", async (req, res) => {
@@ -105,19 +107,11 @@ app.get("/", async (req, res) => {
         let match = line.match(pattern)
         if (!match) return;
 
-        let status = match[8];
-        if (status === '409') return;
-        if (!status.match(/200|101|30[234]/)) {
-          status = `<span style="background-color: orange">${status}</span>`
-        }
-
         if (filter && filtered(match)) return
 
         let log = format(match)
 
-        if (line > lastVisit) {
-          log = `<span style="background-color: yellow">${log}</span>`
-        }
+        if (line > lastVisit) log = highlight(log)
 
         results.push(log)
       });
@@ -172,27 +166,7 @@ app.get("/", async (req, res) => {
       a {color: black; text-decoration: none}
     </style>
     ${results.reverse().join("\n")}
-    <script>
-      for (let time of document.querySelectorAll('time')) {
-        let text = time.textContent;
-        let match = text.match(${/^(\d+)\/(\w+)\/(\d+):\d+:\d+:\d+Z/})
-        if (!match) continue
-        let date = new Date([match[2], match[1], match[3]].join(' '))
-        date = new Date(date.toISOString().slice(0,11) + text.slice(12,21))
-        time.setAttribute('datetime', date.toISOString())
-        time.setAttribute('title', text.slice(0,21))
-        time.textContent = date.toLocaleString().replace(',', '')
-      }
-
-      let filter = document.querySelector('input[name=filter]')
-      filter.addEventListener("click", () => {
-        let url = new URL(window.location)
-        let search = url.searchParams
-        search.set('filter',  filter.checked ? "on" : "off")
-        url.search = search.toString()
-        location = url
-      })
-      </script>
+    <script src="/static/client.js"></script>
   `)
 })
 
@@ -220,6 +194,8 @@ async function fetchOthers() {
     })
   })
 }
+
+startWs(app)
 
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}...`)
