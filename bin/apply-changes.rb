@@ -53,4 +53,5 @@ end
 
 unless `git status --short | grep -v "^?? "`.empty?
   exit 1 unless system 'git commit -a -m "apply configuration changes"'
+  exit 1 unless system 'git push'
 end
