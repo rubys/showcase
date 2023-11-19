@@ -232,9 +232,7 @@ error_log /dev/stderr;
 access_log /dev/stdout main;
 
 <% end -%>
-http {
-  passenger_max_pool_size 16;
-}
+passenger_max_pool_size 16;
 
 server {
 <% if ENV['FLY_APP_NAME'] -%>
