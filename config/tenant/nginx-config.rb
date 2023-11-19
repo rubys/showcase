@@ -277,6 +277,7 @@ server {
   passenger_enabled on;
   passenger_ruby <%= RbConfig.ruby %>;
   passenger_friendly_error_pages on;
+  passenger_max_pool_size 16;
   passenger_min_instances 0;
   passenger_set_header X-Request-Id $request_id;
 <% if ENV['GEM_HOME'] -%>
