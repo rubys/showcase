@@ -232,6 +232,10 @@ error_log /dev/stderr;
 access_log /dev/stdout main;
 
 <% end -%>
+http {
+  passenger_max_pool_size 16;
+}
+
 server {
 <% if ENV['FLY_APP_NAME'] -%>
   listen 3000;
@@ -277,7 +281,6 @@ server {
   passenger_enabled on;
   passenger_ruby <%= RbConfig.ruby %>;
   passenger_friendly_error_pages on;
-  passenger_max_pool_size 16;
   passenger_min_instances 0;
   passenger_set_header X-Request-Id $request_id;
 <% if ENV['GEM_HOME'] -%>
