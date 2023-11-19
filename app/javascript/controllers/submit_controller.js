@@ -22,6 +22,8 @@ export default class extends Controller {
         stream: outputTarget.dataset.stream
       }, {
         connected() {
+          if (!outputTarget.parentNode.classList.contains('hidden')) return
+
           this.perform("command", params)
           submitTarget.disabled=true
           outputTarget.parentNode.classList.remove("hidden")
