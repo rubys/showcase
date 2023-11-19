@@ -1,12 +1,16 @@
-for (let time of document.querySelectorAll('time')) {
-  let text = time.textContent;
+function fixTime(time) {
+  let text = time.textContent
   let match = text.match(/^(\d+)\/(\w+)\/(\d+):\d+:\d+:\d+Z/)
-  if (!match) continue
+  if (!match) return
   let date = new Date([match[2], match[1], match[3]].join(' '))
   date = new Date(date.toISOString().slice(0,11) + text.slice(12,21))
   time.setAttribute('datetime', date.toISOString())
   time.setAttribute('title', text.slice(0,21))
   time.textContent = date.toLocaleString().replace(',', '')
+}
+
+for (let time of document.querySelectorAll('time')) {
+  fixTime(time)
 }
 
 let filter = document.querySelector('input[name=filter]')
@@ -62,6 +66,10 @@ function openws() {
 
       let span = document.createElement('span')
       span.innerHTML = data.message
+
+      for (let time of span.querySelectorAll('time')) {
+        fixTime(time)
+      }
 
       let pre = document.querySelector('pre')
 
