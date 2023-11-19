@@ -16,7 +16,7 @@ end
 (pending['add'] || []).each do |region|
   cmd = [fly, 'machine', 'clone', primary['id'], '--region', region, '--verbose']
 
-  volumes = JSON.parse(`fly volumes list --json`)
+  volumes = JSON.parse(`#{fly} volumes list --json`)
   volume = volumes.find do |volume| 
     volume['region'] == region && volume['attached_machine_id'] == nil
   end
