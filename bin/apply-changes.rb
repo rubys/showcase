@@ -18,11 +18,11 @@ end
 end
 
 if File.exist? 'db/map.yml'
+  exit 1 unless system 'node utils/mapper/usmap.js'
+
   new_map = IO.read('db/map.yml')
   if new_map != IO.read('config/tenant/map.yml')
     IO.write('config/tenant/map.yml', new_map)
-
-    exit 1 unless system 'node utils/mapper/usmap.js'
   end
 end
 
