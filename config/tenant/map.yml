@@ -5,6 +5,12 @@ regions:
     lon: -77.462555
     x: 753.3598022258124
     y: 218.05721663167571
+  atl:
+    name: Atlanta, Georgia (US)
+    lat: 33.6407
+    lon: -84.4277
+    x: 666.8622894496666
+    y: 334.50323467265434
   ord:
     name: Chicago, Illinois (US)
     lat: 41.891544
