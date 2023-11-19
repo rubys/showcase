@@ -42,6 +42,8 @@ async function getRegions(): Promise<string[]> {
   return lastRegions
 }
 
+startWs(app)
+
 app.get("/regions/:region/(*)", async (request, response, next) => {
   let { region } = request.params;
 
@@ -181,8 +183,6 @@ async function fetchOthers() {
     })
   })
 }
-
-startWs(app)
 
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}...`)

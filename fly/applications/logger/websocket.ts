@@ -6,10 +6,12 @@ import { visit } from './view.ts'
 
 let wss = null as ws.Server | null
 
+const FLY_REGION = process.env.FLY_REGION;
+
 export function startWs(express: Express) {
   const { app, getWss } = expressWs(express)
 
-  app.ws('/websocket', (ws, req) => {
+  function websocket(ws: ws) {
     console.log('websocket connection established')
 
     ws.on('message', (message : string) => {
@@ -19,7 +21,10 @@ export function startWs(express: Express) {
     ws.on('close', () => {
       console.log('websocket connection closed')
     })
-  })
+  }
+
+  app.ws(`/regions/${FLY_REGION}/websocket`, websocket)
+  app.ws('/websocket', websocket)
 
   wss = getWss()
 }
