@@ -14,7 +14,15 @@ if pending['add'] and not pending['add'].empty?
 end
 
 (pending['add'] || []).each do |region|
-  exit 1 unless system "#{fly} machine clone #{primary['id']} --region #{region} --verbose"
+  cmd = [fly, 'machine', 'clone', primary['id'], '--region', region, '--verbose']
+
+  volumes = JSON.parse(`fly volumes list --json`)
+  volume = volumes.find do |volume| 
+    volume['region'] == region && volume['attached_machine_id'] == nil
+  end
+  cmd += ['--attach-volume', volume['id']] if volume
+
+  exit 1 unless system *cmd
 end
 
 if File.exist? 'db/map.yml'
