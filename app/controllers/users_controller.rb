@@ -6,7 +6,7 @@ class UsersController < ApplicationController
   skip_before_action :authenticate_user
   before_action :get_authentication
   before_action :authenticate_index, except: %i[ password_reset password_verify ]
-  before_action :set_user, only: %i[ show edit update destroy ]
+  before_action :set_user, only: %i[ show edit auth update destroy ]
 
   # GET /users or /users.json
   def index
@@ -27,6 +27,13 @@ class UsersController < ApplicationController
   # GET /users/1/edit
   def edit
     new
+  end
+
+  # GET /users/1/auth
+  def auth
+    edit
+    @auth = true
+    render :edit
   end
 
   # POST /users or /users.json
@@ -252,7 +259,9 @@ class UsersController < ApplicationController
         IO.write "#{dbpath}/htpasswd", contents
       end
 
-      spawn 'bundle', 'exec', Rails.root.join('bin/user-update').to_s
+      if Rails.env.production?
+        spawn 'bundle', 'exec', Rails.root.join('bin/user-update').to_s
+      end
     end
 
     @@encryptor = ActiveSupport::MessageEncryptor.new(ENV['RAILS_MASTER_KEY'] || IO.read('config/master.key'))

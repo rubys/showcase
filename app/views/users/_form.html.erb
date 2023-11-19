@@ -1,4 +1,4 @@
-<%= form_with(model: user, url: @studios ? nil : password_verify_url(token: @user.token), class: "contents", data: {turbo: false, controller: @studios ? nil : 'logout'}) do |form| %>
+<%= form_with(model: user, url: @studios ? nil : password_verify_url(token: @user.token), class: "contents", id: "user-form", data: {turbo: false, controller: @studios ? nil : 'logout'}) do |form| %>
   <% if user.errors.any? %>
     <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
       <h2><%= pluralize(user.errors.count, "error") %> prohibited this user from being saved:</h2>
@@ -16,6 +16,7 @@
     <%= form.text_field :userid, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <% if @auth %>
   <div class="my-5">
     <%= form.label :password %>
     <%= form.password_field :password, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
@@ -25,6 +26,7 @@
     <%= form.label :password_confirmation %>
     <%= form.password_field :password_confirmation, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+  <% else %>
 
   <div class="my-5">
     <%= form.label :email %>
@@ -40,8 +42,9 @@
     <%= form.label :name2 %>
     <%= form.text_field :name2, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+  <% end %>
 
-  <% if @studios %>
+  <% if @studios and @auth %>
   <input type="hidden" name="admin" value="<%= @admin %>">
   
   <div class="my-5">
@@ -65,8 +68,4 @@
   <% end %>
   </div>
   <% end %>
-
-  <div class="inline">
-    <%= form.submit class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
-  </div>
 <% end %>
