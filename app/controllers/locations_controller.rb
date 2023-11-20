@@ -17,6 +17,13 @@ class LocationsController < ApplicationController
   def new
     @location ||= Location.new
 
+    if params[:user_id] and @location.new_record?
+      user = User.find(params[:user_id])
+      @location.user = user
+      @location.key = user.userid
+      @location.name = user.userid.capitalize
+    end
+
     @users = User.order(:userid).pluck(:userid, :name1, :name2, :id).
     map do |userid, name1, name2, id|
       if name2.empty?

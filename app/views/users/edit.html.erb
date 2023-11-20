@@ -13,6 +13,12 @@
 
   <%= link_to 'Password reset', password_reset_path(user: @user.id), class: 'btn-orange' %>
 
+  <% if @user.locations.first %>
+  <%= link_to 'Edit Studio', edit_location_path(@user.locations.first), class: 'btn-green' %>
+  <% else %>
+  <%= link_to 'New Studio', new_location_path(user_id: @user), class: 'btn-green' %>
+  <% end %>
+
   <%= link_to 'Remove this user', user_path(@user), class: "btn-grey",
     data: { turbo_method: :delete, turbo_confirm: 'Are you sure?' } %>
   <% end %>
