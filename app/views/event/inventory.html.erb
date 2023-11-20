@@ -14,8 +14,9 @@
 <tbody>
 <% @events.each do |event| %>
 <tr>
-  <td><%= event[:studio] %>
-  <td><%= event[:name] %>
+  <% year, city, token = event[:db].split('-', 3) %>
+  <td><%= link_to event[:studio], studio_events_path(city) %>
+  <td><%= link_to event[:name], "#{@scope}/#{year}/#{city}/#{token}/".squeeze('/') %>
   <td><%= event[:date] %>
   <td align="right"><%= event[:people] %>
   <td align="right"><%= event[:heats] %>

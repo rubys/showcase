@@ -255,9 +255,7 @@ class EventController < ApplicationController
         end
       end
 
-      @scope = ENV.fetch("RAILS_APP_SCOPE", '')
-      @scope = '/' + @scope unless @scope.empty?
-      @scope = ENV['RAILS_RELATIVE_URL_ROOT'] + '/' + @scope if ENV['RAILS_RELATIVE_URL_ROOT']
+      set_scope
     end
 
     if logos.size == 1
@@ -336,6 +334,8 @@ class EventController < ApplicationController
     @events.sort_by! {|event| -event[:heats].to_i} if params[:sort] == 'heats'
     @events.sort_by! {|event| -event[:people].to_i} if params[:sort] == 'people'
     @events.sort_by! {|event| -event[:entries].to_i} if params[:sort] == 'entries'
+
+    set_scope
   end
 
   def regions
@@ -750,5 +750,13 @@ class EventController < ApplicationController
     else
       root
     end
+  end
+
+private
+
+  def set_scope
+    @scope = ENV.fetch("RAILS_APP_SCOPE", '')
+    @scope = '/' + @scope unless @scope.empty?
+    @scope = ENV['RAILS_RELATIVE_URL_ROOT'] + '/' + @scope if ENV['RAILS_RELATIVE_URL_ROOT']
   end
 end
