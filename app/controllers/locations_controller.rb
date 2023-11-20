@@ -34,6 +34,15 @@ class LocationsController < ApplicationController
     end
   end
 
+  def first_event(status=:ok)
+    new
+    @first_event = true
+
+    @year ||= Showcase.maximum(:year) || Time.now.year
+
+    render :new, status: status
+  end
+
   # GET /locations/1/edit
   def edit
     new
@@ -66,8 +75,29 @@ class LocationsController < ApplicationController
   def create
     @location = Location.new(location_params)
 
+    if params[:user]
+      @user = User.new(user_params)
+      if not @user.save
+        first_event(:unprocessable_entity)
+        return
+      end
+
+      @location.user_id = @user.id
+    end
+
     respond_to do |format|
       if @location.save
+        if params[:showcase]
+          @showcase = Showcase.new(showcase_params)
+          @showcase.location_id = @location.id
+          @showcase.order = (Showcase.maximum(:order) || 0) + 1
+
+          if not @showcase.save
+            first_event(:unprocessable_entity)
+            return
+          end
+        end
+
         generate_showcases
         generate_map
 
@@ -80,6 +110,8 @@ class LocationsController < ApplicationController
 
         format.html { redirect_to locations_url, notice: "#{@location.name} was successfully created." }
         format.json { render :show, status: :created, location: @location }
+      elsif params[:user]
+        format.html { first_event(:unprocessable_entity) }
       else
         new
         format.html { render :new, status: :unprocessable_entity }
@@ -127,5 +159,13 @@ class LocationsController < ApplicationController
     # Only allow a list of trusted parameters through.
     def location_params
       params.require(:location).permit(:key, :name, :latitude, :longitude, :user_id)
+    end
+
+    def user_params
+      params.require(:user).permit(:userid, :email, :name1, :name2)
+    end
+
+    def showcase_params
+      params.require(:user).permit(:year, :key, :name)
     end
 end

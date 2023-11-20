@@ -192,7 +192,9 @@ Rails.application.routes.draw do
     end
 
     post '/locations/users', to: 'users#update_location', as: 'locations_users'
-    resources :locations
+    resources :locations do
+      get 'first-event', on: :collection
+    end
   end
 
   post '/showcase/events/console', to: 'event#console'
