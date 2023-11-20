@@ -15,13 +15,8 @@ class UsersTest < ApplicationSystemTestCase
     click_on "New user"
 
     fill_in "Email", with: @user.email + '2'
-    fill_in "Link", with: @user.link
     fill_in "Name1", with: @user.name1
     fill_in "Name2", with: @user.name2
-    fill_in "Password", with: @user.password
-    fill_in "Password confirmation", with: @user.password
-    check "Two"
-    fill_in "Token", with: @user.token
     fill_in "Userid", with: @user.userid + '2'
     click_on "Create User"
 
@@ -34,9 +29,23 @@ class UsersTest < ApplicationSystemTestCase
     click_on "Edit this user", match: :first
 
     fill_in "Email", with: @user.email
-    fill_in "Link", with: @user.link
     fill_in "Name1", with: @user.name1
     fill_in "Name2", with: @user.name2
+    fill_in "Userid", with: @user.userid 
+    click_on "Update User"
+
+    assert_text "joe was successfully updated"
+    click_on "Back"
+  end
+
+
+  test "should update User auth" do
+    visit user_url(@user)
+    click_on "Edit this user", match: :first
+    click_on "Auth", match: :first
+
+    # fill_in "Email", with: @user.email
+    fill_in "Link", with: @user.link
     fill_in "Password", with: @user.password
     fill_in "Password confirmation", with: @user.password
     check "Two"
