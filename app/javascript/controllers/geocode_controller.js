@@ -19,6 +19,9 @@ export default class extends Controller {
           if (!location) return 
           this.latitudeTarget.value = location.lat
           this.longitudeTarget.value = location.lon
+
+          this.nameTarget.parentElement.querySelector('label').title =
+            location.display_name
         })
     })
   }

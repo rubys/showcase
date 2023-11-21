@@ -81,6 +81,7 @@ class LocationsController < ApplicationController
   # POST /locations or /locations.json
   def create
     @location = Location.new(location_params)
+    @location.name = @location.name.split(',').first
 
     if params[:user]
       @user = User.new(user_params)
