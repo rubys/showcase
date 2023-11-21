@@ -92,6 +92,7 @@ class LocationsController < ApplicationController
       end
 
       @location.user_id = @user.id
+      @location.key = @user.userid
     end
 
     respond_to do |format|
