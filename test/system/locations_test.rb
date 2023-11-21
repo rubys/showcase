@@ -14,7 +14,7 @@ class LocationsTest < ApplicationSystemTestCase
     visit locations_url
     click_on "New studio"
 
-    fill_in "Key", with: @location.key + '2'
+    fill_in "Token", with: @location.key + '2'
     fill_in "Latitude", with: @location.latitude
     fill_in "Longitude", with: @location.longitude
     fill_in "Name", with: @location.name + '2'
@@ -29,7 +29,7 @@ class LocationsTest < ApplicationSystemTestCase
     visit location_url(@location)
     click_on "Edit this location", match: :first
 
-    fill_in "Key", with: @location.key
+    fill_in "Token", with: @location.key
     fill_in "Latitude", with: @location.latitude
     fill_in "Longitude", with: @location.longitude
     fill_in "Name", with: @location.name
