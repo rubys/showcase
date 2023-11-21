@@ -30,7 +30,8 @@ class HeatsController < ApplicationController
     @issues = @heats.map {|number, heats|
       [number, heats.map {|heat| 
         e=heat.entry
-        [e.lead_id, e.follow_id]}.flatten.tally.select {|person, count| number > 0 && count > 1}
+        heat.number > 0 ? [e.lead_id, e.follow_id] : []
+      }.flatten.tally.select {|person, count| number > 0 && count > 1}
       ]
     }.select {|number, issues| !issues.empty?}
   end
