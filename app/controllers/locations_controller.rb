@@ -36,9 +36,16 @@ class LocationsController < ApplicationController
 
   def first_event(status=:ok)
     new
+    @user ||= User.new
+    @showcase ||= Showcase.new
     @first_event = true
 
-    @year ||= Showcase.maximum(:year) || Time.now.year
+    @showcase.year ||= Showcase.maximum(:year) || Time.now.year
+
+    unless @showcase.location&.showcases&.any? {|showcase| showcase.year == @showcase.year}
+      @showcase.name ||= 'Showcase'
+      @showcase.key ||= 'showcase'
+    end
 
     render :new, status: status
   end
@@ -78,6 +85,8 @@ class LocationsController < ApplicationController
     if params[:user]
       @user = User.new(user_params)
       if not @user.save
+        @showcase = Showcase.new(showcase_params)
+        logger.info @showcase.inspect
         first_event(:unprocessable_entity)
         return
       end
@@ -93,6 +102,8 @@ class LocationsController < ApplicationController
           @showcase.order = (Showcase.maximum(:order) || 0) + 1
 
           if not @showcase.save
+            @user.destroy!
+            @location.destroy!
             first_event(:unprocessable_entity)
             return
           end
@@ -111,6 +122,8 @@ class LocationsController < ApplicationController
         format.html { redirect_to locations_url, notice: "#{@location.name} was successfully created." }
         format.json { render :show, status: :created, location: @location }
       elsif params[:user]
+        @user.destroy!
+        @showcase = Showcase.new(showcase_params)
         format.html { first_event(:unprocessable_entity) }
       else
         new
@@ -166,6 +179,6 @@ class LocationsController < ApplicationController
     end
 
     def showcase_params
-      params.require(:user).permit(:year, :key, :name)
+      params.require(:showcase).permit(:year, :key, :name)
     end
 end

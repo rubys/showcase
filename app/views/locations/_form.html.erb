@@ -18,22 +18,22 @@
 
   <div class="my-5">
     <label required="required" for="user_userid">Userid</label>
-    <input class="block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="text" name="user[userid]" id="user_userid">
+    <input class="block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="text" name="user[userid]" id="user_userid" value="<%= @user&.userid %>">
   </div>
 
   <div class="my-5">
     <label for="user_email">Email</label>
-    <input class="block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="email" name="user[email]" id="user_email">
+    <input class="block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="email" name="user[email]" id="user_email" value="<%= @user&.email %>">
   </div>
 
   <div class="my-5">
     <label for="user_name1">Name1</label>
-    <input class="block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="text" name="user[name1]" id="user_name1">
+    <input class="block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="text" name="user[name1]" id="user_name1" value="<%= @user&.name1 %>">
   </div>
 
   <div class="my-5">
     <label for="user_name2">Name2</label>
-    <input class="block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="text" name="user[name2]" id="user_name2">
+    <input class="block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="text" name="user[name2]" id="user_name2" value="<%= @user&.name2 %>">
   </div>
 
   <h2 class="font-bold text-3xl mt-8">Studio</h1>
@@ -75,17 +75,17 @@
 
   <div class="my-5">
     <label for="showcase_year">Year</label>
-    <input class="block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="number" value="<%= @year %>" name="showcase[year]" id="showcase_year">
+    <input class="block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="number" name="showcase[year]" id="showcase_year" value="<%= @showcase&.year %>">
   </div>
 
   <div class="my-5">
     <label for="showcase_key">Key</label>
-    <input class="block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="text" name="showcase[key]" id="showcase_key">
+    <input class="block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="text" name="showcase[key]" id="showcase_key" value="<%= @showcase&.key %>">
   </div>
 
   <div class="my-5">
     <label for="showcase_name">Name</label>
-    <input class="block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="text" name="showcase[name]" id="showcase_name">
+    <input class="block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="text" name="showcase[name]" id="showcase_name" value="<%= @showcase&.name %>">
   </div>
   <% end %>
 <% end %>
