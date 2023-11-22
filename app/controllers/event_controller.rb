@@ -687,29 +687,31 @@ class EventController < ApplicationController
           end
         end
       end
-    end
 
-    showcases
+      redirect_to settings_event_index_path,
+        notice: "Cloned: #{tables.keys.map(&:to_s).join(", ")}"
+    else
 
-    @sources = []
+      showcases
 
-    @showcases.each do |year, sites|
-      sites.each do |token, info|
-        next unless User.authorized?(@authuser, info[:name])
-        if info[:events]
-          info[:events].each do |subtoken, subinfo|
-            @sources << "#{year}-#{token}-#{subtoken}"
+      @sources = []
+
+      @showcases.each do |year, sites|
+        sites.each do |token, info|
+          next unless User.authorized?(@authuser, info[:name])
+          if info[:events]
+            info[:events].each do |subtoken, subinfo|
+              @sources << "#{year}-#{token}-#{subtoken}"
+            end
+          else
+            @sources << "#{year}-#{token}"
           end
-        else
-          @sources << "#{year}-#{token}"
         end
       end
+
+      @sources.delete ENV["RAILS_APP_DB"]
+
     end
-
-    @sources.delete ENV["RAILS_APP_DB"]
-
-    redirect_to settings_event_index_path,
-      notice: "Cloned: #{tables.keys.map(&:to_s).join(", ")}"
   end
 
   def qrcode
