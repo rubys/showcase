@@ -709,7 +709,7 @@ class EventController < ApplicationController
     @sources.delete ENV["RAILS_APP_DB"]
 
     redirect_to settings_event_index_path,
-      notice: "Cloned: #{table.keys.map(&:to_s).join(", ")}"
+      notice: "Cloned: #{tables.keys.map(&:to_s).join(", ")}"
   end
 
   def qrcode
