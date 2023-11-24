@@ -295,6 +295,14 @@ server {
   passenger_env_var RAILS_PROXY_HOST <%= HOST %>;
 <% end -%>
   passenger_env_var RAILS_APP_REDIS showcase_production;
+<% if ENV['FLY_REGION'] -%>
+
+  # PDF generation
+  location ~ /showcase/.+\.pdf$ {
+    return 409 "wrong app\n";
+    add_header Fly-Replay app=smooth-pdf always;
+  }
+<% end -%>
 <% @tenants.each do |tenant| %>
   # <%= tenant.name %>
 <% if @region and @region == tenant.region and tenant.scope.to_s != '' -%>
