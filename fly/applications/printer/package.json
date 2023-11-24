@@ -1,0 +1,12 @@
+{
+  "name": "printer",
+  "scripts": {
+    "start": "bun server.ts"
+  },
+  "dependencies": {
+    "puppeteer-core": "^21.5.2"
+  },
+  "devDependencies": {
+    "bun-types": "^1.0.14"
+  }
+}
