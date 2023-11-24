@@ -18,16 +18,26 @@ Bun.serve({
   port: PORT,
 
   async fetch(request) {
-    clearTimeout(timeout)
-
     // map URL to showcase site
     const url = new URL(request.url)
     url.hostname = 'smooth.fly.dev'
     url.protocol = 'https:'
     url.port = ''
 
-    // strip pdf extension from URL
-    if (url.pathname.endsWith('.pdf')) url.pathname = url.pathname.slice(0, -4)
+    // redirect non pdf requests back to smooth.fly.dev
+    if (!url.pathname.endsWith('.pdf')) {
+      return new Response(`Non PDF request - redirecting`, {
+        status: 301,
+        headers: { Location: url.href }
+      })
+    }
+
+    // cancel timeout
+    clearTimeout(timeout)
+
+    // strip [index].pdf from end of URL
+    url.pathname = url.pathname.slice(0, -4)
+    if (url.pathname.endsWith('/index')) url.pathname = url.pathname.slice(0, -5)
 
     console.log(`Printing ${url.href}`)
 
@@ -39,6 +49,7 @@ Bun.serve({
     delete headers.host
     await page.setExtraHTTPHeaders(headers)
 
+    // main puppeteer logic: fetch url, convert to URL, return response
     try {
       await page.goto(url.href, { waitUntil: 'networkidle0' })
 
@@ -71,6 +82,7 @@ Bun.serve({
     } finally {
       page.close()
 
+      // start new timeout
       clearTimeout(timeout)
       timeout = setTimeout(exit, KEEP_ALIVE)
     }
