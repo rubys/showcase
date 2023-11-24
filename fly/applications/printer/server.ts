@@ -1,6 +1,9 @@
 import puppeteer from 'puppeteer-core'
 
 const PORT = 3000
+const KEEP_ALIVE = 15 * 60 * 1000 // fifteen minutes
+
+let timeout = setTimeout(exit, KEEP_ALIVE)
 
 const chrome = process.platform == "darwin"
   ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
@@ -15,6 +18,8 @@ Bun.serve({
   port: PORT,
 
   async fetch(request) {
+    clearTimeout(timeout)
+
     // map URL to showcase site
     const url = new URL(request.url)
     url.hostname = 'smooth.fly.dev'
@@ -65,6 +70,9 @@ Bun.serve({
 
     } finally {
       page.close()
+
+      clearTimeout(timeout)
+      timeout = setTimeout(exit, KEEP_ALIVE)
     }
 
   }
@@ -72,8 +80,10 @@ Bun.serve({
 
 console.log(`Printer server listening on port ${PORT}`)
 
-process.on("SIGINT", () => {
+process.on("SIGINT",exit)
+
+function exit() {
   console.log("exiting")
   browser.close()
   process.exit()
-})
+}
