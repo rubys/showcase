@@ -468,6 +468,11 @@ class EventController < ApplicationController
   def publish
     @event = Event.first
     @public_url = URI.join(request.original_url, '../public')
+
+    # Wake up print server
+    Thread.new do
+      Net::HTTP.get_response(URI("https://smooth-pdf.fly.dev/"))
+    end
   end
 
   def database

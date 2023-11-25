@@ -41,7 +41,10 @@ Bun.serve({
 
     console.log(`Printing ${url.href}`)
 
+    // create a new browser page (tab)
     const page = await browser.newPage()
+
+    // disable javascript (optional)
     await page.setJavaScriptEnabled(false)
 
     // copy headers (including auth, excluding host) from original request
