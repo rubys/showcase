@@ -7,9 +7,11 @@ app = "smooth-pdf"
 primary_region = "iad"
 
 [env]
+  HOSTNAME = "smooth.fly.dev"
   PORT = 3000
   TIMEOUT = 15
-  HOSTNAME = "smooth.fly.dev"
+  FORMAT = "letter"
+  JAVASCRIPT = "false"
 
 [http_service]
   internal_port = 3000
