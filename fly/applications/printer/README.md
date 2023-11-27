@@ -27,7 +27,9 @@ This application enables you to offload your applications PDF generation require
 
 ## [Integrate with your existing application](#integrate)
 
-What you will need to do is to redirect requests using the [`Fly-Replay`](https://fly.io/docs/reference/dynamic-request-routing/#the-fly-replay-response-header) header for PDFs to the PDF appliance application.  The convention is that PDF versions of exiting pages can be produced by adding `.pdf` to the URL.  A few examples (in each, replace `appname-pdf` with the appliance application name you selected):
+What you will need to do is to redirect requests using the [`Fly-Replay`](https://fly.io/docs/reference/dynamic-request-routing/#the-fly-replay-response-header) header for PDFs to the PDF appliance application.  The convention is that PDF versions of exiting pages can be produced by adding `.pdf` to the URL.
+
+A few examples (in each, replace `appname-pdf` with the appliance application name you selected):
 
 ### [A single Rails controller action](#rails)
 
@@ -76,6 +78,12 @@ location ~ /.+\.pdf$ {
 }
 ```
 
+## [Preloading (optional)](#preloading)
+
+Cold starting a new machine, loading the Chrome headless application, and waiting for the appliance web server to accept request typically takes on the order of five seconds.  If your application can anticipate that a PDF is going to be requested, sending a HTTP request to the appliance can start that process before the user ever requests a PDF.  If the pathname in the HTTP request does not end with `.pdf`, the appliance will respond with a redirect to your application.
+
+Either run this request in a separate thread for languages that support threading, or don't block on the response (e.g. by calling `await`) so as to not impede the flow of the application.
+
 ## [Scaling](#scaling)
 
 Use [`fly scale`](https://fly.io/docs/flyctl/scale/) to adjust both the [count](https://fly.io/docs/apps/scale-count/) of the number of machines in each region you desire and [memory](https://fly.io/docs/flyctl/scale-memory/) for each machine.
@@ -84,7 +92,7 @@ Adjust [`http_service.concurency`](https://fly.io/docs/reference/configuration/#
 
 ## [Appendix: CSS](#css)
 
-The following information may be useful to tailoring your CSS for printing
+The following information may be useful to tailoring your CSS for printing:
 
 * [Printing](https://developer.mozilla.org/en-US/docs/Web/Guide/Printing)
 * [CSS paged media](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_paged_media)
