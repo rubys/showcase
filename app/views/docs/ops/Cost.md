@@ -18,5 +18,5 @@ For those that wish to learn how to write an application like this,
 this application is written using a framework named
 [Ruby on Rails](https://rubyonrails.org/), and there are plenty of resources
 that can you started, including a
-[book](ttps://pragprog.com/titles/rails7/agile-web-development-with-rails-7/)
+[book](https://pragprog.com/titles/rails7/agile-web-development-with-rails-7/)
 that I have written.
