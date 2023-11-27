@@ -6,10 +6,7 @@ require 'uri'
 require 'net/http'
 
 MARKTIME = "/data/db/.time"
-
-latest = Dir["/data/db/2*.sqlite3"].map {|name| File.mtime(name)}.max
-exit 0 if File.exist?(MARKTIME) && File.mtime(MARKTIME) >= latest
-FileUtils.touch MARKTIME
+DEMO = '/demo/db/demo.sqlite3'
 
 if Process.uid == 0
   status = `passenger-status`
@@ -23,6 +20,22 @@ cable = status[/^showcase-cable.*?\n\n/m]
 processes -= 1 if cable and cable =~ /Sessions:\s*[1-9]/
 
 if processes == 0
+  # keep track of when demo was last updated
+  if File.exist? DEMO
+    if File.exist? "#{DEMO}.time"
+      if File.mtime(DEMO) > File.mtime("#{DEMO}.time")
+        FileUtils.touch "#{DEMO}.time"
+      end
+    elsif File.mtime(DEMO) > File.mtime("#{DEMO}.seed")
+      FileUtils.touch "#{DEMO}.time"
+    end
+  end
+
+  # Don't rsync if no sqlite3 files changed
+  latest = Dir["/data/db/2*.sqlite3"].map {|name| File.mtime(name)}.max
+  exit 0 if File.exist?(MARKTIME) && File.mtime(MARKTIME) >= latest
+  FileUtils.touch MARKTIME
+
   # get a list of ip addresses for running instances, with the primary region first
   addrs = [
     *`dig +short -t aaaa #{ENV['PRIMARY_REGION']}.#{ENV['FLY_APP_NAME']}.internal`.split,
@@ -53,17 +66,5 @@ if processes == 0
   else
     STDERR.puts res
     STDERR.puts res.body 
-  end
-
-  # keep track of when demo was last updated
-  demo = '/demo/db/demo.sqlite3'
-  if File.exist? demo
-    if File.exist? "#{demo}.time"
-      if File.mtime(demo) > File.mtime("#{demo}.time")
-        FileUtils.touch "#{demo}.time"
-      end
-    elsif File.mtime(demo) > File.mtime("#{demo}.seed")
-      FileUtils.touch "#{demo}.time"
-    end
   end
 end
