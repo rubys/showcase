@@ -26,7 +26,7 @@ export function filtered(match: RegExpMatchArray) {
 // formatted log entry
 export function format(match: RegExpMatchArray) {
   let status = match[8];
-  if (!status.match(/200|101|30[234]/)) {
+  if (!status.match(/200|101|30[2347]/)) {
     status = `<span style="background-color: orange">${status}</span>`
   }
 

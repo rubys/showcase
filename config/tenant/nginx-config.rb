@@ -299,8 +299,8 @@ server {
 
   # PDF generation
   location ~ /showcase/.+\.pdf$ {
-    return 409 "wrong app\n";
-    add_header Fly-Replay app=smooth-pdf always;
+    add_header Fly-Replay app=smooth-pdf;
+    return 307;
   }
 <% end -%>
 <% @tenants.each do |tenant| %>
@@ -310,8 +310,8 @@ server {
 <% end -%>
 <% if @region and tenant.region and @region != tenant.region -%>
   location <%= ROOT %>/<%= tenant.scope %>/cable {
-    return 409 "wrong region\n";
-    add_header Fly-Replay region=<%= tenant.region %> always;
+    add_header Fly-Replay region=<%= tenant.region %>;
+    return 307;
   }
   location <%= ROOT %>/<%= tenant.scope %> {
     proxy_set_header X-Forwarded-Host $host;
@@ -359,8 +359,8 @@ server {
   }
 <% else -%>
   location /showcase/regions/<%= region %>/ {
-    return 409 "wrong region\n";
-    add_header Fly-Replay region=<%= region %> always;
+    add_header Fly-Replay region=<%= region %>;
+    return 307;
   }
 <% end -%>
 
