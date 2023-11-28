@@ -73,8 +73,8 @@ app.use((request, response, next) {
 ```nginx
 # PDF generation
 location ~ /.+\.pdf$ {
-  return 307 "print appliance\n";
   add_header Fly-Replay app=appname-pdf;
+  return 307;
 }
 ```
 
