@@ -16,7 +16,7 @@ ENV RAILS_ENV="production" \
 RUN gem update --system --no-document && \
     gem install -N bundler
 
-# Install packages needed to install chrome
+# Install packages needed to install passenger
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y curl gnupg && \
     curl https://oss-binaries.phusionpassenger.com/auto-software-signing-gpg-key.txt | \
@@ -33,9 +33,6 @@ FROM base as build
 # Install packages needed to build gems
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential pkg-config
-
-# Build options
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
 
 # Install application gems
 COPY --link Gemfile Gemfile.lock ./
@@ -66,12 +63,7 @@ FROM base
 
 # Install packages needed for deployment
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl gnupg && \
-    curl https://dl-ssl.google.com/linux/linux_signing_key.pub | \
-      gpg --dearmor > /etc/apt/trusted.gpg.d/google-archive.gpg && \
-    echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list && \
-    apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl dnsutils google-chrome-stable libnginx-mod-http-passenger nginx openssh-server poppler-utils procps redis-server rsync ruby-foreman sqlite3 sudo vim && \
+    apt-get install --no-install-recommends -y curl dnsutils libnginx-mod-http-passenger nginx openssh-server poppler-utils procps redis-server rsync ruby-foreman sqlite3 sudo vim && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # configure nginx and passenger
@@ -145,8 +137,6 @@ EOF
 
 # Deployment options
 ENV DATABASE_URL="sqlite3:///data/production.sqlite3" \
-    PUPPETEER_EXECUTABLE_PATH="/usr/bin/google-chrome" \
-    PUPPETEER_RUBY_NO_SANDBOX="1" \
     RAILS_DB_VOLUME="/data/db" \
     RAILS_LOG_TO_STDOUT="1" \
     RAILS_LOG_VOLUME="/data/log" \
