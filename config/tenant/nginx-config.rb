@@ -299,6 +299,7 @@ server {
 
   # Password reset
   location /showcase/password {
+    proxy_set_header Host $http_host;
     proxy_set_header X-Forwarded-Host $host;
     proxy_pass https://rubix.intertwingly.net/showcase/password;
   }
