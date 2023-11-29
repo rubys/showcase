@@ -23,7 +23,7 @@ Important things to understand:
    * This is running the exact same software
    * Five minutes after the last time anybody visits a page or made an update on any machine, all databases will be backed up and uploaded to all other machines, so the data everywhere is kept up to date.
 
-What this means is: **don't switch machines unless there is a problem, and one you switch don't switch back unti you have verified that the database has your latest updates, otherwise you can lose data.**
+What this means is: **don't switch machines unless there is a problem, and one you switch don't switch back until you have verified that the database has your latest updates, otherwise you can lose data.**
 
 ---
 
@@ -42,7 +42,7 @@ a web browser you can run this yourself, but security, backups, and network acce
 to address.
 
 Understandably, most will opt to use my host (and in the future hosts).  Just be aware that
-for security reaons I don't currently allow users to do the following:
+for security reasons I don't currently allow users to do the following:
 
   * Allocate new events
   * Set/reset passwords
