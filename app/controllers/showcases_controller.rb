@@ -1,5 +1,7 @@
 class ShowcasesController < ApplicationController
   include Configurator
+  include DbQuery
+
   before_action :set_showcase, only: %i[ show edit update destroy ]
 
   # GET /showcases or /showcases.json
@@ -32,6 +34,19 @@ class ShowcasesController < ApplicationController
   # GET /showcases/1/edit
   def edit
     new
+    return
+
+    if @showcase.key == 'showcase' and @showcase.location.showcases.select {|showcase| showcase.year = @showcase.year}.count == 1
+      @db = "#{@showcase.year}-#{@showcase.location.key}"
+    else
+      @db = "#{@showcase.year}-#{@showcase.location.key}-#{@showcase.key}"
+    end
+
+    unless Rails.env.test?
+      @people = dbquery(@db, 'people', 'count(id)').first.values.first
+      @entries = dbquery(@db, 'heats', 'count(id)', 'number > 0').first.values.first
+      @heats = dbquery(@db, 'heats', 'count(distinct number)', 'number > 0').first.values.first
+    end
   end
 
   # POST /showcases or /showcases.json
