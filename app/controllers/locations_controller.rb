@@ -75,7 +75,6 @@ class LocationsController < ApplicationController
         studios.include?(user.userid) or user.sites.split(',').include? @location.name
       end
     end
-
   end
 
   # POST /locations or /locations.json

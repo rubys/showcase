@@ -16,7 +16,7 @@
     <%= form.text_field :userid, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
-  <% if @auth %>
+  <% if @auth || @verify %>
   <div class="my-5">
     <%= form.label :password %>
     <%= form.password_field :password, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
@@ -26,7 +26,8 @@
     <%= form.label :password_confirmation %>
     <%= form.password_field :password_confirmation, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
-  <% else %>
+  <% end %>
+  <% unless @auth %>
 
   <div class="my-5">
     <%= form.label :email %>

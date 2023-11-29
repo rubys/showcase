@@ -297,6 +297,12 @@ server {
   passenger_env_var RAILS_APP_REDIS showcase_production;
 <% if ENV['FLY_REGION'] -%>
 
+  # Password reset
+  location /showcase/password {
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_pass https://rubix.intertwingly.net/showcase/password;
+  }
+
   # PDF generation
   location ~ /showcase/.+\.pdf$ {
     add_header Fly-Replay app=smooth-pdf;

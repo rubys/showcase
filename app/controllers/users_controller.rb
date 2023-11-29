@@ -171,6 +171,7 @@ class UsersController < ApplicationController
   def password_verify
     @user = User.where(token: params[:token]).first
     if request.get?
+      @verify= true
       render :reset
     elsif @user and not params[:user][:password].blank?
       # note: packet sniffers could pick up the token from the url and get past this
