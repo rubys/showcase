@@ -91,6 +91,7 @@ const server = Bun.serve({
       // convert page to pdf - using preferred format and in full color
       const pdf = await page.pdf({
         format: FORMAT,
+        preferCSSPageSize: true,
         printBackground: true
       })
 
