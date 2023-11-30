@@ -77,10 +77,10 @@ end
 if @region
   @tenants << OpenStruct.new(
     owner:  'Demo',
-    region: 'dfw',
+    region: @region,
     name:   'demo',
     label:  "demo",
-    scope:  "demo",
+    scope:  "regions/#{@region}/demo",
     logo:   "intertwingly.png",
   )
 
@@ -260,14 +260,14 @@ server {
   allow ::1;
 
   set $realm "Showcase";
-  if ($request_uri ~ "^/showcase/(assets/|cable$|demo/|docs/|password/|publish/|regions/(<%= @regions.join('|') %>)?$|studios/(<%= @studios.join('|') %>)$|$)") { set $realm off; }
+  if ($request_uri ~ "^/showcase/(assets/|cable$|docs/|password/|publish/|regions/((<%= @regions.join('|') %>)(/demo/.*)?)?$|studios/(<%= @studios.join('|') %>)$|$)") { set $realm off; }
   <%- if @region -%>
   if ($request_uri ~ "^/showcase/<%= @cables %>/cable$") { set $realm off; }
   <%- end -%>
   if ($request_uri ~ "^/showcase/<%= @indexes %>/?$") { set $realm off; }
   if ($request_uri ~ "^/showcase/[-\w]+\.\w+$") { set $realm off; }
   if ($request_uri ~ "^/showcase/\d+/\w+/([-\w]+/)?public/") { set $realm off; }
-  if ($request_uri ~ "^/showcase/events/console/$") { set $realm off; }
+  if ($request_uri ~ "^/showcase/events/console$") { set $realm off; }
   auth_basic $realm;
   auth_basic_user_file <%= @dbpath %>/htpasswd;
 <% else -%>
@@ -302,6 +302,11 @@ server {
     proxy_set_header Host $http_host;
     proxy_set_header X-Forwarded-Host $host;
     proxy_pass https://rubix.intertwingly.net/showcase/password;
+  }
+
+  # Demo
+  location = /showcase/demo/ {
+    return 302 /showcase/regions/<%= @region %>/demo/;
   }
 
   # PDF generation
