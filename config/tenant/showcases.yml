@@ -26,7 +26,7 @@
         :name: Gratitude Gala
   austin:
     :name: Austin
-    :region: dfw
+    :region: atl
     :logo: arthur-murray-logo.gif
   carmel:
     :name: Carmel
@@ -128,11 +128,11 @@
     :logo: arthur-murray-logo.gif
   sugarland:
     :name: Sugar Land
-    :region: dfw
+    :region: atl
     :logo: arthur-murray-logo.gif
   sydney:
     :name: Sydney
-    :region: syd
+    :region: sjc
     :logo: arthur-murray-logo.gif
   vabeach:
     :name: Virginia Beach
@@ -140,7 +140,7 @@
     :logo: arthur-murray-logo.gif
   woodlands:
     :name: Woodlands
-    :region: dfw
+    :region: atl
     :logo: arthur-murray-logo.gif
 2022:
   annapolis:

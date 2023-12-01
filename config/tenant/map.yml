@@ -17,12 +17,6 @@ regions:
     lon: -87.63039
     x: 604.0234830583017
     y: 184.81812492869688
-  dfw:
-    name: Dallas, Texas (US)
-    lat: 32.778286
-    lon: -96.7984
-    x: 476.1993201496286
-    y: 361.5248496538476
   mia:
     name: Miami, Florida (US)
     lat: 25.7877
