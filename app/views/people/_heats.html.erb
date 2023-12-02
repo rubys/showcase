@@ -1,3 +1,4 @@
+<% count = {"Freestyle" => 0, "Closed" => 0, "Open" => 0, "Multi" => 0, "Solo" => 0} %>
 <% if person %>
 <table class="" style="break-after: page">
   <thead>
@@ -30,6 +31,7 @@
   <% @heats.each do |number, heats| %>
   <% heats.each do |heat| %>
     <% next unless heatlist.include? heat.id %>
+    <% count[heat.category] += 1 %>
     <% if @start && @start[number]&.day != day %>
     <tr>
     <td colspan="6" class="p-1">
@@ -63,6 +65,16 @@
     </tr>
   <% end %>
   <% end %>
+  <tr>
+  <td colspan="6" class="pt-2 text-center">
+  <%
+  count["Freestyle"] = count.delete("Open") + count.delete("Closed")
+  count = count.to_a.select {|category, count| count > 0}
+  %>
+  Total<% if count.length > 1 %>s<% end %>:
+  <%= count.map {|category, count| pluralize(count, category)}.join(", ") %>
+  </td>
+  </tr>
   </tbody>
 </table>
 <% end %>
@@ -112,6 +124,7 @@
         next unless heat.entry.subject.studio == @studio
       end
     %>
+    <% count[heat.category] += 1 %>
     <% ballrooms = heat.dance_category&.ballrooms || @ballrooms %>
     <tr class="text-sm">
       <% if @start %>
@@ -135,6 +148,16 @@
     </tr>
   <% end %>
   <% end %>
+  <tr>
+  <td colspan="6" class="pt-2 text-center">
+  <%
+  count["Freestyle"] = count.delete("Open") + count.delete("Closed")
+  count = count.to_a.select {|category, count| count > 0}
+  %>
+  Total<% if count.length > 1 %>s<% end %>:
+  <%= count.map {|category, count| pluralize(count, category)}.join(", ") %>
+  </td>
+  </tr>
   </tbody>
 </table>
 <% end %>
