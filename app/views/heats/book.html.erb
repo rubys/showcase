@@ -66,7 +66,7 @@ tbody::after {
 }
 </style>
 
-<div class="mx-auto md:w-2/3 w-full print:w-full">
+<div class="mx-auto w-full print:w-full">
 
 <div class="mb-4">
   <h2 class="font-bold text-center text-4xl" style="font-family: 'Bevan Regular'"><%= @event.name %></h1>
@@ -132,11 +132,9 @@ tbody::after {
     <% heat = heats.first %>
     <% if @type == 'judge' and heats.first.category == 'Solo' %>
     <div class="page break-before-page">
-    <span class="number"><%= number %></span>
-
-
+    <span class="mt-12 number"><%= number %></span>
     <header>
-    <div class="mb-4">
+    <div class="mt-8 mb-4">
       <h2 class="font-bold text-center text-4xl" style="font-family: 'Bevan Regular'"><%= @event.name %></h1>
 
       <p class="mt-4">
@@ -147,8 +145,8 @@ tbody::after {
       
       <p class="mt-2 text-center" style="font-family: 'Bevan Regular'"><%= @event.date %></p>
 
-      <span class="rotate-shadow">Solo</span>
-      <span class="rotate">Solo</span>
+      <span class="mt-8 -ml-12 rotate-shadow">Solo</span>
+      <span class="mt-8 -ml-12 rotate">Solo</span>
     </div>
 
     <%
@@ -189,15 +187,15 @@ tbody::after {
 
     <div class="mt-4 content truncate text-base">
     <div><b class="text-xl" style="font-family: 'Bevan Regular'">Comments:</b> <span class="whitespace-pre underline"><%= ' ' * 400 %></span></div>
-    <% 12.times do %>
+    <% 11.times do %>
     <div>&nbsp</div>
     <div><span class="whitespace-pre underline"><%= ' ' * 400 %></span></div>
     <% end %>
     </div>
 
     <footer>
-    <div class="mt-8 grid grid-cols-2">
-    <div class="text-xl mt-4"><span class="whitespace-pre underline"><%= ' ' * 60 %></span><br><b>Adjudicator</b></div>
+    <div class="mt-12 grid grid-cols-2">
+    <div class="text-xl mt-4"><span class="whitespace-pre underline"><%= ' ' * 30 %></span><br><b>Adjudicator</b></div>
     <div class="text-xl items-end"><span style="float: right"><b>Score</b>: <span class="border-2 border-black" style="display: inline-block; min-height: .75in; min-width: 1in"></span></span></div>
     </div>
     </footer>
