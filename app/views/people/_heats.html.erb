@@ -68,11 +68,12 @@
   <tr>
   <td colspan="6" class="pt-2 text-center">
   <%
-  count["Freestyle"] = count.delete("Open") + count.delete("Closed")
-  count = count.to_a.select {|category, count| count > 0}
+  counts = count.dup
+  counts["Freestyle"] = counts.delete("Open") + counts.delete("Closed")
+  counts = counts.to_a.select {|category, count| count > 0}
   %>
-  Total<% if count.length > 1 %>s<% end %>:
-  <%= count.map {|category, count| pluralize(count, category)}.join(", ") %>
+  Total<% if counts.length > 1 %>s<% end %>:
+  <%= counts.map {|category, count| pluralize(count, category)}.join(", ") %>
   </td>
   </tr>
   </tbody>
@@ -151,11 +152,12 @@
   <tr>
   <td colspan="6" class="pt-2 text-center">
   <%
-  count["Freestyle"] = count.delete("Open") + count.delete("Closed")
-  count = count.to_a.select {|category, count| count > 0}
+  counts = count.dup
+  counts["Freestyle"] = counts.delete("Open") + counts.delete("Closed")
+  counts = counts.to_a.select {|category, count| count > 0}
   %>
-  Total<% if count.length > 1 %>s<% end %>:
-  <%= count.map {|category, count| pluralize(count, category)}.join(", ") %>
+  Total<% if counts.length > 1 %>s<% end %>:
+  <%= counts.map {|category, count| pluralize(count, category)}.join(", ") %>
   </td>
   </tr>
   </tbody>
