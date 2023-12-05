@@ -5,6 +5,7 @@
 
 app = "smooth-pdf"
 primary_region = "iad"
+swap_size_mb = 2048
 
 [env]
   HOSTNAME = "smooth.fly.dev"
@@ -25,3 +26,8 @@ primary_region = "iad"
     type = "requests"
     soft_limit = 3
     hard_limit = 5
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 2048
