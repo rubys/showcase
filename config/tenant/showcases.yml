@@ -114,6 +114,8 @@
         :name: Medal Ball
       teammatch:
         :name: Team Match
+      nouveau-duo:
+        :name: Nouveau Duo
   roanoke:
     :name: Roanoke
     :region: iad
