@@ -24,6 +24,14 @@ class HeatsController < ApplicationController
     @column_order = event.column_order
     @locked = event.locked?
 
+    if @backnums
+      if Entry.includes(:heats).where.not(heats: {category: 'Solo'}).empty?
+        if Person.where.not(back: nil).empty?
+          @backnums = false
+        end
+      end
+    end
+
     @renumber = Heat.distinct.where.not(number: 0).pluck(:number).
       map(&:abs).sort.uniq.zip(1..).any? {|n, i| n != i}
 

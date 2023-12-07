@@ -45,7 +45,13 @@
   <li class=""><%= link_to "Judge Heat Book", book_heats_path(type: 'judge', format: :pdf), class: "btn-pale-orange w-60" %>
   <li class=""><%= link_to "DJ Dance list", djlist_heats_path(format: :pdf), class: "btn-pale-orange w-60" %>
   <li class=""><%= link_to "Individual Heat Sheets", heats_people_path(format: :pdf), class: "btn-pale-orange w-60" %>
+
+  <% if @event.backnums %>
   <li class=""><%= link_to "Back Numbers", back_numbers_people_path(format: :pdf), class: "btn-pale-orange w-60" %>
+  <% else %>
+  <li class=""><a role="link" aria-disabled="true" class="btn-pale-orange w-60 btn-disabled">Back Numbers</a>
+  <% end %>
+
   <li class=""><%= link_to "Labels", labels_people_path(format: :pdf), class: "btn-pale-orange w-60" %>
   <li class=""><%= link_to "Student Scores", scores_people_path(format: :pdf), class: "btn-pale-orange w-60" %>
   <li class=""><%= link_to "Staff", staff_people_path(format: :pdf), class: "btn-pale-orange w-60" %>
