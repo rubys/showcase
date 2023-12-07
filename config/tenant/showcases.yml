@@ -107,7 +107,7 @@
         :name: Team Match
   richmond:
     :name: Richmond
-    :region: iad
+    :region: atl
     :logo: arthur-murray-logo.gif
     :events:
       medalball:
