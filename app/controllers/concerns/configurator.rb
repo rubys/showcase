@@ -40,9 +40,11 @@ module Configurator
 
     regions = JSON.parse(IO.read 'tmp/regions.json').
       map {|region| [region['Code'], [region["Latitude"], region["Longitude"]]]}.
-      select {|region, geo| deployed.include? region}
+      select {|region, geo| deployed.include? region}.to_h
 
     select_region = lambda do |location|
+      return location.region if regions.keys.include? location.region
+
       geo_a = [location.latitude, location.longitude]
 
       code = nil

@@ -32,6 +32,13 @@ class LocationsController < ApplicationController
         ["#{userid}: #{name1}/#{name2}", id]
       end
     end
+
+    regions = new_regions
+    @regions = JSON.parse(IO.read 'tmp/regions.json').
+      select {|region| regions.include? region['Code']}.
+      map {|region| [region['Name'], region['Code']]}.
+      sort
+    @regions.unshift ["", nil]
   end
 
   def first_event(status=:ok)
@@ -172,7 +179,7 @@ class LocationsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def location_params
-      params.require(:location).permit(:key, :name, :latitude, :longitude, :user_id)
+      params.require(:location).permit(:key, :name, :latitude, :longitude, :user_id, :region)
     end
 
     def user_params

@@ -3,7 +3,7 @@ class User < ApplicationRecord
   validates :password, confirmation: true
   validates :email, uniqueness: true, presence: true
 
-  has_many :locations
+  has_many :locations, dependent: :nullify
 
   dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
   @@db = ENV['RAILS_APP_OWNER'] && SQLite3::Database.new("#{dbpath}/index.sqlite3")
