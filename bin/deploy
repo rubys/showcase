@@ -2,6 +2,7 @@
 
 require 'fileutils'
 require 'uri'
+require 'net/http'
 
 if ENV['FLY_APP_NAME']
   # start rsync daemon
