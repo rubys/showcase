@@ -72,7 +72,11 @@
 
     <%= link_to "Dances", dances_path, class: "btn-pale-blue" %>
     <%= link_to "Agenda", categories_path, class: "btn-pale-green" %>
+    <% if @event.backnums %>
     <%= link_to "Backs", backs_people_path, class: "btn-pale-blue" %>
+    <% else %>
+    <a role="link" aria-disabled="true" class="btn-pale-blue btn-disabled">Backs</a>
+    <% end %>
 
     <%= link_to "Summary", summary_event_index_path , class: "btn-grey" %>
     <%= link_to "Publish",  publish_event_index_path, class: "btn-pale-orange" %>
