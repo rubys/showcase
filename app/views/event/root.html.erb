@@ -1,6 +1,6 @@
 <div class="mx-auto md:w-2/3 lg:w-1/2">
 
-  <% if ENV['RAILS_APP_DB'].to_i > 2023 and not Rails.env.development? %>
+  <% if ENV['RAILS_APP_DB'].to_i > 2023 and not ENV['FLY_REGION'] and not Rails.env.development? %>
   <div class="border-double border-4 rounded-lg border-red-600 mx-4 my-8 pl-4 pr-4 py-4 text-left">
   <p>This server is for backup use only.  Unless there are problems, the link you should be using is:
     <a class="underline" href="https://smooth.fly.dev/showcase/<%= ENV['RAILS_APP_SCOPE'] %>/"%>https://smooth.fly.dev/showcase/<%= ENV['RAILS_APP_SCOPE'] %>/</a>.
