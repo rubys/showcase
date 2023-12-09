@@ -33,43 +33,44 @@
   }
 
   .btn-blue { @apply
-     m-2 rounded-lg py-3 px-5 text-white bg-blue-600 inline-block font-medium
-     text-center
+     m-2 rounded-lg py-3 px-5 text-white bg-blue-600 inline-flex font-medium
+     justify-center items-center text-center
   }
 
   .btn-pale-blue { @apply
-     m-2 rounded-lg py-3 px-5 text-white bg-blue-400 inline-block font-medium
-     text-center
+     m-2 rounded-lg py-3 px-5 text-white bg-blue-400 inline-flex font-medium
+     justify-center items-center text-center
   }
 
   .btn-green { @apply
-     m-2 rounded-lg py-3 px-5 text-white bg-green-600 inline-block font-medium
-     text-center
+     m-2 rounded-lg py-3 px-5 text-white bg-green-600 inline-flex font-medium
+     justify-center items-center text-center
   }
 
   .btn-pale-green { @apply
-     m-2 rounded-lg py-3 px-5 text-white bg-green-400 inline-block font-medium
-     text-center
+     m-2 rounded-lg py-3 px-5 text-white bg-green-400 inline-flex font-medium
+     justify-center items-center text-center
   }
 
   .btn-orange { @apply
-   m-2 rounded-lg py-3 px-5 bg-yellow-400 inline-block font-medium
-   disabled:opacity-50 disabled:cursor-not-allowed
-   text-center
+     m-2 rounded-lg py-3 px-5 bg-yellow-400 inline-flex font-medium
+     disabled:opacity-50 disabled:cursor-not-allowed
+     justify-center items-center text-center
   }
 
   .btn-pale-orange { @apply
-   m-2 rounded-lg py-3 px-5 bg-yellow-200 inline-block font-medium
-   text-center
+     m-2 rounded-lg py-3 px-5 bg-yellow-200 inline-flex font-medium
+     justify-center items-center text-center
   }
 
   .btn-grey { @apply
-     m-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium text-center
+     m-2 rounded-lg py-3 px-5 bg-gray-100 inline-flex font-medium
+     justify-center items-center text-center
   }
 
   .btn-purple { @apply
-    m-2 rounded-lg py-3 px-5 text-white bg-purple-600 inline-block font-medium
-    text-center
+     m-2 rounded-lg py-3 px-5 text-white bg-purple-600 inline-flex font-medium
+     justify-center items-center text-center
   }
 
   .row-head-main { @apply
