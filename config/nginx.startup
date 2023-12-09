@@ -1,0 +1,38 @@
+user rails;
+worker_processes 1;
+pid /rails/tmp/nginx.pid;
+error_log stderr info;
+
+events {
+  worker_connections  768;
+}
+
+http {
+  root /rails/public;
+
+  map $time_iso8601 $timeonly {
+    default '00:00:00';
+    '~^\d{4}-\d{2}-\d{2}T(?<hh>\d{2}):(?<mm>\d{2}):(?<ss>\d{2})' $hh:$mm:$ss;
+  }
+
+  log_format  main  '$timeonly web.1   | $http_x_forwarded_for - $remote_user [$time_local] "$request" '
+    '$status $body_bytes_sent "$http_referer" '
+    '"$http_user_agent"';
+
+  access_log /dev/stdout main;
+
+  server {
+    listen 3000;
+    listen [::]:3000;
+
+    error_page 503 @maintenance;
+
+    location / {
+      return 503;
+    }
+
+    location @maintenance {
+      try_files /503.html =404;
+    }
+  }
+}

@@ -5,6 +5,9 @@ require 'uri'
 require 'net/http'
 
 if ENV['FLY_APP_NAME']
+  # show maintenance mode
+  system "nginx -c /rails/config/nginx.startup"
+
   # start rsync daemon
   system "rsync --daemon"
 
@@ -128,4 +131,7 @@ if ENV['FLY_APP_NAME']
       STDERR.puts res.body 
     end
   end
+
+  # exit maintenance mode
+  system "nginx -c /rails/config/nginx.startup -s stop"
 end
