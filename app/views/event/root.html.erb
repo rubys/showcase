@@ -36,7 +36,7 @@
 
   <% if Rails.env.development? %>
   <span class="absolute right-36 text-5xl rotate-45 text-purple-600 border-2 p-2 border-purple-600 rounded-xl">Dev</span>
-  <% elsif not ENV['FLY_REGION'] -%>
+  <% elsif not ENV['FLY_REGION'] and not Rails.env.test? -%>
   <a href="/showcase/docs/ops/Hosting" class="absolute right-36 text-5xl rotate-45 text-purple-600 border-2 p-2 border-purple-600 rounded-xl">
   <%= ENV['RAILS_PROXY_HOST'].split('.').first.capitalize %>
   </a>
