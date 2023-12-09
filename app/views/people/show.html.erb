@@ -381,11 +381,13 @@ when most dances for an individual are with one instructor but one or two are ch
 
     <div class="mx-auto mt-4 grid grid-cols-3">
       <% if @person.type == 'Student' %>
+      <% unless @heats.empty? and @solos.empty? %>
       <%= up_link 'Add heats', new_entry_path(primary: @person), class: "btn-blue" %>
       <%= up_link 'Add solo', new_solo_path(primary: @person), class: "btn-blue" %>
       <%= up_link 'Add formation', new_formation_path(primary: @person), class: "btn-blue" %>
       <% if @routines %>
       <%= up_link 'Add routine', new_solo_path(primary: @person, routine: true), class: "btn-blue" %>
+      <% end %>
       <% end %>
       <% end %>
 
