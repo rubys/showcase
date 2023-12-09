@@ -1,5 +1,4 @@
-<div class="mx-auto md:w-2/3 w-full flex">
-  <div class="mx-auto">
+<div class="mx-auto md:w-2/3 w-full">
 
   <% if @person.type == 'Student' %>
   <div data-controller="info-box">
@@ -379,9 +378,8 @@ when most dances for an individual are with one instructor but one or two are ch
     </div>
     <% end %>
 
-    <div class="mt-4 mx-auto">
-      <%= up_link 'Edit this person', edit_person_path(@person), class: "btn-blue" %>
 
+    <div class="mx-auto mt-4 grid grid-cols-3">
       <% if @person.type == 'Student' %>
       <%= up_link 'Add heats', new_entry_path(primary: @person), class: "btn-blue" %>
       <%= up_link 'Add solo', new_solo_path(primary: @person), class: "btn-blue" %>
@@ -389,10 +387,20 @@ when most dances for an individual are with one instructor but one or two are ch
       <% if @routines %>
       <%= up_link 'Add routine', new_solo_path(primary: @person, routine: true), class: "btn-blue" %>
       <% end %>
-    </div>
-
-    <div class="mt-4 mx-auto">
       <% end %>
+
+      <%= up_link 'Edit this person', edit_person_path(@person), class: "btn-blue" %>
+
+      <% if @person.studio %>
+      <%= link_to 'Back to studio', @person.studio, class: "btn-green" %>
+      <% else %>
+      <%= link_to 'Back to settings', settings_event_index_path(anchor: 'staff'), class: "btn-green" %>
+      <% end %>
+
+      <% unless @scores.empty? %>
+      <div></div>
+      <% end %>
+
       <% if %w(Student Professional).include? @person.type %>
       <% unless @heats.empty? and @solos.empty? %>
       <%= link_to 'Heat sheet', heats_person_path(@person, format: :pdf), class: "btn-pale-orange" %>
@@ -400,12 +408,6 @@ when most dances for an individual are with one instructor but one or two are ch
       <% unless @scores.empty? %>
       <%= link_to 'Scores', scores_person_path(@person, format: :pdf), class: "btn-pale-orange" %>
       <% end %>
-      <% end %>
-
-      <% if @person.studio %>
-      <%= link_to 'Back to studio', @person.studio, class: "btn-green" %>
-      <% else %>
-      <%= link_to 'Back to settings', settings_event_index_path(anchor: 'staff'), class: "btn-green" %>
       <% end %>
     </div>
   </div>
