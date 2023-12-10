@@ -1,3 +1,2 @@
 web: nginx
 redis: redis-server /etc/redis/redis.conf
-sshd: /usr/sbin/sshd -D

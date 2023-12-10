@@ -11,6 +11,9 @@ if ENV['FLY_APP_NAME']
   # start rsync daemon
   system "rsync --daemon"
 
+  # setup volume, .ssh, db, storage directories
+  VOLUME = File.dirname(ENV.fetch('RAILS_DB_VOLUME', '/data/db'))
+  FileUtils.mkdir_p "#{VOLUME}/.ssh"
   FileUtils.mkdir_p ENV['RAILS_DB_VOLUME']
   FileUtils.mkdir_p ENV['RAILS_STORAGE']
 
@@ -19,40 +22,6 @@ if ENV['FLY_APP_NAME']
     ENV['RAILS_DB_VOLUME'],
     ENV['RAILS_STORAGE']
   ]
-
-  # Configure memory for redis
-  # https://redis.io/docs/getting-started/faq/#background-saving-fails-with-a-fork-error-on-linux
-  File.write '/proc/sys/vm/overcommit_memory', '1'
-
-  # setup volume, .ssh directories
-  VOLUME = File.dirname(ENV.fetch('RAILS_DB_VOLUME', '/data/db'))
-  FileUtils.mkdir_p "#{VOLUME}/.ssh"
-
-  # Sync data from primary region
-  if ENV['FLY_REGION'] != ENV['PRIMARY_REGION']
-    source = "rsync://#{ENV['PRIMARY_REGION']}.#{ENV['FLY_APP_NAME']}.internal"
-
-    # get authorized keys
-    authkeys = "#{VOLUME}/.ssh/authorized_keys"
-    if not File.exist? authkeys
-      system *%W(
-        rsync
-        -av
-        #{source}/ssh/authorized_keys
-        #{authkeys}
-      )
-    end
-
-    # synch databases and storage
-    system *%W(
-      rsync
-      -av
-      --update
-      #{source}#{VOLUME}/db
-      #{source}#{VOLUME}/storage
-      #{VOLUME}
-    )
-  end
 
   # openssh: fly environment variables
   IO.write '/etc/environment',
@@ -96,6 +65,35 @@ if ENV['FLY_APP_NAME']
       end
     end
   end
+
+  # start ssyd
+  system "/usr/sbin/sshd"
+
+  # Sync data from primary region
+  if ENV['FLY_REGION'] != ENV['PRIMARY_REGION']
+    source = "rsync://#{ENV['PRIMARY_REGION']}.#{ENV['FLY_APP_NAME']}.internal"
+
+    # get authorized keys
+    authkeys = "#{VOLUME}/.ssh/authorized_keys"
+    if not File.exist? authkeys
+      system *%W(
+        rsync
+        -av
+        #{source}/ssh/authorized_keys
+        #{authkeys}
+      )
+    end
+
+    # synch databases and storage
+    system *%W(
+      rsync
+      -av
+      --update
+      #{source}#{VOLUME}/db
+      #{source}#{VOLUME}/storage
+      #{VOLUME}
+    )
+  end
 end
 
 latest = Dir["#{VOLUME}/db/2*.sqlite3"].map {|name| File.mtime(name)}.max
@@ -131,6 +129,10 @@ if ENV['FLY_APP_NAME']
       STDERR.puts res.body 
     end
   end
+
+  # Configure memory for redis
+  # https://redis.io/docs/getting-started/faq/#background-saving-fails-with-a-fork-error-on-linux
+  File.write '/proc/sys/vm/overcommit_memory', '1'
 
   # exit maintenance mode
   system "nginx -c /rails/config/nginx.startup -s stop"
