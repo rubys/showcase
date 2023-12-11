@@ -53,8 +53,6 @@ class EventController < ApplicationController
     @djs    = Person.where(type: 'DJ').order(:name)
     @emcees = Person.where(type: 'Emcee').order(:name)
 
-    @tab = params[:tab] || 'Description'
-
     @event ||= Event.last
     
     @ages = Age.all.size
@@ -63,8 +61,14 @@ class EventController < ApplicationController
     @packages = Billable.where.not(type: 'Order').order(:order).group_by(&:type)
     @options = Billable.where(type: 'Option').order(:order)
 
-    if Studio.pluck(:name).all? {|name| name == 'Event Staff'}
+    if not params[:tab] and Studio.pluck(:name).all? {|name| name == 'Event Staff'}
       clone unless ENV['RAILS_APP_OWNER'] == 'Demo'
+    end
+
+    if @sources and not @sources.empty?
+      @tab = params[:tab] || 'Clone'
+    else
+      @tab = params[:tab] || 'Description'
     end
 
     render "event/settings/#{@tab.downcase}", layout: 'settings'
@@ -434,34 +438,34 @@ class EventController < ApplicationController
     logs.each do |log|
       users = `#{log.include?('z')?'z':''}egrep "[0-9] - \\w+ \\[" #{log} | grep -v /assets/ | grep -v ' - rubys \\['`
       unless users.empty?
-	users.split("\n").reverse.each do |line|
-	  time = Time.parse(line[/\[(.*?)\]/, 1].sub(':', ' ')) rescue Time.now
+        users.split("\n").reverse.each do |line|
+          time = Time.parse(line[/\[(.*?)\]/, 1].sub(':', ' ')) rescue Time.now
 
-	  line = ERB::Util.h(line)
+          line = ERB::Util.h(line)
 
-	  line.sub! /&quot;([A-Z]+) (\S+) (\S+)&quot; (\d+)/ do
-	    method, path, protocol, status = $1, $2, $3, $4
-	    if status == '200' and method == 'GET'
-	    elsif status == '302' and method == 'POST'
-	    elsif status == '303' and method == 'DELETE'
-	    elsif status == '304' and method == 'GET'
-	    elsif status == '204' and method == 'POST' and path.end_with? '/start_heat'
-	    elsif status == '200' and method == 'POST' and list.any? {|str| path.end_with? str}
-	    elsif status == '200' and method == 'POST' and path =~ %r{/scores/\d+/post$}
-	    elsif status == '101' and method == 'GET' and path.end_with? '/cable'
-	    else
-	      status = "<span style='background-color: orange'>#{status}</span>"
-	    end
-	    "\"#{method} <a href='#{path}'>#{path}</a> #{protocol}\" #{status}"
-	  end
+          line.sub! /&quot;([A-Z]+) (\S+) (\S+)&quot; (\d+)/ do
+            method, path, protocol, status = $1, $2, $3, $4
+            if status == '200' and method == 'GET'
+            elsif status == '302' and method == 'POST'
+            elsif status == '303' and method == 'DELETE'
+            elsif status == '304' and method == 'GET'
+            elsif status == '204' and method == 'POST' and path.end_with? '/start_heat'
+            elsif status == '200' and method == 'POST' and list.any? {|str| path.end_with? str}
+            elsif status == '200' and method == 'POST' and path =~ %r{/scores/\d+/post$}
+            elsif status == '101' and method == 'GET' and path.end_with? '/cable'
+            else
+              status = "<span style='background-color: orange'>#{status}</span>"
+            end
+            "\"#{method} <a href='#{path}'>#{path}</a> #{protocol}\" #{status}"
+          end
 
-	  if time > start
-	    @logs << "<span style='background-color: yellow'>#{line}</span>"
-	  else
-	    @logs << line
-	  end
-	end
-	break
+          if time > start
+            @logs << "<span style='background-color: yellow'>#{line}</span>"
+          else
+            @logs << line
+          end
+        end
+        break
       end
     end
 

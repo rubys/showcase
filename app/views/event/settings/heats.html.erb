@@ -28,12 +28,6 @@
   </ul>
 </div>
 
-<% if @sources and not @sources.empty? %>
-<div class="mb-16">
-<%= render partial: 'clone' %>
-</div>
-<% end %>
-
 <h1 id="adjust" class="font-bold text-4xl mb-6">Adjust the number of heats</h1>
 
   <% if @event.errors.any? %>

@@ -7,19 +7,10 @@
 <div data-controller="info-box">
   <div class="info-button">&#x24D8;</div>
   <ul class="info-box">
-  <% if @sources and not @sources.empty? %>
-  <li>Feel free to skip over the "copy from another event" section if this is your first event.  This section of the settings will disappear once you have added a studio.</li>
-  <% end %>
   <li>Event description is used in <a href="../../docs/tasks/Publishing" class="text-blue-800 underline">printed materials</a> and  <a href="../../docs/tasks/Counter" class="text-blue-800 underline">counter</a>.</li>
   <li>Use the tabs across the top of this page to get to other settings.
   </ul>
 </div>
-
-<% if @sources and not @sources.empty? %>
-<div class="mb-16">
-<%= render partial: 'clone' %>
-</div>
-<% end %>
 
 <h1 class="font-bold text-4xl mb-6" id="description">Event Description</h1>
 
