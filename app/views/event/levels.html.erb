@@ -1,6 +1,20 @@
 <div class="mx-auto w-full">
 <h1 class="font-bold text-4xl pb-5 text-center">Levels</h1>
 
+<div data-controller="info-box">
+  <div class="info-button">ⓘ</div>
+  <ul class="info-box" style="display: block;">
+  <li>List of levels.  Order is from least experienced to most advanced.</li>
+  <li><span class="text-red-600 font-bold">Making changes to this information after students have been entered may
+  cause student levels to be incorrect.</span>  In general, the following are safe:
+  <ul class="ml-8 list-disc list-outside">
+  <li>Changing level names without inserting or deleting any lines.
+  <li>Inserting lines at the end.
+  </ul>
+  </li>
+  </ul>
+</div>
+
 <%= form_with(url: levels_event_index_path, class: "contents", data: {turbo: false}) do |form| %>
 
 <%= form.text_area :levels, value: @levels, rows: @levels.split("\n").length + 1,
@@ -8,7 +22,7 @@
 
 <div class="mx-auto w-full mt-4 text-center">
   <%= form.submit 'Save', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
-  <%= link_to 'Back to settings', settings_event_index_path(anchor: 'advanced'),
+  <%= link_to 'Back to settings', settings_event_index_path(tab: 'Advanced'),
     class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
 </div>
 

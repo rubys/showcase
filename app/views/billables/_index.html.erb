@@ -5,8 +5,6 @@
     <%= link_to 'New option', new_billable_path(type: 'option'), class: "rounded-lg py-3 px-5 bg-blue-600 text-white block font-medium mt-4" %>
   </div>
 
-    <h1 class="mt-16 font-bold text-4xl mb-6"><%= heading %></h1>
-
     <% %w(Student Professional Guest Judge DJ Emcee Official Organizer).each do |type| %>
     <% if @packages.include? type %>
     <h2 class="font-bold text-2xl mt-4"><%= type %> Packages</h1>

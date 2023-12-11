@@ -3,7 +3,9 @@
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
-  <%= render partial: 'index', locals: { heading: 'Billable Items', id: 'billables' } %>
+  <h1 class="mt-16 font-bold text-4xl mb-6">Billable Items</h1>
+
+  <%= render partial: 'index', locals: { id: 'billables' } %>
 
   </div>
 </div>

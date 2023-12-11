@@ -17,8 +17,6 @@ number, or feedback on areas that are particularly notable or need improvment (e
 
 * Intermix dances within category - this is best explained by example.  If set, smooth heats may be Waltz, Tango, Fox Trot, Waltz, Tango, Fox Trot, etc..  If unset, smooth may be Waltz, Walz, Waltz, Tango, Tango, Tango, etc..
 
-* Enable Judge comments - in addition to scoring, some judges will want to be able to enter short text comments
-
 * Use back numbers? - Uncheck this if leaders won't be wearing back numbers.  Unchecking this will slightly streamline some entry foms and printed results.
 
 * Track student ages? - Uncheck this is ages aren't tracked.  Again, unchecking this will slightly streamline some entry foms and printed results.
@@ -30,6 +28,8 @@ number, or feedback on areas that are particularly notable or need improvment (e
 * Include pro heats? - Checking this allows you to create agenda items where pros compete against each other.
 
 * Match entry forms to agenda? - this is useful if you have a small pre-specified set of freestyle dances to chose from but allow a much larger set of dances for solos.
+
+* Enable Judge comments - in addition to scoring, some judges will want to be able to enter short text comments
 
 * Assign judges couples to evaluate? - this is useful if you have several judges and a large number of couples on the floor at a time.  This doesn't limit judges to only evaluate those couples, instead it indictes which judges to focus on.
 

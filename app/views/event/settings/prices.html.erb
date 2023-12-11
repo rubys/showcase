@@ -1,0 +1,28 @@
+<div class="mx-auto md:w-2/3 w-full" data-controller="anchored">
+
+<% if notice.present? %>
+<p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+<% end %>
+
+<div data-controller="info-box">
+  <div class="info-button">&#x24D8;</div>
+  <ul class="info-box">
+  <li>Packages are fixed costs for partipation - excluding heats.</li>
+  <li>Options are for things like meals that may be included in some packages but exta for others.</li>
+  <li>Description and due date are included in invoices.</li>
+  <li>Prices for heats (freestyles), solos, and multi-dances can be entered here.  These prices can be overriden by agenda item or by studio.</li>
+  <li>See the <a href="../../docs/tasks/Settings" class="text-blue-800 underline">documentation</a> for more information on invoicing.</li>
+  </ul>
+</div>
+
+<% if @sources and not @sources.empty? %>
+<div class="mb-16">
+<%= render partial: 'clone' %>
+</div>
+<% end %>
+
+<h1 class="font-bold text-4xl mb-6" id="options">Event Prices</h1>
+
+<%= render partial: 'billables/index', locals: { id: 'prices' } %>
+
+</div>

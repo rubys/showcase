@@ -1,0 +1,86 @@
+<div class="mx-auto md:w-2/3 w-full" data-controller="anchored">
+
+<% if notice.present? %>
+<p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+<% end %>
+
+<div data-controller="info-box">
+  <div class="info-button">&#x24D8;</div>
+  <ul class="info-box">
+  <% if @sources and not @sources.empty? %>
+  <li>Feel free to skip over the "copy from another event" section if this is your first event.  This section of the settings will disappear once you have added a studio.</li>
+  <% end %>
+  <li>Event description is used in <a href="../../docs/tasks/Publishing" class="text-blue-800 underline">printed materials</a> and  <a href="../../docs/tasks/Counter" class="text-blue-800 underline">counter</a>.</li>
+  <li>Use the tabs across the top of this page to get to other settings.
+  </ul>
+</div>
+
+<% if @sources and not @sources.empty? %>
+<div class="mb-16">
+<%= render partial: 'clone' %>
+</div>
+<% end %>
+
+<h1 class="font-bold text-4xl mb-6" id="description">Event Description</h1>
+
+<%= form_with model: @event do |form| %>
+
+  <% if @event.errors.any? %>
+    <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
+      <h2><%= pluralize(@event.errors.count, "error") %> prohibited these settings from being saved:</h2>
+
+      <ul>
+        <% @event.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="my-5">
+  <%= form.label :name %>
+  <%= form.text_field :name, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+  <%= form.label :theme %>
+  <%= form.text_field :theme, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+  <%= form.label :location %>
+  <%= form.text_area :location, rows: @event.location.blank? ? 2 : @event.location.lines.length + 1,
+    class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+  <%= form.label :date %>
+  <%= form.text_field :date, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+  <%= form.label :heat_length, 'Time between start of one heat to the start of the next (in seconds)' %><br>
+  <span class="text-sm">(Be sure to include time for people to enter the floor, dance, and exit)</span>
+  <%= form.number_field :heat_length, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+  <%= form.label :solo_length, 'Time between start of solos (if different)' %><br>
+  <%= form.number_field :solo_length, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :counter_art %>
+    <% if @event.counter_art.attached? and not Rails.env.test? %>
+    <%= image_tag @event.counter_art.url, style: 'height: 5em' %>
+    <% end %>
+    <%= form.file_field :counter_art, 
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="inline">
+    <%= form.button 'Save', name: 'anchor', value: 'description', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  </div>
+<% end %>
+
+</div>

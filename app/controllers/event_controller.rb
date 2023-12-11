@@ -53,6 +53,8 @@ class EventController < ApplicationController
     @djs    = Person.where(type: 'DJ').order(:name)
     @emcees = Person.where(type: 'Emcee').order(:name)
 
+    @tab = params[:tab] || 'Description'
+
     @event ||= Event.last
     
     @ages = Age.all.size
@@ -64,6 +66,8 @@ class EventController < ApplicationController
     if Studio.pluck(:name).all? {|name| name == 'Event Staff'}
       clone unless ENV['RAILS_APP_OWNER'] == 'Demo'
     end
+
+    render "event/settings/#{@tab.downcase}", layout: 'settings'
   end
 
   def counter
@@ -166,12 +170,13 @@ class EventController < ApplicationController
     anchor = nil
 
     if ok
-      anchor = 'description' if params[:event][:name]
-      anchor = 'prices' if params[:event][:heat_cost]
-      anchor = 'adjust' if params[:event][:intermix]
-      anchor = 'advanced' if params[:event][:solo_level_id]
-      anchor = params[:anchor] if params[:anchor]
-      redirect_to settings_event_index_path(anchor: anchor), notice: "Event was successfully updated."
+      tab = 'Description' if params[:event][:name]
+      tab = 'Options' if params[:event][:intermix]
+      tab = 'Prices' if params[:event][:heat_cost]
+      tab = 'Heats' if params[:event][:max_heat_size]
+      tab = 'Advanced' if params[:event][:solo_level_id]
+      tab = params[:tab] if params[:tab]
+      redirect_to settings_event_index_path(tab: tab), notice: "Event was successfully updated."
     else
       settings
       render :settings, status: :unprocessable_entity
@@ -524,7 +529,7 @@ class EventController < ApplicationController
       end
 
       respond_to do |format|
-        format.html { redirect_to settings_event_index_path(anchor: 'advanced') }
+        format.html { redirect_to settings_event_index_path(tab: 'Advanced'), notice: 'Ages successfully updated.' }
       end
     else
       @ages = Age.order(:id).pluck(:category, :description).
@@ -550,7 +555,7 @@ class EventController < ApplicationController
       end
 
       respond_to do |format|
-        format.html { redirect_to settings_event_index_path(anchor: 'advanced') }
+        format.html { redirect_to settings_event_index_path(tab: 'Advanced'), notice: 'Levels successfully updated.' }
       end
     else
       @levels = Level.order(:id).pluck(:name).join("\n")
@@ -585,7 +590,7 @@ class EventController < ApplicationController
       end
 
       respond_to do |format|
-        format.html { redirect_to settings_event_index_path(anchor: 'advanced') }
+        format.html { redirect_to settings_event_index_path(tab: 'Advanced'), notice: 'Dances successfully updated.' }
       end
     else
       @dances = Dance.where(heat_length: nil).order(:order).pluck(:name).join("\n")

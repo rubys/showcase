@@ -1,0 +1,86 @@
+<div class="mx-auto md:w-2/3 w-full" data-controller="anchored">
+
+<% if notice.present? %>
+<p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+<% end %>
+
+<div data-controller="info-box">
+  <div class="info-button">&#x24D8;</div>
+  <ul class="info-box">
+    <li>Number of heats is largely controlled by the number of entries and number of instructors, but you
+    can set some limits on who can be on the floor at the same time which may increase the number of heats.</li>
+    <li>
+    With the slider<% if @event.track_ages %>s<% end %> all the way to the left, Full Bronze students can only be on the floor
+    with other Full Bronze students.
+    <% if @event.track_ages %>
+    And people in age category B1 can only
+    be on the floor with others in the same age category.
+    <% end %>
+    </li>
+    <li>
+    With the slider<% if @event.track_ages %>s<% end %> all the way to the right, Open and Closed heats can be 
+    on the floor at the same time, Newcomers can be on the dance floor at the
+    same time as Full Gold students.
+    <% if @event.track_ages %>
+    And people in any age category can be on the floor at the same time.
+    <% end %>
+    </li>
+  </ul>
+</div>
+
+<% if @sources and not @sources.empty? %>
+<div class="mb-16">
+<%= render partial: 'clone' %>
+</div>
+<% end %>
+
+<h1 id="adjust" class="font-bold text-4xl mb-6">Adjust the number of heats</h1>
+
+  <% if @event.errors.any? %>
+    <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
+      <h2><%= pluralize(@event.errors.count, "error") %> prohibited these settings from being saved:</h2>
+
+      <ul>
+        <% @event.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+
+
+<%= form_with model: @event, local: true, data: {turbo: false} do |form| %>
+  <div class="my-5">
+    <%= form.label :max_heat_size %>
+    <%= form.number_field :max_heat_size,
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+<!--
+  <div class="my-5">
+    <%= form.label :heat_range_cat, 'open/closed' %>
+    <%= form.range_field :heat_range_cat, min: 0, max: 1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+-->
+
+  <div class="my-5">
+    <%= form.label :heat_range_level, 'level' %>
+    <%= form.range_field :heat_range_level, min: 0, max: @levels.length-1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <% if @event.track_ages %>
+  <div class="my-5">
+    <%= form.label :heat_range_age, 'age' %>
+    <%= form.range_field :heat_range_age, min: 0, max: @ages-1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  <% else %>
+    <%= form.hidden_field :heat_range_age, value: @ages-1 %>
+  <% end %>
+
+  <div class="inline">
+    <%= form.button 'Save', name: 'anchor', value: 'adjust', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  </div>  
+<% end %>
+
+</div>

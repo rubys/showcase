@@ -1,0 +1,40 @@
+<div class="mx-auto md:w-2/3 w-full" data-controller="anchored">
+
+<% if notice.present? %>
+<p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+<% end %>
+
+<h1 id="advanced" class="font-bold text-4xl mb-6">Advanced</h1>
+
+<div data-controller="info-box">
+  <div class="info-button">&#x24D8;</div>
+  <ul class="info-box">
+  <li>Ages and Levels let you customize these values for your event.</li>
+  <li>Dances may be a more convenient way to bulk add a number of new dances.</li>
+  <li>For events that use different levels for freestyles and solos, list the freestyle levels first and indicate what the first level to be used for solos is.</li>
+  </ul>
+</div>
+
+
+<p class="mb-2">
+You normally won't need to adjust these.  <span class="text-red-600 font-bold">Be aware that any ajustments may affect any students
+and heats that you have entered so far.</span>
+</p>
+
+<%= link_to 'Ages', ages_event_index_path, class: 'btn-grey' %>
+<%= link_to 'Levels', levels_event_index_path, class: 'btn-grey' %>
+<%= link_to 'Dances', dances_event_index_path, class: 'btn-grey' %>
+
+<%= form_with model: @event, data: {turbo: false} do |form| %>
+  <div class="my-5">
+    <%= form.label :solo_level_id, "Solo levels start with:" %>
+    <%= form.select :solo_level_id, @levels, {include_blank: true},
+       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="inline">
+    <%= form.button 'Save', name: 'anchor', value: 'adjust', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  </div>  
+<% end %>
+
+</div>

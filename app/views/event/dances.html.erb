@@ -1,6 +1,21 @@
 <div class="mx-auto w-full">
 <h1 class="font-bold text-4xl pb-5 text-center">Dances</h1>
 
+<div data-controller="info-box">
+  <div class="info-button">ⓘ</div>
+  <ul class="info-box" style="display: block;">
+  <li>List of dances.  Order controls heat order, but can be changed later.</li>
+  <li><span class="text-red-600 font-bold">Making changes to this information after students have been entered may
+  cause student dances to be incorrect.</span>  In general, the following are safe:
+  <ul class="ml-8 list-disc list-outside">
+  <li>Changing dance names without inserting or deleting any lines.
+  <li>Inserting lines at the end.
+  </ul>
+  </li>
+  <li>Other changes (e.g., deletions, reordering) are best done by going to <a href="../dances/" class="text-blue-800 underline">dances</a> page.</li>
+  </ul>
+</div>
+
 <%= form_with(url: dances_event_index_path, class: "contents", data: {turbo: false}) do |form| %>
 
 <%= form.text_area :dances, value: @dances, rows: @dances.split("\n").length + 1,
@@ -8,7 +23,7 @@
 
 <div class="mx-auto w-full mt-4 text-center">
   <%= form.submit 'Save', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
-  <%= link_to 'Back to settings', settings_event_index_path(anchor: 'advanced'),
+  <%= link_to 'Back to settings', settings_event_index_path(tab: 'Advanced'),
     class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
 </div>
 

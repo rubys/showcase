@@ -1,0 +1,58 @@
+<div class="mx-auto md:w-2/3 w-full" data-controller="anchored">
+
+<% if notice.present? %>
+<p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+<% end %>
+
+<div data-controller="info-box">
+  <div class="info-button">&#x24D8;</div>
+  <ul class="info-box">
+  <li>Event staff are involved in scoring and running the event.</li>
+  <li>Detailed descriptions of staff roles can be found in the <a href="../../docs/#roles" class="text-blue-800 underline">documentation</a>.</li>
+  </ul>
+</div>
+
+<% if @sources and not @sources.empty? %>
+<div class="mb-16">
+<%= render partial: 'clone' %>
+</div>
+<% end %>
+
+<h1 class="font-bold text-4xl mb-6" id="staff">Event Staff</h1>
+
+  <% if @event.errors.any? %>
+    <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
+      <h2><%= pluralize(@event.errors.count, "error") %> prohibited these settings from being saved:</h2>
+
+      <ul>
+        <% @event.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+<h2 class="font-bold text-2xl mt-4 mb-2">Judges</h2>
+<ul class="list-disc list-inside">
+  <% @judges.each do |judge| %>
+    <li><%= link_to judge.display_name, judge %></li>
+  <% end %>
+</u>
+
+<h2 class="font-bold text-2xl mt-4 mb-2">DJ</h2>
+<ul class="list-disc list-inside mb-8">
+  <% @djs.each do |dj| %>
+    <li><%= link_to dj.display_name, dj %></li>
+  <% end %>
+</ul>
+
+<h2 class="font-bold text-2xl mt-4 mb-2">Emcee</h2>
+<ul class="list-disc list-inside mb-8">
+  <% @emcees.each do |emcee| %>
+    <li><%= link_to emcee.display_name, emcee %></li>
+  <% end %>
+</ul>
+
+<%= link_to "Add person", new_person_path(source: 'settings'), class: "btn-blue" %>
+
+</div>

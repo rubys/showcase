@@ -50,7 +50,7 @@ class BillablesController < ApplicationController
       if @billable.save
         update_includes
 
-        format.html { redirect_to settings_event_index_path(anchor: 'prices'),
+        format.html { redirect_to settings_event_index_path(tab: 'Prices'),
           notice: "#{@billable.name} was successfully created." }
         format.json { render :show, status: :created, location: @billable }
       else

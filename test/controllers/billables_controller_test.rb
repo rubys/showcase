@@ -22,7 +22,7 @@ class BillablesControllerTest < ActionDispatch::IntegrationTest
       post billables_url, params: { type: 'package', billable: { price: @billable.price, name: @billable.name + '2', order: @billable.order, type: @billable.type, options: {'2' => '1'} } }
     end
 
-    assert_redirected_to settings_event_index_path(anchor: 'prices')
+    assert_redirected_to settings_event_index_path(tab: 'Prices')
   end
 
   test "should show billable" do

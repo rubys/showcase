@@ -511,7 +511,7 @@ class PeopleController < ApplicationController
       if @person.save
         update_options
 
-        format.html { redirect_to (params[:source] == 'settings' ? settings_event_index_path(anchor: 'staff') : person_url(@person)),
+        format.html { redirect_to (params[:source] == 'settings' ? settings_event_index_path(tab: 'Staff') : person_url(@person)),
           notice: "#{@person.display_name} was successfully added." }
         format.json { render :show, status: :created, location: @person }
       else
