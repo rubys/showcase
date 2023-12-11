@@ -1,13 +1,6 @@
 <div class="mx-auto md:w-2/3 w-full">
   <h1 class="font-bold text-4xl"><%= @billable.name %></h1>
 
-<div data-controller="info-box">
-<div class="info-button">&#x24D8;</div>
-<ul class="info-box">
-<li>
-</ul>
-</div>
-
 <%= form_with(class: "contents", data: {turbo: false}) do |form| %>
 
 <table class="table-auto my-4">
