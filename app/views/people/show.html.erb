@@ -396,7 +396,7 @@ when most dances for an individual are with one instructor but one or two are ch
       <% if @person.studio %>
       <%= link_to 'Back to studio', @person.studio, class: "btn-green" %>
       <% else %>
-      <%= link_to 'Back to settings', settings_event_index_path(anchor: 'staff'), class: "btn-green" %>
+      <%= link_to 'Back to settings', settings_event_index_path(tab: 'Staff'), class: "btn-green" %>
       <% end %>
 
       <% unless @scores.empty? %>

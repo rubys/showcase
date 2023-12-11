@@ -37,7 +37,7 @@ class BillablesControllerTest < ActionDispatch::IntegrationTest
 
   test "should update billable" do
     patch billable_url(@billable), params: { billable: { price: @billable.price, name: @billable.name, order: @billable.order, type: @billable.type, options: {'2' => '1'} } }
-    assert_redirected_to settings_event_index_path(anchor: 'prices')
+    assert_redirected_to settings_event_index_path(tab: 'Prices')
   end
 
   test "should destroy billable" do
@@ -45,6 +45,6 @@ class BillablesControllerTest < ActionDispatch::IntegrationTest
       delete billable_url(@billable)
     end
 
-    assert_redirected_to settings_event_index_path(anchor: 'prices')
+    assert_redirected_to settings_event_index_path(tab: 'Prices')
   end
 end

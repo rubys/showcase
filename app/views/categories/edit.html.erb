@@ -5,5 +5,5 @@
 
   <%= link_to 'Remove this category', category_path(@category), class: 'btn-grey',
     data: { turbo_method: :delete, turbo_confirm: 'Are you sure?' } %>  
-  <%= link_to "Back to settings", settings_event_index_path(anchor: 'categories'), class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  <%= link_to "Back to agenda", categories_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
 </div>

@@ -67,7 +67,7 @@ class BillablesController < ApplicationController
       if @billable.update(billable_params.except(:options, :packages))
         update_includes
 
-        format.html { redirect_to settings_event_index_path(anchor: 'prices'),
+        format.html { redirect_to settings_event_index_path(tab: 'Prices'),
           notice: "#{@billable.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @billable }
       else
@@ -145,10 +145,10 @@ class BillablesController < ApplicationController
       end
 
       if operation
-        redirect_to settings_event_index_path(anchor: 'prices'),
+        redirect_to settings_event_index_path(tab: 'Prices'),
           notice: "#{helpers.pluralize(count, @billable.type.downcase)} #{operation} #{@billable.name} package"
       else
-        redirect_to settings_event_index_path(anchor: 'prices')
+        redirect_to settings_event_index_path(tab: 'Prices')
       end
     end
   end
@@ -158,7 +158,7 @@ class BillablesController < ApplicationController
     @billable.destroy
 
     respond_to do |format|
-      format.html { redirect_to settings_event_index_path(anchor: 'prices'),
+      format.html { redirect_to settings_event_index_path(tab: 'Prices'),
         status: 303, notice: "#{@billable.name} was successfully removed." }
       format.json { head :no_content }
     end
