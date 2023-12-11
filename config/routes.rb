@@ -22,9 +22,14 @@ Rails.application.routes.draw do
       get "/studios/:studio", to: 'event#showcases', as: 'studio_events'
 
       get "logs", to: 'event#logs'
-      get "/inventory", to: 'event#inventory'
 
       match "/upload" => "event#upload", via: [:get, :post]
+    else
+      root 'event#root'
+    end
+
+    if ENV.fetch("RAILS_APP_DB", '') == 'index' or Rails.env.test?
+      get "/inventory", to: 'event#inventory'
 
       get 'admin/', to: "admin#index"
       get 'admin/regions', to: 'admin#regions',  trailing_slash: true
@@ -33,10 +38,6 @@ Rails.application.routes.draw do
       delete 'admin/regions/:code', to: 'admin#destroy_region', as: 'destroy_region'
       get 'admin/new-region', to: 'admin#new_region'
       get 'admin/apply', to: 'admin#apply'
-
-    else
-      get 'admin/', to: "admin#index" if ENV['RAILS_ENV'] == 'test'
-      root 'event#root'
     end
 
     get '/env', to: 'event#env'
