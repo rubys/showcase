@@ -16,7 +16,7 @@
 
 <h1 class="font-bold text-4xl mb-6" id="options">Event Options</h1>
 
-<%= form_with model: @event, data: {turbo: false} do |form| %>
+<%= form_with model: @event do |form| %>
 
   <% if @event.errors.any? %>
     <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">

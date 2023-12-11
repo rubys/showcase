@@ -25,7 +25,7 @@ and heats that you have entered so far.</span>
 <%= link_to 'Levels', levels_event_index_path, class: 'btn-grey' %>
 <%= link_to 'Dances', dances_event_index_path, class: 'btn-grey' %>
 
-<%= form_with model: @event, data: {turbo: false} do |form| %>
+<%= form_with model: @event do |form| %>
   <div class="my-5">
     <%= form.label :solo_level_id, "Solo levels start with:" %>
     <%= form.select :solo_level_id, @levels, {include_blank: true},

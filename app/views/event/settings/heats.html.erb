@@ -44,7 +44,7 @@
 
 
 
-<%= form_with model: @event, local: true, data: {turbo: false} do |form| %>
+<%= form_with model: @event, local: true do |form| %>
   <div class="my-5">
     <%= form.label :max_heat_size %>
     <%= form.number_field :max_heat_size,
