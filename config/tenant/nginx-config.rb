@@ -73,6 +73,7 @@ showcases.each do |year, list|
 end
 
 @region = ENV['FLY_REGION']
+REGIONS = @region ? `dig +short txt regions.smooth.internal`.scan(/\w+/) : []
 
 if @region
   @tenants << OpenStruct.new(
@@ -317,6 +318,12 @@ server {
 <% end -%>
 <% @tenants.each do |tenant| %>
   # <%= tenant.name %>
+<% if @region && tenant.region && !REGIONS.include?(tenant.region) -%>
+  location <%= ROOT %>/<%= tenant.scope %> {
+    return 410;
+  }
+<% next %>
+<% end -%>
 <% if @region and @region == tenant.region and tenant.scope.to_s != '' -%>
   rewrite <%= ROOT %>/<%= tenant.scope %>/cable <%= ROOT %>/cable last;
 <% end -%>
