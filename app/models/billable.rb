@@ -1,6 +1,8 @@
 class Billable < ApplicationRecord
   self.inheritance_column = nil
 
+  normalizes :name, with: -> name { name.strip }
+
   validates :name, presence: true, uniqueness: { scope: :type }
   validates :price, presence: true
 

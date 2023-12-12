@@ -17,4 +17,10 @@ class ApplicationRecord < ActiveRecord::Base
         Chronic.parse(value.sub(/(^|[a-z]+ )?\d+-\d+/) {|str| str.sub(/-.*/, '')})
     end
   end
+
+  # stub normalizes until 7.1 upgrade
+  unless respond_to? :normalizes
+    def self.normalizes *args
+    end
+  end
 end

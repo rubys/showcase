@@ -1,4 +1,6 @@
 class Category < ApplicationRecord
+  normalizes :name, with: -> name { name.strip }
+
   has_many :open_dances, dependent: :nullify,
     class_name: 'Dance', foreign_key: :open_category_id
   has_many :closed_dances, dependent: :nullify,

@@ -1,4 +1,6 @@
 class Studio < ApplicationRecord
+  normalizes :name, with: -> name { name.strip }
+
   validates :name, presence: true, uniqueness: true
 
   belongs_to :default_student_package, class_name: 'Billable', optional: true

@@ -1,4 +1,7 @@
 class User < ApplicationRecord
+  normalizes :userid, with: -> name { name.strip }
+  normalizes :email, with: -> name { name.strip }
+
   validates :userid, uniqueness: true, presence: true
   validates :password, confirmation: true
   validates :email, uniqueness: true, presence: true

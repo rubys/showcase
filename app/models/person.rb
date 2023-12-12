@@ -1,6 +1,8 @@
 class Person < ApplicationRecord
   self.inheritance_column = nil
 
+  normalizes :name, with: -> name { name.strip }
+
   validates :name, presence: true, uniqueness: true
   validates :back, allow_nil: true, uniqueness: true
 

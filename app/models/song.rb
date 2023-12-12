@@ -1,4 +1,6 @@
 class Song < ApplicationRecord
+  normalizes :title, with: -> name { name.strip }
+
   belongs_to :dance
   has_one_attached :song_file
 
