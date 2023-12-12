@@ -45,8 +45,22 @@ unless `git status --short | grep -v "^?? "`.empty?
   exit 1 unless system "#{fly} deploy"
 end
 
-(pending['delete'] || []).each do |region|
+machines = JSON.parse(`#{fly} machines list --json`)
+
+# ensure that there is only one machine per region
+machines_by_region = machines.map {|machine| [machine['region'], machine['id']]}.sort_by(&:last).group_by(&:first)
+
+if machines_by_region.any? {|region, machines| machines.length > 1}
+  machines_by_region.each do |region, machines|
+     machines.each_with_index do |machine, index|
+       exit 1 unless system "#{fly} machine destroy --force #{machine} --verbose" if index > 0
+     end
+  end
   machines = JSON.parse(`#{fly} machines list --json`)
+end
+
+# process pending delete queue
+(pending['delete'] || []).each do |region|
   machine = machines.find {|machine| machine['region'] == region}
   exit 1 unless system "#{fly} machine destroy --force #{machine['id']} --verbose" if machine
 end

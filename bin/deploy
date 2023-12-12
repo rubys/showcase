@@ -5,6 +5,21 @@ require 'uri'
 require 'net/http'
 
 if ENV['FLY_APP_NAME']
+  # ensure machine is the only one in its region
+  machines_by_region = `dig +short txt _instances.internal`.
+    chomp.gsub('" "', '').gsub('"', '').split(';').
+    map {|instance| instance.scan(/(\w+)=([^,]+)/).to_h}.
+    select {|instance| instance['app'] == ENV["FLY_APP_NAME"]}.
+    sort_by {|instance| instance['instance']}.
+    map {|instance| [instance['instance'], instance['region']]}.
+    sort_by(&:first).group_by(&:last).
+    map {|region, instances| [region, instances.first.first]}.to_h
+
+  unless machines_by_region.values.include? ENV["FLY_ALLOC_ID"]
+    STDERR.puts "Another machine exists in this region, exiting"
+    exit 1
+  end
+
   # show maintenance mode
   system "nginx -c /rails/config/nginx.startup"
 
