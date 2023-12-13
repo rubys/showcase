@@ -68,8 +68,12 @@ a scheduled heat time will be added to each heat.
         <% else %>
         <td class="row"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a>
         <% end %>
+        <% if cat == "Unscheduled" %>
+        <td colspan="2" class="text-right">(<%= pluralize(Heat.where(number: 0).count, 'entry') %>)
+        <% else %>
         <td class="row text-right"><a href="#heat-<%= heats.first&.first %>"><%= heats.first&.first %></a>
         <td class="row text-right"><a href="#heat-<%= heats.last&.first %>"><%= heats.last&.first %></a>
+        <% end %>
         <% if @start and @cat_start[cat] %>
         <% unless @oneday %>
         <td class="row"><%= cat == 'Unscheduled' ? '' : Date::DAYNAMES[@cat_start[cat]&.wday || 7] %>
