@@ -472,8 +472,10 @@ class PeopleController < ApplicationController
     selections
 
     respond_to do |format|
-      format.turbo_stream { render turbo_stream: turbo_stream.replace('package-select', 
-        render_to_string(partial: 'package'))}
+      format.turbo_stream { render turbo_stream: [
+        turbo_stream.replace('package-select', render_to_string(partial: 'package')),
+        turbo_stream.replace('options-select', render_to_string(partial: 'options'))
+      ]}
       format.html { redirect_to people_url }
     end
   end
