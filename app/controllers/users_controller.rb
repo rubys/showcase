@@ -58,6 +58,8 @@ class UsersController < ApplicationController
 
   # PATCH/PUT /users/1 or /users/1.json
   def update
+    admin = params[:sites]
+
     set_password
     set_sites
 
@@ -67,7 +69,7 @@ class UsersController < ApplicationController
       if @user.update(user_params)
         update_htpasswd
 
-        if not @user.token.blank? and not params[:sites]
+        if not @user.token.blank? and not admin
           @user.link = ""
           @user.token = ""
           @user.save!
