@@ -67,7 +67,7 @@ class UsersController < ApplicationController
       if @user.update(user_params)
         update_htpasswd
 
-        if not @user.token.blank?
+        if not @user.token.blank? and not params[:sites]
           @user.link = ""
           @user.token = ""
           @user.save!
