@@ -58,7 +58,7 @@ class UsersController < ApplicationController
 
   # PATCH/PUT /users/1 or /users/1.json
   def update
-    admin = params[:sites]
+    admin = params[:user] && !!params[:user][:sites]
 
     set_password
     set_sites
