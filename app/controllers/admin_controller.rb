@@ -162,7 +162,10 @@ class AdminController < ApplicationController
       @move[site] = {from: was[:region], to: info[:region]}
     end
 
-    @showcases = parse_showcases('db/showcases.yml') - parse_showcases('config/tenant/showcases.yml')
+    previous = parse_showcases('config/tenant/showcases.yml')
+    showcases = parse_showcases('db/showcases.yml')
+    @showcases_modified = showcases - previous
+    @showcases_removed = previous - showcases - @showcases_modified
 
     deployed = JSON.parse(IO.read(DEPLOYED))
     @pending = deployed['pending'] || {}
