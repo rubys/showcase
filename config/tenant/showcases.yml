@@ -1,7 +1,27 @@
 ---
 2024:
+  alexandria:
+    :name: Alexandria
+    :region: iad
+    :logo: arthur-murray-logo.gif
+  austin:
+    :name: Austin
+    :region: atl
+    :logo: arthur-murray-logo.gif
+  dayton:
+    :name: Dayton
+    :region: ord
+    :logo: arthur-murray-logo.gif
+  glenview:
+    :name: Glenview
+    :region: ord
+    :logo: arthur-murray-logo.gif
   raleigh:
     :name: Raleigh
+    :region: iad
+    :logo: arthur-murray-logo.gif
+  roanoke:
+    :name: Roanoke
     :region: iad
     :logo: arthur-murray-logo.gif
   slc:
@@ -9,10 +29,6 @@
     :region: sjc
     :logo: arthur-murray-logo.gif
 2023:
-  alexandria:
-    :name: Alexandria
-    :region: iad
-    :logo: arthur-murray-logo.gif
   annapolis:
     :name: Annapolis
     :region: iad
@@ -24,10 +40,6 @@
         :name: Chesapeake Classic
       gratitudegala:
         :name: Gratitude Gala
-  austin:
-    :name: Austin
-    :region: atl
-    :logo: arthur-murray-logo.gif
   carmel:
     :name: Carmel
     :region: ord
@@ -55,17 +67,9 @@
         :name: Flamingo Fright Festival
       snowball:
         :name: Snowball
-  dayton:
-    :name: Dayton
-    :region: ord
-    :logo: arthur-murray-logo.gif
   durham:
     :name: Durham
     :region: iad
-    :logo: arthur-murray-logo.gif
-  glenview:
-    :name: Glenview
-    :region: ord
     :logo: arthur-murray-logo.gif
   greenhills:
     :name: Nashville-Green Hills
@@ -116,10 +120,6 @@
         :name: Team Match
       nouveau-duo:
         :name: Nouveau Duo
-  roanoke:
-    :name: Roanoke
-    :region: iad
-    :logo: arthur-murray-logo.gif
   salem:
     :name: Salem
     :region: sjc
