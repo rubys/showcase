@@ -84,26 +84,26 @@
 <% end %>
 
 <div class="mx-auto flex">
-  <input type="submit" class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" form="solo-form"
+  <input type="submit" class="btn-blue" form="solo-form"
     value="<%= (solo.persisted? ? 'Update' : 'Create') + ' ' + (@formation ? 'Formation' : (@overrides.blank? ? 'Solo' : 'Routine')) %>">
   <% if solo.id %>
   <% if solo.heat.number < 0 %>
   <%= up_link "Restore this #{@formation ? 'formation' : (@overrides.blank? ? 'solo' : 'routine')}",
-    solo_path(solo), class: 'text-center btn-grey h-full my-0', method: :delete, params: {primary: @person} %>
+    solo_path(solo), class: 'btn-grey', method: :delete, params: {primary: @person} %>
   <% elsif solo.heat.number > 0 %>
   <%= up_link "Scratch this #{@formation ? 'formation' : (@overrides.blank? ? 'solo' : 'routine')}",
-    solo_path(solo), class: 'text-center btn-grey h-full my-0', method: :delete, params: {primary: @person} %>
+    solo_path(solo), class: 'btn-grey', method: :delete, params: {primary: @person} %>
   <% else %>
   <%= up_link "Remove this #{@formation ? 'formation' : (@overrides.blank? ? 'solo' : 'routine')}",
-    solo_path(solo), class: 'text-center btn-grey h-full my-0', method: :delete,
+    solo_path(solo), class: 'btn-grey', method: :delete,
     params: {primary: @person}, form: { data: { turbo_confirm: 'Are you sure?' }} %>
   <% end %>
   <% end %>
 
   <% if return_to %>
-  <%= link_to 'Back to solos', return_to, class: "text-center rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  <%= link_to 'Back to solos', return_to, class: "btn-grey" %>
   <% else %>
-  <%= link_to 'Back to student', @person, class: "text-center rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  <%= link_to 'Back to student', @person, class: "btn-grey" %>
   <% end %>
 </div>
 </div>
