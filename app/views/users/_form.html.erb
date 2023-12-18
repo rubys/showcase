@@ -63,8 +63,8 @@
   <% selected = user.sites.to_s.split(',') %>
   <% @studios.each do |studio| %>
   <div class="my-5">
-    <%= form.check_box "sites[#{studio}]", class: 'entry-count h-8', checked: selected.include?(studio) %>
-    <%= form.label "sites[#{studio}]", studio, class: 'text-xl align-middle pt-2' %>
+    <input class="entry-count h-8" type="checkbox" value="1" name="user[sites][<%= studio %>]" id="user_sites[<%= studio %>]">
+    <label class="text-xl align-middle pt-2" for="user_sites[<%= studio %>]"><%= studio %></label>
   </div>
   <% end %>
   </div>
