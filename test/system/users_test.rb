@@ -40,21 +40,30 @@ class UsersTest < ApplicationSystemTestCase
 
 
   test "should update User auth" do
-    visit user_url(@user)
-    click_on "Edit this user", match: :first
+    visit edit_user_url(@user)
     click_on "Auth", match: :first
 
     # fill_in "Email", with: @user.email
     fill_in "Link", with: @user.link
     fill_in "Password", with: @user.password
     fill_in "Password confirmation", with: @user.password
-    check "Two"
+    assert_no_checked_field "One"
+    assert_checked_field "Two"
+    assert_no_checked_field "Three"
+    check "Three"
     fill_in "Token", with: @user.token
     fill_in "Userid", with: @user.userid 
     click_on "Update User"
 
     assert_text "joe was successfully updated"
-    click_on "Back"
+
+    visit edit_user_url(@user)
+    click_on "Auth", match: :first
+    assert_no_checked_field "One"
+    assert_checked_field "Two"
+    assert_checked_field "Three"
+
+    click_on "Back to users"
   end
 
   test "should destroy User" do

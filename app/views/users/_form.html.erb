@@ -60,13 +60,15 @@
 
   <div class="my-5">
     <%= form.label :sites %>
-  <% selected = user.sites.to_s.split(',') %>
-  <% @studios.each do |studio| %>
-  <div class="my-5">
-    <input class="entry-count h-8" type="checkbox" <% if selected.include?(studio) %>checked <% end %>name="user[sites][<%= studio %>]" id="user_sites[<%= studio %>]">
-    <label class="text-xl align-middle pt-2" for="user_sites[<%= studio %>]"><%= studio %></label>
-  </div>
-  <% end %>
+    <% selected = user.sites.to_s.split(',') %>
+    <% @studios.each do |studio| %>
+      <div class="my-5">
+        <% field = "user[sites][#{studio}]" %>
+        <input name="<%= field %>" type="hidden" value="0" autocomplete="off">
+        <input class="entry-count h-8" type="checkbox" value="1" <% if selected.include?(studio) %>checked <% end %>name="<%= field %>" id="<%= field %>">
+        <label class="text-xl align-middle pt-2" for="<%= field %>"><%= studio %></label>
+      </div>
+    <% end %>
   </div>
   <% end %>
 <% end %>

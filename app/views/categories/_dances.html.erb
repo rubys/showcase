@@ -8,14 +8,15 @@
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
     <% end %>
       <% dances.each do |dance| %>
-        <% field = "include][#{category}][#{dance.name}" %>
+        <% field = "category[include][#{category}][#{dance.name}]" %>
         <% if dance.row and dance.col %>
         <div class="my-5 flex flex-row" style="grid-row:<%= dance.row %>; grid-column:<%= dance.col %>">
         <% else %>
         <div class="my-5 flex flex-row">
         <% end %>
-          <%= form.check_box field, class: "entry-count h-10", checked: @entries[category][dance.name] %>
-          <%= form.label field, dance.name, class: 'mt-1 flex items-center justify-center' %>
+          <input name="<%= field %>" type="hidden" value="0" autocomplete="off">
+          <input class="entry-count h-10" type="checkbox" value="1" <% if @entries[category][dance.name] %>checked="checked" <% end %>name="<%= field %>" id="<%= field %>">
+          <label class="mt-1 flex items-center justify-center" for="<%= field %>"><%= dance.name %></label>
         </div>
       <% end %>
     </div>

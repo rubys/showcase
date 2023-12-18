@@ -16,4 +16,8 @@ class CatExtension < ApplicationRecord
   def cost_override
     category.cost_override
   end
+
+  def pro
+    category.pro
+  end
 end

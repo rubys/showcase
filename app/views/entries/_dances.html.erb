@@ -8,7 +8,7 @@
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
     <% end %>
       <% dances.each do |dance| %>
-        <% field = "entries][#{category}][#{dance.name}" %>
+        <% field = "entry[entries][#{category}][#{dance.name}]" %>
         <% if dance.row and dance.col %>
         <div class="my-5 flex flex-row" style="grid-row:<%= dance.row %>; grid-column:<%= dance.col %>">
         <% else %>
@@ -16,15 +16,15 @@
         <% end %>
           <% value = (@entries[category][dance.name] || []).count {|heat| heat.number >= 0} %>
           <% if value <= 1 %>
-          <%= form.check_box field, class: "entry-count h-10", checked: value > 0 %>
+          <input name="<%= field %>" type="hidden" value="0" autocomplete="off">
+          <input class="entry-count h-10" type="checkbox" value="1" <% if value > 0 %>checked <% end %>name="<%= field %>" id="<%= field %>">
           <% else %>
-          <%= form.text_field field, class: "entry-count", value: value %>
+          <input type="text" id="<%= field %>" name="<%= field %>" class="entry-count" value=<%= value %>>
           <% end %>
           <% if category == 'Multi' -%>
-          <%= form.label field, h(dance.name).split(' - ').join(' -<br>').html_safe,
-            class: 'mt-2 flex items-center justify-center' %>
+          <label class="mt-1 flex items-center justify-center" for="<%= field %>"><%= h(dance.name).split(' - ').join(' -<br>').html_safe %></label>
           <% else -%>
-          <%= form.label field, dance.name, class: 'mt-2 flex items-center justify-center' %>
+          <label class="mt-1 flex items-center justify-center" for="<%= field %>"><%= dance.name %></label>
           <% end -%>
         </div>
       <% end %>

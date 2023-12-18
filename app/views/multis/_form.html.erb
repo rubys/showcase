@@ -67,18 +67,19 @@ categories, make a separate multi-dance for each.
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
     <% end %>
       <% @dances.each do |dance| %>
-        <% field = "multi][#{dance.name}" %>
+        <% field = "dance[multi][#{dance.name}]" %>
         <% if dance.row and dance.col %>
         <div class="my-5 flex flex-row" style="grid-row:<%= dance.row %>; grid-column:<%= dance.col %>">
         <% else %>
         <div class="my-5 flex flex-row">
         <% end %>
           <% if @multi.values.any? {|value| value && value > 1} %>
-          <%= form.text_field field, class: "entry-count", value: @multi[dance.name] %>
+          <input type="text" id="<%= field %>" name="<%= field %>" class="entry-count" value=<%= @multi[dance.name] %>>
           <% else %>
-          <%= form.check_box field, class: "entry-count h-10", checked: !!@multi[dance.name] %>
+          <input name="<%= field %>" type="hidden" value="0" autocomplete="off">
+          <input class="entry-count h-10" type="checkbox" value="1" <% if !!@multi[dance.name] %>checked <% end %>name="<%= field %>" id="<%= field %>">
           <% end %>
-          <%= form.label field, dance.name, class: 'mt-1 flex items-center justify-center' %>
+          <label class="mt-1 flex items-center justify-center" for="<%= field %>"><%= dance.name %></label>
         </div>
       <% end %>
     </div>
