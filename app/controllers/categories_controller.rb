@@ -80,10 +80,18 @@ class CategoriesController < ApplicationController
   end
 
   def toggle_lock
-    event = Event.first
-    event.update(locked: !event.locked)
-    redirect_to params[:return_to] || categories_url,
-      notice: "Agenda #{event.locked ? '' : 'un'}locked."
+    if params[:id]
+      set_category
+      @category.update(locked: !@category.locked)
+      anchor = "cat-#{@category.name.downcase.gsub(' ', '-')}"
+      redirect_to heats_url(anchor: anchor),
+        notice: "Category #{@category.name} #{@category.locked ? '' : 'un'}locked."
+    else
+      event = Event.first
+      event.update(locked: !event.locked)
+      redirect_to params[:return_to] || categories_url,
+        notice: "Agenda #{event.locked ? '' : 'un'}locked."
+    end
   end
 
   # POST /categories/redo

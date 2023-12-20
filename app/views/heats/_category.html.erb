@@ -1,8 +1,10 @@
+<% category = Category.where(name: cat).first %>
+<% locked = @locked || category&.locked %>
 <div id="cat-<%= cat.downcase.gsub(' ', '-') %>"
-  <% if @locked %>
+  <% if locked %>
     data-controller="heat-order drop" data-renumber-action="<%= renumber_heats_path %>"
     data-drop-action="<%= drop_heats_path %>"<% end %>>
-  <div class="mt-8 flex justify-between items-center">
+  <div class="mt-8 flex justify-between items-center group">
     <% if %w(Uncategorized Unscheduled).include? cat %>
     <h1 class="row text-red-600 text-4xl"><%= cat %></h1>
     <% if cat == "Uncategorized" %>
@@ -11,7 +13,18 @@
     <h2 class="row">These dances are not on the <%= link_to "agenda", categories_path, class: "underline" %>.</h2>
     <% end %>
     <% else %>
-    <h1 class="font-bold text-4xl"><%= cat %></h1>
+    <h1 class="font-bold text-4xl">
+      <%= cat %>
+      <% if category %>
+      <%= button_to image_tag(
+          category.locked ? 'Padlock-bronze-closed.svg' : 'Padlock-bronze-open.svg',
+          height: 33, width: 33, class: 'ml-4 mb-1'
+        ), 
+        toggle_lock_category_path(category),
+        data: {turbo: false},
+        form_class: "group-hover:inline hidden" %>
+      <% end %>
+    </h1>
     <% end %>
   </div>
 
@@ -101,7 +114,7 @@
          <% if heat.number < 0 %>
          <tr id="<%= dom_id heat %>" class="group line-through opacity-50">
          <% else %>
-         <tr id="<%= dom_id heat %>" class="group hover:bg-yellow-200"<% if @locked %> draggable="true" data-drag-id="<%= heat.id %>"<% end %>>
+         <tr id="<%= dom_id heat %>" class="group hover:bg-yellow-200"<% if locked %> draggable="true" data-drag-id="<%= heat.id %>"<% end %>>
          <% end %>
            <td></td>
            <% if number != 0 %>
@@ -160,7 +173,7 @@
     </table>
     <% end %>
 
-    <% if @locked and cat == "Unscheduled" %>
+    <% if locked and cat == "Unscheduled" %>
     <%= up_link 'Schedule', schedule_heats_path, class: "mx-8 btn-blue", method: :post %>
     <p class="mx-8 px-8">
     This button will attempt to add the unscheduled <%= pluralize(heats.length, 'heat') %> to existing heats without changing anything else.

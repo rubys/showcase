@@ -101,6 +101,7 @@ Rails.application.routes.draw do
       post 'redo', on: :collection
       post 'drop', on: :collection
       post 'toggle_lock', on: :collection
+      post 'toggle_lock', on: :member
     end
 
     match "/people/certificates", to: 'people#certificates', via: %i(get post)
