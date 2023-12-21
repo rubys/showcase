@@ -257,6 +257,12 @@ module HeatScheduler
     cats.each do |cat, groups|
       if cat.instance_of? CatExtension
         cat.update! start_heat: heat
+      elsif cat&.locked
+        heats = groups.map {|group| group.each.to_a}.flatten.
+          select {|heat| heat.number > 0}.sort_by {|heat| heat.number}
+        groups = heats.group_by {|heat| heat.number}.values.
+          map {|heats| Group.new(heats)}
+        cats[cat] = groups
       end
 
       heat += groups.length
@@ -342,8 +348,8 @@ module HeatScheduler
       agenda_cat&.max_heat_size || @@event.max_heat_size || 9999
     end
 
-    def initialize
-      @group = []
+    def initialize(list = [])
+      @group = list
     end
 
     def match?(dance, dcat, level, age, heat)
