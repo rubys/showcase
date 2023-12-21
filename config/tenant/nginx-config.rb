@@ -281,6 +281,7 @@ server {
   passenger_ruby <%= RbConfig.ruby %>;
   passenger_friendly_error_pages on;
   passenger_min_instances 0;
+  passenger_preload_bundler on;
   passenger_set_header X-Request-Id $request_id;
 <% if ENV['GEM_HOME'] -%>
   passenger_env_var GEM_HOME <%= ENV['GEM_HOME'] %>;
