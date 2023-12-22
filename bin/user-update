@@ -16,7 +16,7 @@ if ENV['FLY_APP_NAME']
       -av
       --update
       /data/db/htpasswd
-      /data/db/index.sqlite3
+      /data/db/index.sqlite3*
       rsync://[#{addr}]/data/db
     ]
   end
@@ -26,7 +26,7 @@ else
     -av
     --update
     db/htpasswd
-    db/index.sqlite3
+    db/index.sqlite3*
     smooth:///data/db
   ]
 

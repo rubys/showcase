@@ -36,6 +36,12 @@ if processes == 0
   exit 0 if File.exist?(MARKTIME) && File.mtime(MARKTIME) >= latest
   FileUtils.touch MARKTIME
 
+  # clean databases: vacuum db and truncate WAL
+  Dir["/data/db/2*-wal"].select {|file| File.size(file) > 0}.each do |file|
+    db = file.chomp '-wal'
+    system "sqlite3 #{db} 'VACUUM; PRAGMA wal_checkpoint(TRUNCATE);'"
+  end
+
   # get a list of ip addresses for running instances, with the primary region first
   addrs = [
     *`dig +short -t aaaa #{ENV['PRIMARY_REGION']}.#{ENV['FLY_APP_NAME']}.internal`.split,

@@ -5,7 +5,7 @@ Event databases, counter backgrounds, and solo music are all backed up.
 There are two separate backups performed automatically:
 
   * Daily backups - these are stored on the same machine.
-  * Idle backups - these are performed five minutes after the last access is made
+  * Idle backups - these are performed ten minutes after the last access is made
     to the application.  These are stored in two places: on a separate machine at the
     same location, and on the [Hetzner backup host](./Hosting.md).
 
