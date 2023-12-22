@@ -3,6 +3,13 @@
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
+  <% if not ENV['FLY_REGION'] # and not Rails.env.development? %>
+  <div class="border-double border-4 rounded-lg border-red-600 mx-4 my-8 pl-4 pr-4 py-4 text-left">
+  <p>This server is intended for backup use only.  Unless there are problems, the link you should be using is:
+    <a class="underline" href="https://smooth.fly.dev/"%>https://smooth.fly.dev/</a>.
+  </div>
+  <% end %>
+
   <% if @region %>
   <h1 class="mt-8 text-center font-bold text-4xl mb-8"><span class="text-blue-600"><%= @region %></span> Region</h1>
   <% elsif @studio %>
