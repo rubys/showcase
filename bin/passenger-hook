@@ -26,7 +26,7 @@ if processes == 0
       if File.mtime(DEMO) > File.mtime("#{DEMO}.time")
         FileUtils.touch "#{DEMO}.time"
       end
-    elsif File.mtime(DEMO) > File.mtime("#{DEMO}.seed")
+    elsif File.exist?("#{DEMO}.seed") && File.mtime(DEMO) > File.mtime("#{DEMO}.seed")
       FileUtils.touch "#{DEMO}.time"
     end
   end
@@ -39,7 +39,13 @@ if processes == 0
   # clean databases: vacuum db and truncate WAL
   Dir["/data/db/2*-wal"].select {|file| File.size(file) > 0}.each do |file|
     db = file.chomp '-wal'
-    system "sqlite3 #{db} 'VACUUM; PRAGMA wal_checkpoint(TRUNCATE);'"
+    system "sqlite3 #{db} 'PRAGMA wal_checkpoint(TRUNCATE); VACUUM;'"
+  end
+
+  # ensure wal and shm files are present
+  Dir["/data/db/2*.sqlite3"].each do |file|
+    next if File.exist?("#{file}-shm") && File.exist?("#{file}-wal")
+    system "sqlite3 #{file} 'PRAGMA journal_mode=WAL;'"
   end
 
   # get a list of ip addresses for running instances, with the primary region first
