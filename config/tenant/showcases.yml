@@ -16,6 +16,10 @@
     :name: Glenview
     :region: ord
     :logo: arthur-murray-logo.gif
+  livermore:
+    :name: Livermore
+    :region: sjc
+    :logo: arthur-murray-logo.gif
   raleigh:
     :name: Raleigh
     :region: iad
