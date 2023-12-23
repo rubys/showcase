@@ -8,6 +8,7 @@ class UsersController < ApplicationController
   before_action :get_authentication
   before_action :authenticate_index, except: %i[ password_reset password_verify ]
   before_action :set_user, only: %i[ show edit auth update destroy ]
+  before_action :admin_home
 
   # GET /users or /users.json
   def index

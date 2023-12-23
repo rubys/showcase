@@ -22,14 +22,13 @@ Rails.application.routes.draw do
       get "/studios/:studio", to: 'event#showcases', as: 'studio_events'
 
       get "logs", to: 'event#logs'
-
-      match "/upload" => "event#upload", via: [:get, :post]
     else
       root 'event#root'
     end
 
     if ENV.fetch("RAILS_APP_DB", '') == 'index' or Rails.env.test?
       get "/inventory", to: 'event#inventory'
+      match "/upload" => "event#upload", via: [:get, :post]
 
       get 'admin/', to: "admin#index"
       get 'admin/regions', to: 'admin#regions',  trailing_slash: true

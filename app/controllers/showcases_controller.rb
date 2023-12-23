@@ -3,6 +3,7 @@ class ShowcasesController < ApplicationController
   include DbQuery
 
   before_action :set_showcase, only: %i[ show edit update destroy ]
+  before_action :admin_home
 
   # GET /showcases or /showcases.json
   def index

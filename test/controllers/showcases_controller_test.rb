@@ -11,7 +11,7 @@ class ShowcasesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should get new" do
-    get new_showcase_url
+    get new_showcase_url(location: @showcase.location.id)
     assert_response :success
   end
 

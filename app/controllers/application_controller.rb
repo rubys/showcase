@@ -51,4 +51,8 @@ class ApplicationController < ActionController::Base
         end
       end
     end
+
+    def admin_home
+      @home_link = admin_path
+    end
 end

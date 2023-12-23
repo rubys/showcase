@@ -3,6 +3,7 @@ class LocationsController < ApplicationController
   include DbQuery
 
   before_action :set_location, only: %i[ show edit update destroy ]
+  before_action :admin_home
 
   # GET /locations or /locations.json
   def index
