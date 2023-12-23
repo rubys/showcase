@@ -8,6 +8,10 @@
     :name: Austin
     :region: atl
     :logo: arthur-murray-logo.gif
+  charlotte:
+    :name: Charlotte
+    :region: atl
+    :logo: arthur-murray-logo.gif
   dayton:
     :name: Dayton
     :region: ord
@@ -15,6 +19,14 @@
   glenview:
     :name: Glenview
     :region: ord
+    :logo: arthur-murray-logo.gif
+  harrisburg:
+    :name: Harrisburg
+    :region: iad
+    :logo: arthur-murray-logo.gif
+  kennesaw:
+    :name: Kennesaw
+    :region: atl
     :logo: arthur-murray-logo.gif
   livermore:
     :name: Livermore
@@ -31,6 +43,10 @@
   slc:
     :name: Salt Lake City
     :region: sjc
+    :logo: arthur-murray-logo.gif
+  vabeach:
+    :name: Virginia Beach
+    :region: iad
     :logo: arthur-murray-logo.gif
 2023:
   annapolis:
