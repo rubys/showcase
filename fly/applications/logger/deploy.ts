@@ -10,6 +10,8 @@ const env = { ...process.env }
 if (!fs.existsSync("/home/log")) {
   await exec("useradd log --create-home --shell /bin/bash")
     .catch(console.error)
+  await exec("passwd -d log")
+    .catch(console.error)
 }
 let { uid, gid } = fs.statSync(HOME) 
 
