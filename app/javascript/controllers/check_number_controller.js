@@ -17,7 +17,7 @@ export default class extends Controller {
         input.classList.add("entry-count");
         input.value = event.key;
         checkbox.replaceWith(input);
-        input.blur();
+        input.focus();
         event.preventDefault();
       });
     }
