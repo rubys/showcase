@@ -68,12 +68,12 @@
         <th>
         <th>
       </thead>
-      <tbody id="heat-<%= number %>">
+      <tbody id="heat-<%= number %>"<% if locked %> draggable="true" data-drag-id="-<%= number %>"<% end %>>
       <% if number and number != 0 %>
       <% if heats.all? {|heat| heat.number < 0} %>
       <tr class="line-through opacity-50">
       <% else %>
-      <tr>
+      <tr<% if locked %> class="hover:bg-yellow-200"<% end %>>
       <% end %>
         <td></td>
         <td colspan="9" class="text-xl pt-4">Heat <span class="heat-humber"><%= number %></span>: 

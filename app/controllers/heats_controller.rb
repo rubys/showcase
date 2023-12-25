@@ -214,10 +214,26 @@ class HeatsController < ApplicationController
   end
 
   def drop
-    source = Heat.find(params[:source])
-    target = Heat.find(params[:target])
+    if params[:source].start_with? '-'
+      params[:before] = params[:source][1..]
 
-    source.number = target.number
+      if params[:target].start_with? '-'
+        params[:after] = params[:target][1..]
+      else
+        params[:after] = Heat.find(params[:target]).number
+      end
+
+      return renumber
+    end
+
+    source = Heat.find(params[:source])
+
+    if params[:target].start_with? '-'
+      source.number = params[:target][1..].to_f
+    else
+      source.number = Heat.find(params[:target]).number
+    end
+
     source.save!
 
     respond_to do |format|

@@ -14,15 +14,18 @@ export default class extends Controller {
           event.dataTransfer.setData("application/drag-id", child.dataset.dragId);
           event.dataTransfer.effectAllowed = "move";
           child.style.opacity = 0.4;
+          event.stopPropagation();
         });
 
         child.addEventListener("dragend", _event => {
           child.style.opacity = 1;
           child.style.cursor = "default";
+          event.stopPropagation();
         });
 
         child.addEventListener("dragover", event => {
           event.dataTransfer.dropEffect = "move";
+          event.stopPropagation();
           event.preventDefault();
           return true;
         });
@@ -47,6 +50,7 @@ export default class extends Controller {
           }).then (response => response.text())
             .then(html => Turbo.renderStreamMessage(html));
 
+          event.stopPropagation();
           event.preventDefault();
         });
       }

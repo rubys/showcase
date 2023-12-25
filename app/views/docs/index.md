@@ -39,6 +39,7 @@ Think of the application like a calculator with buttons you may never use.  That
  * [Mobile](./tasks/Mobile) - public access to the heat list from phones and other devices
  * [Publishing](./tasks/Publishing) - generating printed materials
  * [Scheduling](./tasks/Scheduling) - generating heats per your settings and agenda
+ * [Reordering](./tasks/Reordering) - taking control of the ordering of heats
  * [Settings](./tasks/Settings) - customizing your event
  * [Scoring](./tasks/Scoring) - entering scores and determining winners
  * [Scratches and Walk-ons](./tasks/Scratches-and-Walk-ons) - handling last minute changes
