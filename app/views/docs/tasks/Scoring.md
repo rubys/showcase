@@ -1,6 +1,6 @@
 # Scoring
 
-On the settings page there are a number of settings for controlling scoring.  Closed scoring defaults to metalist (GH/G/S/B) unless open scoring is set to numeric.
+On the settings page there are a number of settings for controlling scoring.  Closed scoring defaults to medalist (GH/G/S/B) unless open scoring is set to numeric.
 
 Clicking on a judge name from the main page from your event will provide access to a number of buttons, the first two for entering scores, then some for generating reports, and finally buttons to edit the information for the judge or to return to the "Event Staff" studio.
 

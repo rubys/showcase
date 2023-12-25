@@ -1,7 +1,7 @@
 # Event Organizer
 
 At this point you have been assigned an id, set a password, and an event has been created for you.  If you don't already have one, request a
-[password](../ops/Passwords.md).
+[password](../ops/Passwords).
 
 There are three basic activities needed to get started:
 

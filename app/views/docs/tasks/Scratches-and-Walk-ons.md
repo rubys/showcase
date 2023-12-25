@@ -12,7 +12,7 @@ possible to schedule all of the heats in this way.
 
 You can also control where the entries are placed by hovering over an entry, click on Edit,
 changing the heat number and clicking on Update Heat.  Additional options can be found in
-[Reodering](./Reordering).
+[Reordering](./Reordering).
 
 Judges, Emcees, DJs and participants using the mobile application will see the live version of the schedule.  For example, if there is a scratch the Emcee will see "5 couples on the floor" if there previously were 6.
 

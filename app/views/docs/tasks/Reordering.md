@@ -25,13 +25,13 @@ A few things to note if you lock an individual agenda item and then click redo:
 The easiest way to reorder heats that are close together is with drag and drop.  Look for the word Heat at the beginning of a line.  Grab it, and drag it to where you want that heat to be.  Drop it, and the heats will be renumbered automatically.
 
 If the heats are further apart this may be inconvenient.  Another method that achieves the same result
-is to click on the heat number itself.  This will replace the heat number with an input field and you can change the number.  If there is an existing heat with that number, the heats will be renumbered as before.  You can also asign a new number (for example, by adding a decimal like "500.1") and that heat will be moved to be in between other heats.
+is to click on the heat number itself.  This will replace the heat number with an input field and you can change the number.  If there is an existing heat with that number, the heats will be renumbered as before.  You can also assign a new number (for example, by adding a decimal like "500.1") and that heat will be moved to be in between other heats.
 
 If there are gaps or decimals, a renumber button will appear at the top of the page.  You won't want to use this after you go to print, but it may be handy up until that point.
 
 ## Moving couples to another heat
 
-Once again, if the heats are close enough together, the easiest way to move a couple is via drag and drop.  Hover over some whitespace in the line containing the couple to be moved and the background for that line will turn yellow.  Drag and drop the couple to the desired heat.
+Once again, if the heats are close enough together, the easiest way to move a couple is via drag and drop.  Hover over some white space in the line containing the couple to be moved and the background for that line will turn yellow.  Drag and drop the couple to the desired heat.
 
 If the heats are further apart, when you hover over the line containing the couple you want to move an
 edit button will appear on the far left.  Click on it and you can change the heat number.  It is also

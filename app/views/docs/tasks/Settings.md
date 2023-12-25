@@ -8,18 +8,18 @@ The information you enter in this section is used largely for the printed materi
 
 ## Event Options
 
-* Ballrooms - smaller events will typically have one ballroom, but larger events may chose to split the floor with stantions into two ballrooms.  If you do decide to split the ballroom, you can put the amateur followers in one and the amateur leaders (including amateur couples) in the other.  Or you can chose to evenly split couples.  Note this choice is not all or nothing: you can chose to split the ballrooms for only certain [agenda](./Agenda) items.
+* Ballrooms - smaller events will typically have one ballroom, but larger events may chose to split the floor with stanchions into two ballrooms.  If you do decide to split the ballroom, you can put the amateur followers in one and the amateur leaders (including amateur couples) in the other.  Or you can chose to evenly split couples.  Note this choice is not all or nothing: you can chose to split the ballrooms for only certain [agenda](./Agenda) items.
 
 * Open Scoring - typically open scoring is 1/2/3/F, but you can elect to change this to match closed scoring (GH/G/S/B), a
-number, or feedback on areas that are particularly notable or need improvment (e.g. Dance Frame, Footwork, Timing).
+number, or feedback on areas that are particularly notable or need improvement (e.g. Dance Frame, Footwork, Timing).
 
 * Multi Scoring - similar options are available for mulit-heats (which go various names: all arounds, triple threats, threepeats...), except for feedback.
 
 * Intermix dances within category - this is best explained by example.  If set, smooth heats may be Waltz, Tango, Fox Trot, Waltz, Tango, Fox Trot, etc..  If unset, smooth may be Waltz, Walz, Waltz, Tango, Tango, Tango, etc..
 
-* Use back numbers? - Uncheck this if leaders won't be wearing back numbers.  Unchecking this will slightly streamline some entry foms and printed results.
+* Use back numbers? - Uncheck this if leaders won't be wearing back numbers.  Unchecking this will slightly streamline some entry forms and printed results.
 
-* Track student ages? - Uncheck this is ages aren't tracked.  Again, unchecking this will slightly streamline some entry foms and printed results.
+* Track student ages? - Uncheck this is ages aren't tracked.  Again, unchecking this will slightly streamline some entry forms and printed results.
 
 * Include open freestyles? - While most events will have open and closed freestyles, your event may only have one or neither.  Unchecking this will simplify data entry and can reduce the number of accidentally miscategorized entries.
 
@@ -31,7 +31,7 @@ number, or feedback on areas that are particularly notable or need improvment (e
 
 * Enable Judge comments - in addition to scoring, some judges will want to be able to enter short text comments
 
-* Assign judges couples to evaluate? - this is useful if you have several judges and a large number of couples on the floor at a time.  This doesn't limit judges to only evaluate those couples, instead it indictes which judges to focus on.
+* Assign judges couples to evaluate? - this is useful if you have several judges and a large number of couples on the floor at a time.  This doesn't limit judges to only evaluate those couples, instead it indicates which couples a judge should to focus on.
 
 ## Event Staff
 

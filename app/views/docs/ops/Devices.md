@@ -8,5 +8,5 @@ Microsoft Windows, and Apple MacOS.
 
 I've also tested it with the following browsers: Chrome, Edge, Firefox, Safari.
 Just make sure that your browser is up to date.  This normally isn't a problem
-unless you are using Safari on an older macbook where you haven't kept the
+unless you are using Safari on an older MacBook where you haven't kept the
 operating system up to date.

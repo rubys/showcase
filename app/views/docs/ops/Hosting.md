@@ -48,4 +48,4 @@ for security reasons I don't currently allow users to do the following:
   * Set/reset passwords
   * Change who can access individual events
 
-For these actions, contact me via email, text, or facebook.
+For these actions, contact me via email, text, or Facebook.
