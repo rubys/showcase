@@ -6,7 +6,12 @@
   <% if not ENV['FLY_REGION'] # and not Rails.env.development? %>
   <div class="border-double border-4 rounded-lg border-red-600 mx-4 my-8 pl-4 pr-4 py-4 text-left">
   <p>This server is intended for backup use only.  Unless there are problems, the link you should be using is:
-    <a class="underline" href="https://smooth.fly.dev/"%>https://smooth.fly.dev/</a>.
+    <%
+      path = request.original_fullpath
+      path = path[1..] if request.local?
+      link = URI::join('https://smooth.fly.dev/showcase/', path).to_s
+    %>
+    <a class="underline" href="<%= link %>"><%= link %></a>.
   </div>
   <% end %>
 
