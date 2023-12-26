@@ -25,8 +25,6 @@
 </span>
 
   <h1 class="font-bold text-center text-4xl">Showcase Administration</h1>
-  <p><%= regions_path.inspect %></p>
-  <p><%= request.local?.inspect %></p>
   <%
     path = regions_path
     path = path[1..] if request.local?
