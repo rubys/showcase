@@ -16,8 +16,8 @@ class AddStudioZero < ActiveRecord::Migration[7.0]
 
       organizer.reload
       organizer.destroy
-    else
-      studio = Studio.create! name: 'Event Staff', id: 0
+    elsif Studio.where(id: 0).first == nil
+      Studio.create! name: 'Event Staff', id: 0
     end
 
     Person.where(studio: nil).each do |person|

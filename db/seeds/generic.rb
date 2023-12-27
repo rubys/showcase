@@ -13,6 +13,9 @@ Event.create!(
   heat_range_age: config[:settings][:heat][:age],
 )
 
+Studio.delete_all
+Studio.create! name: 'Event Staff', id: 0
+
 Age.delete_all
 ages = config[:ages].map do |category, description|
   [category, Age.create!(category: category, description: description)]
