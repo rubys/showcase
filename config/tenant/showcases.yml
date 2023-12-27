@@ -32,6 +32,10 @@
     :name: Livermore
     :region: sjc
     :logo: arthur-murray-logo.gif
+  merrilville:
+    :name: Merrilville
+    :region: ord
+    :logo: arthur-murray-logo.gif
   raleigh:
     :name: Raleigh
     :region: iad
