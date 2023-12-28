@@ -11,24 +11,30 @@ if ENV['FLY_APP_NAME']
 
   # rsync htpasswd and index.sqlite3 to each instance
   addrs.each do |addr|
-    system *%W[
+    system *(%W[
       rsync
       -av
       --update
       /data/db/htpasswd
-      /data/db/index.sqlite3*
+    ] +
+      Dir['db/index.sqlite3*'] +
+    %W[
       rsync://[#{addr}]/data/db
-    ]
+    ])
   end
 else
-  system *%W[
+  system "sqlite3 db/index.sqlite3 'PRAGMA journal_mode=WAL;'"
+
+  system *(%W[
     rsync
-    -av
+    -avv
     --update
     db/htpasswd
-    db/index.sqlite3*
+  ] +
+    Dir['db/index.sqlite3*'] +
+  %W[
     smooth:///data/db
-  ]
+  ])
 
   system "ssh smooth /rails/bin/user-update"
 end
