@@ -265,7 +265,7 @@ class UsersController < ApplicationController
       end
 
       if Rails.env.production?
-        spawn 'bundle', 'exec', Rails.root.join('bin/user-update').to_s
+        spawn RbConfig.ruby, Rails.root.join('bin/user-update').to_s
       end
     end
 
