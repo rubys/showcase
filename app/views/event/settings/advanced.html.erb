@@ -28,7 +28,7 @@ and heats that you have entered so far.</span>
 <%= form_with model: @event do |form| %>
   <div class="my-5">
     <%= form.label :solo_level_id, "Solo levels start with:" %>
-    <%= form.select :solo_level_id, @levels, {include_blank: true},
+    <%= form.select :solo_level_id, @solo_levels, {include_blank: true},
        class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 

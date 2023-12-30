@@ -57,6 +57,7 @@ class EventController < ApplicationController
     
     @ages = Age.all.size
     @levels = Level.all.order(:id).map {|level| [level.name, level.id]}
+    @solo_levels = @levels[1..]
 
     @packages = Billable.where.not(type: 'Order').order(:order).group_by(&:type)
     @options = Billable.where(type: 'Option').order(:order)
