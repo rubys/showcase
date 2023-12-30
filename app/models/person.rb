@@ -8,6 +8,8 @@ class Person < ApplicationRecord
 
   validates :name, format: { without: /&/, message: 'only one name per person' }
   validates :name, format: { without: / and /, message: 'only one name per person' }
+
+  validates :level, presence: true, if: -> {type == 'Student'}
   
   belongs_to :studio, optional: false
   belongs_to :level, optional: true
