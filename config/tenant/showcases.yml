@@ -12,6 +12,10 @@
     :name: Charlotte
     :region: atl
     :logo: arthur-murray-logo.gif
+  chicago:
+    :name: Chicago
+    :region: ord
+    :logo: arthur-murray-logo.gif
   dayton:
     :name: Dayton
     :region: ord
@@ -39,6 +43,10 @@
   roanoke:
     :name: Roanoke
     :region: iad
+    :logo: arthur-murray-logo.gif
+  schaumburg:
+    :name: Schaumburg
+    :region: ord
     :logo: arthur-murray-logo.gif
   slc:
     :name: Salt Lake City
