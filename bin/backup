@@ -3,21 +3,16 @@ require 'fileutils'
 require 'date'
 
 db_dir = File.expand_path('../db', __dir__)
-tmp_dir = File.expand_path('../tmp/dump', __dir__)
 backup_dir = File.join(db_dir, 'backup')
 date = Date.today.to_s
 last_dir = Dir[File.join(backup_dir,'2*')].sort.last
 dest_dir = File.join(backup_dir, date)
-FileUtils.mkdir_p tmp_dir
 FileUtils.mkdir_p dest_dir
 
 Dir["#{db_dir}/2*.sqlite3"].each do |db|
   basename = File.basename(db)
 
-  # dump without modifying wal/shm files
-  FileUtils.copy Dir["#{db}*"], tmp_dir
-  system "/usr/bin/sqlite3 #{tmp_dir}/#{basename} .dump | gzip > #{dest_dir}/#{basename}.gz"
-  FileUtils.remove Dir["#{tmp_dir}/#{basename}*"]
+  system "/usr/bin/sqlite3 #{db} .dump | gzip > #{dest_dir}/#{basename}.gz"
 
   if File.exist? File.join(last_dir, basename+'.gz')
     old_contents = IO.read File.join(last_dir, basename+'.gz')

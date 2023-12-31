@@ -31,22 +31,16 @@ if processes == 0
     end
   end
 
-  # Don't rsync if no sqlite3 files changed
-  latest = Dir["/data/db/2*.sqlite3"].map {|name| File.mtime(name)}.max
-  exit 0 if File.exist?(MARKTIME) && File.mtime(MARKTIME) >= latest
+  # Vacuum changed files; Don't rsync if no sqlite3 files changed
+  updated = false
+  marktime = File.exist?(MARKTIME) ? File.mtime(MARKTIME) : 0
+  Dir["/data/db/2*.sqlite3"].each do |name|
+    next if File.mtime(name) < marktime
+    system "sqlite3 #{db} 'VACUUM;'"
+    updated = true
+  end
+  exit 0 unless updated
   FileUtils.touch MARKTIME
-
-  # clean databases: vacuum db and truncate WAL
-  Dir["/data/db/2*-wal"].select {|file| File.size(file) > 0}.each do |file|
-    db = file.chomp '-wal'
-    system "sqlite3 #{db} 'PRAGMA wal_checkpoint(TRUNCATE); VACUUM;'"
-  end
-
-  # ensure wal and shm files are present
-  Dir["/data/db/2*.sqlite3"].each do |file|
-    next if File.exist?("#{file}-shm") && File.exist?("#{file}-wal")
-    system "sqlite3 #{file} 'PRAGMA journal_mode=WAL;'"
-  end
 
   # get a list of ip addresses for running instances, with the primary region first
   addrs = [

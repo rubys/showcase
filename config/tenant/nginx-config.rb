@@ -221,7 +221,7 @@ passenger_default_group root;
 
 passenger_log_file /dev/stdout;
 
-passenger_pool_idle_time 600;
+passenger_pool_idle_time 300;
 passenger_ctl hook_detached_process /rails/bin/passenger-hook;
 
 <% end -%>

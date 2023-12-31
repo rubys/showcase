@@ -23,12 +23,6 @@ if ENV['FLY_APP_NAME']
     ])
   end
 else
-  if File.exist?('db/index.sqlite3.wal') && File.size('db/index.sqlite3.wal') > 0
-    system "sqlite3 db/index.sqlite3 'PRAGMA wal_checkpoint(TRUNCATE); VACUUM;'"
-  end
-
-  system "sqlite3 db/index.sqlite3 'PRAGMA journal_mode=WAL;'"
-
   system *(%W[
     rsync
     -avv
