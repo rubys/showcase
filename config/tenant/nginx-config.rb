@@ -190,13 +190,12 @@ end
     ENV['DATABASE_URL'] = "sqlite3://#{database}"
     system 'bin/rails db:prepare'
 
+    # not sure why this is needed...
     count = `sqlite3 #{database} "select count(*) from events"`.to_i
-    if count == 0
-      system 'bin/rails db:seed'
+    system 'bin/rails db:seed' if count == 0
 
-      if tenant.owner == "Demo"
-        FileUtils.cp database, "#{database}.seed", preserve: true
-      end
+    if tenant.owner == "Demo"
+      FileUtils.cp database, "#{database}.seed", preserve: true
     end
   end
 
