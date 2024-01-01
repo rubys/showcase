@@ -11,12 +11,25 @@
   </head>
 
   <body class="docs">
-    <%= link_to root_path.chomp('/') + '/' do %>
+    <%
+      if ENV.fetch("RAILS_APP_DB", '') == 'index' && ENV['FLY_REGION']
+        link = regions_path
+      else
+        link = root_path.chomp('/') + '/'
+      end
+    %>
+    <%= link_to link do %>
       <%= image_tag showcase_logo, class: "absolute right-4 top-4 w-28 -z-20" %>
     <% end %>
     
     <main>
       <%= yield %>
     </main>
+
+    <% if params[:page] != 'index' %>
+    <div class="flex justify-center">
+      <%= button_to "Back to Guide", docs_path, method: 'get', class: "btn-green" %>
+    </div>
+    <% end%>
   </body>
 </html>
