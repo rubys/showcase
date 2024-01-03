@@ -168,7 +168,7 @@ class UsersController < ApplicationController
 
       mail.deliver!
 
-      redirect_to root_path, notice: "Password reset email sent."
+      redirect_to users_url, notice: "Password reset email sent to #{user.name1.inspect} <#{user.email}>"
     end
   end
 
