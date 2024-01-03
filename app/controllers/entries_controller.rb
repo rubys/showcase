@@ -248,6 +248,7 @@ class EntriesController < ApplicationController
     end
 
     def update_heats(entry, new: false)
+      return unless entry[:entries]
       tally_entry
 
       @total = 0

@@ -48,7 +48,7 @@
 <h2 class="font-bold text-2xl my-4">Students, by level</h2>
 
 <ul class="list-disc list-inside">
-  <% @people['Student'].group_by {|person| person.level}.sort.each do |level, people| %>
+  <% @people['Student'].group_by {|person| person.level || Level.first}.sort.each do |level, people| %>
     <li><%= link_to level.name, people_path(level: level.id) %>: <%= people.length %></li>
   <% end %>
 </ul>

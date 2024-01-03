@@ -290,20 +290,24 @@ class CategoriesController < ApplicationController
             dance.pro_ßmulti_category = nil
           end
 
-          if dance.open_category == @category
-            if include['Open'][dance.name].to_i == 0
-              dance.open_category = nil
+          if include['Open']
+            if dance.open_category == @category
+              if include['Open'][dance.name].to_i == 0
+                dance.open_category = nil
+              end
+            elsif include['Open'][dance.name].to_i == 1
+              dance.open_category = @category
             end
-          elsif include['Open'][dance.name].to_i == 1
-            dance.open_category = @category
           end
 
-          if dance.closed_category == @category
-            if include['Closed'][dance.name].to_i == 0
-              dance.closed_category = nil
+          if include['Closed']
+            if dance.closed_category == @category
+              if include['Closed'][dance.name].to_i == 0
+                dance.closed_category = nil
+              end
+            elsif include['Closed'][dance.name].to_i == 1
+              dance.closed_category = @category
             end
-          elsif include['Closed'][dance.name].to_i == 1
-            dance.closed_category = @category
           end
 
           if dance.solo_category == @category
