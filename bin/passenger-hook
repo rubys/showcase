@@ -36,7 +36,7 @@ if processes == 0
   marktime = File.exist?(MARKTIME) ? File.mtime(MARKTIME) : 0
   Dir["/data/db/2*.sqlite3"].each do |name|
     next if File.mtime(name) < marktime
-    system "sqlite3 #{db} 'VACUUM;'"
+    system "sqlite3 #{name} 'VACUUM;'"
     updated = true
   end
   exit 0 unless updated
