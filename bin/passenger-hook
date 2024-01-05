@@ -58,6 +58,7 @@ if processes == 0
       rsync
       -av
       --update
+      --exclude db/.time
       /data/db
       /data/storage
       rsync://[#{addr}]/data/
