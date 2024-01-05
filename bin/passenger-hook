@@ -31,12 +31,13 @@ if processes == 0
     end
   end
 
-  # Vacuum changed files; Don't rsync if no sqlite3 files changed
+  # Don't rsync if no local sqlite3 files changed
   updated = false
   marktime = File.exist?(MARKTIME) ? File.mtime(MARKTIME) : 0
+  conf = IO.read("/etc/nginx/sites-enabled/showcase.conf")
   Dir["/data/db/2*.sqlite3"].each do |name|
+    next unless conf.include? name
     next if File.mtime(name) < marktime
-    system "sqlite3 #{name} 'VACUUM;'"
     updated = true
   end
   exit 0 unless updated
