@@ -4,6 +4,8 @@ require 'socket'
 require 'fileutils'
 require 'uri'
 require 'net/http'
+require 'open3'
+require 'sentry-ruby'
 
 MARKTIME = "/data/db/.time"
 DEMO = '/demo/db/demo.sqlite3'
@@ -12,6 +14,12 @@ if Process.uid == 0
   status = `passenger-status`
 else
   status = `sudo /usr/sbin/passenger-status`
+end
+
+if ENV["SENTRY_DSN"]
+  Sentry.init do |config|
+    config.dsn = ENV["SENTRY_DSN"]
+  end
 end
 
 # get a list of processe, excluding cable processes
@@ -55,7 +63,7 @@ if processes == 0
 
   # rsync db and storage directories to each instance
   addrs.each do |addr|
-    system *%W[
+    cmd = %W[
       rsync
       -av
       --update
@@ -64,6 +72,11 @@ if processes == 0
       /data/storage
       rsync://[#{addr}]/data/
     ]
+
+    puts cmd.join(' ')
+    output, status = Open3.capture2e *cmd
+    puts output
+    Sentry.capture_message(output) unless status.success?
   end
 
   # run webhook
@@ -74,5 +87,6 @@ if processes == 0
   else
     STDERR.puts res
     STDERR.puts res.body 
+    Sentry.capture_message(res.body)
   end
 end
