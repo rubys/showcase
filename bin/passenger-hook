@@ -1,5 +1,8 @@
 #!/usr/bin/env ruby
 
+# Ugly hack to get system gems
+$:.unshift *Dir['/usr/local/bundle/gems/*/lib']
+
 require 'socket'
 require 'fileutils'
 require 'uri'
@@ -22,71 +25,77 @@ if ENV["SENTRY_DSN"]
   end
 end
 
-# get a list of processe, excluding cable processes
-processes = status[/^Processes\s*:\s*(\d*)/, 1].to_i
-cable = status[/^showcase-cable.*?\n\n/m]
-processes -= 1 if cable and cable =~ /Sessions:\s*[1-9]/
+begin
 
-if processes == 0
-  # keep track of when demo was last updated
-  if File.exist? DEMO
-    if File.exist? "#{DEMO}.time"
-      if File.mtime(DEMO) > File.mtime("#{DEMO}.time")
+  # get a list of processe, excluding cable processes
+  processes = status[/^Processes\s*:\s*(\d*)/, 1].to_i
+  cable = status[/^showcase-cable.*?\n\n/m]
+  processes -= 1 if cable and cable =~ /Sessions:\s*[1-9]/
+
+  if processes == 0
+    # keep track of when demo was last updated
+    if File.exist? DEMO
+      if File.exist? "#{DEMO}.time"
+        if File.mtime(DEMO) > File.mtime("#{DEMO}.time")
+          FileUtils.touch "#{DEMO}.time"
+        end
+      elsif File.exist?("#{DEMO}.seed") && File.mtime(DEMO) > File.mtime("#{DEMO}.seed")
         FileUtils.touch "#{DEMO}.time"
       end
-    elsif File.exist?("#{DEMO}.seed") && File.mtime(DEMO) > File.mtime("#{DEMO}.seed")
-      FileUtils.touch "#{DEMO}.time"
+    end
+
+    # Don't rsync if no local sqlite3 files changed
+    updated = false
+    marktime = File.exist?(MARKTIME) ? File.mtime(MARKTIME) : 0
+    conf = IO.read("/etc/nginx/sites-enabled/showcase.conf")
+    Dir["/data/db/2*.sqlite3"].each do |name|
+      next unless conf.include? name
+      next if File.mtime(name) < marktime
+      updated = true
+    end
+    exit 0 unless updated
+    FileUtils.touch MARKTIME
+
+    # get a list of ip addresses for running instances, with the primary region first
+    addrs = [
+      *`dig +short -t aaaa #{ENV['PRIMARY_REGION']}.#{ENV['FLY_APP_NAME']}.internal`.split,
+      *`dig +short -t aaaa global.#{ENV['FLY_APP_NAME']}.internal`.split,
+    ].uniq
+
+    # remove current region from the list
+    addrs -=
+      `dig +short -t aaaa #{ENV['FLY_REGION']}.#{ENV['FLY_APP_NAME']}.internal`.split
+
+    # rsync db and storage directories to each instance
+    addrs.each do |addr|
+      cmd = %W[
+        rsync
+        -av
+        --update
+        --exclude db/.time
+        /data/db
+        /data/storage
+        rsync://[#{addr}]/data/
+      ]
+
+      puts cmd.join(' ')
+      output, status = Open3.capture2e *cmd
+      puts output
+      Sentry.capture_message(output) unless status.success?
+    end
+
+    # run webhook
+    uri = URI('https://rubix.intertwingly.net/webhook/showcase')
+    res = Net::HTTP.get_response(uri)
+    if res.is_a?(Net::HTTPSuccess)
+      puts res.body 
+    else
+      STDERR.puts res
+      STDERR.puts res.body 
+      Sentry.capture_message(res.body)
     end
   end
 
-  # Don't rsync if no local sqlite3 files changed
-  updated = false
-  marktime = File.exist?(MARKTIME) ? File.mtime(MARKTIME) : 0
-  conf = IO.read("/etc/nginx/sites-enabled/showcase.conf")
-  Dir["/data/db/2*.sqlite3"].each do |name|
-    next unless conf.include? name
-    next if File.mtime(name) < marktime
-    updated = true
-  end
-  exit 0 unless updated
-  FileUtils.touch MARKTIME
-
-  # get a list of ip addresses for running instances, with the primary region first
-  addrs = [
-    *`dig +short -t aaaa #{ENV['PRIMARY_REGION']}.#{ENV['FLY_APP_NAME']}.internal`.split,
-    *`dig +short -t aaaa global.#{ENV['FLY_APP_NAME']}.internal`.split,
-  ].uniq
-
-  # remove current region from the list
-  addrs -=
-    `dig +short -t aaaa #{ENV['FLY_REGION']}.#{ENV['FLY_APP_NAME']}.internal`.split
-
-  # rsync db and storage directories to each instance
-  addrs.each do |addr|
-    cmd = %W[
-      rsync
-      -av
-      --update
-      --exclude db/.time
-      /data/db
-      /data/storage
-      rsync://[#{addr}]/data/
-    ]
-
-    puts cmd.join(' ')
-    output, status = Open3.capture2e *cmd
-    puts output
-    Sentry.capture_message(output) unless status.success?
-  end
-
-  # run webhook
-  uri = URI('https://rubix.intertwingly.net/webhook/showcase')
-  res = Net::HTTP.get_response(uri)
-  if res.is_a?(Net::HTTPSuccess)
-    puts res.body 
-  else
-    STDERR.puts res
-    STDERR.puts res.body 
-    Sentry.capture_message(res.body)
-  end
+rescue => exception
+  Sentry.capture_exception(exception)
 end

@@ -15,7 +15,7 @@ ENV RAILS_ENV="production" \
 
 # Update gems and bundler
 RUN gem update --system --no-document && \
-    gem install -N bundler
+    gem install -N bundler sentry-ruby
 
 # Install packages needed to install passenger
 RUN apt-get update -qq && \

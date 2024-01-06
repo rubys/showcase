@@ -129,6 +129,7 @@ if ENV['FLY_APP_NAME']
         rsync
         -av
         --update
+        --exclude .time
         #{VOLUME}/db/
         #{dest}#{VOLUME}/db/
       )
