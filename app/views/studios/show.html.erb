@@ -6,7 +6,11 @@
 
     <%= render @studio %>
 
+  <% if @studio.id == 0 %>
+  <div class="mt-8 grid grid-cols-3 gap-1">
+  <% else %>
   <div class="mt-8 grid grid-cols-4 gap-1">
+  <% end %>
     <%= up_link 'Add Person', new_person_path(studio: @studio), class: "btn-blue" %>
     <% if @studio.id != 0 %>
     <%= link_to 'Solos', solos_studio_path(@studio), class: "btn-blue" %>
