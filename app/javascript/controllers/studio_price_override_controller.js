@@ -4,6 +4,7 @@ import { Controller } from "@hotwired/stimulus";
 export default class extends Controller {
   connect() {
     this.checkbox = this.element.querySelector("input[type=checkbox]");
+    if (!this.checkbox) return;
     this.checkbox.addEventListener("change", this.hideShow);
     this.hideShow();
   }
