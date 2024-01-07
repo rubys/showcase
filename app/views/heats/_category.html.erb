@@ -12,6 +12,13 @@
     <div>
     <h2 class="row">These dances are not on the <%= link_to "agenda", categories_path, class: "underline" %>.</h2>
     <% end %>
+    <% if !locked and cat == "Unscheduled" and Category.any? and !Heat.where.not(number: ..0).any? %>
+    </div>
+    <div>
+    <p class="mx-8 mt-4 px-8">
+    Click the <span class="x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium">Redo</span> button above to add these heats to the agenda.
+    </p>
+    <% end %>
     <% else %>
     <h1 class="font-bold text-4xl">
       <%= cat %>
@@ -25,6 +32,8 @@
         form_class: "group-hover:inline hidden" %>
       <% end %>
     </h1>
+
+
     <% end %>
   </div>
 
@@ -173,7 +182,7 @@
     </table>
     <% end %>
 
-    <% if locked and cat == "Unscheduled" %>
+    <% if locked and cat == "Unscheduled" and Heat.where.not(number: ..0).any? %>
     <%= up_link 'Schedule', schedule_heats_path, class: "mx-8 btn-blue", method: :post %>
     <p class="mx-8 px-8">
     This button will attempt to add the unscheduled <%= pluralize(heats.length, 'heat') %> to existing heats without changing anything else.
