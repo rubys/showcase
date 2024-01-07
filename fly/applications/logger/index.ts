@@ -16,6 +16,7 @@ const app = express();
 const appName = process.env.FLY_APP_NAME
 
 const FLY_REGION = process.env.FLY_REGION
+const SEENFILE = Bun.file('/logs/.seen')
 
 let lastRegionCheck = 0
 let lastRegions: string[] = []
@@ -42,7 +43,48 @@ async function getRegions(): Promise<string[]> {
   return lastRegions
 }
 
+async function getLatest() {
+  const { SENTRY_TOKEN, SENTRY_ORG, SENTRY_PROJECT } = process.env
+  const url = `https://sentry.io/api/0/projects/${SENTRY_ORG}/${SENTRY_PROJECT}/issues/`
+
+  const api_response = await fetch(url, {
+    headers: { Authorization: `Bearer ${SENTRY_TOKEN}` }
+  })
+
+  const issues = await api_response.json() as {lastSeen: string}[]
+
+  let lastSeen = "0";
+  for (const issue of issues) {
+    if (issue.lastSeen > lastSeen) lastSeen = issue.lastSeen;
+  }
+
+  return lastSeen
+}
+
 startWs(app)
+
+app.get("/sentry/link", (_, response) => {
+  const { SENTRY_ORG, SENTRY_PROJECT } = process.env
+  const link = `https://${SENTRY_ORG}.sentry.io/issues/?project=${SENTRY_PROJECT}`
+  response.redirect(302, link)
+
+  getLatest().then(latest => {
+     Bun.write(SEENFILE, latest)
+     setTimeout(() => fetchOthers("/sentry/link").catch(console.error), 1000)
+  })
+})
+
+app.get("/sentry/seen", async (_, response) => {
+  const lastSeen = await getLatest()
+  const seen = (await SEENFILE.exists()) ? (await SEENFILE.text()) : "0"
+  console.log(JSON.stringify([lastSeen, seen]))
+
+  if (seen === lastSeen) {
+    response.send("")
+  } else {
+    response.send("/sentry/link")
+  }
+})
 
 app.get("/regions/:region/(*)", async (request, response, next) => {
   let { region } = request.params;
@@ -67,7 +109,7 @@ let timeout = 0;
 app.get("/", async (req, res) => {
   if (req.headers['x-forwarded-port']) {
     if (timeout !== 0) clearTimeout(timeout)
-    timeout = +setTimeout(() => fetchOthers().catch(console.error), 1000)
+    timeout = +setTimeout(() => fetchOthers("/").catch(console.error), 1000)
   }
 
   let filter = (req.query.filter !== 'off');
@@ -153,6 +195,7 @@ app.get("/", async (req, res) => {
     <!DOCTYPE html>
     <style>
       a {color: black; text-decoration: none}
+      .sentry {margin: 0 10px; padding: 4px; border: solid red 2px; border-radius: 10px}
     </style>
     ${results.reverse().join("\n")}
     <script src="/static/client.js"></script>
@@ -160,7 +203,7 @@ app.get("/", async (req, res) => {
 })
 
 // update lastVisit on all machines
-async function fetchOthers() {
+async function fetchOthers(path: string) {
   let dig = `dig +short -t txt vms.${appName}.internal`
 
   return new Promise((resolve, reject) => {
@@ -174,7 +217,7 @@ async function fetchOthers() {
         for await (let machine of machines) {
           if (machine === process.env.FLY_MACHINE_ID) continue
 
-          await fetch(`http://${machine}.vm.${appName}.internal:3000/`)
+          await fetch(`http://${machine}.vm.${appName}.internal:3000${path}`)
             .catch(console.error)
         }
 

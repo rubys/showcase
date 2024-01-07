@@ -3,9 +3,9 @@ function fixTime(time) {
   let match = text.match(/^(\d+)\/(\w+)\/(\d+):\d+:\d+:\d+Z/)
   if (!match) return
   let date = new Date([match[2], match[1], match[3]].join(' '))
-  date = new Date(date.toISOString().slice(0,11) + text.slice(12,21))
+  date = new Date(date.toISOString().slice(0, 11) + text.slice(12, 21))
   time.setAttribute('datetime', date.toISOString())
-  time.setAttribute('title', text.slice(0,21))
+  time.setAttribute('title', text.slice(0, 21))
   time.textContent = date.toLocaleString().replace(',', '')
 }
 
@@ -17,7 +17,7 @@ let filter = document.querySelector('input[name=filter]')
 filter.addEventListener("click", () => {
   let url = new URL(window.location)
   let search = url.searchParams
-  search.set('filter',  filter.checked ? "on" : "off")
+  search.set('filter', filter.checked ? "on" : "off")
   url.search = search.toString()
   location = url
 })
@@ -77,10 +77,24 @@ function openws() {
       for (let element of [...span.children].reverse()) {
         pre.prepend(element)
       }
-   } catch (e) {
-     console.log(e)
-   }
+    } catch (e) {
+      console.log(e)
+    }
   }
 }
 
 openws()
+
+fetch(new URL("/sentry/seen", window.location).href)
+  .then(response => response.text())
+  .then(text => {
+    if (!text) return
+
+    const a = document.createElement('a')
+    a.className = "sentry"
+    a.href = text
+    a.textContent = "Issue"
+
+    const h2 = document.querySelector('h2')
+    h2.appendChild(a)
+  })
