@@ -77,7 +77,7 @@ app.get("/sentry/link", (_, response) => {
 app.get("/sentry/seen", async (_, response) => {
   const lastSeen = await getLatest()
   const seen = (await SEENFILE.exists()) ? (await SEENFILE.text()) : "0"
-  console.log(JSON.stringify([lastSeen, seen]))
+  response.set('Access-Control-Allow-Origin', '*')
 
   if (seen === lastSeen) {
     response.send("")
