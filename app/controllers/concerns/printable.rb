@@ -185,7 +185,11 @@ module Printable
 
       @cost.merge! overrides
 
-      preload = {heats: {dance: [:open_category, :closed_category, :solo_category]}}
+      preload = {
+        lead: [:package, {options: :option}],
+        follow: [:package, {options: :option}],
+        heats: {dance: [:open_category, :closed_category, :solo_category]}
+      }
       entries = (Entry.joins(:follow).preload(preload).where(people: {type: 'Student', studio: studio}) +
         Entry.joins(:lead).preload(preload).where(people: {type: 'Student', studio: studio})).uniq
 
