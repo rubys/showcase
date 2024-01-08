@@ -27,6 +27,25 @@
     :name: Chicago
     :region: ord
     :logo: arthur-murray-logo.gif
+  clearwater:
+    :name: Clearwater
+    :region: mia
+    :logo: arthur-murray-logo.gif
+    :events:
+      texas-opener:
+        :name: Texas Opener
+      birthday-bash:
+        :name: Birthday Bash
+      glass-slipper:
+        :name: Glass Slipper Gala
+      northstar-opener:
+        :name: Northstar Opener
+      flamingo-opener:
+        :name: Flamingo Opener
+      fright-fest:
+        :name: Fright Fest
+      snowball:
+        :name: Snowball
   dayton:
     :name: Dayton
     :region: ord
