@@ -185,8 +185,9 @@ module Printable
 
       @cost.merge! overrides
 
-      entries = (Entry.joins(:follow).where(people: {type: 'Student', studio: studio}) +
-        Entry.joins(:lead).where(people: {type: 'Student', studio: studio})).uniq
+      preload = {heats: {dance: [:open_category, :closed_category, :solo_category]}}
+      entries = (Entry.joins(:follow).preload(preload).where(people: {type: 'Student', studio: studio}) +
+        Entry.joins(:lead).preload(preload).where(people: {type: 'Student', studio: studio})).uniq
 
       @dances = studio.people.order(:name).map do |person|
         purchases = (@registration || person.package&.price || 0) + person.options.map(&:option).map(&:price).sum
