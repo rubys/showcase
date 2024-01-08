@@ -368,6 +368,12 @@ class PeopleController < ApplicationController
 
   # GET /people/1/edit
   def edit
+    if @person.studio_id == 0
+      @types = %w[Judge DJ Emcee Official Organizer Guest]
+    elsif @person.studio_id
+      @types = %w[Student Professional Guest]
+    end
+
     selections
 
     @entries = @person.lead_entries.count + @person.follow_entries.count
