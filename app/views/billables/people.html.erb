@@ -12,7 +12,8 @@
   <% else %>
   <tr>
   <% end %>
-    <td><%= form.check_box "person[#{person.id}]", class: "entry-count h-10", checked: @billable.people.include?(person) %>
+    <td><%= form.check_box "person[#{person.id}]", class: "entry-count h-10",
+      checked: @billable.people.include?(person) %>
     <td class="px-4"><%= person.name %>
     <td><%= person.studio.name %>
   </tr>

@@ -13,4 +13,12 @@ class Billable < ApplicationRecord
   has_many :default_guest_package_for, dependent: :nullify, class_name: 'Studio', foreign_key: :default_guest_package_id
   has_many :people_package, class_name: 'Person', dependent: :nullify, foreign_key: :package_id
   has_many :people_options, class_name: 'PersonOption', dependent: :destroy, foreign_key: :option_id
+
+  def people
+    if type == 'Option'
+      people_options
+    else
+      people_package
+    end
+  end
 end
