@@ -5,6 +5,7 @@
   <% end %>
 </div>
 
+<% if @event.print_studio_heats %>
 <% if @studio %>
   <%= render "people/heats", person: nil %>
 <% elsif @people.length != 1
@@ -13,4 +14,5 @@
     @studio = studio %>
     <%= render "people/heats", person: nil %>
   <% end %>
+<% end %>
 <% end %>

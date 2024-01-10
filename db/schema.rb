@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_12_27_064854) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_09_224242) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -63,6 +63,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_27_064854) do
     t.integer "order"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "couples", default: false
   end
 
   create_table "cat_extensions", force: :cascade do |t|
@@ -175,6 +176,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_27_064854) do
     t.boolean "include_open", default: true
     t.boolean "include_closed", default: true
     t.integer "solo_level_id"
+    t.boolean "print_studio_heats", default: false
     t.index ["solo_level_id"], name: "index_events_on_solo_level_id"
   end
 

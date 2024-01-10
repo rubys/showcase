@@ -147,7 +147,17 @@ module Printable
     end
   end
 
+  def find_couples
+    people = Person.joins(:package).where(package: {couples: true})
+    couples = Entry.where(lead: people, follow: people).pluck(:lead_id, :follow_id).to_h
+    @paired = (couples.keys + couples.values).group_by(&:itself).
+      select {|id, list| list.length == 1}.keys
+    @couples = couples.select {|lead, follow| @paired.include?(lead) && @paired.include?(follow)}
+  end
+
   def generate_invoice(studios = nil, student=false)
+    find_couples
+
     studios ||= Studio.all(order: name)
 
     @event = Event.last
@@ -194,7 +204,9 @@ module Printable
         Entry.joins(:lead).preload(preload).where(people: {type: 'Student', studio: studio})).uniq
 
       @dances = studio.people.order(:name).map do |person|
-        purchases = (@registration || person.package&.price || 0) + person.options.map(&:option).map(&:price).sum
+        package = (@registration || person.package&.price || 0)
+        package/=2 if @paired.include? person.id
+        purchases = package + person.options.map(&:option).map(&:price).sum
         [person, {dances: 0, cost: 0, purchases: purchases}]
       end.to_h
 

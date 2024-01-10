@@ -34,6 +34,13 @@
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <% if @type == 'package' %>
+  <div class="my-5">
+    <%= form.check_box :couples, class: 'entry-count h-10' %>
+    <%= form.label :couples, 'Couples package?' %>
+  </div>
+  <% end %>
+
   <% if @type == 'package' and not @options.empty? %>
   <h2 class="font-bold text-2xl mt-4">Options included in package:</h1>
   <ul class="mb-8">

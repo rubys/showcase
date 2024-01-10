@@ -132,7 +132,7 @@ class EventController < ApplicationController
       :intermix, :ballrooms, :column_order, :backnums, :track_ages, :heat_length, :solo_length, :open_scoring, :multi_scoring,
       :heat_cost, :solo_cost, :multi_cost, :max_heat_size, :package_required, :student_package_description, :payment_due,
       :counter_art, :judge_comments, :agenda_based_entries, :pro_heats, :assign_judges, :font_size, :include_times,
-      :include_open, :include_closed, :solo_level_id)
+      :include_open, :include_closed, :solo_level_id, :print_studio_heats)
 
     if @event.open_scoring != old_open_scoring and @event.open_scoring != '#' and @event.open_scoring != '#'
       map = {
