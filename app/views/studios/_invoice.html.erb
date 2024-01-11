@@ -200,6 +200,6 @@
   <% else %>
 
   <% invoice[:entries].each do |names, entries| %>
-    <%= render "entry", names: names, entries: entries, studio: studio.name, invoice: :studio, partner: partner %>
+    <%= render "entry", names: names, entries: entries, studio: studio.name, invoice: :studio, partner: nil %>
   <% end %>
   <% end %>
