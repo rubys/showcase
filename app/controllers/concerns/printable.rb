@@ -149,10 +149,10 @@ module Printable
 
   def find_couples
     people = Person.joins(:package).where(package: {couples: true})
-    couples = Entry.where(lead: people, follow: people).pluck(:lead_id, :follow_id).to_h
+    couples = Entry.where(lead: people, follow: people).pluck(:follow_id, :lead_id).to_h
     @paired = (couples.keys + couples.values).group_by(&:itself).
       select {|id, list| list.length == 1}.keys
-    @couples = couples.select {|lead, follow| @paired.include?(lead) && @paired.include?(follow)}
+    @couples = couples.select {|follow, lead| @paired.include?(lead) && @paired.include?(follow)}
   end
 
   def generate_invoice(studios = nil, student=false)

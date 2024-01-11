@@ -84,11 +84,31 @@
 
   <% if @student %>
   <% studio.people.order(:name).each do |person| %>
-  <% next if @student and person.type != 'Student' %>
-  <% dances = invoice[:dances][person] %>
+  <% next if person.type != 'Student' or @couples.values.include? person.id %>
+
+  <%
+    dances = invoice[:dances][person]
+    registration = (@registration || person.package.price) / (person.package&.couples ? 2 : 1)
+    partner = nil
+
+    if @paired.include? person.id
+      partner = Person.find(@couples[person.id])
+
+      registration += (@registration || partner.package.price) / 2
+
+      primary_dances = dances
+      partner_dances = invoice[:dances][partner]
+
+      dances = {}
+      (primary_dances.keys + partner_dances.keys).uniq.each do |key|
+        dances[key] = primary_dances.fetch(key, 0) + partner_dances.fetch(key, 0)
+      end
+    end
+  %>
+
   <div class="w-full" style="break-before: page">
 
-  <div class="float-right mb-4"><%= person.display_name %></div>
+  <div class="float-right mb-4"><%= person.display_name %><% if partner %><br><%= partner.display_name %><% end %></div>
   <h2 class="font-bold text-center text-4xl"><%= @event.name %></h1>
 
   <p class="mt-4">
@@ -105,7 +125,7 @@
   <% if person.package_id %>
   <tr>
     <th align="left" class="pr-8">Registration:
-    <th align="left"><%= number_to_currency person.package.price %> per person</th>
+    <th align="left"><%= number_to_currency person.package.price %> per <%= person.package.couples ? "couple" : "person" %></th>
   </tr>
   <% end %>
   <% unless @event.student_package_description.blank? %>
@@ -142,7 +162,7 @@
   <% if person.package_id %>
   <tr>
     <td class="pr-8">Registration:
-    <td align="right"><%= number_to_currency @registration || person.package.price %></td>
+    <td align="right"><%= number_to_currency registration %></td>
   </tr>
   <% end %>
   <tr>
@@ -173,13 +193,13 @@
   <div style="clear:both"></div>
 
   <% invoice[:entries].each do |names, entries| %>
-    <% next unless names.include? person.name%>
-    <%= render "entry", names: names, entries: entries, studio: studio.name, invoice: :student %>
+    <% next unless names.include?(person.name) || (partner and names.include?(partner.name)) %>
+    <%= render "entry", names: names, entries: entries, studio: studio.name, invoice: :student, partner: partner %>
   <% end %>
   <% end %>
   <% else %>
 
   <% invoice[:entries].each do |names, entries| %>
-    <%= render "entry", names: names, entries: entries, studio: studio.name, invoice: :studio %>
+    <%= render "entry", names: names, entries: entries, studio: studio.name, invoice: :studio, partner: partner %>
   <% end %>
   <% end %>

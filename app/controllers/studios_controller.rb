@@ -119,12 +119,8 @@ class StudiosController < ApplicationController
     @solo_cost = @studio.student_solo_cost || @studio.solo_cost || event.solo_cost || 0
     @multi_cost = @studio.student_multi_cost || @studio.multi_cost || event.multi_cost || 0
 
-    unless @registration
-      if @studio.default_student_package_id
-        @registration = Billable.find(@studio.default_student_package_id).price
-      else
-        @registration = Billable.where(type: 'Student').order(:order).pluck(:price).first
-      end
+    if !@registration and @studio.default_student_package_id
+      @registration = Billable.find(@studio.default_student_package_id).price
     end
 
     respond_to do |format|
