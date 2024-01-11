@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import { promises as dns } from 'node:dns';
 import { exec } from "node:child_process"
 import readline from 'node:readline'
 import path from 'node:path'
@@ -25,18 +26,7 @@ async function getRegions(): Promise<string[]> {
   let checkTime = new Date().getTime()
 
   if (checkTime - lastRegionCheck > 60000) {
-    lastRegions = await new Promise((resolve, reject) => {
-      let dig = `dig +short -t txt regions.${appName}.internal`
-
-      exec(dig, async (err, stdout, stderr) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve(JSON.parse(stdout).trim().split(","))
-        }
-      })
-    })
-
+    lastRegions = (await dns.resolveTxt(`regions.${appName}.internal`)).join(',').split(',')
     lastRegionCheck = checkTime
   }
 
