@@ -26,9 +26,9 @@
   </thead>
   <tbody>
     <% total_dance_cost = total_purchases = 0 %>
-    <% studio.people.order(:name).each do |person| %>
-    <% next if @student and person.type != 'Student' %>
     <% dances = invoice[:dances] %>
+    <% dances.keys.sort_by(&:name).each do |person| %>
+    <% next if @student and person.type != 'Student' %>
     <% dance_cost = dances[person][:cost] %>
     <% purchases = dances[person][:purchases] %>
     <% next if purchases == 0 and dances[person][:dances] == 0 %>
@@ -68,8 +68,9 @@
   </thead>
   <tbody>
     
-    <% studio.people.order(:name).each do |person| %>
+    <% invoice[:dances].keys.sort_by(&:name).each do |person| %>
     <% next if @student and person.type != 'Student' %>
+    <% next unless person.studio == studio %>
     <% purchases = person.options.map(&:option).map(&:name) %>
     <% purchases.unshift "#{person.type} #{person.package.name}" if person.package_id %>
     <% next if purchases.empty? %>
@@ -83,12 +84,13 @@
   <% end %>
 
   <% if @student %>
-  <% studio.people.order(:name).each do |person| %>
-  <% next if person.type != 'Student' or @couples.values.include? person.id %>
+  <% invoice[:dances].keys.sort_by(&:name).each do |person| %>
+  <% next if person.type != 'Student' # or @couples.values.include? person.id %>
 
   <%
     dances = invoice[:dances][person]
     registration = (@registration || person.package.price) / (person.package&.couples ? 2 : 1)
+    registration = 0 unless person.studio == studio
     partner = nil
 
     if @paired.include? person.id
@@ -193,7 +195,7 @@
   <div style="clear:both"></div>
 
   <% invoice[:entries].each do |names, entries| %>
-    <% next unless names.include?(person.name) || (partner and names.include?(partner.name)) %>
+    <% next unless names.include?(person) || (partner and names.include?(partner)) %>
     <%= render "entry", names: names, entries: entries, studio: studio.name, invoice: :student, partner: partner %>
   <% end %>
   <% end %>

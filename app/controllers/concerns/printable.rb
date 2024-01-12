@@ -203,10 +203,22 @@ module Printable
       entries = (Entry.joins(:follow).preload(preload).where(people: {type: 'Student', studio: studio}) +
         Entry.joins(:lead).preload(preload).where(people: {type: 'Student', studio: studio})).uniq
 
-      @dances = studio.people.order(:name).map do |person|
+      pentries = (Entry.joins(:follow).preload(preload).where(people: {type: 'Professional', studio: studio}) +
+        Entry.joins(:lead).preload(preload).where(people: {type: 'Professional', studio: studio})).uniq
+
+      studios = Set.new(studio.pairs + [studio])
+      entries.select! {|entry| studios.include?(entry.follow.studio) && studios.include?(entry.lead.studio)}
+      pentries.select! {|entry| !studios.include?(entry.follow.studio) || !studios.include?(entry.lead.studio)}
+
+      entries += pentries
+
+      people = entries.map {|entry| [entry.lead, entry.follow]}.flatten.uniq
+
+      @dances = people.sort_by(&:name).map do |person|
         package = (@registration || person.package&.price || 0)
         package/=2 if @paired.include? person.id
         purchases = package + person.options.map(&:option).map(&:price).sum
+        purchases = 0 unless person.studio == studio
         [person, {dances: 0, cost: 0, purchases: purchases}]
       end.to_h
 
@@ -253,7 +265,7 @@ module Printable
         entries: Entry.where(id: entries.map(&:id)).
           order(:levei_id, :age_id).
           includes(lead: [:studio], follow: [:studio], heats: [:dance]).group_by {|entry| 
-            entry.follow.type == "Student" ? [entry.follow.name, entry.lead.name] : [entry.lead.name, entry.follow.name]
+            entry.follow.type == "Student" ? [entry.follow, entry.lead] : [entry.lead, entry.follow]
           }.sort_by {|key, value| key}
       }
     end
