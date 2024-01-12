@@ -287,7 +287,7 @@ class CategoriesController < ApplicationController
           end
 
           if dance.pro_multi_category == @category
-            dance.pro_ßmulti_category = nil
+            dance.pro_multi_category = nil
           end
 
           if include['Open']
