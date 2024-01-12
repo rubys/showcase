@@ -1,6 +1,5 @@
 import fs from 'node:fs'
 import { promises as dns } from 'node:dns';
-import { exec } from "node:child_process"
 import readline from 'node:readline'
 import path from 'node:path'
 
@@ -194,27 +193,15 @@ app.get("/", async (req, res) => {
 
 // update lastVisit on all machines
 async function fetchOthers(path: string) {
-  let dig = `dig +short -t txt vms.${appName}.internal`
+  let machines = (await dns.resolveTxt(`vms.${appName}.internal`)).join(',').split(',')
+    .map((txt: String) => txt.split(' ')[0])
 
-  return new Promise((resolve, reject) => {
-    exec(dig, async (err, stdout, stderr) => {
-      if (err) {
-        reject(err)
-      } else {
-        let machines = JSON.parse(stdout).trim().split(",")
-          .map((txt: String) => txt.split(' ')[0])
+  for await (let machine of machines) {
+    if (machine === process.env.FLY_MACHINE_ID) continue
 
-        for await (let machine of machines) {
-          if (machine === process.env.FLY_MACHINE_ID) continue
-
-          await fetch(`http://${machine}.vm.${appName}.internal:3000${path}`)
-            .catch(console.error)
-        }
-
-        resolve(null)
-      }
-    })
-  })
+    await fetch(`http://${machine}.vm.${appName}.internal:3000${path}`)
+      .catch(console.error)
+  }
 }
 
 app.listen(PORT, () => {
