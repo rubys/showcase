@@ -79,10 +79,15 @@ class HeatsController < ApplicationController
     index
     @font_size = @event.font_size
 
+    @assignments = {}
+    if @event.assign_judges and @type == 'judge'
+      @assignments = Score.joins(:judge).pluck(:heat_id, :name).to_h
+    end
+
     respond_to do |format|
       format.html
       format.pdf do
-        render_as_pdf basename: @type == 'judget' ? 'judge-heat-book' : "master-heat-book"
+        render_as_pdf basename: @type == 'judge' ? 'judge-heat-book' : "master-heat-book"
       end
     end
   end
