@@ -46,6 +46,8 @@ class EventController < ApplicationController
         @next = File.join(root, events[index+1].scope) unless index == events.length - 1
       end
     end
+
+    @browser_warn = browser_warn
   end
 
   def settings
@@ -772,11 +774,35 @@ class EventController < ApplicationController
     end
   end
 
+
 private
 
   def set_scope
     @scope = ENV.fetch("RAILS_APP_SCOPE", '')
     @scope = '/' + @scope unless @scope.empty?
     @scope = ENV['RAILS_RELATIVE_URL_ROOT'] + '/' + @scope if ENV['RAILS_RELATIVE_URL_ROOT']
+  end
+
+  # https://github.com/rails/rails/blob/main/actionpack/lib/action_controller/metal/allow_browser.rb
+  MODERN_BROWSER = {
+    "Chrome" => 119,
+    "Safari" => 17.2,
+    "Firefox" => 121,
+    "Internet Explorer" => false,
+    "Opera" => 104
+  }
+
+  def browser_warn
+    user_agent = UserAgent.parse(request.user_agent)
+    min_version = MODERN_BROWSER[user_agent.browser]
+    return if min_version == nil
+    if min_version == false || user_agent.version < UserAgent::Version.new(min_version.to_s)
+      browser = "You are running #{user_agent.browser} #{user_agent.version}."
+      if user_agent.browser == 'Safari' and user_agent.platform = 'Macintosh'
+        "#{browser} Please upgrade your operating system or swtich to a different browser."
+      else
+        "#{browser} Please upgrade your browser."
+      end
+    end
   end
 end

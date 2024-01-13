@@ -273,6 +273,7 @@ GEM
       railties (>= 6.0.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
+    useragent (0.16.10)
     web-console (4.2.1)
       actionview (>= 6.0.0)
       activemodel (>= 6.0.0)
@@ -321,6 +322,7 @@ DEPENDENCIES
   tomlrb (~> 2.0)
   turbo-rails
   tzinfo-data
+  useragent (~> 0.16.10)
   web-console
 
 BUNDLED WITH

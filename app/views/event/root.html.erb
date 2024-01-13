@@ -8,6 +8,11 @@
   <p class="mt-4">If you make changes in both locations without waiting for the sites to synchronize,
     <span class="bold text-red-600">you will lose data</span>.
   </div>
+  <% elsif @browser_warn %>
+  <div class="border-double border-4 rounded-lg border-red-600 mx-4 my-8 pl-4 pr-4 py-4 text-left">
+    <strong><%= @browser_warn %></strong>
+    <p class="mt-4">This application uses web features that may not be supported by the browser you are using.</p>
+  </div>
   <% end %>
 
 <div data-controller="info-box">

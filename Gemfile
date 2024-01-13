@@ -86,3 +86,5 @@ gem "combine_pdf", "~> 1.0"
 gem "kramdown", "~> 2.4"
 gem "tomlrb", "~> 2.0"
 gem "ansi-to-html", "~> 0.0.3"
+
+gem "useragent", "~> 0.16.10"
