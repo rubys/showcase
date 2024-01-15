@@ -280,6 +280,10 @@ class PeopleController < ApplicationController
     @people = package.people.includes(:studio).order(:name)
     @title = "#{package.type} - #{package.name}"
 
+    if package.type == 'Option'
+      @packages = package.option_included_by.map(&:package)
+    end
+
     index
   end
 

@@ -80,4 +80,16 @@
   <% end %>
   </tbody>
   </table>
+
+  <% if @packages and !@packages.empty? %>
+  <div class="my-4 mx-auto md:w-2/3 lg:w-1/2">
+  <h2 class="font-bold text-2xl mb-4">Option is included by:</h2>
+  <ul class="ml-8 list-disc list-outside">
+  <% @packages.each do |package| %>
+    <li><%= link_to "#{package.type}: #{package.name} (#{package.people.count})", people_package_path(package.id) %>
+  <% end %>
+  <ul>
+  </div>
+
+  <% end %>
 </div>

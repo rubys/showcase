@@ -21,7 +21,7 @@ class Billable < ApplicationRecord
     if type == 'Option'
       people_options
     else
-      people_package
+      people_packages
     end
   end
 end

@@ -57,7 +57,7 @@
   <% @packages.each do |package, checked| %>
   <li>
     <%= form.check_box "packages][#{package.id}", class: "entry-count h-10", checked: checked %>
-    <%= package.type %>: <%= package.name %>
+    <%= link_to "#{package.type}: #{package.name}", edit_billable_path(package) %>
   </li>
   <% end %>
   </ul>
