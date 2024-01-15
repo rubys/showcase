@@ -48,6 +48,8 @@ class EventController < ApplicationController
     end
 
     @browser_warn = browser_warn
+
+    render :root, status: (@browser_warn ? :upgrade_required : :ok)
   end
 
   def settings
