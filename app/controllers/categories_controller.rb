@@ -59,7 +59,9 @@ class CategoriesController < ApplicationController
 
   # PATCH/PUT /categories/1 or /categories/1.json
   def update
-    if !params[:category] || params[:category][:customize] != '1'
+    params[:category] ||= params[:cat_extension]
+
+    if params[:category][:customize] != '1' and @category.instance_of? Category
       params[:category][:ballrooms] = ''
       params[:category][:max_heat_size] = ''
       params[:category][:heats] = ''
@@ -290,40 +292,42 @@ class CategoriesController < ApplicationController
             dance.pro_multi_category = nil
           end
 
-          if include['Open']
-            if dance.open_category == @category
-              if include['Open'][dance.name].to_i == 0
-                dance.open_category = nil
+          if include
+            if include['Open']
+              if dance.open_category == @category
+                if include['Open'][dance.name].to_i == 0
+                  dance.open_category = nil
+                end
+              elsif include['Open'][dance.name].to_i == 1
+                dance.open_category = @category
               end
-            elsif include['Open'][dance.name].to_i == 1
-              dance.open_category = @category
             end
-          end
 
-          if include['Closed']
-            if dance.closed_category == @category
-              if include['Closed'][dance.name].to_i == 0
-                dance.closed_category = nil
+            if include['Closed']
+              if dance.closed_category == @category
+                if include['Closed'][dance.name].to_i == 0
+                  dance.closed_category = nil
+                end
+              elsif include['Closed'][dance.name].to_i == 1
+                dance.closed_category = @category
               end
-            elsif include['Closed'][dance.name].to_i == 1
-              dance.closed_category = @category
             end
-          end
 
-          if dance.solo_category == @category
-            if include['Solo'][dance.name].to_i == 0
-              dance.solo_category = nil
+            if dance.solo_category == @category
+              if include['Solo'][dance.name].to_i == 0
+                dance.solo_category = nil
+              end
+            elsif include['Solo'][dance.name].to_i == 1
+              dance.solo_category = @category
             end
-          elsif include['Solo'][dance.name].to_i == 1
-            dance.solo_category = @category
-          end
 
-          if dance.multi_category == @category
-            if include['Multi'][dance.name].to_i == 0
-              dance.multi_category = nil
+            if dance.multi_category == @category
+              if include['Multi'][dance.name].to_i == 0
+                dance.multi_category = nil
+              end
+            elsif include['Multi'] and include['Multi'][dance.name].to_i == 1
+              dance.multi_category = @category
             end
-          elsif include['Multi'] and include['Multi'][dance.name].to_i == 1
-            dance.multi_category = @category
           end
         end
 

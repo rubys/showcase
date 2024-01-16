@@ -9,10 +9,6 @@ class CatExtension < ApplicationRecord
     category.ballrooms
   end
 
-  def duration
-    nil
-  end
-
   def cost_override
     category.cost_override
   end
