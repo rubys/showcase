@@ -5,9 +5,9 @@
   <% @options.each do |option| %>
   <li>
     <% if @package_options.include? option %>
-    <%= check_box_tag "person[options[#{option.id}]]", '1', true, class: "entry-count h-10 opacity-70", disabled: true %>
+    <%= check_box_tag "person[options][#{option.id}]", '1', true, class: "entry-count h-10 opacity-70", disabled: true %>
     <% else %>
-    <%= check_box_tag "person[options[#{option.id}]]", '1', @person_options.include?(option), class: "entry-count h-10" %>
+    <%= check_box_tag "person[options][#{option.id}]", '1', @person_options.include?(option), class: "entry-count h-10" %>
     <% end %>
     <%= option.name %>
   </li>
