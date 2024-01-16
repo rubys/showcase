@@ -28,7 +28,7 @@
     <% total_dance_cost = total_purchases = 0 %>
     <% dances = invoice[:dances] %>
     <% dances.keys.sort_by(&:name).each do |person| %>
-    <% next if @student and person.type != 'Student' %>
+    <% next if @student and !%w(Student Guest).include? person.type %>
     <% dance_cost = dances[person][:cost] %>
     <% purchases = dances[person][:purchases] %>
     <% next if purchases == 0 and dances[person][:dances] == 0 %>
@@ -69,7 +69,7 @@
   <tbody>
     
     <% invoice[:dances].keys.sort_by(&:name).each do |person| %>
-    <% next if @student and person.type != 'Student' %>
+    <% next if @student and !%w(Student Guest).include? person.type %>
     <% next unless person.studio == studio %>
     <% purchases = person.options.map(&:option).map(&:name) %>
     <% purchases.unshift "#{person.type} #{person.package.name}" if person.package_id %>
