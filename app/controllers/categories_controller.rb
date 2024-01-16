@@ -59,7 +59,7 @@ class CategoriesController < ApplicationController
 
   # PATCH/PUT /categories/1 or /categories/1.json
   def update
-    if params[:category][:customize] != '1'
+    if not params[:category] || params[:category][:customize] != '1'
       params[:category][:ballrooms] = ''
       params[:category][:max_heat_size] = ''
       params[:category][:heats] = ''
