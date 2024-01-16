@@ -127,7 +127,7 @@
   <% if person.package_id %>
   <tr>
     <th align="left" class="pr-8">Registration:
-    <th align="left"><%= number_to_currency person.package.price %> per <%= person.package.couples ? "couple" : "person" %></th>
+    <th align="left"><%= number_to_currency registration %> per <%= person.package.couples ? "couple" : "person" %></th>
   </tr>
   <% end %>
   <% unless @event.student_package_description.blank? %>
