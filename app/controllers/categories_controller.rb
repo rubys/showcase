@@ -111,7 +111,7 @@ class CategoriesController < ApplicationController
     end
 
     if params[:target].include? '-'
-      source = CatExtension.find(params[:target].split('-').first.to_i)
+      target = CatExtension.find(params[:target].split('-').first.to_i)
     else
       target = Category.find(params[:target].to_i)
     end
