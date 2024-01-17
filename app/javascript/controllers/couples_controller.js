@@ -15,8 +15,10 @@ export default class extends Controller {
       }
     }
 
-    couples_visibilty()
+    if (billable_type) {
+      couples_visibilty()
 
-    billable_type.addEventListener("change", couples_visibilty);
+      billable_type.addEventListener("change", couples_visibilty)
+    }
   }
 }

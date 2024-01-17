@@ -24,7 +24,8 @@ class BillablesController < ApplicationController
     else
       current_packages = @billable.option_included_by.map(&:package_id)
       @packages = (Billable.where(type: 'Student').order(:order) +
-        Billable.where(type: 'Guest').order(:order)).
+        Billable.where(type: 'Guest').order(:order) +
+        Billable.where(type: 'Professional').order(:order)).
         map {|package| [package, current_packages.include?(package.id)]}
     end
   end
