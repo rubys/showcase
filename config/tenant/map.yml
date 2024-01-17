@@ -29,6 +29,10 @@ regions:
     lon: -121.89674
     x: 112.63114487340647
     y: 223.9075025700198
+  waw:
+    name: Warsaw, Poland
+    lat: 52.1657
+    lon: 20.9671
 studios:
   alexandria:
     lat: 38.805
@@ -168,6 +172,9 @@ studios:
     lon: -76.06
     x: 782.006683846955
     y: 255.8200576232449
+  warsaw:
+    lat: 52.2319581
+    lon: 21.0067249
   woodlands:
     lat: 30.158
     lon: -95.456
