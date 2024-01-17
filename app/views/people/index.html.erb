@@ -79,12 +79,14 @@
       <% unless @multis.empty? %>
       <td class="row text-right"><%= @multis[person.id] %></td>
       <% end %>
+    <% if @strike && @option %>
     <td>
     <form method="post" action="<%= remove_option_person_path(person) %>">
-    <input type="hidden" name="option" value="<%= @option&.id %>">
+    <input type="hidden" name="option" value="<%= @option.id %>">
     <button type="submit" class='ml-4 group-hover:inline hidden x-2 rounded-lg py-1 px-2 text-white bg-red-600 font-medium'>Remove</button>
     </form>
     </td>
+    <% end %>
     </tr>
   <% end %>
   </tbody>
