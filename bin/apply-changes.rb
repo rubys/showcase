@@ -10,7 +10,9 @@ pending = JSON.parse(IO.read('tmp/deployed.json'))['pending'] || {}
 
 if pending['add'] and not pending['add'].empty?
   machines = JSON.parse(`#{fly} machines list --json`)
-  primary = machines.find {|machine| machine['region'] == primary_region}
+  primary = machines.find {|machine|
+    machine['region'] == primary_region && machine['config']['env']['FLY_PROCESS_GROUP'] == 'app'
+  }
 end
 
 (pending['add'] || []).each do |region|
