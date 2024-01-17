@@ -71,7 +71,7 @@
     <% invoice[:dances].keys.sort_by(&:name).each do |person| %>
     <% next if @student and !%w(Student Guest).include? person.type %>
     <% next unless person.studio == studio %>
-    <% purchases = person.options.map(&:option).map(&:name) %>
+    <% purchases = person.selected_options.map(&:name) %>
     <% purchases.unshift "#{person.type} #{person.package.name}" if person.package_id %>
     <% next if purchases.empty? %>
     <tr>

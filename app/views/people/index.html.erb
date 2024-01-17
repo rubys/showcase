@@ -50,6 +50,8 @@
   <% @people.each do |person| %>
     <% if not person.active? %>
     <tr class="bg-slate-200" title="no entries defined">
+    <% elsif @strike && @strike.include?(person) %>
+    <tr class="line-through" title="already included in package">
     <% else %>
     <tr>
     <% end %>

@@ -218,7 +218,7 @@ module Printable
         package = person.package&.price || 0
         package = @registration if @registration && person.type == "Student"
         package/=2 if @paired.include? person.id
-        purchases = package + person.options.map(&:option).map(&:price).sum || 0
+        purchases = package + person.selected_options.map(&:price).sum || 0
         purchases = 0 unless person.studio == studio
         [person, {dances: 0, cost: 0, purchases: purchases}]
       end.to_h

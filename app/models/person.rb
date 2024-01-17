@@ -95,4 +95,11 @@ class Person < ApplicationRecord
       true
     end
   end
+
+  # don't double bill a person for included options
+  def selected_options
+    options = self.options.map(&:option)
+    included = self.package&.package_includes&.map(&:option)&.map(&:id) || []
+    options.reject {|option| included.include? option.id}
+  end
 end

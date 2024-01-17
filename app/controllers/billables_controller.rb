@@ -180,7 +180,7 @@ class BillablesController < ApplicationController
       if @billable.type == 'Option'
         desired_packages = billable_params[:packages]
         current_packages = @billable.option_included_by.map(&:package_id)
-        Billable.where(type: ['Student', 'Guest']).each do |package|
+        Billable.where(type: ['Student', 'Guest', 'Professional']).each do |package|
           if desired_packages[package.id.to_s].to_i == 1
             unless current_packages.include? package.id
               PackageInclude.create! package: package, option: @billable
