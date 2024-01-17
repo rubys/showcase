@@ -48,14 +48,15 @@
 
   <tbody>
   <% @people.each do |person| %>
+    <% strike = @strike && @strike.include?(person) %>
     <% if not person.active? %>
     <tr class="bg-slate-200" title="no entries defined">
-    <% elsif @strike && @strike.include?(person) %>
-    <tr class="line-through" title="already included in package">
+    <% elsif strike %>
+    <tr class="group" title="already included in package">
     <% else %>
     <tr>
     <% end %>
-      <td class="row-main"><%= link_to person.name, person %></td>
+      <td class="row-main<% if strike %> line-through<% end %>"><%= link_to person.name, person %></td>
       <% unless @title == 'Students' %>
       <td class="row"><%= person.type %></td>
       <% end %>
@@ -78,6 +79,12 @@
       <% unless @multis.empty? %>
       <td class="row text-right"><%= @multis[person.id] %></td>
       <% end %>
+    <td>
+    <form method="post" action="<%= remove_option_person_path(person) %>">
+    <input type="hidden" name="option" value="<%= @option.id %>">
+    <button type="submit" class='ml-4 group-hover:inline hidden x-2 rounded-lg py-1 px-2 text-white bg-red-600 font-medium'>Remove</button>
+    </form>
+    </td>
     </tr>
   <% end %>
   </tbody>

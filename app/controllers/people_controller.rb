@@ -2,7 +2,7 @@ class PeopleController < ApplicationController
   include Printable
   
   before_action :set_person, only: 
-    %i[ show edit update destroy get_entries post_entries toggle_present ]
+    %i[ show edit update destroy get_entries post_entries toggle_present remove_option ]
 
   def heats
     event = Event.last
@@ -283,6 +283,7 @@ class PeopleController < ApplicationController
     if package.type == 'Option'
       @packages = package.option_included_by.map(&:package)
 
+      @option = package
       @strike = @people.reject {|person| person.selected_options.map(&:id).include? package_id}
     end
 
@@ -554,6 +555,14 @@ class PeopleController < ApplicationController
         format.json { render json: @person.errors, status: :unprocessable_entity }
       end
     end
+  end
+
+  def remove_option
+    option = Billable.find(params[:option])
+    removed = PersonOption.destroy_by person: @person, option: option
+    redirect_to people_package_path(@person, package_id: option.id),
+      notice: removed.empty? ? "no options removed from #{@person.display_name}."
+        : "option #{option.name} removed from "#{@person.display_name}."
   end
 
   def toggle_present
