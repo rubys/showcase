@@ -100,6 +100,11 @@
     <li><%= link_to "#{package.type}: #{package.name} (#{package.people.count})", people_package_path(package.id) %>
   <% end %>
   <ul>
+  <% if @option.missing.length > 0 %>
+  <%= link_to "Not included by #{@option.missing.length}", missing_billable_path(@option), class: "block mt-4 -ml-4" %>
+  <% else %>
+  <p class="mt-4 -ml-4">Not included by 0</p>
+  <% end %>
   </div>
 
   <% end %>

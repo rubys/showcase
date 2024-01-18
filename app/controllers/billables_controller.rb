@@ -1,5 +1,5 @@
 class BillablesController < ApplicationController
-  before_action :set_billable, only: %i[ show edit update destroy people ]
+  before_action :set_billable, only: %i[ show edit update destroy people missing ]
 
   # GET /billables or /billables.json
   def index
@@ -152,6 +152,22 @@ class BillablesController < ApplicationController
         redirect_to settings_event_index_path(tab: 'Prices')
       end
     end
+  end
+
+  def missing
+    if @billable.type == 'Option'
+      @title = "NOT #{@billable.name}"
+    else
+      @title = "#{@billable.type.pluralize} NOT #{@billable.name}"
+    end
+
+    @people = @billable.missing
+
+    @heats = {}
+    @solos = {}
+    @multis = {}
+
+    render 'people/index'
   end
 
   # DELETE /billables/1 or /billables/1.json

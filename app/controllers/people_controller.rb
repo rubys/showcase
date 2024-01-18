@@ -281,7 +281,7 @@ class PeopleController < ApplicationController
     @title = "#{package.type} - #{package.name}"
 
     if package.type == 'Option'
-      @packages = package.option_included_by.map(&:package)
+      @packages = package.option_included_by.map(&:package).sort_by {|package| [package.type, package.order]}
 
       @option = package
       @strike = @people.reject {|person| person.selected_options.map(&:id).include? package_id}

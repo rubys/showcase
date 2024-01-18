@@ -24,4 +24,12 @@ class Billable < ApplicationRecord
       people_packages
     end
   end
+
+  def missing
+    if type == 'Option'
+      Person.where.not(package: option_included_by.map(&:package))
+    else
+      Person.where(type: type).and(Person.where.not(package: self))
+    end
+  end
 end

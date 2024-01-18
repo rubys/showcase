@@ -180,6 +180,7 @@ Rails.application.routes.draw do
     resources :billables do
       post 'drop', on: :collection
       match 'people', on: :member, via: %i(get post)
+      get 'missing', on: :member
     end
 
     match "/password/reset", to: 'users#password_reset', via: %i(get post)
