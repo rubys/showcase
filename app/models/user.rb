@@ -37,6 +37,19 @@ class User < ApplicationRecord
     false
   end
 
+  def self.owned?(userid, studio=nil)
+    owned = studios_owned(userid)
+    STDERR.puts userid
+    STDERR.puts studio.inspect
+    if studio
+      owned.include? studio.name
+    else
+      owned = studios_owned(userid)
+      STDERR.puts owned.inspect
+      Studio.any? {|studio| owned.include? studio.name}
+    end
+  end
+
   # list of users authorized to THIS event
   def self.authlist
     return [] unless @@db
@@ -90,6 +103,13 @@ class User < ApplicationRecord
           sites.include? event or sites.include? 'index'
         end.to_h.keys
       end
+    end
+
+    def self.studios_owned(userid)
+      return [] unless @@db
+      query = %{select name from users inner join locations
+        on locations.user_id = users.id where users.userid="#{userid}"}
+      @@db.execute(query).flatten
     end
 
     self.load_auth

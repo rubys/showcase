@@ -7,24 +7,37 @@ class ApplicationController < ActionController::Base
       flash: {error: 'Database is in readonly mode'}
   end
 
+  def self.permit_owners(*actions)
+    skip_before_action :authenticate_user, only: actions
+    before_action :authenticate_owner, only: actions
+  end
+
   private
     def authenticate_user
       get_authentication
 
-      return unless Rails.env.production?
-      return if request.local?
+      unless ENV['HTTP_X_REMOTE_USER']
+        return unless Rails.env.production?
+        return if request.local?
+      end
+
       return if ENV['RAILS_APP_OWNER'] == 'Demo'
 
       forbidden unless User.authorized?(@authuser)
     end
 
-    def authenticate_user_or_studio(studio)
+    def authenticate_owner
       get_authentication
 
-      return unless Rails.env.production?
-      return if request.local?
+      unless ENV['HTTP_X_REMOTE_USER']
+        return unless Rails.env.production?
+        return if request.local?
+      end
 
-      forbidden unless User.authorized?(@authuser) or User.authorized?(@authuser, studio)
+      return if ENV['RAILS_APP_OWNER'] == 'Demo'
+      return if User.authorized?(@authuser)
+
+      forbidden unless User.owned?(@authuser, @studio)
     end
 
     def show_detailed_exceptions?

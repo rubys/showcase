@@ -4,10 +4,7 @@ class StudiosController < ApplicationController
 
   before_action :set_studio, only: %i[ show edit update unpair destroy heats scores invoice student_invoices send_invoice solos ]
 
-  skip_before_action :authenticate_user, only: %i[ index solos invoice ]
-  before_action only: :solos do
-    authenticate_user_or_studio(@studio.name)
-  end
+  permit_owners *%i[ index show solos invoice ]
 
   # GET /studios or /studios.json
   def index
