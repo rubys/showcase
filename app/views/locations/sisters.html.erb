@@ -1,0 +1,15 @@
+<div class="mx-auto md:w-2/3 w-full">
+  <h1 class="mt-8 font-bold text-4xl" ><%= @location.name %> - Sister Studios</h1>
+
+  <%= form_with url: update_sisters_location_path do |form| %>
+  <%= form.hidden_field :location, value: @location.id %>
+  <% @studios.each do |studio| %>
+  <div class="my-5">
+    <%= form.check_box "sisters[#{studio}]", class: 'entry-count h-8', checked: @checked[studio] %>
+    <%= form.label "sisters[#{studio}]", studio, class: 'text-xl align-middle pt-2' %>
+  </div>
+  <% end %>
+  <%= form.submit 'Save', class: "btn-blue" %>
+  <%= link_to 'Back to Studio', edit_location_path(@location), class: 'btn-grey' %>
+  <% end %>
+</div>

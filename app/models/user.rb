@@ -39,13 +39,10 @@ class User < ApplicationRecord
 
   def self.owned?(userid, studio=nil)
     owned = studios_owned(userid)
-    STDERR.puts userid
-    STDERR.puts studio.inspect
     if studio
       owned.include? studio.name
     else
       owned = studios_owned(userid)
-      STDERR.puts owned.inspect
       Studio.any? {|studio| owned.include? studio.name}
     end
   end

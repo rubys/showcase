@@ -1,0 +1,15 @@
+<div class="mx-auto md:w-2/3 w-full">
+  <h1 class="mt-8 font-bold text-4xl" id="authorization"><%= @location.name %> - Authorization</h1>
+
+  <%= form_with url: locations_users_path, data: {turbo: false} do |form| %>
+  <%= form.hidden_field :location, value: @location.id %>
+  <% @auth.each do |user| %>
+  <div class="my-5">
+    <%= form.check_box "auth[#{user.id}]", class: 'entry-count h-8', checked: @checked[user.id] %>
+    <%= form.label "auth[#{user.id}]", user.userid, class: 'text-xl align-middle pt-2' %>
+  </div>
+  <% end %>
+  <%= form.submit 'Save', class: "btn-blue" %>
+  <%= link_to 'Back to Studio', edit_location_path(@location), class: 'btn-grey' %>
+  <% end %>
+</div>

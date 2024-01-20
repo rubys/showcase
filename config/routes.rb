@@ -197,6 +197,10 @@ Rails.application.routes.draw do
     post '/locations/users', to: 'users#update_location', as: 'locations_users'
     resources :locations do
       get 'first-event', on: :collection
+      get 'events', on: :member
+      get 'auth', on: :member
+      get 'sisters', on: :member
+      post 'update_sisters', on: :member
     end
   end
 

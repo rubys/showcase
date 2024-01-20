@@ -2,7 +2,7 @@ class LocationsController < ApplicationController
   include Configurator
   include DbQuery
 
-  before_action :set_location, only: %i[ show edit update destroy ]
+  before_action :set_location, only: %i[ show edit events auth sisters update destroy ]
   before_action :admin_home
 
   # GET /locations or /locations.json
@@ -63,6 +63,14 @@ class LocationsController < ApplicationController
     new
 
     @showcases = @location.showcases.order(:year, :order).reverse.group_by(&:year)
+  end
+
+  def events
+    edit
+  end
+
+  def auth
+    edit
 
     studios = []
     dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
@@ -74,6 +82,7 @@ class LocationsController < ApplicationController
     locations = Location.joins(:user).pluck(:name, :userid).to_h
 
     studios = studios.uniq.map {|studio| locations[studio['name']]}.compact.sort
+    @studios = @location.key
 
     @checked = {}
     @auth = User.order(:userid).select do |user|
@@ -83,6 +92,39 @@ class LocationsController < ApplicationController
         studios.include?(user.userid) or user.sites.split(',').include? @location.name
       end
     end
+  end
+
+  def sisters
+    edit
+
+    studios = []
+    dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
+    Dir["#{dbpath}/20*.sqlite3"].each do |db|
+      studios += dbquery(File.basename(db, '.sqlite3'), 'studios', 'name')
+    end
+
+    @studios = studios.flatten.map {|studio| studio['name'].strip}.sort.uniq
+    @studios -= Location.pluck(:name)
+    @studios.delete 'Event Staff'
+
+    @checked = {}
+    @location.sisters.to_s.split(',').each do |location|
+      @checked[location] = true
+    end
+  end
+
+  def update_sisters
+    location = Location.find(params[:location])
+
+    sisters = []
+
+    params[:sisters].each do |location, checked|
+      sisters << location if checked == '1'
+    end
+
+    location.update!(sisters: sisters.join(','))
+
+    redirect_to edit_location_url(location.id)
   end
 
   # POST /locations or /locations.json

@@ -60,7 +60,7 @@ class ShowcasesController < ApplicationController
       if @showcase.save
         generate_showcases
 
-        format.html { redirect_to edit_location_url(@showcase.location),
+        format.html { redirect_to events_location_url(@showcase.location),
           notice: "#{@showcase.name} was successfully created." }
         format.json { render :show, status: :created, location: @showcase }
       else
@@ -77,7 +77,7 @@ class ShowcasesController < ApplicationController
       if @showcase.update(showcase_params)
         generate_showcases
 
-        format.html { redirect_to edit_location_url(@showcase.location),
+        format.html { redirect_to events_location_url(@showcase.location),
           notice: "#{@showcase.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @showcase }
       else
@@ -94,7 +94,7 @@ class ShowcasesController < ApplicationController
     generate_showcases
 
     respond_to do |format|
-      format.html { redirect_to edit_location_url(@showcase.location), status: 303,
+      format.html { redirect_to events_location_url(@showcase.location), status: 303,
         notice: "#{@showcase.name} was successfully destroyed." }
       format.json { head :no_content }
     end
