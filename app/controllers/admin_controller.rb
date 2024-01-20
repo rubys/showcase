@@ -7,6 +7,11 @@ class AdminController < ApplicationController
   REGIONS = File.join(Rails.root, 'tmp', 'regions.json')
 
   def index
+    if ENV['FLY_REGION']
+      redirect_to 'https://rubix.intertwingly.net/admin'
+      return
+    end
+
     showcases = YAML.load_file('config/tenant/showcases.yml')
 
     cities = Set.new
