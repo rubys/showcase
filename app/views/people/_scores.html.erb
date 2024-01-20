@@ -26,7 +26,9 @@
       <% if @judges.empty? %>
       <td></td>
       <% elsif heat.category == 'Open' and @event.open_scoring == '+' %>
+      <% if @heats.any? {|heat| heat.scores.any? {|score| score.value}} %>
       <td colspan="<%= [@judges.length, 1].max %>"></td>
+      <% end %>
       <% elsif @heats.any? {|heat| heat.scores.any? {|score| score.value}} %>
       <% @judges.each do |judge| %>
         <td class="text-center"><%= heat.scores.select {|score| score.judge == judge}.sort_by(&:slot).map(&:value).join(' ') %>
