@@ -98,14 +98,14 @@ can click on it to see helpful hints.</li>
 <% elsif Rails.env.development? %>
 <%= link_to 'Admin', admin_path, class: 'btn-orange' %>
 <% elsif @authuser %>
-<%= link_to 'Admin', "https://rubix.intertwingly.net/showcase/admin/", class: 'btn-orange' %>
+<%= link_to 'Admin', admin_path, class: 'btn-orange' %>
 <% else %>
-<%= link_to 'Admin', "https://rubix.intertwingly.net/showcase/admin/", class: 'btn-orange cursor-not-allowed' %>
+<%= link_to 'Admin', admin_path, class: 'btn-orange cursor-not-allowed' %>
 <% end %>
 <% elsif @authuser %>
-<%= link_to 'Admin', "https://rubix.intertwingly.net/showcase/admin/", class: 'btn-orange' %>
+<%= link_to 'Admin', admin_path, class: 'btn-orange' %>
 <% else %>
-<%= link_to 'Admin', "https://rubix.intertwingly.net/showcase/admin/", class: 'btn-orange cursor-not-allowed' %>
+<%= link_to 'Admin', admin_path, class: 'btn-orange cursor-not-allowed' %>
 <% end %>
 <% end %>
 </div>

@@ -306,6 +306,11 @@ server {
     proxy_pass https://rubix.intertwingly.net/showcase/password;
   }
 
+  # Admin
+  location /showcase/admin {
+    return 301 https://rubix.intertwingly.net/showcase/admin;
+  }
+
   # Demo
   location = /showcase/demo/ {
     return 302 /showcase/regions/<%= @region %>/demo/;
