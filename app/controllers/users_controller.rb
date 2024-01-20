@@ -245,12 +245,12 @@ class UsersController < ApplicationController
       if site
         dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
         Dir["#{dbpath}/20*.sqlite3"].each do |db|
-          next unless db =~ /^#{dbpath}\/\d+-#{site}[-.]/
+          next unless site == 'index' || db =~ /^#{dbpath}\/\d+-#{site}[-.]/
           @studios += dbquery(File.basename(db, '.sqlite3'), 'studios', 'name')
         end
       end
 
-      @studios = @studios.map {|studio| studio['name'] || studio[:name]}.uniq.sort
+      @studios = @studios.map {|studio| (studio['name'] || studio[:name]).strip}.uniq.sort
 
       @studios.unshift 'index'
     end
