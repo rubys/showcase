@@ -6,6 +6,14 @@
 
 <% changes = false %>
 
+<% unless `rsync -i --dry-run db/index.sqlite3 smooth:/data/db/`.empty? %>
+<h2 class="font-bold text-2xl mt-4 mb-2">Sync databases</h2>
+<ul class="ml-8 list-disc list-outside">
+<li>index.sqlite3
+</ul>
+<% changes = true %>
+<% end %>
+
 <% unless @pending['add'].blank? %>
 <h2 class="font-bold text-2xl mt-4 mb-2">Add regions</h2>
 <ul class="ml-8 list-disc list-outside">

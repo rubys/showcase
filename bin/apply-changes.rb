@@ -6,6 +6,12 @@ fly = File.join(Dir.home, '.fly/bin/flyctl')
 
 primary_region = Tomlrb.parse(IO.read 'fly.toml')['primary_region']
 
+# index.sqlite3
+unless `rsync -i --dry-run db/index.sqlite3 smooth:/data/db/`.empty?
+  exit 1 unless system "bin/user-update"
+end
+
+# create machine(s)
 pending = JSON.parse(IO.read('tmp/deployed.json'))['pending'] || {}
 
 if pending['add'] and not pending['add'].empty?
@@ -27,6 +33,7 @@ end
   exit 1 unless system *cmd
 end
 
+# create map, update showcases
 if File.exist? 'db/map.yml'
   exit 1 unless system 'node utils/mapper/usmap.js'
 
@@ -43,13 +50,17 @@ if File.exist? 'db/showcases.yml'
   end
 end
 
+# deploy changes
 unless `git status --short | grep -v "^?? "`.empty?
   exit 1 unless system "#{fly} deploy"
 end
 
-machines = JSON.parse(`#{fly} machines list --json`)
-
 # ensure that there is only one machine per region
+machines = JSON.parse(`#{fly} machines list --json`)
+machines.select! {|machine|
+  machine['config']['env']['FLY_PROCESS_GROUP'] == 'app'
+}
+
 machines_by_region = machines.map {|machine| [machine['region'], machine['id']]}.sort_by(&:last).group_by(&:first)
 
 if machines_by_region.any? {|region, machines| machines.length > 1}
@@ -67,6 +78,7 @@ end
   exit 1 unless system "#{fly} machine destroy --force #{machine['id']} --verbose" if machine
 end
 
+# push changes
 unless `git status --short | grep -v "^?? "`.empty?
   exit 1 unless system 'git commit -a -m "apply configuration changes"'
   exit 1 unless system 'git push'
