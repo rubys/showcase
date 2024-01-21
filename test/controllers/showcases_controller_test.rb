@@ -20,7 +20,7 @@ class ShowcasesControllerTest < ActionDispatch::IntegrationTest
       post showcases_url, params: { showcase: { key: @showcase.key+'2', name: @showcase.name+'2', location_id: @showcase.location_id, year: @showcase.year } }
     end
 
-    assert_redirected_to edit_location_url(@showcase.location)
+    assert_redirected_to events_location_path(@showcase.location)
     assert_equal flash[:notice], 'MyString2 was successfully created.'
   end
 
@@ -36,7 +36,7 @@ class ShowcasesControllerTest < ActionDispatch::IntegrationTest
 
   test "should update showcase" do
     patch showcase_url(@showcase), params: { showcase: { key: @showcase.key, name: @showcase.name, location_id: @showcase.location_id, year: @showcase.year } }
-    assert_redirected_to edit_location_url(@showcase.location)
+    assert_redirected_to events_location_path(@showcase.location)
     assert_equal flash[:notice], 'MyString was successfully updated.'
   end
 
@@ -46,7 +46,7 @@ class ShowcasesControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response 303
-    assert_redirected_to edit_location_url(@showcase.location)
+    assert_redirected_to events_location_path(@showcase.location)
     assert_equal flash[:notice], 'MyString was successfully destroyed.'
   end
 end

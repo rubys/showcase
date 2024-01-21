@@ -107,6 +107,10 @@ class LocationsController < ApplicationController
     @studios -= Location.pluck(:name)
     @studios.delete 'Event Staff'
 
+    Location.all.each do |location|
+      @studios -= location.sisters.to_s.split(',') unless location == @location
+    end
+
     @checked = {}
     @location.sisters.to_s.split(',').each do |location|
       @checked[location] = true
@@ -116,15 +120,25 @@ class LocationsController < ApplicationController
   def update_sisters
     location = Location.find(params[:location])
 
+    before = location.sisters.to_s.split(',')
+
     sisters = []
 
     params[:sisters].each do |location, checked|
       sisters << location if checked == '1'
     end
 
+    added = (sisters - before).length
+    removed = (before - sisters).length
+
+    notices = []
+    notices << "#{added} sister #{"location".pluralize(added)} added" if added > 0
+    notices << "#{removed} sister #{"location".pluralize(removed)} removed" if removed > 0
+    notices << "Sister locations didn't change" if notices.length == 0
+
     location.update!(sisters: sisters.join(','))
 
-    redirect_to edit_location_url(location.id)
+    redirect_to edit_location_url(location.id), notice: notices.join(' and ')
   end
 
   # POST /locations or /locations.json
