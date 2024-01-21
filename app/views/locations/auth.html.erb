@@ -6,7 +6,7 @@
   <% @auth.each do |user| %>
   <div class="my-5">
     <%= form.check_box "auth[#{user.id}]", class: 'entry-count h-8', checked: @checked[user.id] %>
-    <%= form.label "auth[#{user.id}]", user.userid, class: 'text-xl align-middle pt-2' %>
+    <label class="text-xl align-middle pt-2" for="auth[<%= user.id %>]"><span class="inline-block min-w-40"><%= user.userid %></span><span class="ml-4"><%= user.name1 %></span></label>
   </div>
   <% end %>
   <%= form.submit 'Save', class: "btn-blue" %>

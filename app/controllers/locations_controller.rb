@@ -79,17 +79,23 @@ class LocationsController < ApplicationController
       studios += dbquery(File.basename(db, '.sqlite3'), 'studios', 'name')
     end
 
-    locations = Location.joins(:user).pluck(:name, :userid).to_h
+    locations = Location.joins(:user).pluck(:name, :sisters, :userid).
+      map {|name, sisters, userid| ([name] + sisters.to_s.split(',')).
+      map {|site| [site, userid]}}.flatten(1).to_h
 
-    studios = studios.uniq.map {|studio| locations[studio['name']]}.compact.sort
+    owners = studios.uniq.map {|studio| locations[studio['name']]}.compact.sort
     @studios = @location.key
 
     @checked = {}
     @auth = User.order(:userid).select do |user|
       if user.sites.split(',').include? @location.name
         @checked[user.id] = true
+      elsif owners.include?(user.userid)
+        true
+      elsif user.sites.split(',').include? @location.name
+        true
       else
-        studios.include?(user.userid) or user.sites.split(',').include? @location.name
+        false
       end
     end
   end

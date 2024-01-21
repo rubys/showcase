@@ -92,26 +92,37 @@ class UsersController < ApplicationController
   def update_location
     location = Location.find(params[:location])
 
+    added = 0
+    removed = 0
+
     params[:auth].each do |user_id, auth|
       user = User.find(user_id)
       sites = user.sites.split(',')
+      before = sites.dup
 
       if auth == "0"
         if sites.include? location.name
           sites.delete(location.name)
           user.sites = sites.join(',')
           user.save!
+          removed += 1
         end
       else
         unless sites.include? location.name
           sites.push(location.name)
           user.sites = sites.join(',')
           user.save!
+          added += 1
         end
       end
     end
 
-    redirect_to edit_location_url(location.id, anchor: 'authorization')
+    notices = []
+    notices << "#{added} #{"site".pluralize(added)} added" if added > 0
+    notices << "#{removed} #{"site".pluralize(removed)} removed" if removed > 0
+    notices << "Auth didn't change" if notices.length == 0
+
+    redirect_to edit_location_url(location.id, anchor: 'authorization'), notice: notices.join(' and ')
   end
 
   # DELETE /users/1 or /users/1.json
