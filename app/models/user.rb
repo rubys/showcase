@@ -42,7 +42,6 @@ class User < ApplicationRecord
     if studio
       owned.include? studio.name
     else
-      owned = studios_owned(userid)
       Studio.any? {|studio| owned.include? studio.name}
     end
   end
@@ -104,9 +103,9 @@ class User < ApplicationRecord
 
     def self.studios_owned(userid)
       return [] unless @@db
-      query = %{select name from users inner join locations
+      query = %{select name, sisters from users inner join locations
         on locations.user_id = users.id where users.userid="#{userid}"}
-      @@db.execute(query).flatten
+      @@db.execute(query).flatten.compact.split(',').uniq.join(',').split(',')
     end
 
     self.load_auth
