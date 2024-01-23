@@ -37,6 +37,10 @@ class EntriesController < ApplicationController
     @next = params[:next]
 
     tally_entry
+
+    unless @avail.values.include? @partner
+      @avail[@entry.partner(@person).display_name] = @partner
+    end
   end
 
   # POST /entries or /entries.json
