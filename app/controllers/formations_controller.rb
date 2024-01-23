@@ -2,6 +2,8 @@ class FormationsController < ApplicationController
   before_action :set_formation, only: %i[ show edit update destroy ]
   include EntryForm
 
+  permit_site_owners *%i[ show edit update ]
+
   # GET /formations or /formations.json
   def index
     @formations = Formation.all
