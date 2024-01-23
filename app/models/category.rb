@@ -33,4 +33,8 @@ class Category < ApplicationRecord
   def part
     nil
   end
+
+  def base_category
+    self
+  end
 end

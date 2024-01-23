@@ -16,4 +16,8 @@ class CatExtension < ApplicationRecord
   def pro
     category.pro
   end
+
+  def base_category
+    category
+  end
 end
