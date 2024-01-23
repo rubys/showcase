@@ -1,5 +1,8 @@
-# Monkey patch Rails 7.1 to restore Rails 7.0 sqlite3 behavior
-# Hopefully this can be retired once this can be configured.  See links below.
+# Monkey patch Rails 7.1 to:
+#  * restore Rails 7.0 sqlite3 behavior
+#  * retry events when busy
+
+# This should be able to be retired when Rails 8 is releasded.
 
 # WAL mode primarily increases concurrency and write performance, but does
 # so in a way that complicates backup and replication, particularly when
@@ -14,7 +17,10 @@ require 'active_record/connection_adapters/sqlite3_adapter'
 module ActiveRecord::ConnectionAdapters
   class SQLite3Adapter < AbstractAdapter
     def configure_connection
-      super
+      retries = 20
+      raw_connection.busy_handler do |count|
+        count <= retries
+      end
 
       raw_execute("PRAGMA foreign_keys = ON", "SCHEMA")
       raw_execute("PRAGMA journal_mode = DELETE", "SCHEMA")
@@ -30,6 +36,10 @@ __END__
 What changed in 7.1:
 
 https://www.bigbinary.com/blog/rails-7-1-comes-with-an-optimized-default-sqlite3-adapter-connection-configuration
+
+  - and -
+
+https://github.com/rails/rails/pull/49352
 
 Plans to make it configurable:
 
