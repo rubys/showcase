@@ -66,6 +66,8 @@ begin
     addrs -=
       `dig +short -t aaaa #{ENV['FLY_REGION']}.#{ENV['FLY_APP_NAME']}.internal`.split
 
+    hostenv = `env | grep FLY`
+
     # rsync db and storage directories to each instance
     addrs.each do |addr|
       cmd = %W[
@@ -81,7 +83,8 @@ begin
       puts cmd.join(' ')
       output, status = Open3.capture2e *cmd
       puts output
-      Sentry.capture_message(output) unless status.success?
+
+      Sentry.capture_message("#{hostenv}\n#{output}") unless status.success?
     end
 
     # run webhook
@@ -92,7 +95,7 @@ begin
     else
       STDERR.puts res
       STDERR.puts res.body 
-      Sentry.capture_message(res.body)
+      Sentry.capture_message("#{hostenv}\n#{res.body}")
     end
   end
 
