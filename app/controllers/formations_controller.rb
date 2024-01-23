@@ -1,6 +1,7 @@
 class FormationsController < ApplicationController
   before_action :set_formation, only: %i[ show edit update destroy ]
   include EntryForm
+  include ActiveStorage::SetCurrent
 
   permit_site_owners *%i[ show edit update ]
 
