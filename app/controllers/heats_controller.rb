@@ -276,6 +276,14 @@ class HeatsController < ApplicationController
     @instructor = @heat.entry.instructor_id
     @ballroom = Event.exists?(ballrooms: 2..) || Category.exists?(ballrooms: 2..)
     @locked = Event.last.locked
+
+    unless @avail.values.include? @partner
+      partner = @heat.entry.partner(@person)
+      @avail[partner.display_name] = @partner
+      if partner.type == 'Professional'
+        @instructors[partner.display_name] = @partner
+      end
+    end
   end
 
   # POST /heats or /heats.json
