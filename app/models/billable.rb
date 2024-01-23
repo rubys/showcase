@@ -27,7 +27,9 @@ class Billable < ApplicationRecord
 
   def missing
     if type == 'Option'
-      Person.where.not(package: option_included_by.map(&:package))
+      option_selected_by = PersonOption.where(option: self).pluck(:person_id)
+      Person.where.not(package: option_included_by.map(&:package)).
+        select {|person| !option_selected_by.include? person.id}
     else
       Person.where(type: type).and(Person.where.not(package: self))
     end
