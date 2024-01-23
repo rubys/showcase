@@ -53,7 +53,13 @@ private
   end
 
   def run(command)
-    PTY.spawn *command do |read, write, pid|
+    path = ENV['PATH']
+
+    if Dir.exist? "/opt/homebrew/opt/ruby/bin"
+      path = "/opt/homebrew/opt/ruby/bin:#{path}"
+    end
+
+    PTY.spawn({"PATH" => path}, *command) do |read, write, pid|
       @pid = pid
       write.close
     

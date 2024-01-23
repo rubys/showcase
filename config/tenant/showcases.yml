@@ -74,6 +74,10 @@
     :name: Raleigh
     :region: iad
     :logo: arthur-murray-logo.gif
+  ridgewood:
+    :name: Ridgewood
+    :region: iad
+    :logo: arthur-murray-logo.gif
   roanoke:
     :name: Roanoke
     :region: iad
