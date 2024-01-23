@@ -11,7 +11,7 @@ class EventController < ApplicationController
   skip_before_action :authenticate_user, only: %i[ counter showcases regions console ]
   skip_before_action :verify_authenticity_token, only: :console
 
-  permit_owners :root
+  permit_site_owners :root
 
   def landing
     @nologo = true

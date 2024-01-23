@@ -7,9 +7,9 @@ class ApplicationController < ActionController::Base
       flash: {error: 'Database is in readonly mode'}
   end
 
-  def self.permit_owners(*actions)
+  def self.permit_site_owners(*actions)
     skip_before_action :authenticate_user, only: actions
-    before_action :authenticate_owner, only: actions
+    before_action :authenticate_site_owner, only: actions
   end
 
   private
@@ -26,7 +26,7 @@ class ApplicationController < ActionController::Base
       forbidden unless User.authorized?(@authuser)
     end
 
-    def authenticate_owner
+    def authenticate_site_owner
       get_authentication
 
       unless ENV['HTTP_X_REMOTE_USER']

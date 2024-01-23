@@ -4,7 +4,7 @@ class SolosController < ApplicationController
   include Printable
   include ActiveStorage::SetCurrent
 
-  permit_owners *%i[ show edit update ]
+  permit_site_owners *%i[ show edit update ]
 
   # GET /solos or /solos.json
   def index
