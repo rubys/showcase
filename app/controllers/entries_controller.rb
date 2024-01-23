@@ -39,7 +39,11 @@ class EntriesController < ApplicationController
     tally_entry
 
     unless @avail.values.include? @partner
-      @avail[@entry.partner(@person).display_name] = @partner
+      partner = @entry.partner(@person)
+      @avail[partner.display_name] = @partner
+      if partner.type == 'Professional'
+        @instructors[partner.display_name] = @partner
+      end
     end
   end
 
