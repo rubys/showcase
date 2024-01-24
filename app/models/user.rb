@@ -39,7 +39,9 @@ class User < ApplicationRecord
 
   def self.owned?(userid, studio=nil)
     owned = studios_owned(userid)
-    if studio
+    if owned.include? 'index'
+      true
+    elsif studio
       owned.include? studio.name
     else
       Studio.any? {|studio| owned.include? studio.name}

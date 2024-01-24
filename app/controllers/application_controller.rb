@@ -12,6 +12,11 @@ class ApplicationController < ActionController::Base
     before_action :authenticate_site_owner, only: actions
   end
 
+  def self.permit_event_owners(*actions)
+    skip_before_action :authenticate_user, only: actions
+    before_action :authenticate_event_owner, only: actions
+  end
+
   private
     def authenticate_user
       get_authentication
@@ -40,6 +45,23 @@ class ApplicationController < ActionController::Base
       forbidden unless User.owned?(@authuser, @studio)
     end
 
+    def authenticate_event_owner
+      get_authentication
+
+      unless ENV['HTTP_X_REMOTE_USER']
+        return unless Rails.env.production?
+        return if request.local?
+      end
+
+      return if ENV['RAILS_APP_OWNER'] == 'Demo'
+
+      return if User.index_auth?(@authuser)
+
+      studio = Studio.where(name: ENV['RAILS_APP_OWNER']).first
+
+      forbidden(true) unless User.owned?(@authuser, studio)
+    end
+
     def show_detailed_exceptions?
       User.index_auth?(@authuser)
     end
@@ -53,8 +75,8 @@ class ApplicationController < ActionController::Base
       end
     end
 
-    def forbidden
-      if @authuser and not params[:login]
+    def forbidden(prompt = false)
+      if @authuser and not params[:login] and not prompt
         page = ENV['RAILS_APP_OWNER'] == 'index' ? 'public/403-index.html' : 'public/403.html'
         render file: File.expand_path(page, Rails.root),
           layout: false, status: :forbidden

@@ -3,6 +3,8 @@ class CategoriesController < ApplicationController
   include HeatScheduler
   before_action :set_category, only: %i[ show edit update destroy ]
 
+  permit_event_owners :toggle_lock
+
   # GET /categories or /categories.json
   def index
     generate_agenda
