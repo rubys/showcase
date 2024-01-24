@@ -84,7 +84,9 @@ begin
       output, status = Open3.capture2e *cmd
       puts output
 
-      Sentry.capture_message("#{hostenv}\n#{output}") unless status.success?
+      unless status.success?
+        Sentry.capture_message("#{hostenv}\nrsync to: #{addr}\n\n#{output}")
+      end
     end
 
     # run webhook
