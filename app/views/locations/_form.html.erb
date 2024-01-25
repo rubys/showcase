@@ -1,4 +1,4 @@
-<%= form_with(model: location, class: "contents", id: 'location-form', data: {controller: 'geocode'}) do |form| %>
+<%= form_with(model: location, class: "contents", id: 'location-form', data: {controller: 'geocode name-to-token'}) do |form| %>
   <% errors = (@location&.errors&.full_messages || []) + 
     (@user&.errors&.full_messages || []) + (@showcase&.errors&.full_messages || []) %>
   <% if errors.any? %>
@@ -17,21 +17,29 @@
 
   <h2 class="font-bold text-3xl mt-8">Studio</h2>
 
-  <% else %>
-
-  <div class="my-5">
-    <%= form.label :key, "Token", class: "block" %>
-    <%= form.text_field :key, data: {"geocode-target" => "token"},
-      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
-  </div>
-
-  <% end %>
-
   <div class="my-5">
     <%= form.label :name %>
     <%= form.text_field :name, data: {"geocode-target" => "name"},
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+
+  <% else %>
+
+  <div class="my-5">
+    <%= form.label :name %>
+    <%= form.text_field :name, data: {"geocode-target" => "name", "name-to-token-target" => "name"},
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :key, "Token", class: "block" %>
+    <%= form.text_field :key, data: {"name-to-token-target" => "token"},
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <% end %>
+
+
 
   <div class="my-5">
     <%= form.label :latitude %>
@@ -89,13 +97,15 @@
   </div>
 
   <div class="my-5">
-    <label for="showcase_key">Key</label>
-    <input class="block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="text" name="showcase[key]" id="showcase_key" value="<%= @showcase&.key %>">
+    <label for="showcase_name">Name</label>
+    <input class="block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full"
+      type="text" name="showcase[name]" id="showcase_name" value="<%= @showcase&.name %>"  data-name-to-token-target="name">
   </div>
 
   <div class="my-5">
-    <label for="showcase_name">Name</label>
-    <input class="block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="text" name="showcase[name]" id="showcase_name" value="<%= @showcase&.name %>">
+    <label for="showcase_key">Key</label>
+    <input class="block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full"
+      type="text" name="showcase[key]" id="showcase_key" value="<%= @showcase&.key %>" data-name-to-token-target="token">
   </div>
   <% end %>
 <% end %>

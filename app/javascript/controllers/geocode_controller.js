@@ -2,15 +2,11 @@ import { Controller } from "@hotwired/stimulus"
 
 // Connects to data-controller="geocode"
 export default class extends Controller {
-  static targets = ["name", "latitude", "longitude", "token"]
+  static targets = ["name", "latitude", "longitude"]
 
   connect() {
     this.nameTarget.addEventListener('change', () => {
       let name = this.nameTarget.value
-
-      if (!this.tokenTarget.value) {
-        this.tokenTarget.value = name.toLowerCase().replace(/\W+/g, '')
-      }
 
       fetch(`https://geocode.maps.co/search?q=${encodeURIComponent(name)}`)
         .then(response => response.json())
