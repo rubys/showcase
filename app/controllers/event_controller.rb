@@ -54,7 +54,7 @@ class EventController < ApplicationController
     render :root, status: (@browser_warn ? :upgrade_required : :ok)
   end
 
-  def settings(status: 200)
+  def settings(status: :ok)
     @judges = Person.where(type: 'Judge').order(:name)
     @djs    = Person.where(type: 'DJ').order(:name)
     @emcees = Person.where(type: 'Emcee').order(:name)
@@ -78,7 +78,11 @@ class EventController < ApplicationController
       @tab = params[:tab] || 'Description'
     end
 
-    render "event/settings/#{@tab.downcase}", layout: 'settings', status: status
+    if status == :ok
+      render "event/settings/#{@tab.downcase}", layout: 'settings', status: status
+    else
+      render :settings, status: status
+    end
   end
 
   def counter
