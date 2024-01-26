@@ -86,6 +86,10 @@
     :name: Roanoke
     :region: iad
     :logo: arthur-murray-logo.gif
+  sanjose:
+    :name: San Jose
+    :region: sjc
+    :logo: arthur-murray-logo.gif
   schaumburg:
     :name: Schaumburg
     :region: ord
