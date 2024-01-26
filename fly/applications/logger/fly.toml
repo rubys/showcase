@@ -10,6 +10,8 @@ swap_size_mb = 2048
 [[mounts]]
   source = "log"
   destination = "/logs"
+  auto_extend_size_threshold = 80
+  auto_extend_size_increment = "1GB"
 
 [http_service]
   internal_port = 3000
