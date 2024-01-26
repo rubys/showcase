@@ -54,7 +54,7 @@ class EventController < ApplicationController
     render :root, status: (@browser_warn ? :upgrade_required : :ok)
   end
 
-  def settings
+  def settings(status: 200)
     @judges = Person.where(type: 'Judge').order(:name)
     @djs    = Person.where(type: 'DJ').order(:name)
     @emcees = Person.where(type: 'Emcee').order(:name)
@@ -78,7 +78,7 @@ class EventController < ApplicationController
       @tab = params[:tab] || 'Description'
     end
 
-    render "event/settings/#{@tab.downcase}", layout: 'settings'
+    render "event/settings/#{@tab.downcase}", layout: 'settings', status: status
   end
 
   def counter
@@ -189,8 +189,7 @@ class EventController < ApplicationController
       tab = params[:tab] if params[:tab]
       redirect_to settings_event_index_path(tab: tab), notice: "Event was successfully updated."
     else
-      settings
-      render :settings, status: :unprocessable_entity
+      settings(status: :unprocessable_entity)
     end
   end
 
