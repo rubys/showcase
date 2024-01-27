@@ -19,6 +19,7 @@ module ActiveRecord::ConnectionAdapters
     def configure_connection
       retries = 20
       raw_connection.busy_handler do |count|
+        sleep 0.1
         count <= retries
       end
 
