@@ -11,6 +11,8 @@
   <table class="w-full break-before-avoid">
       <% @heats.each do |heat| %>
         <% next if heat.number == 0 %>
+        <% category = heat.category
+           category = "" if @combine_open_and_closed and %w(Open Closed).include? heat.category %>
         <% if @agenda[heat.number] %>
         <% if heat.number != 1 %>
         </tbody>
@@ -30,27 +32,27 @@
         <% children.each_with_index do |multi, i| %>
         <tr <% if i == 0 %>id="<%= dom_id heat %>"<% end %> class="text-black">
           <td><%= heat.number %> - Semi <%= i+1 %>
-          <td><%= "#{heat.category} #{heat.dance.name} - #{multi.dance.name}" %>
+          <td><%= "#{category} #{heat.dance.name} - #{multi.dance.name}" %>
         </tr>
         <% end%>
         <% children.each_with_index do |multi, i| %>
         <tr <% if i == 0 %>id="<%= dom_id heat %>"<% end %> class="text-black">
           <td><%= heat.number %> - Final <%= i+1 %>
-          <td><%= "#{heat.category} #{heat.dance.name} - #{multi.dance.name}" %>
+          <td><%= "#{category} #{heat.dance.name} - #{multi.dance.name}" %>
         </tr>
         <% end%>
         <% elsif children.length > 0 %>
         <% 0.upto(heat.dance.heat_length-1) do |i| multi=children[i % children.length] %>
         <tr <% if i == 0 %>id="<%= dom_id heat %>"<% end %> class="text-black">
           <td><%= heat.number %> - Part <%= i+1 %>
-          <td><%= "#{heat.category} #{heat.dance.name} - #{multi.dance.name}" %>
+          <td><%= "#{category} #{heat.dance.name} - #{multi.dance.name}" %>
         </tr>
         <% end%>
         <% else %>
         <% 0.upto(heat.dance.heat_length-1) do |i| %>
         <tr <% if i == 0 %>id="<%= dom_id heat %>"<% end %> class="text-black">
           <td><%= heat.number %> - Part <%= i+1 %>
-          <td><%= "#{heat.category} #{heat.dance.name}" %>
+          <td><%= "#{category} #{heat.dance.name}" %>
         </tr>
         <% end%>
         <% end %>
@@ -58,11 +60,11 @@
         <tr id="<%= dom_id heat %>" class="text-black">
           <td><%= heat.number %>
           <% if heat.solo %>
-          <td><%= "#{heat.category} #{heat.dance.name}#{heat.solo.combo_dance_id ? " / #{heat.solo.combo_dance.name}" : ''}" %>
+          <td><%= "#{category} #{heat.dance.name}#{heat.solo.combo_dance_id ? " / #{heat.solo.combo_dance.name}" : ''}" %>
           <% unless heat.solo.song.blank? %>- <%= heat.solo.song %><% end %>
           <% unless heat.solo.artist.blank? %>- <%= heat.solo.artist %><% end %>
           <% else %>
-          <td><%= "#{heat.category} #{heat.dance.name}" %>
+          <td><%= "#{category} #{heat.dance.name}" %>
           <% end %>
         </tr>
         <% end %>

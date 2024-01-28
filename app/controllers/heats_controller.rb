@@ -23,6 +23,7 @@ class HeatsController < ApplicationController
     @track_ages = event.track_ages
     @column_order = event.column_order
     @locked = event.locked?
+    @combine_open_and_closed = event.heat_range_cat == 1
 
     if @backnums
       if Entry.includes(:heats).where.not(heats: {category: 'Solo'}).empty?
@@ -62,6 +63,8 @@ class HeatsController < ApplicationController
     @layout = ''
     @nologo = true
     @font_size = Event.first.font_size
+
+    @combine_open_and_closed = Event.last.heat_range_cat == 1
 
     respond_to do |format|
       format.html

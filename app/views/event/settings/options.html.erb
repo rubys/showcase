@@ -52,13 +52,18 @@
   </ul>
   </div>
 
+  <% if @combine_open_and_closed %>
+  <% @event.open_scoring = 'G' %>
+  <div class="my-5 bg-slate-300 opacity-50 cursor-not-allowed">
+  <% else %>
   <div class="my-5">
+  <% end %>
   <%= form.label :open_scoring %>
   <ul class="ml-6">
-  <li class="my-2"><%= form.radio_button :open_scoring, '1' %> 1/2/3/F
-  <li class="my-2"><%= form.radio_button :open_scoring, 'G' %> GH/G/S/B
-  <li class="my-2"><%= form.radio_button :open_scoring, '#' %> Number (85, 95, ...)
-  <li class="my-2"><%= form.radio_button :open_scoring, '+' %> Feedback (Needs Work On / Great Job With)
+  <li class="my-2"><%= form.radio_button :open_scoring, '1', disabled: @combine_open_and_closed %> 1/2/3/F
+  <li class="my-2"><%= form.radio_button :open_scoring, 'G', disabled: @combine_open_and_closed %> GH/G/S/B
+  <li class="my-2"><%= form.radio_button :open_scoring, '#', disabled: @combine_open_and_closed %> Number (85, 95, ...)
+  <li class="my-2"><%= form.radio_button :open_scoring, '+', disabled: @combine_open_and_closed %> Feedback (Needs Work On / Great Job With)
   </ul>
   </div>
 

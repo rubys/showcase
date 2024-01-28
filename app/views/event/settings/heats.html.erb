@@ -10,20 +10,26 @@
     <li>Number of heats is largely controlled by the number of entries and number of instructors, but you
     can set some limits on who can be on the floor at the same time which may increase the number of heats.</li>
     <li>
-    With the slider<% if @event.track_ages %>s<% end %> all the way to the left, Full Bronze students can only be on the floor
+    With the sliders all the way to the left:
+    <ul class="ml-4 list-disc list-outside">
+    <li>Full Bronze students can only be on the floor
     with other Full Bronze students.
     <% if @event.track_ages %>
-    And people in age category B1 can only
+    <li>People in age category B1 can only
     be on the floor with others in the same age category.
     <% end %>
+    </ul>
     </li>
     <li>
-    With the slider<% if @event.track_ages %>s<% end %> all the way to the right<!--, Open and Closed heats can be 
-    on the floor at the same time, --> Newcomers can be on the dance floor at the
+    With the sliders all the way to the right:
+    <ul class="ml-4 list-disc list-outside">
+    <li>Newcomers can be on the dance floor at the
     same time as Full Gold students.
     <% if @event.track_ages %>
-    And people in any age category can be on the floor at the same time.
+    <li>People in any age category can be on the floor at the same time.
     <% end %>
+    <li>And Open and Closed heats can be on the floor at the same time.
+    </ul>
     </li>
   </ul>
 </div>
@@ -51,13 +57,6 @@
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
-<!--
-  <div class="my-5">
-    <%= form.label :heat_range_cat, 'open/closed' %>
-    <%= form.range_field :heat_range_cat, min: 0, max: 1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
-  </div>
--->
-
   <div class="my-5">
     <%= form.label :heat_range_level, 'level' %>
     <%= form.range_field :heat_range_level, min: 0, max: @levels.length-1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
@@ -71,6 +70,11 @@
   <% else %>
     <%= form.hidden_field :heat_range_age, value: @ages-1 %>
   <% end %>
+
+  <div class="my-5">
+    <%= form.label :heat_range_cat, 'open/closed' %>
+    <%= form.range_field :heat_range_cat, min: 0, max: 1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
 
   <div class="inline">
     <%= form.button 'Save', name: 'tab', value: 'Heats', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>

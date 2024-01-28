@@ -85,7 +85,7 @@
       <% end %>
         <td></td>
         <td colspan="9" class="text-xl pt-4">Heat <span class="heat-humber"><%= number %></span>: 
-          <%= heats.first.category %>
+          <% unless @combine_open_and_closed and %w(Open Closed).include? heats.first.category %><%= heats.first.category %><% end %>
           <% if heats.first.dance_id == heats.last.dance_id %>
           <%= heats.first.dance.name %>
           <% if heats.first.category == 'Solo' and heats.first.solo.combo_dance%>

@@ -20,6 +20,7 @@ class ScoresController < ApplicationController
     @sort = params[:sort] || 'back'
 
     @heats = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance)
+    @combine_open_and_closed = Event.last.heat_range_cat == 1
 
     @agenda = @heats.group_by(&:dance_category).
       sort_by {|category, heats| [category&.order || 0, heats.map(&:number).min]}
@@ -47,11 +48,14 @@ class ScoresController < ApplicationController
       entry: [:age, :level, :lead, :follow]
     ).to_a
 
+    @combine_open_and_closed = @event.heat_range_cat == 1
+
     if @subjects.empty?
       @dance = '-'
       @scores = []
     else
       category = @subjects.first.category
+
       if @subjects.first.dance_id == @subjects.last.dance_id
         @dance = "#{category} #{@subjects.first.dance.name}"
       else
@@ -65,6 +69,11 @@ class ScoresController < ApplicationController
         @scores = SCORES['Closed'].dup
       else
         @scores = SCORES[category].dup
+      end
+
+      if @combine_open_and_closed and %w(Open Closed).include? @subjects.first.category
+        @dance.sub! /^\w+ /, ''
+        @scores = SCORES['Closed'].dup if @subjects.first.category == 'Open'
       end
     end
 

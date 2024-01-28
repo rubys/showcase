@@ -214,7 +214,7 @@ Swiping left and right on mobile devices and tablets also work.
         <td><%= subject.follow.display_name %>
         <td><%= subject.lead.display_name %>
         <% end %>
-        <td><%= subcat %>
+        <td><% if @combine_open_and_closed and %w(Open Closed).include? subject.category %><%= subject.category %> - <% end %><%= subcat %>
         <td><%= subject.subject.studio.name %>
         <% unless @style == 'emcee' %>
         <% if @event.open_scoring == '#' %>
@@ -313,6 +313,7 @@ Swiping left and right on mobile devices and tablets also work.
           </div>
           <% unless @backnums and not subject.entry.lead.back.blank? %>
           <div class="hidden text-sm sm:block base-<%=lvl%>"><br>
+          <% if @combine_open_and_closed and %w(Open Closed).include? subject.category %><%= subject.category %><br><% end %>
           <%= subject.entry.subject_category(@track_ages) %><br>
           <%= lvl %></div>
           <% end %>

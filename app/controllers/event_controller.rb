@@ -60,6 +60,8 @@ class EventController < ApplicationController
     @emcees = Person.where(type: 'Emcee').order(:name)
 
     @event ||= Event.last
+
+    @combine_open_and_closed = @event.heat_range_cat == 1
     
     @ages = Age.all.size
     @levels = Level.all.order(:id).map {|level| [level.name, level.id]}
