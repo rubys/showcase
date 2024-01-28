@@ -8,7 +8,8 @@ class AdminController < ApplicationController
 
   def index
     if ENV['FLY_REGION']
-      redirect_to 'https://rubix.intertwingly.net/admin'
+      redirect_to 'https://rubix.intertwingly.net/admin',
+        allow_other_host: true
       return
     end
 
