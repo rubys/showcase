@@ -19,7 +19,11 @@ class ScoresController < ApplicationController
     @style = params[:style] || 'cards'
     @sort = params[:sort] || 'back'
 
-    @heats = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance)
+    @heats = Heat.all.where(number: 1..).order(:number).group(:number).includes(
+      dance: [:open_category, :closed_category, :multi_category, {solo_category: :extensions}],
+      entry: %i[lead follow],
+      solo: %i[category_override]
+    )
     @combine_open_and_closed = Event.last.heat_range_cat == 1
 
     @agenda = @heats.group_by(&:dance_category).
