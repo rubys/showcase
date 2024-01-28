@@ -1,13 +1,14 @@
 import fs from 'node:fs'
-import { promises as dns } from 'node:dns';
+import { promises as dns } from 'node:dns'
 import readline from 'node:readline'
 import path from 'node:path'
 
 import express from "express"
+import Convert from 'ansi-to-html'
 
 import { startWs } from './websocket.ts'
 
-import { pattern, filtered, format, highlight, visit, LOGS } from "./view.ts";
+import { pattern, filtered, format, highlight, visit, LOGS } from "./view.ts"
 
 const PORT = 3000
 
@@ -188,6 +189,51 @@ app.get("/", async (req, res) => {
     </style>
     ${results.reverse().join("\n")}
     <script src="/static/client.js"></script>
+  `)
+})
+
+// scan for request
+app.get("/request/:request_id", async (request, response, next) => {
+  let { request_id } = request.params;
+  if (request_id.length < 20 || !request_id.match(/^\w+$/)) return next()
+
+  const convert = new Convert();
+
+  let logs = await fs.promises.readdir(LOGS);
+  logs.sort();
+
+  let results: string[] = [];
+
+  results.push('<pre>')
+
+  while (logs.length > 0) {
+    const log = logs.pop();
+    if (!log?.endsWith('.log')) continue;
+
+    const rl = readline.createInterface({
+      input: fs.createReadStream(path.join(LOGS, log)),
+      crlfDelay: Infinity
+    });
+
+    await new Promise(resolve => {
+      rl.on('line', line => {
+        if (line.includes(request_id)) results.push(convert.toHtml(line))
+      });
+
+      rl.on('close', () => {
+        resolve(null)
+      });
+    });
+
+    if (results.length > 0) break;
+  }
+
+  results.push('</pre>')
+
+  response.send(`
+    <!DOCTYPE html>
+    <h1>Request ${request_id}</h1>
+    ${results.join("\n")}
   `)
 })
 

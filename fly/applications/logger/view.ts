@@ -15,7 +15,9 @@ export const pattern = new RegExp([
   /- (-|\w+) /,                      // - user (#3)
   /\[([\w\/: +-]+)\] /,              // time (#4)
   /"(\w+) (\/showcase\S*) (.*?)" /,  // method (#5), url (#6), protocol (#7)
-  /(\d+) (\d+.*$)/,                  // status (#8), length, rest (#9)
+  /(\d+) (\d+) /,                    // status (#8), length (#9)
+  /(\[\w+\] )?/,                     // request id (#10)
+  /(.*$)/,                           // rest (#11)
 ].map(r => r.source).join(''))
 
 // identify which lines are to be filtered
@@ -26,8 +28,11 @@ export function filtered(match: RegExpMatchArray) {
 // formatted log entry
 export function format(match: RegExpMatchArray) {
   let status = match[8];
+  let request_id = (match[10] || '').replace(/[^\w]/g, '')
   if (!status.match(/20[06]|101|30[2347]/)) {
-    status = `<span style="background-color: orange">${status}</span>`
+    status = `<a href="request/${request_id}" style="background-color: orange">${status}</a>`
+  } else {
+    status = `<a href="request/${request_id}">${status}</a>`
   }
 
   let link = `<a href="${HOST}${match[6]}">${match[6]}</a>`;
@@ -38,8 +43,8 @@ export function format(match: RegExpMatchArray) {
     status,
     match[2].split(',')[0],
     `<span style="color: blue">${match[3]}</span>`,
-    `"${match[5]} ${link} ${match[7]}"`,
-    escape(match[9])
+    `"${match[5]} ${link} ${match[7]} ${match[9]}"`,
+    escape(match[11])
   ].join(' ')
 }
 
