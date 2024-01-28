@@ -131,7 +131,12 @@ class ScoresController < ApplicationController
 
     options = {style: @style, sort: @sort}
 
-    heats = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance)
+    heats = Heat.all.where(number: 1..).order(:number).group(:number).
+      includes(
+        dance: [:open_category, :closed_category, :multi_category, {solo_category: :extensions}],
+        entry: %i[lead follow],
+        solo: %i[category_override]
+      )
     agenda = heats.group_by(&:dance_category).
       sort_by {|category, heats| [category&.order || 0, heats.map(&:number).min]}
     heats = agenda.to_h.values.flatten
