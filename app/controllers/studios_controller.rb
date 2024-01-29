@@ -4,7 +4,7 @@ class StudiosController < ApplicationController
 
   before_action :set_studio, only: %i[ show edit update unpair destroy heats scores invoice student_invoices send_invoice solos ]
 
-  permit_site_owners *%i[ index show solos invoice ]
+  permit_site_owners *%i[ index show solos invoice student_invoices scores ]
 
   # GET /studios or /studios.json
   def index
