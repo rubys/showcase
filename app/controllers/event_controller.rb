@@ -13,6 +13,18 @@ class EventController < ApplicationController
 
   permit_site_owners :root
 
+  FONTS = {
+    'Algerian' => 'Algerian Regular',
+    'Arial' => 'Helvetica, Arial',
+    'Berlin Sans FB' => 'Berlin Sans FB Demi Bold',
+    'Bevan' => 'Bevan Regular',
+    'Courier New' => 'Courier New, Courier',
+    'Georgia' => 'Georgia',
+    'Times New Roman' => 'Times New Roman, Times',
+    'Trebuchet MS' => 'Trebuchet MS',
+    'Verdana' => 'Verdana'
+  }
+
   def landing
     @nologo = true
   end
