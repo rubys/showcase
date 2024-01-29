@@ -57,16 +57,12 @@ startWs(app)
 // authentication middleware
 app.use(async (req, res, next) => {
   const { HTPASSWD } = process.env
-  console.log(HTPASSWD)
-  // if (!HTPASSWD) return next()
 
   // parse login and password from headers
   const b64auth = (req.headers.authorization || '').split(' ')[1] || ''
 
-  if (HTPASSWD) console.log(await bcrypt.compare(b64auth, HTPASSWD))
-
   if (HTPASSWD && await bcrypt.compare(b64auth, HTPASSWD)) return next()
-  console.log(`fly secrets set --stage 'HTPASSWD=${await bcrypt.hash(b64auth, 10)}'`)
+  // console.log(`fly secrets set --stage 'HTPASSWD=${await bcrypt.hash(b64auth, 10)}'`)
 
   // Access denied...
   res.set('WWW-Authenticate', 'Basic realm="smooth-logger"')
