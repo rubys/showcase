@@ -14,5 +14,17 @@ export default class extends Controller {
           .catch(console.error);
       });
     }
+
+    let selects = this.element.querySelectorAll("select");
+
+    for (const input of selects) {
+      input.addEventListener("input", () => {
+        fetch(this.element.action, {
+          method: this.element.method,
+          body: new FormData(this.element)
+        })
+          .catch(console.error);
+      });
+    }
   }
 }

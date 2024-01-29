@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_01_20_160513) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_29_193921) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -178,6 +178,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_20_160513) do
     t.boolean "include_closed", default: true
     t.integer "solo_level_id"
     t.boolean "print_studio_heats", default: false
+    t.string "font_family", default: "Helvetica, Arial"
     t.index ["solo_level_id"], name: "index_events_on_solo_level_id"
   end
 

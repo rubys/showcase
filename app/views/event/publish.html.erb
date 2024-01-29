@@ -24,6 +24,12 @@
 
   <%= form_with model: @event, data: {controller: "autoform"} do |form| %>
   <div class="mt-12">
+  <%= form.label :font_family %>
+  <%= form.select :font_family, @fonts, {},
+    class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="mt-12">
   <%= form.label :font_size %>
   <%= form.text_field :font_size, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
@@ -35,7 +41,7 @@
 
   <div class="my-5 flex items-center">
   <%= form.check_box :print_studio_heats, class: "entry-count h-10" %>
-  <%= form.label :print_studio_heats, class: "align-middle" %>
+  <%= form.label :print_studio_heats, 'include studio heats', class: "align-middle" %>
   </div>
   <% end %>
   </div>

@@ -80,7 +80,7 @@ class HeatsController < ApplicationController
     @event = Event.last
     @ballrooms = Event.last.ballrooms
     index
-    @font_family = 'Algerian Regular'
+    @font_family = @event.font_family
     @font_size = @event.font_size
 
     @assignments = {}
