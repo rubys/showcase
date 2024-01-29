@@ -34,7 +34,7 @@ can click on it to see helpful hints.</li>
 <table class="table-auto mt-8">
 <% @regions.each do |region, cities| %>
   <tr>
-    <td><span class="w-10 text-2xl inline-block"><%= link_to region, region_path(region) %></span>
+    <td><span class="w-14 text-2xl inline-block"><%= link_to region, region_path(region) %></span>
     <td><span class="text-slate-500">(<%= cities.map {|city| link_to city, studio_events_path(@cities[city])}.join(", ").html_safe %>)</span>
   </tr>
 <% end %>
