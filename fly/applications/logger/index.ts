@@ -5,6 +5,7 @@ import path from 'node:path'
 
 import express from "express"
 import Convert from 'ansi-to-html'
+import * as bcrypt from "bcrypt"
 
 import { startWs } from './websocket.ts'
 
@@ -52,6 +53,25 @@ async function getLatest() {
 }
 
 startWs(app)
+
+// authentication middleware
+app.use(async (req, res, next) => {
+  const { HTPASSWD } = process.env
+  console.log(HTPASSWD)
+  // if (!HTPASSWD) return next()
+
+  // parse login and password from headers
+  const b64auth = (req.headers.authorization || '').split(' ')[1] || ''
+
+  if (HTPASSWD) console.log(await bcrypt.compare(b64auth, HTPASSWD))
+
+  if (HTPASSWD && await bcrypt.compare(b64auth, HTPASSWD)) return next()
+  console.log(`fly secrets set --stage 'HTPASSWD=${await bcrypt.hash(b64auth, 10)}'`)
+
+  // Access denied...
+  res.set('WWW-Authenticate', 'Basic realm="smooth-logger"')
+  res.status(401).send('Authentication required.')
+})
 
 app.get("/sentry/link", (_, response) => {
   const { SENTRY_ORG, SENTRY_PROJECT } = process.env
