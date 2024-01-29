@@ -195,6 +195,11 @@ studios:
   warsaw:
     lat: 52.2319581
     lon: 21.0067249
+  westchester:
+    lat: 39.3303357
+    lon: -84.408275
+    x: 654.1151636067387
+    y: 228.04018651927674
   woodlands:
     lat: 30.158
     lon: -95.456

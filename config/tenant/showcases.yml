@@ -106,6 +106,10 @@
     :name: Warsaw
     :region: waw
     :logo: arthur-murray-logo.gif
+  westchester:
+    :name: West Chester
+    :region: ord
+    :logo: arthur-murray-logo.gif
 2023:
   annapolis:
     :name: Annapolis
