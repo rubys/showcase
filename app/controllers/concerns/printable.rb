@@ -158,7 +158,7 @@ module Printable
   def generate_invoice(studios = nil, student=false)
     find_couples
 
-    studios ||= Studio.all(order: name)
+    studios ||= Studio.all(order: name).preload(:studio1_pairs, :studio2_pairs, people: {options: :option, package: {package_includes: :option}})
 
     @event = Event.last
     @track_ages = @event.track_ages
@@ -196,8 +196,8 @@ module Printable
       @cost.merge! overrides
 
       preload = {
-        lead: [:package, {options: :option}],
-        follow: [:package, {options: :option}],
+        lead: [:studio, {options: :option, package: {package_includes: :option}}],
+        follow: [:studio, {options: :option, package: {package_includes: :option}}],
         heats: {dance: [:open_category, :closed_category, :solo_category]}
       }
       entries = (Entry.joins(:follow).preload(preload).where(people: {type: 'Student', studio: studio}) +
