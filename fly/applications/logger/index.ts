@@ -241,7 +241,7 @@ app.get("/request/:request_id", async (request, response, next) => {
       });
     });
 
-    if (results.length > 0) break;
+    if (results.length > 1) break;
   }
 
   results.push('</pre>')
