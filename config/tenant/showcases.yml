@@ -70,6 +70,11 @@
     :name: Livermore
     :region: sjc
     :logo: arthur-murray-logo.gif
+    :events:
+      pep-rally:
+        :name: Pep Rally
+      district-showcase:
+        :name: District Showcase
   merrillville:
     :name: Merrillville
     :region: ord
