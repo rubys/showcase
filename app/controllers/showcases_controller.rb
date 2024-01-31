@@ -35,18 +35,17 @@ class ShowcasesController < ApplicationController
   # GET /showcases/1/edit
   def edit
     new
-    return
 
-    if @showcase.key == 'showcase' and @showcase.location.showcases.select {|showcase| showcase.year = @showcase.year}.count == 1
+    if @showcase.key == 'showcase' and @showcase.location.showcases.select {|showcase| showcase.year == @showcase.year}.count == 1
       @db = "#{@showcase.year}-#{@showcase.location.key}"
     else
       @db = "#{@showcase.year}-#{@showcase.location.key}-#{@showcase.key}"
     end
 
     unless Rails.env.test?
-      @people = dbquery(@db, 'people', 'count(id)').first.values.first
-      @entries = dbquery(@db, 'heats', 'count(id)', 'number > 0').first.values.first
-      @heats = dbquery(@db, 'heats', 'count(distinct number)', 'number > 0').first.values.first
+      @people = dbquery(@db, 'people', 'count(id)').first&.values&.first || 0
+      @entries = dbquery(@db, 'heats', 'count(id)', 'number > 0').first&.values&.first || 0
+      @heats = dbquery(@db, 'heats', 'count(distinct number)', 'number > 0').first&.values&.first || 0
     end
   end
 

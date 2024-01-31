@@ -354,9 +354,9 @@ class EventController < ApplicationController
 
       event[:name] ||= dbquery(event[:db], 'events', 'name').first.values.first
 
-      event[:people] = dbquery(event[:db], 'people', 'count(id)').first.values.first
-      event[:entries] = dbquery(event[:db], 'heats', 'count(id)', 'number > 0').first.values.first
-      event[:heats] = dbquery(event[:db], 'heats', 'count(distinct number)', 'number > 0').first.values.first
+      event[:people] = dbquery(event[:db], 'people', 'count(id)').first&.values&.first || 0
+      event[:entries] = dbquery(event[:db], 'heats', 'count(id)', 'number > 0').first&.values&.first || 0
+      event[:heats] = dbquery(event[:db], 'heats', 'count(distinct number)', 'number > 0').first&.values&.first || 0
     end
 
     @events.sort_by! {|event| event[:studio]}

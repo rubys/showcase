@@ -195,6 +195,8 @@ end
     count = `sqlite3 #{database} "select count(*) from events"`.to_i
     system 'bin/rails db:seed' if count == 0
 
+    FileUtils.chown_R 'rails', 'rails', database
+
     if tenant.owner == "Demo"
       FileUtils.cp database, "#{database}.seed", preserve: true
     end
