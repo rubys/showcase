@@ -181,6 +181,7 @@ end
       File.rename basedb, database
       Dir.chdir @dbpath do
         File.symlink File.basename(database), File.basename(basedb)
+        FileUtils.chown_R 'rails', 'rails', File.basename(basedb)
       end
     end
   end
@@ -206,9 +207,13 @@ end
       File.rename basestore, storage
       Dir.chdir @storage do
         File.symlink File.basename(storage), File.basename(basestore)
+        FileUtils.chown_R 'rails', 'rails', File.basename(basestore)
       end
     else
-      FileUtils.mkdir_p storage unless Dir.exist? storage
+      unless Dir.exist? storage
+        FileUtils.mkdir_p storage
+        FileUtils.chown_R 'rails', 'rails', storage
+      end
     end
   end
 end
