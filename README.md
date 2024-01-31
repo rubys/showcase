@@ -5,7 +5,7 @@ In between updates to [Agile Web Development with Rails
 keep my Rails skills sharp by developing small applications.
 
 I also take ballroom dance lessons with my wife, and we have competed
-nationally and at smaller local competitions.  Nationally, there is commercial
+internationally and at smaller local competitions.  For larger events there is commercial
 software for scheduling "heats" where dancers go on the floor and be judged.
 Smaller competitions use spreadsheets to track this.
 
@@ -16,8 +16,9 @@ having the same person being scheduled twice with different partners for the
 same heat.
 
 This application manages showcase events, from data entry to scheduling, to
-generating of printed reports.  It can even be accessed by participants
-on the day of the event to see the list of heats.
+generating of printed reports.  It can also be accessed by participants
+on the day of the event to see the list of heats, and by judges to enter
+scores.
 
 # Getting up and running - bare metal, one event
 
@@ -29,7 +30,7 @@ Prerequisites:
 git clone https://github.com/rubys/showcase.git
 cd Showcase
 bundle install
-bin/rails db:create db:migrate db:seed
+bin/rails db:prepare
 bin/rails test
 bin/rails test:system
 bin/dev
@@ -81,7 +82,7 @@ drag and drop.
 
 # Deployment (multi-tenancy)
 
-The current code base supports only a single event.
+The code base supports only a single event.
 
 There are a number of blog posts out there on how to do
 [multi-tenancy](https://blog.arkency.com/comparison-of-approaches-to-multitenancy-in-rails-apps/)
@@ -117,33 +118,64 @@ still listed as todo, but the following is what I have been able to figure out:
 
 The end result is what outwardly appears to be a single Rails app, with a
 single set of assets and a single cable.  One additional rails instance
-serves the index and ultimately will provide global administration.
+serves the index and provides a global administration interface.
 
 # Topology
 
-The initial (and as of this writing, current) configuration has a 8 year old i3
+The initial configuration had a 8 year old i3
 Linux box running Apache httpd handing SSL and reverse proxying the application
 to a 2021 vintage Mac Mini M1 running the nginx configuration described above.
-This approach should easily scale to be able to handle hundreds of events even
-with a half dozen or so running concurrently.
+This approach could easily scale to be able to handle hundreds of events even
+with a half dozen or so running concurrently, but had a hard dependency on
+my house having both power and internet connectivity.
 
 An architecture of a single nginx process per group of rails apps, one per
 event, is well suited to deployment in a Docker container to one of any number
-of available cloud providers.  Doing so would not only give scalability and
-privacy, it would eliminate any concerns of the app not being available due to
+of available cloud providers.  Doing so not only provides scalability and
+privacy, it eliminates any concerns of the app not being available due to
 power or network outages.
 
-Depending on the cloud provider, you will likely need to replace the database,
-the volumes, the ports, and even the `docker-compose.yml`.
+The current configuration is hosted on [Fly.io](https://fly.io).  It consists
+of one machine per region, each machine hosts multiple locations, and each
+location hosting one or more events.  A 
+[stimulus controller and turbo hook](https://github.com/rubys/showcase/commit/84a1e20749cd189254f35896779a9f5439d3c939) adds a [`Fly-Prefer-Region`](https://fly.io/docs/networking/dynamic-request-routing/#the-fly-prefer-region-request-header) header to requests, and nginx is
+configured to respond with a [`Fly-Replay`](https://fly.io/docs/networking/dynamic-request-routing/#the-fly-replay-response-header) header and/or
+reverse proxy requests to the [proper region](https://fly.io/docs/networking/private-networking/#fly-io-internal-addresses).
 
-# Futures (planned features)
+A separate [printing app](https://fly.io/blog/print-on-demand/) handles
+generation of PDFs, and a separate
+[logging app](https://fly.io/blog/redundant-logs/) provides access to logs.
 
-Some of features being explored:
+# Backups
 
-- Cloud deployment (described above)
-- User access control and authentication
-    - Likely initially "Basic" HTTP authentication within the application
-    - OAuth with providers like google, facebook, etc is indeed possible
-- User interface to create a new event
-- Basic "bulletin board" feature both for support request and for studios to
-  coordinate plans
+A typical database is approximately a megabyte so it doesn't make sense
+to optimize for storage.  To the contrary, each database is replicated
+to every region as well as to two separate off-size locations.  Replications
+are implemented using rsync, and occur when the passenger application in a
+given region has been idle for five minutes.
+
+A cron job in my home server takes daily backups, and uses hard links
+to optimize for the case where the database hasn't changed in on that day.
+As these backups are stored on a terabyte SSD, a growth rate of a few
+megabytes per day is not a concern.
+
+# Performance
+
+* While there are a few outliers (e.g., agenda redo, pdf generation), most
+  requests are satisfied in approximately 100ms.
+* Peak load rates approach 1 request per second per event.
+* Typical usage profile
+  * days (or even weeks) of data entry, often by a single person,
+    other times by a group of people in the same geographic region.
+  * a day or so of final tweaks and generation of PDFs
+  * a day or two of a judge or a small number of judges entering scores.
+    These judges will all be in the same physical locaion.
+  * a small number of hours of PDF generation.
+
+Given this profile, even a modest (shared-cpu-1x) VM has can support
+multiple simultaneous events with ease, with plenty of room for
+growth should it be needed.
+
+Access to remote events is possible but not optimized for.  That being
+said, casual browsing of events as far away as Sydney from the US is
+very doable with resonable reponse times. 
