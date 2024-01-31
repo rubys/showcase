@@ -84,7 +84,6 @@ class User < ApplicationRecord
 
     def self.load_auth
       return unless @@db
-boom
       @@auth_studio = @@db.execute('select userid, sites from users').
         map {|userid, sites| [userid, sites.to_s.split(',')]}.to_h
 
