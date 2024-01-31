@@ -42,9 +42,9 @@ class User < ApplicationRecord
     if owned.include? 'index'
       true
     elsif studio
-      owned.include? studio.name
+      owned.include? studio
     else
-      Studio.any? {|studio| owned.include? studio.name}
+      Studio.any? {|studio| owned.include? studio}
     end
   end
 

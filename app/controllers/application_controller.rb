@@ -42,7 +42,7 @@ class ApplicationController < ActionController::Base
       return if ENV['RAILS_APP_OWNER'] == 'Demo'
       return if User.authorized?(@authuser)
 
-      forbidden unless User.owned?(@authuser, @studio)
+      forbidden unless User.owned?(@authuser, @studio.name)
     end
 
     def authenticate_event_owner
@@ -57,9 +57,7 @@ class ApplicationController < ActionController::Base
 
       return if User.index_auth?(@authuser)
 
-      studio = Studio.where(name: ENV['RAILS_APP_OWNER']).first
-
-      forbidden(true) unless User.owned?(@authuser, studio)
+      forbidden(true) unless User.owned?(@authuser, ENV['RAILS_APP_OWNER'])
     end
 
     def show_detailed_exceptions?
