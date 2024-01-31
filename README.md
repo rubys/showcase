@@ -136,7 +136,7 @@ privacy, it eliminates any concerns of the app not being available due to
 power or network outages.
 
 The current configuration is hosted on [Fly.io](https://fly.io).  It consists
-of one machine per region, each machine hosts multiple locations, and each
+of one machine per region, with each machine hosting multiple locations, and each
 location hosting one or more events.  A 
 [stimulus controller and turbo hook](https://github.com/rubys/showcase/commit/84a1e20749cd189254f35896779a9f5439d3c939) adds a [`Fly-Prefer-Region`](https://fly.io/docs/networking/dynamic-request-routing/#the-fly-prefer-region-request-header) header to requests, and nginx is
 configured to respond with a [`Fly-Replay`](https://fly.io/docs/networking/dynamic-request-routing/#the-fly-replay-response-header) header and/or
