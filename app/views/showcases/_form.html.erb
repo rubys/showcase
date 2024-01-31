@@ -1,4 +1,4 @@
-<%= form_with(model: showcase, class: "contents", id: 'showcase-form') do |form| %>
+<%= form_with(model: showcase, class: "contents", id: 'showcase-form', data: {controller: 'geocode name-to-token'}) do |form| %>
   <% if showcase.errors.any? %>
     <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
       <h2><%= pluralize(showcase.errors.count, "error") %> prohibited this showcase from being saved:</h2>
@@ -17,13 +17,15 @@
   </div>
 
   <div class="my-5">
-    <%= form.label :key %>
-    <%= form.text_field :key, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+    <%= form.label :name %>
+    <%= form.text_field :name, data: {"name-to-token-target" => "name"},
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
   <div class="my-5">
-    <%= form.label :name %>
-    <%= form.text_field :name, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+    <%= form.label :key %>
+    <%= form.text_field :key, data: {"name-to-token-target" => "token"},
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
   <div class="my-5">
