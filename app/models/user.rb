@@ -30,7 +30,7 @@ class User < ApplicationRecord
   def self.index_auth?(userid)
     # deny access if there is a user with 'index' access and this user does not
     return true unless userid
-    return false unless @@auth_studio[userid]
+    return false unless @@db && @@auth_studio[userid]
     return true if @@auth_studio[userid].include? 'index'
     return true unless @@auth_studio.any? {|user, sites| sites.include? 'index'}
 
@@ -84,6 +84,7 @@ class User < ApplicationRecord
 
     def self.load_auth
       return unless @@db
+boom
       @@auth_studio = @@db.execute('select userid, sites from users').
         map {|userid, sites| [userid, sites.to_s.split(',')]}.to_h
 
