@@ -79,6 +79,17 @@
     :name: Merrillville
     :region: ord
     :logo: arthur-murray-logo.gif
+    :events:
+      medal-ball:
+        :name: Medal Ball
+      team-match:
+        :name: Team Match
+      graduation-night:
+        :name: Graduation Night
+      newsome-twosome:
+        :name: Newsome Twosome
+      snowball-spotlight:
+        :name: Snowball Spotlight
   raleigh:
     :name: Raleigh
     :region: iad
