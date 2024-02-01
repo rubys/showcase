@@ -295,7 +295,8 @@ class PeopleController < ApplicationController
     Dance.all
     Person.all
 
-    entries = @person.lead_entries + @person.follow_entries
+    preload = [:lead, :follow, :level, heats: [:dance]]
+    entries = @person.lead_entries.preload(preload) + @person.follow_entries.preload(preload)
     partners = (entries.map(&:follow) + entries.map(&:lead)).uniq
     partners.delete @person
     partners = partners.sort_by {|person| person.name.split(/,\s*/).last}.
