@@ -57,7 +57,7 @@ class ApplicationController < ActionController::Base
 
       return if User.index_auth?(@authuser)
 
-      forbidden(true) unless User.owned?(@authuser, nil, ENV['RAILS_APP_OWNER'])
+      forbidden(true) unless User.owned?(@authuser, Struct.new(:name).new(ENV['RAILS_APP_OWNER']))
     end
 
     def show_detailed_exceptions?
