@@ -786,11 +786,13 @@ class EventController < ApplicationController
     if request.post?
       body = request.body.read
       begin
-        logger.info JSON.pretty_generate(JSON.parse(body))
+        JSON.pretty_generate(JSON.parse(body)).lines.each do |line|
+          logger.info line 
+        end
       rescue
         logger.warn body
       end
-      render status: 200, json: {result: 'OK'}
+      render status: 202, json: {result: 'OK'}
     else
       root
     end

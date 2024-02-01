@@ -35,14 +35,15 @@ export function format(match: RegExpMatchArray) {
     status = `<a href="request/${request_id}">${status}</a>`
   }
 
-  let link = `<a href="${HOST}${match[6]}">${match[6]}</a>`;
+  let link = `<a href="${HOST}${match[6]}">${match[6]}</a>`
+  let ip = match[2].split(',')[0]
 
   return [
     `<time>${match[4].replace(' +0000', 'Z')}</time>`,
     `<a href="https://smooth.fly.dev/showcase/regions/${match[1]}/status"><span style="color: maroon">${match[1]}</span></a>`,
     status,
-    match[2].split(',')[0],
     `<span style="color: blue">${match[3]}</span>`,
+    `<a href="https://iplocation.com/?ip=${ip}">${ip.match(/\w+[.:]\w+$/)}</a>`,
     `"${match[5]} ${link} ${match[7]} ${match[9]}"`,
     escape(match[11])
   ].join(' ')
