@@ -38,6 +38,19 @@ class EntriesController < ApplicationController
 
     tally_entry
 
+    event = Event.first
+    if !event.include_open && event.include_closed
+      @entries['Open'].each do |dance, heats|
+        @entries['Closed'][dance] ||= []
+        @entries['Closed'][dance] += heats
+      end
+    elsif event.include_open && !event.include_closed
+      @entries['Closed'].each do |dance, heats|
+        @entries['Open'][dance] ||= []
+        @entries['Open'][dance] += heats
+      end
+    end
+
     unless @avail.values.include? @partner
       partner = @entry.partner(@person)
       @avail[partner.display_name] = @partner
@@ -76,6 +89,17 @@ class EntriesController < ApplicationController
   def update
     entry = params[:entry]
     replace = find_or_create_entry(entry)
+
+    event = Event.first
+    if event.include_open && !event.include_closed
+      params[:entry][:entries]['Closed'] ||= {}
+      params[:entry][:entries]['Open'].each {|dance, count| params[:entry][:entries]['Closed'][dance] = 0}
+    elsif !event.include_open && event.include_closed
+      params[:entry][:entries]['Open'] ||= {}
+      params[:entry][:entries]['Closed'].each {|dance, count| params[:entry][:entries]['Open'][dance] = 0}
+    end
+
+    params[:entry][:age_id] = 1 if !event.track_ages
 
     previous = @entry.heats.length
     update_heats(entry)
@@ -253,6 +277,7 @@ class EntriesController < ApplicationController
         group_by {|heat| heat.category}.map do |category, heats|
         [category, heats.group_by {|heat| heat.dance.name}]
       end.to_h)
+
     end
 
     def update_heats(entry, new: false)
