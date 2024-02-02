@@ -16,8 +16,9 @@ export const pattern = new RegExp([
   /\[([\w\/: +-]+)\] /,              // time (#4)
   /"(\w+) (\/showcase\S*) (.*?)" /,  // method (#5), url (#6), protocol (#7)
   /(\d+) (\d+) /,                    // status (#8), length (#9)
-  /(\[\w+\] )?/,                     // request id (#10)
-  /(.*$)/,                           // rest (#11)
+  /\[(\w+)\] /,                      // request id (#10)
+  /([.\d]+)?/,                       // request time (#11)
+  /(.*$)/,                           // rest (#12)
 ].map(r => r.source).join(''))
 
 // identify which lines are to be filtered
@@ -44,8 +45,7 @@ export function format(match: RegExpMatchArray) {
     status,
     `<span style="color: blue">${match[3]}</span>`,
     `<a href="https://iplocation.com/?ip=${ip}">${ip.match(/\w+[.:]\w+$/)}</a>`,
-    `"${match[5]} ${link} ${match[7]} ${match[9]}"`,
-    escape(match[11])
+    `${match[5]} ${link} ${match[9]} ${match[11] || ''}`
   ].join(' ')
 }
 
