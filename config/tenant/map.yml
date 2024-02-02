@@ -1,4 +1,8 @@
 regions:
+  ams:
+    name: Amsterdam, Netherlands
+    lat: 52.374344
+    lon: 4.895439
   iad:
     name: Ashburn, Virginia (US)
     lat: 39.02214
