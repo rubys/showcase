@@ -30,8 +30,12 @@ export function filtered(match: RegExpMatchArray) {
 export function format(match: RegExpMatchArray) {
   let status = match[8];
   let request_id = (match[10] || '').replace(/[^\w]/g, '')
-  if (!status.match(/20[06]|101|30[2347]/)) {
-    status = `<a href="request/${request_id}" style="background-color: orange">${status}</a>`
+  if (!status.match(/^20[06]|101|30[2347]/)) {
+    if (status === "499") {
+      status = `<a href="request/${request_id}" style="background-color: gold">${status}</a>`
+    } else {
+      status = `<a href="request/${request_id}" style="background-color: orange">${status}</a>`
+    }
   } else {
     status = `<a href="request/${request_id}">${status}</a>`
   }
