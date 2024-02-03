@@ -28,7 +28,14 @@ end
   volume = volumes.find do |volume| 
     volume['region'] == region && volume['attached_machine_id'] == nil
   end
-  cmd += ['--attach-volume', volume['id']] if volume
+
+  if volume
+    # protect against volume attached to a machine that is destroyed
+    status = JSON.parse(`#{fly} volumes show #{volume['id']} --json`)
+    if status['attached_machine_id'] == nil
+      cmd += ['--attach-volume', volume['id']]
+    end
+  end
 
   exit 1 unless system *cmd
 end
