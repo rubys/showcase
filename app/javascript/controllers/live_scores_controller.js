@@ -13,10 +13,10 @@ export default class extends Controller {
   reload = _event => {
     fetch(this.element.getAttribute("action"), {
       method: "POST",
-      headers: {
+      headers: window.inject_region({
         "X-CSRF-Token": this.token,
         "Content-Type": "application/json"
-      },
+      }),
       credentials: "same-origin",
       redirect: "follow",
       body: ""

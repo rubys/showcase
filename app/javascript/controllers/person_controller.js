@@ -36,10 +36,10 @@ export default class extends Controller {
 
     fetch(event.target.getAttribute("data-url"), {
       method: "POST",
-      headers: {
+      headers: window.inject_region({
         "X-CSRF-Token": this.token,
         "Content-Type": "application/json"
-      },
+      }),
       credentials: "same-origin",
       redirect: "follow",
       body: JSON.stringify({id: this.id, type: event.target.value, studio_id: this.studioTarget.value})
@@ -58,10 +58,10 @@ export default class extends Controller {
   setPackage(event) {
     fetch(event.target.getAttribute("data-url"), {
       method: "POST",
-      headers: {
+      headers: window.inject_region({
         "X-CSRF-Token": this.token,
         "Content-Type": "application/json"
-      },
+      }),
       credentials: "same-origin",
       redirect: "follow",
       body: JSON.stringify({id: this.id, type: this.typeTarget.value, package_id: event.target.value})

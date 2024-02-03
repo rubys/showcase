@@ -22,3 +22,11 @@ export default class extends Controller {
     event.detail.fetchOptions.headers['Fly-Prefer-Region'] = this.region;
   }
 }
+
+window.inject_region = function(headers) {
+  if (document.body.dataset.region) {
+    return Object.assign({}, headers, {'Fly-Prefer-Region': document.body.dataset.region})
+  } else {
+    return headers
+  }
+}

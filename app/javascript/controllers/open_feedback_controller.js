@@ -51,10 +51,10 @@ export default class extends Controller {
 
         fetch(this.element.dataset.feedbackAction, {
           method: "POST",
-          headers: {
+          headers: window.inject_region({
             "X-CSRF-Token": token,
             "Content-Type": "application/json"
-          },
+          }),
           credentials: "same-origin",
           redirect: "follow",
           body: JSON.stringify(feedback)

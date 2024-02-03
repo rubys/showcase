@@ -16,10 +16,10 @@ export default class extends Controller {
       } else {
         fetch(this.studioTarget.getAttribute("data-url"), {
           method: "POST",
-          headers: {
+          headers: window.inject_region({
             "X-CSRF-Token": this.token,
             "Content-Type": "application/json"
-          },
+          }),
           credentials: "same-origin",
           redirect: "follow",
           body: JSON.stringify({studio_id: this.studioTarget.value})

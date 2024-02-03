@@ -57,10 +57,10 @@ export default class extends Controller {
       if (form) return;
       fetch(this.element.dataset.startAction, {
         method: "POST",
-        headers: {
+        headers: window.inject_region({
           "X-CSRF-Token": this.token,
           "Content-Type": "application/json"
-        },
+        }),
         credentials: "same-origin",
         redirect: "follow",
         body: JSON.stringify({
@@ -206,10 +206,10 @@ export default class extends Controller {
   post = results => {
     return fetch(this.element.dataset.dropAction, {
       method: "POST",
-      headers: {
+      headers: window.inject_region({
         "X-CSRF-Token": this.token,
         "Content-Type": "application/json"
-      },
+      }),
       credentials: "same-origin",
       redirect: "follow",
       body: JSON.stringify(results)

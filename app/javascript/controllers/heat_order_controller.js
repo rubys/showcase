@@ -26,10 +26,10 @@ export default class extends Controller {
         input.addEventListener("change", () => {
           fetch(this.element.getAttribute("data-renumber-action"), {
             method: "POST",
-            headers: {
+            headers: window.inject_region({
               "X-CSRF-Token": token,
               "Content-Type": "application/json"
-            },
+            }),
             credentials: "same-origin",
             redirect: "follow",
             body: JSON.stringify({ before: heat.textContent, after: input.value })
