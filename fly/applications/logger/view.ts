@@ -48,7 +48,7 @@ export function format(match: RegExpMatchArray) {
     `<a href="https://smooth.fly.dev/showcase/regions/${match[1]}/status"><span style="color: maroon">${match[1]}</span></a>`,
     status,
     `<span style="color: blue">${match[3]}</span>`,
-    `<a href="https://iplocation.com/?ip=${ip}">${ip.match(/\w+[.:]\w+$/)}</a>`,
+    `<a href="https://iplocation.com/?ip=${ip}">${ip.match(/\w+[.:]+\w+$/)}</a>`,
     `${match[5]} ${link} ${match[9]} ${match[11] || ''}`
   ].join(' ')
 }
