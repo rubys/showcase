@@ -29,7 +29,7 @@ class User < ApplicationRecord
 
   def self.index_auth?(userid)
     # deny access if there is a user with 'index' access and this user does not
-    return true unless userid
+    return Rails.env.development? unless userid
     return false unless @@db && @@auth_studio[userid]
     return true if @@auth_studio[userid].include? 'index'
     return true unless @@auth_studio.any? {|user, sites| sites.include? 'index'}
