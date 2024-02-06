@@ -220,7 +220,7 @@ class EventController < ApplicationController
   end
 
   def showcases
-    auth = YAML.load_file('config/tenant/auth.yml')[@authuser]
+    get_authentication
     @showcases = YAML.load_file('config/tenant/showcases.yml')
     logos = Set.new
 
@@ -263,12 +263,6 @@ class EventController < ApplicationController
     raise ActiveRecord::RecordNotFound if @showcases.empty?
 
     @showcases.each do |year, sites|
-      if auth and false # disable
-        sites.select! do |token, value|
-          auth.include? token
-        end
-      end
-
       sites.each do |token, info|
         logos.add info[:logo] if info[:logo]
         if info[:events]

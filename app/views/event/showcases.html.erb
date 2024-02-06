@@ -90,22 +90,14 @@ can click on it to see helpful hints.</li>
   <a href="https://github.com/rubys/showcase/issues">issues</a>.
 </p>
 
-<% if User.index_auth? @authuser %>
 <% if ENV['FLY_REGION'] || Rails.env.development? %>
-<%= link_to 'Regions', regions_path, class: 'btn-blue' %>
+<%= link_to 'Regions', regions_path, class: 'btn-pale-blue' %>
+<% end %>
+
+<% if User.index_auth? @authuser %>
 <% if @region %>
 <%= link_to 'Status', region_status_path(@region), class: 'btn-orange' %>
-<% elsif Rails.env.development? %>
-<%= link_to 'Admin', admin_path, class: 'btn-orange' %>
-<% elsif @authuser %>
-<%= link_to 'Admin', admin_path, class: 'btn-orange' %>
-<% else %>
-<%= link_to 'Admin', admin_path, class: 'btn-orange cursor-not-allowed' %>
 <% end %>
-<% elsif @authuser %>
 <%= link_to 'Admin', admin_path, class: 'btn-orange' %>
-<% else %>
-<%= link_to 'Admin', admin_path, class: 'btn-orange cursor-not-allowed' %>
-<% end %>
 <% end %>
 </div>
