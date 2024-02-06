@@ -645,7 +645,10 @@ class EventController < ApplicationController
         event.delete 'id'
         event.delete 'name'
         event.delete 'date'
+        event.delete 'theme'
         event.delete 'current_heat'
+        event.delete 'locked'
+        event.delete 'payment_due'
         Event.first.update(event)
       end
 
@@ -688,6 +691,7 @@ class EventController < ApplicationController
           Person.destroy_all
           excludes = {}
           dbquery(source, 'people').each do |person|
+            person.delete 'back'
             person.delete 'age_id' unless tables[:ages]
             person.delete 'level_id' unless tables[:levels]
             person.delete 'studio_id' unless tables[:studios]
