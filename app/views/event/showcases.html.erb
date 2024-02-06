@@ -94,10 +94,11 @@ can click on it to see helpful hints.</li>
 <%= link_to 'Regions', regions_path, class: 'btn-pale-blue' %>
 <% end %>
 
-<% if User.index_auth? @authuser %>
 <% if @region %>
 <%= link_to 'Status', region_status_path(@region), class: 'btn-orange' %>
 <% end %>
+
+<% if @up == '.' %>
 <%= link_to 'Admin', admin_path, class: 'btn-orange' %>
 <% end %>
 </div>

@@ -220,7 +220,6 @@ class EventController < ApplicationController
   end
 
   def showcases
-    get_authentication
     @showcases = YAML.load_file('config/tenant/showcases.yml')
     logos = Set.new
 
