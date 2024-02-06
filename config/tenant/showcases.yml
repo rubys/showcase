@@ -102,6 +102,10 @@
     :name: Roanoke
     :region: iad
     :logo: arthur-murray-logo.gif
+  salem:
+    :name: Salem
+    :region: sea
+    :logo: arthur-murray-logo.gif
   sanjose:
     :name: San Jose
     :region: sjc
@@ -220,7 +224,7 @@
         :name: Nouveau Duo
   salem:
     :name: Salem
-    :region: sjc
+    :region: sea
     :logo: arthur-murray-logo.gif
   sarasota:
     :name: Sarasota

@@ -29,6 +29,12 @@ regions:
     lon: -121.89674
     x: 112.63114487340647
     y: 223.9075025700198
+  sea:
+    name: Seattle, Washington (US)
+    lat: 47.6097
+    lon: -122.3331
+    x: 159.108421435958
+    y: 37.01944688208971
   waw:
     name: Warsaw, Poland
     lat: 52.1657
