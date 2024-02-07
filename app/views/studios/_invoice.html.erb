@@ -89,7 +89,7 @@
 
   <%
     dances = invoice[:dances][person]
-    registration = (@registration || person.package.price) / (person.package&.couples ? 2 : 1)
+    registration = (@registration || person.package&.price || 0) / (person.package&.couples ? 2 : 1)
     registration = 0 unless person.studio == studio
     partner = nil
 
