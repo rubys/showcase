@@ -23,7 +23,7 @@ export const pattern = new RegExp([
 
 // identify which lines are to be filtered
 export function filtered(match: RegExpMatchArray) {
-  return match[3] === '-' || match[3] === 'rubys'
+  return match[3] === '-' || match[3] === 'rubys' || match[5].endsWith('/cable')
 }
 
 // formatted log entry
