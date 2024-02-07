@@ -62,6 +62,10 @@
     :name: Kennesaw
     :region: atl
     :logo: arthur-murray-logo.gif
+  lakeview:
+    :name: Lakeview
+    :region: ord
+    :logo: arthur-murray-logo.gif
   lincolnshire:
     :name: Lincolnshire
     :region: ord
