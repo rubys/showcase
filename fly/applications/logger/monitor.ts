@@ -70,8 +70,8 @@ async function monitor() {
   }
 
   // send a message to Sentry for each vm that did not produce a heartbeat log
-  for (const vm of seeking) {
-    Sentry.captureMessage(`heatbeat not found for vm ${vm}`)
+  if (seeking.size) {
+    Sentry.captureMessage(`heatbeat not found for ${[...seeking].join(', ')}`)
   }
 
   // update the list of vms for the next check
