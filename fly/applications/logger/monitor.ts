@@ -69,7 +69,7 @@ async function monitor() {
     });
   }
 
-  // send a message to Sentry for each vm that did not produce a heartbeat log
+  // send a message to Sentry listing vms that did not produce a heartbeat log
   if (seeking.size) {
     Sentry.captureMessage(`heatbeat not found for ${[...seeking].join(', ')}`)
   }
