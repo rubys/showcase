@@ -13,6 +13,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@sentry/node": "^7.100.1",
     "@types/bcrypt": "^5.0.2",
     "ansi-to-html": "^0.7.2",
     "bcrypt": "^5.1.1",

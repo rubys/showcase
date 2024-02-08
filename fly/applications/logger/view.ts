@@ -8,7 +8,7 @@ const HOST = "https://smooth.fly.dev"
 
 // lines to be selected to be send to the browser
 export const pattern = new RegExp([
-  /(\w+) /,                          // region (#1)
+  /^\S+ \[.*?\] (\w+) /,             // timestamp, machine, region (#1)
   /\[\w+\] /,                        // log level
   /[\d:]+ web\.1\s* \| /,            // time, procfile source
   /([\d:a-fA-F, .]+) /,              // ip addresses (#2)
