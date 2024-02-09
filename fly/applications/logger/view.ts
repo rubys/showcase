@@ -52,7 +52,6 @@ export function format(match: RegExpMatchArray) {
     `<a href="https://iplocation.com/?ip=${ip}">${ip.match(/\w+[.:]+\w+$/)}</a>`,
     match[5],
     link,
-    match[9],
   ].join(' ')
 }
 
