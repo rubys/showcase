@@ -34,7 +34,7 @@ async function monitor() {
 
   // pattern to match heartbeat logs
   const pattern = new RegExp([
-    /^\S+ \[.*?\] \w+ /,               // timestamp machine region
+    /^\S+\s+\[.*?\] \w+ /,             // timestamp machine region
     /\[\w+\] /,                        // log level
     /[\d:]+ heartbeat\.1\s* \| /,      // time, procfile source
     /HEARTBEAT (\w+ \w+)/              // vm (#1)
