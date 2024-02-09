@@ -10,8 +10,10 @@ class SolosController < ApplicationController
   def index
     @solos = {}
 
+    unscheduled = Struct.new(:id, :name).new(0, 'Unscheduled')
     Solo.order(:order).each do |solo|
-      cat = solo.heat.dance_category.base_category
+      cat = solo.heat.dance_category
+      cat = cat ? cat.base_category : unscheduled
       @solos[cat] ||= []
       @solos[cat] << solo.heat
     end
