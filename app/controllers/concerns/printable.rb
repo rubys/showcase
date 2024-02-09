@@ -212,7 +212,8 @@ module Printable
 
       entries += pentries
 
-      people = (entries.map {|entry| [entry.lead, entry.follow]}.flatten + studio.people).uniq
+      people = (entries.map {|entry| [entry.lead, entry.follow]}.flatten +
+        studio.people.preload({options: :option, package: {package_includes: :option}})).uniq
 
       @dances = people.sort_by(&:name).map do |person|
         package = person.package&.price || 0
