@@ -14,7 +14,7 @@ export const pattern = new RegExp([
   /([\d:a-fA-F, .]+) /,              // ip addresses (#2)
   /- (-|\w+) /,                      // - user (#3)
   /\[([\w\/: +-]+)\] /,              // time (#4)
-  /"(\w+) (\/showcase\S*) (.*?)" /,  // method (#5), url (#6), protocol (#7)
+  /"(\w+) \/showcase\/(\S*) (.*?)" /,// method (#5), url (#6), protocol (#7)
   /(\d+) (\d+) /,                    // status (#8), length (#9)
   /\[(\w+)\] /,                      // request id (#10)
   /([.\d]+)?/,                       // request time (#11)
@@ -40,16 +40,19 @@ export function format(match: RegExpMatchArray) {
     status = `<a href="request/${request_id}">${status}</a>`
   }
 
-  let link = `<a href="${HOST}${match[6]}">${match[6]}</a>`
+  let link = `<a href="${HOST}/showcase/${match[6]}">${match[6]}</a>`
   let ip = match[2].split(',')[0]
 
   return [
     `<time>${match[4].replace(' +0000', 'Z')}</time>`,
     `<a href="https://smooth.fly.dev/showcase/regions/${match[1]}/status"><span style="color: maroon">${match[1]}</span></a>`,
     status,
+    match[11],
     `<span style="color: blue">${match[3]}</span>`,
     `<a href="https://iplocation.com/?ip=${ip}">${ip.match(/\w+[.:]+\w+$/)}</a>`,
-    `${match[5]} ${link} ${match[9]} ${match[11] || ''}`
+    match[5],
+    link,
+    match[9],
   ].join(' ')
 }
 
