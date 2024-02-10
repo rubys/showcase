@@ -12,11 +12,12 @@ class StudiosController < ApplicationController
     staff = @studios.find {|studio| studio.id == 0}
     @studios.push @studios.delete staff
 
-    generate_invoice @studios, @student
+    # generate_invoice @studios, @student
 
     @total_count = Person.where.not(studio_id: nil).count
     @total_tables = Studio.sum(:tables)
-    @total_invoice = @invoices.values.map {|info| info[:total_cost]}.sum
+    # @total_invoice = @invoices.values.map {|info| info[:total_cost]}.sum
+    @total_invoice = 0
   end
 
   def invoices
