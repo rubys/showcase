@@ -1,5 +1,5 @@
 class Event < ApplicationRecord
-  validates :date, chronic: true, allow_blank: true
+  validate :valid_date?
   has_one_attached :counter_art
 
   belongs_to :solo_level, class_name: 'Level', optional: true
@@ -38,5 +38,11 @@ class Event < ApplicationRecord
     end
 
     return results
+  end
+
+  def valid_date?
+    unless date.blank? || Chronic.parse(date)
+      errors.add(:date, "is missing or invalid")
+    end
   end
 end

@@ -92,11 +92,7 @@ class EventController < ApplicationController
       @tab = params[:tab] || 'Description'
     end
 
-    if status == :ok
-      render "event/settings/#{@tab.downcase}", layout: 'settings', status: status
-    else
-      render :settings, status: status
-    end
+    render "event/settings/#{@tab.downcase}", layout: 'settings', status: status
   end
 
   def counter
