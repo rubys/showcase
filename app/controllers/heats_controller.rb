@@ -85,7 +85,8 @@ class HeatsController < ApplicationController
 
     @assignments = {}
     if @event.assign_judges and @type == 'judge'
-      @assignments = Score.joins(:judge).pluck(:heat_id, :name).to_h
+      @assignments = Score.joins(:judge).pluck(:heat_id, :name).
+        map {|heat, judge| [heat, Person.display_name(judge)]}.to_h
     end
 
     respond_to do |format|

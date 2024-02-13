@@ -31,6 +31,10 @@ class Person < ApplicationRecord
 
   has_many :scores, dependent: :destroy, foreign_key: :judge_id
 
+  def self.display_name(name)
+    name.split(/,\s*/).rotate.join(' ')
+  end
+
   def display_name
     name.split(/,\s*/).rotate.join(' ')
   end
