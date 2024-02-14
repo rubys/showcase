@@ -76,7 +76,7 @@ Rails.application.configure do
   config.hosts << "rubix.intertwingly.net"
 
   if ENV['RAILS_RELATIVE_URL_ROOT']
-    config.force_ssl = true
+    config.force_ssl = false
   end
 
   if ENV['RAILS_APP_DB']
