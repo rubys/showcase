@@ -1,5 +1,9 @@
 ---
 2024:
+  adelaide:
+    :name: Adelaide
+    :region: syd
+    :logo: arthur-murray-logo.gif
   alexandria:
     :name: Alexandria
     :region: iad
@@ -240,7 +244,7 @@
     :logo: arthur-murray-logo.gif
   sydney:
     :name: Sydney
-    :region: sjc
+    :region: syd
     :logo: arthur-murray-logo.gif
   vabeach:
     :name: Virginia Beach

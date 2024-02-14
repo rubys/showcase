@@ -35,11 +35,18 @@ regions:
     lon: -122.3331
     x: 159.108421435958
     y: 37.01944688208971
+  syd:
+    name: Sydney, Australia
+    lat: -33.86603
+    lon: 151.20692
   waw:
     name: Warsaw, Poland
     lat: 52.1657
     lon: 20.9671
 studios:
+  adelaide:
+    lat: -34.9281805
+    lon: 138.5999312
   alexandria:
     lat: 38.805
     lon: -77.043
