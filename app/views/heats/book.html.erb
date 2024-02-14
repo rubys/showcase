@@ -329,6 +329,38 @@ tbody::after {
            <td>
              <div class="w-24 pt-4 border-b-2 border-black">&nbsp;</div>
            </td>
+           <% if heat.category == 'Open' && @event.open_scoring == '+' %>
+           <tr>
+            <td colspan="2">
+            <td colspan="4">
+            <div class="grid grid-cols-2 divide-x-2 divide-black" %>
+            <div class="grid grid-cols-5 good" %>
+              <button class="open-fb"><abbr>DF</abbr><span>Dance Frame</span></button>
+              <button class="open-fb"><abbr>T</abbr><span>Timing</span></button>
+              <button class="open-fb"><abbr>LF</abbr><span>Lead/&ZeroWidthSpace;Follow</span></button>
+              <button class="open-fb"><abbr>CM</abbr><span>Cuban Motion</span></button>
+              <button class="open-fb"><abbr>RF</abbr><span>Rise & Fall</span></button>
+              <button class="open-fb"><abbr>FW</abbr><span>Footwork</span></button>
+              <button class="open-fb"><abbr>B</abbr><span>Balance</span></button>
+              <button class="open-fb"><abbr>AS</abbr><span>Arm Styling</span></button>
+              <button class="open-fb"><abbr>CB</abbr><span>Contra-Body</span></button>
+              <button class="open-fb"><abbr>FC</abbr><span>Floor Craft</span></button>
+            </div>
+            <div class="grid grid-cols-5 bad" %>
+              <button class="open-fb"><abbr>DF</abbr><span>Dance Frame</span></button>
+              <button class="open-fb"><abbr>T</abbr><span>Timing</span></button>
+              <button class="open-fb"><abbr>LF</abbr><span>Lead/&ZeroWidthSpace;Follow</span></button>
+              <button class="open-fb"><abbr>CM</abbr><span>Cuban Motion</span></button>
+              <button class="open-fb"><abbr>RF</abbr><span>Rise & Fall</span></button>
+              <button class="open-fb"><abbr>FW</abbr><span>Footwork</span></button>
+              <button class="open-fb"><abbr>B</abbr><span>Balance</span></button>
+              <button class="open-fb"><abbr>AS</abbr><span>Arm Styling</span></button>
+              <button class="open-fb"><abbr>CB</abbr><span>Contra-Body</span></button>
+              <button class="open-fb"><abbr>FC</abbr><span>Floor Craft</span></button>        </div>
+          </div>
+          </div>
+          </tr>
+           <% end %>
            <% if @event.judge_comments %>
            <tr class="pt-2">
            <td colspan="2">
