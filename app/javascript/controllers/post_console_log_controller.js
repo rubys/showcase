@@ -46,7 +46,7 @@ function hookLogType(logType) {
     postLog({ 
       type: logType, 
       timeStamp: TS(), 
-      value: Array.from(arguments).map(arg => arg.toString())
+      value: Array.from(arguments).map(arg => arg ? arg.toString() : "null")
     });
     original.apply(console, arguments);
   };

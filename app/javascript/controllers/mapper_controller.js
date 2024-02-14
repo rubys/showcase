@@ -11,9 +11,34 @@ export default class extends Controller {
       return dots.find(dot => dot.href.baseVal == href);
     }
 
+    let active = null;
+
+    function clear() {
+      if (!active) return;
+
+      active.style.color = "";
+      let dot = findDot(active.getAttribute("href"));
+      if (dot) {
+        dot.firstElementChild.style.fill = "";
+      }
+
+      let region = active.closest("tr").querySelector("td a");
+      region.style.color = "";
+      dot = findDot(region.getAttribute("href"));
+      if (dot) {
+        dot.firstElementChild.style.fill = "";
+      }
+
+      active = null;
+    };
+
     for (let studio of studios) {
       studio.addEventListener("mouseover", () => {
-        studio.style.color = "red";
+        if (active === studio) return;
+        clear();
+        active = studio;
+
+        active.style.color = "red";
         let dot = findDot(studio.getAttribute("href"));
         if (dot) {
           dot.parentElement.appendChild(dot);
@@ -29,18 +54,8 @@ export default class extends Controller {
       });
 
       studio.addEventListener("mouseleave", () => {
-        studio.style.color = "";
-        let dot = findDot(studio.getAttribute("href"));
-        if (dot) {
-          dot.firstElementChild.style.fill = "";
-        }
-
-        let region = studio.closest("tr").querySelector("td a");
-        region.style.color = "";
-        dot = findDot(region.getAttribute("href"));
-        if (dot) {
-          dot.firstElementChild.style.fill = "";
-        }
+        if (active !== studio) return;
+        clear();
       });
     }
 

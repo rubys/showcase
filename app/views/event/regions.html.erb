@@ -31,14 +31,17 @@ can click on it to see helpful hints.</li>
 </div>
 </div>
 
-<table class="table-auto mt-8">
-<% @regions.each do |region, cities| %>
-  <tr>
-    <td><span class="w-14 text-2xl inline-block"><%= link_to region, region_path(region) %></span>
-    <td><span class="text-slate-500">(<%= cities.map {|city| link_to city, studio_events_path(@cities[city])}.join(", ").html_safe %>)</span>
+<div id="region-list" class="w-full">
+<table class="table-auto mt-8 w-full">
+<% @regions.to_a.sort.each do |region, cities| %>
+  <tr class="w-full">
+    <td><img src="https://fly.io/phx/ui/images/<%= region %>.svg" width="20">
+    <td><span class="w-14 text-2xl inline-block ml-4 cursor-pointer"><%= link_to region, region_path(region) %></span>
+    <td><span class="text-slate-500"><%= cities.map {|city| link_to city, studio_events_path(@cities[city]), class: "cursor-pointer"}.join(", ").html_safe %></span>
   </tr>
 <% end %>
 </table>
+</div>
 
 <p class="mt-4">Click on the <span class="text-emerald-600">&#x24D8;</span> in the top
     left corner of this page to see helpful hints.</p>
