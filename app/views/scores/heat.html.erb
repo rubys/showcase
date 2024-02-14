@@ -11,6 +11,10 @@
       <% end %>
       </span>
     <% end %>
+    <% if @event.assign_judges && @judge && @style != 'emcee' %>
+    <% heats = Heat.joins(:scores).includes(entry: :lead).where(number: @heat.number, scores: {judge_id: @judge.id}).order('people.back') %>
+    <div class="text-2xl"><%= heats.map {|heat| "<a href='##{ dom_id heat }'>#{heat.entry.lead.back}</a>"}.join(' ').html_safe %></div>
+    <% end %>
     <% if @style == 'emcee' and @heat.category != 'Solo' %>
     <div class="font-normal"><%= @subjects.length %> <%= 'couple'.pluralize @subjects.length %> on the floor</div>
     <% if @song %>
@@ -198,7 +202,7 @@ Swiping left and right on mobile devices and tablets also work.
       <% lastcat = subcat %>
       <% lastassign = assign %>
       <% if subject.number > 0 %>
-      <tr class="hover:bg-yellow-200">
+      <tr class="hover:bg-yellow-200" id="<%= dom_id subject %>">
       <% else %>
       <tr class="hover:bg-yellow-200 line-through opacity-50">
       <% end %>
