@@ -72,6 +72,8 @@ const server = Bun.serve({
 
     // create a new browser page (tab)
     const page = await browser.newPage()
+    page.setDefaultNavigationTimeout(0)
+    page.setDefaultTimeout(0)
 
     // main puppeteer logic: fetch url, convert to URL, return response
     try {
@@ -85,7 +87,8 @@ const server = Bun.serve({
 
       // fetch page to be printed
       await page.goto(url.href, {
-        waitUntil: JAVASCRIPT ? 'networkidle2' : 'load'
+        waitUntil: JAVASCRIPT ? 'networkidle2' : 'load',
+        timeout: 0
       })
 
       // convert page to pdf - using preferred format and in full color
