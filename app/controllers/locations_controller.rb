@@ -40,6 +40,12 @@ class LocationsController < ApplicationController
       map {|region| [region['Name'], region['Code']]}.
       sort
     @regions.unshift ["", nil]
+
+    Dir.chdir 'public' do
+      @logos = Dir['*'].select do |name| 
+        name.include? '.' and not name.include? '.html' and not name.start_with? 'apple-' and not name.include? '.txt'
+      end
+    end
   end
 
   def first_event(status=:ok)
@@ -242,7 +248,7 @@ class LocationsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def location_params
-      params.require(:location).permit(:key, :name, :latitude, :longitude, :user_id, :region)
+      params.require(:location).permit(:key, :name, :latitude, :longitude, :user_id, :region, :logo)
     end
 
     def user_params

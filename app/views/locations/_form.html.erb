@@ -55,7 +55,13 @@
 
   <div class="my-5">
   <%= form.label :region %>
-  <%= form.select :region, options_for_select(@regions, @location.region), {},
+  <%= form.select :region, options_for_select(@regions, @location.region), {include_blank: true},
+    class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+  <%= form.label :logo %>
+  <%= form.select :logo, options_for_select(@logos, @location.logo), {include_blank: true},
     class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
