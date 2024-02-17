@@ -1,6 +1,7 @@
 class Event < ApplicationRecord
   validate :valid_date?
   has_one_attached :counter_art
+  validate :correct_document_mime_type
 
   belongs_to :solo_level, class_name: 'Level', optional: true
 
@@ -43,6 +44,13 @@ class Event < ApplicationRecord
   def valid_date?
     unless date.blank? || Chronic.parse(date)
       errors.add(:date, "is missing or invalid")
+    end
+  end
+
+  def correct_document_mime_type
+    acceptable_types = "image/apng,image/avif,image/gif,image/jpeg,image/png,image/svg+xml,image/webp".split(',')
+    if counter_art.attached? && !counter_art.content_type.in?(acceptable_types)
+      errors.add(:counter_art, 'Must be an image')
     end
   end
 end
