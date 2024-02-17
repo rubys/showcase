@@ -583,14 +583,63 @@ class PeopleController < ApplicationController
 
     judges = Person.where(type: 'Judge', present: true).pluck(:id).shuffle
     scored = Score.joins(:heat).distinct.where.not(heats: {number: ...0}).pluck(:number)
-    unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).pluck(:id)
 
-    queue = []
-    Score.transaction do
-      unscored.each do |heat_id|
-        queue = judges.dup if queue.empty?
-        Score.create! heat_id: heat_id, judge_id: queue.pop
+    if ENV['RAILS_APP_DB'] == '2024-glenview' 
+      unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).pluck(:number, :id)
+
+      counts = unscored.group_by(&:first).map {|number, heats| [number, heats.length]}.to_h
+
+      limits = counts.map {|number, count|
+        if count <= 11
+          [number, 0]
+        elsif count <= 15
+          [number, 1]
+        elsif count <= 17
+          [number, 2]
+        else
+          [number, 3]
+        end
+      }.to_h
+
+      current = 0
+      count = 0
+
+      queue = []
+      Score.transaction do
+        unscored.each do |number, heat_id|
+          queue = judges.dup if queue.empty?
+          judge = queue.pop
+
+          if judge == 142
+            if current != number
+              current = number
+              count = 0
+            end
+
+            if count >= limits[number]
+              queue = judges.dup if queue.empty?
+              judge = queue.pop
+            else
+              count += 1
+            end
+          end
+
+          Score.create! heat_id: heat_id, judge_id: judge
+        end
       end
+
+    else
+
+      unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).pluck(:id)
+
+      queue = []
+      Score.transaction do
+        unscored.each do |heat_id|
+          queue = judges.dup if queue.empty?
+          Score.create! heat_id: heat_id, judge_id: queue.pop
+        end
+      end
+
     end
 
     redirect_to person_path(params[:id]), notice: "#{unscored.count} entries assigned to #{judges.count} judges."
