@@ -21,7 +21,7 @@
         :name: Gratitude Gala
   austin:
     :name: Austin
-    :region: atl
+    :region: dfw
     :logo: arthur-murray-logo.gif
   charlotte:
     :name: Charlotte
@@ -83,6 +83,10 @@
         :name: Pep Rally
       district-showcase:
         :name: District Showcase
+  mdballroom:
+    :name: Memorial DanceSport Ballroom
+    :region: dfw
+    :logo: arthur-murray-logo.gif
   merrillville:
     :name: Merrillville
     :region: ord
@@ -240,7 +244,7 @@
     :logo: arthur-murray-logo.gif
   sugarland:
     :name: Sugar Land
-    :region: atl
+    :region: dfw
     :logo: arthur-murray-logo.gif
   sydney:
     :name: Sydney
@@ -252,7 +256,7 @@
     :logo: arthur-murray-logo.gif
   woodlands:
     :name: Woodlands
-    :region: atl
+    :region: dfw
     :logo: arthur-murray-logo.gif
 2022:
   annapolis:
