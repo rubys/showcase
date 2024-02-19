@@ -85,7 +85,7 @@ begin
       puts output
 
       unless status.success?
-        Sentry.capture_message("#{hostenv}\nrsync to: #{addr}\n\n#{output}")
+        Sentry.capture_message("rsync failure:\n\n#{hostenv}\nrsync to: #{addr}\n\n#{output}")
       end
     end
 
@@ -97,7 +97,7 @@ begin
     else
       STDERR.puts res
       STDERR.puts res.body 
-      Sentry.capture_message("#{hostenv}\n#{res.body}")
+      Sentry.capture_message("webhook failure:\n\n#{hostenv}\n#{res.body}")
     end
   end
 
