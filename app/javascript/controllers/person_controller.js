@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus";
 
 // Connects to data-controller="person"
 export default class extends Controller {
-  static targets = [ "studio", "level", "age", "role", "back", "exclude", "type", "package", "options" ];
+  static targets = [ "studio", "independent", "level", "age", "role", "back", "exclude", "type", "package", "options" ];
 
   connect() {
     this.id = JSON.parse(this.element.dataset.id);
@@ -20,6 +20,7 @@ export default class extends Controller {
       if (this.hasAgeTarget) this.ageTarget.style.display = "block";
       this.roleTarget.style.display = "block";
       this.excludeTarget.style.display = "block";
+      if (this.hasIndependentTarget) this.independentTarget.style.display = "none";
     } else {
       this.levelTarget.style.display = "none";
       if (this.hasAgeTarget) this.ageTarget.style.display = "none";
@@ -27,10 +28,12 @@ export default class extends Controller {
       if (event.target.value == "Professional") {
         this.roleTarget.style.display = "block";
         this.excludeTarget.style.display = "block";
+        if (this.hasIndependentTarget) this.independentTarget.style.display = "block";
       } else {
         this.roleTarget.style.display = "none";
         this.backTarget.style.display = "none";
         this.excludeTarget.style.display = "none";
+        if (this.hasIndependentTarget) this.independentTarget.style.display = "none";
       }
     }
 

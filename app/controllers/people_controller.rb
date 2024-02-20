@@ -2,7 +2,7 @@ class PeopleController < ApplicationController
   include Printable
   
   before_action :set_person, only: 
-    %i[ show edit update destroy get_entries post_entries toggle_present remove_option ]
+    %i[ show edit update destroy get_entries post_entries toggle_present remove_option instructor_invoice ]
 
   def heats
     event = Event.last
@@ -56,6 +56,22 @@ class PeopleController < ApplicationController
       format.html { render 'people/scores' }
       format.pdf do
         render_as_pdf basename: "#{@person.name.gsub(/\W+/, '-')}-scores"
+      end
+    end
+  end
+
+  def instructor_invoice
+    @studio = @person.studio
+    @instructor = @person
+    generate_invoice([@studio], false, @person)
+
+    @event ||= Event.first
+    @font_size = @event.font_size
+
+    respond_to do |format|
+      format.html { render 'studios/invoice' }
+      format.pdf do
+        render_as_pdf basename: "#{@person.display_name.gsub(/\W+/, '-')}-invoice"
       end
     end
   end
@@ -544,6 +560,8 @@ class PeopleController < ApplicationController
 
     set_exclude
 
+    params[:independent] = false unless @event.independent_instructors
+
     respond_to do |format|
       if @person.update(filtered_params(person_params).except(:options))
         update_options
@@ -695,7 +713,7 @@ class PeopleController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def person_params
-      params.require(:person).permit(:name, :studio_id, :type, :back, :level_id, :age_id, :category, :role, :exclude_id, :package_id, options: {})
+      params.require(:person).permit(:name, :studio_id, :type, :back, :level_id, :age_id, :category, :role, :exclude_id, :package_id, :independent, options: {})
     end
 
     def filtered_params(person)
@@ -708,7 +726,8 @@ class PeopleController < ApplicationController
         role: person[:role],
         back: person[:back],
         exclude_id: person[:exclude_id],
-        package_id: person[:package_id]
+        package_id: person[:package_id],
+        independent: person[:independent]
       }
 
       unless %w(Student).include? base[:type]
@@ -719,6 +738,10 @@ class PeopleController < ApplicationController
       unless %w(Professional Student).include? base[:type]
         base.delete :role
         base.delete :back
+      end
+
+      unless base[:type] == 'Professional' && @event&.independent_instructors
+        base.delete :independent
       end
 
       base
@@ -765,6 +788,7 @@ class PeopleController < ApplicationController
       @person_options = @person.options.map(&:option)
 
       @track_ages = @event.track_ages
+      @include_independent_instructors = @event.independent_instructors
     end
 
     def sort_order

@@ -122,6 +122,11 @@
     <%= form.label :agenda_based_entries, 'Assign judges couples to evaluate?' %>
   </div>
 
+  <div class="my-5">
+    <%= form.check_box :independent_instructors, class: 'entry-count h-10' %>
+    <%= form.label :independent_instructors, 'Include independent instructors?' %>
+  </div>
+
   <div class="inline">
     <%= form.button 'Save', name: 'tab', value: 'Options', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
   </div>

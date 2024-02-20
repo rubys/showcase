@@ -33,6 +33,9 @@ number, or feedback on areas that are particularly notable or need improvement (
 
 * Assign judges couples to evaluate? - this is useful if you have several judges and a large number of couples on the floor at a time.  This doesn't limit judges to only evaluate those couples, instead it indicates which couples a judge should to focus on.
 
+* Include independent instructors? - use this if your studio has instructors that are invoiced separately but otherwise participate
+with your studio.
+
 ## Event Staff
 
 * Enter Judges, DJs, Emcees, Officials, Organizers, and Conference Guests.  The first three have specific [roles](../#roles).

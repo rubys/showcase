@@ -155,7 +155,7 @@ module Printable
     @couples = couples.select {|follow, lead| @paired.include?(lead) && @paired.include?(follow)}
   end
 
-  def generate_invoice(studios = nil, student=false)
+  def generate_invoice(studios = nil, student=false, instructor=nil)
     find_couples
 
     studios ||= Studio.all(order: name).preload(:studio1_pairs, :studio2_pairs, people: {options: :option, package: {package_includes: :option}})
@@ -206,14 +206,24 @@ module Printable
       pentries = (Entry.joins(:follow).preload(preload).where(people: {type: 'Professional', studio: studio}) +
         Entry.joins(:lead).preload(preload).where(people: {type: 'Professional', studio: studio})).uniq
 
-      studios = Set.new(studio.pairs + [studio])
-      entries.select! {|entry| studios.include?(entry.follow.studio) && studios.include?(entry.lead.studio)}
-      pentries.select! {|entry| !studios.include?(entry.follow.studio) || !studios.include?(entry.lead.studio)}
+      if instructor
+        entries.select! {|entry| entry.lead == instructor || entry.follow == instructor || entry.instructor == instructor}
+        pentries.select! {|entry| entry.lead == instructor || entry.follow == instructor || entry.instructor == instructor}
+      else
+        studios = Set.new(studio.pairs + [studio])
+        entries.select! {|entry| studios.include?(entry.follow.studio) && studios.include?(entry.lead.studio)}
+        pentries.select! {|entry| !studios.include?(entry.follow.studio) || !studios.include?(entry.lead.studio)}
+      end
 
       entries += pentries
 
-      people = (entries.map {|entry| [entry.lead, entry.follow]}.flatten +
-        studio.people.preload({options: :option, package: {package_includes: :option}})).uniq
+      people = entries.map {|entry| [entry.lead, entry.follow]}.flatten
+
+      if instructor
+        people << @person
+      else
+        people = (people + studio.people.preload({options: :option, package: {package_includes: :option}})).uniq
+      end
 
       @dances = people.sort_by(&:name).map do |person|
         package = person.package&.price || 0
@@ -221,6 +231,7 @@ module Printable
         package/=2 if @paired.include? person.id
         purchases = package + person.selected_options.map(&:price).sum || 0
         purchases = 0 unless person.studio == studio
+        purchases = 0 if @event.independent_instructors && person != instructor
         [person, {dances: 0, cost: 0, purchases: purchases}]
       end.to_h
 

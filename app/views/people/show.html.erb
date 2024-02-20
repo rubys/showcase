@@ -407,6 +407,9 @@ when most dances for an individual are with one instructor but one or two are ch
       <% unless @heats.empty? and @solos.empty? %>
       <%= link_to 'Heat sheet', heats_person_path(@person, format: :pdf), class: "btn-pale-orange" %>
       <% end %>
+      <% if @person.type == 'Professional' && @event.independent_instructors %>
+      <%= link_to 'Invoice', instructor_invoice_person_path(@person, format: :pdf), class: "btn-pale-orange" %>
+      <% end %>
       <% unless @scores.empty? %>
       <%= link_to 'Scores', scores_person_path(@person, format: :pdf), class: "btn-pale-orange" %>
       <% end %>
