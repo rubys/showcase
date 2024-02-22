@@ -86,10 +86,23 @@ const server = Bun.serve({
       await page.setExtraHTTPHeaders(headers)
 
       // fetch page to be printed
+      try {
       await page.goto(url.href, {
         waitUntil: JAVASCRIPT ? 'networkidle2' : 'load',
         timeout: 0
       })
+    } catch (error: any) {
+      if (error.message.includes("ERR_NETWORK_CHANGED")) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        await page.goto(url.href, {
+          waitUntil: JAVASCRIPT ? 'networkidle2' : 'load',
+          timeout: 0
+        })
+      } else {
+        throw error
+      }
+    }
 
       // convert page to pdf - using preferred format and in full color
       const pdf = await page.pdf({
