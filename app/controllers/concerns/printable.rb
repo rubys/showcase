@@ -231,11 +231,11 @@ module Printable
         package/=2 if @paired.include? person.id
         purchases = package + person.selected_options.map(&:price).sum || 0
         purchases = 0 unless person.studio == studio
-        purchases = 0 if @event.independent_instructors && person != instructor
+        purchases = 0 if instructor && @event.independent_instructors && person != instructor
         [person, {dances: 0, cost: 0, purchases: purchases}]
       end.to_h
 
-      entries.each do |entry|
+      entries.uniq.each do |entry|
         if entry.lead.type == 'Student' and entry.follow.type == 'Student' 
           split = 2.0
         else
