@@ -223,6 +223,12 @@ module Printable
         people << @person
       else
         people = (people + studio.people.preload({options: :option, package: {package_includes: :option}})).uniq
+
+        independents = people.select {|person| person.independent}
+        unless independents.empty?
+          entries.reject! {|entry| independents.include?(entry.lead) || independents.include?(entry.follow)}
+          pentries.reject! {|entry| independents.include?(entry.lead) || independents.include?(entry.follow)}
+        end
       end
 
       @dances = people.sort_by(&:name).map do |person|
@@ -231,7 +237,6 @@ module Printable
         package/=2 if @paired.include? person.id
         purchases = package + person.selected_options.map(&:price).sum || 0
         purchases = 0 unless person.studio == studio
-        purchases = 0 if instructor && @event.independent_instructors && person != instructor
         [person, {dances: 0, cost: 0, purchases: purchases}]
       end.to_h
 
@@ -264,6 +269,12 @@ module Printable
               @dances[entry.follow][category] = (@dances[entry.follow][category] || 0) + 1/split
             end
           end
+        end
+      end
+
+      if @event.independent_instructors && !instructor
+        @dances.each do |person, info|
+          info[:purchases] = 0 if info[:dances] == 0
         end
       end
 
