@@ -16,7 +16,7 @@ if ENV['FLY_APP_NAME']
     sort_by(&:first).group_by(&:last).
     map {|region, instances| [region, instances.first.first]}.to_h
 
-  unless machines_by_region.values.include? ENV["FLY_ALLOC_ID"]
+  if machines_by_region.values.include? ENV["FLY_ALLOC_ID"]
     STDERR.puts "Another machine exists in this region, exiting"
     exit 1
   end
