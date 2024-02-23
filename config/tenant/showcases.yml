@@ -72,7 +72,7 @@
     :logo: arthur-murray-logo.gif
   laval:
     :name: Laval
-    :region: waw
+    :region: yul
     :logo: ''
   lincolnshire:
     :name: Lincolnshire
@@ -216,7 +216,7 @@
     :logo: arthur-murray-logo.gif
   montreal:
     :name: Montreal
-    :region: iad
+    :region: yul
     :logo: arthur-murray-logo.gif
   raleigh:
     :name: Raleigh
