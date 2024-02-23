@@ -71,14 +71,14 @@
     <% invoice[:dances].keys.sort_by(&:name).each do |person| %>
     <% next if @student and !%w(Student Guest).include? person.type %>
     <% next unless person.studio == studio %>
-    <% purchases = person.selected_options.map(&:name) %>
+    <% purchases = person.selected_options.group_by(&:name) %>
     <% purchases.unshift "#{person.type} #{person.package.name}" if person.package_id %>
     <% next if purchases.empty? %>
     <% next unless person.studio == studio %>
     <% next if @instructor && person != @instructor %>
     <tr>
       <td><div class="mx-4"><%= person.name %>
-      <td><div class="mx-4"><%= purchases.join(' + ') %>
+      <td><div class="mx-4"><%= purchases.map {|name, list| list.length == 1 ? name : "#{list.length} &#215; #{name}"}.join(' + ').html_safe %>
     </tr>
     <% end %>
   </tbody>
@@ -169,6 +169,23 @@
     <td align="right"><%= number_to_currency registration %></td>
   </tr>
   <% end %>
+  <% person.options.group_by(&:option_id).each do |option_id, options| %> 
+    <tr>
+      <td align="left">
+        <% if options.length > 1 %> 
+          <%= options.length %> &#215;
+        <% end %>
+        <%= options.first.option.name %>
+      </td>
+      <td align="right">
+        <%= number_to_currency options.first.option.price * options.length %>
+      </td>
+      </td>
+    </tr>
+    <tr>
+
+    </tr>
+    <% end %>
   <tr>
     <td>Freestyles
     <td align="right"><%= number_to_currency @heat_cost * (dances.fetch('Open', 0) + dances.fetch('Closed', 0)) %></th>

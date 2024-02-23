@@ -785,7 +785,8 @@ class PeopleController < ApplicationController
         @package_options = []
       end
 
-      @person_options = @person.options.map(&:option)
+      @person_options = @person.options.group_by(&:option).
+        map {|option, list| [option, list.length]}.to_h
 
       @track_ages = @event.track_ages
       @include_independent_instructors = @event.independent_instructors
@@ -823,16 +824,19 @@ class PeopleController < ApplicationController
 
     def update_options
       desired_options = person_params[:options] || {}
-      current_options = @person.options.map(&:option_id)
+      current_options = @person.options.group_by(&:option_id)
       Billable.where(type: 'Option').each do |option|
-        if desired_options[option.id.to_s].to_i == 1
-          unless current_options.include? option.id
-            PersonOption.create! person: @person, option: option
-          end
-        else
-          if current_options.include? option.id
-            PersonOption.destroy_by person: @person, option: option
-          end
+        got = current_options[option.id]&.length || 0
+        want = desired_options[option.id.to_s].to_i
+
+        while got < want
+          PersonOption.create! person: @person, option: option
+          got += 1
+        end
+
+        while got > want
+          current_options[option.id].pop.destroy
+          got -= 1
         end
       end
     end

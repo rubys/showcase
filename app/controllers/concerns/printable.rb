@@ -274,6 +274,7 @@ module Printable
 
       if @event.independent_instructors && !instructor
         @dances.each do |person, info|
+          next if person.type == "Professional" and not person.independent
           info[:purchases] = 0 if info[:dances] == 0
         end
       end
