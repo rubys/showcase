@@ -117,6 +117,18 @@ latest = Dir["#{VOLUME}/db/2*.sqlite3"].map {|name| File.mtime(name) rescue Time
 # set up nginx and run migrations
 Dir.chdir File.dirname(__dir__) do
   system "#{RbConfig.ruby} ./config/tenant/nginx-config.rb"
+
+  showcase_conf = '/etc/nginx/sites-enabled/showcase.conf'
+  if IO.read(showcase_conf).include? '410'
+    fork do
+      10.times do
+        sleep 30
+        STDERR.puts "Reconfiguring nginx..."
+        system "#{RbConfig.ruby} ./config/tenant/nginx-config.rb"
+        exit unless IO.read(showcase_conf).include? '410'
+      end
+    end
+  end
 end
 
 # Sync databases back to primary region

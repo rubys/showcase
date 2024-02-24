@@ -77,6 +77,13 @@ end
 REGIONS = @region ? `dig +short txt regions.smooth.internal`.scan(/\w+/) : []
 
 if @region
+  # warn if there are regions in the configuration that are not on the network
+  missing = @regions - REGIONS
+  unless missing.empty?
+    STDERR.puts "Missing regions: #{missing.join(', ')}"
+  end
+
+  # add demo tenant
   @tenants << OpenStruct.new(
     owner:  'Demo',
     region: @region,

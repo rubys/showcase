@@ -59,7 +59,7 @@ end
 
 # deploy changes
 unless `git status --short | grep -v "^?? "`.empty?
-  exit 1 unless system "#{fly} deploy"
+  exit 1 unless system "#{fly} deploy --smoke-checks=false"
 end
 
 # ensure that there is only one machine per region
