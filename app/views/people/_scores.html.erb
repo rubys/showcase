@@ -1,3 +1,4 @@
+<% judge_ids = @judges.map(&:id) %>
 <table class="" style="break-before: page">
   <thead>
     <tr>
@@ -30,8 +31,8 @@
       <td colspan="<%= [@judges.length, 1].max %>"></td>
       <% end %>
       <% elsif @heats.any? {|heat| heat.scores.any? {|score| score.value}} %>
-      <% @judges.each do |judge| %>
-        <td class="text-center"><%= heat.scores.select {|score| score.judge == judge}.sort_by(&:slot).map(&:value).join(' ') %>
+      <% judge_ids.each do |judge| %>
+        <td class="text-center"><%= heat.scores.select {|score| score.judge_id == judge}.sort_by(&:slot).map(&:value).join(' ') %>
       <% end %>
       <% end %>
       <td><div class="mx-4"><%= heat.category %> <%= heat.dance.name %></div>
@@ -117,11 +118,11 @@
       <% if @judges.empty? %>
       <td></td>
       <% else %>
-      <% @judges.each do |judge| %>
-        <td class="text-left"><%= heat.scores.select {|score| score.judge == judge}.sort_by(&:slot).map(&:good).join(' | ') %>
+      <% judge_ids.each do |judge| %>
+        <td class="text-left"><%= heat.scores.select {|score| score.judge_id == judge}.sort_by(&:slot).map(&:good).join(' | ') %>
       <% end %>
-      <% @judges.each do |judge| %>
-        <td class="text-left bg-gray-200"><%= heat.scores.select {|score| score.judge == judge}.sort_by(&:slot).map(&:bad).join(' | ') %>
+      <% judge_ids.each do |judge| %>
+        <td class="text-left bg-gray-200"><%= heat.scores.select {|score| score.judge_id == judge}.sort_by(&:slot).map(&:bad).join(' | ') %>
       <% end %>
       <% end %>
       <td><div class="mx-4"><%= heat.category %> <%= heat.dance.name %></div>
