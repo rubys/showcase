@@ -72,7 +72,7 @@
     <% next if @student and !%w(Student Guest).include? person.type %>
     <% next unless person.studio == studio %>
     <% purchases = person.selected_options.group_by(&:name) %>
-    <% purchases.unshift "#{person.type} #{person.package.name}" if person.package_id %>
+    <% purchases["#{person.type} #{person.package.name}"] = [person.package] if person.package_id %>
     <% next if purchases.empty? %>
     <% next unless person.studio == studio %>
     <% next if @instructor && person != @instructor %>
