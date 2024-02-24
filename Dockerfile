@@ -136,6 +136,9 @@ pid file = /var/run/rsyncd.pid
   list = yes
 EOF
 
+# Prep demo
+RUN SECRET_KEY_BASE=DUMMY RAILS_APP_DB=demo bin/rails db:prepare
+
 # Deployment options
 ENV DATABASE_URL="sqlite3:///data/production.sqlite3" \
     RAILS_DB_VOLUME="/data/db" \

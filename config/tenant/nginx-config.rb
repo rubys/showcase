@@ -87,6 +87,12 @@ if @region
 
   FileUtils.mkdir_p "/demo/db"
   FileUtils.mkdir_p "/demo/storage/demo"
+
+  # install prebuilt demo database
+  if File.exist?("/rails/db/demo.sqlite3") && !File.exist?("/demo/db/demo.sqlite3")
+    FileUtils.cp "/rails/db/demo.sqlite3", "/demo/db/demo.sqlite3"
+  end
+
   FileUtils.chown_R 'rails', 'rails', "/demo"
   FileUtils.rm_f "/demo/db/index.sqlite3"
   File.symlink "/data/db/index.sqlite3", "/demo/db/index.sqlite3"
