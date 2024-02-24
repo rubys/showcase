@@ -175,12 +175,15 @@ if restart
   end
 end
 
+migrations = Dir["#{@git_path}/db/migrate/2*"].map {|name| name[/\d+/]}
+
 @tenants.each do |tenant|
   next if @region and tenant.region and @region != tenant.region
   ENV['RAILS_APP_DB'] = tenant.label
   database = "#{@dbpath}/#{tenant.label}.sqlite3"
   database = "/demo/db/#{tenant.label}.sqlite3" if tenant.owner == "Demo"
 
+  # rename the database if it is not a symlink and there is a base
   if tenant.base and not File.exist?(database)
     basedb = "#{@dbpath}/#{tenant.base}.sqlite3"
     if File.exist?(basedb) and not File.symlink?(basedb)
@@ -193,15 +196,23 @@ end
   end
 
   if @region
-    # only run migrations in one place - fly.io; rely on rsync to update others
-    ENV['DATABASE_URL'] = "sqlite3://#{database}"
-    system 'bin/rails db:prepare'
+    if file.exist?(database)
+      applied = JSON.parse(`sqlite3 #{database} "select version from schema_migrations" --json`).map(&:values).flatten
+    else
+      applied = []
+    end
 
-    # not sure why this is needed...
-    count = `sqlite3 #{database} "select count(*) from events"`.to_i
-    system 'bin/rails db:seed' if count == 0
+    unless (migrations - applied).empty?
+      # only run migrations in one place - fly.io; rely on rsync to update others
+      ENV['DATABASE_URL'] = "sqlite3://#{database}"
+      system 'bin/rails db:prepare'
 
-    FileUtils.chown_R 'rails', 'rails', database
+      # not sure why this is needed...
+      count = `sqlite3 #{database} "select count(*) from events"`.to_i
+      system 'bin/rails db:seed' if count == 0
+
+      FileUtils.chown_R 'rails', 'rails', database
+    end
 
     if tenant.owner == "Demo"
       FileUtils.cp database, "#{database}.seed", preserve: true
