@@ -5,6 +5,7 @@ require 'set'
 require 'yaml'
 require 'fileutils'
 require 'ostruct'
+require 'json'
 
 ROOT = '/showcase'
 
@@ -196,7 +197,7 @@ migrations = Dir["#{@git_path}/db/migrate/2*"].map {|name| name[/\d+/]}
   end
 
   if @region
-    if file.exist?(database)
+    if File.exist?(database)
       applied = JSON.parse(`sqlite3 #{database} "select version from schema_migrations" --json`).map(&:values).flatten
     else
       applied = []
