@@ -11,6 +11,13 @@ class CategoriesController < ApplicationController
     @agenda = @agenda.to_h
     @categories = (Category.all + CatExtension.all).sort_by {|cat| cat.order}
     @locked = Event.last.locked?
+    @settings = params[:settings]
+
+    if @settings
+      @event = Event.first
+      @ages = Age.all.size
+      @levels = Level.all.order(:id).map {|level| [level.name, level.id]}
+    end
   end
 
   # GET /categories/1 or /categories/1.json

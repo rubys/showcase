@@ -6,6 +6,7 @@ require 'erb'
 
 class EventController < ApplicationController
   include DbQuery
+  include HeatScheduler
   include ActiveStorage::SetCurrent
 
   skip_before_action :authenticate_user, only: %i[ counter showcases regions console ]
@@ -148,11 +149,16 @@ class EventController < ApplicationController
     @event = Event.last
     old_open_scoring = @event.open_scoring
     old_multi_scoring = @event.multi_scoring
-    ok = @event.update params.require(:event).permit(:name, :theme, :location, :date, :heat_range_cat, :heat_range_level, :heat_range_age,
+
+    @event.assign_attributes params.require(:event).permit(:name, :theme, :location, :date, :heat_range_cat, :heat_range_level, :heat_range_age,
       :intermix, :ballrooms, :column_order, :backnums, :track_ages, :heat_length, :solo_length, :open_scoring, :multi_scoring,
       :heat_cost, :solo_cost, :multi_cost, :max_heat_size, :package_required, :student_package_description, :payment_due,
       :counter_art, :judge_comments, :agenda_based_entries, :pro_heats, :assign_judges, :font_family, :font_size, :include_times,
       :include_open, :include_closed, :solo_level_id, :print_studio_heats, :independent_instructors)
+
+    redo_schedule = @event.max_heat_size_changed? || @event.heat_range_level_changed? || @event.heat_range_age_changed? || @event.heat_range_cat_changed?
+
+    ok = @event.save
 
     if @event.open_scoring != old_open_scoring and @event.open_scoring != '#' and @event.open_scoring != '#'
       map = {
@@ -201,7 +207,20 @@ class EventController < ApplicationController
       tab = 'Heats' if params[:event][:max_heat_size]
       tab = 'Advanced' if params[:event][:solo_level_id]
       tab = params[:tab] if params[:tab]
-      redirect_to settings_event_index_path(tab: tab), notice: "Event was successfully updated."
+
+      dest = settings_event_index_path(tab: tab)
+      notice = "Event was successfully updated."
+
+      if tab == 'Categories'
+        dest = categories_path(settings: 'on')
+
+        if redo_schedule
+          schedule_heats
+          notice = "#{Heat.maximum(:number).to_i} heats generated."
+        end
+      end
+
+      redirect_to dest, notice: notice
     else
       settings(status: :unprocessable_entity)
     end

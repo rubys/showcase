@@ -119,4 +119,65 @@ another heat is still possible, even when the agenda is locked.
     <%= link_to 'Dances', dances_path, class: "btn-green" %>
     <%= link_to "Back to Event", root_path, class: "btn-green" %>
   </div>
+
+<% if @settings %>
+<h2 class="font-bold text-2xl mt-4">Heat settings</h1>
+<%= form_with model: @event do |form| %>
+
+  <% if @event.errors.any? %>
+    <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
+      <h2><%= pluralize(@event.errors.count, "error") %> prohibited these settings from being saved:</h2>
+
+      <ul>
+        <% @event.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="my-5">
+  <%= form.label :heat_length, 'Time between start of one heat to the start of the next (in seconds)' %><br>
+  <span class="text-sm">(Be sure to include time for people to enter the floor, dance, and exit)</span>
+  <%= form.number_field :heat_length, min: 46, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full invalid:border-red-500 invalid:text-red-600" %>
+  </div>
+
+  <div class="my-5">
+  <%= form.label :solo_length, 'Time between start of solos (if different)' %><br>
+  <%= form.number_field :solo_length, min: 46, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full invalid:border-red-500 invalid:text-red-600" %>
+  </div>
+
+  <% unless @event.locked %>
+  <div class="my-5">
+  <%= form.label :max_heat_size %>
+  <%= form.number_field :max_heat_size,
+    class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+<div class="my-5">
+  <%= form.label :heat_range_level, 'level' %>
+  <%= form.range_field :heat_range_level, min: 0, max: @levels.length-1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+</div>
+
+<% if @event.track_ages %>
+<div class="my-5">
+  <%= form.label :heat_range_age, 'age' %>
+  <%= form.range_field :heat_range_age, min: 0, max: @ages-1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+</div>
+<% else %>
+  <%= form.hidden_field :heat_range_age, value: @ages-1 %>
+<% end %>
+
+<div class="my-5">
+  <%= form.label :heat_range_cat, 'open/closed' %>
+  <%= form.range_field :heat_range_cat, min: 0, max: 1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+</div>
+<% end %>
+
+<div class="inline">
+<%= form.button 'Save', name: 'tab', value: 'Categories', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+</div>
+
+<% end %>
+<% end %>
 </div>
