@@ -11,6 +11,8 @@
 <li>Once the event has "gone to print", clicking the lock icon will lock the agenda preventing large scale changes such as redo.
 Small changes such as scratching heats, replacing a person in a heat, and even moving an individual entry to
 another heat is still possible, even when the agenda is locked.
+<li>For convinience, the "Show Settings" button will take you to the bottom of the page where you can adjust the heat settings.
+  If the event is unlocked, changing the max heat size, level, age, and open/closed settings will redo the agenda immediately.
 </ul>
 </div>
 
@@ -118,10 +120,15 @@ another heat is still possible, even when the agenda is locked.
     <%= up_link 'New category', new_category_path, class: "btn-blue", disabled: @locked %>
     <%= link_to 'Dances', dances_path, class: "btn-green" %>
     <%= link_to "Back to Event", root_path, class: "btn-green" %>
+    <% if @settings %>
+    <%= link_to 'Hide Settings', categories_path(), class: "btn-blue" %>
+    <% else %>
+    <%= link_to 'Show Settings', categories_path(settings: 'on', anchor: 'settings'), class: "btn-blue", data: {turbo: false} %>
+    <% end %>
   </div>
 
 <% if @settings %>
-<h2 class="font-bold text-2xl mt-4">Heat settings</h1>
+<h2 class="font-bold text-2xl mt-4" id="settings">Heat settings</h1>
 <%= form_with model: @event do |form| %>
 
   <% if @event.errors.any? %>
