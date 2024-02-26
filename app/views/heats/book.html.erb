@@ -65,6 +65,25 @@ tbody::after {
   margin-right: 1.5cm;
 }
 </style>
+<%
+
+last_seen = Set.new
+seen = Set.new
+
+show_name = lambda do |person|
+  name = person.display_name
+  return name unless @type == 'emcee'
+
+  seen.add person
+
+  if last_seen.include? person
+    return "<u>#{name}</u>".html_safe
+  else
+    return name
+  end
+end
+
+%>
 
 <div class="mx-auto w-full print:w-full">
 
@@ -238,6 +257,7 @@ tbody::after {
       <tbody id="heat-<%= number %>">
       <% end %>
       <% if number and number > 0 %>
+      <% last_seen = seen; seen = Set.new %>
       <tr>
         <td></td>
         <td colspan="9" class="text-lg">Heat <%= number %>:
@@ -253,8 +273,8 @@ tbody::after {
           <% if @start %>
           <span class="text-base" style="opacity: 50%">- <%= @start[number]&.strftime("%-I:%M %P") %></span>
           <% end %>
-          <% if @type == 'judge' %>
-          <span class="text-base" style="opacity: 50%">(<%= ballrooms.values.flatten.length %> entries)</span>
+          <% if @type == 'judge' || @type=='emcee' %>
+          <span class="text-base">(<%= ballrooms.values.flatten.length %> entries)</span>
           <% end %>
         </td>
       </tr>
@@ -302,23 +322,23 @@ tbody::after {
                p1, p2 = heat.follow, heat.lead
              end
            %>
-           <td class="pl-4"><%= link_to p1.display_name, polymorphic_path(p1, anchor: 'heats') %>
+           <td class="pl-4"><%= show_name[p1] %>
            <% if heat.category == 'Solo' %>
            <% heat.solo.formations.each_with_index do |formation, index| %>
              <% if index % 2 == 0 and formation.on_floor %>
-             <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
+             <br><%= show_name[formation.person] %>
              <% end %>
            <% end %>
            <% end %>
-           <td class="pl-4"><%= link_to p2.display_name, polymorphic_path(p2, anchor: 'heats') %>
+           <td class="pl-4"><%= link_to show_name[p2] %>
            <% if heat.category == 'Solo' %>
            <% heat.solo.formations.each_with_index do |formation, index| %>
              <% if index % 2 == 1 and formation.on_floor %>
-             <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
+             <br><%= show_name[formation.person] %>
              <% end %>
            <% end %>
            <% end %>
-           <% if @type == 'judge' %>
+           <% if @type == 'judge' || @type == 'emcee' %>
            <td class="pl-4 text-center"><%= heat.entry.subject_lvlcat(@track_ages) %>
            <% else %>
            <td class="pl-4"><%= heat.entry.level_name %>
