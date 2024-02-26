@@ -282,7 +282,8 @@ class ScoresController < ApplicationController
   end
 
   def by_level
-    @open_scoring = Event.first.open_scoring
+    @event = Event.first
+    @open_scoring = @event.open_scoring
     levels = Level.order(:id).all
 
     @last_score_update = Score.maximum(:updated_at)
@@ -312,7 +313,7 @@ class ScoresController < ApplicationController
         end
 
         @scores[group][level][students] ||= {
-          'Open' => SCORES['Open'].map {0},
+          'Open' => @open_scoring == '&' ? [0]*5 : SCORES['Open'].map {0},
           'Closed' => SCORES['Closed'].map {0},
           'points' => 0
         }
@@ -321,6 +322,7 @@ class ScoresController < ApplicationController
           @scores[group][level][students]['points'] += score.to_i
         else
           value = SCORES['Closed'].index score
+
           if value
             category = 'Closed'
           else
@@ -328,7 +330,12 @@ class ScoresController < ApplicationController
             value = SCORES['Open'].index score
           end
 
-          if value
+          if not value and @open_scoring == '&' and score =~ /^\d+$/
+            value = score.to_i - 1
+
+            @scores[group][level][students][category][value] += count
+            @scores[group][level][students]['points'] += count * value
+          elsif value
             @scores[group][level][students][category][value] += count
             @scores[group][level][students]['points'] += count * WEIGHTS[value]
           end
@@ -378,7 +385,7 @@ class ScoresController < ApplicationController
 
           points = 0
 
-          if @open_scoring == '#'
+          if %w(# &).include? @open_scoring
             points = count * score.to_i
           else
             value = SCORES['Closed'].index score
@@ -423,7 +430,8 @@ class ScoresController < ApplicationController
   end
 
   def by_age
-    @open_scoring = Event.first.open_scoring
+    @event = Event.first
+    @open_scoring = @event.open_scoring
     ages = Age.order(:id).all
 
     template1 = ->() {
@@ -453,7 +461,7 @@ class ScoresController < ApplicationController
         age ||= ages.first.last
 
         @scores[group][age][students] ||= {
-          'Open' => SCORES['Open'].map {0},
+          'Open' => @open_scoring == '&' ? [0]*5 : SCORES['Open'].map {0},
           'Closed' => SCORES['Closed'].map {0},
           'points' => 0
         }
@@ -469,7 +477,12 @@ class ScoresController < ApplicationController
             value = SCORES['Open'].index score
           end
   
-          if value
+          if not value and @open_scoring == '&' and score =~ /^\d+$/
+            value = score.to_i - 1
+
+            @scores[group][age][students][category][value] += count
+            @scores[group][age][students]['points'] += count * value
+          elsif value
             @scores[group][age][students][category][value] += count
             @scores[group][age][students]['points'] += count * WEIGHTS[value]
           end
