@@ -54,16 +54,17 @@ class ScoresController < ApplicationController
 
     @combine_open_and_closed = @event.heat_range_cat == 1
 
+    category = @subjects.first.category
+    category = 'Open' if category == 'Closed' and @event.closed_scoring == '='
+
     if @subjects.empty?
       @dance = '-'
       @scores = []
     else
-      category = @subjects.first.category
-
       if @subjects.first.dance_id == @subjects.last.dance_id
-        @dance = "#{category} #{@subjects.first.dance.name}"
+        @dance = "#{@subjects.first.category} #{@subjects.first.dance.name}"
       else
-        @dance = "#{category} #{@subjects.first.dance_category.name}"
+        @dance = "#{@subjects.first.category} #{@subjects.first.dance_category.name}"
       end
       if category == 'Open' and @event.open_scoring == 'G'
         @scores = SCORES['Closed'].dup
@@ -75,9 +76,9 @@ class ScoresController < ApplicationController
         @scores = SCORES[category].dup
       end
 
-      if @combine_open_and_closed and %w(Open Closed).include? @subjects.first.category
+      if @combine_open_and_closed and %w(Open Closed).include? category
         @dance.sub! /^\w+ /, ''
-        @scores = SCORES['Closed'].dup if @subjects.first.category == 'Open'
+        @scores = SCORES['Closed'].dup if category == 'Open'
       end
     end
 
@@ -96,7 +97,7 @@ class ScoresController < ApplicationController
       end
     end
 
-    if %w(+ &).include? @event.open_scoring and @subjects.first.category == 'Open'
+    if %w(+ &).include? @event.open_scoring and category == 'Open'
       @good = {}
       @bad = {}
       @value = {}

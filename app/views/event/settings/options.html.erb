@@ -77,6 +77,14 @@
   </ul>
   </div>
 
+  <div class="my-5">
+  <%= form.label :closed_scoring %>
+  <ul class="ml-6">
+  <li class="my-2"><%= form.radio_button :closed_scoring, 'G' %> GH/G/S/B
+  <li class="my-2"><%= form.radio_button :closed_scoring, '=' %> Same as Open
+  </ul>
+  </div>
+
 
   <div class="my-5">
     <%= form.check_box :intermix, class: 'entry-count h-10' %>
