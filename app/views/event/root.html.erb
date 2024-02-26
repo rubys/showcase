@@ -60,7 +60,11 @@
   <h2 class="font-bold text-2xl mt-4 mb-2"><%= @judges.length == 1 ? 'Judge' : 'Judges' %></h2>
   <ul class="list-disc list-inside">
     <% @judges.each do |judge| %>
+      <% if @event.assign_judges? and not judge.present? %>
+      <li><%= link_to judge.display_name, judge, class: 'opacity-40' %></li>
+      <% else %>
       <li><%= link_to judge.display_name, judge %></li>
+      <% end %>
     <% end %>
   </u>
 
