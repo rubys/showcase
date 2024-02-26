@@ -95,7 +95,7 @@
 </table>
 </div>
 
-<% if @event.open_scoring == '+' and @heats.any? {|heat| [heat.entry.lead, heat.entry.follow].include? person and heat.category == 'Open'} %>
+<% if %w(+ &).include? @event.open_scoring and @heats.any? {|heat| [heat.entry.lead, heat.entry.follow].include? person and heat.category == 'Open'} %>
 <table class="mt-8" style="break-inside: avoid">
   <thead>
     <tr>
@@ -148,6 +148,7 @@
   <td colspan="<%= 3 + @judges.length*2 %>">
   <h2 class="mt-4 ml-4 font-bold">Legend:</h2>
   <table class="ml-8 w-full">
+  <% if @event.open_scoring == '+' %>
     <tr>
       <td><abbr>DF</abbr>: <span>Dance Frame</span></td>
       <td><abbr>T</abbr>: <span>Timing</span></td>
@@ -162,6 +163,17 @@
       <td><abbr>CB</abbr>: <span>Contra-Body</span></td>
       <td><abbr>FC</abbr>: <span>Floor Craft</span></td>
     <tr>
+  <% else %>
+    <tr>
+      <td><abbr>F</abbr>: <span>Frame</span></td>
+      <td><abbr>P</abbr>: <span>Posture</span></td>
+      <td><abbr>FW</abbr>: <span>Footwork</span></td>
+      <td><abbr>LF</abbr>: <span>Lead/&ZeroWidthSpace;Follow</span></td>
+      <td><abbr>T</abbr>: <span>Timing</span></td>
+      <td><abbr>S</abbr>: <span>Styling</span></td>
+
+    <tr>
+  <% end %>
     </table>
   </td>
   </tr>

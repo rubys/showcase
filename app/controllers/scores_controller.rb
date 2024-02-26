@@ -67,7 +67,7 @@ class ScoresController < ApplicationController
       end
       if category == 'Open' and @event.open_scoring == 'G'
         @scores = SCORES['Closed'].dup
-      elsif category == 'Open' and @event.open_scoring == '+'
+      elsif category == 'Open' and %w(+ &).include? @event.open_scoring
         @scores = []
       elsif category == 'Multi' and @event.multi_scoring == 'G'
         @scores = SCORES['Closed'].dup
@@ -96,12 +96,14 @@ class ScoresController < ApplicationController
       end
     end
 
-    if @event.open_scoring == '+' and @subjects.first.category == 'Open'
+    if %w(+ &).include? @event.open_scoring and @subjects.first.category == 'Open'
       @good = {}
       @bad = {}
+      @value = {}
       scores.each do |score|
         @good[score.heat_id] = score.good
         @bad[score.heat_id] = score.bad
+        @value[score.heat_id] = score.value
       end
     end
 
@@ -251,6 +253,12 @@ class ScoresController < ApplicationController
         feedback = score.good.to_s.split(' ')
         if feedback.delete(params[:bad])
           score.good = feedback.empty? ? nil : feedback.join(' ')
+        end
+      elsif params.include? :value
+        if score.value == params[:value]
+          score.value = nil
+        else
+          score.value = params[:value]
         end
       else
         render json: params, status: :bad_request

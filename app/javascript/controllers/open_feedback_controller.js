@@ -40,7 +40,8 @@ export default class extends Controller {
         const token = document.querySelector('meta[name="csrf-token"]').content;
         const score = document.querySelector("div[data-controller=score]");
 
-        let feedbackType = button.parentElement.classList.contains("good") ? "good" : "bad";
+        let feedbackType = button.parentElement.classList.contains("good") ? "good" : 
+          (button.parentElement.classList.contains("bad") ? "bad" : "value");
         let feedbackValue = button.querySelector("abbr").textContent;
 
         const feedback = {
@@ -68,7 +69,8 @@ export default class extends Controller {
 
               let sections = button.parentElement.parentElement.children;
               for (let section of sections) {
-                let feedbackType =  section.classList.contains("good") ? "good" : "bad";
+                let feedbackType = section.classList.contains("good") ? "good" : 
+                  (section.classList.contains("bad") ? "bad" : "value");
                 let feedback = (response[feedbackType] || "").split(" ");
             
                 for (let button of section.querySelectorAll("button")) {

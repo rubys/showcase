@@ -207,7 +207,7 @@ Swiping left and right on mobile devices and tablets also work.
       <tr class="hover:bg-yellow-200 line-through opacity-50">
       <% end %>
         <% if @event.assign_judges > 0 && assign %>
-        <td class="py-2 font-bold text-xl"><span class="border-2 border-red-600 px-2 rounded-full"><%= subject.lead.back %></span>
+        <td class="py-2 font-bold text-xl"><span class="border-2 border-red-600 px-2 rounded-full"><%= subject.lead.back || 'TBD' %></span>
         <% else %>
         <td class="py-2 text-xl"><%= subject.lead.back %>
         <% end %>
@@ -238,6 +238,34 @@ Swiping left and right on mobile devices and tablets also work.
       <% if @style != 'emcee' and @scores.empty? %>
       <tr data-controller="open-feedback" class="open-fb-row" data-heat="<%= subject.id %>" data-feedback-action="<%= post_feedback_path(judge: @judge) %>">
       <td colspan="5">
+      <% if @event.open_scoring == '&' %>
+      <div class="grid value w-full" data-value="<%= @value[subject.id] %>" style="grid-template-columns: 100px repeat(5, 1fr)">
+        <div class="bg-gray-200 inline-flex justify-center items-center">Overall</div>
+        <button class="open-fb"><abbr>1</abbr><span>1</span></button>
+        <button class="open-fb"><abbr>2</abbr><span>2</span></button>
+        <button class="open-fb"><abbr>3</abbr><span>3</span></button>
+        <button class="open-fb"><abbr>4</abbr><span>4</span></button>
+        <button class="open-fb"><abbr>5</abbr><span>5</span></button>
+      </div>
+      <div class="grid good" data-value="<%= @good[subject.id] %>" style="grid-template-columns: 100px repeat(6, 1fr)">
+        <div class="bg-gray-200 inline-flex justify-center items-center">Good</div>
+        <button class="open-fb"><abbr>F</abbr><span>Frame</span></button>
+        <button class="open-fb"><abbr>P</abbr><span>Posture</span></button>
+        <button class="open-fb"><abbr>FW</abbr><span>Footwork</span></button>
+        <button class="open-fb"><abbr>LF</abbr><span>Lead/&ZeroWidthSpace;Follow</span></button>
+        <button class="open-fb"><abbr>T</abbr><span>Timing</span></button>
+        <button class="open-fb"><abbr>S</abbr><span>Styling</span></button>
+      </div>
+      <div class="grid bad"  data-value="<%= @bad[subject.id] %>" style="grid-template-columns: 100px repeat(6, 1fr)">
+        <div class="bg-gray-200 inline-flex justify-center items-center">Bad</div>
+        <button class="open-fb"><abbr>F</abbr><span>Frame</span></button>
+        <button class="open-fb"><abbr>P</abbr><span>Posture</span></button>
+        <button class="open-fb"><abbr>FW</abbr><span>Footwork</span></button>
+        <button class="open-fb"><abbr>LF</abbr><span>Lead/&ZeroWidthSpace;Follow</span></button>
+        <button class="open-fb"><abbr>T</abbr><span>Timing</span></button>
+        <button class="open-fb"><abbr>S</abbr><span>Styling</span></button>
+      </div>
+      <% else %>
       <div class="grid grid-cols-2 w-full divide-x-2 divide-black">
         <div class="grid grid-cols-5 good" data-value="<%= @good[subject.id] %>">
           <button class="open-fb"><abbr>DF</abbr><span>Dance Frame</span></button>
@@ -263,6 +291,7 @@ Swiping left and right on mobile devices and tablets also work.
           <button class="open-fb"><abbr>CB</abbr><span>Contra-Body</span></button>
           <button class="open-fb"><abbr>FC</abbr><span>Floor Craft</span></button>        </div>
       </div>
+      <% end %>
       </td>
       </tr>
       <% end %>

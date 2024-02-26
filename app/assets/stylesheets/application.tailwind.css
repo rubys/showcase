@@ -125,5 +125,9 @@
   .bad .open-fb.selected { @apply
    bg-red-400
   }
+
+  .value .open-fb.selected { @apply
+   bg-blue-400
+  }
 }
 @import 'actiontext.css';
