@@ -16,12 +16,14 @@ when most dances for an individual are with one instructor but one or two are ch
   <ul class="info-box">
   <li>Scores may be entered during the heats themselves, shortly thereafter, or even after the event entirely.
   <li>If the scores are entered during the event, the program can be used to tally scores.
+  <% unless %w(# &).include? @event.open_scoring || @event.judge_comments %>
   <li>Two methods are provided for entering scores:
   <ul class="ml-8 list-disc list-outside">
   <li><em>Cards</em> visually represent each couple, and scoring is accomplished by moving the cards to areas
   corresponding to the desired score.
   <li><em>Radio</em> shows participants in a tabular form and provides "radio buttons" next to each entry to record a score.
   </ul>
+  <% end %>
   </ul>
   </div>
   <% end %>
@@ -342,7 +344,7 @@ when most dances for an individual are with one instructor but one or two are ch
     <% end %>
     <% sort = @person.judge&.sort || 'back'%>
     <div class="mt-4 mx-auto">
-    <% if @event.open_scoring == '#' %>
+    <% if %w(# &).include? @event.open_scoring || @event.judge_comments %>
     <%= link_to 'Score heats', judge_heatlist_path(judge: @person, style: 'radio', sort: sort), class: "btn-purple" %>
     <% else %>
     <%= link_to 'Score heats - cards', judge_heatlist_path(judge: @person, style: 'cards', sort: sort), class: "btn-purple" %>
