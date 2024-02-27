@@ -13,10 +13,16 @@
           <th class="row-head">Points
           <th class="row-head">Name
           <% if @open_scoring != '#' %>
+          <% if @event.closed_scoring != '=' or @open_scoring == 'G' %>
           <% ScoresController::SCORES['Closed'].each do |score| %>
           <th class="row-head bg-slate-200"><%= score %>
           <% end %>
-          <% if @open_scoring != 'G' %>
+          <% end %>
+          <% if @open_scoring == '&' %>
+          <% 1.upto(5).each do |score| %>
+          <th class="row-head"><%= score %>
+          <% end %>
+          <% elsif @open_scoring != 'G' %>
           <% ScoresController::SCORES['Open'].each do |score| %>
           <th class="row-head"><%= score %>
           <% end %>
@@ -29,6 +35,7 @@
       <td class="row-main text-right"><%= results['points'] %>
       <td class="row-main"><%= link_to person&.display_name || 'nil', person %></td>
       <% if @open_scoring != '#' %>
+      <% if @event.closed_scoring != '=' or @open_scoring == 'G' %>
       <% results['Closed'].each do |score| %>
       <td class="row text-right px-4 bg-slate-200"><%= score == 0 ? '' : score %></td>
       <% end %>
@@ -36,6 +43,7 @@
       <% if @open_scoring != 'G' %>
       <% results['Open'].each do |score| %>
       <td class="row text-right px-4"><%= score == 0 ? '' : score %></td>
+      <% end %>
       <% end %>
       <% end %>
     </tr>

@@ -579,7 +579,8 @@ class ScoresController < ApplicationController
   end
 
   def instructor
-    @open_scoring = Event.first.open_scoring
+    @event = Event.first
+    @open_scoring = @event.open_scoring
     @scores = {}
 
     people = Person.where(type: 'Professional').
@@ -589,7 +590,7 @@ class ScoresController < ApplicationController
       person = people[instructor]
 
       @scores[person] ||= {
-        'Open' => SCORES['Open'].map {0},
+        'Open' => @open_scoring == '&' ? [0]*5 : SCORES['Open'].map {0},
         'Closed' => SCORES['Closed'].map {0},
         'points' => 0
       }
@@ -603,11 +604,17 @@ class ScoresController < ApplicationController
         else
           category = 'Open'
           value = SCORES['Open'].index score
-          next unless value
         end
 
-        @scores[person][category][value] += count
-        @scores[person]['points'] += count * WEIGHTS[value]
+        if not value and @open_scoring == '&' and score =~ /^\d+$/
+          value = score.to_i - 1
+
+          @scores[person][category][value] += count
+          @scores[person]['points'] += count * value
+        elsif value
+          @scores[person][category][value] += count
+          @scores[person]['points'] += count * WEIGHTS[value]
+        end
       end
     end
 
