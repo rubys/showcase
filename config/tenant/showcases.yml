@@ -106,6 +106,10 @@
         :name: Newsome Twosome
       snowball-spotlight:
         :name: Snowball Spotlight
+  perth:
+    :name: Perth
+    :region: syd
+    :logo: arthur-murray-logo.gif
   raleigh:
     :name: Raleigh
     :region: iad
