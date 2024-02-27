@@ -204,10 +204,12 @@ migrations = Dir["#{@git_path}/db/migrate/2*"].map {|name| name[/\d+/]}
   end
 
   if @region
-    if File.exist?(database)
-      applied = JSON.parse(`sqlite3 #{database} "select version from schema_migrations" --json`).map(&:values).flatten
-    else
-      applied = []
+    applied = []
+    if File.exist?(database) and File.size(database) > 0
+      begin
+        applied = JSON.parse(`sqlite3 #{database} "select version from schema_migrations" --json`).map(&:values).flatten
+      rescue
+      end
     end
 
     unless (migrations - applied).empty?
