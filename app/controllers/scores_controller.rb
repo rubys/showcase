@@ -351,7 +351,8 @@ class ScoresController < ApplicationController
   end
 
   def by_studio
-    @open_scoring = Event.first.open_scoring
+    @event = Event.first
+    @open_scoring = @event.open_scoring
     levels = Level.order(:id).all
     total = Struct.new(:name).new('Total')
 
@@ -374,18 +375,22 @@ class ScoresController < ApplicationController
           studio = student.studio.name
 
           @scores[level][studio] ||= {
+            'Open' => @open_scoring == '&' ? [0]*5 : SCORES['Open'].map {0},
+            'Closed' => SCORES['Closed'].map {0},
             'points' => 0,
             'count' => 0
           }
 
           @scores[total][studio] ||= {
+            'Open' => @open_scoring == '&' ? [0]*5 : SCORES['Open'].map {0},
+            'Closed' => SCORES['Closed'].map {0},
             'points' => 0,
             'count' => 0
           }
 
           points = 0
 
-          if %w(# &).include? @open_scoring
+          if @open_scoring == '#'
             points = count * score.to_i
           else
             value = SCORES['Closed'].index score
@@ -396,12 +401,19 @@ class ScoresController < ApplicationController
               value = SCORES['Open'].index score
             end
 
-            if value
+            if not value and @open_scoring == '&' and score =~ /^\d+$/
+              value = score.to_i - 1
+              points = count * (value + 1)
+
+            elsif value
               points = count * WEIGHTS[value]
             end
           end
 
           if points > 0
+            @scores[level][studio][category][value] += count
+            @scores[total][studio][category][value] += count
+
             @scores[level][studio]['count'] += count
             @scores[level][studio]['points'] += points
 
