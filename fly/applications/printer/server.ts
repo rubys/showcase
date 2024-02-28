@@ -39,6 +39,9 @@ const browser = await puppeteer.launch({
 // start initial timeout
 let timeout = setTimeout(exit, TIMEOUT)
 
+// is a shutdown needed?  Used to avoid starting a new timeout after an error.
+let shutdown = false
+
 // process HTTP requests
 const server = Bun.serve({
   port: PORT,
@@ -128,6 +131,9 @@ const server = Bun.serve({
           }
         })
       } else {
+        // indicate that a shutdown is warranted
+        shutdown = true
+
         // all other errors
         console.error(error.stack || error);
         return new Response(`<pre>${error.stack || error}</pre>`, {
@@ -142,7 +148,7 @@ const server = Bun.serve({
 
       // start new timeout
       clearTimeout(timeout)
-      timeout = setTimeout(exit, TIMEOUT)
+      timeout = setTimeout(exit, shutdown ? 500 : TIMEOUT)
     }
   }
 })
