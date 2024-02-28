@@ -1,15 +1,16 @@
 <div id="scores-by-age">
+  <h1 class="font-bold mt-8 text-4xl pb-5 text-center">Scores by Age</h1>
   <% empty = true %>
   
   <% @scores.each do |group, ages| %>
     <% next if ages.values.all? {|students| students.empty?} %>
 
-    <h1 class="font-bold mt-8 text-4xl pb-5 text-center"><%= group %></h1>
+    <h2 class="font-bold mt-8 text-4xl pb-5"><%= group %></h2>
 
     <% ages.each do |age, students| %>
       <% next if students.empty? %>
       <% empty = false %>
-      <h2 class="font-bold pt-4 text-2xl pb-5"><%= age.category %> (<%= age.description %>)</h1>
+      <h3 class="font-bold pt-4 text-2xl pb-5"><%= age.category %> (<%= age.description %>)</h3>
       <table class="mb-8">
         <thead>
           <% if @open_scoring == '1' %>

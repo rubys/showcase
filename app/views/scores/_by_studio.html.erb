@@ -1,13 +1,31 @@
+<div data-controller="info-box">
+<div class="info-button">&#x24D8;</div>
+<ul class="info-box">
+<li>Scores are presented first by total points, then by average points.
+  Total points are the sum of all scores entered for a studio.
+  Average points are the total points divided by the number of scores entered for a studio.  
+  The average is rounded to the nearest percentage point.
+  <ul class="ml-4 list-disc list-outside">
+    <li>Total Points rewards studios that have more entries.
+    <li>Average Points rewards studios that have higher scores.
+  </ul>
+<li>Averages may not total 100% due to rounding.
+</ul>
+</div>
+
+
 <div id="scores-by-studio">
+  <h1 class="font-bold mt-8 text-4xl pb-5 text-center">Scores by Studio</h1>
+
   <% empty = true %>
 
     <% @scores.each do |level, studios| %>
       <% next if studios.empty? %>
       <% if empty %>
-      <h1 class="font-bold pt-4 text-4xl pb-5">Total Points</h1>
+      <h2 class="font-bold pt-4 text-4xl pb-5">Total Points</h2>
       <% end %>
 
-      <h2 class="font-bold pt-4 text-2xl pb-5"><%= level.name %></h2>
+      <h3 class="font-bold pt-4 text-2xl pb-5"><%= level.name %></h3>
       <table class="mb-8">
         <thead>
           <% if @open_scoring == '1' %>
@@ -64,11 +82,11 @@
   <% if empty %>
   <p class="my-8">No scores entered yet.</p>
   <% else %>
-  <h1 class="font-bold pt-4 text-4xl pb-5">Average Points</h1>
+  <h2 class="font-bold pt-4 text-4xl pb-5">Average Points</h2>
   <% @scores.each do |level, studios| %>
       <% next if studios.empty? %>
 
-      <h2 class="font-bold pt-4 text-2xl pb-5"><%= level.name == 'Total' ? "Overall Averages" : level.name %></h2>
+      <h3 class="font-bold pt-4 text-2xl pb-5"><%= level.name == 'Total' ? "Overall Averages" : level.name %></h3>
       <table class="mb-8">
         <thead>
           <% if @open_scoring == '1' %>
@@ -101,17 +119,18 @@
           </tr>
         </thead>
       <% studios.sort_by {|studio, results| results['avg']}.reverse.each do |studio, results| %>
-        <% count = results['count'] %>
         <tr>
           <td class="row-main text-right"><%= number_with_precision results['avg'], precision: 2 %>
           <td class="row-main"><%= studio %></td>
           <% if @open_scoring != '#' %>
           <% if @event.closed_scoring != '=' or @open_scoring == 'G' %>
+          <% count = results['Closed'].sum %>
           <% (results['Closed'] || []).each do |score| %>
           <td class="row text-right px-4 bg-slate-200"><%= score == 0 ? '' : number_to_percentage(100.8 * score.round / count, precision: 0) %></td>
           <% end %>
           <% end %>
           <% if @open_scoring != 'G' %>
+          <% count = results['Open'].sum %>
           <% (results['Open'] || []).each do |score| %>
           <td class="row text-right px-4"><%= score == 0 ? '' : number_to_percentage(100.0 * score.round / count, precision: 0) %></td>
           <% end %>
