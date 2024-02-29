@@ -154,7 +154,7 @@ class EventController < ApplicationController
       :intermix, :ballrooms, :column_order, :backnums, :track_ages, :heat_length, :solo_length, :open_scoring, :multi_scoring,
       :heat_cost, :solo_cost, :multi_cost, :max_heat_size, :package_required, :student_package_description, :payment_due,
       :counter_art, :judge_comments, :agenda_based_entries, :pro_heats, :assign_judges, :font_family, :font_size, :include_times,
-      :include_open, :include_closed, :solo_level_id, :print_studio_heats, :independent_instructors, :closed_scoring)
+      :include_open, :include_closed, :solo_level_id, :print_studio_heats, :independent_instructors, :closed_scoring, :heat_order)
 
     redo_schedule = @event.max_heat_size_changed? || @event.heat_range_level_changed? || @event.heat_range_age_changed? || @event.heat_range_cat_changed?
 

@@ -64,7 +64,7 @@ module HeatScheduler
       assignments = {}
       subgroups = []
 
-      if ENV['RAILS_APP_DB'] == '2024-harrisburg'
+      if @event.heat_order == 'R'
 
         # first, extract all heats in the group
         pending = []
@@ -127,7 +127,7 @@ module HeatScheduler
 
       Group.max = group.max_heat_size
 
-      if ENV['RAILS_APP_DB'] == '2024-harrisburg'
+      if @event.heat_order == 'R'
         assignments = assignments.map {|index, assignment| [heats[index], assignment]}.to_h
       else
         assignments = (0...assignments.length).map {|index| [heats[index], assignments[index]]}.to_h
