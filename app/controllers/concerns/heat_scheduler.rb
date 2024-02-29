@@ -64,20 +64,63 @@ module HeatScheduler
       assignments = {}
       subgroups = []
 
-      more = heats.first
-      while more
-        group = Group.new
-        subgroups.unshift group
-        more = nil
+      if ENV['RAILS_APP_DB'] == '2024-harrisburg'
 
+        # first, extract all heats in the group
+        pending = []
+        group = nil
         heats.each_with_index do |entry, index|
-          next if assignments[index]
-          if group.add? *entry
-            assignments[index] = group
-          elsif group.match? *entry
-            more ||= entry
+          if index == 0
+            group = Group.new
+            group.add? *entry
+            pending << index
           else
-            break
+            if group.match? *entry
+              pending << index
+            else
+              break
+            end
+          end
+        end
+
+        # now organize heats into subgroups
+        more = pending.first
+        while more
+          group = Group.new
+          subgroups.unshift group
+          more = nil
+
+          pending.shuffle!
+          pending.each do |index|
+            next if assignments[index]
+            entry = heats[index]
+
+            if group.add? *entry
+              assignments[index] = group
+            else
+              more ||= index
+            end
+          end
+        end
+
+      else
+
+        # organize heats into groups
+        more = heats.first
+        while more
+          group = Group.new
+          subgroups.unshift group
+          more = nil
+
+          heats.each_with_index do |entry, index|
+            next if assignments[index]
+            if group.add? *entry
+              assignments[index] = group
+            elsif group.match? *entry
+              more ||= entry
+            else
+              break
+            end
           end
         end
       end
