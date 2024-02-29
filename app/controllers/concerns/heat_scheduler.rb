@@ -126,7 +126,13 @@ module HeatScheduler
       end
 
       Group.max = group.max_heat_size
-      assignments = (0...assignments.length).map {|index| [heats[index], assignments[index]]}.to_h
+
+      if ENV['RAILS_APP_DB'] == '2024-harrisburg'
+        assignments = assignments.map {|index, assignment| [heats[index], assignment]}.to_h
+      else
+        assignments = (0...assignments.length).map {|index| [heats[index], assignments[index]]}.to_h
+      end
+      
       rebalance(assignments, subgroups, group.max_heat_size)
 
       heats.shift assignments.length
