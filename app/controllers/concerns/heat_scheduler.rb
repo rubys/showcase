@@ -2,6 +2,8 @@ module HeatScheduler
   include Printable
   
   def schedule_heats
+    event = Event.last
+
     Group.set_knobs
 
     # reset judge assignments
@@ -54,7 +56,7 @@ module HeatScheduler
 
     heats = Group.sort(heats)
 
-    max = Event.last.max_heat_size || 9999
+    max = event.max_heat_size || 9999
 
     # group entries into heats
     groups = []
@@ -64,7 +66,7 @@ module HeatScheduler
       assignments = {}
       subgroups = []
 
-      if @event.heat_order == 'R'
+      if event.heat_order == 'R'
 
         # first, extract all heats in the group
         pending = []
@@ -127,7 +129,7 @@ module HeatScheduler
 
       Group.max = group.max_heat_size
 
-      if @event.heat_order == 'R'
+      if event.heat_order == 'R'
         assignments = assignments.map {|index, assignment| [heats[index], assignment]}.to_h
       else
         assignments = (0...assignments.length).map {|index| [heats[index], assignments[index]]}.to_h
