@@ -81,10 +81,13 @@ Rails.application.routes.draw do
       get 'book', on: :collection
       get 'mobile', on: :collection
       get 'djlist', on: :collection
+      post 'reset_open', on: :collection
+      post 'reset_closed', on: :collection
     end
 
     resources :entries do
       get 'couples', on: :collection
+      post 'reset_ages', on: :collection
     end
 
     get '/dances/:dance/songs', to: 'songs#dancelist', as: 'dance_songlist'

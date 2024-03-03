@@ -25,16 +25,28 @@ and heats that you have entered so far.</span>
 <%= link_to 'Levels', levels_event_index_path, class: 'btn-grey' %>
 <%= link_to 'Dances', dances_event_index_path, class: 'btn-grey' %>
 
-<%= form_with model: @event do |form| %>
+<%= form_with model: @event, id: 'advanced-form' do |form| %>
   <div class="my-5">
     <%= form.label :solo_level_id, "Solo levels start with:" %>
     <%= form.select :solo_level_id, @solo_levels, {include_blank: true},
        class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
-
-  <div class="inline">
-    <%= form.button 'Save', name: 'tab', value: 'Advanced', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
-  </div>  
 <% end %>
+
+<div class="mx-auto flex">
+  <input type="submit" class="btn-blue" form="advanced-form" value="Save">
+
+  <% if @reset_ages %>
+    <%= up_link 'Reset ages', reset_ages_entries_path, class: "btn-orange", method: :post %>
+  <% end %>
+
+  <% if @reset_open %>
+    <%= up_link 'Reset open', reset_open_heats_path, class: "btn-orange", method: :post %>
+  <% end %>
+
+  <% if @reset_closed %>
+    <%= up_link 'Reset closed', reset_closed_heats_path, class: "btn-orange", method: :post %>
+  <% end %>
+</div>
 
 </div>

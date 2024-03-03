@@ -187,6 +187,23 @@ class EntriesController < ApplicationController
     end
   end
 
+  def reset_ages
+    people_count = Person.where.not(age_id: 1).update(age_id: 1).count
+
+    entry_count = Entry.where.not(age_id: 1).update(age_id: 1).count
+    groups = Entry.all.group_by {|entry| [entry.level_id, entry.lead_id, entry.follow_id]}
+    groups.each do |group, entries|
+      next if entries.length < 2
+      entries[1..].each do |entry|
+        entry.heats.update_all(entry_id: entries[0].id)
+        entry.destroy!
+      end
+    end
+
+    redirect_to settings_event_index_path(tab: 'Advanced'),
+      notice: "#{helpers.pluralize people_count, 'person'} and #{helpers.pluralize entry_count, 'entry'} updated."
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_entry

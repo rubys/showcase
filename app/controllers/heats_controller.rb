@@ -405,6 +405,20 @@ class HeatsController < ApplicationController
     redirect_to heats_url, notice: notice
   end
 
+  def reset_open
+    count = Heat.where(category: 'Closed').update_all(category: 'Open')
+
+    redirect_to settings_event_index_path(tab: 'Advanced'),
+      notice: "#{helpers.pluralize(count, 'heat')} reset to open."
+  end
+
+  def reset_closed
+    count = Heat.where(category: 'Open').update_all(category: 'Closed')
+
+    redirect_to settings_event_index_path(tab: 'Advanced'),
+      notice: "#{helpers.pluralize(count, 'heat')} reset to closed."
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_heat

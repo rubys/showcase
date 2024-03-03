@@ -93,6 +93,20 @@ class EventController < ApplicationController
       @tab = params[:tab] || 'Description'
     end
 
+    if params[:tab] == 'Advanced'
+      if not @event.track_ages
+        @reset_ages = Person.where.not(age_id: 1).any? || Entry.where.not(age_id: 1).any?
+      end
+
+      if not @event.include_closed
+        @reset_open = Heat.where(category: 'Closed').any?
+      end
+
+      if not @event.include_open
+        @reset_closed = Heat.where(category: 'Open').any?
+      end
+    end
+
     render "event/settings/#{@tab.downcase}", layout: 'settings', status: status
   end
 
