@@ -29,6 +29,7 @@ if ENV['FLY_APP_NAME']
 
   # setup volume, .ssh, db, storage directories
   VOLUME = File.dirname(ENV.fetch('RAILS_DB_VOLUME', '/data/db'))
+  FileUtils.chown('rails', 'rails', VOLUME)
   FileUtils.mkdir_p "#{VOLUME}/.ssh"
   FileUtils.mkdir_p ENV['RAILS_DB_VOLUME']
   FileUtils.mkdir_p ENV['RAILS_STORAGE']
