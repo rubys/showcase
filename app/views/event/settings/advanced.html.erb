@@ -12,6 +12,18 @@
   <li>Ages and Levels let you customize these values for your event.</li>
   <li>Dances may be a more convenient way to bulk add a number of new dances.</li>
   <li>For events that use different levels for freestyles and solos, list the freestyle levels first and indicate what the first level to be used for solos is.</li>
+
+  <% if @reset_ages %>
+  <li><span class="btn-orange py-0 px-2 m-0">Reset ages</span> will remove all ages from the entries and heats.</li>
+  <% end %>
+
+  <% if @reset_open %>
+  <li><span class="btn-orange py-0 px-2 m-0">>Reset open</span> will change all of the Closed heats to Open.</li>
+  <% end %>
+
+  <% if @reset_closed %>
+  <li><span class="btn-orange py-0 px-2 m-0">Reset closed</span> will change all of the Open heats to Closed.</li>
+  <% end %>
   </ul>
 </div>
 
