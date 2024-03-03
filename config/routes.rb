@@ -1,12 +1,11 @@
 Rails.application.routes.draw do
-  get "/docs/", to: "docs#page", trailing_slash: true, defaults: {page: 'index'}
-  get "/docs/*page", to: "docs#page"
-
   unless ENV['FLY_REGION']
     mount ActionCable.server => "/showcase/cable"
   end
  
   scope ENV.fetch("RAILS_APP_SCOPE", '') do
+    get "/docs/", to: "docs#page", trailing_slash: true, defaults: {page: 'index'}
+    get "/docs/*page", to: "docs#page"
 
     if ENV.fetch("RAILS_APP_DB", '') == 'index'
       root 'event#showcases'

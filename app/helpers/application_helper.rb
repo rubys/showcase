@@ -19,7 +19,8 @@ module ApplicationHelper
   end
 
   def action_cable_meta_tag_dynamic
-    scheme = (request.env['HTTP_X_FORWARDED_PROTO'] || request.env["rack.url_scheme"]).split(',').last
+    scheme = (request.env['HTTP_X_FORWARDED_PROTO'] || request.env["rack.url_scheme"] || '').split(',').last
+    return '' if scheme.blank?
     host = request.env['HTTP_X_FORWARDED_HOST'] || request.env["HTTP_HOST"]
     scope = request.env['RAILS_APP_SCOPE']
     root = request.env['RAILS_RELATIVE_URL_ROOT']
