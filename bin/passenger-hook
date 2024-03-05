@@ -27,7 +27,7 @@ end
 
 begin
 
-  # get a list of processe, excluding cable processes
+  # get a list of processes, excluding cable processes
   processes = status[/^Processes\s*:\s*(\d*)/, 1].to_i
   cable = status[/^showcase-cable.*?\n\n/m]
   processes -= 1 if cable and cable =~ /Sessions:\s*[1-9]/
@@ -56,6 +56,9 @@ begin
     exit 0 unless updated
     FileUtils.touch MARKTIME
 
+    #  make sure the storage directory is owned by the rails user
+    system "chown -R rails:rails /data/storage"
+
     # get a list of ip addresses for running instances, with the primary region first
     addrs = [
       *`dig +short -t aaaa #{ENV['PRIMARY_REGION']}.#{ENV['FLY_APP_NAME']}.internal`.split,
@@ -73,6 +76,7 @@ begin
       cmd = %W[
         rsync
         -av
+        --no-perms --no-owner --no-group
         --update
         --exclude db/.time
         /data/db
