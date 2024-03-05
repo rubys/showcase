@@ -1,0 +1,53 @@
+<%= raw begin
+
+  workbook = FastExcel.open(constant_memory: true)
+  bold = workbook.bold_format
+
+  #***************************************************************************
+  #                                 Heats
+  #***************************************************************************
+
+  @judges.each do |judge|
+    worksheet = workbook.add_worksheet(judge.display_name)
+    assignments = judge.scores.pluck(:heat_id, :value).to_h
+    worksheet.auto_width = true
+
+    headers = [
+      'Number',
+      'Student',
+      'Open or Closed',
+      'Dance',
+      'Back #',
+      'Lead',
+      'Follow',
+      'Level',
+      'Category',
+      'Studio',
+      'Score'
+    ]
+
+    worksheet.append_row(headers, bold)
+
+    @heats.each do |heat|
+      next unless assignments.include? heat.id
+      worksheet.append_row [
+        heat.number,
+        heat.entry.subject.name,
+        heat.category,
+        heat.dance.name,
+        heat.entry.lead.back,
+        heat.entry.lead.name,
+        heat.entry.follow.name,
+        heat.entry.level.name,
+        heat.entry.subject_category,
+        heat.entry.subject.studio.name,
+        assignments[heat.id]
+      ]
+    end
+  end
+
+  #***************************************************************************
+
+  workbook.read_string
+
+end %>

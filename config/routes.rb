@@ -44,6 +44,7 @@ Rails.application.routes.draw do
     get '/instructions', to: 'event#instructions'
     get '/landing', to: 'event#landing'
     get '/event.xlsx', to: "event#index", as: 'event_spreadsheet'
+    get '/judge.xlsx', to: "event#judge", as: 'judge_spreadsheet'
     get '/event.sqlite3', to: "event#database", as: 'event_database'
     get '/regions/', to: "event#regions", trailing_slash: true
     get '/regions/:region/status', to: "event#region", as: 'region_status'

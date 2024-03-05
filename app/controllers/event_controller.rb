@@ -248,6 +248,10 @@ class EventController < ApplicationController
       order('number,people.back').all
   end
 
+  def judge
+    index
+  end
+
   def showcases
     @showcases = YAML.load_file('config/tenant/showcases.yml')
     logos = Set.new
