@@ -75,7 +75,7 @@
   <ul class="ml-8">
   <li class=""><%= link_to "Labels", labels_studios_path(format: :csv), class: "btn-green w-60" %>
   <li class=""><%= link_to "Spreadsheet", event_spreadsheet_path, class: "btn-green w-60" %>
-  <% if @event.assign_judges %>
+  <% if @event.assign_judges? and Score.any? %>
   <li class=""><%= link_to "Judge Spreadsheet", judge_spreadsheet_path, class: "btn-green w-60" %>
   <% end %>
   <li class=""><%= link_to "Database", event_database_path, class: "btn-green w-60" %>
