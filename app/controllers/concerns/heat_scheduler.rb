@@ -329,6 +329,10 @@ module HeatScheduler
       @@level = @@event.heat_range_level
       @@age = @@event.heat_range_age
       @@max = @@event.max_heat_size || 9999
+
+      # only combine open/closed dances if the category is the same
+      @@combinable = @@category == 0 ? [] :
+        Dance.all.select {|dance| dance.open_category && dance.open_category_id == dance.closed_category}
     end
 
     def self.max= max
@@ -405,7 +409,7 @@ module HeatScheduler
 
     def match?(dance, dcat, level, age, heat)
       return false unless @dance == dance
-      return false unless @dcat == dcat or @@category > 0
+      return false unless @dcat == dcat or @@combinable.include? dance
       return false if heat.category == 'Solo'
       return true
     end
@@ -430,8 +434,8 @@ module HeatScheduler
 
       return false unless @dance == dance
       return false if heat.category == 'Solo' and @group.length > 0
-      return false unless (dcat-@max_dcat).abs <= @@category
-      return false unless (dcat-@min_dcat).abs <= @@category
+      return false unless dcat == @max_dcat or @@combinable.include? dance
+      return false unless dcat == @min_dcat or @@combinable.include? dance
       return false unless (level-@max_level).abs <= @@level
       return false unless (level-@min_level).abs <= @@level
       return false unless (age-@max_age).abs <= @@age
