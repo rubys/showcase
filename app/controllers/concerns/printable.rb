@@ -62,11 +62,14 @@ module Printable
     end
     @agenda['Uncategorized'] = []
 
+    current = @categories.values.first
     @heats.each do |number, heats|
       if number == 0
         @agenda['Unscheduled'] << [number, {nil => heats}]
       else
         cat = heats.first.dance_category
+        cat = current if cat != current and event.heat_range_cat == 1 and (heats.first.dance.open_category == current or heats.first.dance.closed_category == current)
+        current = cat
         ballrooms = cat&.ballrooms || event.ballrooms || 1
         
         cat = cat&.name || 'Uncategorized'
