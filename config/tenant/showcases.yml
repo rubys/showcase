@@ -147,10 +147,10 @@
     :region: iad
     :logo: arthur-murray-logo.gif
     :events:
-      freestyles:
-        :name: Virginia Beach Freestyles
       newsome-twosome:
         :name: Medal Ball - Newsome Twosome
+      freestyles:
+        :name: Virginia Beach Freestyles
   warsaw:
     :name: Warsaw
     :region: waw
