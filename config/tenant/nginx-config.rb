@@ -393,7 +393,7 @@ server {
 <% else -%>
     passenger_env_var RAILS_APP_SCOPE <%= tenant.scope %>;
 <% if tenant.logo -%>
-    passenger_env_var SHOWCASE_LOGO <%= tenant.logo.blank? ? "arthur-murray-logo.gif" : tenant.logo %>;
+    passenger_env_var SHOWCASE_LOGO <%= tenant.logo == '' ? "arthur-murray-logo.gif" : tenant.logo %>;
 <% end -%>
 <% end -%>
     passenger_env_var PIDFILE <%= @git_path %>/tmp/pids/<%= tenant.label %>.pid;
