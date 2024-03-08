@@ -53,7 +53,7 @@
   cranford:
     :name: Cranford
     :region: ewr
-    :logo: ''
+    :logo: arthur-murray-logo.gif
   dayton:
     :name: Dayton
     :region: ord
@@ -146,6 +146,11 @@
     :name: Virginia Beach
     :region: iad
     :logo: arthur-murray-logo.gif
+    :events:
+      newsome-twosome:
+        :name: Medal Ball - Newsome Twosome
+      freestyles:
+        :name: Virginia Beach Freestyles
   warsaw:
     :name: Warsaw
     :region: waw
