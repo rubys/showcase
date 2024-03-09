@@ -40,10 +40,7 @@ module Printable
     heat_length = Event.last.heat_length
     solo_length = Event.last.solo_length || heat_length
     if not Event.last.date.blank? and heat_length and @categories.values.any? {|category| not category.time.blank?}
-      start = Chronic.parse(
-        Event.last.date.sub(/(^|[a-z]+ )?\d+\s*[-&]\s*\d+/) {|str| str.sub(/\s*[-&]\s*.*/, '')},
-        guess: false
-      )&.begin || Time.now
+      start = Event.parse_date(Event.last.date, guess: false)&.begin || Time.now
 
       if not @categories.empty? and not @categories.values.first.day.blank?
         start = Chronic.parse(@categories.values.first.day, guess: false)&.begin || start

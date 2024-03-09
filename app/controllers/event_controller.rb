@@ -375,7 +375,7 @@ class EventController < ApplicationController
         event[:date] = event[:year].to_s
       else
         date = event["date"].sub(/(^|[a-z]+ )?\d+\s*[-&]\s*\d+( |,|$)/) {|str| str.sub(/\s*[-&]\s*.*/, ' ')}
-        event[:date] = Chronic.parse(date, now: Time.local(event[:year], 1, 1)).to_date.iso8601
+        event[:date] = Event.parse_date(date, now: Time.local(event[:year], 1, 1)).to_date.iso8601
       end
 
       event[:name] ||= dbquery(event[:db], 'events', 'name').first.values.first

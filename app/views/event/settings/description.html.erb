@@ -8,6 +8,12 @@
   <div class="info-button">&#x24D8;</div>
   <ul class="info-box">
   <li>Event description is used in <a href="../../docs/tasks/Publishing" class="text-blue-800 underline">printed materials</a> and  <a href="../../docs/tasks/Counter" class="text-blue-800 underline">counter</a>.</li>
+  <%
+    date = Chronic.parse('next saturday').to_date+7
+    date+=7 if date.month != (date+1).month
+    date = date.strftime("%B %d, %Y").sub(/\d+,/) {|d| "#{d.to_i}-#{d.to_i+1},"}
+  %>
+  <li>Events that span multiple days should be entered as a range, e.g. "<%= date %>".</li>
   <li>Use the tabs across the top of this page to get to other settings.
   </ul>
 </div>
@@ -45,7 +51,7 @@
   </div>
 
   <div class="my-5">
-  <%= form.label :date %>
+  <%= form.label :date, 'Date(s)' %>
   <%= form.text_field :date, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 

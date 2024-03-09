@@ -41,8 +41,12 @@ class Event < ApplicationRecord
     return results
   end
 
+  def self.parse_date(date, options={})
+    Chronic.parse(date.sub(/((^|[a-z]+\s+)\d+)(-|\sand\s|\/)\d+/, '\1'), options)
+  end
+
   def valid_date?
-    unless date.blank? || Chronic.parse(date)
+    unless date.blank? || Event.parse_date(date)
       errors.add(:date, "is missing or invalid")
     end
   end
