@@ -71,7 +71,7 @@ const server = Bun.serve({
     url.pathname = url.pathname.slice(0, -4)
     if (url.pathname.endsWith('/index')) url.pathname = url.pathname.slice(0, -5)
 
-    console.log(`Printing ${url.href}`)
+    console.log(`Fetching ${url.href}`)
 
     // create a new browser page (tab)
     const page = await browser.newPage()
@@ -84,30 +84,33 @@ const server = Bun.serve({
       await page.setJavaScriptEnabled(JAVASCRIPT)
 
       // copy headers (including auth, excluding host) from original request
-      const headers = Object.fromEntries(request.headers)
-      delete headers.host
+      const headers = {} as Record<string, string>
+      request.headers.forEach((value, key) => {
+        if (key != 'host') headers[key] = value
+      })
       await page.setExtraHTTPHeaders(headers)
 
       // fetch page to be printed
       try {
-      await page.goto(url.href, {
-        waitUntil: JAVASCRIPT ? 'networkidle2' : 'load',
-        timeout: 0
-      })
-    } catch (error: any) {
-      if (error.message.includes("ERR_NETWORK_CHANGED")) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
         await page.goto(url.href, {
           waitUntil: JAVASCRIPT ? 'networkidle2' : 'load',
-          timeout: 0
+          timeout: 30_000
         })
-      } else {
-        throw error
+      } catch (error: any) {
+        if (error.message.includes("ERR_NETWORK_CHANGED")) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
+          await page.goto(url.href, {
+            waitUntil: JAVASCRIPT ? 'networkidle2' : 'load',
+            timeout: 0
+          })
+        } else {
+          throw error
+        }
       }
-    }
 
       // convert page to pdf - using preferred format and in full color
+      console.log(`Converting ${url.href} to PDF`)
       const pdf = await page.pdf({
         format: FORMAT,
         preferCSSPageSize: true,
@@ -115,6 +118,7 @@ const server = Bun.serve({
       })
 
       // return the generated PDF as the response
+      console.log(`Responding with ${url.href}`)
       return new Response(pdf, {
         headers: { "Content-Type": "application/pdf" }
       })
