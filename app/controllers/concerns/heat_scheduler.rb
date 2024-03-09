@@ -166,6 +166,7 @@ module HeatScheduler
 
   def rebalance(assignments, subgroups, max)
     return if subgroups.first.dance&.semi_finals
+    return if max <= 0
     while subgroups.length * max < assignments.length
       subgroups.unshift Group.new
     end
