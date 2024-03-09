@@ -204,14 +204,14 @@ class ScoresController < ApplicationController
       end
 
       keep = score.good || score.bad || score.comments || score.value || Event.first.assign_judges > 0
-      if keep ? score.save : score.delete
+      if save(score, keep)
         render json: score.as_json
       else
         render json: score.errors, status: :unprocessable_entity
       end
     elsif not params[:score].blank? or not score.comments.blank? or Event.first.assign_judges > 0
       score.value = params[:score]
-      if score.save
+      if save(score, true)
         render json: score.as_json
       else
         render json: score.errors, status: :unprocessable_entity
@@ -268,7 +268,7 @@ class ScoresController < ApplicationController
 
       keep = score.good || score.bad || score.comments || score.value || Event.first.assign_judges > 0
 
-      if keep ? score.save : score.delete
+      if save(score, keep)
         render json: score.as_json
       else
         render json: score.errors, status: :unprocessable_entity
@@ -661,7 +661,7 @@ class ScoresController < ApplicationController
     @score = Score.new(score_params)
 
     respond_to do |format|
-      if @score.save
+      if save(@score, true)
         format.html { redirect_to score_url(@score), notice: "Score was successfully created." }
         format.json { render :show, status: :created, location: @score }
       else
@@ -697,6 +697,19 @@ class ScoresController < ApplicationController
   end
 
   private
+    # retry saving a score if it fails due to database contention
+    def save(score, keep=true)
+      4.times do
+        begin
+          return keep ? score.save : score.delete
+        rescue ActiveRecord::StatementInvalid
+          sleep 0.1
+        end
+      end
+
+      keep ? score.save : score.delete
+    end
+
     # Use callbacks to share common setup or constraints between actions.
     def set_score
       @score = Score.find(params[:id])
