@@ -18,7 +18,7 @@ const app = express();
 
 const appName = process.env.FLY_APP_NAME
 
-const FLY_REGION = process.env.FLY_REGION
+const FLY_REGION = process.env.FLY_REGION || 'undefined'
 const SEENFILE = Bun.file(`${LOGS}/.seen`)
 
 let lastRegionCheck = 0
@@ -44,7 +44,7 @@ async function getLatest() {
     headers: { Authorization: `Bearer ${SENTRY_TOKEN}` }
   })
 
-  const issues = await api_response.json() as {lastSeen: string}[]
+  const issues = await api_response.json() as { lastSeen: string }[]
 
   let lastSeen = "0";
   for (const issue of issues) {
@@ -79,8 +79,8 @@ app.get("/sentry/link", (_, response) => {
   response.redirect(302, link)
 
   getLatest().then(latest => {
-     Bun.write(SEENFILE, latest)
-     setTimeout(() => fetchOthers("/sentry/link").catch(console.error), 1000)
+    Bun.write(SEENFILE, latest)
+    setTimeout(() => fetchOthers("/sentry/link").catch(console.error), 1000)
   })
 })
 
@@ -101,18 +101,18 @@ app.get("/regions/:region/(*)", async (request, response, next) => {
 
   const REGIONS = await getRegions()
 
-  if (!REGIONS.includes(region)) {
-    response.status(404).send('Not found')
-  } else if (region === FLY_REGION) {
+  if (region === FLY_REGION) {
     request.url = '/' + request.params[0]
     next()
+  } else if (!REGIONS.includes(region)) {
+    response.status(404).send('Not found')
   } else {
     response.set('Fly-Replay', `region=${region}`)
     response.status(409).send("wrong region\n")
   }
 })
 
-app.use(LOGS, express.static('/logs'))
+app.use('/logs', express.static(LOGS))
 app.use('/static', express.static('./public'))
 
 let timeout = 0;
@@ -123,7 +123,6 @@ app.get("/", async (req, res) => {
   }
 
   let filter = (req.query.filter !== 'off');
-
   let lastVisit = visit()
 
   let logs = await fs.promises.readdir(LOGS);
@@ -134,9 +133,12 @@ app.get("/", async (req, res) => {
 
   results.push('</pre>')
 
+  let start = (req.query.start || '') as string
+
   while (logs.length > 0) {
     const log = logs.pop();
     if (!log?.endsWith('.log')) continue;
+    if (log.slice(0, start.length) > start) continue;
 
     const rl = readline.createInterface({
       input: fs.createReadStream(path.join(LOGS, log)),
@@ -167,20 +169,22 @@ app.get("/", async (req, res) => {
     if (results.length > 40) break;
 
     previous = results;
-    results = [ previous.shift() as string ];
+    results = [previous.shift() as string];
   }
 
   results.push('<pre>')
 
   results.push("</p>")
   logs = await fs.promises.readdir(LOGS);
+  logs = logs.filter(log => log.match(/^2\d\d\d-\d\d-\d\d\.log$/))
   logs.sort();
+  if (!start) start = logs[logs.length - 1]
   for (const log of logs) {
-    if (log.match(/^2\d\d\d-\d\d-\d\d\.log$/)) {
-      results.push(`<a href=/regions/${FLY_REGION}/logs/${log}>${log.replace('.log', '')}</a>`)
-    }
+    if (log.slice(0, start.length) == start) results.push('</u>')
+    results.push(`<a href=/regions/${FLY_REGION}/logs/${log}>${log.replace('.log', '')}</a>`)
+    if (log.slice(0, start.length) == start) results.push('<u>')
   }
-  results.push("<p>")
+  results.push('<p id="archives">')
 
   const REGIONS = await getRegions()
 

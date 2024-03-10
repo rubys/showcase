@@ -22,7 +22,7 @@
     "nats": "^2.15.1"
   },
   "scripts": {
-    "dev": "NODE_ENV=development bun index.ts",
+    "dev": "NODE_ENV=development bun --hot index.ts",
     "start": "bun deploy.ts",
     "sync": "bun bin/sync.ts"
   },

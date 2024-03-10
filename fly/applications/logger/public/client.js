@@ -1,3 +1,4 @@
+// Changes times to local time
 function fixTime(time) {
   let text = time.textContent
   let match = text.match(/^(\d+)\/(\w+)\/(\d+):\d+:\d+:\d+Z/)
@@ -13,6 +14,7 @@ for (let time of document.querySelectorAll('time')) {
   fixTime(time)
 }
 
+// Filter handling: add a query parameter to the URL
 let filter = document.querySelector('input[name=filter]')
 filter.addEventListener("click", () => {
   let url = new URL(window.location)
@@ -22,6 +24,7 @@ filter.addEventListener("click", () => {
   location = url
 })
 
+// Websocket handling: add new log entries to the top of the list
 let ws = null
 let counter = 1
 let delay = 1
@@ -83,8 +86,12 @@ function openws() {
   }
 }
 
-openws()
+// Get realtime updates unless a start date is specified
+if (!new URL(window.location).searchParams.get('start')) {
+  openws()
+}
 
+// Show the Sentry issue link if a new issue was created
 fetch(new URL("/sentry/seen", window.location).href)
   .then(response => response.text())
   .then(text => {
@@ -98,3 +105,26 @@ fetch(new URL("/sentry/seen", window.location).href)
     const h2 = document.querySelector('h2')
     h2.appendChild(a)
   })
+
+// log traversal via arrow keys
+const dates = [...document.querySelectorAll("#archives a")].map(node => node.textContent)
+document.addEventListener("keydown", event => {
+  console.log(event.key)
+  let location = new URL(window.location)
+  const start = location.searchParams.get("start")
+  if (event.key === "ArrowLeft") {
+    event.preventDefault()
+    let index = dates.indexOf(start)
+    if (index === -1) return
+    if (index === 0) return
+    location.searchParams.set("start", dates[index - 1])
+    window.location = location
+  } else if (event.key === "ArrowRight") {
+    event.preventDefault()
+    let index = dates.indexOf(start)
+    if (index === -1) index = 0
+    if (index === dates.length - 1) return
+    location.searchParams.set("start", dates[index + 1])
+    window.location = location
+  }
+})
