@@ -374,8 +374,8 @@ class EventController < ApplicationController
       if event["date"].blank?
         event[:date] = event[:year].to_s
       else
-        date = event["date"].sub(/(^|[a-z]+ )?\d+\s*[-&]\s*\d+( |,|$)/) {|str| str.sub(/\s*[-&]\s*.*/, ' ')}
-        event[:date] = Event.parse_date(date, now: Time.local(event[:year], 1, 1)).to_date.iso8601
+        event[:date] = Event.parse_date(event["date"], now: Time.local(event[:year], 1, 1)).to_date.iso8601
+        event[:date] ||= event["date"]
       end
 
       event[:name] ||= dbquery(event[:db], 'events', 'name').first.values.first

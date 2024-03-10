@@ -42,7 +42,15 @@ class Event < ApplicationRecord
   end
 
   def self.parse_date(date, options={})
-    Chronic.parse(date.sub(/((^|[a-z]+\s+)\d+)(-|\sand\s|\/)\d+/, '\1'), options)
+    return unless date
+
+    if date =~ /^\d+-\d+-\d+/
+      date = date.gsub('-', '/')
+    elsif date !~ /^\d+\//
+      date = date.sub(/((^|[a-z]+\s+)\d+)(-|\sand\s|\/|\s*&\s*)\d+/, '\1')
+    end
+
+    Chronic.parse(date, options)
   end
 
   def valid_date?
