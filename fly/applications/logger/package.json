@@ -22,7 +22,9 @@
     "nats": "^2.15.1"
   },
   "scripts": {
-    "start": "bun deploy.ts"
+    "dev": "NODE_ENV=development bun index.ts",
+    "start": "bun deploy.ts",
+    "sync": "bun bin/sync.ts"
   },
   "dockerfile": {
     "packages": {

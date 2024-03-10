@@ -12,13 +12,14 @@ import { startWs } from './websocket.ts'
 import { pattern, filtered, format, highlight, visit, LOGS } from "./view.ts"
 
 const PORT = 3000
+const { NODE_ENV } = process.env
 
 const app = express();
 
 const appName = process.env.FLY_APP_NAME
 
 const FLY_REGION = process.env.FLY_REGION
-const SEENFILE = Bun.file('/logs/.seen')
+const SEENFILE = Bun.file(`${LOGS}/.seen`)
 
 let lastRegionCheck = 0
 let lastRegions: string[] = []
@@ -26,7 +27,7 @@ let lastRegions: string[] = []
 async function getRegions(): Promise<string[]> {
   let checkTime = new Date().getTime()
 
-  if (checkTime - lastRegionCheck > 60000) {
+  if (NODE_ENV != 'development' && checkTime - lastRegionCheck > 60000) {
     lastRegions = (await dns.resolveTxt(`regions.${appName}.internal`)).join(',').split(',')
     lastRegionCheck = checkTime
   }
@@ -36,6 +37,7 @@ async function getRegions(): Promise<string[]> {
 
 async function getLatest() {
   const { SENTRY_TOKEN, SENTRY_ORG, SENTRY_PROJECT } = process.env
+  if (!SENTRY_TOKEN || !SENTRY_ORG || !SENTRY_PROJECT) return "0"
   const url = `https://sentry.io/api/0/projects/${SENTRY_ORG}/${SENTRY_PROJECT}/issues/`
 
   const api_response = await fetch(url, {
@@ -57,6 +59,8 @@ startWs(app)
 // authentication middleware
 app.use(async (req, res, next) => {
   const { HTPASSWD } = process.env
+
+  if (NODE_ENV == "development") return next()
 
   // parse login and password from headers
   const b64auth = (req.headers.authorization || '').split(' ')[1] || ''
@@ -85,7 +89,7 @@ app.get("/sentry/seen", async (_, response) => {
   const seen = (await SEENFILE.exists()) ? (await SEENFILE.text()) : "0"
   response.set('Access-Control-Allow-Origin', '*')
 
-  if (seen === lastSeen) {
+  if (seen === lastSeen || NODE_ENV === "development") {
     response.send("")
   } else {
     response.send("/sentry/link")
@@ -108,7 +112,7 @@ app.get("/regions/:region/(*)", async (request, response, next) => {
   }
 })
 
-app.use('/logs', express.static('/logs'))
+app.use(LOGS, express.static('/logs'))
 app.use('/static', express.static('./public'))
 
 let timeout = 0;

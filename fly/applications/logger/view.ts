@@ -1,8 +1,10 @@
 import fs from 'node:fs'
+import process from 'node:process'
 
 import escape from "escape-html"
 
-export const LOGS = '/logs'
+const { NODE_ENV } = process.env
+export const LOGS = NODE_ENV == 'development' ? './logs' : '/logs'
 const VISITTIME = `${LOGS}/.time`
 const HOST = "https://smooth.fly.dev"
 
