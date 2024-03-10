@@ -13,8 +13,7 @@ class ApplicationRecord < ActiveRecord::Base
 
   class ChronicValidator < ActiveModel::EachValidator
     def validate_each(record, attribute, value)
-      record.errors.add attribute, (options[:message] || "is not an day/time") unless
-        Chronic.parse(value.sub(/(^|[a-z]+ )?\d+-\d+/) {|str| str.sub(/-.*/, '')})
+      record.errors.add attribute, (options[:message] || "is not an day/time") unless Event.parse_date(value)
     end
   end
 
