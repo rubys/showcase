@@ -162,6 +162,7 @@ Rails.application.routes.draw do
       match 'multis', on: :collection, action: :multis, via: %i(get post)
       match 'pros', on: :collection, action: :pros, via: %i(get post)
       match 'instructor', on: :collection, via: %i(get post)
+      post 'reset', on: :collection
     end
 
     resources :solos do

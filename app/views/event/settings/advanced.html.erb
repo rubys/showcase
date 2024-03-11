@@ -59,6 +59,10 @@ and heats that you have entered so far.</span>
   <% if @reset_closed %>
     <%= up_link 'Reset closed', reset_closed_heats_path, class: "btn-orange", method: :post %>
   <% end %>
+
+  <% if @reset_scores %>
+    <%= up_link 'Reset scores', reset_scores_path, class: "btn-orange", method: :post, data: {turbo_confirm: 'Are you sure?'} %>
+  <% end %>
 </div>
 
 </div>

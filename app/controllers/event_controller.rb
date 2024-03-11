@@ -105,6 +105,9 @@ class EventController < ApplicationController
       if not @event.include_open
         @reset_closed = Heat.where(category: 'Open').any?
       end
+
+      @reset_scores = Score.where.not(value: nil).any? or Score.where.not(comments: nil).any? or
+        Score.where.not(good: nil).any? or Score.where.not(bad: nil).any?
     end
 
     render "event/settings/#{@tab.downcase}", layout: 'settings', status: status

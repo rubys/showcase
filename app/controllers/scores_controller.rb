@@ -196,7 +196,7 @@ class ScoresController < ApplicationController
     heat = Heat.find(params[:heat].to_i)
     slot = params[:slot]&.to_i
 
-    score = Score.find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
+    score = find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
     if ApplicationRecord.readonly?
       render json: 'database is readonly', status: :service_unavailable
     elsif params[:comments]
@@ -230,7 +230,7 @@ class ScoresController < ApplicationController
     heat = Heat.find(params[:heat].to_i)
     slot = params[:slot]&.to_i
 
-    score = Score.find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
+    score = find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
     if ApplicationRecord.readonly?
       render json: 'database is readonly', status: :service_unavailable
     else
@@ -705,7 +705,24 @@ class ScoresController < ApplicationController
     end
   end
 
+  # POST /scores/reset
+  def reset
+    Score.delete_all
+    redirect_to settings_event_index_path(tab: 'Advanced'), notice: 'Scores were successfully reset.'
+  end
+
   private
+    # retry finding or creating a score if it fails due to database contention
+    def find_or_create_by(options)
+      4.times do
+        begin
+          return Score.find_or_create_by(options)
+        rescue ActiveRecord::StatementInvalid
+          sleep 0.1
+        end
+      end
+    end
+
     # retry saving a score if it fails due to database contention
     def save(score, keep=true)
       4.times do
