@@ -86,8 +86,9 @@ function openws() {
   }
 }
 
-// Get realtime updates unless a start date is specified
-if (!new URL(window.location).searchParams.get('start')) {
+// Get realtime updates unless a start date is specified or view is printer
+let search = new URL(window.location).searchParams
+if (!search.get('start') && search.get('view') !== 'printer') {
   openws()
 }
 
@@ -109,7 +110,6 @@ fetch(new URL("/sentry/seen", window.location).href)
 // log traversal via arrow keys
 const dates = [...document.querySelectorAll("#archives a")].map(node => node.textContent)
 document.addEventListener("keydown", event => {
-  console.log(event.key)
   let location = new URL(window.location)
   const start = location.searchParams.get("start")
   if (event.key === "ArrowLeft") {
@@ -125,6 +125,10 @@ document.addEventListener("keydown", event => {
     if (index === -1) index = 0
     if (index === dates.length - 1) return
     location.searchParams.set("start", dates[index + 1])
+    window.location = location
+  } else if (event.key === "p") {
+    event.preventDefault()
+    location.searchParams.set("view", "printer")
     window.location = location
   }
 })

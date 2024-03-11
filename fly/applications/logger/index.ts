@@ -122,7 +122,9 @@ app.get("/", async (req, res) => {
     timeout = +setTimeout(() => fetchOthers("/").catch(console.error), 1000)
   }
 
-  let filter = (req.query.filter !== 'off');
+  let filter = (req.query.filter !== 'off')
+  let printer = (req.query.view == 'printer')
+  let printerApps = new Set()
   let lastVisit = visit()
 
   let logs = await fs.promises.readdir(LOGS);
@@ -147,6 +149,16 @@ app.get("/", async (req, res) => {
 
     await new Promise(resolve => {
       rl.on('line', line => {
+        if (printer) {
+          let match = line.match(/\[(\w+)\] .* Preparing to run: .* as chrome/)
+          if (match) printerApps.add(match[1])
+          match = line.match(/\[(\w+)\]/)
+
+          if (match && printerApps.has(match[1])) results.push(line)
+
+          return
+        }
+
         let match = line.match(pattern)
         if (!match) return;
 
