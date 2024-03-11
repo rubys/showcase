@@ -11,7 +11,7 @@
       <% end %>
       </span>
     <% end %>
-    <% if @event.assign_judges && @judge && @style != 'emcee' %>
+    <% if @event.assign_judges && @show == 'mixed' && @judge && @style != 'emcee' %>
     <% heats = Heat.joins(:scores).includes(entry: :lead).where(number: @heat.number, scores: {judge_id: @judge.id}).order('people.back') %>
     <div class="text-2xl"><%= heats.map {|heat| "<a href='##{ dom_id heat }'>#{heat.entry.lead.back}</a>"}.join(' ').html_safe %></div>
     <% end %>
@@ -188,12 +188,13 @@ Swiping left and right on mobile devices and tablets also work.
         <tr><td colspan="10" class="bg-black"></tr>
       <% end %>
       <% subjects.each do |subject| %>
+      <% assign = @event.assign_judges > 0 && subject.scores.any? {|score| score.judge_id == @judge.id} %>
+      <% next if @show == 'only' and not assign %>
       <% if subject.dance_id != dance %>
       <tr><td colspan="10" class="bg-gray-400"></tr>
       <% dance = subject.dance_id %>
       <% end %>
       <% subcat = subject.entry.pro ? 'Pro' : "#{subject.entry.subject_category(@track_ages)} - #{subject.entry.level.initials}" %>
-      <% assign = @event.assign_judges > 0 && subject.scores.any? {|score| score.judge_id == @judge.id} %>
       <% if (@sort == 'level' and lastcat and subcat != lastcat) || (@event.assign_judges > 0 && assign != lastassign && lastcat) %>
       <tr>
         <td class="<% if @event.judge_comments %>h-12<% else %>h-4<% end %>"></td>
@@ -206,7 +207,7 @@ Swiping left and right on mobile devices and tablets also work.
       <% else %>
       <tr class="hover:bg-yellow-200 line-through opacity-50">
       <% end %>
-        <% if @event.assign_judges > 0 && assign %>
+        <% if @event.assign_judges > 0 && assign && @show != 'only' %>
         <td class="py-2 font-bold text-xl"><span class="border-2 border-red-600 px-2 rounded-full"><%= subject.lead.back || 'TBD' %></span>
         <% else %>
         <td class="py-2 text-xl"><%= subject.lead.back %>

@@ -115,16 +115,19 @@ class ScoresController < ApplicationController
     ballrooms = @subjects.first.dance_category&.ballrooms || @event.ballrooms
     @ballrooms = assign_rooms(ballrooms, @subjects)
 
-    @sort = params[:sort] || 'back'
-    if @event.assign_judges > 0
-      @subjects.sort_by! do |subject|
-        entry = subject.entry
-        [subject.scores.any? {|score| score.judge_id == @judge.id} ? 0 : 1, entry.lead.back || 0]
-      end
-    elsif @sort == 'level'
+    @sort = @judge.sort_order || 'back'
+    @show = @judge.show_assignments || 'first'
+    @show = 'mixed' unless @event.assign_judges > 0
+    if @sort == 'level'
       @subjects.sort_by! do |subject|
         entry = subject.entry
         [entry.level_id || 0, entry.age_id || 0, entry.lead.back || 0]
+      end
+    end
+    if @show != 'mixed'
+      @subjects.sort_by! do |subject|
+        entry = subject.entry
+        subject.scores.any? {|score| score.judge_id == @judge.id} ? 0 : 1
       end
     end
 
@@ -139,7 +142,7 @@ class ScoresController < ApplicationController
         map {|score| [score.heat_id, score.comments]}.to_h
     end
 
-    options = {style: @style, sort: @sort}
+    options = {style: @style}
 
     heats = Heat.all.where(number: 1..).order(:number).group(:number).
       includes(
