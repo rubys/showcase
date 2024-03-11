@@ -23,6 +23,7 @@
   <h2 class="mt-12 font-bold text-2xl">Sort order</h2>
   <form method="post" data-controller="auto-submit" action="<%= sort_scores_path %>">
     <input type="hidden" name="style" value="<%= @style %>">
+    <input type="hidden" name="show" value="<%= @show %>">
     <div>
       <input type="radio" name="sort" value="back"<%= !@sort || @sort == 'back' ? ' checked' : '' %>>
       <span>Back Number</span>
@@ -32,6 +33,26 @@
       <span>Level</span>
     </div>
   </form>
+
+  <% if @assign_judges %>
+  <h2 class="mt-12 font-bold text-2xl">Show assignments</h2>
+  <form method="post" data-controller="auto-submit" action="<%= show_assignments_person_path(@judge) %>">
+    <input type="hidden" name="style" value="<%= @style %>">
+    <input type="hidden" name="sort" value="<%= @sort %>">
+    <div>
+      <input type="radio" name="show" value="first"<%= (!@show || @show == 'first') ? ' checked' : '' %>>
+      <span>First</span>
+    </div>
+    <div>
+      <input type="radio" name="show" value="only"<%= @show == 'only' ? ' checked' : '' %>>
+      <span>Only</span>
+    </div>
+    <div>
+      <input type="radio" name="show" value="mixed"<%= @show == 'mixed' ? ' checked' : '' %>>
+      <span>In Sort Order</span>
+    </div>
+  </form>
+  <% end %>
   <% end %>
   </div>
 
@@ -49,8 +70,8 @@
           <% category = (@combine_open_and_closed and %w(Open Closed).include? heat.category) ? '' : heat.category %>
           <td><%= link_to "#{category} #{heat.dance.name}#{heat.solo&.combo_dance_id ? " / #{heat.solo.combo_dance.name}" : ''}",
             heat.category == 'Multi' ?
-            judge_heat_slot_path(judge: @judge, heat: heat.number, slot: 1, style: @style, sort: @sort)
-            : judge_heat_path(judge: @judge, heat: heat.number, style: @style, sort: @sort) %>
+            judge_heat_slot_path(judge: @judge, heat: heat.number, slot: 1, style: @style)
+            : judge_heat_path(judge: @judge, heat: heat.number, style: @style) %>
           <% if @scored[heat.number] and @scored[heat.number].length != @count[heat.number.to_f] %>
           <span class="text-black">*</span>
           <% end %>

@@ -585,21 +585,29 @@ class PeopleController < ApplicationController
   end
 
   def toggle_present
-    logger.info params.inspect
-
     respond_to do |format|
-      if @person.update({present: !@person.present})
-        format.json { render json: { present: @person.present } }
+      judge = Judge.find_or_create_by(person_id: @person.id)
+      if judge.update({present: !judge.present})
+        format.json { render json: { present: @person.present? } }
       else
-        format.json { render json: { present: @person.present }, status: :unprocessable_entity }
+        format.json { render json: { present: @person.present? }, status: :unprocessable_entity }
       end
     end
+  end
+
+  # POST /people/1/show_assignments
+  def show_assignments
+    judge = Judge.find_or_create_by(person_id: params[:id])
+    judge.update! show_assignments: params[:show]
+    redirect_to judge_heatlist_path(judge: params[:id],
+      sort: params[:sort], style: params[:style], show: params[:show])
   end
 
   def assign_judges
     Score.where(value: nil, comments: nil, good: nil, bad: nil).delete_all
 
-    judges = Person.where(type: 'Judge', present: true).pluck(:id).shuffle
+    judges = Person.includes(:judge).where(type: 'Judge').
+      select {|person| person.present?}.map(&:id).shuffle
     scored = Score.joins(:heat).distinct.where.not(heats: {number: ...0}).pluck(:number)
 
     if ENV['RAILS_APP_DB'] == '2024-glenview' 

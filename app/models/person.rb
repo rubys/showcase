@@ -100,6 +100,18 @@ class Person < ApplicationRecord
     end
   end
 
+  def present?
+    judge ? judge.present : true 
+  end
+
+  def show_assignments
+    judge ? judge.show_assignments : 'first'
+  end
+
+  def sort_order
+    judge ? judge.sort : 'back'
+  end
+
   # don't double bill a person for included options
   def selected_options
     options = self.options.map(&:option)

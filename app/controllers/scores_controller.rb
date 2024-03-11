@@ -15,9 +15,12 @@ class ScoresController < ApplicationController
 
   # GET /scores or /scores.json
   def heatlist
+    event = Event.first
     @judge = Person.find(params[:judge].to_i)
-    @style = params[:style] || 'cards'
-    @sort = params[:sort] || 'back'
+    @style = params[:style]
+    @sort = @judge.sort_order
+    @show = @judge.show_assignments
+    @assign_judges = event.assign_judges?
 
     @heats = Heat.all.where(number: 1..).order(:number).group(:number).includes(
       dance: [:open_category, :closed_category, :multi_category, {solo_category: :extensions}],
@@ -46,7 +49,7 @@ class ScoresController < ApplicationController
     @number = params[:heat].to_f
     @number = @number.to_i if @number == @number.to_i
     @slot = params[:slot]&.to_i
-    @style = params[:style] || 'cards'
+    @style = params[:style] || 'radio'
     @subjects = Heat.where(number: @number).includes(
       dance: [:multi_children], 
       entry: [:age, :level, :lead, :follow]
@@ -640,7 +643,13 @@ class ScoresController < ApplicationController
   def sort
     judge = Judge.find_or_create_by(person_id: params[:judge])
     judge.update! sort: params[:sort]
-    redirect_to judge_heatlist_path(judge: params[:judge], sort: params[:sort], style: params[:style])
+    if params[:show].blank?
+      redirect_to judge_heatlist_path(judge: params[:judge], 
+        sort: params[:sort], style: params[:style])
+    else
+      redirect_to judge_heatlist_path(judge: params[:judge], 
+        sort: params[:sort], style: params[:style], show: params[:show])
+    end
   end
 
   # GET /scores/1 or /scores/1.json

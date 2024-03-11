@@ -133,6 +133,7 @@ Rails.application.routes.draw do
       post 'assign_judges', on: :member
       post 'reset_assignments', on: :member
       post 'remove_option', on: :member
+      post 'show_assignments', on: :member
     end
 
     resources :studios do

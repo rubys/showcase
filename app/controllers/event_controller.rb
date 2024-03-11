@@ -31,7 +31,7 @@ class EventController < ApplicationController
   end
 
   def root
-    @judges = Person.where(type: 'Judge').order(:name)
+    @judges = Person.includes(:judge).where(type: 'Judge').order(:name)
     @djs    = Person.where(type: 'DJ').order(:name)
     @emcees = Person.where(type: 'Emcee').order(:name)
 
@@ -714,6 +714,7 @@ class EventController < ApplicationController
 
       if tables[:people]
         Person.transaction do
+
           Person.destroy_all
           excludes = {}
           dbquery(source, 'people').each do |person|
@@ -730,6 +731,9 @@ class EventController < ApplicationController
           excludes.each do |id, exclude|
             Person.find(id).update(exclude_id: exclude)
           end
+
+          Judge.destroy_all
+          dbquery(source, 'judges').each {|judge| Judge.create judge}
         end
 
         if tables[:agenda]

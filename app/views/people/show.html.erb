@@ -339,16 +339,16 @@ when most dances for an individual are with one instructor but one or two are ch
     <% if @event.assign_judges > 0 %>
     <div class="mt-4" data-controller="assign-judges" data-present-url=<%= toggle_present_person_path %>>
       <span class="mx-4">On floor?</span>
-      <input type='checkbox' name="active" <% if @person.present %>checked <% end %>class="w-6 h-6 mr-3">
+      <input type='checkbox' name="active" <% if @person.present? %>checked <% end %>class="w-6 h-6 mr-3">
     </div>
     <% end %>
     <% sort = @person.judge&.sort || 'back'%>
     <div class="mt-4 mx-auto">
     <% if %w(# &).include?(@event.open_scoring) || @event.judge_comments %>
-    <%= link_to 'Score heats', judge_heatlist_path(judge: @person, style: 'radio', sort: sort), class: "btn-purple" %>
+    <%= link_to 'Score heats', judge_heatlist_path(judge: @person), class: "btn-purple" %>
     <% else %>
-    <%= link_to 'Score heats - cards', judge_heatlist_path(judge: @person, style: 'cards', sort: sort), class: "btn-purple" %>
-    <%= link_to 'Score heats - radio', judge_heatlist_path(judge: @person, style: 'radio', sort: sort), class: "btn-purple" %>
+    <%= link_to 'Score heats - cards', judge_heatlist_path(judge: @person, style: 'cards'), class: "btn-purple" %>
+    <%= link_to 'Score heats - radio', judge_heatlist_path(judge: @person), class: "btn-purple" %>
     <% end %>
     </div>
     <% if @event.assign_judges > 0 %>

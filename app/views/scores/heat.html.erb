@@ -147,7 +147,7 @@ Swiping left and right on mobile devices and tablets also work.
     </div>
 
   </div>
-  <% elsif @style == 'radio' || @style == 'emcee' || @scores.empty? %>
+  <% elsif @style != 'cards' || @style == 'emcee' || @scores.empty? %>
     <div class="grow flex flex-col border-2 border-slate-400 overflow-y-auto">
     <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>
     <table class="table-auto border-separate border-spacing-y-1 mx-4">
@@ -257,7 +257,7 @@ Swiping left and right on mobile devices and tablets also work.
         <button class="open-fb"><abbr>S</abbr><span>Styling</span></button>
       </div>
       <div class="grid bad"  data-value="<%= @bad[subject.id] %>" style="grid-template-columns: 100px repeat(6, 1fr)">
-        <div class="bg-gray-200 inline-flex justify-center items-center">Bad</div>
+        <div class="bg-gray-200 inline-flex justify-center items-center">Needs Work</div>
         <button class="open-fb"><abbr>F</abbr><span>Frame</span></button>
         <button class="open-fb"><abbr>P</abbr><span>Posture</span></button>
         <button class="open-fb"><abbr>FW</abbr><span>Footwork</span></button>

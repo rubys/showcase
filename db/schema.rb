@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_02_29_134705) do
+ActiveRecord::Schema[7.1].define(version: 2024_03_10_223701) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -212,6 +212,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_29_134705) do
     t.string "sort"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "show_assignments", default: "first", null: false
+    t.boolean "present", default: true, null: false
     t.index ["person_id"], name: "index_judges_on_person_id"
   end
 
@@ -266,7 +268,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_29_134705) do
     t.datetime "updated_at", null: false
     t.integer "exclude_id"
     t.integer "package_id"
-    t.boolean "present", default: true
     t.boolean "independent", default: false
     t.index ["age_id"], name: "index_people_on_age_id"
     t.index ["exclude_id"], name: "index_people_on_exclude_id"
