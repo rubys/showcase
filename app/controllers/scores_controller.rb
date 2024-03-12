@@ -200,7 +200,7 @@ class ScoresController < ApplicationController
     heat = Heat.find(params[:heat].to_i)
     slot = params[:slot]&.to_i
 
-    Score.transaction do
+    retry_transaction do
     score = find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
     if ApplicationRecord.readonly?
       render json: 'database is readonly', status: :service_unavailable
@@ -236,7 +236,7 @@ class ScoresController < ApplicationController
     heat = Heat.find(params[:heat].to_i)
     slot = params[:slot]&.to_i
 
-    Score.transaction do
+    retry_transaction do
     score = find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
     if ApplicationRecord.readonly?
       render json: 'database is readonly', status: :service_unavailable
@@ -742,6 +742,20 @@ class ScoresController < ApplicationController
       end
 
       keep ? score.save : score.delete
+    end
+
+    def retry_transaction(&block)
+      4.times do
+        begin
+          return Score.transaction(&block)
+        rescue SQLite3::BusyException
+          sleep 0.1
+        rescue ActiveRecord::StatementInvalid
+          sleep 0.1
+        end
+      end
+
+      Score.transaction(&block)
     end
 
     # Use callbacks to share common setup or constraints between actions.
