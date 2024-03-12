@@ -23,6 +23,10 @@
     :name: Austin
     :region: dfw
     :logo: arthur-murray-logo.gif
+  cary:
+    :name: Cary
+    :region: iad
+    :logo: arthur-murray-logo.gif
   charlotte:
     :name: Charlotte
     :region: atl
