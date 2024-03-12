@@ -200,6 +200,7 @@ class ScoresController < ApplicationController
     heat = Heat.find(params[:heat].to_i)
     slot = params[:slot]&.to_i
 
+    Score.transaction do
     score = find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
     if ApplicationRecord.readonly?
       render json: 'database is readonly', status: :service_unavailable
@@ -227,6 +228,7 @@ class ScoresController < ApplicationController
       score.destroy
       render json: score
     end
+    end
   end
 
   def post_feedback
@@ -234,6 +236,7 @@ class ScoresController < ApplicationController
     heat = Heat.find(params[:heat].to_i)
     slot = params[:slot]&.to_i
 
+    Score.transaction do
     score = find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
     if ApplicationRecord.readonly?
       render json: 'database is readonly', status: :service_unavailable
@@ -280,6 +283,7 @@ class ScoresController < ApplicationController
       else
         render json: score.errors, status: :unprocessable_entity
       end
+    end
     end
   end
 
