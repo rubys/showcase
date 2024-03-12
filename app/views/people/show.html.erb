@@ -336,7 +336,8 @@ when most dances for an individual are with one instructor but one or two are ch
     <% end %>
 
     <% if @person.type == 'Judge' %>
-    <% if @event.assign_judges > 0 %>
+    <% assign_judges = @event.assign_judges > 0 && Person.where(type: 'Judge').count > 1 %>
+    <% if assign_judges %>
     <div class="mt-4" data-controller="assign-judges" data-present-url=<%= toggle_present_person_path %>>
       <span class="mx-4">On floor?</span>
       <input type='checkbox' name="active" <% if @person.present? %>checked <% end %>class="w-6 h-6 mr-3">
@@ -351,7 +352,7 @@ when most dances for an individual are with one instructor but one or two are ch
     <%= link_to 'Score heats - radio', judge_heatlist_path(judge: @person), class: "btn-purple" %>
     <% end %>
     </div>
-    <% if @event.assign_judges > 0 %>
+    <% if assign_judges %>
     <div class="mt-4 flex">
     <%= button_to 'Assign judges', assign_judges_person_path(@person), class: "btn-blue" %>
     <%= button_to 'Reset assignments', reset_assignments_person_path(@person), class: "btn-pale-blue" %>

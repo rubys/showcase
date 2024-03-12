@@ -117,7 +117,7 @@ class ScoresController < ApplicationController
 
     @sort = @judge.sort_order || 'back'
     @show = @judge.show_assignments || 'first'
-    @show = 'mixed' unless @event.assign_judges > 0
+    @show = 'mixed' unless @event.assign_judges > 0 and @show != 'mixed' && Person.where(type: 'Judge').count > 1 
     if @sort == 'level'
       @subjects.sort_by! do |subject|
         entry = subject.entry
