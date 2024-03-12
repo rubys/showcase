@@ -86,7 +86,8 @@ class ScoresController < ApplicationController
     end
 
     scores = Score.where(judge: @judge, heat: @subjects, slot: @slot).all
-    student_results = scores.map {|score| [score.heat, score.value]}.to_h
+    student_results = scores.map {|score| [score.heat, score.value]}.
+      select {|heat, value| value}.to_h
 
     @results = {}
     @subjects.each do |subject|

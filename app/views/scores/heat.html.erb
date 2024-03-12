@@ -11,7 +11,7 @@
       <% end %>
       </span>
     <% end %>
-    <% if @event.assign_judges && @show == 'mixed' && @judge && @style != 'emcee' %>
+    <% if @event.assign_judges? && @show == 'mixed' && @judge && @style != 'emcee' %>
     <% heats = Heat.joins(:scores).includes(entry: :lead).where(number: @heat.number, scores: {judge_id: @judge.id}).order('people.back') %>
     <div class="text-2xl"><%= heats.map {|heat| "<a href='##{ dom_id heat }'>#{heat.entry.lead.back}</a>"}.join(' ').html_safe %></div>
     <% end %>
