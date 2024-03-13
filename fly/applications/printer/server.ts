@@ -13,6 +13,7 @@ import puppeteer, { PaperFormat } from 'puppeteer-core'
 
 // fetch configuration fron environment variables
 const PORT = process.env.PORT || 3000
+const FETCH_TIMEOUT = 30_000
 const FORMAT = (process.env.FORMAT || "letter") as PaperFormat
 const JAVASCRIPT = (process.env.JAVASCRIPT != "false")
 const TIMEOUT = (parseInt(process.env.TIMEOUT || '15')) * 60 * 1000 // minutes
@@ -94,15 +95,16 @@ const server = Bun.serve({
       try {
         await page.goto(url.href, {
           waitUntil: JAVASCRIPT ? 'networkidle2' : 'load',
-          timeout: 30_000
+          timeout: FETCH_TIMEOUT
         })
       } catch (error: any) {
         if (error.message.includes("ERR_NETWORK_CHANGED")) {
           await new Promise((resolve) => setTimeout(resolve, 100));
 
+          console.log(`Retrying ${url.href}`)
           await page.goto(url.href, {
             waitUntil: JAVASCRIPT ? 'networkidle2' : 'load',
-            timeout: 0
+            timeout: FETCH_TIMEOUT
           })
         } else {
           throw error
@@ -127,6 +129,7 @@ const server = Bun.serve({
       // handle unauthorized separately
       // see: https://github.com/puppeteer/puppeteer/issues/9856
       if (error.toString().includes("net::ERR_INVALID_AUTH_CREDENTIALS")) {
+        console.log(`Unauthorized`)
         return new Response(`Unauthorized`, {
           status: 401,
           headers: {
@@ -139,6 +142,7 @@ const server = Bun.serve({
         shutdown = true
 
         // all other errors
+        console.log(`Error fetching ${url.href} - Shutting down server`)
         console.error(error.stack || error);
         return new Response(`<pre>${error.stack || error}</pre>`, {
           status: 500,
