@@ -1,10 +1,15 @@
 // Changes times to local time
 function fixTime(time) {
   let text = time.textContent
-  let match = text.match(/^(\d+)\/(\w+)\/(\d+):\d+:\d+:\d+Z/)
-  if (!match) return
-  let date = new Date([match[2], match[1], match[3]].join(' '))
-  date = new Date(date.toISOString().slice(0, 11) + text.slice(12, 21))
+  let date
+  if (text.includes('-')) {
+    date = new Date(Date.parse(text))
+  } else {
+    let match = text.match(/^(\d+)\/(\w+)\/(\d+):\d+:\d+:\d+Z/)
+    if (!match) return
+    date = new Date([match[2], match[1], match[3]].join(' '))
+    date = new Date(date.toISOString().slice(0, 11) + text.slice(12, 21))
+  }
   time.setAttribute('datetime', date.toISOString())
   time.setAttribute('title', text.slice(0, 21))
   time.textContent = date.toLocaleString().replace(',', '')

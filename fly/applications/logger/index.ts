@@ -136,6 +136,8 @@ app.get("/", async (req, res) => {
   let results: string[] = [];
   let previous: string[] = [];
 
+  const convert = printer ? new Convert() : null;
+
   results.push('</pre>')
 
   let start = (req.query.start || '') as string
@@ -155,9 +157,16 @@ app.get("/", async (req, res) => {
         if (printer) {
           let match = line.match(/\[(\w+)\] .* Preparing to run: .* as chrome/)
           if (match) printerApps.add(match[1])
-          match = line.match(/\[(\w+)\]/)
+          match = line.match(/^(\S+)\s+\[(\w+)\]\s(\w+)\s(.*)/)
 
-          if (match && printerApps.has(match[1])) results.push(line)
+          if (match && printerApps.has(match[2])) {
+            results.push([
+              `<time>${match[1]}</time>`,
+              `[${match[2]}]`,
+              `<a href="https://smooth.fly.dev/showcase/regions/${match[3]}/status"><span style="color: maroon">${match[3]}</span></a>`,
+              convert?.toHtml(match[4]) || ''
+            ].join(' '))
+          }
 
           return
         }
