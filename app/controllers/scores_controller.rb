@@ -205,7 +205,7 @@ class ScoresController < ApplicationController
     slot = params[:slot]&.to_i
 
     retry_transaction do
-    score = find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
+    score = Score.find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
     if ApplicationRecord.readonly?
       render json: 'database is readonly', status: :service_unavailable
     elsif params[:comments]
@@ -216,14 +216,14 @@ class ScoresController < ApplicationController
       end
 
       keep = score.good || score.bad || score.comments || score.value || Event.first.assign_judges > 0
-      if save(score, keep)
+      if keep ? score.save : score.delete
         render json: score.as_json
       else
         render json: score.errors, status: :unprocessable_entity
       end
     elsif not params[:score].blank? or not score.comments.blank? or Event.first.assign_judges > 0
       score.value = params[:score]
-      if save(score, true)
+      if score.save
         render json: score.as_json
       else
         render json: score.errors, status: :unprocessable_entity
@@ -241,7 +241,7 @@ class ScoresController < ApplicationController
     slot = params[:slot]&.to_i
 
     retry_transaction do
-    score = find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
+    score = Score.find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
     if ApplicationRecord.readonly?
       render json: 'database is readonly', status: :service_unavailable
     else
@@ -282,7 +282,7 @@ class ScoresController < ApplicationController
 
       keep = score.good || score.bad || score.comments || score.value || Event.first.assign_judges > 0
 
-      if save(score, keep)
+      if keep ? score.save : score.delete
         render json: score.as_json
       else
         render json: score.errors, status: :unprocessable_entity
@@ -682,7 +682,7 @@ class ScoresController < ApplicationController
     @score = Score.new(score_params)
 
     respond_to do |format|
-      if save(@score, true)
+      if @score.save
         format.html { redirect_to score_url(@score), notice: "Score was successfully created." }
         format.json { render :show, status: :created, location: @score }
       else
@@ -724,32 +724,8 @@ class ScoresController < ApplicationController
   end
 
   private
-    # retry finding or creating a score if it fails due to database contention
-    def find_or_create_by(options)
-      4.times do
-        begin
-          return Score.find_or_create_by(options)
-        rescue ActiveRecord::StatementInvalid
-          sleep 0.1
-        end
-      end
-    end
-
-    # retry saving a score if it fails due to database contention
-    def save(score, keep=true)
-      4.times do
-        begin
-          return keep ? score.save : score.delete
-        rescue ActiveRecord::StatementInvalid
-          sleep 0.1
-        end
-      end
-
-      keep ? score.save : score.delete
-    end
-
     def retry_transaction(&block)
-      f = File.open('tmp/score.lock', File::RDWR|File::CREAT, 0644)
+      f = File.open("tmp/#{ENV.fetch('RAILS_APP_DB', 'db')}-score.lock", File::RDWR|File::CREAT, 0644)
       f.flock File::LOCK_EX
       4.times do
         begin
