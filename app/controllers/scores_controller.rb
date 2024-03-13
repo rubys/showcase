@@ -745,6 +745,8 @@ class ScoresController < ApplicationController
     end
 
     def retry_transaction(&block)
+      f = File.open('tmp/score.lock', File::RDWR|File::CREAT, 0644)
+      f.flock File::LOCK_EX
       4.times do
         begin
           return Score.transaction(&block)
@@ -756,6 +758,8 @@ class ScoresController < ApplicationController
       end
 
       Score.transaction(&block)
+    ensure
+      f.flock File::LOCK_UN
     end
 
     # Use callbacks to share common setup or constraints between actions.
