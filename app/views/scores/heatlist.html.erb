@@ -17,7 +17,7 @@
   <h1 class="font-bold text-4xl"><%= link_to @judge.display_name, person_path(@judge) %></h1>
 
   <div class="float-right w-60" title="<%= judge_heatlist_url(@judge, style: @style, sort: @sort) %>">
-  <%= RQRCode::QRCode.new(judge_heatlist_url(@judge, style: @style, sort: @sort)).as_svg(viewbox: true).html_safe %>
+  <%= RQRCode::QRCode.new(judge_heatlist_url(@judge, style: @style)).as_svg(viewbox: true).html_safe %>
 
   <% unless @style == 'emcee' %>
   <h2 class="mt-12 font-bold text-2xl">Sort order</h2>

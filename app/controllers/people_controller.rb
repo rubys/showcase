@@ -599,8 +599,9 @@ class PeopleController < ApplicationController
   def show_assignments
     judge = Judge.find_or_create_by(person_id: params[:id])
     judge.update! show_assignments: params[:show]
-    redirect_to judge_heatlist_path(judge: params[:id],
-      sort: params[:sort], style: params[:style], show: params[:show])
+    style = params[:style]
+    style = nil if style == 'radio' || style == ''
+    redirect_to judge_heatlist_path(judge: params[:id], style: style)
   end
 
   def assign_judges

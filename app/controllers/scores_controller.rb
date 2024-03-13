@@ -655,12 +655,12 @@ class ScoresController < ApplicationController
   def sort
     judge = Judge.find_or_create_by(person_id: params[:judge])
     judge.update! sort: params[:sort]
+    style = params[:style]
+    style = nil if style == 'radio' || style == ''
     if params[:show].blank?
-      redirect_to judge_heatlist_path(judge: params[:judge], 
-        sort: params[:sort], style: params[:style])
+      redirect_to judge_heatlist_path(judge: params[:judge], style: style)
     else
-      redirect_to judge_heatlist_path(judge: params[:judge], 
-        sort: params[:sort], style: params[:style], show: params[:show])
+      redirect_to judge_heatlist_path(judge: params[:judge], style: style)
     end
   end
 
