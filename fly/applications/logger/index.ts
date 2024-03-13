@@ -122,8 +122,11 @@ app.get("/", async (req, res) => {
     timeout = +setTimeout(() => fetchOthers("/").catch(console.error), 1000)
   }
 
-  let filter = (req.query.filter !== 'off')
   let printer = (req.query.view == 'printer')
+  let demo = (req.query.view == 'demo')
+
+  let filter = (req.query.filter !== 'off') && !demo
+
   let printerApps = new Set()
   let lastVisit = visit()
 
@@ -161,6 +164,7 @@ app.get("/", async (req, res) => {
 
         let match = line.match(pattern)
         if (!match) return;
+        if (demo && !line.includes('demo')) return;
 
         if (filter && filtered(match)) return
 

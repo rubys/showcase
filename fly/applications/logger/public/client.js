@@ -88,7 +88,7 @@ function openws() {
 
 // Get realtime updates unless a start date is specified or view is printer
 let search = new URL(window.location).searchParams
-if (!search.get('start') && search.get('view') !== 'printer') {
+if (!search.get('start') && search.get('view') !== 'printer' && search.get('view') !== 'demo') {
   openws()
 }
 
@@ -129,6 +129,10 @@ document.addEventListener("keydown", event => {
   } else if (event.key === "p") {
     event.preventDefault()
     location.searchParams.set("view", "printer")
+    window.location = location
+  } else if (event.key === "d") {
+    event.preventDefault()
+    location.searchParams.set("view", "demo")
     window.location = location
   }
 })
