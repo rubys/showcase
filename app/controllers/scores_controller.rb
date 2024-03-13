@@ -49,7 +49,8 @@ class ScoresController < ApplicationController
     @number = params[:heat].to_f
     @number = @number.to_i if @number == @number.to_i
     @slot = params[:slot]&.to_i
-    @style = params[:style] || 'radio'
+    @style = params[:style]
+    @style = 'radio' if @style.blank?
     @subjects = Heat.where(number: @number).includes(
       dance: [:multi_children], 
       entry: [:age, :level, :lead, :follow]
