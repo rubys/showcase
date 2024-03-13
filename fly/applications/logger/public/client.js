@@ -134,5 +134,9 @@ document.addEventListener("keydown", event => {
     event.preventDefault()
     location.searchParams.set("view", "demo")
     window.location = location
+  } else if (event.key === "Enter" || event.key === "Escape") {
+    event.preventDefault()
+    location.searchParams.delete("view")
+    window.location = location
   }
 })
