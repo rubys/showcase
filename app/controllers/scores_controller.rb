@@ -143,6 +143,7 @@ class ScoresController < ApplicationController
         map {|score| [score.heat_id, score.comments]}.to_h
     end
 
+    @style = nil if @style == 'radio'
     options = {style: @style}
 
     heats = Heat.all.where(number: 1..).order(:number).group(:number).
@@ -181,6 +182,8 @@ class ScoresController < ApplicationController
         end
       end
     end
+
+    @style = 'radio' if @style.nil?
 
     if @style == 'emcee' and @heat.dance.songs.length > 0
       index = Heat.joins(:entry).where(dance_id: @heat.dance_id).distinct.order(:number).pluck(:number).index(@heat.number)
