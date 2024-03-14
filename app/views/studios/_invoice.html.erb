@@ -91,6 +91,7 @@
 
   <%
     dances = invoice[:dances][person]
+    next if !person.package_id && person.options.empty? && dances.values.sum == 0
     registration = (@registration || person.package&.price || 0) / (person.package&.couples ? 2 : 1)
     registration = 0 unless person.studio == studio
     partner = nil
