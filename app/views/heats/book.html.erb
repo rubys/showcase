@@ -316,7 +316,7 @@ end
            <td class="pl-4 font-bold"><%= heat.back %>
            <% end %>
            <%
-             if @column_order == 1 or heat.follow.type == 'Professional'
+             if @column_order == 1 or heat.lead.type == 'Student'
                p1, p2 = heat.lead, heat.follow
              else
                p1, p2 = heat.follow, heat.lead

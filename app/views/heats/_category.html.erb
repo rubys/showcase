@@ -139,7 +139,7 @@
            <td class="row"><% if heat.category != 'Solo' %><% if heat.back -%><%= heat.back %><% else %><%= link_to 'TBD', backs_people_path %><% end %><% end %>
            <% end %>
            <%
-            if @column_order == 1 or heat.follow.type == 'Professional'
+            if @column_order == 1 or heat.lead.type == 'Student'
               p1, p2 = heat.lead, heat.follow
             else
               p1, p2 = heat.follow, heat.lead

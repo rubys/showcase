@@ -49,7 +49,7 @@
     <td class="px-2 text-center"><%= heat.entry.lead.back %>
     <% end %>
     <%
-      if @event.column_order == 1 or heat.entry.follow.type == 'Professional'
+      if @event.column_order == 1 or heat.entry.lead.type == 'Student'
         p1, p2 = heat.entry.lead, heat.entry.follow
       else
         p1, p2 = heat.entry.follow, heat.entry.lead
