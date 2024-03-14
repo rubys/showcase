@@ -66,6 +66,10 @@
     :name: Glenview
     :region: ord
     :logo: arthur-murray-logo.gif
+  greenhills:
+    :name: Nashville-Green Hills
+    :region: atl
+    :logo: arthur-murray-logo.gif
   harrisburg:
     :name: Harrisburg
     :region: iad
