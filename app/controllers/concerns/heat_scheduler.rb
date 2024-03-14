@@ -333,7 +333,7 @@ module HeatScheduler
 
       # only combine open/closed dances if the category is the same
       @@combinable = @@category == 0 ? [] :
-        Dance.all.select {|dance| dance.open_category && dance.open_category_id == dance.closed_category}
+        Dance.all.select {|dance| dance.open_category && dance.open_category_id == dance.closed_category_id}.map(&:id)
     end
 
     def self.max= max
