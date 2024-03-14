@@ -125,6 +125,11 @@
   <p class="mt-2 text-center"><%= @event.date %></p>
   </div>
 
+  <%
+    heat_cost = @heat_cost
+    heat_cost -= 5 if ENV['RAILS_APP_DB'] == '2024-laval' && person.age.category.start_with?('J')
+  %>
+
   <table class="mt-8">
   <tbody>
   <% if person.package_id %>
@@ -140,12 +145,14 @@
   <% end %>
   <tr>
     <th align="left">Freestyles:
-    <th align="left"><%= number_to_currency @heat_cost %> per entry</th>
+    <th align="left"><%= number_to_currency heat_cost %> per entry</th>
   </tr>
+  <% if @solo_cost > 0 %>
   <tr>
     <th align="left">Routines:
     <th align="left"><%= number_to_currency @solo_cost %> per entry</th>
   </tr>
+  <% end %>
   <% @cost.each do |name, cost| %>
   <% next if %w(Closed Open Solo Multi).include? name %>
   <tr>
@@ -194,7 +201,7 @@
     <% end %>
   <tr>
     <td>Freestyles
-    <td align="right"><%= number_to_currency @heat_cost * (dances.fetch('Open', 0) + dances.fetch('Closed', 0)) %></th>
+    <td align="right"><%= number_to_currency heat_cost * (dances.fetch('Open', 0) + dances.fetch('Closed', 0)) %></th>
   </tr>
   <tr>
     <td>Routines
