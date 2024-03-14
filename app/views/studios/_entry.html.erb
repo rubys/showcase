@@ -46,7 +46,7 @@
       <td class="text-right"><%= number_to_currency @cost[cost_category]*heats.length/split, precision: 2, unit: '' %>
     </tr>
     <% count += heats.length %>
-    <% total += @cost[category]/split * heats.length %>
+    <% total += @cost[cost_category]/split * heats.length %>
   <% end %>
     <tr class="text-sm">
       <th colspan="4">subtotal
