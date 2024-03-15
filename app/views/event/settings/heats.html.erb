@@ -71,10 +71,14 @@
     <%= form.hidden_field :heat_range_age, value: @ages-1 %>
   <% end %>
 
+  <% if @event.include_open? and @event.include_closed? %>
   <div class="my-5">
     <%= form.label :heat_range_cat, 'open/closed' %>
     <%= form.range_field :heat_range_cat, min: 0, max: 1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+  <% else %>
+    <%= form.hidden_field :heat_range_cat, value: 0 %>
+  <% end %>
 
   <div class="inline">
     <%= form.button 'Save', name: 'tab', value: 'Heats', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>

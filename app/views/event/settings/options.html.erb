@@ -52,7 +52,7 @@
   </ul>
   </div>
 
-  <% if @combine_open_and_closed %>
+  <% if @combine_open_and_closed && @event.include_closed? %>
   <% @event.open_scoring = 'G' %>
   <div class="my-5 bg-slate-300 opacity-50 cursor-not-allowed" title="open and closed are combined">
   <% else %>
