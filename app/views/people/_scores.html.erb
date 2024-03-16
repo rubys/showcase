@@ -95,7 +95,7 @@
 </table>
 </div>
 
-<% if %w(+ &).include? @event.open_scoring and @heats.any? {|heat| [heat.entry.lead, heat.entry.follow].include? person and heat.category == 'Open'} %>
+<% if %w(+ &).include? @event.open_scoring and @heats.any? {|heat| [heat.entry.lead, heat.entry.follow].include? person and (heat.category == 'Open' || (heat.category == 'Closed' && @event.closed_scoring == '='))} %>
 <table class="mt-8" style="break-inside: avoid">
   <thead>
     <tr>
@@ -112,17 +112,17 @@
   <tbody>
     <% @heats.each do |heat| %>
     <% next unless [heat.entry.lead, heat.entry.follow].include? person %>
-    <% next unless heat.category == 'Open' %>
+    <% next unless heat.category == 'Open' || (heat.category == 'Closed' && @event.closed_scoring == '=') %>
     <tr class="text-sm">
       <td class="text-center"><%= heat.number %>
       <% if @judges.empty? %>
       <td></td>
       <% else %>
       <% judge_ids.each do |judge| %>
-        <td class="text-left"><%= heat.scores.select {|score| score.judge_id == judge}.sort_by(&:slot).map(&:good).join(' | ') %>
+        <td class="text-left" class="ml-4"><span class="ml-2"><%= heat.scores.select {|score| score.judge_id == judge}.sort_by(&:slot).map(&:good).join(' | ') %></span>
       <% end %>
       <% judge_ids.each do |judge| %>
-        <td class="text-left bg-gray-200"><%= heat.scores.select {|score| score.judge_id == judge}.sort_by(&:slot).map(&:bad).join(' | ') %>
+        <td class="text-left bg-gray-200"><span class="ml-2"><%= heat.scores.select {|score| score.judge_id == judge}.sort_by(&:slot).map(&:bad).join(' | ') %></span>
       <% end %>
       <% end %>
       <td><div class="mx-4"><%= heat.category %> <%= heat.dance.name %></div>
