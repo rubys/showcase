@@ -96,7 +96,7 @@
     registration = 0 unless person.studio == studio
     partner = nil
 
-    if @paired.include? person.id
+    if @couples.include? person.id
       partner = Person.find(@couples[person.id])
 
       registration += (@registration || partner.package.price) / 2
