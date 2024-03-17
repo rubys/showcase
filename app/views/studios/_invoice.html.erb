@@ -87,7 +87,7 @@
 
   <% if @student %>
   <% invoice[:dances].keys.sort_by(&:name).each do |person| %>
-  <% next if person.type != 'Student' # or @couples.values.include? person.id %>
+  <% next if person.type != 'Student' or @couples.values.include? person.id %>
 
   <%
     dances = invoice[:dances][person]
