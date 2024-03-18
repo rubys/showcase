@@ -1,6 +1,7 @@
 {
   "name": "printer",
   "dependencies": {
+    "chalk": "^5.3.0",
     "puppeteer-core": "^21.5.2"
   },
   "devDependencies": {

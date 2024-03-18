@@ -10,6 +10,7 @@
 // instance is "warmed-up" prior to issuing requests.
 
 import puppeteer, { PaperFormat } from 'puppeteer-core'
+import chalk from 'chalk'
 
 // fetch configuration fron environment variables
 const PORT = process.env.PORT || 3000
@@ -72,7 +73,7 @@ const server = Bun.serve({
     url.pathname = url.pathname.slice(0, -4)
     if (url.pathname.endsWith('/index')) url.pathname = url.pathname.slice(0, -5)
 
-    console.log(`Fetching ${url.href}`)
+    console.log(`${chalk.green.bold('Fetching')} ${url.href}`)
 
     // create a new browser page (tab)
     const page = await browser.newPage()
@@ -101,7 +102,7 @@ const server = Bun.serve({
         if (error.message.includes("ERR_NETWORK_CHANGED")) {
           await new Promise((resolve) => setTimeout(resolve, 100));
 
-          console.log(`Retrying ${url.href}`)
+          console.log(`${chalk.yellow.bold('Retrying')} ${url.href}`)
           await page.goto(url.href, {
             waitUntil: JAVASCRIPT ? 'networkidle2' : 'load',
             timeout: FETCH_TIMEOUT
@@ -112,7 +113,7 @@ const server = Bun.serve({
       }
 
       // convert page to pdf - using preferred format and in full color
-      console.log(`Converting ${url.href} to PDF`)
+      console.log(`${chalk.green.bold('Converting')} ${url.href} to PDF`)
       const pdf = await page.pdf({
         format: FORMAT,
         preferCSSPageSize: true,
@@ -120,7 +121,7 @@ const server = Bun.serve({
       })
 
       // return the generated PDF as the response
-      console.log(`Responding with ${url.href}`)
+      console.log(`${chalk.green.bold('Responding')} with ${url.href}`)
       return new Response(pdf, {
         headers: { "Content-Type": "application/pdf" }
       })
@@ -129,7 +130,7 @@ const server = Bun.serve({
       // handle unauthorized separately
       // see: https://github.com/puppeteer/puppeteer/issues/9856
       if (error.toString().includes("net::ERR_INVALID_AUTH_CREDENTIALS")) {
-        console.log(`Unauthorized`)
+        console.log(chalk.red(`Unauthorized`))
         return new Response(`Unauthorized`, {
           status: 401,
           headers: {
@@ -142,7 +143,7 @@ const server = Bun.serve({
         shutdown = true
 
         // all other errors
-        console.log(`Error fetching ${url.href} - Shutting down server`)
+        console.log(chalk.white.bgRed.bold(`Error fetching ${url.href} - Shutting down server`))
         console.error(error.stack || error);
         return new Response(`<pre>${error.stack || error}</pre>`, {
           status: 500,

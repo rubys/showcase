@@ -221,6 +221,11 @@ module Printable
 
       if instructor
         people << @person
+      elsif student && @person
+        people = [@person]
+
+        entries.reject! {|entry| entry.lead != @person && entry.follow != @person}
+        pentries.reject! {|entry| entry.lead != @person && entry.follow != @person}
       else
         people = (people + studio.people.preload({options: :option, package: {package_includes: :option}})).uniq
 
