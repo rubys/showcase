@@ -32,4 +32,4 @@ USER chrome:chrome
 COPY --link . .
 
 # Start the server
-CMD [ "bun", "server.ts" ]
+CMD [ "bun", "server.ts", "--colors" ]
