@@ -330,7 +330,6 @@ server {
 <% unless @region -%>
   passenger_env_var RAILS_PROXY_HOST <%= HOST %>;
 <% end -%>
-  passenger_env_var RAILS_APP_REDIS showcase_production;
 <% if ENV['FLY_REGION'] -%>
 
   # Password reset
