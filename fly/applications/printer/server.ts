@@ -73,7 +73,7 @@ const server = Bun.serve({
     url.pathname = url.pathname.slice(0, -4)
     if (url.pathname.endsWith('/index')) url.pathname = url.pathname.slice(0, -5)
 
-    console.log(`${chalk.green.bold('Fetching')} ${url.href}`)
+    console.log(`${chalk.green.bold('Fetching')} ${chalk.black(url.href)}`)
 
     // create a new browser page (tab)
     const page = await browser.newPage()
@@ -102,7 +102,7 @@ const server = Bun.serve({
         if (error.message.includes("ERR_NETWORK_CHANGED")) {
           await new Promise((resolve) => setTimeout(resolve, 100));
 
-          console.log(`${chalk.yellow.bold('Retrying')} ${url.href}`)
+          console.log(`${chalk.yellow.bold('Retrying')} ${chalk.black(url.href)}`)
           await page.goto(url.href, {
             waitUntil: JAVASCRIPT ? 'networkidle2' : 'load',
             timeout: FETCH_TIMEOUT
@@ -113,7 +113,7 @@ const server = Bun.serve({
       }
 
       // convert page to pdf - using preferred format and in full color
-      console.log(`${chalk.green.bold('Converting')} ${url.href} to PDF`)
+      console.log(`${chalk.green.bold('Converting')} ${chalk.black(url.href + ' to PDF')}`)
       const pdf = await page.pdf({
         format: FORMAT,
         preferCSSPageSize: true,
@@ -121,7 +121,7 @@ const server = Bun.serve({
       })
 
       // return the generated PDF as the response
-      console.log(`${chalk.green.bold('Responding')} with ${url.href}`)
+      console.log(`${chalk.green.bold('Responding')} ${chalk.black('with ' + url.href)}`)
       return new Response(pdf, {
         headers: { "Content-Type": "application/pdf" }
       })
