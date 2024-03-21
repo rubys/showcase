@@ -126,6 +126,10 @@
     :name: Raleigh
     :region: iad
     :logo: arthur-murray-logo.gif
+  richmond:
+    :name: Richmond
+    :region: atl
+    :logo: arthur-murray-logo.gif
   ridgewood:
     :name: Ridgewood
     :region: ewr
