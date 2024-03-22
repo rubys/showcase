@@ -130,6 +130,13 @@
     :name: Richmond
     :region: atl
     :logo: arthur-murray-logo.gif
+    :events:
+      medal-ball:
+        :name: Medal Ball
+      team-match:
+        :name: Team Match
+      nouveau-duo:
+        :name: Nouveau Duo
   ridgewood:
     :name: Ridgewood
     :region: ewr
