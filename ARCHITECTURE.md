@@ -1,28 +1,7 @@
-<style>
-  .callout {
-	margin-top: 3rem;
-	margin-bottom: 3rem;
-	border-radius: .75rem;
-	border-width: 1px;
-	border-color: #5b21b61a;
-	background-color: #448;
-  color: #FFF;
-	padding: 2rem;
-	font-size: 1rem;
-	line-height: 1.75rem;
-	--tw-shadow: 0 10px 15px -3px #0000001a,0 4px 6px -4px #0000001a;
-	--tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color),0 4px 6px -4px var(--tw-shadow-color);
-	box-shadow: var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow);
-	--tw-shadow-color: rgba(91,33,182,.075);
-	--tw-shadow: var(--tw-shadow-colored);
-}
-</style>
-
 ## Shared-nothing architecures
 
-<p class="callout">
-A shared-nothing architecture is a distributed computing architecture in which each update request is satisfied by a single node (processor/memory/storage unit) in a computer cluster.
-</p>
+> [!NOTE]
+> A shared-nothing architecture is a distributed computing architecture in which each update request is satisfied by a single node (processor/memory/storage unit) in a computer cluster.
 
 As you might expect, a Showcase competition happens live and in a single location. Very few people need access to the system, and they’re often all in the same room; picture a few judges entering scores at the end of a number—that’s your peak simultaneous users. Data’s not shared between events–they don’t want or need to share a database and Redis cache.
 
@@ -37,9 +16,8 @@ This application started, like most applications, small.  And that's where the s
 
 ## A single event
 
-<p class="callout">
-A Fly.io machine is not merely a Docker container, but rather a <a href="https://fly.io/blog/docker-without-docker/" title="">full VM</a>.  Treat it as such: run as many services as you like on a single machine.
-</p>
+> [!NOTE]
+> A Fly.io machine is not merely a Docker container, but rather a <a href="https://fly.io/blog/docker-without-docker/" title="">full VM</a>.  Treat it as such: run as many services as you like on a single machine.
 
 My first showcase was in Harrisburg, Pennsylvania.  The app I developed initially supported only that one event, and all of the services needed to support the event ran on a single machine.  Like most Rails applications,
 this consisted of a Rails application, a database, and (eventually) Redis.  Over time a number of supporting services were added (NGINX, opensshd, rsyncd, and a small log "heartbeat" script).
@@ -70,9 +48,8 @@ Finally, invest the time to set up a [wireguard network](https://fly.io/docs/net
 
 ## Multi-tenancy
 
-<p class="callout">
-The code base supports only a single event.  Running multiple events on a single machine is the next step before jumping into multiple machines.
-</p>
+> [!NOTE]
+> The code base supports only a single event.  Running multiple events on a single machine is the next step before jumping into multiple machines.
 
 There are a number of blog posts out there on how to do
 [multi-tenancy](https://blog.arkency.com/comparison-of-approaches-to-multitenancy-in-rails-apps/)
@@ -114,10 +91,9 @@ Recapping: a single server can host multiple events, each event is a separate in
 
 ## Multiple regions
 
-<p class="callout">
-Distributing an app across multiple regions not only lets you service requests close
+> [!NOTE]
+> Distributing an app across multiple regions not only lets you service requests close
 to your users, it enables horizontal scalability and isolation.
-</p>
 
 While most of my users are US based, my showcase app now has a second user in Australia, and now one in Warsaw, Poland.
 Sending requests and replies half way around the world unnecessarily adds latency.
@@ -159,10 +135,9 @@ is limited to 1MB requests, and uploading audio files may exceed this limit.
 
 ## Appliances
 
-<p class="callout">
-For larger tasks, try
-decomposing parts of your applications into event handlers, starting up Machines to handle requests when needed, and stopping them when the requests are done.
-</p>
+> [!NOTE]
+> For larger tasks, try
+> decomposing parts of your applications into event handlers, starting up Machines to handle requests when needed, and stopping them when the requests are done.
 
 While above I've sung the praises of a Majestic Monolith, there are limits.  Usage of this application
 is largely split into two phases: a lengthy period of data entry, followed by a brief period of report generation.
@@ -195,10 +170,9 @@ something I plan to explore.
 
 ## Backups
 
-<p class="callout">
-Running databases on a single volume attached to a single machine is a single
-point of failure.  It is imperative that you have recent backups in case of failure.
-</p>
+> [!NOTE]
+> Running databases on a single volume attached to a single machine is a single
+> point of failure.  It is imperative that you have recent backups in case of failure.
 
 At this point, databases are small, and can be moved between servers with a simple configuration change.
 For that reason, for the moment I've elected to have each machine contain a complete copy of all of the databases.
@@ -239,9 +213,8 @@ Finally, since each region contains a copy of all databases, I use [`auto_extend
 
 ## Logging
 
-<p class="callout">
-It is important that logs are there when you need them.  For this reason, logs need both monitoring and redundancy.
-</p>
+> [!NOTE]
+> It is important that logs are there when you need them.  For this reason, logs need both monitoring and redundancy.
 
 Equally as important as backups are logs.  Over the course of the life of this application I've had two cases where
 I've lost data due to errors on my part and was able to reconstruct that data by re-applying POST requests extracted
@@ -271,11 +244,10 @@ I strongly encourage people to look into [Sentry](https://community.fly.io/t/int
 
 ## Applying updates
 
-<p class="callout">
-While Fly.io will start machines fast, you have to do your part.
-If your app doesn't start fast, start something else that starts quickly first
-so your users see something while they are waiting.
-</p>
+> [!NOTE]
+> While Fly.io will start machines fast, you have to do your part.
+> If your app doesn't start fast, start something else that starts quickly first
+> so your users see something while they are waiting.
 
 If you go to https://smooth.fly.dev/ the server nearest to you will need to spin up the index application. And if, from there, you click on demo, a second application will be started.  While you might get lucky and somebody else (or a bot) may have already started these for you, the normal case is that you will have to wait.
 
@@ -291,11 +263,10 @@ see no down time at all, just an approximately two second delay on their next re
 
 ## Administration
 
-<p class="callout">
-While Fly.io provides a <a href="https://fly.io/docs/machines/working-with-machines/" title="">Machines API</a>,
-you can go a long way with old-fashioned scripting using the <a href="https://fly.io/docs/flyctl/" title="">flyctl</a>
-command.
-</p>
+> [!NOTE]
+> While Fly.io provides a <a href="https://fly.io/docs/machines/working-with-machines/" title="">Machines API</a>,
+> you can go a long way with old-fashioned scripting using the <a href="https://fly.io/docs/flyctl/" title="">flyctl</a>
+> command.
 
 Now lets look at what happens when I create a new event, in a new region.  I (a human) get an email, I bring up my admin UI (on an instance of the index app I mentioned above).  I fill out a form for the new event.  I go to a separate page and add a new region.  I then go to a third form where I can review and apply the changes.  This involves regenerating my map, and I need to update the NGINX configuration in every existing region.  There are shortcuts I can utilize which will update files on each machine and reload the NGINX configuration, but I went that way I would need to ensure that the end result exactly matches the reproducible result that a subsequent `fly deploy` would produce.  I don't need that headache, so I'm actually using `fly deploy` which can add tens of seconds to the actual deploy time.
 
@@ -321,11 +292,10 @@ For those who are curious, here's the [deployment script](https://github.com/rub
 
 ## Costs
 
-<p class="callout">
-This is a decent sized personal project, deployed across three continents.  Even with a
-significant amount of over-provisioning, the costs per month are around $60, before taking
-into account plans and allowances.
-</p>
+> [!NOTE]
+> This is a decent sized personal project, deployed across three continents.  Even with a
+> significant amount of over-provisioning, the costs per month are around $60, before taking
+> into account plans and allowances.
 
 I'm currently running this app in nine regions.  I have two machine running a log server.
 I have two machines that will run puppeteer and Chrome on demand.
@@ -360,9 +330,8 @@ a fully fleshed out system would cost per month to operate.
 
 ## Summary
 
-<p class="callout">
-Shared Nothing architectures are a great way to scale up applications where the data involved is easily partitionable.
-</p>
+> [!NOTE]
+> Shared Nothing architectures are a great way to scale up applications where the data involved is easily partitionable.
 
 Key points (none of these should be a surprise, they were highlighted
 in the text above):
