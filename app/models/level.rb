@@ -3,6 +3,6 @@ class Level < ApplicationRecord
   
   def initials
     return '*' if id == 0
-    name.gsub(/[^A-Z]/, '')
+    name.gsub(/[^A-Z0-9]/, '')
   end
 end

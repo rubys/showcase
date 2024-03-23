@@ -102,7 +102,7 @@ class ScoresController < ApplicationController
       end
     end
 
-    if %w(+ &).include? @event.open_scoring and category == 'Open'
+    if %w(+ &).include?(@event.open_scoring) and category == 'Open'
       @good = {}
       @bad = {}
       @value = {}
