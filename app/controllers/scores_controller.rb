@@ -347,6 +347,7 @@ class ScoresController < ApplicationController
 
           if not value and @open_scoring == '&' and score =~ /^\d+$/
             value = score.to_i - 1
+            value = 4-value
 
             @scores[group][level][students][category][value] += count
             @scores[group][level][students]['points'] += count * value
@@ -419,6 +420,7 @@ class ScoresController < ApplicationController
             if not value and @open_scoring == '&' and score =~ /^\d+$/
               value = score.to_i - 1
               points = count * (value + 1)
+              value = 4-value
 
             elsif value
               points = count * WEIGHTS[value]
@@ -506,6 +508,7 @@ class ScoresController < ApplicationController
   
           if not value and @open_scoring == '&' and score =~ /^\d+$/
             value = score.to_i - 1
+            value = 4-value
 
             @scores[group][age][students][category][value] += count
             @scores[group][age][students]['points'] += count * value
@@ -635,6 +638,7 @@ class ScoresController < ApplicationController
 
         if not value and @open_scoring == '&' and score =~ /^\d+$/
           value = score.to_i - 1
+          value = 4-value
 
           @scores[person][category][value] += count
           @scores[person]['points'] += count * value

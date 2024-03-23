@@ -46,7 +46,7 @@
           <% end %>
           <% end %>
           <% if @open_scoring == '&' %>
-          <% 1.upto(5).each do |score| %>
+          <% 5.downto(1).each do |score| %>
           <th class="row-head"><%= score %>
           <% end %>
           <% elsif @open_scoring != 'G' %>
@@ -107,7 +107,7 @@
           <% end %>
           <% end %>
           <% if @open_scoring == '&' %>
-          <% 1.upto(5).each do |score| %>
+          <% 5.downto(1).each do |score| %>
           <th class="row-head"><%= score %>
           <% end %>
           <% elsif @open_scoring != 'G' %>
