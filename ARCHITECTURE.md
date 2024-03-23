@@ -1,3 +1,9 @@
+The Showcase application is in its third year of production use.  Over time, I've adapted it to take advantage
+of a number of unique features that [Fly.io](https://fly.io/) has to offer.  The description below describes this journey, and
+closes with an itemized set of costs to run this application.
+
+Feel free to start by skimming only the Notes, reading into only the sections that are of interest, and ultimately following the links to find out more.
+
 ## Shared-nothing architecures
 
 > [!NOTE]
@@ -9,7 +15,7 @@ Shared-nothing architectures are nothing new.  An excerpt from [Wikipedia](https
 
 > The intent is to eliminate contention among nodes. Nodes do not share (independently access) the same memory or storage. One alternative architecture is shared everything, in which requests are satisfied by arbitrary combinations of nodes. This may introduce contention, as multiple nodes may seek to update the same data at the same time. 
 
-While serverless is one kind of a shared-nothing architecture - this post explores another variation.  One where servers are explicitly deployed,
+While serverless is one kind of a shared-nothing architecture - this page explores another variation.  One where servers are explicitly deployed,
 users are assigned to servers, and users have databases that aren't shared. 
 
 This application started, like most applications, small.  And that's where the story begins.
