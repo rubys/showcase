@@ -77,8 +77,8 @@ const server = Bun.serve({
 
     // create a new browser page (tab)
     const page = await browser.newPage()
-    page.setDefaultNavigationTimeout(0)
-    page.setDefaultTimeout(0)
+    page.setDefaultNavigationTimeout(FETCH_TIMEOUT)
+    page.setDefaultTimeout(FETCH_TIMEOUT)
 
     // main puppeteer logic: fetch url, convert to URL, return response
     try {
@@ -105,7 +105,7 @@ const server = Bun.serve({
           console.log(`${chalk.yellow.bold('Retrying')} ${chalk.black(url.href)}`)
           await page.goto(url.href, {
             waitUntil: JAVASCRIPT ? 'networkidle2' : 'load',
-            timeout: FETCH_TIMEOUT
+            timeout: FETCH_TIMEOUT * 4
           })
         } else {
           throw error
