@@ -168,7 +168,7 @@ Swiping left and right on mobile devices and tablets also work.
         <% @scores.each do |score| %>
           <th class="border-b-2 border-black">
         <% end %>
-      <% elsif @event.open_scoring != '&' || !(@heat.category == 'Open' || (@event.closed_scoring == '=' && @heat.category == 'Closed')) %>
+      <% elsif !%w(& +).include? @scoring %>
         <th class="text-center" colspan="<%= @scores.length %>%>">Score
       </tr>
       <tr>
@@ -222,14 +222,14 @@ Swiping left and right on mobile devices and tablets also work.
         <td><% if @combine_open_and_closed and %w(Open Closed).include? subject.category %><%= subject.category %> - <% end %><%= subcat %>
         <td><%= subject.subject.studio.name %>
         <% unless @style == 'emcee' %>
-        <% if @event.open_scoring == '#' %>
+        <% if @scoring == '#' %>
         <td><div class="mx-auto text-center">
           <input data-score-target="score" class="text-center w-20 h-10 border-2 invalid:border-red-600" pattern="^\d\d$"
             name="<%= subject.id %>" value="<%= @results[subject] %>"%>
         </div>
         <% elsif subject.dance.semi_finals %>
         <td class="text-center"><input type="checkbox" name="<%= subject.id %>" value="<%= @results[subject] %>"<%= @results[subject].empty? ? '' : ' checked' %>>
-        <% elsif @event.open_scoring != '&' || !(@heat.category == 'Open' || (@event.closed_scoring == '=' && @heat.category == 'Closed')) %>
+        <% elsif !%w(+ &).include? @scoring %>
         <% @scores.each do |score| %>
         <td class="text-center"><input type="radio" name="<%= subject.id %>" value="<%= score %>"<%= @results[subject]==score ? ' checked' : '' %>>
         <% end %>
@@ -239,7 +239,7 @@ Swiping left and right on mobile devices and tablets also work.
       <% if @style != 'emcee' # and @scores.empty? %>
       <tr data-controller="open-feedback" class="open-fb-row" data-heat="<%= subject.id %>" data-feedback-action="<%= post_feedback_path(judge: @judge) %>">
       <td colspan="5">
-      <% if @event.open_scoring == '&' && (@heat.category == 'Open' || (@event.closed_scoring == '='  && @heat.category == 'Closed'))  %>
+      <% if @scoring == '&' %>
       <div class="grid value w-full" data-value="<%= @value[subject.id] %>" style="grid-template-columns: 100px repeat(5, 1fr)">
         <div class="bg-gray-200 inline-flex justify-center items-center">Overall</div>
         <button class="open-fb"><abbr>1</abbr><span>1</span></button>
@@ -266,7 +266,7 @@ Swiping left and right on mobile devices and tablets also work.
         <button class="open-fb"><abbr>T</abbr><span>Timing</span></button>
         <button class="open-fb"><abbr>S</abbr><span>Styling</span></button>
       </div>
-      <% elsif @heat.category == 'Open' %>
+      <% elsif @scoring == '+' %>
       <div class="grid grid-cols-2 w-full divide-x-2 divide-black">
         <div class="grid grid-cols-5 good" data-value="<%= @good[subject.id] %>">
           <button class="open-fb"><abbr>DF</abbr><span>Dance Frame</span></button>

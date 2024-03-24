@@ -102,7 +102,24 @@ class ScoresController < ApplicationController
       end
     end
 
-    if %w(+ &).include?(@event.open_scoring) and category == 'Open'
+    # 1 - 1/2/3/F
+    # G - GH/G/S/B
+    # # - Number (85, 95, ...)
+    # + - Feedback (Needs Work On / Great Job With)
+    # & - Number (1-5) and Feedback
+    # S - Solo
+    @heat = @subjects.first
+    if @heat.category == 'Solo'
+      @scoring = 'S'
+    elsif @heat.category == 'Multi'
+      @scoring = @event.multi_scoring
+    elsif @heat.category == 'Open' || (@heat.category == 'Closed' && @event.closed_scoring == '=')
+      @scoring = @event.open_scoring
+    else
+      @scoring = @event.closed_scoring
+    end
+
+    if %w(+ &).include? @scoring
       @good = {}
       @bad = {}
       @value = {}
@@ -135,8 +152,6 @@ class ScoresController < ApplicationController
 
     @scores << '' unless @scores.length == 0
  
-    @heat = Heat.find_by(number: @number)
-
     if @heat.category == 'Solo'
       @comments = Score.where(judge: @judge, heat: @subjects.first).first&.comments
     else
