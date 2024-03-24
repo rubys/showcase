@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_03_10_223701) do
+ActiveRecord::Schema[7.1].define(version: 2024_03_24_222321) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -47,6 +47,16 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_10_223701) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "age_costs", force: :cascade do |t|
+    t.integer "age_id", null: false
+    t.decimal "heat_cost", precision: 7, scale: 2
+    t.decimal "solo_cost", precision: 7, scale: 2
+    t.decimal "multi_cost", precision: 7, scale: 2
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["age_id"], name: "index_age_costs_on_age_id"
   end
 
   create_table "ages", force: :cascade do |t|
@@ -379,6 +389,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_10_223701) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "age_costs", "ages"
   add_foreign_key "cat_extensions", "categories"
   add_foreign_key "dances", "categories", column: "closed_category_id"
   add_foreign_key "dances", "categories", column: "multi_category_id"
