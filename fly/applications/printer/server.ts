@@ -9,7 +9,7 @@
 // after reseting the timeout.  This is useful for ensuring that the Chrome
 // instance is "warmed-up" prior to issuing requests.
 
-import puppeteer, { PaperFormat } from 'puppeteer-core'
+import puppeteer, { PaperFormat, Page } from 'puppeteer-core'
 import chalk from 'chalk'
 
 // fetch configuration fron environment variables
@@ -76,7 +76,19 @@ const server = Bun.serve({
     console.log(`${chalk.green.bold('Fetching')} ${chalk.black(url.href)}`)
 
     // create a new browser page (tab)
-    const page = await browser.newPage()
+    let page: Page
+    try {
+      page = await browser.newPage()
+    } catch (error: any) {
+      console.error(chalk.white.bgRed.bold(`Error creating page - replaying and shutting down server`))
+      console.error(chalk.white.bgRed.bold(error.stack || error))
+      timeout = setTimeout(exit, 500)
+      return new Response(`<pre>${error.stack || error}</pre>`, {
+        status: 409,
+        headers: { "Content-Type": "text/html", "Fly-Replay": "elsewhere=true" }
+      })
+    }
+
     page.setDefaultNavigationTimeout(FETCH_TIMEOUT)
     page.setDefaultTimeout(FETCH_TIMEOUT)
 
