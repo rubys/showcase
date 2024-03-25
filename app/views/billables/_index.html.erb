@@ -1,9 +1,12 @@
   <div id="<%= id %>" class="min-w-full">
 
+
   <div class="float-right">
     <%= link_to 'New package', new_billable_path(type: 'package'), class: "rounded-lg py-3 px-5 bg-blue-600 text-white block font-medium" %>
     <%= link_to 'New option', new_billable_path(type: 'option'), class: "rounded-lg py-3 px-5 bg-blue-600 text-white block font-medium mt-4" %>
   </div>
+
+  <h1 class="font-bold text-4xl mb-6" id="options">Event Prices</h1>
 
     <% %w(Student Professional Guest Judge DJ Emcee Official Organizer).each do |type| %>
     <% if @packages.include? type %>
@@ -85,7 +88,7 @@
   </div>
 
   <div class="inline">
-    <%= form.submit 'Update prices',
-      class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+    <%= form.submit 'Update prices', class: "btn-blue" %>
   </div>
+
   <% end %>
