@@ -118,9 +118,17 @@
         :name: Newsome Twosome
       snowball-spotlight:
         :name: Snowball Spotlight
+  millbrae:
+    :name: Millbrae
+    :region: sjc
+    :logo: ''
   perth:
     :name: Perth
     :region: syd
+    :logo: arthur-murray-logo.gif
+  petaluma:
+    :name: Petaluma
+    :region: sjc
     :logo: arthur-murray-logo.gif
   raleigh:
     :name: Raleigh
