@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  age: one
+  heat_cost: 9.99
+  solo_cost: 9.99
+  multi_cost: 9.99
+
+two:
+  age: two
+  heat_cost: 9.99
+  solo_cost: 9.99
+  multi_cost: 9.99
