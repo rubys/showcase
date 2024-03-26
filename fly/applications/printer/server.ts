@@ -84,7 +84,7 @@ const server = Bun.serve({
       console.error(chalk.white.bgRed.bold(error.stack || error))
       timeout = setTimeout(exit, 500)
       return new Response(`<pre>${error.stack || error}</pre>`, {
-        status: 409,
+        status: 307,
         headers: { "Content-Type": "text/html", "Fly-Replay": "elsewhere=true" }
       })
     }
