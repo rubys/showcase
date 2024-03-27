@@ -33,10 +33,16 @@ const chrome = process.platform == "darwin"
   : '/usr/bin/google-chrome'
 
 // launch a single headless Chrome instance to be used by all requests
-const browser = await puppeteer.launch({
-  headless: "new",
-  executablePath: chrome
-})
+try {
+  const browser = await puppeteer.launch({
+    headless: "new",
+    executablePath: chrome
+  })
+} catch (error: any) {
+  console.error(chalk.white.bgRed.bold(`Error launching browser - exiting`))
+  console.error(chalk.white.bgRed.bold(error.stack || error))
+  process.exit(1)
+}
 
 // start initial timeout
 let timeout = setTimeout(exit, TIMEOUT)
@@ -156,7 +162,7 @@ const server = Bun.serve({
 
         // all other errors
         console.log(chalk.white.bgRed.bold(`Error fetching ${url.href} - Shutting down server`))
-        console.error(error.stack || error);
+        console.error(chalk.white.bgRed.bold(error.stack || error))
         return new Response(`<pre>${error.stack || error}</pre>`, {
           status: 500,
           headers: { "Content-Type": "text/html" }
