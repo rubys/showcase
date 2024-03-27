@@ -10,13 +10,53 @@
   <li>Packages are fixed costs for partipation - excluding heats.</li>
   <li>Options are for things like meals that may be included in some packages but exta for others.</li>
   <li>Description and due date are included in invoices.</li>
-  <li>Prices for heats (freestyles), solos, and multi-dances can be entered here.  These prices can be overriden by agenda item or by studio.</li>
+  <li>Prices for heats (freestyles), solos, and multi-dances can be entered here.  These prices can be overriden by agenda item, by studio, or by age.</li>
   <li>See the <a href="../../docs/tasks/Invoicing" class="text-blue-800 underline">documentation</a> for more information on invoicing.</li>
   </ul>
 </div>
 
-
-
 <%= render partial: 'billables/index', locals: { id: 'prices' } %>
 
+<div class="flex">
+<input type="submit" name="commit" value="Update prices" class="btn-blue" form="billable-form" data-disable-with="Update prices">
+<% if Rails.env.development? and !AgeCost.any? %>
+<%= button_to 'Age discounts', add_age_costs_billables_path, class: "btn-pale-blue", data: {turbo: false} %>
+<% end %>
 </div>
+
+<% if AgeCost.any? %>
+<h2 id="age-costs" class="font-bold text-2xl mt-8 mb-4">Age Discounts</h2>
+
+<%= form_with url: update_age_costs_billables_path, method: "post", id: 'age-discounts', data: {turbo: false} do |form| %>
+<table>
+  <thead>
+    <tr>
+      <th>Age</th>
+      <th>Heat Cost</th>
+      <th>Solo Cost</th>
+      <th>Multi Cost</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% AgeCost.all.each_with_index do |costs| %>
+    <tr>
+      <td><%= select_tag "age[#{costs.age_id}][age_id]", options_for_select(@ages, costs.age_id), class: "text-right pr-10 block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-20" %>
+      <td><input step="any" value="<%= number_to_currency costs.heat_cost, delimiter: '', unit: '' %>" class="text-right block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="number" name="age[<%= costs.age_id %>][heat_cost]" id="age[<%= costs.age_id %>][heat_cost]"></td>
+      <td><input step="any" value="<%= number_to_currency costs.solo_cost, delimiter: '', unit: '' %>" class="text-right block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="number" name="age[<%= costs.age_id %>][solo_cost]" id="age[<%= costs.age_id %>][solo_cost]"></td>
+      <td><input step="any" value="<%= number_to_currency costs.multi_cost, delimiter: '', unit: '' %>" class="text-right block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="number" name="age[<%= costs.age_id %>][multi_cost]" id="age[<%= costs.age_id %>][multi_cost]"></td>
+    </tr>
+    <% end %>
+  </tbody>
+</table>
+<% end %>
+
+<p class="mt-4">If you blank all of the costs for an age and click Save, the age will be removed from the list.</p>
+
+<div class="flex mt-4">
+<button name="button" type="submit" class="btn-blue" form="age-discounts">Save</button>
+<%= button_to 'Add Age', add_age_costs_billables_path, disabled: !Age.includes(:costs).where(costs: {id: nil}).any?,
+  class: "btn-pale-blue disabled:opacity-50 disabled:cursor-not-allowed", data: {turbo: false} %>
+</div>
+</div>
+<% end %>
+

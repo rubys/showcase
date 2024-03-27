@@ -8,7 +8,11 @@ Two types of invoice are supported: student invoices (the amounts student pay to
 more common packages at the top.
  * Also on the setup page is a place where you can enter a Student package description which will be included on the invoices given to students.
  * Optionally add options if applicable.  Options are useful for things like meals and hotels.  You can indicate that options are included in some packages.
- * If some studios have special pricing or different default packages you can indicate this on the page for that studio.
+ * Prices can be customized a number of ways:
+     * If some studios have special pricing or different default packages you can indicate this on the page for that studio.
+     * Agenda items can override pricing for heats in that agenda item.
+     * On the pricing page, you can define different prices for specific age groups, for example
+       to have discounts for juniors.
 
 Once this setup is complete, when you add new people to the event you will have the opportunity to select packages and options.
 
@@ -19,4 +23,4 @@ If, by chance, you add a new package after you have added people, there is a "Se
  * From the publish page there is a button you can use to generate invoices for all studios.  You can print it directly from here or download it and email it.
  * From each studio there are two buttons for invoices: one for the studio and one for the student.  If studios have direct access to the application they print this information for themselves, otherwise you can download and email invoices.
 
-Note: amateur couples will be invoiced separately and each changed for their package and half the cost of shared heats.  This is due to the fact that the application has no way of determining if the couple shares expenses or not.
+Note: unless you define couples packages, amateur couples will be invoiced separately and each changed for their package and half the cost of shared heats.

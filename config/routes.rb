@@ -187,6 +187,9 @@ Rails.application.routes.draw do
       post 'drop', on: :collection
       match 'people', on: :member, via: %i(get post)
       get 'missing', on: :member
+
+      post 'add-age-costs', on: :collection
+      post 'update-age-costs', on: :collection
     end
 
     match "/password/reset", to: 'users#password_reset', via: %i(get post)

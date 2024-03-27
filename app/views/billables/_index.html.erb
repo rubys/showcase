@@ -1,6 +1,5 @@
   <div id="<%= id %>" class="min-w-full">
 
-
   <div class="float-right">
     <%= link_to 'New package', new_billable_path(type: 'package'), class: "rounded-lg py-3 px-5 bg-blue-600 text-white block font-medium" %>
     <%= link_to 'New option', new_billable_path(type: 'option'), class: "rounded-lg py-3 px-5 bg-blue-600 text-white block font-medium mt-4" %>
@@ -32,7 +31,7 @@
     </table>
     <% end %>  
 
-    <%= form_with(model: @event, class: "contents", data: {turbo: false}) do |form| %>
+  <%= form_with(model: @event, class: "contents", id: 'billable-form') do |form| %>
 
   <div class="my-5">
     <%= form.check_box :package_required, class: 'entry-count h-10' %>
@@ -85,10 +84,6 @@
     <%= form.number_field :multi_cost, step: :any,
     value: number_to_currency(form.object.multi_cost.to_f, delimiter: '', unit: ''),
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
-  </div>
-
-  <div class="inline">
-    <%= form.submit 'Update prices', class: "btn-blue" %>
   </div>
 
   <% end %>

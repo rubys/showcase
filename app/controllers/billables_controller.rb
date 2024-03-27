@@ -181,6 +181,26 @@ class BillablesController < ApplicationController
     end
   end
 
+  def add_age_costs
+    used = AgeCost.pluck(:age_id)
+    age_id = Age.where.not(id: used).first.id
+    AgeCost.create! age_id: age_id
+
+    redirect_to settings_event_index_path(tab: 'Prices', anchor: 'age-costs')
+  end
+
+  def update_age_costs
+    costs = params.permit({age: [:age_id, :heat_cost, :solo_cost, :multi_cost]}).to_h['age'].
+      select {|age_id, cost| !cost[:heat_cost].blank? || !cost[:solor_cost].blank? || !cost[:multi_cost].blank?}
+
+    AgeCost.where.not(age_id: costs.values.map {|cost| cost[:age_id].to_i}).destroy_all
+    costs.values.each do |cost|
+      AgeCost.find_or_create_by(age_id: cost[:age_id].to_i).update!(cost)
+    end
+
+    redirect_to settings_event_index_path(tab: 'Prices', anchor: 'age-costs')
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_billable

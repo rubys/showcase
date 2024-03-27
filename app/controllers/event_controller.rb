@@ -93,7 +93,9 @@ class EventController < ApplicationController
       @tab = params[:tab] || 'Description'
     end
 
-    if params[:tab] == 'Advanced'
+    if params[:tab] = 'Prices'
+      @ages = Age.order(:id).pluck(:category, :id)
+    elsif params[:tab] == 'Advanced'
       if not @event.track_ages
         @reset_ages = Person.where.not(age_id: 1).any? || Entry.where.not(age_id: 1).any?
       end
