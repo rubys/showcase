@@ -122,6 +122,10 @@
     :name: Millbrae
     :region: sjc
     :logo: ''
+  monterey:
+    :name: Monterey
+    :region: sjc
+    :logo: ''
   perth:
     :name: Perth
     :region: syd
