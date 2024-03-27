@@ -19,8 +19,8 @@
 
 <div class="flex">
 <input type="submit" name="commit" value="Update prices" class="btn-blue" form="billable-form" data-disable-with="Update prices">
-<% if Rails.env.development? and !AgeCost.any? %>
-<%= button_to 'Age discounts', add_age_costs_billables_path, class: "btn-pale-blue", data: {turbo: false} %>
+<% unless AgeCost.any? %>
+<%= button_to 'Age discounts', add_age_costs_billables_path, class: "btn-green", data: {turbo: false} %>
 <% end %>
 </div>
 
@@ -38,7 +38,7 @@
     </tr>
   </thead>
   <tbody>
-    <% AgeCost.all.each_with_index do |costs| %>
+    <% AgeCost.order(:age_id).all.each_with_index do |costs| %>
     <tr>
       <td><%= select_tag "age[#{costs.age_id}][age_id]", options_for_select(@ages, costs.age_id), class: "text-right pr-10 block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-20" %>
       <td><input step="any" value="<%= number_to_currency costs.heat_cost, delimiter: '', unit: '' %>" class="text-right block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" type="number" name="age[<%= costs.age_id %>][heat_cost]" id="age[<%= costs.age_id %>][heat_cost]"></td>
@@ -55,7 +55,7 @@
 <div class="flex mt-4">
 <button name="button" type="submit" class="btn-blue" form="age-discounts">Save</button>
 <%= button_to 'Add Age', add_age_costs_billables_path, disabled: !Age.includes(:costs).where(costs: {id: nil}).any?,
-  class: "btn-pale-blue disabled:opacity-50 disabled:cursor-not-allowed", data: {turbo: false} %>
+  class: "btn-green disabled:opacity-50 disabled:cursor-not-allowed", data: {turbo: false} %>
 </div>
 </div>
 <% end %>

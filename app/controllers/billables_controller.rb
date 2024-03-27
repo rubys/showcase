@@ -184,7 +184,8 @@ class BillablesController < ApplicationController
   def add_age_costs
     used = AgeCost.pluck(:age_id)
     age_id = Age.where.not(id: used).first.id
-    AgeCost.create! age_id: age_id
+    event = Event.last
+    AgeCost.create! age_id: age_id, heat_cost: event.heat_cost, solo_cost: event.solo_cost, multi_cost: event.multi_cost
 
     redirect_to settings_event_index_path(tab: 'Prices', anchor: 'age-costs')
   end

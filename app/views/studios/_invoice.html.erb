@@ -126,8 +126,13 @@
   </div>
 
   <%
-    heat_cost = @heat_cost
+    heat_cost, solo_cost, multi_cost = @heat_cost, @solo_cost, @multi_cost
     heat_cost -= 5 if ENV['RAILS_APP_DB'] == '2024-laval' && person.age.category.start_with?('J')
+    if person.age.cost
+      heat_cost = person.age.cost.heat_cost || heat_cost
+      solo_cost = person.age.cost.solo_cost || solo_cost
+      multi_cost = person.age.cost.multi_cost || multi_cost
+    end
   %>
 
   <table class="mt-8">
@@ -147,10 +152,10 @@
     <th align="left">Freestyles:
     <th align="left"><%= number_to_currency heat_cost %> per entry</th>
   </tr>
-  <% if @solo_cost > 0 %>
+  <% if solo_cost > 0 %>
   <tr>
     <th align="left">Routines:
-    <th align="left"><%= number_to_currency @solo_cost %> per entry</th>
+    <th align="left"><%= number_to_currency solo_cost %> per entry</th>
   </tr>
   <% end %>
   <% @cost.each do |name, cost| %>
@@ -160,11 +165,11 @@
     <th align="left"><%= number_to_currency cost %> per entry</th>
   </tr>
   <% end %>
-  <% if @multi_cost and @multi_cost > 0 %>
+  <% if multi_cost and multi_cost > 0 %>
   </tr>
     <tr>
     <th align="left" class="pr-8">Multi Dance Event:
-    <th align="left"><%= number_to_currency @multi_cost %> per entry</th>
+    <th align="left"><%= number_to_currency multi_cost %> per entry</th>
   </tr>
   <% end %>
   </tbody>
@@ -205,11 +210,11 @@
   </tr>
   <tr>
     <td>Routines
-    <td align="right"><%= number_to_currency @solo_cost * dances.fetch('Solo', 0) %></td>
+    <td align="right"><%= number_to_currency solo_cost * dances.fetch('Solo', 0) %></td>
   </tr>
     <tr>
     <td class="pr-8">3 dance event
-    <td align="right"><%= number_to_currency @multi_cost * dances.fetch('Multi', 0) %></td>
+    <td align="right"><%= number_to_currency multi_cost * dances.fetch('Multi', 0) %></td>
   </tr>
   <tr>
     <th class="pr-8">Total:
