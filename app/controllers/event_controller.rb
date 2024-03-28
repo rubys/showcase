@@ -93,7 +93,7 @@ class EventController < ApplicationController
       @tab = params[:tab] || 'Description'
     end
 
-    if params[:tab] = 'Prices'
+    if params[:tab] == 'Prices'
       @ages = Age.order(:id).pluck(:category, :id)
     elsif params[:tab] == 'Advanced'
       if not @event.track_ages
