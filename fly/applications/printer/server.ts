@@ -32,9 +32,11 @@ const chrome = process.platform == "darwin"
   ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
   : '/usr/bin/google-chrome'
 
+let browser: puppeteer.Browser = null
+
 // launch a single headless Chrome instance to be used by all requests
 try {
-  const browser = await puppeteer.launch({
+  browser = await puppeteer.launch({
     headless: "new",
     executablePath: chrome
   })
@@ -50,11 +52,28 @@ let timeout = setTimeout(exit, TIMEOUT)
 // is a shutdown needed?  Used to avoid starting a new timeout after an error.
 let shutdown = false
 
+// determine if fetches should be cancelled
+let deadManSwitch = false
+
 // process HTTP requests
 const server = Bun.serve({
   port: PORT,
 
   async fetch(request) {
+    // if the previous request never completed, shut down the server and replay request
+    if (deadManSwitch) {
+      console.log(chalk.red(`Dead server, replaying request`))
+
+      timeout = setTimeout(exit, 500)
+
+      return new Response(`Service Unavailable`, {
+        status: 307,
+        headers: { "Fly-Replay": "elsewhere=true" }
+      })
+    }
+
+    deadManSwitch = true
+
     // cancel timeout
     clearTimeout(timeout)
 
@@ -138,6 +157,9 @@ const server = Bun.serve({
         printBackground: true
       })
 
+      // indicate that a request has completed
+      deadManSwitch = false
+
       // return the generated PDF as the response
       console.log(`${chalk.green.bold('Responding')} ${chalk.black('with ' + url.href)}`)
       return new Response(pdf, {
@@ -149,6 +171,7 @@ const server = Bun.serve({
       // see: https://github.com/puppeteer/puppeteer/issues/9856
       if (error.toString().includes("net::ERR_INVALID_AUTH_CREDENTIALS")) {
         console.log(chalk.red(`Unauthorized`))
+        deadManSwitch = false
         return new Response(`Unauthorized`, {
           status: 401,
           headers: {
