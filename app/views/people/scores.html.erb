@@ -1,6 +1,12 @@
 <div class="w-screen">
+  <% found = false %>
   <% @people.each do |person| %>
     <% next unless @heats.any? {|heat| [heat.entry.lead, heat.entry.follow].include? person} or @formations.any? {|id, number| id == person.id} %>
     <%= render "people/scores", person: person %>
+    <% found = true %>
+  <% end %>
+
+  <% unless found %>
+  <p>No scores are entered yet for this event.</p>
   <% end %>
 </div>

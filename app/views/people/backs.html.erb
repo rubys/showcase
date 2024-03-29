@@ -15,6 +15,9 @@
   <h1 class="mx-auto font-bold text-4xl mb-4">Back Numbers</h1>
   </div>
 
+  <% if @people.empty? %>
+  <p>No heats are scheduled yet for this event.</p>
+  <% else %>
   <table class="table-fixed mx-auto">
     <thead>
       <tr>
@@ -56,6 +59,7 @@
     <%= form.number_field :student_numbers, value: @student_numbers || 201,
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+  <% end %>
   <% end %>
   </div>
 </div>
