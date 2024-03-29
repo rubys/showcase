@@ -118,10 +118,6 @@
         :name: Newsome Twosome
       snowball-spotlight:
         :name: Snowball Spotlight
-  millbrae:
-    :name: Millbrae
-    :region: sjc
-    :logo: ''
   monterey:
     :name: Monterey
     :region: sjc
@@ -182,6 +178,10 @@
         :name: Medal Ball - Newsome Twosome
       freestyles:
         :name: Virginia Beach Freestyles
+  vicenza:
+    :name: Vicenza
+    :region: waw
+    :logo: ''
   warsaw:
     :name: Warsaw
     :region: waw
