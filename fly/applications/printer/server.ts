@@ -88,6 +88,9 @@ const server = Bun.serve({
       // start new timeout
       timeout = setTimeout(exit, TIMEOUT)
 
+      console.log(`${chalk.yellow('Redirecting')} ${chalk.black(url.href)}`)
+      deadManSwitch = false
+
       return new Response(`Non PDF request - redirecting`, {
         status: 301,
         headers: { Location: url.href }
