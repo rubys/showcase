@@ -363,7 +363,7 @@ export default class extends Controller {
       resize();
     }
 
-    // wire up comments and scores for solos
+    // wire up comments and scores for solos and heats with comments enabled
     if (this.hasCommentsTarget) {
       this.commentTimeout = null;
 
@@ -377,10 +377,8 @@ export default class extends Controller {
           if (this.commentTimeout) clearTimeout(this.commentTimeout);
 
           this.commentTimeout = setTimeout(() => {
-            for (let comment of this.commentsTargets) {
-              if (comment.textarea !== comment.value) {
-                comment.dispatchEvent(new Event("change"));
-              }
+            if (comment.textarea !== comment.value) {
+              comment.dispatchEvent(new Event("change"));
             }
 
             this.commentTimeout = null;
