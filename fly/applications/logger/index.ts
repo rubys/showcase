@@ -124,6 +124,7 @@ app.get("/", async (req, res) => {
 
   let printer = (req.query.view == 'printer')
   let demo = (req.query.view == 'demo')
+  let demoVisitors = new Set()
 
   let filter = (req.query.filter !== 'off') && !demo
 
@@ -176,10 +177,14 @@ app.get("/", async (req, res) => {
         if (demo && !line.includes('demo')) return;
 
         if (filter && filtered(match)) return
-
         let log = format(match)
 
-        if (line > lastVisit) log = highlight(log)
+        if (demo) {
+          if (match.includes("POST") && ! match.includes("events/console")) demoVisitors.add(match[2])
+          if (demoVisitors.has(match[2])) log = highlight(log)
+        } else if (line > lastVisit) {
+          log = highlight(log)
+        }
 
         results.push(log)
       });
