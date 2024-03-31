@@ -123,7 +123,11 @@ app.get("/", async (req, res) => {
   }
 
   let printer = (req.query.view == 'printer')
+
   let heartbeat = (req.query.view == 'heartbeat')
+  interface RegionHeartbeats {[key: string]: number}
+  let regionHeatbeats : RegionHeartbeats = {}
+
   let demo = (req.query.view == 'demo')
   let demoVisitors = new Set()
 
@@ -172,7 +176,17 @@ app.get("/", async (req, res) => {
 
           return
         } else if (heartbeat) {
-          if (line.includes(' heartbeat.1 | HEARTBEAT ')) results.push(line)
+          if (line.includes(' heartbeat.1 | HEARTBEAT ')) {
+            let date = Date.parse(line.split(' ')[0])
+            let region = line.split(' ').pop() || '???'
+            if (!regionHeatbeats[region]) regionHeatbeats[region] = date
+            if (date - regionHeatbeats[region] > 35 * 60 * 1000) {
+              results.push(`<span style="color: red">${line}</span>`)
+            } else {
+              results.push(line)
+            }
+            regionHeatbeats[region] = date
+          }
           return
         }
 
