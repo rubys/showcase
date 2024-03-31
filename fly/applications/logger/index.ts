@@ -123,6 +123,7 @@ app.get("/", async (req, res) => {
   }
 
   let printer = (req.query.view == 'printer')
+  let heartbeat = (req.query.view == 'heartbeat')
   let demo = (req.query.view == 'demo')
   let demoVisitors = new Set()
 
@@ -169,6 +170,9 @@ app.get("/", async (req, res) => {
             ].join(' '))
           }
 
+          return
+        } else if (heartbeat) {
+          if (line.includes(' heartbeat.1 | HEARTBEAT ')) results.push(line)
           return
         }
 

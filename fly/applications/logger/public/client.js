@@ -135,6 +135,10 @@ document.addEventListener("keydown", event => {
     event.preventDefault()
     location.searchParams.set("view", "printer")
     window.location = location
+  } else if (event.key === "h") {
+    event.preventDefault()
+    location.searchParams.set("view", "heartbeat")
+    window.location = location
   } else if (event.key === "d") {
     event.preventDefault()
     location.searchParams.set("view", "demo")
