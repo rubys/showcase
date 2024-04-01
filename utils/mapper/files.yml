@@ -1,5 +1,28 @@
 ---
-shapefile_url: https://www2.census.gov/geo/tiger/GENZ2018/shp/cb_2018_us_state_20m.zip
-shapefile_zip: cb_2018_us_state_20m.zip
-map_yaml: ../../db/map.yml
-map_svg: ../../app/views/event/_usmap.html.erb
+files:
+  map_yaml: ../../db/map.yml
+maps:
+  - shapefile_url: https://www2.census.gov/geo/tiger/GENZ2018/shp/cb_2018_us_state_20m.zip
+    shapefile_zip: cb_2018_us_state_20m.zip
+    map_svg: ../../app/views/event/_usmap.html.erb
+    projection: us
+    min_lat: 24
+    max_lat: 50
+    min_lon: -125
+    max_lon: -66
+  - shapefile_url: https://naciscdn.org/naturalearth/10m/cultural/ne_10m_admin_0_countries.zip
+    shapefile_zip: ne_10m_admin_0_countries.zip
+    map_svg: ../../app/views/event/_eumap.html.erb
+    projection: eu
+    min_lat: 35
+    max_lat: 75
+    min_lon: -25
+    max_lon: 45
+  - shapefile_url: https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files/STE_2021_AUST_SHP_GDA2020.zip
+    shapefile_zip: STE_2021_AUST_SHP_GDA2020.zip
+    map_svg: ../../app/views/event/_aumap.html.erb
+    projection: au
+    min_lat: -45
+    max_lat: -10
+    min_lon: 110
+    max_lon: 155

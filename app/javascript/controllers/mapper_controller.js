@@ -2,10 +2,35 @@ import { Controller } from "@hotwired/stimulus";
 
 // Connects to data-controller="mapper"
 export default class extends Controller {
+  maps = [...this.element.querySelectorAll("svg")];
+
+  keydown = event => {
+    if (event.key == "ArrowRight") {
+      let index = this.maps.findIndex(map => (map.style.display !== 'none'))
+      index = (index + 1) % this.maps.length
+      this.maps.forEach((map, i) => {
+        map.style.display = i == index ? 'block' : 'none'
+      })
+    } else if (event.key == "ArrowLeft") {
+      let index = this.maps.findIndex(map => (map.style.display !== 'none'))
+      index = (index + this.maps.length - 1) % this.maps.length
+      this.maps.forEach((map, i) => {
+        map.style.display = i == index ? 'block' : 'none'
+      })
+    }
+  };
+
+  disconnect() {
+    document.removeEventListener("keydown", this.keydown);
+  };
+
   connect() {
     let dots = [...this.element.querySelectorAll("svg a")];
     let machines = this.element.querySelectorAll("tbody tr td:first-child a");
     let studios = this.element.querySelectorAll("tbody tr td:last-child a");
+    console.log('mapper connected')
+
+    document.addEventListener("keydown", this.keydown);
 
     function findDot(href) {
       return dots.find(dot => dot.href.baseVal == href);
