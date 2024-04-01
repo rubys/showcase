@@ -169,6 +169,10 @@
     :name: Salt Lake City
     :region: sjc
     :logo: arthur-murray-logo.gif
+  sydney:
+    :name: Sydney
+    :region: syd
+    :logo: arthur-murray-logo.gif
   vabeach:
     :name: Virginia Beach
     :region: iad
