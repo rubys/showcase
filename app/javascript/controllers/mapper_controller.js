@@ -4,19 +4,27 @@ import { Controller } from "@hotwired/stimulus";
 export default class extends Controller {
   maps = [...this.element.querySelectorAll("svg")];
 
+  next = () => {
+    let index = this.maps.findIndex(map => (map.style.display !== 'none'))
+    index = (index + 1) % this.maps.length
+    this.maps.forEach((map, i) => {
+      map.style.display = i == index ? 'block' : 'none'
+    })
+  }
+
+  prev = () => {
+    let index = this.maps.findIndex(map => (map.style.display !== 'none'))
+    index = (index + this.maps.length - 1) % this.maps.length
+    this.maps.forEach((map, i) => {
+      map.style.display = i == index ? 'block' : 'none'
+    })
+  }
+
   keydown = event => {
     if (event.key == "ArrowRight") {
-      let index = this.maps.findIndex(map => (map.style.display !== 'none'))
-      index = (index + 1) % this.maps.length
-      this.maps.forEach((map, i) => {
-        map.style.display = i == index ? 'block' : 'none'
-      })
+      this.next()
     } else if (event.key == "ArrowLeft") {
-      let index = this.maps.findIndex(map => (map.style.display !== 'none'))
-      index = (index + this.maps.length - 1) % this.maps.length
-      this.maps.forEach((map, i) => {
-        map.style.display = i == index ? 'block' : 'none'
-      })
+      this.prev()
     }
   };
 
@@ -28,7 +36,16 @@ export default class extends Controller {
     let dots = [...this.element.querySelectorAll("svg a")];
     let machines = this.element.querySelectorAll("tbody tr td:first-child a");
     let studios = this.element.querySelectorAll("tbody tr td:last-child a");
-    console.log('mapper connected')
+
+    document.querySelector('a[rel=next]').addEventListener("click", event => {
+      event.preventDefault();
+      this.next();
+    });
+
+    document.querySelector('a[rel=prev]').addEventListener("click", event => {
+      event.preventDefault();
+      this.prev();
+    });
 
     document.addEventListener("keydown", this.keydown);
 

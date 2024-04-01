@@ -4,6 +4,8 @@
     shown = @map['regions'][ENV['FLY_REGION']]['map']
   end
 %>
+<div style="width: 100%">
+
 <% %w{us eu au}.each do |map| %>
 <svg version="1.1" width="100%" xmlns="http://www.w3.org/2000/svg" style="overflow: hidden; position: relative; left: -0.5px; display: <%= map == shown ? 'block' : 'none' %>" viewBox="50 0 <%= map == 'us' ? 900 : 600 %> 500" preserveAspectRatio="xMinYMin" xmlns:xlink="http://www.w3.org/1999/xlink">
    <%= render "#{map}map" %>
@@ -28,3 +30,9 @@
    <% end %>
 </svg>
 <% end %>
+
+<div class="mt-4">
+<a rel="prev" class="cursor-pointer float-left ml-2 text-2xl">&#x2190;</a>
+<a rel="next" class="cursor-pointer float-right mr-16 text-2xl">&#x2192;</a>
+</div>
+</div>
