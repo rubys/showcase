@@ -42,7 +42,7 @@ end
 
 # create map, update showcases
 if File.exist? 'db/map.yml'
-  exit 1 unless system 'node utils/mapper/usmap.js'
+  exit 1 unless system 'node utils/mapper/makemaps.js'
 
   new_map = IO.read('db/map.yml')
   if new_map != IO.read('config/tenant/map.yml')
