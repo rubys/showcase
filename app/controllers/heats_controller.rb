@@ -36,6 +36,10 @@ class HeatsController < ApplicationController
     @renumber = Heat.distinct.where.not(number: 0).pluck(:number).
       map(&:abs).sort.uniq.zip(1..).any? {|n, i| n != i}
 
+    # detect if categories were reordered
+    first_heats = @agenda.map {|category| category.last.first}.compact.map(&:first)
+    @renumber ||= (first_heats != first_heats.sort)
+
     @issues = @heats.map {|number, heats|
       [number, heats.map {|heat| 
         e=heat.entry
@@ -184,6 +188,13 @@ class HeatsController < ApplicationController
 
       newnumbers = Heat.distinct.where(number: 0.1..).order(:number).pluck(:number).zip(1..).to_h
       count = newnumbers.select {|n, i| n != i}.length
+
+      if count == 0
+        # handle case where categories were reordered
+        generate_agenda
+        newnumbers = @agenda.map {|category, heats| heats.map {|heat| heat.first.to_f}}.flatten.zip(1..).to_h
+        count = newnumbers.select {|n, i| n != i}.length
+      end
 
       Heat.transaction do
         Heat.all.each do |heat|
