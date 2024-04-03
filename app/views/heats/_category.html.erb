@@ -1,5 +1,5 @@
 <% category = Category.where(name: cat).first %>
-<% locked = @locked || category&.locked %>
+<% locked = category && (@locked || category.locked) %>
 <div id="cat-<%= cat.downcase.gsub(' ', '-') %>"
   <% if locked %>
     data-controller="heat-order drop" data-renumber-action="<%= renumber_heats_path %>"
