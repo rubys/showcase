@@ -20,3 +20,6 @@ this application is written using a framework named
 that can you started, including a
 [book](https://pragprog.com/titles/rails7/agile-web-development-with-rails-7/)
 that I have written.
+
+Should you be interested in the backstory of how this hobby of mine started, see
+my blog entry: [Unretiring](http://intertwingly.net/blog/2022/08/13/Unretiring).
