@@ -153,6 +153,15 @@
     :name: Roanoke
     :region: iad
     :logo: arthur-murray-logo.gif
+    :events:
+      team-match:
+        :name: Team Match
+      spring-showcase:
+        :name: Spring Showcase
+      fall-showcase:
+        :name: Fall Showcase
+      medal-ball:
+        :name: Medal Ball
   salem:
     :name: Salem
     :region: sea
