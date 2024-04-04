@@ -1,7 +1,7 @@
-<div class="mx-auto w-full flex flex-wrap">
+<div class="mx-auto w-full flex flex-wrap" id="sect-<%= category.downcase %>">
   <div class="mx-auto flex flex-wrap">
-    <h2 class="w-full text-center bg-yellow-400 mb-4"><%= title %></h1>
-
+    <h2 class="w-full text-center bg-yellow-400 mt-6"><%= title %></h1>
+    <% if category == "Open" %><button class="btn-blue py-1 px-2 mt-2 mx-auto hidden" id="copy-fron-closed">Copy from Closed</button><% end %>
     <% if @columns %>
     <div style="display: grid; width: 100%; grid-template-columns: repeat(<%= @columns %>, 1fr);  gap: 10px;">
     <% else %>
