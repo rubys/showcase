@@ -47,11 +47,13 @@ entry in the common case.
 </div>
 <% end %>
 
+<div<% if @include_closed && @include_open %> data-controller="copy-entries"<% end %>>
 <% @agenda.each do |agenda| %>
 <% next if agenda[:title] == 'CLOSED CATEGORY' and not @include_closed %>
 <% next if agenda[:title] == 'OPEN CATEGORY' and not @include_open %>
 <%= render partial: 'entries/dances', locals: agenda.merge(form: form) %>
 <% end %>
+</div>
 <% end %>
 
 <div class="mx-auto grid grid-cols-3 gap-x-1">
