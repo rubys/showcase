@@ -33,8 +33,13 @@
     
     <div class="my-5">
       <%= form.label :category %>
-      <%= form.select :category, %w(Open Closed Solo Multi), {},
+      <% if %w(Open Closed).include? heat.category %>
+      <%= form.select :category, %w(Open Closed), {},
         class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+      <% else %>
+      <%= form.select :category, [heat.category], {},
+        class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+      <% end %>
     </div>
 
     <div class="my-5">
