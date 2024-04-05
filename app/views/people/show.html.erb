@@ -356,6 +356,7 @@ when most dances for an individual are with one instructor but one or two are ch
     <div class="mt-4 flex">
     <%= button_to 'Assign judges', assign_judges_person_path(@person), class: "btn-blue" %>
     <%= button_to 'Reset assignments', reset_assignments_person_path(@person), class: "btn-pale-blue" %>
+    <%= link_to 'Heat Book', book_heats_path(type: 'judge', format: :pdf, judge: @person.id), class: "btn-pale-orange" %>
     </div>
     <% end %>
     <div class="mt-4 mx-auto">

@@ -91,6 +91,10 @@ class HeatsController < ApplicationController
     if @event.assign_judges and @type == 'judge'
       @assignments = Score.joins(:judge).pluck(:heat_id, :name).
         map {|heat, judge| [heat, Person.display_name(judge)]}.to_h
+    
+      if params[:judge]
+        @judge = Person.find(params[:judge])
+      end
     end
 
     respond_to do |format|

@@ -88,7 +88,10 @@ end
 <div class="mx-auto w-full print:w-full">
 
 <div class="mb-4">
-  <h2 class="font-bold text-center text-4xl" style="font-family: '<%= @font_family %>'"><%= @event.name %></h1>
+  <% if @judge %>
+  <h2 class="font-bold text-center text-4xl" style="font-family: '<%= @font_family %>'"><%= @judge.display_name %></h2>
+  <% end %>
+  <h2 class="font-bold text-center text-4xl" style="font-family: '<%= @font_family %>'"><%= @event.name %></h2>
 
   <p class="mt-4">
     <% @event.location.to_s.lines.each do |line| %>
@@ -100,7 +103,7 @@ end
 </div>
 
 <div class="justify-between items-center">
-  <h1 class="font-bold text-xl text-center" style="font-family: '<%= @font_family %>'">Agenda</h1>
+  <h2 class="font-bold text-xl text-center" style="font-family: '<%= @font_family %>'">Agenda</h2>
 </div>
 
   <table class="table-fixed mt-4 mx-auto mb-0">
@@ -148,7 +151,9 @@ end
 
     <% heats.each do |number, ballrooms| %>
     <% heats = ballrooms.values.flatten %>
+    <% heats = heats.select {|heat| @assignments[heat.id] == @judge.display_name} if @judge && %w(Open Closed).include?(heats.first&.category) %>
     <% heat = heats.first %>
+    <% next unless heat %>
     <% if @type == 'judge' and heats.first.category == 'Solo' %>
     <div class="page break-before-page">
     <span class="mt-12 number"><%= number %></span>
@@ -214,7 +219,7 @@ end
 
     <footer>
     <div class="mt-12 grid grid-cols-2">
-    <div class="text-xl mt-4"><span class="whitespace-pre underline"><%= ' ' * 30 %></span><br><b>Adjudicator</b></div>
+    <div class="text-xl mt-4"><span class="whitespace-pre underline"><%= @judge ? @judge.display_name : ' ' * 30 %></span><br><b>Adjudicator</b></div>
     <div class="text-xl items-end"><span style="float: right"><b>Score</b>: <span class="border-2 border-black" style="display: inline-block; min-height: .75in; min-width: 1in"></span></span></div>
     </div>
     </footer>
@@ -281,6 +286,7 @@ end
       <% end %>
 
       <% ballrooms.each do |ballroom, heats| %>
+        <% heats = heats.select {|heat| @assignments[heat.id] == @judge.display_name} if @judge && %w(Open Closed).include?(heats.first&.category) %>
         <% next if heats.empty? %>
          <% if ballroom %>
          <tr>
@@ -420,7 +426,9 @@ end
            <tr class="pt-2">
            <td colspan="2">
            <td colspan="4" class="mr-4 h-20 border-2 rounded-lg">
+           <% unless @judge %>
            <td align="center" colspan="6" class="text-4xl"><%= @assignments[heat.id].to_s.gsub(/[^A-Z]/, '') %></td>
+           <% end %>
            </tr>
            <% end %>
            <% end %>
