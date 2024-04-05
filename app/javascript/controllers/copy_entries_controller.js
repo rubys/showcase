@@ -39,7 +39,6 @@ export default class extends Controller {
   }
 
   hideShowButton = () => {
-    console.log('hideShowButton')
     if (this.anyChecked(this.closed_entries) && !this.anyChecked(this.open_entries)) {
       this.copy_from_closed.classList.remove('hidden')
     } else {
