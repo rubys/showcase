@@ -7,7 +7,8 @@ export default class extends Controller {
   static targets = ["error", "comments", "score"];
 
   keydown = event => {
-    let form = ["INPUT", "TEXTAREA"].includes(document.activeElement.nodeName);
+    let form = ["INPUT", "TEXTAREA"].includes(event.target.nodeName) ||
+      ["INPUT", "TEXTAREA"].includes(document.activeElement.nodeName);
 
     if (event.key == "ArrowRight") {
       if (form) return;
