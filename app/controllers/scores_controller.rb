@@ -122,7 +122,7 @@ class ScoresController < ApplicationController
       @scoring = 'S'
     elsif @heat.category == 'Multi'
       @scoring = @event.multi_scoring
-    elsif @heat.category == 'Open' || (@heat.category == 'Closed' && @event.closed_scoring == '=')
+    elsif @heat.category == 'Open' || (@heat.category == 'Closed' && @event.closed_scoring == '=') || @event.heat_range_cat > 0
       @scoring = @event.open_scoring
     else
       @scoring = @event.closed_scoring
