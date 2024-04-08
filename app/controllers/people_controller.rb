@@ -1,5 +1,6 @@
 class PeopleController < ApplicationController
   include Printable
+  include Retriable
   
   before_action :set_person, only: 
     %i[ show edit update destroy get_entries post_entries toggle_present remove_option instructor_invoice ]
@@ -605,7 +606,9 @@ class PeopleController < ApplicationController
   end
 
   def assign_judges
-    Score.where(value: nil, comments: nil, good: nil, bad: nil).delete_all
+    retry_transaction do
+      Score.where(value: nil, comments: nil, good: nil, bad: nil).delete_all
+    end
 
     judges = Person.includes(:judge).where(type: 'Judge').
       select {|person| person.present?}.map(&:id).shuffle
@@ -632,7 +635,7 @@ class PeopleController < ApplicationController
       count = 0
 
       queue = []
-      Score.transaction do
+      retry_transaction do
         unscored.each do |number, heat_id|
           queue = judges.dup if queue.empty?
           judge = queue.pop

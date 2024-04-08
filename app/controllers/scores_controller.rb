@@ -1,5 +1,6 @@
 class ScoresController < ApplicationController
   include Printable
+  include Retriable
   before_action :set_score, only: %i[ show edit update destroy ]
 
   include ActiveStorage::SetCurrent
@@ -752,24 +753,6 @@ class ScoresController < ApplicationController
   end
 
   private
-    def retry_transaction(&block)
-      f = File.open("tmp/#{ENV.fetch('RAILS_APP_DB', 'db')}-score.lock", File::RDWR|File::CREAT, 0644)
-      f.flock File::LOCK_EX
-      4.times do
-        begin
-          return Score.transaction(&block)
-        rescue SQLite3::BusyException
-          sleep 0.1
-        rescue ActiveRecord::StatementInvalid
-          sleep 0.1
-        end
-      end
-
-      Score.transaction(&block)
-    ensure
-      f.flock File::LOCK_UN
-    end
-
     # Use callbacks to share common setup or constraints between actions.
     def set_score
       @score = Score.find(params[:id])
