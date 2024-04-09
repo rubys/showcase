@@ -2,6 +2,7 @@ class HeatsController < ApplicationController
   include HeatScheduler
   include EntryForm
   include Printable
+  include Retriable
   
   skip_before_action :authenticate_user, only: %i[ mobile ]
   before_action :set_heat, only: %i[ show edit update destroy ]
@@ -349,6 +350,8 @@ class HeatsController < ApplicationController
       entry.reload
       entry.destroy if entry.heats.empty?
     end
+
+    assign_unassigned_to_judges
   end
 
   # DELETE /heats/1 or /heats/1.json
@@ -417,6 +420,8 @@ class HeatsController < ApplicationController
       notice = "#{scheduled[true]} heats scheduled; #{scheduled[false]} heats not scheduled"
     end
 
+    assign_unassigned_to_judges
+
     redirect_to heats_url, notice: notice
   end
 
@@ -443,5 +448,35 @@ class HeatsController < ApplicationController
     # Only allow a list of trusted parameters through.
     def heat_params
       params.require(:heat).permit(:number, :category, :dance_id, :ballroom)
+    end
+
+    # Find heats that are not assigned to a judge, and assign them
+    def assign_unassigned_to_judges
+      return unless Event.last.assign_judges?
+      return unless Score.where(value: nil, good: nil, bad: nil, comments: nil).any?
+
+      # find heats that have not been assigned to a judge
+      scored = Score.joins(:heat).distinct.where.not(heats: {number: ...0}).pluck(:number)
+      heats = Heat.where.not(number: scored).where.not(number: ...0).
+        where.not(id: Score.distinct.pluck(:heat_id)).
+        where.not(category: "Solo").all
+
+      return if heats.empty?
+
+      # exclude judges that are not present
+      exclude = Judge.where(present: false).pluck(:person_id)
+      retirn unless Person.where(type: 'Judge').where.not(id: exclude).any?
+
+      retry_transaction do
+        heats.each do |heat|
+          # select judge with fewest couples in this heat
+          judge_id = Score.includes(:heat).where.not(judge_id: exclude).
+            where(heat: {number: heat.number.to_f}).group(:judge_id).count.
+            invert.sort.first.last
+
+          next unless judge_id
+          Score.create! heat_id: heat.id, judge_id: judge_id
+        end
+      end
     end
 end
