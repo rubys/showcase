@@ -465,13 +465,14 @@ class HeatsController < ApplicationController
 
       # exclude judges that are not present
       exclude = Judge.where(present: false).pluck(:person_id)
-      retirn unless Person.where(type: 'Judge').where.not(id: exclude).any?
+      include = Person.where(type: 'Judge').where.not(id: exclude).all.shuffle.map {|judge| [judge.id, 0]}.to_h
+      return if include.empty?
 
       retry_transaction do
         heats.each do |heat|
           # select judge with fewest couples in this heat
-          judge_id = Score.includes(:heat).where.not(judge_id: exclude).
-            where(heat: {number: heat.number.to_f}).group(:judge_id).count.
+          judge_id = include.merge(Score.includes(:heat).where(judge_id: include).
+            where(heat: {number: heat.number.to_f}).group(:judge_id).count).
             invert.sort.first.last
 
           next unless judge_id
