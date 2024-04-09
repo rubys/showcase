@@ -27,7 +27,7 @@ export default class extends Controller {
 
   toggleIncludes = routine => {
     for (let checkbox of document.querySelectorAll("input[type=checkbox]")) {
-      if (checkbox.id.startsWith("category_include[")) {
+      if (checkbox.id.startsWith("category[include]")) {
         checkbox.disabled = routine;
         checkbox.parentElement.parentElement.parentElement.style.display =
           (routine ? "none" : "block");
