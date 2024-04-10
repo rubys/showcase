@@ -123,7 +123,7 @@
          <% if heat.number < 0 %>
          <tr id="<%= dom_id heat %>" class="group line-through opacity-50">
          <% else %>
-         <tr id="<%= dom_id heat %>" class="group hover:bg-yellow-200"<% if locked %> draggable="true" data-drag-id="<%= heat.id %>"<% end %>>
+         <tr id="<%= dom_id heat %>" class="group hover:bg-yellow-200"<% if locked && !solos_only %> draggable="true" data-drag-id="<%= heat.id %>"<% end %>>
          <% end %>
            <td></td>
            <% if number != 0 %>
