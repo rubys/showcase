@@ -262,7 +262,7 @@ passenger_ctl hook_detached_process /rails/bin/passenger-hook;
 # logging
 log_format  main  '$http_x_forwarded_for - $remote_user [$time_local] "$request" '
   '$status $body_bytes_sent [$request_id] $request_time "$http_referer" '
-  '"$http_user_agent"';
+  '"$http_user_agent" - $http_fly_request_id';
 error_log /dev/stderr;
 access_log /dev/stdout main;
 
