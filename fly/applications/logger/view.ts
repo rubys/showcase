@@ -32,6 +32,7 @@ export function filtered(match: RegExpMatchArray) {
 export function format(match: RegExpMatchArray) {
   let status = match[8];
   let request_id = (match[10] || '').replace(/[^\w]/g, '')
+  let request_region = match[12].match(/" - \w+-(\w+)$/)
   if (!status.match(/^20[06]|101|30[2347]/)) {
     if (status === "499" || status == "426") {
       status = `<a href="request/${request_id}" style="background-color: gold">${status}</a>`
@@ -45,9 +46,11 @@ export function format(match: RegExpMatchArray) {
   let link = `<a href="${HOST}/showcase/${match[6]}">${match[6]}</a>`
   let ip = match[2].split(',')[0]
 
+  let regionColor = request_region && request_region[1] === match[1] ? 'green' : 'maroon'
+
   return [
     `<time>${match[4].replace(' +0000', 'Z')}</time>`,
-    `<a href="https://smooth.fly.dev/showcase/regions/${match[1]}/status"><span style="color: maroon">${match[1]}</span></a>`,
+    `<a href="https://smooth.fly.dev/showcase/regions/${match[1]}/status"><span style="color: ${regionColor}">${match[1]}</span></a>`,
     status,
     match[11],
     `<span style="color: blue">${match[3]}</span>`,
