@@ -17,7 +17,7 @@ class Person < ApplicationRecord
   belongs_to :exclude, class_name: 'Person', optional: true
   belongs_to :package, class_name: 'Billable', optional: true
 
-  has_one :judge, required: false
+  has_one :judge, required: false, dependent: :destroy
 
   has_many :lead_entries, class_name: 'Entry', foreign_key: :lead_id,
     dependent: :destroy
