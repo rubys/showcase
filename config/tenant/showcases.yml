@@ -4,6 +4,15 @@
     :name: Adelaide
     :region: syd
     :logo: arthur-murray-logo.gif
+    :events:
+      starry-night:
+        :name: Starry Night
+      rewind:
+        :name: Rewind
+      northside:
+        :name: Northside
+      adalaide:
+        :name: Adalaide
   alexandria:
     :name: Alexandria
     :region: iad
