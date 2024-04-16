@@ -15,16 +15,6 @@ if (!fs.existsSync("/home/log")) {
 }
 let { uid, gid } = fs.statSync(HOME) 
 
-// allocate swap space
-if (!fs.existsSync("/swapfile")) {
-  await exec('fallocate -l 1G /swapfile')
-  await exec('chmod 0600 /swapfile')
-  await exec('mkswap /swapfile')
-  fs.writeFileSync('/proc/sys/vm/swappiness', '10')
-  await exec('swapon /swapfile')
-  fs.writeFileSync('/proc/sys/vm/overcommit_memory', '1')
-}
-
 // openssh: fly environment variables
 fs.writeFileSync(
   "/etc/environment",
