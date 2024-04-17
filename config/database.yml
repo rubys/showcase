@@ -23,4 +23,5 @@ test:
 
 production:
   <<: *default
+  default_transaction_mode: IMMEDIATE
   database: <%= ENV.fetch("RAILS_DB_VOLUME") { 'db' } %>/<%= ENV.fetch("RAILS_APP_DB") { 'production' } %>.sqlite3
