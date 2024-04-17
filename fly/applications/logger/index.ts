@@ -58,7 +58,7 @@ startWs(app)
 
 // authentication middleware
 app.use(async (req, res, next) => {
-  const { HTPASSWD } = process.env
+  const { HTPASSWD, HTPASSWD2 } = process.env
 
   if (NODE_ENV == "development") return next()
 
@@ -66,6 +66,7 @@ app.use(async (req, res, next) => {
   const b64auth = (req.headers.authorization || '').split(' ')[1] || ''
 
   if (HTPASSWD && await bcrypt.compare(b64auth, HTPASSWD)) return next()
+  if (HTPASSWD2 && await bcrypt.compare(b64auth, HTPASSWD2)) return next()
   // console.log(`fly secrets set --stage 'HTPASSWD=${await bcrypt.hash(b64auth, 10)}'`)
 
   // Access denied...
