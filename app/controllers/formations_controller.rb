@@ -58,6 +58,7 @@ class FormationsController < ApplicationController
 
     @on_floor = @solo.formations.all? {|formation| formation.on_floor}
     @heat = params[:heat]
+    @locked = Event.last.locked?
   end
 
   # POST /formations or /formations.json

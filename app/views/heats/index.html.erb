@@ -64,9 +64,9 @@ a scheduled heat time will be added to each heat.
     <% @agenda.each do |cat, heats| %>
       <tr>
         <% if %w(Uncategorized Unscheduled).include? cat %>
-        <td class="row text-red-600 font-bold"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a>
+        <td class="row text-red-600 font-bold"><a href="#cat-<%= cat.downcase.gsub(/[^\w]+/, '-') %>"><%= cat %></a>
         <% else %>
-        <td class="row"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a>
+        <td class="row"><a href="#cat-<%= cat.downcase.gsub(/[^\w]+/, '-') %>"><%= cat %></a>
         <% end %>
         <% if cat == "Unscheduled" %>
         <td colspan="2" class="text-right">(<%= pluralize(Heat.where(number: 0).count, 'entry') %>)

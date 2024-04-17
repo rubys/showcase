@@ -191,7 +191,8 @@ class HeatsController < ApplicationController
     
     else
 
-      newnumbers = Heat.distinct.where(number: 0.1..).order(:number).pluck(:number).zip(1..).to_h
+      generate_agenda
+      newnumbers = @agenda.map {|category, heats| heats.map {|heat| heat.first.to_f}}.flatten.zip(1..).to_h
       count = newnumbers.select {|n, i| n != i}.length
 
       if count == 0

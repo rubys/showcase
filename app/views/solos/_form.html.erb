@@ -15,9 +15,9 @@
 <div class="mx-auto w-full mb-8 text-center">
   <%= render partial: 'entries/box', locals: {form: form} %>
   
-  <% if @heat or not @person %>
+  <% if @heat or not @person or @locked %>
   <div class="my-5">
-    <%= form.label :number %>
+    <%= form.label :number, 'Heat number' %>
     <%= form.text_field :number, value: @number, pattern: '^\s*\d+(\.\d+|\d+_)?\s*$',
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>

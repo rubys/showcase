@@ -71,6 +71,7 @@ class SolosController < ApplicationController
     end
 
     @heat = params[:heat]
+    @locked = Event.last.locked?
   end
 
   # POST /solos or /solos.json

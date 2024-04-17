@@ -63,7 +63,7 @@ export default class extends Controller {
         }
 
         box.id = `solo_formation[${this.boxes.length - 1}]`;
-        box.setAttribute("name", `solo[formation[${this.boxes.length}]]`);
+        box.setAttribute("name", `solo[formation][${this.boxes.length}]`);
         box.removeAttribute("data-formation-target");
         box.addEventListener("change", this.preventDupes);
 

@@ -1,7 +1,7 @@
 <% category = Category.where(name: cat).first %>
 <% solos_only = heats.map {|number, ballrooms| ballrooms.values}.flatten.all? {|heat| heat.category == 'Solo'} %>
 <% locked = category && (@locked || category.locked || solos_only) %>
-<div id="cat-<%= cat.downcase.gsub(' ', '-') %>"
+<div id="cat-<%= cat.downcase.gsub(/[^\w]+/, '-') %>"
   <% if locked %>
     data-controller="heat-order drop" data-renumber-action="<%= renumber_heats_path %>"
     data-drop-action="<%= drop_heats_path %>"<% end %>>
