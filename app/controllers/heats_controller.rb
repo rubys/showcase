@@ -192,15 +192,9 @@ class HeatsController < ApplicationController
     else
 
       generate_agenda
-      newnumbers = @agenda.map {|category, heats| heats.map {|heat| heat.first.to_f}}.flatten.zip(1..).to_h
-      count = newnumbers.select {|n, i| n != i}.length
-
-      if count == 0
-        # handle case where categories were reordered
-        generate_agenda
-        newnumbers = @agenda.map {|category, heats| heats.map {|heat| heat.first.to_f}}.flatten.zip(1..).to_h
-        count = newnumbers.select {|n, i| n != i}.length
-      end
+      newnumbers = @agenda.map {|category, heats| heats.map {|heat| heat.first.to_f}}.
+        flatten.select {|number| number > 0}.zip(1..).to_h
+      count = newnumbers.select {|n, i| n.to_f != i.to_f}.length
 
       Heat.transaction do
         Heat.all.each do |heat|
