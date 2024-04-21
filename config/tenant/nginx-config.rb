@@ -11,7 +11,7 @@ ROOT = '/showcase'
 
 HOST = if ENV['FLY_APP_NAME']
   "#{ENV['FLY_APP_NAME']}.fly.dev"
-elsif `hostname` =~ /^ubuntu/
+elsif `hostname` =~ /^ubuntu/ || ENV['KAMAL_CONTAINER_NAME']
   'hetzner.intertwingly.net'
 else
   'rubix.intertwingly.net'
@@ -257,6 +257,11 @@ passenger_log_file /dev/stdout;
 passenger_pool_idle_time 300;
 passenger_ctl hook_detached_process /rails/bin/passenger-hook;
 
+<% elsif ENV['KAMAL_CONTAINER_NAME'] -%>
+passenger_default_user root;
+passenger_default_group root;
+
+passenger_log_file /dev/stdout;
 <% end -%>
 <% if ENV['FLY_APP_NAME'] -%>
 # logging
@@ -274,6 +279,10 @@ server {
   listen 3000;
   listen [::]:3000;
   server_name <%= ENV['FLY_APP_NAME'] %>.fly.dev;
+<% elsif ENV['KAMAL_CONTAINER_NAME'] -%>
+  listen 3000;
+  listen [::]:3000;
+  server_name hetzner.intertwingly.net;
 <% else -%>
   listen 9999;
   server_name localhost;

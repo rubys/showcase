@@ -37,6 +37,10 @@
 # Ignore master key for decrypting credentials and more.
 /config/master.key
 
+# Ignore all environment files.
+/.env*
+!/.env.example
+
 # Ignore nginx password file
 /config/htpasswd
 

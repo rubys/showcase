@@ -111,9 +111,9 @@ if ENV['FLY_APP_NAME']
       #{VOLUME}
     )
   end
-end
 
-latest = Dir["#{VOLUME}/db/2*.sqlite3"].map {|name| File.mtime(name) rescue Time.at(0)}.max
+  LATEST = Dir["#{VOLUME}/db/2*.sqlite3"].map {|name| File.mtime(name) rescue Time.at(0)}.max
+end
 
 # set up nginx and run migrations
 Dir.chdir File.dirname(__dir__) do
@@ -134,7 +134,7 @@ end
 
 # Sync databases back to primary region
 if ENV['FLY_APP_NAME']
-  if Dir["#{VOLUME}/db/2*.sqlite3"].map {|name| File.mtime(name) rescue Time.at(0)}.max > latest
+  if Dir["#{VOLUME}/db/2*.sqlite3"].map {|name| File.mtime(name) rescue Time.at(0)}.max > LATEST
     if ENV['FLY_REGION'] != ENV['PRIMARY_REGION']
       dest = "rsync://#{ENV['PRIMARY_REGION']}.#{ENV['FLY_APP_NAME']}.internal"
 

@@ -2,6 +2,8 @@ Rails.application.routes.draw do
   unless ENV['FLY_REGION']
     mount ActionCable.server => "/showcase/cable"
   end
+
+  get "/up", to: proc { [200, {}, ["ok"]] }, as: :rails_health_check
  
   scope ENV.fetch("RAILS_APP_SCOPE", '') do
     get "/docs/", to: "docs#page", trailing_slash: true, defaults: {page: 'index'}
