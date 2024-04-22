@@ -263,13 +263,17 @@ passenger_default_group root;
 
 passenger_log_file /dev/stdout;
 <% end -%>
-<% if ENV['FLY_APP_NAME'] -%>
+<% if ENV['FLY_APP_NAME'] || ENV['KAMAL_CONTAINER_NAME'] -%>
 # logging
 log_format  main  '$http_x_forwarded_for - $remote_user [$time_local] "$request" '
   '$status $body_bytes_sent [$request_id] $request_time "$http_referer" '
   '"$http_user_agent" - $http_fly_request_id';
+map $request_uri $loggable {
+  /up  0;
+  default 1;
+}
 error_log /dev/stderr;
-access_log /dev/stdout main;
+access_log /dev/stdout main if=$loggable;
 
 <% end -%>
 passenger_max_pool_size 16;
@@ -358,6 +362,13 @@ server {
   location ~ /showcase/.+\.pdf$ {
     add_header Fly-Replay app=smooth-pdf;
     return 307;
+  }
+<% elsif ENV['KAMAL_CONTAINER_NAME'] -%>
+
+  # Health check
+  location /up {
+    default_type text/html;
+    return 200 "OK";
   }
 <% end -%>
 <% @tenants.each do |tenant| %>
