@@ -66,7 +66,14 @@ class EntriesController < ApplicationController
 
     @entry = find_or_create_entry(entry)
 
-    update_heats(entry, new: true)
+    Entry.transaction do
+      update_heats(entry, new: true)
+
+      if @entry.errors.any?
+        new
+        return render :edit, status: :unprocessable_entity
+      end
+    end
 
     respond_to do |format|
       if @entry.save
@@ -102,7 +109,15 @@ class EntriesController < ApplicationController
     params[:entry][:age_id] = 1 if !event.track_ages
 
     previous = @entry.heats.length
-    update_heats(entry)
+
+    Entry.transaction do
+      update_heats(entry)
+
+      if @entry.errors.any?
+        edit
+        return render :edit, status: :unprocessable_entity
+      end
+    end
 
     if not replace
       @entry.lead = lead
@@ -301,6 +316,14 @@ class EntriesController < ApplicationController
       return unless entry[:entries]
       tally_entry
 
+      dance_limit = Event.first.dance_limit
+
+      if dance_limit
+        entries = Entry.where(lead_id: 63).or(Entry.where(follow_id: 63)).pluck(:id)
+        entries.delete @entry.id
+        counts = Heat.where(entry_id: entries).group(:dance_id, :category).count
+      end
+
       @total = 0
       %w(Closed Open Multi Solo).each do |category|
         Dance.all.each do |dance|
@@ -308,6 +331,12 @@ class EntriesController < ApplicationController
           heats = @entries[category][dance.name] || []
           was = new ? 0 : heats.count {|heat| heat.number >= 0}
           wants = entry[:entries][category][dance.name].to_i
+
+          if wants > 0 and dance_limit and counts[[dance.id, category]] + wants > dance_limit
+            @entry.errors.add(:base, :dance_limit_exceeded,
+              message: "#{dance.name} #{category} heats are limited to #{dance_limit}.")
+          end
+
           if wants != was
             @total += (wants - was).abs
   

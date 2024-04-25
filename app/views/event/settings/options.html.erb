@@ -143,6 +143,11 @@
     <%= form.label :independent_instructors, 'Include independent instructors?' %>
   </div>
 
+  <div class="my-5">
+    <%= form.text_field :dance_limit, class: 'entry-count' %>
+    <%= form.label :dance_limit, 'Limit # of entries per dance per category' %>
+  </div>
+
   <div class="inline">
     <%= form.button 'Save', name: 'tab', value: 'Options', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
   </div>
