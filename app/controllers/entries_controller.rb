@@ -323,9 +323,21 @@ class EntriesController < ApplicationController
       dance_limit = Event.first.dance_limit
 
       if dance_limit
-        entries = Entry.where(lead_id: 63).or(Entry.where(follow_id: 63)).pluck(:id)
-        entries.delete @entry.id
-        counts = Heat.where(entry_id: entries).group(:dance_id, :category).count
+        counts = {}
+
+        if @entry.follow.type == 'Student'
+          entries = Entry.where(lead_id: @entry.follow_id).or(Entry.where(follow_id: @entry.follow_id)).pluck(:id)
+          entries.delete @entry.id
+          counts = Heat.where(entry_id: entries).group(:dance_id, :category).count
+        end
+
+        if @entry.lead.type == 'Student'
+          entries = Entry.where(lead_id: @entry.lead_id).or(Entry.where(follow_id: @entry.lead_id)).pluck(:id)
+          entries.delete @entry.id
+          Heat.where(entry_id: entries).group(:dance_id, :category).count.each do |key, count|
+            counts[key] = count if (counts[key] || 0) < count
+          end
+        end
       end
 
       @total = 0
@@ -337,11 +349,17 @@ class EntriesController < ApplicationController
           wants = entry[:entries][category][dance.name].to_i
 
           if wants != was
-            if wants > was and dance_limit and (counts[[dance.id, category]] || 0) + wants > dance_limit
-              @entry.errors.add(:base, :dance_limit_exceeded,
-                message: "#{dance.name} #{category} heats are limited to #{dance_limit}.")
-              @entries[category][dance.name] = [Heat.new(number: 9999)] * wants
-              next
+            if dance_limit
+              if wants > was and (counts[[dance.id, category]] || 0) + wants > dance_limit
+                @entry.errors.add(:base, :dance_limit_exceeded,
+                  message: "#{dance.name} #{category} heats are limited to #{dance_limit}.")
+                @entries[category][dance.name] = [Heat.new(number: 9999)] * wants
+                next
+              elsif @entry.errors.any?
+                # no additional error, but we need to update the entries to match the form
+                @entries[category][dance.name] = [Heat.new(number: 9999)] * wants
+                next
+              end
             end
 
             @total += (wants - was).abs

@@ -329,8 +329,34 @@ class HeatsController < ApplicationController
     @heat.entry = replace
     @heat.number = 0
 
+    if @heat.dance_id != params[:heat][:dance_id].to_i or @heat.category != params[:heat][:category]
+      dance_limit = Event.last.dance_limit
+      if dance_limit
+        counts = {}
+
+        entry = @heat.entry
+        if entry.follow.type == 'Student'
+          entries = Entry.where(lead_id: entry.follow_id).or(Entry.where(follow_id: entry.follow_id)).pluck(:id)
+          counts = Heat.where(entry_id: entries).group(:dance_id, :category).count
+        end
+
+        if entry.lead.type == 'Student'
+          entries = Entry.where(lead_id: entry.lead_id).or(Entry.where(follow_id: entry.lead_id)).pluck(:id)
+          Heat.where(entry_id: entries).group(:dance_id, :category).count.each do |key, count|
+            counts[key] = count if (counts[key] || 0) < count
+          end
+        end
+
+        if (counts[[params[:heat][:dance_id].to_i, params[:heat][:category]]] || 0) + 1 >= dance_limit
+          @heat.dance_id = params[:heat][:dance_id].to_i
+          @heat.category = params[:heat][:category]
+          @heat.errors.add(:dance_id, "Dance limit of #{dance_limit} reached for this category.")
+        end
+      end
+    end
+
     respond_to do |format|
-      if @heat.update(heat_params)
+      if not @heat.errors.any? and @heat.update(heat_params)
         format.html { redirect_to params['return-to'] || person_path(@person),
           notice: "Heat was successfully updated." }
         format.json { render :show, status: :ok, location: @heat }
