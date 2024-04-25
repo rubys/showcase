@@ -70,7 +70,9 @@ class EntriesController < ApplicationController
       update_heats(entry, new: true)
 
       if @entry.errors.any?
+        entries = @entries
         new
+        @entries = entries
         return render :edit, status: :unprocessable_entity
       end
     end
@@ -114,7 +116,9 @@ class EntriesController < ApplicationController
       update_heats(entry)
 
       if @entry.errors.any?
+        entries = @entries
         edit
+        @entries = entries
         return render :edit, status: :unprocessable_entity
       end
     end
@@ -332,12 +336,14 @@ class EntriesController < ApplicationController
           was = new ? 0 : heats.count {|heat| heat.number >= 0}
           wants = entry[:entries][category][dance.name].to_i
 
-          if wants > 0 and dance_limit and counts[[dance.id, category]] + wants > dance_limit
-            @entry.errors.add(:base, :dance_limit_exceeded,
-              message: "#{dance.name} #{category} heats are limited to #{dance_limit}.")
-          end
-
           if wants != was
+            if wants > was and dance_limit and (counts[[dance.id, category]] || 0) + wants > dance_limit
+              @entry.errors.add(:base, :dance_limit_exceeded,
+                message: "#{dance.name} #{category} heats are limited to #{dance_limit}.")
+              @entries[category][dance.name] = [Heat.new(number: 9999)] * wants
+              next
+            end
+
             @total += (wants - was).abs
   
             (wants...was).each do |index|
