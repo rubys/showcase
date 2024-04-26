@@ -67,6 +67,11 @@
     :name: Cranford
     :region: ewr
     :logo: arthur-murray-logo.gif
+    :events:
+      spring-freestyles:
+        :name: Spring Freestyles
+      fall-freestyles:
+        :name: Fall Freestyles
   dayton:
     :name: Dayton
     :region: ord
