@@ -136,6 +136,10 @@
     :name: Monterey
     :region: sjc
     :logo: ''
+  montgomery:
+    :name: Montgomery
+    :region: ord
+    :logo: ''
   perth:
     :name: Perth
     :region: syd

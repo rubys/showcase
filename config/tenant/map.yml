@@ -3,65 +3,65 @@ regions:
     name: Ashburn, Virginia (US)
     lat: 39.02214
     lon: -77.462555
+    map: us
     x: 753.3598022258124
     y: 218.05721663167571
-    map: us
   atl:
     name: Atlanta, Georgia (US)
     lat: 33.6407
     lon: -84.4277
+    map: us
     x: 666.8622894496666
     y: 334.50323467265434
-    map: us
   ord:
     name: Chicago, Illinois (US)
     lat: 41.891544
     lon: -87.63039
+    map: us
     x: 604.0234830583017
     y: 184.81812492869688
-    map: us
   dfw:
     name: Dallas, Texas (US)
     lat: 32.778286
     lon: -96.7984
+    map: us
     x: 476.1993201496286
     y: 361.5248496538476
-    map: us
   mia:
     name: Miami, Florida (US)
     lat: 25.7877
     lon: -80.2241
+    map: us
     x: 755.3064170132483
     y: 469.82316642663625
-    map: us
   yul:
     name: Montreal, Canada
     lat: 45.48647
     lon: -73.75549
+    map: us
     x: 777.2374221552278
     y: 88.56635457692141
-    map: us
   sjc:
     name: San Jose, California (US)
     lat: 37.3516
     lon: -121.89674
+    map: us
     x: 112.63114487340647
     y: 223.9075025700198
-    map: us
   sea:
     name: Seattle, Washington (US)
     lat: 47.6097
     lon: -122.3331
+    map: us
     x: 159.108421435958
     y: 37.01944688208971
-    map: us
   ewr:
     name: Secaucus, NJ (US)
     lat: 40.789543
     lon: -74.05653
+    map: us
     x: 793.5743604788862
     y: 175.28796263135462
-    map: us
   syd:
     name: Sydney, Australia
     lat: -33.86603
@@ -86,153 +86,159 @@ studios:
   alexandria:
     lat: 38.805
     lon: -77.043
+    map: us
     x: 760.083179034975
     y: 220.88885532144934
-    map: us
   annapolis:
     lat: 38.977
     lon: -76.49
+    map: us
     x: 767.2299344207813
     y: 216.11177407681362
-    map: us
   ashburn:
     lat: 39.030019100000004
     lon: -77.46964646557657
+    map: us
     x: 753.2310471605465
     y: 217.93121649798343
-    map: us
   austin:
     lat: 30.268
     lon: -97.743
+    map: us
     x: 460.5946026114453
     y: 408.3844834496065
-    map: us
   carmel:
     lat: 39.978
     lon: -86.126
+    map: us
     x: 628.4271325916611
     y: 218.66736359890683
-    map: us
   cary:
     lat: 35.79
     lon: -78.781
+    map: us
     x: 745.7286718838117
     y: 281.54568667130036
-    map: us
   charlotte:
     lat: 35.223
     lon: -80.838
+    map: us
     x: 716.9949924630313
     y: 297.3280639322754
-    map: us
   chicago:
     lat: 41.884
     lon: -87.632
+    map: us
     x: 604.0138271084311
     y: 184.96143997309503
-    map: us
   clearwater:
     lat: 27.966
     lon: -82.796
+    map: us
     x: 706.5473236124388
     y: 436.43303362885484
-    map: us
   cranford:
     lat: 40.6584358
     lon: -74.2995923
+    map: us
     x: 790.815075673393
     y: 178.46885561265594
-    map: us
   dayton:
     lat: 39.759
     lon: -84.194
+    map: us
     x: 656.1568422996456
     y: 219.64530171816716
-    map: us
   durham:
     lat: 35.995
     lon: -78.897
+    map: us
     x: 743.3241585423084
     y: 278.05716284229277
-    map: us
   glenview:
     lat: 42.078
     lon: -87.799
+    map: us
     x: 601.4030344287673
     y: 181.52679166478015
-    map: us
   greenhills:
     lat: 36.105
     lon: -86.815
+    map: us
     x: 625.7519967420483
     y: 292.3296808842899
-    map: us
   harrisburg:
     lat: 40.26
     lon: -76.882
+    map: us
     x: 756.8774021217204
     y: 193.55267565048007
-    map: us
   kennesaw:
     lat: 34.023
     lon: -84.616
+    map: us
     x: 663.1172630068728
     y: 327.71284702649643
-    map: us
   lakeview:
     lat: 42.254
     lon: -88.001
+    map: us
     x: 598.3544936057206
     y: 178.4656881939419
-    map: us
   laval:
     lat: 45.6066
     lon: -73.707092
+    map: us
     x: 777.3324153383578
     y: 86.23752866493703
-    map: us
   lincolnshire:
     lat: 42.1900249
     lon: -87.9084039
+    map: us
     x: 599.723541646565
     y: 179.55673222553196
-    map: us
   livermore:
     lat: 37.676
     lon: -121.759
+    map: us
     x: 116.2196000467979
     y: 218.55680408776743
-    map: us
   mdballroom:
     lat: 29.7589382
     lon: -95.3676974
+    map: us
     x: 498.90549219956324
     y: 418.12500231765466
-    map: us
   merrillville:
     lat: 41.48281
     lon: -87.33281
+    map: us
     x: 608.8143728778319
     y: 192.10923916192849
-    map: us
   millbrae:
     lat: 37.598958
     lon: -122.400941
+    map: us
     x: 106.77652299796523
     y: 217.4079077133133
-    map: us
   monterey:
     lat: 36.2231079
     lon: -121.387742
+    map: us
     x: 114.22735431477787
     y: 246.42461952761005
+  montgomery:
+    lat: 39.6837328
+    lon: -84.2854817
     map: us
+    x: 655.0399803947201
+    y: 221.2138588769975
   montreal:
     lat: 45.5019
     lon: -73.5674
+    map: us
     x: 779.5648385687444
     y: 87.71272338612823
-    map: us
   perth:
     lat: -31.9558933
     lon: 115.8605855
@@ -242,69 +248,69 @@ studios:
   petaluma:
     lat: 38.295411
     lon: -122.61369350203252
+    map: us
     x: 107.4094830912855
     y: 203.92725719975465
-    map: us
   raleigh:
     lat: 35.785
     lon: -78.643
+    map: us
     x: 747.7831716008914
     y: 281.2636146992004
-    map: us
   richmond:
     lat: 37.541
     lon: -77.434
+    map: us
     x: 759.1837835261686
     y: 245.37727238439845
-    map: us
   ridgewood:
     lat: 40.9796683
     lon: -74.1194403
+    map: us
     x: 791.8986820872547
     y: 172.00343906758667
-    map: us
   roanoke:
     lat: 37.272
     lon: -79.941
+    map: us
     x: 723.8834608954846
     y: 257.0370360397393
-    map: us
   salem:
     lat: 44.933
     lon: -123.04
+    map: us
     x: 136.50150209185773
     y: 82.40005410159029
-    map: us
   sanjose:
     lat: 37.3361663
     lon: -121.890591
+    map: us
     x: 112.63990545612671
     y: 224.21213764765776
-    map: us
   sarasota:
     lat: 27.339
     lon: -82.539
+    map: us
     x: 712.4055629423673
     y: 447.3783588884137
-    map: us
   schaumburg:
     lat: 42.0333608
     lon: -88.083406
+    map: us
     x: 597.572238623354
     y: 182.69493513723273
-    map: us
   slc:
     lat: 40.7608
     lon: -111.891
+    map: us
     x: 266.82050091642657
     y: 192.5966797377855
-    map: us
   sugarland:
     lat: 29.633
     lon: -95.601
+    map: us
     x: 495.13521982938465
     y: 420.4983994549814
-    map: us
   sydney:
     lat: -33.8302783
     lon: 151.1570269
@@ -314,9 +320,9 @@ studios:
   vabeach:
     lat: 36.755
     lon: -76.06
+    map: us
     x: 782.006683846955
     y: 255.8200576232449
-    map: us
   vicenza:
     lat: 45.63485905
     lon: 11.40635425660249
@@ -332,12 +338,12 @@ studios:
   westchester:
     lat: 39.3303357
     lon: -84.408275
+    map: us
     x: 654.1151636067387
     y: 228.04018651927674
-    map: us
   woodlands:
     lat: 30.158
     lon: -95.456
+    map: us
     x: 497.43205315199447
     y: 410.674112886692
-    map: us
