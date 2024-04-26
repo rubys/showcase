@@ -96,6 +96,11 @@
     :name: Lakeview
     :region: ord
     :logo: arthur-murray-logo.gif
+    :events:
+      showcase-rounds:
+        :name: Showcase Rounds
+      graduation-nights:
+        :name: Graduation Nights
   laval:
     :name: Laval
     :region: yul
