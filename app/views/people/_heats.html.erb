@@ -1,6 +1,10 @@
 <style>
-@media print {
-  body {margin-top: 0.5in; margin-bottom: 0.5in}
+@page {
+  margin-bottom: 0.5in;
+  margin-right: 0.5in;
+}
+body {
+  overflow: visible;
 }
 </style>
 <% count = {"Freestyle" => 0, "Closed" => 0, "Open" => 0, "Multi" => 0, "Solo" => 0} %>
@@ -13,7 +17,7 @@
       <% if person.back %>
       # <%= person.back %>
       <% end %>
-      <span class="font-normal text-base float-right">
+      <span class="font-normal text-base float-right mr-6">
         <%= person.studio.name %><br>
         <%= @event.name %>
       </span>
@@ -27,7 +31,7 @@
     <td class="row-head">Partner
     <td class="row-head">Dance
     <td class="row-head">Type
-    <td class="row-head">Category
+    <td class="row-head mr-2">Category
   </tr>
   </thead>
   <tbody>
