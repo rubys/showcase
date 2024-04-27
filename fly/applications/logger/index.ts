@@ -221,6 +221,8 @@ app.get("/", async (req, res) => {
     results = [previous.shift() as string];
   }
 
+  if (previous.length > 0) results.push(...previous);
+
   results.push('<pre>')
 
   results.push("</p>")
