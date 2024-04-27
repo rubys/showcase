@@ -1,3 +1,8 @@
+<style>
+@media print {
+  body {margin-top: 0.5in; margin-bottom: 0.5in}
+}
+</style>
 <% count = {"Freestyle" => 0, "Closed" => 0, "Open" => 0, "Multi" => 0, "Solo" => 0} %>
 <% if person %>
 <table class="" style="break-after: page">
@@ -8,7 +13,7 @@
       <% if person.back %>
       # <%= person.back %>
       <% end %>
-      <span class="font-normal text-base float-right text-right">
+      <span class="font-normal text-base float-right">
         <%= person.studio.name %><br>
         <%= @event.name %>
       </span>
