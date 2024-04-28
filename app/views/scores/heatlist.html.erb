@@ -66,12 +66,15 @@
         </tr>
         <% end %>
         <tr id="<%= dom_id heat %>" class="text-<%= (@scored[heat.number] || !@missed.include?(heat.number)) ? 'slate-400' : 'black' %>">
-          <td><%= link_to heat.number, judge_heat_path(judge: @judge, heat: heat.number, style: @style, sort: @sort) %>
+        <%
+          link = heat.category == 'Multi' ?
+            judge_heat_slot_path(judge: @judge, heat: heat.number, slot: 1, style: @style)
+            : judge_heat_path(judge: @judge, heat: heat.number, style: @style)
+        %>
+          <td><%= link_to heat.number, link %>
           <% category = (@combine_open_and_closed and %w(Open Closed).include? heat.category) ? '' : heat.category %>
           <td><%= link_to "#{category} #{heat.dance.name}#{heat.solo&.combo_dance_id ? " / #{heat.solo.combo_dance.name}" : ''}",
-            heat.category == 'Multi' ?
-            judge_heat_slot_path(judge: @judge, heat: heat.number, slot: 1, style: @style)
-            : judge_heat_path(judge: @judge, heat: heat.number, style: @style) %>
+            link %>
           <% if @missed.include?(heat.number) && @scored[heat.number] %>
           <span class="text-black">*</span>
           <% end %>
