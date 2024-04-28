@@ -66,6 +66,8 @@ class ScoresController < ApplicationController
       entry: [:age, :level, :lead, :follow]
     ).to_a
 
+    @slot ||= 1 if @subjects.first&.category == 'Multi' and @slot.nil?
+
     @combine_open_and_closed = @event.heat_range_cat == 1
 
     category = @subjects.first.category
