@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ "$1" == "destroy" ]; then
+
+  fly volumes list --json | \
+    jq -r '[.[] | select(.attached_machine_id == null) | .id] | .[]' | \
+    xargs -n 1 fly volume destroy --yes
+
+else
+
+  fly volumes list --json | \
+    jq --raw-output '[.[] | select(.attached_machine_id == null)]'
+
+fi

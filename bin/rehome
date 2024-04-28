@@ -1,0 +1,56 @@
+#!/usr/bin/env ruby
+
+# rehome a machine to another host in the same region
+
+require 'json'
+require 'tmpdir'
+
+region = ARGV.first
+
+Dir.chdir File.dirname(__dir__)
+
+if not region
+  STDERR.puts "region required"
+  exit 1
+end
+
+machines = JSON.parse(`fly machines list --json`)
+machine = machines.find {|machine| machine['region'] == region}
+
+if not machine
+  STDERR.puts "no machine found in region #{region}"
+  exit 1
+end
+
+original = machine['id']
+
+if machine["state"] != "stopped"
+  exit $? unless system "fly machine stop #{original}"
+end
+
+volumes = JSON.parse(`fly volumes list --json`)
+volume = volumes.find {|volume| volume['attached_machine_id'] == original}
+
+if not volume
+  STDERR.puts "no volume found for machine #{oriignal}"
+  exit $?
+end
+
+def latest_snapshot(volume)
+  JSON.parse(`fly volumes snapshots list --json #{volume['id']}`).
+    select {|snapshot| snapshot['status'] == 'created'}.
+    sort_by {|snapshot| snapshot['created_at']}.last
+end
+
+previous_snapshot = latest_snapshot(volume)
+
+exit $? unless system "fly volume snapshot create #{volume['id']}"
+
+while latest_snapshot(volume) == previous_snapshot
+  sleep 1
+end
+
+exit $? unless system "fly machine clone #{original} --from-snapshot last --region #{region} --volume-requires-unique-zone=true"
+
+exit $? unless system "fly machine destroy #{original}"
+exit $? unless system "fly volume destroy #{volume['id']}"
