@@ -15,7 +15,7 @@ export default class extends Controller {
 
     let next = this.element.nextElementSibling;
 
-    if (next.querySelector("textarea")) {
+    if (next && next.querySelector("textarea")) {
       next.addEventListener("mouseenter", () => {
         previous.classList.add("bg-yellow-200");
       });
