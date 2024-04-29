@@ -198,9 +198,19 @@ class HeatsController < ApplicationController
 
       Heat.transaction do
         Heat.all.each do |heat|
-          if heat.number != newnumbers[heat.number.to_f]
-            heat.number = newnumbers[heat.number.to_f]
-            heat.save
+          number = heat.number.to_f.abs
+          if heat.number != newnumbers[number]
+            if heat.number >= 0
+              heat.number = newnumbers[number] || 0
+            else
+              heat.number = -newnumbers[number] || 0
+            end
+
+            if heat.number == 0
+              heat.destroy
+            else
+              heat.save
+            end
           end
         end
       end
