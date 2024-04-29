@@ -214,6 +214,7 @@ app.get("/", async (req, res) => {
     });
 
     if (previous.length > 0) results.push(...previous);
+    previous = [];
 
     if (results.length > 40) break;
 
