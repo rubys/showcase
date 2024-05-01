@@ -143,6 +143,11 @@ module HeatScheduler
 
     groups = reorder(groups)
 
+    if event.heat_range_level == 0 && ENV['RAILS_APP_DB'] == '2024-lakeview-graduation-nights'
+      i = 0
+      groups.sort_by! {|group| [group.first.entry.level_id, i += 1]}
+    end
+
     ActiveRecord::Base.transaction do
       groups.each_with_index do |group, index|
         group.each do |heat|

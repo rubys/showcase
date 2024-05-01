@@ -130,6 +130,21 @@ module Printable
         end
       end
     end
+
+    if event.heat_range_level == 0 && ENV['RAILS_APP_DB'] == '2024-lakeview-graduation-nights'
+      heat_level = Heat.joins(:entry).pluck(:number, :level_id).to_h
+      agenda = @agenda
+      @agenda = {}
+
+      Level.order(:id).each do |level|
+        heats_for_level = heat_level.select {|number, level_id| level_id == level.id}.keys
+
+        agenda.each do |name, heats|
+          category = heats.select {|number, rooms| heats_for_level.include? rooms.values.flatten.first.number}
+          @agenda["#{level.name} #{name}"] = category unless category.empty?
+        end
+      end
+    end
   end
 
   def assign_rooms(ballrooms, heats)
