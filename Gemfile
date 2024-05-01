@@ -90,3 +90,5 @@ gem "ansi-to-html", "~> 0.0.3"
 gem "useragent", "~> 0.16.10"
 
 gem "kamal", "~> 1.4", :group => :development
+
+gem "csv", "~> 3.3"
