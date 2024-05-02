@@ -252,34 +252,34 @@ class CategoriesController < ApplicationController
           end
 
           if dance.pro_open_category == @category
-            if include['Open'][dance.name].to_i == 0
+            if include['Open']&.[](dance.name).to_i == 0
               dance.pro_open_category = nil
             end
-          elsif include['Open'][dance.name].to_i == 1
+          elsif include['Open']&.[](dance.name).to_i == 1
             dance.pro_open_category = @category
           end
 
           if dance.pro_closed_category == @category
-            if include['Closed'][dance.name].to_i == 0
+            if include['Closed']&.[](dance.name).to_i == 0
               dance.pro_closed_category = nil
             end
-          elsif include['Closed'][dance.name].to_i == 1
+          elsif include['Closed']&.[](dance.name).to_i == 1
             dance.pro_closed_category = @category
           end
 
           if dance.pro_solo_category == @category
-            if include['Solo'][dance.name].to_i == 0
+            if include['Solo']&.[](dance.name).to_i == 0
               dance.pro_solo_category = nil
             end
-          elsif include['Solo'][dance.name].to_i == 1
+          elsif include['Solo']&.[](dance.name).to_i == 1
             dance.pro_solo_category = @category
           end
 
           if dance.pro_multi_category == @category
-            if include['Multi'][dance.name].to_i == 0
+            if include['Multi']&.[](dance.name).to_i == 0
               dance.pro_multi_category = nil
             end
-          elsif include['Multi'] and include['Multi'][dance.name].to_i == 1
+          elsif include['Multi']&.[](dance.name).to_i == 1
             dance.pro_multi_category = @category
           end
 
