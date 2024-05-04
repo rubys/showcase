@@ -51,7 +51,7 @@ entry in the common case.
 <% @agenda.each do |agenda| %>
 <% next if agenda[:title] == 'CLOSED CATEGORY' and not @include_closed %>
 <% next if agenda[:title] == 'OPEN CATEGORY' and not @include_open %>
-<%= render partial: 'entries/dances', locals: agenda.merge(form: form) %>
+<%= render partial: 'entries/dances', locals: agenda.merge(form: form) if agenda[:category] %>
 <% end %>
 </div>
 <% end %>
