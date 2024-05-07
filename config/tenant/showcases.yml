@@ -201,6 +201,10 @@
     :name: Salt Lake City
     :region: sjc
     :logo: arthur-murray-logo.gif
+  sugarland:
+    :name: Sugar Land
+    :region: dfw
+    :logo: arthur-murray-logo.gif
   sydney:
     :name: Sydney
     :region: syd
