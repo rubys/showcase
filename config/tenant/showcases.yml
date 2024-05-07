@@ -32,6 +32,10 @@
     :name: Austin
     :region: dfw
     :logo: arthur-murray-logo.gif
+  bellevue:
+    :name: Bellevue
+    :region: sea
+    :logo: ''
   cary:
     :name: Cary
     :region: iad
