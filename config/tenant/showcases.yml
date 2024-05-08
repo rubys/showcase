@@ -36,6 +36,10 @@
     :name: Bellevue
     :region: sea
     :logo: ''
+  carmel:
+    :name: Carmel
+    :region: ord
+    :logo: arthur-murray-logo.gif
   cary:
     :name: Cary
     :region: iad
