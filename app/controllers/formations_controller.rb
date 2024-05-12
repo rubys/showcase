@@ -3,7 +3,8 @@ class FormationsController < ApplicationController
   include EntryForm
   include ActiveStorage::SetCurrent
 
-  permit_site_owners *%i[ show edit update ]
+  permit_site_owners *%i[ show edit update ], trust_level: 25
+  permit_site_owners :new, :create, :destroy, trust_level: 50
 
   # GET /formations or /formations.json
   def index
@@ -103,6 +104,7 @@ class FormationsController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_formation
       @solo = Solo.find(params[:id])
+      @studio = @solo.heat.entry.subject.studio
     end
 
     # Only allow a list of trusted parameters through.

@@ -2,6 +2,9 @@ class EntriesController < ApplicationController
   before_action :set_entry, only: %i[ show edit update destroy ]
   include EntryForm
 
+  permit_site_owners :new, :edit, :create, :update, :destroy,
+    trust_level: 50
+
   # GET /entries or /entries.json
   def index
     @entries = Entry.all
@@ -227,6 +230,7 @@ class EntriesController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_entry
       @entry = Entry.find(params[:id])
+      @studio = @entry.subject.studio
     end
 
     # Only allow a list of trusted parameters through.

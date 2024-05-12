@@ -7,18 +7,20 @@ class ApplicationController < ActionController::Base
       flash: {error: 'Database is in readonly mode'}
   end
 
-  def self.permit_site_owners(*actions)
+  def self.permit_site_owners(*actions, trust_level: 0)
     skip_before_action :authenticate_user, only: actions
-    before_action :authenticate_site_owner, only: actions
-  end
 
-  def self.permit_event_owners(*actions)
-    skip_before_action :authenticate_user, only: actions
-    before_action :authenticate_event_owner, only: actions
+    if User.trust_level >= trust_level
+      before_action :authenticate_site_owner, only: actions
+    else
+      before_action :authenticate_event_owner, only: actions
+    end
   end
 
   private
     def authenticate_user
+      return authenticate_site_owner if User.trust_level >= 75
+
       get_authentication
 
       unless ENV['HTTP_X_REMOTE_USER']

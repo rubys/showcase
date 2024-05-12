@@ -5,6 +5,10 @@ class PeopleController < ApplicationController
   before_action :set_person, only: 
     %i[ show edit update destroy get_entries post_entries toggle_present remove_option instructor_invoice ]
 
+  permit_site_owners :new, :create, :show, :post_type, :edit, :update, :destroy,
+    :get_entries, :post_entries, :instructor_invoice,
+    trust_level: 50
+
   def heats
     event = Event.last
     @ballrooms = event.ballrooms
@@ -721,6 +725,7 @@ class PeopleController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_person
       @person = Person.find(params[:id])
+      @studio = @person.studio
     end
 
     # Only allow a list of trusted parameters through.
