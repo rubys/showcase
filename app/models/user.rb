@@ -108,7 +108,7 @@ class User < ApplicationRecord
         end.to_h.keys
       end
 
-      @@trust_level = @@db.execute('select trust_level from locations where name=' + event.inspect).first.first || 0
+      @@trust_level = @@db.execute('select trust_level from locations where name=' + event.inspect).first&.first || 0
     end
 
     def self.studios_owned(userid)

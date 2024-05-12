@@ -212,10 +212,16 @@ class LocationsController < ApplicationController
 
   # PATCH/PUT /locations/1 or /locations/1.json
   def update
+    trust_level = @location.trust_level
+
     respond_to do |format|
       if @location.update(location_params)
         generate_showcases
         generate_map
+
+        if Rails.env.production? and trust_level != @location.trust_level
+          spawn RbConfig.ruby, Rails.root.join('bin/user-update').to_s
+        end
 
         format.html { redirect_to locations_url, notice: "#{@location.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @location }
