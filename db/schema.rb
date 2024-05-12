@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_04_25_003705) do
+ActiveRecord::Schema[7.1].define(version: 2024_05_12_170708) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -245,6 +245,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_25_003705) do
     t.datetime "updated_at", null: false
     t.string "region"
     t.string "sisters"
+    t.integer "trust_level", default: 0
     t.index ["user_id"], name: "index_locations_on_user_id"
   end
 

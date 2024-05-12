@@ -10,6 +10,7 @@ class User < ApplicationRecord
 
   dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
   @@db = ENV['RAILS_APP_OWNER'] && SQLite3::Database.new("#{dbpath}/index.sqlite3")
+  @@trust_level = 0
 
   def self.authorized?(userid, site=nil)
     return true unless @@db
@@ -81,6 +82,10 @@ class User < ApplicationRecord
     events
   end
 
+  def self.trust_level
+    @@trust_level
+  end
+
   private
 
     def self.load_auth
@@ -102,6 +107,8 @@ class User < ApplicationRecord
           sites.include? event or sites.include? 'index'
         end.to_h.keys
       end
+
+      @@trust_level = @@db.execute('select trust_level from locations where name=' + event.inspect).first.first || 0
     end
 
     def self.studios_owned(userid)

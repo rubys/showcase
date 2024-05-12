@@ -72,6 +72,12 @@
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <div class="my-5>
+    <%= form.label :trust_level, "Visiting Studio Trust Level" %>
+    <%= form.number_field :trust_level, in: 0..100, step: 25,
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
   <% else %>
   <h2 class="font-bold text-3xl">User</h2>
 
