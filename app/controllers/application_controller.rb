@@ -57,7 +57,7 @@ class ApplicationController < ActionController::Base
 
       return if ENV['RAILS_APP_OWNER'] == 'Demo'
 
-      return if User.index_auth?(@authuser)
+      return if User.authorized?(@authuser)
 
       forbidden(true) unless User.owned?(@authuser, Struct.new(:name).new(ENV['RAILS_APP_OWNER']))
     end
