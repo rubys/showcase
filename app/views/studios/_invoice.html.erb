@@ -128,7 +128,7 @@
   <%
     heat_cost, solo_cost, multi_cost = @heat_cost, @solo_cost, @multi_cost
     heat_cost -= 5 if ENV['RAILS_APP_DB'] == '2024-laval' && person.age.category.start_with?('J')
-    if person.age.costs
+    if person.age&.costs
       heat_cost = person.age.costs.heat_cost || heat_cost
       solo_cost = person.age.costs.solo_cost || solo_cost
       multi_cost = person.age.costs.multi_cost || multi_cost
