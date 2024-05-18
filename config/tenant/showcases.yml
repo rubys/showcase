@@ -47,7 +47,7 @@
   charlotte:
     :name: Charlotte
     :region: atl
-    :logo: arthur-murray-logo.gif
+    :logo: ''
   chicago:
     :name: Chicago
     :region: ord
@@ -109,6 +109,8 @@
         :name: Showcase Rounds
       graduation-nights:
         :name: Graduation Nights
+      in-studio:
+        :name: In Studio
   laval:
     :name: Laval
     :region: yul
@@ -261,7 +263,7 @@
   charlotte:
     :name: Charlotte
     :region: atl
-    :logo: arthur-murray-logo.gif
+    :logo: ''
   chicago:
     :name: Chicago
     :region: ord
@@ -377,7 +379,7 @@
   charlotte:
     :name: Charlotte
     :region: atl
-    :logo: arthur-murray-logo.gif
+    :logo: ''
   harrisburg:
     :name: Harrisburg
     :region: iad
