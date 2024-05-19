@@ -756,10 +756,17 @@ class EventController < ApplicationController
             Dance.destroy_all
 
             dbquery(source, 'dances').each do |dance|
-              dance.delete 'open_category_id' unless tables[:agenda]
-              dance.delete 'closed_category_id' unless tables[:agenda]
-              dance.delete 'solo_category_id' unless tables[:agenda]
-              dance.delete 'multi_category_id' unless tables[:agenda]
+              unless tables[:agenda]
+                dance.delete 'open_category_id'
+                dance.delete 'closed_category_id'
+                dance.delete 'solo_category_id'
+                dance.delete 'multi_category_id'
+
+                dance.delete 'pro_open_category_id'
+                dance.delete 'pro_closed_category_id'
+                dance.delete 'pro_solo_category_id'
+                dance.delete 'pro_multi_category_id'
+              end
               Dance.create dance
             end
 
