@@ -159,6 +159,17 @@
     :name: Perth
     :region: syd
     :logo: arthur-murray-logo.gif
+    :events:
+      karaoke:
+        :name: Karaoke
+      country:
+        :name: Country
+      pin-up-50s:
+        :name: Pin Up 50's
+      hawaiian:
+        :name: Hawaiian
+      chrismas:
+        :name: Chrismas
   petaluma:
     :name: Petaluma
     :region: sjc
