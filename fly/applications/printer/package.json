@@ -2,7 +2,8 @@
   "name": "printer",
   "dependencies": {
     "chalk": "^5.3.0",
-    "puppeteer-core": "^21.5.2"
+    "puppeteer-core": "^21.5.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "bun-types": "^1.0.14"

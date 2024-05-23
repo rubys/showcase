@@ -114,7 +114,7 @@ GEM
       ruby2_keywords
     ed25519 (1.3.0)
     erubi (1.12.0)
-    fast_excel (0.4.1)
+    fast_excel (0.5.0)
       ffi (> 1.9, < 2)
     ffi (1.16.3)
     globalid (1.2.1)
@@ -332,7 +332,7 @@ DEPENDENCIES
   csv (~> 3.3)
   debug
   dockerfile-rails
-  fast_excel (~> 0.4.0)
+  fast_excel (~> 0.5.0)
   importmap-rails
   jbuilder
   kamal (~> 1.4)

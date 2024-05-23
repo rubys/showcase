@@ -5,12 +5,16 @@
 // host app, convert that page to PDF and return the generated
 // PDF as the response.
 //
+// Requests for paths ending in .xlsx are converted to .json and then
+// fetched from the host apps, and the results are converted to .xlsx format.
+//
 // Requests for anything else will be redirected back to the host application
 // after reseting the timeout.  This is useful for ensuring that the Chrome
 // instance is "warmed-up" prior to issuing requests.
 
 import puppeteer, { PaperFormat, Page } from 'puppeteer-core'
 import chalk from 'chalk'
+import * as XLSX from 'xlsx'
 
 // fetch configuration fron environment variables
 const PORT = process.env.PORT || 3000
@@ -82,6 +86,25 @@ const server = Bun.serve({
     url.hostname = HOSTNAME
     url.protocol = 'https:'
     url.port = ''
+
+    if (url.pathname.endsWith('.xslx')) {
+      url.pathname = url.pathname.slice(0, -4) + 'json'
+      console.log(`${chalk.green.bold('Fetching')} ${chalk.black(url.href)}`)
+      let response = await fetch(url)
+      let json = await response.json()
+
+      console.log(`${chalk.green.bold('Converting')} ${chalk.black(url.href + ' to XLSX')}`)
+      let wb = XLSX.utils.book_new()
+      for (const [name, sheet] of Object.entries(json)) {
+        const ws = XLSX.utils.json_to_sheet(sheet as any[])
+        XLSX.utils.book_append_sheet(wb, ws, name)
+      }
+
+      url.pathname = url.pathname.slice(0, -4) + 'xlsx'
+      console.log(`${chalk.green.bold('Responding')} ${chalk.black('with ' + url.href)}`)
+      return new Response(XLSX.write(wb, { type: 'array', bookType: 'xlsx' }),
+        { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" } })
+    }
 
     // redirect non pdf requests back to host
     if (!url.pathname.endsWith('.pdf')) {
