@@ -87,13 +87,22 @@ const server = Bun.serve({
     url.protocol = 'https:'
     url.port = ''
 
-    if (url.pathname.endsWith('.xslx')) {
+    if (url.pathname.endsWith('.xlsx')) {
       url.pathname = url.pathname.slice(0, -4) + 'json'
+      let headers = {} as Record<string, string>
+      request.headers.forEach((value, key) => {
+        if (key != 'host'  && key != "accept-encoding") headers[key] = value
+      })
+
       console.log(`${chalk.green.bold('Fetching')} ${chalk.black(url.href)}`)
-      let response = await fetch(url)
-      let json = await response.json()
+      let response = await fetch(url.href, { headers, credentials: 'include'})
+      if (!response.ok) {
+        console.error(`${chalk.red.bold('Error fetching')} ${chalk.black(url.href)} ${response.status}`)
+        return response
+      }
 
       console.log(`${chalk.green.bold('Converting')} ${chalk.black(url.href + ' to XLSX')}`)
+      let json = await response.json()
       let wb = XLSX.utils.book_new()
       for (const [name, sheet] of Object.entries(json)) {
         const ws = XLSX.utils.json_to_sheet(sheet as any[])
