@@ -3,18 +3,17 @@
   workbook = FastExcel.open(constant_memory: true)
   bold = workbook.bold_format
 
-  @sheets.each do |judge, sheet|
+  @sheets.each do |page, sheet|
     next if sheet.empty?
-    worksheet = workbook.add_worksheet(judge)
+    worksheet = workbook.add_worksheet(page)
     worksheet.auto_width = true
 
     worksheet.append_row(sheet.first.keys, bold)
 
-    sheet.each do |heat|
-      worksheet.append_row heat.values
+    sheet.each do |row|
+      worksheet.append_row row.values
     end
   end
 
   workbook.read_string
-
 end %>

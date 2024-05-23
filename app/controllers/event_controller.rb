@@ -75,7 +75,7 @@ class EventController < ApplicationController
     @event ||= Event.last
 
     @combine_open_and_closed = @event.heat_range_cat == 1
-    
+
     @ages = Age.all.size
     @levels = Level.all.order(:id).map {|level| [level.name, level.id]}
     @solo_levels = @levels[1..]
@@ -255,8 +255,123 @@ class EventController < ApplicationController
       order('number,people.back').all
   end
 
+  def spreadsheet
+    index
+
+    @sheets = {}
+
+    #***************************************************************************
+    #                              Participants
+    #***************************************************************************
+
+    sheet = []
+
+    headers = [
+      'Name',
+      'Type',
+      'Role',
+      'Back #',
+      'Level',
+      'Age',
+      'Studio',
+    ]
+
+    @people.each do |person|
+      sheet << headers.zip([
+        person.name,
+        person.type,
+        person.role,
+        person.back,
+        person.level&.name,
+        person.age&.category,
+        person.studio&.name
+      ]).to_h
+    end
+
+    @sheets['Participants'] = sheet
+
+    #***************************************************************************
+    #                                 Heats
+    #***************************************************************************
+
+    sheet = []
+
+    headers = [
+      'Number',
+      'Student',
+      'Open or Closed',
+      'Dance',
+      'Back #',
+      'Lead',
+      'Follow',
+      'Level',
+      'Category',
+      'Studio',
+    ] + @judges.map(&:first_name)
+
+    @heats.each do |heat|
+      scores = heat.scores
+      scores_by_judge = @judges.map {|judge| scores.find {|score| score.judge == judge}&.value}
+      sheet << headers.zip([
+        heat.number,
+        heat.entry.subject.name,
+        heat.category,
+        heat.dance.name,
+        heat.entry.lead.back,
+        heat.entry.lead.name,
+        heat.entry.follow.name,
+        heat.entry.level.name,
+        heat.entry.subject_category,
+        heat.entry.subject.studio.name,
+        *scores_by_judge
+      ]).to_h
+    end
+
+    @sheets['Heats'] = sheet
+  end
+
   def judge
     index
+
+    @sheets = {}
+
+    @judges.each do |judge|
+      sheet = []
+      assignments = judge.scores.pluck(:heat_id, :value).to_h
+
+      headers = [
+        'Number',
+        'Student',
+        'Open or Closed',
+        'Dance',
+        'Back #',
+        'Lead',
+        'Follow',
+        'Level',
+        'Category',
+        'Studio',
+        'Score'
+      ]
+
+      @heats.each do |heat|
+        next unless assignments.include? heat.id
+        sheet << headers.zip([
+          heat.number,
+          heat.entry.subject.name,
+          heat.category,
+          heat.dance.name,
+          heat.entry.lead.back,
+          heat.entry.lead.name,
+          heat.entry.follow.name,
+          heat.entry.level.name,
+          heat.entry.subject_category,
+          heat.entry.subject.studio.name,
+          assignments[heat.id]
+        ]).to_h
+      end
+
+      @sheets[judge.display_name] = sheet
+    end
   end
 
   def showcases
@@ -264,7 +379,7 @@ class EventController < ApplicationController
     logos = Set.new
 
     regions = {}
-    @showcases.each do |year, list| 
+    @showcases.each do |year, list|
       list.each  do |city, defn|
         region = defn[:region]
         regions[region] ||= []
@@ -325,7 +440,7 @@ class EventController < ApplicationController
     end
 
     if logos.size == 1
-      EventController.logo = logos.first 
+      EventController.logo = logos.first
     else
       EventController.logo = nil
     end
@@ -411,7 +526,7 @@ class EventController < ApplicationController
     @regions = {}
     @cities = {}
 
-    showcases.each do |year, list| 
+    showcases.each do |year, list|
       list.each  do |city, defn|
         @cities[defn[:name]] = city
         region = defn[:region]
@@ -421,7 +536,7 @@ class EventController < ApplicationController
     end
 
     @regions.each {|region, cities| cities.sort!.uniq!}
-      
+
     (@map["regions"].values + @map['studios'].values).each do |point|
       if point['transform']
         x = point['x'].to_f
@@ -488,7 +603,7 @@ class EventController < ApplicationController
 
     logdir = '/var/log/nginx'
     if Dir.exist? '/opt/homebrew/var/log/nginx'
-      logdir = '/opt/homebrew/var/log/nginx' 
+      logdir = '/opt/homebrew/var/log/nginx'
     end
 
     logs = Dir["#{logdir}/access.log*"].sort_by {|name| (name[/\d+/]||99999999).to_i}.reverse
@@ -823,7 +938,7 @@ class EventController < ApplicationController
         IO.binwrite File.join(db, name), params[:file].read
       elsif name.end_with? '.sqlite3.gz'
         stdout, status = Open3.capture2 'sqlite3', File.join(db, File.basename(name, '.gz')),
-          stdin_data: Zlib::GzipReader.new(params[:file].tempfile).read 
+          stdin_data: Zlib::GzipReader.new(params[:file].tempfile).read
       end
 
       redirect_to root_path, notice: "#{params[:file].original_filename} was successfully imported."
@@ -835,7 +950,7 @@ class EventController < ApplicationController
       body = request.body.read
       begin
         JSON.pretty_generate(JSON.parse(body)).lines.each do |line|
-          logger.info line 
+          logger.info line
         end
       rescue
         logger.warn body

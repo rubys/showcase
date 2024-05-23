@@ -4,7 +4,7 @@ Rails.application.routes.draw do
   end
 
   get "/up", to: proc { [200, {}, ["ok"]] }, as: :rails_health_check
- 
+
   scope ENV.fetch("RAILS_APP_SCOPE", '') do
     get "/docs/", to: "docs#page", trailing_slash: true, defaults: {page: 'index'}
     get "/docs/*page", to: "docs#page"
@@ -45,8 +45,10 @@ Rails.application.routes.draw do
     get '/auth', to: 'event#auth'
     get '/instructions', to: 'event#instructions'
     get '/landing', to: 'event#landing'
-    get '/event.xlsx', to: "event#index", as: 'event_spreadsheet'
+    get '/event.xlsx', to: "event#spreadsheet", as: 'event_spreadsheet'
+    get '/event.json', to: "event#spreadsheet", as: 'event_json'
     get '/judge.xlsx', to: "event#judge", as: 'judge_spreadsheet'
+    get '/judge.json', to: "event#judge", as: 'judge_json'
     get '/event.sqlite3', to: "event#database", as: 'event_database'
     get '/regions/', to: "event#regions", trailing_slash: true
     get '/regions/:region/status', to: "event#region", as: 'region_status'
