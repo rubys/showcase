@@ -109,7 +109,7 @@ end
 years = showcases.select {|year, sites| sites.any? {|name, site| site[:region] == @region}}.
   map do |year, sites|
     sites.select! {|name, site| site[:region] == @region}
-    sites = sites.map do |name, site| 
+    sites = sites.map do |name, site|
       if site[:events]
         name + '/(' + site[:events].keys.join('|') + ')'
       else
@@ -141,7 +141,7 @@ years = years.map! do |year|
 end
 
 years = showcases.map do |year, sites|
-  sites = sites.map do |name, site| 
+  sites = sites.map do |name, site|
     name + '/' if site[:events]
   end.compact
 
@@ -363,6 +363,12 @@ server {
     add_header Fly-Replay app=smooth-pdf;
     return 307;
   }
+
+  # XLSX generation
+  location ~ /showcase/.+\.xlsx$ {
+    add_header Fly-Replay app=smooth-pdf;
+    return 307;
+  }
 <% elsif ENV['KAMAL_CONTAINER_NAME'] -%>
 
   # Health check
@@ -438,7 +444,7 @@ server {
   }
 <% end -%>
 
-<% end -%> 
+<% end -%>
 <% end -%>
   # Action cable (shared by all apps on this server listen port)
   location <%= ROOT %>/cable {
