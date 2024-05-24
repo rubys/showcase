@@ -62,7 +62,7 @@ class ScoresController < ApplicationController
     @style = params[:style]
     @style = 'radio' if @style.blank?
     @subjects = Heat.where(number: @number).includes(
-      dance: [:multi_children], 
+      dance: [:multi_children],
       entry: [:age, :level, :lead, :follow]
     ).to_a
 
@@ -105,7 +105,7 @@ class ScoresController < ApplicationController
     @results = {}
     @subjects.each do |subject|
       score = student_results[subject] || ''
-      if @style == 'radio' and @subjects.first.category != 'Solo' 
+      if @style == 'radio' and @subjects.first.category != 'Solo'
         @results[subject] = score
       else
         score = student_results[subject] || ''
@@ -148,22 +148,26 @@ class ScoresController < ApplicationController
 
     @sort = @judge.sort_order || 'back'
     @show = @judge.show_assignments || 'first'
-    @show = 'mixed' unless @event.assign_judges > 0 and @show != 'mixed' && Person.where(type: 'Judge').count > 1 
+    @show = 'mixed' unless @event.assign_judges > 0 and @show != 'mixed' && Person.where(type: 'Judge').count > 1
     if @sort == 'level'
-      @subjects.sort_by! do |subject|
-        entry = subject.entry
-        [entry.level_id || 0, entry.age_id || 0, entry.lead.back || 0]
+      @ballrooms.each do |ballroom, subjects|
+        subjects.sort_by! do |subject|
+          entry = subject.entry
+          [entry.level_id || 0, entry.age_id || 0, entry.lead.back || 0]
+        end
       end
     end
     if @show != 'mixed'
-      @subjects.sort_by! do |subject|
-        entry = subject.entry
-        subject.scores.any? {|score| score.judge_id == @judge.id} ? 0 : 1
+      @ballrooms.each do |ballroom, subjects|
+        subjects.sort_by! do |subject|
+          entry = subject.entry
+          subject.scores.any? {|score| score.judge_id == @judge.id} ? 0 : 1
+        end
       end
     end
 
     @scores << '' unless @scores.length == 0
- 
+
     if @heat.category == 'Solo'
       @comments = Score.where(judge: @judge, heat: @subjects.first).first&.comments
     else
@@ -277,7 +281,7 @@ class ScoresController < ApplicationController
         unless feedback.delete(params[:good])
           feedback << params[:good]
           feedback.sort!
-        end 
+        end
         score.good = feedback.empty? ? nil : feedback.join(' ')
 
         feedback = score.bad.to_s.split(' ')
@@ -289,7 +293,7 @@ class ScoresController < ApplicationController
         unless feedback.delete(params[:bad])
           feedback << params[:bad]
           feedback.sort!
-        end 
+        end
         score.bad = feedback.empty? ? nil : feedback.join(' ')
 
         feedback = score.good.to_s.split(' ')
@@ -532,7 +536,7 @@ class ScoresController < ApplicationController
             category = 'Open'
             value = SCORES['Open'].index score
           end
-  
+
           if not value and @open_scoring == '&' and score =~ /^\d+$/
             value = score.to_i - 1
             value = 4-value

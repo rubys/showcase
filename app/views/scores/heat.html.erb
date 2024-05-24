@@ -208,7 +208,7 @@ Swiping left and right on mobile devices and tablets also work.
       <tr class="hover:bg-yellow-200 line-through opacity-50">
       <% end %>
         <% if @event.assign_judges > 0 && assign && @show != 'only' %>
-        <td class="py-2 font-bold text-xl"><span class="border-2 border-red-600 px-2 rounded-full"><%= subject.lead.back || 'TBD' %></span>
+        <td class="py-2 font-bold text-xl"><span class="border-2 border-red-600 px-2 rounded-full"><%= subject.lead.back || '&#9733;'.html_safe %></span>
         <% else %>
         <td class="py-2 text-xl"><%= subject.lead.back %>
         <% end %>
