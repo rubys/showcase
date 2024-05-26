@@ -1,6 +1,6 @@
 module HeatScheduler
   include Printable
-  
+
   def schedule_heats
     event = Event.last
 
@@ -25,7 +25,7 @@ module HeatScheduler
     routines = Category.where(routines: true).all.zip(4..).map {|cat, num| [cat.id, num]}.to_h
 
     heats = @heats.map {|heat|
-      if heat.solo&.category_override_id
+      if heat.solo&.category_override_id and routines[heat.solo.category_override_id]
         category = routines[heat.solo.category_override_id]
         order = 1000 + heat.solo.order
       else
@@ -134,7 +134,7 @@ module HeatScheduler
       else
         assignments = (0...assignments.length).map {|index| [heats[index], assignments[index]]}.to_h
       end
-      
+
       rebalance(assignments, subgroups, group.max_heat_size)
 
       heats.shift assignments.length
@@ -423,11 +423,11 @@ module HeatScheduler
     def add?(dance, dcat, level, age, heat)
       if @group.length == 0
         @participants = Set.new
-  
+
         @max_dcat = @min_dcat = dcat
         @max_level = @min_level = level
         @max_age = @min_age = age
-        
+
         @dance = dance
         @dcat = dcat
       end
