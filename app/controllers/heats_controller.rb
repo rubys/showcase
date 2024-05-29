@@ -3,9 +3,12 @@ class HeatsController < ApplicationController
   include EntryForm
   include Printable
   include Retriable
-  
+
   skip_before_action :authenticate_user, only: %i[ mobile ]
   before_action :set_heat, only: %i[ show edit update destroy ]
+
+  permit_site_owners :show, :edit, :update, :destroy,
+    trust_level: 50
 
   # GET /heats or /heats.json
   def index
@@ -42,7 +45,7 @@ class HeatsController < ApplicationController
     @renumber ||= (first_heats != first_heats.sort)
 
     @issues = @heats.map {|number, heats|
-      [number, heats.map {|heat| 
+      [number, heats.map {|heat|
         e=heat.entry
         heat.number > 0 ? [e.lead_id, e.follow_id] : []
       }.flatten.tally.select {|person, count| number > 0 && count > 1}
@@ -92,7 +95,7 @@ class HeatsController < ApplicationController
     if @event.assign_judges and @type == 'judge'
       @assignments = Score.joins(:judge).pluck(:heat_id, :name).
         map {|heat, judge| [heat, Person.display_name(judge)]}.to_h
-    
+
       if params[:judge]
         @judge = Person.find(params[:judge])
       end
@@ -132,13 +135,13 @@ class HeatsController < ApplicationController
       source = heats.first
 
       if before > 0 && after > 0
-        # get a list of all affected heats, including scratches         
+        # get a list of all affected heats, including scratches
         heats = Heat.where(number: [
           Range.new(*[before, after].sort),
           Range.new(*[-before , -after].sort)
         ])
 
-        # find unique heat numbers 
+        # find unique heat numbers
         numbers = heats.map(&:number).map(&:abs).sort.uniq
 
         solos = {}
@@ -170,7 +173,7 @@ class HeatsController < ApplicationController
         unless heats.all? {|heat| not heat.solo or mappings[heat.number] == nil or solos[heat.number]}
           solos = {}
         end
-        
+
         # apply mapping
         Heat.transaction do
           heats.each do |heat|
@@ -188,7 +191,7 @@ class HeatsController < ApplicationController
           end
         end
       end
-    
+
     else
 
       generate_agenda
@@ -295,7 +298,7 @@ class HeatsController < ApplicationController
     form_init(params[:primary], @heat.entry)
 
     @dances = Dance.order(:name).pluck(:name, :id).to_h
-    
+
     @partner = @heat.entry.partner(@person).id
     @age = @heat.entry.age_id
     @level = @heat.entry.level_id
@@ -395,9 +398,9 @@ class HeatsController < ApplicationController
       @heat.destroy
       notice = "Heat was successfully removed."
     end
-    
+
     respond_to do |format|
-      format.html { redirect_to params[:primary] ? person_url(params[:primary]) : heats_url, 
+      format.html { redirect_to params[:primary] ? person_url(params[:primary]) : heats_url,
         status: 303, notice: notice }
       format.json { head :no_content }
     end
@@ -472,6 +475,8 @@ class HeatsController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_heat
       @heat = Heat.find(params[:id])
+
+      @studio = @heat&.subject&.studio
     end
 
     # Only allow a list of trusted parameters through.
