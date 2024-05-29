@@ -134,6 +134,7 @@ Rails.application.routes.draw do
       get 'instructor_invoice', on: :member
       get 'staff', on: :collection
       post 'toggle_present', on: :member
+      post 'ballroom', on: :member
       post 'assign_judges', on: :member
       post 'reset_assignments', on: :member
       post 'remove_option', on: :member

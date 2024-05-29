@@ -341,6 +341,12 @@ when most dances for an individual are with one instructor but one or two are ch
     <div class="mt-4" data-controller="assign-judges" data-present-url=<%= toggle_present_person_path %>>
       <span class="mx-4">On floor?</span>
       <input type='checkbox' name="active" <% if @person.present? %>checked <% end %>class="w-6 h-6 mr-3">
+
+      <% if @event.ballrooms > 1 %>
+      Ballroom: <%= select_tag "ballroom", options_for_select(%w[Both A B], @person.judge&.ballroom || 'Both'),
+        data: {ballroom_url: ballroom_person_path},
+        class: "text-center pr-10 shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 ml-2 w-22" %>
+      <% end %>
     </div>
     <% end %>
     <% sort = @person.judge&.sort || 'back'%>

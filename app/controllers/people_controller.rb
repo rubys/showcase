@@ -1,9 +1,9 @@
 class PeopleController < ApplicationController
   include Printable
   include Retriable
-  
-  before_action :set_person, only: 
-    %i[ show edit update destroy get_entries post_entries toggle_present remove_option instructor_invoice ]
+
+  before_action :set_person, only:
+    %i[ show edit update destroy get_entries post_entries toggle_present ballroom remove_option instructor_invoice ]
 
   permit_site_owners :new, :create, :show, :post_type, :edit, :update, :destroy,
     :get_entries, :post_entries, :instructor_invoice,
@@ -156,7 +156,7 @@ class PeopleController < ApplicationController
 
     counts.each do |(category, id), count|
       next unless @people.find {|person| person.id == id}
-      
+
       list = case category
         when "Solo"
           @solos
@@ -213,7 +213,7 @@ class PeopleController < ApplicationController
       raise ActiveRecord::Rollback unless people.all? {|person| person.valid?}
     end
 
-    redirect_to backs_people_path 
+    redirect_to backs_people_path
   end
 
   # GET /people/students or /students.json
@@ -258,7 +258,7 @@ class PeopleController < ApplicationController
     @couples = Entry.preload(:lead, :follow).joins(:lead, :follow).
       where(lead: {type: 'Student'}, follow: {type: 'Student'}).
       group_by {|entry| [entry.lead, entry.follow]}.
-      map do |(lead, follow), entries| 
+      map do |(lead, follow), entries|
         [lead, follow, entries.sum {|entry| entry.heats.count}]
       end.
       sort_by {|(lead, follow), count| level = lead.level_id}
@@ -428,9 +428,9 @@ class PeopleController < ApplicationController
     end.to_h
 
     seeking = @person.role == 'Leader' ? 'Follower' : 'Leader'
-    teacher = Person.where(type: 'Professional', studio: studios, 
+    teacher = Person.where(type: 'Professional', studio: studios,
       role: [seeking, 'Both']).order(:name)
-    student = Person.where(type: 'Student', studio: @person.studio, 
+    student = Person.where(type: 'Student', studio: @person.studio,
       role: [seeking, 'Both']).order(:name)
 
     @avail = teacher + student
@@ -461,9 +461,9 @@ class PeopleController < ApplicationController
 
           entry = {
             category: category,
-            dance: dance, 
-            lead: lead, 
-            follow: follow, 
+            dance: dance,
+            lead: lead,
+            follow: follow,
             count: count
           }
 
@@ -480,12 +480,12 @@ class PeopleController < ApplicationController
   end
 
   def studio_list
-    @people = [['-- all students --', nil]] + 
+    @people = [['-- all students --', nil]] +
       Person.where(type: 'Student', studio_id: params[:studio_id].to_i).order(:name).
          map {|person| [person.display_name, person.id]}
 
     respond_to do |format|
-      format.turbo_stream { render turbo_stream: turbo_stream.replace('select-person', 
+      format.turbo_stream { render turbo_stream: turbo_stream.replace('select-person',
         render_to_string(partial: 'studio_list'))}
       format.html { redirect_to people_certificates_url }
     end
@@ -528,7 +528,7 @@ class PeopleController < ApplicationController
     selections
 
     respond_to do |format|
-      format.turbo_stream { render turbo_stream: turbo_stream.replace('options-select', 
+      format.turbo_stream { render turbo_stream: turbo_stream.replace('options-select',
         render_to_string(partial: 'options'))}
       format.html { redirect_to people_url }
     end
@@ -600,6 +600,17 @@ class PeopleController < ApplicationController
     end
   end
 
+  def ballroom
+    respond_to do |format|
+      judge = Judge.find_or_create_by(person_id: @person.id)
+      if judge.update({ballroom: params[:ballroom] || 'Both'})
+        format.json { render json: { ballroom: judge.ballroom } }
+      else
+        format.json { render json: { ballroom: judge.ballroom }, status: :unprocessable_entity }
+      end
+    end
+  end
+
   # POST /people/1/show_assignments
   def show_assignments
     judge = Judge.find_or_create_by(person_id: params[:id])
@@ -618,7 +629,7 @@ class PeopleController < ApplicationController
       select {|person| person.present?}.map(&:id).shuffle
     scored = Score.joins(:heat).distinct.where.not(heats: {number: ...0}).pluck(:number)
 
-    if ENV['RAILS_APP_DB'] == '2024-glenview' 
+    if ENV['RAILS_APP_DB'] == '2024-glenview'
       unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).pluck(:number, :id)
 
       counts = unscored.group_by(&:first).map {|number, heats| [number, heats.length]}.to_h
@@ -666,11 +677,35 @@ class PeopleController < ApplicationController
 
       unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).pluck(:id)
 
-      queue = []
-      Score.transaction do
-        unscored.each do |heat_id|
-          queue = judges.dup if queue.empty?
-          Score.create! heat_id: heat_id, judge_id: queue.pop
+      @event = Event.last
+      if @event.ballrooms > 1
+        eligable = {
+          A: judges.select {|judge| Person.find(judge).judge&.ballroom != 'B'},
+          B: judges.select {|judge| Person.find(judge).judge&.ballroom != 'A'}
+        }
+      end
+
+      if @event.ballrooms > 1 && Judge.where.not(ballroom: 'Both').any? && !eligable[:A].empty? && !eligable[:B].empty?
+        counts = judges.map {|id| [id, 0]}.to_h
+        unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).group_by(&:number)
+        unscored.each do |number, heats|
+          assign_rooms(@event.ballrooms, heats).each do |room, heats|
+            heats.each do |heat|
+              judge = counts.sort_by(&:last).find {|id, count| eligable[room].include? id}.first
+              counts[judge] += 1
+              Score.create! heat_id: heat.id, judge_id: judge
+            end
+          end
+        end
+      else
+        unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).pluck(:id)
+
+        queue = []
+        Score.transaction do
+          unscored.each do |heat_id|
+            queue = judges.dup if queue.empty?
+            Score.create! heat_id: heat_id, judge_id: queue.pop
+          end
         end
       end
 
@@ -689,7 +724,7 @@ class PeopleController < ApplicationController
   def destroy
     studio = @person.studio
 
-    if not Event.first.locked?  
+    if not Event.first.locked?
       @person.destroy
 
       notice = "#{@person.display_name} was successfully removed."
@@ -824,15 +859,15 @@ class PeopleController < ApplicationController
           @person.exclude.exclude = nil
           @person.exclude.save!
         end
-  
+
         if person_params[:exclude_id] and not person_params[:exclude_id].empty?
           exclude = Person.find(person_params[:exclude_id])
-  
+
           if exclude.exclude
             exclude.exclude.exclude = nil
             exclude.exclude.save!
           end
-  
+
           exclude.exclude = @person
           exclude.save!
         end

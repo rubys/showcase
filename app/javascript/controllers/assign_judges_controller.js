@@ -21,5 +21,21 @@ export default class extends Controller {
         .then (response => response.json())
         .then(json => event.target.checked = json.present);
     });
+
+    let ballroom = this.element.querySelector("select[id=ballroom]");
+    if (ballroom) {
+      ballroom.addEventListener("change", (event) => {
+        fetch(event.target.dataset.ballroomUrl, {
+          method: "POST",
+          headers: window.inject_region({
+            "X-CSRF-Token": token,
+            "Content-Type": "application/json"
+          }),
+          credentials: "same-origin",
+          redirect: "follow",
+          body: JSON.stringify({ ballroom: event.target.value })
+        });
+      });
+    }
   }
 }
