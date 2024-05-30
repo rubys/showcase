@@ -60,6 +60,9 @@ module Printable
     @agenda['Uncategorized'] = []
 
     current = @categories.values.first
+
+    judge_ballrooms = Judge.where.not(ballroom: 'Both').exists?
+
     @heats.each do |number, heats|
       if number == 0
         @agenda['Unscheduled'] << [number, {nil => heats}]
@@ -70,7 +73,8 @@ module Printable
         ballrooms = cat&.ballrooms || event.ballrooms || 1
         
         cat = cat&.name || 'Uncategorized'
-        @agenda[cat] << [number, assign_rooms(ballrooms, heats)]
+        @agenda[cat] << [number, assign_rooms(ballrooms, heats,
+          (judge_ballrooms && ballrooms == 2) ? -number : nil)]
       end
     end
 
@@ -147,13 +151,20 @@ module Printable
     end
   end
 
-  def assign_rooms(ballrooms, heats)
+  def assign_rooms(ballrooms, heats, number)
     if ballrooms == 1 or heats.all? {|heat| heat.category == 'Solo'}
       {nil => heats}
     elsif ballrooms == 2
       b = heats.select {|heat| heat.entry.lead.type == "Student"}
       {'A': heats - b, 'B': b}
     else
+      if number && (number < 0 || Judge.where.not(ballroom: 'Both').exists?)
+        # negative number means it has already been determined that
+        # judges ae assigned to a specific ballroom.
+        heats = heats.sort_by(&:id)
+        heats = heats.shuffle(random: Random.new(number.to_f.abs))
+      end
+
       groups = {nil => [], 'A' => [], 'B' => []}.merge(heats.group_by(&:ballroom))
       heats = groups[nil]
       n = (heats.length / 2).to_i

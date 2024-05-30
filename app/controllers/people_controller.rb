@@ -689,7 +689,7 @@ class PeopleController < ApplicationController
         counts = judges.map {|id| [id, 0]}.to_h
         unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).group_by(&:number)
         unscored.each do |number, heats|
-          assign_rooms(@event.ballrooms, heats).each do |room, heats|
+          assign_rooms(@event.ballrooms, heats, -number).each do |room, heats|
             heats.each do |heat|
               judge = counts.sort_by(&:last).find {|id, count| eligable[room].include? id}.first
               counts[judge] += 1

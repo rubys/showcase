@@ -144,7 +144,7 @@ class ScoresController < ApplicationController
 
     @subjects.sort_by! {|heat| [heat.dance_id, heat.entry.lead.back || 0]}
     ballrooms = @subjects.first.dance_category&.ballrooms || @event.ballrooms
-    @ballrooms = assign_rooms(ballrooms, @subjects)
+    @ballrooms = assign_rooms(ballrooms, @subjects, @number)
 
     @sort = @judge.sort_order || 'back'
     @show = @judge.show_assignments || 'first'
