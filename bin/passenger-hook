@@ -60,10 +60,16 @@ begin
     system "chown -R rails:rails /data/storage"
 
     # get a list of ip addresses for running instances, with the primary region first
-    addrs = [
-      *`dig +short -t aaaa #{ENV['PRIMARY_REGION']}.#{ENV['FLY_APP_NAME']}.internal`.split,
-      *`dig +short -t aaaa global.#{ENV['FLY_APP_NAME']}.internal`.split,
-    ].uniq
+    24.times.do |i| # approximately 5 minutes
+      addrs = [
+        *`dig +short -t aaaa #{ENV['PRIMARY_REGION']}.#{ENV['FLY_APP_NAME']}.internal`.split,
+        *`dig +short -t aaaa global.#{ENV['FLY_APP_NAME']}.internal`.split,
+      ].uniq
+
+      break unless addrs.include? 'error'
+
+      sleep 0.1*i
+    end
 
     # remove current region from the list
     addrs -=
