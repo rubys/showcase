@@ -159,6 +159,10 @@
     :name: Montgomery
     :region: ord
     :logo: ''
+  montreal:
+    :name: Montreal
+    :region: yul
+    :logo: arthur-murray-logo.gif
   perth:
     :name: Perth
     :region: syd
