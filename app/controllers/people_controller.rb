@@ -761,6 +761,7 @@ class PeopleController < ApplicationController
     def set_person
       @person = Person.find(params[:id])
       @studio = @person.studio
+      @person
     end
 
     # Only allow a list of trusted parameters through.
