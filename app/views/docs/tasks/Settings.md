@@ -8,12 +8,18 @@ The information you enter in this section is used largely for the printed materi
 
 ## Event Options
 
+* Heat column order - which should come first - student or leader - in printed materials?
+
 * Ballrooms - smaller events will typically have one ballroom, but larger events may chose to split the floor with stanchions into two ballrooms.  If you do decide to split the ballroom, you can put the amateur followers in one and the amateur leaders (including amateur couples) in the other.  Or you can chose to evenly split couples.  Note this choice is not all or nothing: you can chose to split the ballrooms for only certain [agenda](./Agenda) items.
 
 * Open Scoring - typically open scoring is 1/2/3/F, but you can elect to change this to match closed scoring (GH/G/S/B), a
-number, or feedback on areas that are particularly notable or need improvement (e.g. Dance Frame, Footwork, Timing).
+number, or feedback on areas that are particularly notable or need improvement (e.g. Dance Frame, Footwork, Timing), or a combination of number of feedback.
 
 * Multi Scoring - similar options are available for mulit-heats (which go various names: all arounds, triple threats, threepeats...), except for feedback.
+
+* Closed scoring generally is GH/G/S/B, but can be the same as open.
+
+* Heats can be ordered to generally progress from newcomer to advanced within each agenda item, typically resulting in large breaks for each participant.  Random will space things out.
 
 * Intermix dances within category - this is best explained by example.  If set, smooth heats may be Waltz, Tango, Fox Trot, Waltz, Tango, Fox Trot, etc..  If unset, smooth may be Waltz, Walz, Waltz, Tango, Tango, Tango, etc..
 
@@ -35,6 +41,8 @@ number, or feedback on areas that are particularly notable or need improvement (
 
 * Include independent instructors? - use this if your studio has instructors that are invoiced separately but otherwise participate
 with your studio.
+
+* Limit number of dances per category - prevent any student from having more than this number of entries in any dance.
 
 ## Event Staff
 
