@@ -465,7 +465,7 @@ server {
 <% if REGIONS.include?(region) -%>
     proxy_pass http://<%= region %>.smooth.internal:3000/showcase/$year/$site;
 <% else -%>
-    return 401;
+    return 410;
 <% end -%>
   }
 <% end -%>
