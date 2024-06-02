@@ -77,6 +77,17 @@ end
 REGIONS = @region ? `dig +short txt regions.smooth.internal`.scan(/\w+/) : []
 
 if @region
+  regions = {}
+
+  showcases.each do |year, sites|
+    sites.each do |site, events|
+      next unless events[:region]
+      regions[events[:region]] ||= {years: Set.new, sites: Set.new}
+      regions[events[:region]][:years] << year
+      regions[events[:region]][:sites] << site
+    end
+  end
+
   # warn if there are regions in the configuration that are not on the network
   missing = @regions - REGIONS - [@region]
   unless missing.empty?
@@ -377,14 +388,9 @@ server {
     return 200 "OK";
   }
 <% end -%>
-<% @tenants.each do |tenant| %>
+<% @tenants.each do |tenant| -%>
+<% next if @region and tenant.region and @region != tenant.region -%>
   # <%= tenant.name %>
-<% if @region && tenant.region && !REGIONS.include?(tenant.region) -%>
-  location <%= ROOT %>/<%= tenant.scope %> {
-    return 410;
-  }
-<% next %>
-<% end -%>
 <% if @region and @region == tenant.region and tenant.scope.to_s != '' -%>
   rewrite <%= ROOT %>/<%= tenant.scope %>/cable <%= ROOT %>/cable last;
 <% end -%>
@@ -425,9 +431,11 @@ server {
     passenger_env_var PIDFILE <%= @git_path %>/tmp/pids/<%= tenant.label %>.pid;
 <% end -%>
   }
-<% end %>
+
+<% end -%>
 <% if ENV['FLY_REGION'] -%>
 <% @regions.to_a.sort.each do |region| -%>
+  # <%= region %> region
 <% if region == ENV['FLY_REGION'] -%>
   location /showcase/regions/<%= region %>/logs/ {
     types {
@@ -441,6 +449,24 @@ server {
   location /showcase/regions/<%= region %>/ {
     add_header Fly-Replay region=<%= region %>;
     return 307;
+  }
+<%
+  data = regions[region]
+  years = "(?<year>#{data[:years].to_a.sort.join('|')})"
+  sites = "(?<site>#{data[:sites].to_a.sort.join('|')})"
+%>
+  location ~ /showcase/<%= years %>/<%= sites %> {
+    if ($request_method = 'GET') {
+      add_header Fly-Replay region=<%= region %>;
+      return 307;
+    }
+
+    proxy_set_header X-Forwarded-Host $host;
+<% if REGIONS.include?(region) -%>
+    proxy_pass http://<%= region %>.smooth.internal:3000/showcase/$year/$site;
+<% else -%>
+    return 401;
+<% end -%>
   }
 <% end -%>
 
