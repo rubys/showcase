@@ -387,7 +387,7 @@ server {
     default_type text/html;
     return 200 "OK";
   }
-<% end -%>
+<% end %>
 <% @tenants.each do |tenant| -%>
 <% next if @region and tenant.region and @region != tenant.region -%>
   # <%= tenant.name %>
