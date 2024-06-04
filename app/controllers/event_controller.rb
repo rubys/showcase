@@ -725,7 +725,7 @@ class EventController < ApplicationController
 
       new_levels.each_with_index do |new_level, index|
         if index >= old_levels.length
-          Level.create(name: new_level, id: index+1)
+          Level.create(name: new_level, id: Level.pluck(:id).max+1)
         elsif old_levels[index].name != new_level
           old_levels[index].update(name: new_level)
         end
