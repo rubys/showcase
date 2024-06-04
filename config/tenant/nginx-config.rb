@@ -268,6 +268,8 @@ passenger_log_file /dev/stdout;
 passenger_pool_idle_time 300;
 passenger_ctl hook_detached_process /rails/bin/passenger-hook;
 
+resolver [fdaa::3]:53 valid=1s;
+
 <% elsif ENV['KAMAL_CONTAINER_NAME'] -%>
 passenger_default_user root;
 passenger_default_group root;
@@ -455,7 +457,7 @@ server {
   years = "(?<year>#{data[:years].to_a.sort.join('|')})"
   sites = "(?<site>#{data[:sites].to_a.sort.join('|')})"
 %>
-  location ~ /showcase/<%= years %>/<%= sites %> {
+  location ~ /showcase/<%= years %>/<%= sites %>(?<rest>/.*)?$ {
     if ($request_method = 'GET') {
       add_header Fly-Replay region=<%= region %>;
       return 307;
@@ -463,7 +465,7 @@ server {
 
     proxy_set_header X-Forwarded-Host $host;
 <% if REGIONS.include?(region) -%>
-    proxy_pass http://<%= region %>.smooth.internal:3000/showcase/$year/$site;
+    proxy_pass http://<%= region %>.smooth.internal:3000/showcase/$year/$site$rest;
 <% else -%>
     return 410;
 <% end -%>
