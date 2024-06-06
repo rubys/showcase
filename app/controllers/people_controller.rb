@@ -5,8 +5,9 @@ class PeopleController < ApplicationController
   before_action :set_person, only:
     %i[ show edit update destroy get_entries post_entries toggle_present ballroom remove_option instructor_invoice ]
 
-  permit_site_owners :new, :create, :show, :post_type, :edit, :update, :destroy,
-    :get_entries, :post_entries, :instructor_invoice,
+  permit_site_owners :show, :get_entries, trust_level: 25
+  permit_site_owners :new, :create, :post_type, :edit, :update, :destroy,
+    :post_entries, :instructor_invoice,
     trust_level: 50
 
   def heats

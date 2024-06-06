@@ -3,8 +3,8 @@ class FormationsController < ApplicationController
   include EntryForm
   include ActiveStorage::SetCurrent
 
-  permit_site_owners *%i[ show edit update ], trust_level: 25
-  permit_site_owners :new, :create, :destroy, trust_level: 50
+  permit_site_owners *%i[ show ], trust_level: 25
+  permit_site_owners *%i[ new edit update create destroy ], trust_level: 50
 
   # GET /formations or /formations.json
   def index

@@ -7,8 +7,8 @@ class HeatsController < ApplicationController
   skip_before_action :authenticate_user, only: %i[ mobile ]
   before_action :set_heat, only: %i[ show edit update destroy ]
 
-  permit_site_owners :show, :edit, :update, :destroy,
-    trust_level: 50
+  permit_site_owners :show, trust_level: 25
+  permit_site_owners :edit, :update, :destroy, trust_level: 50
 
   # GET /heats or /heats.json
   def index
