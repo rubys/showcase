@@ -2,7 +2,7 @@
 
 Things always come up at the last minute which will require changes after you've gone to print.
 
-Even if you've clicked the lock button on agenda page once you have gone to print (and it is highly recommended that you do so), you can continue to add remove entries, either by editing entries or individual heats.  See [Changing Entries](./Entries#changing-entries) for more information.
+Even if you've clicked the lock button on agenda page once you have gone to print (and it is highly recommended that you do so), you can continue to add and remove entries, either by editing entries or individual heats.  See [Changing Entries](./Entries#changing-entries) for more information.
 
 The key difference is that you will **not** want to click on redo on either the heats or agenda page as that will change the schedule.  Instead you will find that new entries are assigned to heat zero.
 
