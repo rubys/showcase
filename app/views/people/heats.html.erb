@@ -1,3 +1,9 @@
+<style>
+  @page {
+    margin-top: 0.5in;
+  }
+</style>
+
 <div class="w-screen">
   <% @people.each do |person| %>
     <% next if @heatlist[person].empty? %>
