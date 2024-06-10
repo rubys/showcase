@@ -53,6 +53,11 @@
   <%= number_field_tag 'font-size', 32, class: 'text-right' %>
   </div>
 
+  <div class="grid grid-cols-3 gap-4 my-4">
+  <label>Font color</label>
+  <%= select_tag 'font-color', options_for_select(black: "0 0 0", white: '255 255 255'), class: 'text-right' %>
+  </div>
+
   <%= submit_tag "Generate Certificates", class: "btn-pale-orange" %>
 <% end %>
 </div>
