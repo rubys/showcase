@@ -131,7 +131,7 @@ class ScoresController < ApplicationController
       @scoring = @event.closed_scoring
     end
 
-    if %w(+ &).include? @scoring
+    if %w(+ & @).include? @scoring
       @good = {}
       @bad = {}
       @value = {}

@@ -168,7 +168,7 @@ Swiping left and right on mobile devices and tablets also work.
         <% @scores.each do |score| %>
           <th class="border-b-2 border-black">
         <% end %>
-      <% elsif !%w(& +).include? @scoring %>
+      <% elsif !%w(& + @).include? @scoring %>
         <th class="text-center" colspan="<%= @scores.length %>%>">Score
       </tr>
       <tr>
@@ -229,7 +229,7 @@ Swiping left and right on mobile devices and tablets also work.
         </div>
         <% elsif subject.dance.semi_finals %>
         <td class="text-center"><input type="checkbox" name="<%= subject.id %>" value="<%= @results[subject] %>"<%= @results[subject].empty? ? '' : ' checked' %>>
-        <% elsif !%w(+ &).include? @scoring %>
+        <% elsif !%w(+ & @).include? @scoring %>
         <% @scores.each do |score| %>
         <td class="text-center"><input type="radio" name="<%= subject.id %>" value="<%= score %>"<%= @results[subject]==score ? ' checked' : '' %>>
         <% end %>
@@ -239,6 +239,7 @@ Swiping left and right on mobile devices and tablets also work.
       <% if @style != 'emcee' # and @scores.empty? %>
       <tr data-controller="open-feedback" class="open-fb-row" data-heat="<%= subject.id %>" data-feedback-action="<%= post_feedback_path(judge: @judge) %>">
       <td colspan="5">
+      <% if @scoring == '&' || @scoring == '@' %>
       <% if @scoring == '&' %>
       <div class="grid value w-full" data-value="<%= @value[subject.id] %>" style="grid-template-columns: 100px repeat(5, 1fr)">
         <div class="bg-gray-200 inline-flex justify-center items-center">Overall</div>
@@ -248,6 +249,15 @@ Swiping left and right on mobile devices and tablets also work.
         <button class="open-fb"><abbr>4</abbr><span>4</span></button>
         <button class="open-fb"><abbr>5</abbr><span>5</span></button>
       </div>
+      <% else %>
+      <div class="grid value w-full" data-value="<%= @value[subject.id] %>" style="grid-template-columns: 100px repeat(4, 1fr)">
+        <div class="bg-gray-200 inline-flex justify-center items-center">Overall</div>
+        <button class="open-fb"><abbr>B</abbr><span>B</span></button>
+        <button class="open-fb"><abbr>S</abbr><span>S</span></button>
+        <button class="open-fb"><abbr>G</abbr><span>G</span></button>
+        <button class="open-fb"><abbr>GH</abbr><span>GH</span></button>
+      </div>
+      <% end %>
       <div class="grid good" data-value="<%= @good[subject.id] %>" style="grid-template-columns: 100px repeat(6, 1fr)">
         <div class="bg-gray-200 inline-flex justify-center items-center">Good</div>
         <button class="open-fb"><abbr>F</abbr><span>Frame</span></button>
