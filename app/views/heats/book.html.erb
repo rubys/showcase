@@ -229,7 +229,8 @@ end
     </footer>
     </div>
     <% else %>
-    <table class="break-inside-avoid table-fixed w-full" style="font-size: 11.5px">
+    <% feedback = (@event.closed_scoring == "=" || @combine_open_and_closed) && %w(+ & @).include?(@event.open_scoring) %>
+    <table class="<% unless feedback %>break-inside-avoid <% end %>table-fixed w-full" style="font-size: 11.5px">
       <colgroup>
         <col width="5px">
         <% unless heat.category == 'Solo' %>
@@ -307,6 +308,9 @@ end
           </tr>
           <% dance = heat.dance_id %>
          <% end %>
+         <% if feedback %>
+         <tbody class="break-inside-avoid">
+         <% end %>
          <% if heat.number < 0 %>
          <tr class="font-base line-through opacity-50" id="<%= dom_id heat %>">
          <% else %>
@@ -360,7 +364,7 @@ end
              <div class="w-24 pt-4 border-b-2 border-black">&nbsp;</div>
            </td>
            <% if heat.category == 'Open' || @event.closed_scoring == "=" || @combine_open_and_closed %>
-           <% if @event.open_scoring == '+' || @event.open_scoring == '@' %>
+           <% if @event.open_scoring == '+' %>
            <tr>
             <td colspan="2">
             <td colspan="4">
@@ -391,10 +395,11 @@ end
           </div>
           </div>
           </tr>
-          <% elsif @event.open_scoring == '&' %>
+          <% elsif @event.open_scoring == '&' || @event.open_scoring == '@' %>
           <tr>
             <td colspan="2">
             <td colspan="4">
+              <% if @event.open_scoring == '&' %>
               <div class="grid value w-full" style="grid-template-columns: 100px repeat(5, 1fr)">
                 <div class="bg-gray-200 inline-flex justify-center items-center">Overall</div>
                 <button class="open-fb"><abbr>1</abbr><span>1</span></button>
@@ -403,6 +408,15 @@ end
                 <button class="open-fb"><abbr>4</abbr><span>4</span></button>
                 <button class="open-fb"><abbr>5</abbr><span>5</span></button>
               </div>
+              <% else %>
+              <div class="grid value w-full" style="grid-template-columns: 100px repeat(4, 1fr)">
+                <div class="bg-gray-200 inline-flex justify-center items-center">Overall</div>
+                <button class="open-fb"><abbr>B</abbr><span>B</span></button>
+                <button class="open-fb"><abbr>S</abbr><span>S</span></button>
+                <button class="open-fb"><abbr>G</abbr><span>G</span></button>
+                <button class="open-fb"><abbr>GH</abbr><span>GH</span></button>
+              </div>
+              <% end %>
               <div class="grid good" style="grid-template-columns: 100px repeat(6, 1fr)">
                 <div class="bg-gray-200 inline-flex justify-center items-center">Good</div>
                 <button class="open-fb"><abbr>F</abbr><span>Frame</span></button>
@@ -413,7 +427,7 @@ end
                 <button class="open-fb"><abbr>S</abbr><span>Styling</span></button>
               </div>
               <div class="grid bad" style="grid-template-columns: 100px repeat(6, 1fr)">
-                <div class="bg-gray-200 inline-flex justify-center items-center">Bad</div>
+                <div class="bg-gray-200 inline-flex justify-center items-center">Needs Work</div>
                 <button class="open-fb"><abbr>F</abbr><span>Frame</span></button>
                 <button class="open-fb"><abbr>P</abbr><span>Posture</span></button>
                 <button class="open-fb"><abbr>FW</abbr><span>Footwork</span></button>
@@ -437,6 +451,9 @@ end
            <% end %>
            <% end %>
          </tr>
+         <% if feedback %>
+         </tbody>
+         <% end %>
          <% end %>
       <% end %>
       </tbody>
