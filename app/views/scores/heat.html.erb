@@ -278,7 +278,7 @@ Swiping left and right on mobile devices and tablets also work.
       </div>
       <% elsif @scoring == '+' %>
       <div class="grid grid-cols-2 w-full divide-x-2 divide-black">
-        <div class="grid grid-cols-5 good" data-value="<%= @good[subject.id] %>">
+        <div class="grid grid-cols-5 good" data-value="<%= @good[subject.id] %>" title="Good Job With">
           <button class="open-fb"><abbr>DF</abbr><span>Dance Frame</span></button>
           <button class="open-fb"><abbr>T</abbr><span>Timing</span></button>
           <button class="open-fb"><abbr>LF</abbr><span>Lead/&ZeroWidthSpace;Follow</span></button>
@@ -290,7 +290,7 @@ Swiping left and right on mobile devices and tablets also work.
           <button class="open-fb"><abbr>CB</abbr><span>Contra-Body</span></button>
           <button class="open-fb"><abbr>FC</abbr><span>Floor Craft</span></button>
         </div>
-        <div class="grid grid-cols-5 bad"  data-value="<%= @bad[subject.id] %>">
+        <div class="grid grid-cols-5 bad"  data-value="<%= @bad[subject.id] %>" title="Needs Work On">
           <button class="open-fb"><abbr>DF</abbr><span>Dance Frame</span></button>
           <button class="open-fb"><abbr>T</abbr><span>Timing</span></button>
           <button class="open-fb"><abbr>LF</abbr><span>Lead/&ZeroWidthSpace;Follow</span></button>
