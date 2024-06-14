@@ -36,6 +36,15 @@
     :name: Bellevue
     :region: sea
     :logo: ''
+    :events:
+      june-medal-ball:
+        :name: June Medal Ball
+      august-showcase:
+        :name: August Showcase
+      october-mini-comp:
+        :name: October Mini COmp
+      december-medal-ball:
+        :name: December Medal Ball
   carmel:
     :name: Carmel
     :region: ord
@@ -138,6 +147,11 @@
     :name: Memorial DanceSport Ballroom
     :region: dfw
     :logo: mdballroom.webp
+    :events:
+      february-team-match:
+        :name: February Team Match
+      june-team-match:
+        :name: June Team Match
   merrillville:
     :name: Merrillville
     :region: ord
