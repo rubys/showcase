@@ -37,6 +37,7 @@
   </thead>
   <tbody>
   <% heats.each_with_index do |heat, index| %>
+  <% next if heat.number <= 0 %>
     <% if ballroom == 'A' and (
       (ballrooms == 2 and heat.entry.lead.type == 'Student') or
       (ballrooms == 3 and index >= heats.length/2 ))
