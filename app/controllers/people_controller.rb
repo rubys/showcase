@@ -626,6 +626,11 @@ class PeopleController < ApplicationController
       Score.where(value: nil, comments: nil, good: nil, bad: nil).delete_all
     end
 
+    unless Person.includes(:judge).where(type: 'Judge').all.any?(&:present?)
+      redirect_to person_path(params[:id]), alert: "No judges are marked as present."
+      return
+    end
+
     judges = Person.includes(:judge).where(type: 'Judge').
       select {|person| person.present?}.map(&:id).shuffle
     scored = Score.joins(:heat).distinct.where.not(heats: {number: ...0}).pluck(:number)
