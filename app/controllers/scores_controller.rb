@@ -515,7 +515,7 @@ class ScoresController < ApplicationController
         if students.length == 1
           age = ages[students.first.age_id]
         else
-          age = ages[students.map {|student| student.age_id}.max]
+          age = ages[students.map {|student| student.age_id || 0 }.max]
         end
 
         age ||= ages.first.last
