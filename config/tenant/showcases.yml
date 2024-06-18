@@ -271,6 +271,11 @@
     :name: Warsaw
     :region: waw
     :logo: arthur-murray-logo.gif
+    :events:
+      june-warsaw-freestyle:
+        :name: June Warsaw Freestyle
+      july-kiev:
+        :name: July Kiev
   westchester:
     :name: West Chester
     :region: ord
