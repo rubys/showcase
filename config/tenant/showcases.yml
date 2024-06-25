@@ -261,6 +261,8 @@
     :events:
       newsome-twosome:
         :name: Medal Ball - Newsome Twosome
+      summer-beach-bash:
+        :name: Summer Beach Bash
       freestyles:
         :name: Virginia Beach Freestyles
   vicenza:
