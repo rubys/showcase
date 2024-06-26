@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+if [[ $# -lt 2 ]]; then
+  echo "Usage: $0 db script"
+  exit 1
+fi
+
+DIR="$( dirname -- "${BASH_SOURCE[0]}"; )";   # Get the directory name
+if [ $(dirname $HOME) == "home" ]; then
+  DIR="$( realpath -e -- "$DIR"; )";    # Resolve its full path if need be
+else
+  DIR="$( realpath -- "$DIR"; )";    # Resolve its full path if need be
+fi
+BASE="$(realpath $DIR/..)"
+
+export RAILS_APP_DB=$(basename -s .sqlite3 $1)
+export RAILS_STORAGE=$BASE/storage/$(basename -s .sqlite3 $1)
+
+if [[ "$1" = "test" ]]; then
+  export RAILS_ENV=test
+  bin/rails db:prepare db:fixtures:load
+fi
+
+bin/rails runner $2
