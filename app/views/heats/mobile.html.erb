@@ -57,7 +57,7 @@
       end
     %>
     <td class="px-2 border-x" data-index><%= p1.display_name %> - <%= p2.display_name %>
-    <% if heat.category == 'Solo' %>
+    <% if heat.solo %>
     <% heat.solo.formations.each do |formation| %>
     <% next unless formation.on_floor %>
     - <%= formation.person.display_name %>

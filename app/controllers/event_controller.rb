@@ -922,6 +922,7 @@ class EventController < ApplicationController
   end
 
   def self.logo
+    @@logo = nil if @@logo == ''
     @@logo ||= ENV['SHOWCASE_LOGO'] || 'intertwingly.png'
   end
 
