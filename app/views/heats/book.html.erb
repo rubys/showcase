@@ -337,7 +337,7 @@ end
              end
            %>
            <td class="pl-4"><%= show_name[p1] %>
-           <% if heat.category == 'Solo' %>
+           <% if heat.solo %>
            <% heat.solo.formations.each_with_index do |formation, index| %>
              <% if index % 2 == 0 and formation.on_floor %>
              <br><%= show_name[formation.person] %>
