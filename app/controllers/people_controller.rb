@@ -347,6 +347,7 @@ class PeopleController < ApplicationController
       order('abs(number)').to_a
 
     @solos = Solo.includes(:heat, :formations).all.map(&:heat) & @heats
+    @solos.select! {|heat| heat.category == 'Solo'}
 
     @scores = Score.joins(heat: :entry).
       where(entry: {follow_id: @person.id}).or(

@@ -13,6 +13,7 @@ class SolosController < ApplicationController
 
     unscheduled = Struct.new(:id, :name).new(0, 'Unscheduled')
     Solo.order(:order).each do |solo|
+      next unless solo.heat.category == 'Solo'
       cat = solo.heat.dance_category
       cat = cat ? cat.base_category : unscheduled
       @solos[cat] ||= []
@@ -82,7 +83,7 @@ class SolosController < ApplicationController
     solo[:instructor] ||= formation.first
 
     @heat = Heat.create!({
-      number: solo[:number] || 0, 
+      number: solo[:number] || 0,
       entry: find_or_create_entry(solo),
       category: "Solo",
       dance: Dance.find(solo[:dance_id].to_i)
@@ -109,7 +110,7 @@ class SolosController < ApplicationController
             on_floor: (person.type != 'Professional' || solo[:on_floor] != '0')
         end
 
-        format.html { redirect_to @person, 
+        format.html { redirect_to @person,
           notice: "#{formation.empty? ? 'Solo' : 'Formation'} was successfully created." }
         format.json { render :show, status: :created, location: @solo }
       else
@@ -150,7 +151,7 @@ class SolosController < ApplicationController
     if not formation.empty? or not @solo.formations.empty?
       @solo.formations.each do |record|
         if not formation.include? record.person_id
-          Formation.delete(record) 
+          Formation.delete(record)
         elsif record.person.type == "Professional"
           record.update on_floor: solo[:on_floor] == '1'
         end
@@ -191,7 +192,7 @@ class SolosController < ApplicationController
     category = source.heat.solo.category_override
     if category
       solos = Solo.order(:order).where(category_override_id: category.id)
-    else 
+    else
       category = source.heat.dance.solo_category
       solos = Solo.where(category_override_id: nil).order(:order).joins(heat: :dance).where(dance: {solo_category_id: category&.id})
     end
@@ -223,11 +224,11 @@ class SolosController < ApplicationController
     end
 
     respond_to do |format|
-      format.turbo_stream { 
+      format.turbo_stream {
         id = category ? helpers.dom_id(category) : 'category_0'
         heats = solos.map(&:heat)
 
-        render turbo_stream: turbo_stream.replace(id, 
+        render turbo_stream: turbo_stream.replace(id,
           render_to_string(partial: 'cat', layout: false, locals: {heats: heats, id: id})
         )
       }
@@ -336,7 +337,7 @@ class SolosController < ApplicationController
       ideal = solo_count / participants.values.map(&:length).max
 
       cat_order = weights.keys
-      
+
       solo_count.to_i.times do |iteration|
         new_order = []
 
