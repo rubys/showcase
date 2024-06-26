@@ -922,12 +922,11 @@ class EventController < ApplicationController
   end
 
   def self.logo
-    @@logo = nil if @@logo == ''
     @@logo ||= ENV['SHOWCASE_LOGO'] || 'intertwingly.png'
   end
 
   def self.logo=(logo)
-    @@logo = logo || 'intertwingly.png'
+    @@logo = logo == '' ? nil : logo
   end
 
   def import
