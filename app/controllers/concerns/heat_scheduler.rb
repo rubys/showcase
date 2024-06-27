@@ -438,6 +438,9 @@ module HeatScheduler
       return if heat.lead.exclude_id and @participants.include? heat.lead.exclude
       return if heat.follow.exclude_id and @participants.include? heat.follow.exclude
 
+      formations = heat.solo&.formations&.map(&:person)
+      return if formations and @participants.any? {|participant| formations.include? participant}
+
       return false unless @dance == dance
       return false if heat.category == 'Solo' and @group.length > 0
       return false unless dcat == @max_dcat or @@combinable.include? dance
@@ -449,6 +452,7 @@ module HeatScheduler
 
       @participants.add heat.lead
       @participants.add heat.follow
+      @participants += formations if formations
 
       @max_dcat = dcat if dcat > @max_dcat
       @min_dcat = dcat if dcat < @min_dcat
@@ -478,4 +482,57 @@ module HeatScheduler
       @group.size
     end
   end
+
+  if ENV['RAILS_APP_DB'] == '2024-monterey'
+    alias :schedule_heats_orig :schedule_heats
+
+    def schedule_heats
+      # Ensure Bill Giuliani's pro-am heats are scheduled to exactly correspond with his wife's pro-am heats
+      entries = Entry.where(follow_id: 8, lead_id: 36)
+      entry_attributes = entries.first.attributes
+      Heat.where(entry: entries).delete_all
+
+      entries = Entry.where(follow_id: 37).where.not(lead_id: 36)
+      heats = Heat.where(entry: entries)
+
+      heats.each do |heat|
+        unless heat.solo
+          solo = Solo.new(heat_id: heat.id)
+          solo.order = (Solo.maximum(:order) || 0) + 1
+          heat.solo = solo
+          heat.save!
+        end
+
+        people = heat.solo.formations.pluck(:person_id)
+
+        unless people.include? 36
+          formation = Formation.new(solo_id: heat.solo.id, person_id: 36)
+          formation.save!
+        end
+
+        unless people.include? 8
+          formation = Formation.new(solo_id: heat.solo.id, person_id: 8)
+          formation.save!
+        end
+      end
+
+      schedule_heats_orig
+
+      solos = Formation.includes(:solo).where(person_id: [8, 36]).map(&:solo).uniq
+      entry = Entry.where(follow_id: 8, lead_id: 36).first
+      entry ||= Entry.create!(entry_attributes)
+
+      solos.each do |solo|
+        Heat.create!(
+          number: solo.heat.number,
+          category: solo.heat.category,
+          dance_id: solo.heat.dance_id,
+          entry_id: entry.id
+        )
+
+        solo.destroy!
+      end
+    end
+  end
+
 end
