@@ -59,6 +59,7 @@ class StudiosController < ApplicationController
     heat_sheets
 
     @event ||= Event.first
+    @track_ages = @event.track_ages
     @font_size = @event.font_size
 
     respond_to do |format|
