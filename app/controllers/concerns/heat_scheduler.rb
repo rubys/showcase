@@ -320,6 +320,7 @@ module HeatScheduler
         groups = heats.group_by {|heat| heat.number}.values.
           map {|heats| Group.new(heats)}
         cats[cat] = groups
+        cat.update! locked: false if groups.empty?
       end
 
       heat += groups.length

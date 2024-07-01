@@ -122,7 +122,14 @@ class HeatsController < ApplicationController
   # POST /heats/redo
   def redo
     schedule_heats
-    redirect_to heats_url, notice: "#{Heat.maximum(:number).to_i} heats generated."
+    notice = "#{Heat.maximum(:number).to_i} heats generated."
+
+    unless Heat.where(number: 0.0).empty?
+      locked = Category.where(locked: true).count
+      notice += " #{locked} categories locked." if locked > 0
+    end
+
+    redirect_to heats_url, notice: notice
   end
 
   def renumber
