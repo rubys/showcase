@@ -11,7 +11,7 @@
     </tr>
     <tr>
       <td class="row-head">Heat
-      <% if @score_values %>
+      <% if @score_values != false %>
       <td class="row-head" colspan="<%= [@judges.length, 1].max %>">Scores
       <% end %>
       <td class="row-head">Dance
@@ -27,10 +27,10 @@
       <% if @judges.empty? %>
       <td></td>
       <% elsif heat.category == 'Open' and @event.open_scoring == '+' %>
-      <% if @score_values %>
+      <% if @score_values != false %>
       <td colspan="<%= [@judges.length, 1].max %>"></td>
       <% end %>
-      <% elsif @score_values %>
+      <% elsif @score_values != false %>
       <% judge_ids.each do |judge| %>
         <td class="text-center"><%= heat.scores.select {|score| score.judge_id == judge}.sort_by(&:slot).map(&:value).join(' ') %>
       <% end %>
