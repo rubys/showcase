@@ -1,5 +1,6 @@
 <div class="w-screen">
   <% found = false %>
+  <% @score_values = !Score.where.not(value: [nil, ""]).empty? %>
   <% @people.each do |person| %>
     <% next unless @heats.any? {|heat| [heat.entry.lead, heat.entry.follow].include? person} or @formations.any? {|id, number| id == person.id} %>
     <%= render "people/scores", person: person %>
