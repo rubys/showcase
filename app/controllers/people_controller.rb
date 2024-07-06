@@ -96,6 +96,13 @@ class PeopleController < ApplicationController
         @people.select! {|person| person.studio_id == studio_id}
       end
 
+      unless params[:template].content_type == 'application/pdf'
+        flash[:alert] = "template must be a PDF file."
+        @studios = [['-- all studios --', nil]] + Studio.order(:name).pluck(:name, :id)
+        render :certificates, status: :unprocessable_entity
+        return
+      end
+
       pdf = CombinePDF.new
       @people.each do |name|
         pdf << CombinePDF.load(params[:template].tempfile.path)
