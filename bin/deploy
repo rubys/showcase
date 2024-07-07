@@ -61,7 +61,7 @@ if ENV['FLY_APP_NAME']
       end
     end
 
-    # ensure host keys remain stable 
+    # ensure host keys remain stable
     host_keys = Dir['ssh_host*']
     if host_keys.empty?
       # generate new keys
@@ -89,7 +89,14 @@ if ENV['FLY_APP_NAME']
   # Sync data from primary region
   if ENV['FLY_REGION'] != ENV['PRIMARY_REGION']
     source = "rsync://#{ENV['PRIMARY_REGION']}.#{ENV['FLY_APP_NAME']}.internal"
+  elsif !Dir.exist?("#{VOLUME}/db/") and !machines_by_region.empty?
+    # new machine in primary region, pick a random region to sync from
+    source = "rsync://#{machines_by_region.keys.sample}.#{ENV['FLY_APP_NAME']}.internal"
+  else
+    source = nil
+  end
 
+  if source
     # get authorized keys
     authkeys = "#{VOLUME}/.ssh/authorized_keys"
     if not File.exist? authkeys
@@ -153,10 +160,10 @@ if ENV['FLY_APP_NAME']
     uri = URI('https://rubix.intertwingly.net/webhook/showcase')
     res = Net::HTTP.get_response(uri)
     if res.is_a?(Net::HTTPSuccess)
-      puts res.body 
+      puts res.body
     else
       STDERR.puts res
-      STDERR.puts res.body 
+      STDERR.puts res.body
     end
   end
 
