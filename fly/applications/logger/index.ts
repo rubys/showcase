@@ -97,6 +97,20 @@ app.get("/sentry/seen", async (_, response) => {
   }
 })
 
+app.get("/sentry/seen.debug", async (_, response) => {
+  const lastSeen = await getLatest()
+  const seen = (await SEENFILE.exists()) ? (await SEENFILE.text()) : "0"
+  response.set('Access-Control-Allow-Origin', '*')
+
+  response.write(`region:   ${process.env.FLY_REGION}\n`)
+  response.write(`seen:     ${seen}\n`)
+  response.write(`lastSeen: ${lastSeen}\n`)
+  response.write(`exists:   ${await SEENFILE.exists()}\n`)
+  response.write(`text:     ${await SEENFILE.text()}\n`)
+  response.write('result:   ' + (seen === lastSeen ? '""' : "/sentry/link"))
+  response.end()
+})
+
 app.get("/regions/:region/(*)", async (request, response, next) => {
   let { region } = request.params;
 
