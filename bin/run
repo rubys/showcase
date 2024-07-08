@@ -21,4 +21,5 @@ if [[ "$1" = "test" ]]; then
   bin/rails db:prepare db:fixtures:load
 fi
 
-bin/rails runner $2
+shift
+bin/rails runner $@

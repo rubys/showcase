@@ -1,0 +1,82 @@
+#!/usr/bin/env ruby
+require 'yaml'
+
+if ARGV.empty?
+  config = {
+    database: 'db/2024-livermore-barbecue-pep-rally.sqlite3',
+    log: Dir.home + '/Downloads/2024-07-07.log',
+    start: '2024-07-07T17:04:15.950656096Z',
+    finish: '2024-07-07T18:05:16.906959819Z',
+    controllers: ["ScoresController"],
+    methods: ["post", "post_feedback"],
+  }
+
+  IO.write(Dir.home + '/tmp/2024-livermore-barbecue-pep-rally.yml', config.to_yaml)
+else
+  config = YAML.load_file(ARGV.first)
+end
+
+if !defined? Rails
+  exec "bin/run", config[:database], $0, *ARGV
+end
+
+start = config[:start]
+finish = config[:finish]
+
+posts = Hash.new {|h, k| h[k] = {}}
+
+prefix = '^([-\d.:TZ]+) +\[\w+\] \w+ \[info\] [\d:]+ [\w.]+\s+\| App \d+ output: \[(\w+)\]'
+
+puts "Replaying log from #{config[:log]}"
+File.readlines(config[:log], chomp: true, encoding: 'UTF-8').each do |line|
+  next if start && line < start
+  break if finish && line > finish
+
+  if line =~ /#{prefix} Started POST "(.*?)"/
+    posts[$2].merge! path: $3, time: $1
+  elsif line =~ /#{prefix} Processing by (\w+)#(\w+)/
+    posts[$2].merge! controller: $3, method: $4
+  elsif line =~ /#{prefix}\s+Parameters: (.*)/
+    begin
+      posts[$2].merge! parameters: eval($3)
+    rescue SyntaxError
+      # ignore: may include things like file uploads
+    end
+  end
+end
+
+posts.select! {|key, value| value[:time]}
+posts.select! {|key, value| value[:method]}
+posts.select! {|key, value| value[:parameters]}
+
+posts = posts.sort_by {|key, value| value[:time]}
+
+prefix = /^\/showcase\/#{ENV['RAILS_APP_DB'].gsub(/\W/, '.')}/
+
+controllers = config[:controllers]
+methods = config[:methods]
+
+posts.each do |key, post|
+  next unless post[:path] =~ prefix
+  next if controllers and !controllers.include?(post[:controller])
+  next if methods and !methods.include?(post[:method])
+  parameters = JSON.generate(post[:parameters]).force_encoding('UTF-8')
+
+  env = {
+    "PATH_INFO" => post[:path].sub(prefix, ''),
+    "REQUEST_METHOD" =>"POST",
+    "CONTENT_TYPE" => "application/json",
+    "CONTENT_LENGTH" => parameters.bytes.length,
+    "rack.input" => StringIO.new(parameters),
+  }
+
+  code, _headers, response = Rails.application.routes.call env
+  if code == 200
+    body = response.body
+    puts body[/<body>(.*)<\/body>/m, 1] || body
+  else
+    pp post
+    puts Thor::Shell::Color.new.set_color("Response code: #{code}", :red)
+    exit
+  end
+end
