@@ -238,7 +238,7 @@ class HeatsController < ApplicationController
             map(&:abs).sort.uniq.zip(1..).any? {|n, i| n != i}
 
           render turbo_stream: [
-            turbo_stream.replace("cat-#{ catname.downcase.gsub(' ', '-') }",
+            turbo_stream.replace("cat-#{ catname.downcase.gsub(/[^\w]+/, '-') }",
               render_to_string(partial: 'category', layout: false, locals: {cat: catname, heats: heats})
             ),
             turbo_stream.replace("renumber",
@@ -284,7 +284,7 @@ class HeatsController < ApplicationController
         heats = @agenda[cat.name]
         @locked = Event.last.locked?
 
-        render turbo_stream: turbo_stream.replace("cat-#{ cat.name.downcase.gsub(' ', '-') }",
+        render turbo_stream: turbo_stream.replace("cat-#{ cat.name.downcase.gsub(/[^\w]+/, '-') }",
           render_to_string(partial: 'category', layout: false, locals: {cat: cat.name, heats: heats})
         )
       }
