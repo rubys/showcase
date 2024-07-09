@@ -100,6 +100,7 @@ class CategoriesController < ApplicationController
     else
       event = Event.first
       event.update(locked: !event.locked)
+      Heat.where('prev_number != number').update_all 'prev_number = number' if event.locked
       redirect_to params[:return_to] || categories_url,
         notice: "Agenda #{event.locked ? '' : 'un'}locked."
     end
@@ -148,7 +149,7 @@ class CategoriesController < ApplicationController
     flash.now.notice = "#{source.name} was successfully moved."
 
     respond_to do |format|
-      format.turbo_stream { render turbo_stream: turbo_stream.replace('categories', 
+      format.turbo_stream { render turbo_stream: turbo_stream.replace('categories',
         render_to_string(:index, layout: false))}
       format.html { redirect_to categories_url }
     end
@@ -342,7 +343,7 @@ class CategoriesController < ApplicationController
 
         if dance.changed?
           dance.save!
-          @total += 1 
+          @total += 1
         end
       end
     end

@@ -37,8 +37,8 @@ class HeatsController < ApplicationController
       end
     end
 
-    @renumber = Heat.distinct.where.not(number: 0).pluck(:number).
-      map(&:abs).sort.uniq.zip(1..).any? {|n, i| n != i}
+    @undoable = !@locked && undoable
+    @renumber = !@locked && renumber_needed
 
     # detect if categories were reordered
     first_heats = @agenda.map {|category| category.last.first}.compact.map(&:first)
@@ -129,6 +129,13 @@ class HeatsController < ApplicationController
       notice += " #{locked} categories locked." if locked > 0
     end
 
+    redirect_to heats_url, notice: notice
+  end
+
+  # POST /heats/undo
+  def undo
+    count = Heat.where('prev_number != number').update_all 'number = prev_number'
+    notice = "#{helpers.pluralize count, 'heat'} undone."
     redirect_to heats_url, notice: notice
   end
 
@@ -234,8 +241,8 @@ class HeatsController < ApplicationController
           catname = cat&.name || 'Uncategorized'
           heats = @agenda[catname]
           @locked = Event.last.locked?
-          @renumber = Heat.distinct.where.not(number: 0).pluck(:number).
-            map(&:abs).sort.uniq.zip(1..).any? {|n, i| n != i}
+          @renumber = !@locked && renumber_needed
+          @undoable = !@locked && undoable
 
           render turbo_stream: [
             turbo_stream.replace("cat-#{ catname.downcase.gsub(/[^\w]+/, '-') }",
@@ -284,9 +291,17 @@ class HeatsController < ApplicationController
         heats = @agenda[cat.name]
         @locked = Event.last.locked?
 
-        render turbo_stream: turbo_stream.replace("cat-#{ cat.name.downcase.gsub(/[^\w]+/, '-') }",
-          render_to_string(partial: 'category', layout: false, locals: {cat: cat.name, heats: heats})
-        )
+        @renumber = !@locked && renumber_needed
+        @undoable = !@locked && undoable
+
+        render turbo_stream: [
+          turbo_stream.replace("cat-#{ cat.name.downcase.gsub(/[^\w]+/, '-') }",
+            render_to_string(partial: 'category', layout: false, locals: {cat: cat.name, heats: heats})
+          ),
+          turbo_stream.replace("renumber",
+            render_to_string(partial: 'renumber')
+          )
+        ]
       }
 
       format.html { redirect_to heats_url }

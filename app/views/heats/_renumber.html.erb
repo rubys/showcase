@@ -7,3 +7,6 @@
   <% else %>
   <%= up_link 'Renumber', renumber_heats_path, class: "hidden btn-blue print:hidden", id: 'renumber', method: :post %>
   <% end %>
+  <% if @undoable and not @locked %>
+  <%= up_link 'Undo', undo_heats_path, class: "btn-pale-orange print:hidden", method: :post %>
+  <% end %>

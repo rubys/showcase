@@ -3,7 +3,7 @@ module Printable
     event = Event.last
 
     @heats = Heat.order('abs(number)').includes(
-      dance: [:open_category, :closed_category, :solo_category, :multi_category], 
+      dance: [:open_category, :closed_category, :solo_category, :multi_category],
       entry: [:age, :level, lead: [:studio], follow: [:studio]],
       solo: [:formations]
     )
@@ -35,7 +35,7 @@ module Printable
       end
       last_cat = category
     end
-      
+
     start = nil
     heat_length = Event.last.heat_length
     solo_length = Event.last.solo_length || heat_length
@@ -71,7 +71,7 @@ module Printable
         cat = current if cat != current and event.heat_range_cat == 1 and (heats.first.dance.open_category == current or heats.first.dance.closed_category == current)
         current = cat
         ballrooms = cat&.ballrooms || event.ballrooms || 1
-        
+
         cat = cat&.name || 'Uncategorized'
         @agenda[cat] << [number, assign_rooms(ballrooms, heats,
           (judge_ballrooms && ballrooms == 2) ? -number : nil)]
@@ -272,7 +272,7 @@ module Printable
       end.to_h
 
       entries.uniq.each do |entry|
-        if entry.lead.type == 'Student' and entry.follow.type == 'Student' 
+        if entry.lead.type == 'Student' and entry.follow.type == 'Student'
           split = 2.0
         else
           split = 1
@@ -320,7 +320,7 @@ module Printable
 
         entries: Entry.where(id: entries.map(&:id)).
           order(:levei_id, :age_id).
-          includes(lead: [:studio], follow: [:studio], heats: [:dance]).group_by {|entry| 
+          includes(lead: [:studio], follow: [:studio], heats: [:dance]).group_by {|entry|
             entry.follow.type == "Student" ? [entry.follow, entry.lead] : [entry.lead, entry.follow]
           }.sort_by {|key, value| key}
       }
@@ -389,5 +389,14 @@ module Printable
       type: 'application/pdf'
   ensure
     tmpfile.unlink
+  end
+
+  def undoable
+    Heat.where('number != prev_number AND prev_number != 0').any?
+  end
+
+  def renumber_needed
+    Heat.distinct.where.not(number: 0).pluck(:number).
+      map(&:abs).sort.uniq.zip(1..).any? {|n, i| n != i}
   end
 end

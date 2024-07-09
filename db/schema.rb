@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_29_200032) do
+ActiveRecord::Schema[7.1].define(version: 2024_07_08_213142) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -193,6 +193,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_29_200032) do
     t.string "closed_scoring", default: "G"
     t.string "heat_order", default: "L"
     t.integer "dance_limit"
+    t.string "counter_color", default: "#FFFFFF"
     t.index ["solo_level_id"], name: "index_events_on_solo_level_id"
   end
 
@@ -214,6 +215,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_29_200032) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "ballroom"
+    t.float "prev_number"
     t.index ["dance_id"], name: "index_heats_on_dance_id"
     t.index ["entry_id"], name: "index_heats_on_entry_id"
   end
