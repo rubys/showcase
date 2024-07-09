@@ -69,10 +69,16 @@
   <div class="my-5">
     <%= form.label :counter_art %>
     <% if @event.counter_art.attached? and not Rails.env.test? %>
+    <% if @event.counter_art.content_type.start_with? 'video' %>
+    <video controls autoplay loop muted style="height: 5em">
+      <source src="<%= url_for @event.counter_art %>" type="<%= @event.counter_art.content_type %>">
+    </video>
+    <% else %>
     <%= image_tag @event.counter_art.url, style: 'height: 5em' %>
     <% end %>
+    <% end %>
     <%= form.file_field :counter_art, 
-      accept: "image/apng,image/avif,image/gif,image/jpeg,image/png,image/svg+xml,image/webp",
+      accept: "image/apng,image/avif,image/gif,image/jpeg,image/png,image/svg+xml,image/webp,video/webm,video/mp4",
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 

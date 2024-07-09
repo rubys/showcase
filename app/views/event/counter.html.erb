@@ -6,7 +6,14 @@ html, body {
 </style>
 
 <% if @event.counter_art.attached? %>
+<% if @event.counter_art.content_type.start_with? 'video' %>
+<video autoplay loop muted style="position: absolute; height: 100%; width: 100%; z-index: -1; object-fit: fill">
+  <source src="<%= url_for @event.counter_art %>" type="<%= @event.counter_art.content_type %>">
+</video>
+<div>
+<% else %>
 <div style="background-image: url(<%= @event.counter_art.url %>); background-size: 100% 100%">
+<% end %>
 <% else %>
 <div class="bg-gradient-to-r from-violet-500 to-fuchsia-500">
 <% end %>

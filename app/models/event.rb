@@ -60,9 +60,10 @@ class Event < ApplicationRecord
   end
 
   def correct_document_mime_type
-    acceptable_types = "image/apng,image/avif,image/gif,image/jpeg,image/png,image/svg+xml,image/webp".split(',')
+    acceptable_types = %w(image/apng image/avif image/gif image/jpeg image/png
+      image/svg+xml image/webp video/webm video/mp4)
     if counter_art.attached? && !counter_art.content_type.in?(acceptable_types)
-      errors.add(:counter_art, 'Must be an image')
+      errors.add(:counter_art, 'Must be an image or video')
     end
   end
 end
