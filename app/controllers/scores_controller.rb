@@ -439,6 +439,7 @@ class ScoresController < ApplicationController
 
           if @open_scoring == '#'
             points = count * score.to_i
+            category = 'Open'
           else
             value = SCORES['Closed'].index score
             if value
@@ -459,8 +460,10 @@ class ScoresController < ApplicationController
           end
 
           if points > 0
-            @scores[level][studio][category][value] += count
-            @scores[total][studio][category][value] += count
+            if @open_scoring != '#'
+              @scores[level][studio][category][value] += count
+              @scores[total][studio][category][value] += count
+            end
 
             @scores[level][studio]['count'] += count
             @scores[level][studio]['points'] += points
