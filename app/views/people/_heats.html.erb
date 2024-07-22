@@ -51,11 +51,11 @@ body {
     <% day = @start[number]&.day %>
     <% end %>
     <% ballrooms = heat.dance_category&.ballrooms || @ballrooms %>
-    <tr class="text-sm">
+    <tr class="text-sm<% if heat.number < 0%> line-through<% end %>">
       <% if @start %>
       <td class="text-right pr-4"><%= @start[number]&.strftime("%-I:%M") %></td>
       <% end %>
-      <td class="text-center"><%= heat.number %>
+      <td class="text-center"><%= heat.number.abs %>
       <% unless heat.category == 'Solo' %>
       <% if ballrooms == 2 %>
       - <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
@@ -136,11 +136,11 @@ body {
     %>
     <% count[heat.category] += 1 %>
     <% ballrooms = heat.dance_category&.ballrooms || @ballrooms %>
-    <tr class="text-sm">
+    <tr class="text-sm<% if heat.number < 0%> line-through<% end %>">
       <% if @start %>
       <td class="text-right pr-4"><%= @start[number]&.strftime("%-I:%M") %></td>
       <% end %>
-      <td class="text-center"><%= heat.number %>
+      <td class="text-center"><%= heat.number.abs %>
       <% if ballrooms == 2 %>
       - <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
       <% elsif ballrooms == 3 %>
