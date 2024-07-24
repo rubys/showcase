@@ -9,7 +9,7 @@ class EventController < ApplicationController
   include HeatScheduler
   include ActiveStorage::SetCurrent
 
-  skip_before_action :authenticate_user, only: %i[ counter showcases regions console ]
+  skip_before_action :authenticate_user, only: %i[ counter showcases regions console upload ]
   skip_before_action :verify_authenticity_token, only: :console
 
   permit_site_owners :root, trust_level: 25
