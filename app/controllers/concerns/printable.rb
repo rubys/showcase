@@ -279,6 +279,7 @@ module Printable
         end
 
         entry.heats.each do |heat|
+          next if heat.number <= 0
           category = heat.category
           category = heat.dance_category.name if heat.dance_category&.cost_override
           category = heat.dance.name if heat.dance.cost_override
