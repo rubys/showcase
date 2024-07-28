@@ -9,7 +9,7 @@ export default class extends Controller {
     this.toggleForm();
 
     let category_routines = document.getElementById("category_routines");
-    if (category_routines) {
+    if (category_routines && category_routines.dataset.agenda == 'false') {
       this.toggleIncludes(category_routines.checked);
 
       category_routines.addEventListener("click", () => {

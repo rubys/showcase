@@ -16,6 +16,15 @@ class Dance < ApplicationRecord
   has_many :multi_children, dependent: :destroy, class_name: 'Multi', foreign_key: :parent_id
   has_many :multi_dances, dependent: :destroy, class_name: 'Multi', foreign_key: :dance_id
 
-  validates :name, presence: true, uniqueness: true
+  validates :name, presence: true # , uniqueness: true
   validates :order, presence: true, uniqueness: true
+
+  validate :name_unique
+
+  def name_unique
+    return if order < 0
+    return unless name.present?
+    return unless Dance.where(name: name, order: 0...).where.not(id: id).exists?
+    errors.add(:name, 'already exists')
+  end
 end

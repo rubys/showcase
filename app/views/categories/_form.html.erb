@@ -58,8 +58,10 @@ start times for each heat will show up on the heats page.
   </div>
 
   <div class="my-5">
-    <%= form.check_box :routines, class: 'entry-count h-10' %>
-    <%= form.label :routines, 'Agenda Item for "Routines" (include all dances)?' %>
+    <%= form.check_box :routines, class: 'entry-count h-10', data: {agenda: Event.first.agenda_based_entries?} %>
+    <%= form.label :routines, (Event.first.agenda_based_entries? \
+      ? "Separate set of dances from main program"
+      : 'Agenda Item for "Routines" (include all dances)?') %>
   </div>
 
   <% if @pro_option %>

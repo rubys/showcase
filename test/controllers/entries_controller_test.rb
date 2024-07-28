@@ -21,7 +21,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
 
     entries = %w(Closed Open Multi).map do |category|
       [category, Dance.all.map do |dance|
-        [dance.name, 1] if !!dance.heat_length ^ (category == 'Multi')
+        [dance.id, 1] if !!dance.heat_length ^ (category == 'Multi')
       end.compact.to_h]
     end.to_h
 
@@ -38,7 +38,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
 
     entries = %w(Closed Open Multi).map do |category|
       [category, Dance.all.map do |dance|
-        [dance.name, 1] if !!dance.heat_length ^ (category == 'Multi')
+        [dance.id, 1] if !!dance.heat_length ^ (category == 'Multi')
       end.compact.to_h]
     end.to_h
 
@@ -65,7 +65,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
 
     entries = %w(Closed Open Multi).map do |category|
       [category, Dance.all.map do |dance|
-        [dance.name, 1] if !!dance.heat_length ^ (category == 'Multi')
+        [dance.id, 1] if !!dance.heat_length ^ (category == 'Multi')
       end.compact.to_h]
     end.to_h
 

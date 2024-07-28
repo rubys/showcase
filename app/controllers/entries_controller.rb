@@ -32,7 +32,7 @@ class EntriesController < ApplicationController
   def edit
     form_init(params[:primary], @entry)
     agenda_init
-    
+
     @partner = @entry.partner(@person).id
     @age = @entry.age_id
     @level = @entry.level_id
@@ -86,7 +86,7 @@ class EntriesController < ApplicationController
           @entry.lead.default_package!
           @entry.follow.default_package!
         end
-        
+
         format.html { redirect_to @person, notice: "#{helpers.pluralize @total, 'heat'} successfully created." }
         format.json { render :show, status: :created, location: @entry }
       else
@@ -258,14 +258,14 @@ class EntriesController < ApplicationController
       end
 
       used = []
-      clean = (Category.where(routines: true).count == 0)
+      clean = (Category.where(routines: true).count == 0) || event.agenda_based_entries
       all = dances + multis
       cat_ids.each do |id|
         cats = all.map(&id).compact.uniq
         clean = false if cats.any? {|cat| used.include? cat}
         used += cats
       end
-  
+
       if clean and (pro or event.agenda_based_entries)
         if pro
           dance_ids = {
@@ -284,13 +284,20 @@ class EntriesController < ApplicationController
         end
 
         @agenda = []
+        reorder = nil
         Category.order(:order).each do |cat|
           next if cat.pro ^ pro
           dances = []
           category = nil
           dance_ids.each do |id, name|
             dances = cat.send(id).order(:order)
+
             if dances.length > 0
+              if dances.first.order < 0
+                reorder ||= Dance.where(order: 0...).pluck(:name, :order).to_h
+                dances = dances.sort_by {|dance| reorder[dance.name] || dance.order}
+              end
+
               category = name
               break
             end
@@ -303,7 +310,7 @@ class EntriesController < ApplicationController
           {title: 'CLOSED CATEGORY', dances: dances, category: 'Closed'},
           {title: 'OPEN CATEGORY', dances: dances, category: 'Open'}
         ]
-    
+
         unless multis.empty?
           @agenda.push({title: 'MULTI CATEGORY', dances: multis, category: 'Multi'})
         end
@@ -315,9 +322,8 @@ class EntriesController < ApplicationController
 
       @entries.merge!(@entry.heats.
         group_by {|heat| heat.category}.map do |category, heats|
-        [category, heats.group_by {|heat| heat.dance.name}]
+        [category, heats.group_by {|heat| heat.dance.id}]
       end.to_h)
-
     end
 
     def update_heats(entry, new: false)
@@ -346,28 +352,28 @@ class EntriesController < ApplicationController
 
       @total = 0
       %w(Closed Open Multi Solo).each do |category|
+        next unless entry[:entries][category]
         Dance.all.each do |dance|
-          next unless entry[:entries][category]
-          heats = @entries[category][dance.name] || []
+          heats = @entries[category][dance.id] || []
           was = new ? 0 : heats.count {|heat| heat.number >= 0}
-          wants = entry[:entries][category][dance.name].to_i
+          wants = entry[:entries][category][dance.id.to_s].to_i
 
           if wants != was
             if dance_limit
               if wants > was and (counts[[dance.id, category]] || 0) + wants > dance_limit
                 @entry.errors.add(:base, :dance_limit_exceeded,
                   message: "#{dance.name} #{category} heats are limited to #{dance_limit}.")
-                @entries[category][dance.name] = [Heat.new(number: 9999)] * wants
+                @entries[category][dance.id] = [Heat.new(number: 9999)] * wants
                 next
               elsif @entry.errors.any?
                 # no additional error, but we need to update the entries to match the form
-                @entries[category][dance.name] = [Heat.new(number: 9999)] * wants
+                @entries[category][dance.id] = [Heat.new(number: 9999)] * wants
                 next
               end
             end
 
             @total += (wants - was).abs
-  
+
             (wants...was).each do |index|
               heat = heats[index]
               if heat.number == 0
@@ -376,14 +382,14 @@ class EntriesController < ApplicationController
                 heat.update(number: -heat.number)
               end
             end
-  
+
             (was...wants).each do
               heat = heats.find {|heat| heat.number < 0}
               if heat
                 heat.update(number: -heat.number)
               else
                 @heat = Heat.create({
-                  number: 0, 
+                  number: 0,
                   entry: @entry,
                   category: category,
                   dance: dance

@@ -7,6 +7,22 @@ class DancesController < ApplicationController
     @heats = Heat.where(number: 1..).group(:dance_id).distinct.count(:number)
     @entries = Heat.where(number: 1..).group(:dance_id).count
     @songs = Song.group(:dance_id).count
+
+    @separate = @dances.select {|dance| dance.order < 0}.group_by(&:name)
+
+    @dances.each do |dance|
+      next if dance.order < 0
+      separate = @separate[dance.name]
+      next unless separate
+      separate.each do |separate_dance|
+        @heats[dance.id] = (@heats[dance.id] || 0) + (@heats[separate_dance.id] || 0)
+        @entries[dance.id] = (@entries[dance.id] || 0) + (@entries[separate_dance.id] || 0)
+
+        if @songs[dance.id] || @songs[separate_dance.id]
+          @songs[dance.id] = (@songs[dance.id] || 0) + (@songs[separate_dance.id] || 0)
+        end
+      end
+    end
   end
 
   # GET /dances/1 or /dances/1.json
@@ -92,7 +108,7 @@ class DancesController < ApplicationController
     flash.now.notice = "#{source.name} was successfully moved."
 
     respond_to do |format|
-      format.turbo_stream { render turbo_stream: turbo_stream.replace('dances', 
+      format.turbo_stream { render turbo_stream: turbo_stream.replace('dances',
         render_to_string(:index, layout: false))}
       format.html { redirect_to dances_url }
     end
@@ -136,7 +152,7 @@ class DancesController < ApplicationController
     def form_init
       @categories = Category.order(:order).pluck(:name, :id)
 
-      @affinities = Category.all.map do |category| 
+      @affinities = Category.all.map do |category|
         dances = category.open_dances + category.closed_dances + category.solo_dances
 
         associations = {}
@@ -155,7 +171,7 @@ class DancesController < ApplicationController
         if closed.length == 1
           associations[:dance_solo_category_id] = solo.first
         end
-        
+
         [category.id, associations]
       end.to_h
     end
@@ -167,7 +183,7 @@ class DancesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def dance_params
-      params.require(:dance).permit(:name, :category, 
+      params.require(:dance).permit(:name, :category,
         :closed_category_id, :open_category_id, :solo_category_id,
         :heat_length, :multi_category_id, :multi)
     end

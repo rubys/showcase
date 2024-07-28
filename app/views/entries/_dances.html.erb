@@ -8,13 +8,13 @@
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
     <% end %>
       <% dances.each do |dance| %>
-        <% field = "entry[entries][#{category}][#{dance.name}]" %>
+        <% field = "entry[entries][#{category}][#{dance.id}]" %>
         <% if dance.row and dance.col %>
         <div class="my-5 flex flex-row" style="grid-row:<%= dance.row %>; grid-column:<%= dance.col %>">
         <% else %>
         <div class="my-5 flex flex-row">
         <% end %>
-          <% value = (@entries[category][dance.name] || []).count {|heat| heat.number >= 0} %>
+          <% value = (@entries[category][dance.id] || []).count {|heat| heat.number >= 0} %>
           <% if value <= 1 %>
           <input name="<%= field %>" type="hidden" value="0" autocomplete="off">
           <input class="entry-count h-10" type="checkbox" value="1" <% if value > 0 %>checked <% end %>name="<%= field %>" id="<%= field %>">

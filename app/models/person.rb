@@ -3,14 +3,14 @@ class Person < ApplicationRecord
 
   normalizes :name, with: -> name { name.strip }
 
-  validates :name, presence: true, uniqueness: true
+  validates :name, presence: true, uniqueness: { scope: :type }
   validates :back, allow_nil: true, uniqueness: true
 
   validates :name, format: { without: /&/, message: 'only one name per person' }
   validates :name, format: { without: / and /, message: 'only one name per person' }
 
   validates :level, presence: true, if: -> {type == 'Student'}
-  
+
   belongs_to :studio, optional: false
   belongs_to :level, optional: true
   belongs_to :age, optional: true
@@ -61,8 +61,8 @@ class Person < ApplicationRecord
   end
 
   def self.active
-    (Entry.distinct(:lead_id).pluck(:lead_id) + 
-      Entry.distinct(:follow_id).pluck(:follow_id) + 
+    (Entry.distinct(:lead_id).pluck(:lead_id) +
+      Entry.distinct(:follow_id).pluck(:follow_id) +
       Entry.distinct(:follow_id).pluck(:follow_id)).uniq
   end
 
@@ -101,7 +101,7 @@ class Person < ApplicationRecord
   end
 
   def present?
-    judge ? judge.present : true 
+    judge ? judge.present : true
   end
 
   def show_assignments

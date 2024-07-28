@@ -1,6 +1,8 @@
 class Category < ApplicationRecord
   normalizes :name, with: -> name { name.strip }
 
+  before_destroy :delete_owned_dances
+
   has_many :open_dances, dependent: :nullify,
     class_name: 'Dance', foreign_key: :open_category_id
   has_many :closed_dances, dependent: :nullify,
@@ -36,5 +38,18 @@ class Category < ApplicationRecord
 
   def base_category
     self
+  end
+
+  def delete_owned_dances
+    return unless routines? and Event.first.agenda_based_entries?
+    open_dances.where(order: ...0).delete_all
+    closed_dances.where(order: ...0).delete_all
+    solo_dances.where(order: ...0).delete_all
+    routine_dances.where(order: ...0).delete_all
+    multi_dances.where(order: ...0).delete_all
+    pro_open_dances.where(order: ...0).delete_all
+    pro_closed_dances.where(order: ...0).delete_all
+    pro_solo_dances.where(order: ...0).delete_all
+    pro_multi_dances.where(order: ...0).delete_all
   end
 end

@@ -182,13 +182,25 @@ class CategoriesController < ApplicationController
 
     def form_init
       dances = Dance.order(:order).all
-      @dances = dances.select {|dance| dance.heat_length == nil}
-      @multis = dances.select {|dance| dance.heat_length != nil}
+      @dances = dances.select {|dance| dance.heat_length == nil && dance.order >= 0}
+      @multis = dances.select {|dance| dance.heat_length != nil && dance.order >= 0}
       @entries = {'Closed' => {}, 'Open' => {}, 'Solo' => {}, 'Multi' => {}}
       @columns = Dance.maximum(:col)
 
       if @category.id
         dances.each do |dance|
+          # ensure dance is in the list
+          if dance.heat_length == nil
+            if !@dances.any? {|d| d.name == dance.name}
+              @dances << dance
+            end
+          else
+            if !@multis.any? {|d| d.name == dance.name}
+              @multis << dance
+            end
+          end
+
+          # mark dances that are in the category
           if @category.pro
             if dance.pro_open_category_id == @category.id
               @entries['Open'][dance.name] = true
@@ -234,7 +246,54 @@ class CategoriesController < ApplicationController
     def update_dances(include, pro)
       @total = 0
 
+      categories = [
+        ['Open', :open_category, :pro_open_category],
+        ['Closed', :closed_category, :pro_closed_category],
+        ['Solo', :solo_category, :pro_solo_category],
+        ['Multi', :multi_category, :pro_multi_category]
+      ]
+
+      if @category.routines? and Event.first.agenda_based_entries?
+        categories.each do |cat, normal, pro|
+          # Delete all dances that are not longer in the category
+          # resetting the included count for those that are
+          Dance.all.each do |dance|
+            next if dance.order >= 0
+            if dance.send(normal) == @category
+              if pro == '1' || include[cat]&.[](dance.name).to_i == 0
+                dance.destroy! unless dance.heats.any?
+              elsif include[cat]&.[](dance.name).to_i > 0
+                include[cat][dance.name] = 0
+              end
+            end
+
+            if dance.send(pro) == @category
+              if pro == '0' || include[cat]&.[](dance.name).to_i == 0
+                dance.destroy! unless dance.heats.any?
+              elsif include[cat]&.[](dance.name).to_i > 0
+                include[cat][dance.name] = 0
+              end
+            end
+          end
+
+          # Create new dances for those that are now in the category
+          # again, resetting the included count
+          include[cat]&.each do |name, value|
+            next if value.to_i == 0
+            order = [Dance.minimum(:order), 0].min - 1
+            if pro == '1'
+              Dance.create!(name: name, pro => @category, order: order)
+            else
+              Dance.create!(name: name, normal => @category, order: order)
+            end
+            @total += 1
+            include[cat][name] = 0
+          end
+        end
+      end
+
       Dance.all.each do |dance|
+        next if dance.order < 0
         if pro == "1"
           if dance.open_category == @category
             dance.open_category = nil
