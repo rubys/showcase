@@ -333,8 +333,6 @@ class PeopleController < ApplicationController
         entry.lead == partner || entry.follow == partner
       }]}.to_h
 
-    heats = entries.map {|entry| entry.heats}.flatten
-
     @dances = Dance.order(:order).all.map {|dance|
       [dance, partners.map {|partner, entries|
         [partner, entries.map {|entry| entry.active_heats.count {|heat| heat.category != 'Solo' and heat.dance == dance}}.sum]
@@ -344,7 +342,7 @@ class PeopleController < ApplicationController
     @entries = partners
     @partners = partners.keys
 
-    @routines = !Category.where(routines: true).blank?
+    @routines = Category.where(routines: true).any? && !Event.first.agenda_based_entries?
 
     @heats = Heat.joins(:entry).
       includes(:dance, entry: [:lead, :follow]).
