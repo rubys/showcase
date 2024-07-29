@@ -95,7 +95,7 @@
 </table>
 </div>
 
-<% if %w(+ &).include? @event.open_scoring and @heats.any? {|heat| [heat.entry.lead, heat.entry.follow].include? person and (heat.category == 'Open' || (heat.category == 'Closed' && (@event.heat_range_cat > 0 || @event.closed_scoring == '=')))} %>
+<% if %w(+ & @).include? @event.open_scoring and @heats.any? {|heat| [heat.entry.lead, heat.entry.follow].include? person and (heat.category == 'Open' || (heat.category == 'Closed' && (@event.heat_range_cat > 0 || @event.closed_scoring == '=')))} %>
 <table class="mt-8" style="break-inside: avoid">
   <thead>
     <tr>
