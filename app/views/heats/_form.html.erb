@@ -42,11 +42,13 @@
       <% end %>
     </div>
 
-    <div class="my-5">
+    <div class="my-5" data-controller="agenda-select" data-url=<%= agenda_dances_path %> data-solo="false">
       <%= form.label :dance_id %>
       <%= form.select :dance_id, @dances, {},
         class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
     </div>
+
+    <%= render partial: "dances/categories" %>
 
     <% if return_to %>
     <input type="hidden" name="return-to" value="<%= return_to %>">

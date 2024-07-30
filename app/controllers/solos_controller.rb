@@ -4,8 +4,8 @@ class SolosController < ApplicationController
   include Printable
   include ActiveStorage::SetCurrent
 
-  permit_site_owners *%i[ show ], trust_level: 25
-  permit_site_owners *%i[ new create edit update destroy ], trust_level: 50
+  permit_site_owners(*%i[ show ], trust_level: 25)
+  permit_site_owners(*%i[ new create edit update destroy ], trust_level: 50)
 
   # GET /solos or /solos.json
   def index
@@ -56,11 +56,10 @@ class SolosController < ApplicationController
 
   # GET /solos/1/edit
   def edit
+    event = Event.last
     form_init(params[:primary], @solo.heat.entry)
 
     @partner = @solo.heat.entry.partner(@person).id
-
-    @dances = Dance.order(:name).all.map {|dance| [dance.name, dance.id]}
 
     @instructor = @solo.heat.entry.instructor
     @age = @solo.heat.entry.age_id
@@ -68,7 +67,23 @@ class SolosController < ApplicationController
     @dance = @solo.heat.dance.id
     @number = @solo.heat.number
 
-    if @solo.category_override_id
+    if event.agenda_based_entries?
+      dances = Dance.where(order: 0...).order(:name)
+
+      @categories = dance_categories(@solo.heat.dance, true)
+
+      @category = @dance
+
+      if not dances.include? @solo.heat.dance
+        @dance = dances.find {|dance| dance.name == @solo.heat.dance.name}&.id || @dance
+      end
+
+      @dances = dances.map {|dance| [dance.name, dance.id]}
+    else
+      @dances = Dance.order(:name).all.pluck(:name, :id)
+    end
+
+    if true # @solo.category_override_id and !event.agenda_based_entries?
       @overrides = Category.where(routines: true).map {|category| [category.name, category.id]}
     end
 
@@ -345,7 +360,6 @@ class SolosController < ApplicationController
 
         cat_order.reverse! if iteration % 2 == 1
         solo1 = cat_order.first
-        solo2 = nil
         entry1 = solo1.heat.entry
         last_seen[entry1.lead] = -1
         last_seen[entry1.follow] = -1
@@ -411,7 +425,7 @@ class SolosController < ApplicationController
     @event = Event.first
     @layout = 'mx-0'
     @nologo = true
-    @font-size = @event.font_size
+    @font_size = @event.font_size
   end
 
   def critiques0

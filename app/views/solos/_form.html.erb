@@ -23,25 +23,19 @@
   </div>
   <% end %>
 
-  <div class="my-5">
+  <div class="my-5" data-controller="agenda-select" data-url=<%= agenda_dances_path %> data-solo="true">
     <%= form.label :dance_id %>
     <%= form.select :dance_id, @dances, {selected: @dance},
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+
+  <%= render partial: "dances/categories" %>
 
   <div class="my-5">
     <%= form.label :combo_dance_id %>
     <%= form.select :combo_dance_id, @dances, {include_blank: true},
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
-
-  <% unless @overrides.blank? %>
-  <div class="my-5">
-    <%= form.label :category_override_id, 'Category' %>
-    <%= form.select :category_override_id, @overrides, {include_blank: false},
-      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
-  </div>
-  <% end %>
 
   <div class="my-5">
     <%= form.label :song %>

@@ -27,4 +27,9 @@ class Dance < ApplicationRecord
     return unless Dance.where(name: name, order: 0...).where.not(id: id).exists?
     errors.add(:name, 'already exists')
   end
+
+  def freestyle_category
+    open_category || closed_category || multi_category ||
+    pro_open_category || pro_closed_category || pro_multi_category
+  end
 end

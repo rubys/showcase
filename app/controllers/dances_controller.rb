@@ -1,5 +1,6 @@
 class DancesController < ApplicationController
-  before_action :set_dance, only: %i[ show edit update destroy ]
+  include EntryForm
+  before_action :set_dance, only: %i[ show edit update destroy agenda ]
 
   # GET /dances or /dances.json
   def index
@@ -145,6 +146,15 @@ class DancesController < ApplicationController
     respond_to do |format|
       format.html { redirect_to dances_url, status: 303, notice: "#{@dance.name} was successfully removed." }
       format.json { head :no_content }
+    end
+  end
+
+  def agenda
+    @categories = dance_categories(@dance)
+    respond_to do |format|
+      format.turbo_stream { render turbo_stream: turbo_stream.replace('category-override',
+        render_to_string(partial: 'categories'))}
+      format.html { redirect_to people_certificates_url }
     end
   end
 

@@ -12,7 +12,6 @@ module EntryForm
     end
 
     if @person
-      entries = @person.lead_entries + @person.follow_entries
       studios = [@person.studio] + @person.studio.pairs
 
       seeking = case @person.role
@@ -33,7 +32,7 @@ module EntryForm
       seeking = ['Leader', 'Follower'] if @formation
       @seeking = seeking
 
-      instructors = Person.where(type: 'Professional', studio: studios, 
+      instructors = Person.where(type: 'Professional', studio: studios,
         role: [*seeking, 'Both']).order(:name)
 
       if @person.type == "Professional"
@@ -42,7 +41,7 @@ module EntryForm
         instructors += more
         @students = []
       else
-        @students = Person.where(type: 'Student', studio: @person.studio, 
+        @students = Person.where(type: 'Student', studio: @person.studio,
           role: [*seeking, 'Both']).order(:name) +
           Person.where(type: 'Student', studio: @person.studio.pairs,
           role: [*seeking, 'Both']).order(:name)
@@ -124,5 +123,17 @@ module EntryForm
       level: level,
       instructor_id: instructor
     )
+  end
+
+  def dance_categories(dance, solo=false)
+    if solo
+      Dance.where(name: dance.name, order: ...0).select {|dance| dance.solo_category}.
+        sort_by {|dance| dance.solo_category.order || 0}.
+        map {|dance| [dance.solo_category.name, dance.id]}
+    else
+      Dance.where(name: dance.name, order: ...0).select {|dance| dance.freestyle_category}.
+        sort_by {|dance| dance.freestyle_category.order || 0}.
+        map {|dance| [dance.freestyle_category.name, dance.id]}
+    end
   end
 end

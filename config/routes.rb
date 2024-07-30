@@ -102,6 +102,7 @@ Rails.application.routes.draw do
       post 'drop', on: :collection
       get 'form', on: :collection
       post 'form-update', on: :collection, as: 'update_form'
+      post 'agenda', on: :collection
     end
 
     resources :categories do

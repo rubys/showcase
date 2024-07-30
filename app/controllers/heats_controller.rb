@@ -319,14 +319,26 @@ class HeatsController < ApplicationController
   def edit
     form_init(params[:primary], @heat.entry)
 
-    @dances = Dance.order(:name).pluck(:name, :id).to_h
-
     @partner = @heat.entry.partner(@person).id
     @age = @heat.entry.age_id
     @level = @heat.entry.level_id
     @instructor = @heat.entry.instructor_id
     @ballroom = Event.exists?(ballrooms: 2..) || Category.exists?(ballrooms: 2..)
     @locked = Event.last.locked
+
+    if Event.first.agenda_based_entries?
+      dances = Dance.where(order: 0...).order(:name)
+
+      if !dances.include?(@heat.dance) || !@heat.dance.freestyle_category
+        @categories = dance_categories(@heat.dance, false)
+        @category = @heat.dance.id
+        @heat.dance_id = dances.find {|dance| dance.name == @heat.dance.name}&.id || @heat.dance_id
+      end
+
+      @dances = dances.map {|dance| [dance.name, dance.id]}
+    else
+      @dances = Dance.order(:name).all.pluck(:name, :id)
+    end
 
     unless @avail.values.include? @partner
       partner = @heat.entry.partner(@person)
@@ -365,6 +377,7 @@ class HeatsController < ApplicationController
     @heat.number = 0
 
     if @heat.dance_id != params[:heat][:dance_id].to_i or @heat.category != params[:heat][:category]
+      params[:heat].delete(:number)
       dance_limit = Event.last.dance_limit
       if dance_limit
         @heat.dance_id = params[:heat][:dance_id].to_i
@@ -436,8 +449,6 @@ class HeatsController < ApplicationController
     scheduled = {true => 0, false => 0}
 
     unscheduled.each do |heat|
-      level = heat.entry.level_id
-
       avail = Heat.joins(:entry).where(dance_id: heat.dance_id, category: heat.category).group('number').
         pluck('number, AVG(entries.level_id) as avg_level, COUNT(heats.id) as count').
         sort_by {|number, level, count| (level - heat.entry.level_id).abs}
