@@ -1,0 +1,15 @@
+  <div id="category-override">
+  <% if @categories && @categories.length > 1 %>
+  <div class="my-5">
+    <label for="<%= @heat ? 'heat' : 'solo' %>_dance_id">Category</label>
+    <%= select_tag "#{@heat ? 'heat' : 'solo'}[dance_id]", options_for_select(@categories, selected: @category),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  <% elsif !@overrides.blank? %>
+  <div class="my-5 z">
+    <label for="solo_category_override_id">Category</label>
+    <%= select_tag 'solo[category_override_id]', options_for_select( @overrides, {include_blank: false}),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  <% end %>
+  </div>
