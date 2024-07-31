@@ -253,41 +253,57 @@ class CategoriesController < ApplicationController
         ['Multi', :multi_category, :pro_multi_category]
       ]
 
-      if @category.routines? and Event.first.agenda_based_entries?
-        categories.each do |cat, normal, pro|
-          # Delete all dances that are not longer in the category
-          # resetting the included count for those that are
-          Dance.all.each do |dance|
-            next if dance.order >= 0
-            if dance.send(normal) == @category
-              if pro == '1' || include[cat]&.[](dance.name).to_i == 0
-                dance.destroy! unless dance.heats.any?
-              elsif include[cat]&.[](dance.name).to_i > 0
-                include[cat][dance.name] = 0
+      if Event.first.agenda_based_entries?
+        if @category.routines?
+          categories.each do |cat, normal, pro|
+            # Delete all dances that are not longer in the category
+            # resetting the included count for those that are
+            Dance.all.each do |dance|
+              next if dance.order >= 0
+              if dance.send(normal) == @category
+                if pro == '1' || include[cat]&.[](dance.name).to_i == 0
+                  dance.destroy! unless dance.heats.any?
+                elsif include[cat]&.[](dance.name).to_i > 0
+                  include[cat][dance.name] = 0
+                end
+              end
+
+              if dance.send(pro) == @category
+                if pro == '0' || include[cat]&.[](dance.name).to_i == 0
+                  dance.destroy! unless dance.heats.any?
+                elsif include[cat]&.[](dance.name).to_i > 0
+                  include[cat][dance.name] = 0
+                end
               end
             end
 
-            if dance.send(pro) == @category
-              if pro == '0' || include[cat]&.[](dance.name).to_i == 0
-                dance.destroy! unless dance.heats.any?
-              elsif include[cat]&.[](dance.name).to_i > 0
-                include[cat][dance.name] = 0
+            # Create new dances for those that are now in the category
+            # again, resetting the included count
+            include[cat]&.each do |name, value|
+              next if value.to_i == 0
+              order = [Dance.minimum(:order), 0].min - 1
+              if pro == '1'
+                Dance.create!(name: name, pro => @category, order: order)
+              else
+                Dance.create!(name: name, normal => @category, order: order)
               end
+              @total += 1
+              include[cat][name] = 0
             end
           end
+        else
+          # Move all heats that are in the category back to main program dances
+          dupes = Dance.all.select do |dance|
+            dance.order < 0 && (dance.freestyle_category == @category || dance.solo_category == @category)
+          end
 
-          # Create new dances for those that are now in the category
-          # again, resetting the included count
-          include[cat]&.each do |name, value|
-            next if value.to_i == 0
-            order = [Dance.minimum(:order), 0].min - 1
-            if pro == '1'
-              Dance.create!(name: name, pro => @category, order: order)
-            else
-              Dance.create!(name: name, normal => @category, order: order)
+          dupes.each do |dupe|
+            real = Dance.where(name: dupe.name, order: 0...).first
+            dupe.heats.each do |heat|
+              heat.dance = real
+              heat.save!
             end
-            @total += 1
-            include[cat][name] = 0
+            dupe.delete
           end
         end
       end
