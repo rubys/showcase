@@ -246,6 +246,15 @@
     :name: Salt Lake City
     :region: sjc
     :logo: arthur-murray-logo.gif
+  stockton:
+    :name: Stockton
+    :region: sjc
+    :logo: ''
+    :events:
+      walk-this-way:
+        :name: Walk This Way
+      dance-down-memory-lane:
+        :name: Dance Down Memory Lane
   sugarland:
     :name: Sugar Land
     :region: dfw
