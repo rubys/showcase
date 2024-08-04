@@ -165,7 +165,10 @@ module Printable
         heats = heats.shuffle(random: Random.new(number.to_f.abs))
       end
 
-      groups = {nil => [], 'A' => [], 'B' => []}.merge(heats.group_by(&:ballroom))
+      groups = {nil => [], 'A' => [], 'B' => []}.merge(heats.group_by do |heat|
+        return heat.ballroom unless heat.ballroom.blank?
+        return heat.subject.studio.ballroom if ballrooms != 3 && !heat.subject.studio.ballroom.blank?
+      end)
       heats = groups[nil]
       n = (heats.length / 2).to_i
       n += 1 if heats.length % 2 == 1 and heats[n].entry.lead.type != 'Student'

@@ -281,7 +281,7 @@ class StudiosController < ApplicationController
     # Only allow a list of trusted parameters through.
     def studio_params
       params.require(:studio).permit(:name, :tables, :pair,
-        :default_student_package_id,
+        :default_student_package_id, :ballroom,
         :cost_override, :heat_cost, :solo_cost, :multi_cost,
         :student_cost_override, :student_registration_cost,
         :student_heat_cost, :student_solo_cost, :student_multi_cost)

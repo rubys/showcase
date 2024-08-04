@@ -39,6 +39,14 @@
     <%= form.number_field :tables, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <% if Event.first.ballrooms == 4 %>
+  <div class="my-5">
+    <%= form.label :ballroom, 'Ballroom' %>
+    <%= form.select :ballroom, %w(A B), {include_blank: true},
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  <% end %>
+
   <% unless @studio.id == 0 or @avail.length == 0 %>
   <div class="my-5">
     <%= form.label 'pair'%>

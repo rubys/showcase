@@ -18,8 +18,13 @@
 <table class="w-full table-auto">
   <% @heats.each do |number, heats| %>
   <% next if number == 0 %>
-  <% ballrooms = heats.first.dance_category&.ballrooms || @event.ballrooms %>
-  <% ballroom = ballrooms == 1 ? '' : 'A' %>
+  <% 
+    ballrooms = heats.first.dance_category&.ballrooms || @event.ballrooms
+    ballroom = ballrooms == 1 ? '' : 'A'
+    if ballrooms == 4
+      heats = heats.each_with_index.sort_by {|heat, index| [heat.subject.studio.ballroom || "", index]}
+    end
+  %>
   <thead>
   <tr class="bg-slate-200">
     <td colspan="3" class='px-4 py-2 font-bold text-xl'>
@@ -40,7 +45,8 @@
   <% next if heat.number <= 0 %>
     <% if ballroom == 'A' and (
       (ballrooms == 2 and heat.entry.lead.type == 'Student') or
-      (ballrooms == 3 and index >= heats.length/2 ))
+      (ballrooms == 3 and index >= heats.length/2 )) or
+      (ballrooms == 4 and heat.subject.studio.ballroom == 'B')
         ballroom = 'B'
        end %>
   <tr>

@@ -61,6 +61,8 @@ body {
       - <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
       <% elsif ballrooms == 3 %>
       - <%= heats.index(heat) >= heats.length/2 ? 'B' : 'A' %>
+      <% elsif ballrooms == 4 %>
+      - <%= heat.subject.studio.ballroom || "" %>
       <% end %>
       <% end %>
       <% if heat.entry.lead != person %>
@@ -145,6 +147,8 @@ body {
       - <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
       <% elsif ballrooms == 3 %>
       - <%= heats.index(heat) >= heats.length/2 ? 'B' : 'A' %>
+      <% elsif ballrooms == 4 %>
+      - <%= heat.subject.studio.ballroom || "" %>
       <% end %>
       <td><div class="mx-4"><%= heat.category %>
       <td><div class="mx-4"><%= heat.dance.name %></div>
