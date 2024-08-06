@@ -101,6 +101,11 @@
     :name: Glenview
     :region: ord
     :logo: arthur-murray-logo.gif
+    :events:
+      chicagoland-feb:
+        :name: Chicagoland Feb
+      chicagoland-sept:
+        :name: Chicagoland Sept
   greenhills:
     :name: Nashville-Green Hills
     :region: atl
