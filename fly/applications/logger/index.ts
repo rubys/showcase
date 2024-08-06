@@ -105,6 +105,7 @@ app.get("/sentry/seen.debug", async (_, response) => {
   response.write(`region:   ${process.env.FLY_REGION}\n`)
   response.write(`seen:     ${seen}\n`)
   response.write(`lastSeen: ${lastSeen}\n`)
+  response.write('seenFile: ' + SEENFILE.name + '\n')
   response.write(`exists:   ${await SEENFILE.exists()}\n`)
   response.write(`text:     ${await SEENFILE.text()}\n`)
   response.write('result:   ' + (seen === lastSeen ? '""' : "/sentry/link"))
