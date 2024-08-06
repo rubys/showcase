@@ -28,6 +28,17 @@ Finally, create entries, solos, and formations by going to the page for a profes
 participant in the event.  When creating entries for freestyle heats, only the dances
 that were previously defined in a professional category will be available for selection.
 
+## Agenda first option<a id="agenda-first"></a>
+
+Most people get started by entering dances and organizing the agenda later; but you can go the other way too: start by defining the agenda first and then entering dances.  The advantage of doing the agenda first is that you can have (for example) open waltz in multiple agenda categories - only once in agenda items that aren't specifically marked as separate from the main program, but as many entries that are marked as separate as you want.
+
+This often is useful if you desire separate agenda items for newcomers or for youths.
+
+If you want this:
+
+ * Select the following option in the settings: "Match entry forms to agenda?"
+ * In each agenda item that you want to have a separate set of dances, select: "Separate set of dances from main program"
+
 ## Making changes
 
  * If you click on an agenda item you can edit any field and click on Update category at the bottom.
