@@ -93,6 +93,10 @@
     :name: Dayton
     :region: ord
     :logo: arthur-murray-logo.gif
+  durham:
+    :name: Durham
+    :region: iad
+    :logo: arthur-murray-logo.gif
   glenview:
     :name: Glenview
     :region: ord
@@ -234,6 +238,11 @@
     :name: Salem
     :region: sea
     :logo: arthur-murray-logo.gif
+    :events:
+      spring:
+        :name: Spring
+      fall:
+        :name: Fall
   sanjose:
     :name: San Jose
     :region: sjc
