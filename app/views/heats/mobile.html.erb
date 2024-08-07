@@ -22,7 +22,7 @@
     ballrooms = heats.first.dance_category&.ballrooms || @event.ballrooms
     ballroom = ballrooms == 1 ? '' : 'A'
     if ballrooms == 4
-      heats = heats.each_with_index.sort_by {|heat, index| [heat.subject.studio.ballroom || "", index]}
+      heats = heats.each_with_index.sort_by {|heat, index| [heat.subject.studio.ballroom || "", index]}.map(&:first)
     end
   %>
   <thead>
