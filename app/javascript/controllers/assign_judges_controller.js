@@ -5,8 +5,8 @@ export default class extends Controller {
   connect() {
     const token = document.querySelector('meta[name="csrf-token"]').content;
 
-    let checkbox = this.element.querySelector("input[type=checkbox][name=active]");
-    checkbox.addEventListener("click", (event) => {
+    let active_checkbox = this.element.querySelector("input[type=checkbox][name=active]");
+    active_checkbox.addEventListener("click", (event) => {
       event.preventDefault();
 
       fetch(this.element.dataset.presentUrl, {
@@ -18,7 +18,7 @@ export default class extends Controller {
         credentials: "same-origin",
         redirect: "follow"
       })
-        .then (response => response.json())
+        .then(response => response.json())
         .then(json => event.target.checked = json.present);
     });
 
@@ -35,6 +35,27 @@ export default class extends Controller {
           redirect: "follow",
           body: JSON.stringify({ ballroom: event.target.value })
         });
+      });
+    }
+
+    let dancing_checkbox = this.element.querySelector("input[type=checkbox][name=dancing_judge]");
+    if (dancing_checkbox) {
+      dancing_checkbox.addEventListener("click", (event) => {
+        event.preventDefault();
+
+        fetch(dancing_checkbox.dataset.url, {
+          method: "PATCH",
+          headers: window.inject_region({
+            "X-CSRF-Token": token,
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          }),
+          credentials: "same-origin",
+          redirect: "follow",
+          body: JSON.stringify({person: {exclude_id: event.target.checked ? event.target.value : ""}})
+        })
+          .then(response => response.json())
+          .then(json => event.target.checked = json.exclude_id);
       });
     }
   }

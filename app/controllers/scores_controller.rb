@@ -39,11 +39,12 @@ class ScoresController < ApplicationController
 
     @scored = Score.includes(:heat).where(judge: @judge).
       select {|score| score.value || score.comments || score.good || score.bad}.
-      group_by {|score| score.heat.number}
+      group_by {|score| score.heat.number.to_f}
     @count = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance).count
 
     if event.assign_judges? and Score.where(judge: @judge).any?
       @missed = Score.includes(:heat).where(judge: @judge, good: nil, bad: nil, value: nil).distinct.pluck(:number)
+      @missed += Solo.includes(:heat).pluck(:number).select {|number| !@scored[number]}
     else
       @missed = Heat.distinct.pluck(:number).select do |number|
         number = number.to_i == number ? number.to_i : number

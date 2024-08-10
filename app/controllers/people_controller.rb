@@ -366,6 +366,7 @@ class PeopleController < ApplicationController
 
     if @person.type == 'Judge'
       @multi = Dance.where.not(multi_category: nil).count
+      @dancing_judge = Person.where(name: @person.name, type: "Professional").pluck(:id).first
     end
 
     @event = Event.first
@@ -574,8 +575,13 @@ class PeopleController < ApplicationController
 
     params[:independent] = false unless @event.independent_instructors
 
+    update = filtered_params(person_params).except(:options)
+    if update[:exclude_id] != nil and !update[:name]
+      update = {exclude_id: update[:exclude_id]}
+    end
+
     respond_to do |format|
-      if @person.update(filtered_params(person_params).except(:options))
+      if @person.update(update)
         update_options
 
         format.html { redirect_to person_url(@person), notice: "#{@person.display_name} was successfully updated." }
@@ -697,6 +703,12 @@ class PeopleController < ApplicationController
         }
       end
 
+      judge_dancers = Person.where(type: 'Judge').where.not(exclude_id: nil).pluck(:id, :exclude_id).to_h
+      if judge_dancers.any?
+        generate_agenda
+        dancers = @heats.map {|number, heats| [number.to_f, heats.map {|heat| [heat.entry.lead_id, heat.entry.follow_id]}.flatten]}.to_h
+      end
+
       if @event.ballrooms > 1 && Judge.where.not(ballroom: 'Both').any? && !eligable[:A].empty? && !eligable[:B].empty?
         counts = judges.map {|id| [id, 0]}.to_h
         unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).group_by(&:number)
@@ -705,18 +717,21 @@ class PeopleController < ApplicationController
             heats.each do |heat|
               judge = counts.sort_by(&:last).find {|id, count| eligable[room].include? id}.first
               counts[judge] += 1
+              redo if judge_dancers.include?(judge) and dancers[number.to_f].include?(judge_dancers[judge])
               Score.create! heat_id: heat.id, judge_id: judge
             end
           end
         end
       else
-        unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).pluck(:id)
+        unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).pluck(:number, :id)
 
         queue = []
         Score.transaction do
-          unscored.each do |heat_id|
+          unscored.each do |number, heat_id|
             queue = judges.dup if queue.empty?
-            Score.create! heat_id: heat_id, judge_id: queue.pop
+            judge = queue.pop
+            redo if judge_dancers.include?(judge) and dancers[number].include?(judge_dancers[judge])
+            Score.create! heat_id: heat_id, judge_id: judge
           end
         end
       end

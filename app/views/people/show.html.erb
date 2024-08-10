@@ -349,6 +349,13 @@ when most dances for an individual are with one instructor but one or two are ch
         data: {ballroom_url: ballroom_person_path},
         class: "text-center pr-10 shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 ml-2 w-22" %>
       <% end %>
+    <% if @dancing_judge %>
+    <div class="mt-4 mx-4">
+      <label for="dancing_judge">Dancing judge</label>
+      <%= check_box_tag "dancing_judge", @dancing_judge, !!@person.exclude_id, class: "h-6 w-6 ml-3",
+        data: {url: person_path(@person)} %>
+    </div>
+    <% end %>
     </div>
     <% end %>
     <% sort = @person.judge&.sort || 'back'%>
