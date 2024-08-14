@@ -270,8 +270,8 @@
     :events:
       june:
         :name: June
-      metal-ball:
-        :name: Metal Ball
+      medal-ball:
+        :name: Medal Ball
   stockton:
     :name: Stockton
     :region: sjc
