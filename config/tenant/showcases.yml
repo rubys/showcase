@@ -267,6 +267,11 @@
     :name: Salt Lake City
     :region: sjc
     :logo: arthur-murray-logo.gif
+    :events:
+      june:
+        :name: June
+      metal-ball:
+        :name: Metal Ball
   stockton:
     :name: Stockton
     :region: sjc
