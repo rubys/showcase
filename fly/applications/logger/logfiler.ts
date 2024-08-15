@@ -3,6 +3,7 @@ import fs from 'node:fs';
 
 import { pattern, highlight, filtered, format } from "./view.ts"
 import { broadcast } from "./websocket.ts"
+import { alert } from "./sentry.ts"
 
 fs.mkdirSync("/logs", { recursive: true });
 
@@ -99,8 +100,11 @@ fs.mkdirSync("/logs", { recursive: true });
 
       console.log("log nats subscription closed");
 
-    } catch (error) {
+    } catch (error : any) {
+      let message = "message" in error ? error.message : error.toString();
+      alert(`logfiler error: ${message}`);
       console.error(error);
+      process.exit(1);
     }
   }
 })()

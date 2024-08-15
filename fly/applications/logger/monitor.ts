@@ -6,9 +6,8 @@ import fs from 'node:fs'
 import readline from 'node:readline'
 import path from 'node:path'
 
-import * as Sentry from '@sentry/node'
-
 import { LOGS } from "./view.ts"
+import { alert } from "./sentry.ts"
 
 // get the list of vms from for the smooth application
 async function vms() {
@@ -17,8 +16,6 @@ async function vms() {
 }
 
 let previous_vms = await vms()
-
-Sentry.init()
 
 async function monitor() {
   // only look for vms that are active and were present in the previous check
@@ -71,7 +68,7 @@ async function monitor() {
 
   // send a message to Sentry listing vms that did not produce a heartbeat log
   if (seeking.size) {
-    Sentry.captureMessage(`heatbeat not found for ${[...seeking].join(', ')}`)
+    alert(`heatbeat not found for ${[...seeking].join(', ')}`)
   }
 
   // update the list of vms for the next check
