@@ -37,7 +37,7 @@ class StudiosController < ApplicationController
 
   def labels
     data = ['Name', 'Studio'].to_csv
-    
+
     Studio.order(:name).each do |studio|
       studio.people.order(:name).each do |person|
         data << [person.display_name, studio.name].to_csv
@@ -61,6 +61,7 @@ class StudiosController < ApplicationController
     @event ||= Event.first
     @track_ages = @event.track_ages
     @font_size = @event.font_size
+    @ballrooms = @event.ballrooms
 
     respond_to do |format|
        format.html { render 'people/heats' }
@@ -169,7 +170,7 @@ class StudiosController < ApplicationController
             json: {exception: exception.to_s, message: exception.message, backtrace: exception.backtrace } }
         end
       end
-    else  
+    else
       @from = @event.email
       @to = @studio.email
       @subject = "Invoice/Confirmation - #{@event.name}"
