@@ -360,7 +360,7 @@ when most dances for an individual are with one instructor but one or two are ch
     <% end %>
     <% sort = @person.judge&.sort || 'back'%>
     <div class="mt-4 mx-auto">
-    <% if %w(# & +).include?(@event.open_scoring) || @event.closed_score == '#' || @event.judge_comments %>
+    <% if %w(# & +).include?(@event.open_scoring) || @event.closed_scoring == '#' || @event.judge_comments %>
     <%= link_to 'Score heats', judge_heatlist_path(judge: @person), class: "btn-purple" %>
     <% else %>
     <%= link_to 'Score heats - cards', judge_heatlist_path(judge: @person, style: 'cards'), class: "btn-purple" %>
