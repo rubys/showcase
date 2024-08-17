@@ -331,6 +331,7 @@ class ScoresController < ApplicationController
   def by_level
     @event = Event.first
     @open_scoring = @event.open_scoring
+    @closed_scoring = @event.closed_scoring
     levels = Level.order(:id).all
 
     @last_score_update = Score.maximum(:updated_at)
@@ -360,12 +361,12 @@ class ScoresController < ApplicationController
         end
 
         @scores[group][level][students] ||= {
-          'Open' => @open_scoring == '&' ? [0]*5 : SCORES['Open'].map {0},
+          'Open' => %w(& +).include?(@open_scoring) ? [0]*5 : SCORES['Open'].map {0},
           'Closed' => SCORES['Closed'].map {0},
           'points' => 0
         }
 
-        if @open_scoring == '#'
+        if @open_scoring == '#' || @closed_scoring == '#'
           @scores[group][level][students]['points'] += score.to_i
         else
           value = SCORES['Closed'].index score
@@ -500,6 +501,7 @@ class ScoresController < ApplicationController
   def by_age
     @event = Event.first
     @open_scoring = @event.open_scoring
+    @closed_scoring = @event.closed_scoring
     ages = Age.order(:id).all
 
     template1 = ->() {
@@ -529,12 +531,12 @@ class ScoresController < ApplicationController
         age ||= ages.first.last
 
         @scores[group][age][students] ||= {
-          'Open' => @open_scoring == '&' ? [0]*5 : SCORES['Open'].map {0},
+          'Open' => %w(& +).include?(@open_scoring) ? [0]*5 : SCORES['Open'].map {0},
           'Closed' => SCORES['Closed'].map {0},
           'points' => 0
         }
 
-        if @open_scoring == '#'
+        if @open_scoring == '#' || @closed_scoring == '#'
           @scores[group][age][students]['points'] += score.to_i
         else
           value = SCORES['Closed'].index score
