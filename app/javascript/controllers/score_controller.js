@@ -432,7 +432,7 @@ export default class extends Controller {
         target.disabled = true;
 
         let data;
-        if (this.hasCommentsTarget) {
+        if (this.commentsTargets.length == 1) {
           data = {
             heat: parseInt(this.commentsTarget.dataset.heat),
             score: target.value
