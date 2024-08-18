@@ -218,6 +218,11 @@
     :name: Raleigh
     :region: iad
     :logo: arthur-murray-logo.gif
+    :events:
+      casino-royale:
+        :name: Casino Royale
+      in-house:
+        :name: In House
   richmond:
     :name: Richmond
     :region: atl
