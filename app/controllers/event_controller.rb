@@ -122,7 +122,8 @@ class EventController < ApplicationController
 
   def summary
     @people = Person.includes(:level, :age, :lead_entries, :follow_entries, options: :option, package: {package_includes: :option}).
-      all.select(&:active?).group_by {|person| person.type}
+      all.group_by {|person| person.type}
+      # should .select(&:active?) be an option?
 
     @packages = Billable.where.not(type: 'Option').order(:order).group_by(&:type).
       map {|type, packages| [type, packages.map {|package| [package, 0]}.to_h]}.to_h
