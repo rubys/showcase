@@ -2,6 +2,7 @@ module EntryForm
   def form_init(id = nil, entry = nil)
     event = Event.first
     @person ||= Person.find(id) if id
+    @person ||= Person.nobody if @studio
 
     if entry and @person&.type != 'Student'
       if entry.follow.type == "Student"
@@ -12,7 +13,8 @@ module EntryForm
     end
 
     if @person
-      studios = [@person.studio] + @person.studio.pairs
+      studio = @studio || @person.studio
+      studios = [studio] + studio.pairs
 
       seeking = case @person.role
       when 'Leader'
@@ -41,9 +43,9 @@ module EntryForm
         instructors += more
         @students = []
       else
-        @students = Person.where(type: 'Student', studio: @person.studio,
+        @students = Person.where(type: 'Student', studio: studio,
           role: [*seeking, 'Both']).order(:name) +
-          Person.where(type: 'Student', studio: @person.studio.pairs,
+          Person.where(type: 'Student', studio: studio.pairs,
           role: [*seeking, 'Both']).order(:name)
       end
 
@@ -85,8 +87,8 @@ module EntryForm
   end
 
   def find_or_create_entry(params)
-    @person = Person.find(params[:primary])
-    partner = Person.find(params[:partner])
+    @person = Person.find(params[:primary] || 0)
+    partner = Person.find(params[:partner] || 0)
 
     if @person.role == "Follower" || partner.role == 'Leader' || params[:role] == 'Follower'
       lead = partner

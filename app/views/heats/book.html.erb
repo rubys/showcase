@@ -75,6 +75,7 @@ last_seen = Set.new
 seen = Set.new
 
 show_name = lambda do |person|
+  return '' if person.id == 0
   name = person.display_name
   return name unless @type == 'emcee'
 

@@ -39,6 +39,8 @@ export default class extends Controller {
         let base = add.textContent.includes("instructor") ? this.instructorTarget : this.partnerTarget;
 
         let box = base.cloneNode(true);
+        box.classList.remove("hidden");
+        box.disabled = false;
 
         if (add.dataset.list) {
           for (let option of box.querySelectorAll("option")) {
@@ -87,6 +89,7 @@ export default class extends Controller {
     let taken = [];
     if (this.boxes.length <= 3) taken.push("x");
     for (let box of this.boxes) {
+      if (box.classList.contains("hidden") || box.disabled) continue;
       let avail = "";
       let options = box.querySelectorAll("option");
       for (let option of options) {

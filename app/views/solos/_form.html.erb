@@ -61,7 +61,7 @@
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
-  <% if @formation and @person&.type != "Professional" %>
+  <% if @formation and @person&.type != "Professional" and @person&.id != 0 %>
   <div class="my-5">
   <%= form.label :on_floor, 'Instructors' %>
   <ul class="ml-6">
@@ -96,6 +96,8 @@
 
   <% if return_to %>
   <%= link_to 'Back to solos', return_to, class: "btn-grey" %>
+  <% elsif @studio %>
+  <%= link_to 'Back to studio', @studio, class: "btn-grey" %>
   <% else %>
   <%= link_to 'Back to student', @person, class: "btn-grey" %>
   <% end %>

@@ -20,6 +20,10 @@ class FormationsController < ApplicationController
     @solo ||= Solo.new
     @formation = [nil]
 
+    if params[:studio]
+      @studio = Studio.find(params[:studio])
+    end
+
     form_init(params[:primary])
     @levels.push ["All Levels", 0]
     @ages.push ["All Ages", 0]

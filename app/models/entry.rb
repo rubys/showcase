@@ -16,9 +16,13 @@ class Entry < ApplicationRecord
   def subject
     if lead.type == 'Professional'
       follow
+    elsif lead.id == 0
+      formations = heats&.first&.solo&.formations
+      formation = formations.find {|formation| formation.person.type == 'Student'} || formations.first
+      formation.person
     else
       lead
-    end   
+    end
   end
 
   def subject_category(show_ages = true)
@@ -66,19 +70,25 @@ class Entry < ApplicationRecord
   end
 
   def partner(person)
-    follow == person ? lead : follow 
+    follow == person ? lead : follow
   end
 
   def pro
-    follow.type != 'Student' and lead.type != 'Student'
+    subject.type != 'Student'
   end
 
   def level_name
-    pro ? 'Professional' : level.name
+    if pro
+      'Professional'
+    elsif lead_id == 0
+      'Studio Formation'
+    else
+      level.name
+    end
   end
 
   def age_category
-    pro ? '-' : age.category
+    (pro || lead_id == 0) ? '-' : age.category
   end
 
 private

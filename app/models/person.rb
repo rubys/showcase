@@ -118,4 +118,18 @@ class Person < ApplicationRecord
     included = self.package&.package_includes&.map(&:option)&.map(&:id) || []
     options.reject {|option| included.include? option.id}
   end
+
+  def self.nobody
+    person = Person.find_or_create_by(id: 0)
+
+    if not person.name
+      person.name = 'Nobody'
+      person.type = 'Placeholder'
+      person.role = 'both'
+      person.studio = Studio.find(0)
+      person.save!
+    end
+
+    person
+  end
 end

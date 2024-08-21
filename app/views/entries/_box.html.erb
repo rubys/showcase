@@ -1,9 +1,9 @@
-<div data-controller="<%= @formation ? 'formation' : 'entry-box' %>">
+<div data-controller="<%= @formation ? 'formation' : 'entry-box' %>" style="min-height: 2rem">
   <% if @formation %>
     <div class="absolute top-0 right-0 flex flex-col">
     <a class="btn-blue ml-auto cursor-pointer w-full"
       data-list="<%= @instructors.to_json %>">Add instructor</a>
-    <% if @person&.type == "Student" %>  
+    <% if @person&.type == "Student" || @person&.id == 0 %>  
     <a class="btn-blue ml-auto cursor-pointer w-full"
       data-list="<%= @students.map {|person| [person.name, person.id]}.to_h.to_json %>">Add student</a>
     <% end %>
@@ -12,12 +12,16 @@
 
   <% target = (@formation ? 'formation' : 'entry-box') + '-target' %>
 
-  <% if @role %>
+  <% if @role && @person&.id != 0 %>
   <%= form.select :role, %w{Leader Follower}, {selected: @role}, data: {target => 'role', boths: @boths.to_json },
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'role' %>
   <% end %>
 
-  <% if @person %>
+  <% if @studio && @person&.id == 0 %>
+  <%= form.hidden_field :primary, value: @person.id, data: {target => 'primary'} %>
+  <%= form.select :partner, @avail, {}, data: {target => 'partner'}, disabled: true,
+    class: "hidden mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'partner' %>
+  <% elsif @person %>
   <%= form.hidden_field :primary, value: @person.id, data: {target => 'primary'} %>
   <%= form.select :partner, @avail, {include_blank: @entry&.new_record?, selected: @partner}, data: {target => 'partner', action: 'change->entry-box#reveal'},
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'partner' %>
@@ -28,7 +32,10 @@
   class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'partner' %>
   <% end %>
 
-  <% if @formation %>
+  <% if @studio && @person&.id== 0 %>
+  <%= form.select :instructor, @instructors, {}, data: {target => 'instructor'}, disabled: true,
+    class: "hidden mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'instructor' %>
+  <% elsif @formation %>
    <% @formation.each_with_index do |instructor, index| %>
    <% if @students.any? {|student| student.id == instructor} %>
    <%= form.select "formation][#{index+1}", @students.map {|person| [person.display_name, person.id]}, {selected: instructor}, data: {target => 'instructor'},
@@ -53,6 +60,6 @@
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></div>
   <% else %>
   <%= form.hidden_field :level, value: Level.maximum(:id) %>
-  <p class ="mt-8"></p>
+  <p class ="mt-8"></p></div>
   <% end %>
 </div>

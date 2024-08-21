@@ -2,7 +2,9 @@
   <%= render "info_box" %>
 
   <div class="relative">
-  <% if @person %>
+  <% if @studio && @person&.id == 0%>
+  <h1 class="text-center font-bold text-4xl"><%= @studio.name %> <%= @formation ? 'Formation' : 'Solo' %></h1>
+  <% elsif @person %>
   <h1 class="text-center font-bold text-4xl"><%= @person.display_name %></h1>
   <% else %>
   <h1 class="text-center font-bold text-4xl">New <%= @formation ? 'Formation' : 'Solo' %></h1>
