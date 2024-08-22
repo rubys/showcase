@@ -160,6 +160,8 @@ class DancesController < ApplicationController
 
   private
     def form_init
+      @event = Event.first
+
       @categories = Category.order(:order).pluck(:name, :id)
 
       @affinities = Category.all.map do |category|
@@ -195,6 +197,6 @@ class DancesController < ApplicationController
     def dance_params
       params.require(:dance).permit(:name, :category,
         :closed_category_id, :open_category_id, :solo_category_id,
-        :heat_length, :multi_category_id, :multi)
+        :heat_length, :multi_category_id, :multi, :limit)
     end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_08_04_224317) do
+ActiveRecord::Schema[7.1].define(version: 2024_08_22_010045) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -124,6 +124,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_04_224317) do
     t.integer "pro_solo_category_id"
     t.integer "pro_multi_category_id"
     t.boolean "semi_finals", default: false
+    t.integer "limit"
     t.index ["closed_category_id"], name: "index_dances_on_closed_category_id"
     t.index ["multi_category_id"], name: "index_dances_on_multi_category_id"
     t.index ["open_category_id"], name: "index_dances_on_open_category_id"

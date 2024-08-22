@@ -55,4 +55,12 @@ Changing the name here will change it everywhere.
       value: !form.object.cost_override ? '' : number_to_currency(form.object.cost_override.to_f, delimiter: '', unit: ''),
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+
+  <% if @event.dance_limit != nil %>
+  <div class="my-5">
+    <%= form.label :limit, 'Dance limit (if different)' %>
+    <%= form.number_field :limit, step: :any,
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  <% end %>
 <% end %>

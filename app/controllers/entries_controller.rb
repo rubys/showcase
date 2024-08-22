@@ -331,17 +331,18 @@ class EntriesController < ApplicationController
       tally_entry
 
       dance_limit = Event.first.dance_limit
+      dance_override = Dance.where.not(limit: nil).any?
 
       if dance_limit
         counts = {}
 
-        if @entry.follow.type == 'Student'
+        if @entry.follow.type == 'Student' or dance_override
           entries = Entry.where(lead_id: @entry.follow_id).or(Entry.where(follow_id: @entry.follow_id)).pluck(:id)
           entries.delete @entry.id
           counts = Heat.where(entry_id: entries).group(:dance_id, :category).count
         end
 
-        if @entry.lead.type == 'Student'
+        if @entry.lead.type == 'Student' or dance_override
           entries = Entry.where(lead_id: @entry.lead_id).or(Entry.where(follow_id: @entry.lead_id)).pluck(:id)
           entries.delete @entry.id
           Heat.where(entry_id: entries).group(:dance_id, :category).count.each do |key, count|
@@ -360,7 +361,7 @@ class EntriesController < ApplicationController
 
           if wants != was
             if dance_limit
-              if wants > was and (counts[[dance.id, category]] || 0) + wants > dance_limit
+              if wants > was and (counts[[dance.id, category]] || 0) + wants > (dance.limit || dance_limit)
                 @entry.errors.add(:base, :dance_limit_exceeded,
                   message: "#{dance.name} #{category} heats are limited to #{dance_limit}.")
                 @entries[category][dance.id] = [Heat.new(number: 9999)] * wants

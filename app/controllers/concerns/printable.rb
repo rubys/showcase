@@ -187,7 +187,7 @@ module Printable
   def generate_invoice(studios = nil, student=false, instructor=nil)
     find_couples
 
-    studios ||= Studio.all(order: name).preload(:studio1_pairs, :studio2_pairs, people: {options: :option, package: {package_includes: :option}})
+    studios ||= Studio.all.order(:name).preload(:studio1_pairs, :studio2_pairs, people: {options: :option, package: {package_includes: :option}})
 
     @event = Event.last
     @track_ages = @event.track_ages

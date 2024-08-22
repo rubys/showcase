@@ -3,11 +3,11 @@ class PeopleController < ApplicationController
   include Retriable
 
   before_action :set_person, only:
-    %i[ show edit update destroy get_entries post_entries toggle_present ballroom remove_option instructor_invoice ]
+    %i[ show edit update destroy get_entries post_entries toggle_present ballroom remove_option invoice instructor_invoice ]
 
   permit_site_owners :show, :get_entries, trust_level: 25
   permit_site_owners :new, :create, :post_type, :edit, :update, :destroy,
-    :post_entries, :instructor_invoice,
+    :post_entries, :instructor_invoice, :invoice,
     trust_level: 50
 
   def heats
@@ -70,6 +70,27 @@ class PeopleController < ApplicationController
     @studio = @person.studio
     @instructor = @person
     generate_invoice([@studio], false, @person)
+
+    @event ||= Event.first
+    @font_size = @event.font_size
+
+    respond_to do |format|
+      format.html { render 'studios/invoice' }
+      format.pdf do
+        render_as_pdf basename: "#{@person.display_name.gsub(/\W+/, '-')}-invoice"
+      end
+    end
+  end
+
+  def invoice
+    @studio = @person.studio
+    @student = @person if @person.type == 'Student'
+    @instructor = @person
+    generate_invoice([@studio], true, @person)
+
+    @heat_cost = @studio.student_heat_cost || @studio.heat_cost || @event.heat_cost || 0
+    @solo_cost = @studio.student_solo_cost || @studio.solo_cost || @event.solo_cost || 0
+    @multi_cost = @studio.student_multi_cost || @studio.multi_cost || @event.multi_cost || 0
 
     @event ||= Event.first
     @font_size = @event.font_size
