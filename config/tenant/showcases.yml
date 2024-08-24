@@ -264,6 +264,11 @@
     :name: San Jose
     :region: sjc
     :logo: arthur-murray-logo.gif
+    :events:
+      march:
+        :name: March
+      september:
+        :name: September
   schaumburg:
     :name: Schaumburg
     :region: ord
