@@ -45,6 +45,10 @@
         :name: October Mini Comp
       december-medal-ball:
         :name: December Medal Ball
+  boston:
+    :name: Boston
+    :region: ewr
+    :logo: ''
   carmel:
     :name: Carmel
     :region: ord
