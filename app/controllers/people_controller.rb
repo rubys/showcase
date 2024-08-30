@@ -395,7 +395,7 @@ class PeopleController < ApplicationController
 
     @score_bgcolor = []
     if @event.open_scoring == '#'
-      @score_range = @scores.values.map(&:keys).flatten.sort.uniq
+      @score_range = @scores.values.map(&:keys).flatten.compact.sort.uniq
     elsif @event.open_scoring == '1'
       @score_range = ScoresController::SCORES['Closed'] + ScoresController::SCORES['Open']
       @score_bgcolor = ScoresController::SCORES['Closed']
