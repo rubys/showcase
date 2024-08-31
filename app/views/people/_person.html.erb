@@ -45,6 +45,23 @@
         <td class="row-main"><%= person.back %></td>
       </tr>
       <% end %>
+
+      <% if person.invoice_to %>
+      <tr>
+        <td class="row">Invoice to</td>
+        <td class="row-main"><%= link_to person.invoice_to.display_name, person.invoice_to %></td>
+      </tr>
+      <% elsif !person.responsible_for.empty? %>
+      <tr>
+        <td class="row">Responsible for</td>
+        <td class="row-main">
+        <% person.responsible_for.sort_by(&:name).each_with_index do |dependent, index| %>
+        <%= ", " if index != 0 %>
+        <%= link_to dependent.display_name, dependent %>
+        <% end %>
+        </td>
+      </tr>
+      <% end %>
     </tbody>
   </table>
 

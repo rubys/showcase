@@ -814,7 +814,7 @@ class PeopleController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def person_params
-      params.require(:person).permit(:name, :studio_id, :type, :back, :level_id, :age_id, :category, :role, :exclude_id, :package_id, :independent, options: {})
+      params.require(:person).permit(:name, :studio_id, :type, :back, :level_id, :age_id, :category, :role, :exclude_id, :package_id, :independent, :invoice_to_id, options: {})
     end
 
     def filtered_params(person)
@@ -828,7 +828,8 @@ class PeopleController < ApplicationController
         back: person[:back],
         exclude_id: person[:exclude_id],
         package_id: person[:package_id],
-        independent: person[:independent]
+        independent: person[:independent],
+        invoice_to_id: person[:invoice_to_id]
       }
 
       unless %w(Student).include? base[:type]
@@ -864,6 +865,11 @@ class PeopleController < ApplicationController
       @exclude = Person.where(studio: @person.studio).order(:name).to_a
       @exclude.delete(@person)
       @exclude = @exclude.map {|exclude| [exclude.name, exclude.id]}
+
+      @invoiceable = Person.where(studio: @person.studio, type: 'Student', invoice_to: nil).
+        where.not(id: @person.id).order(:name).to_a
+      related = @invoiceable.select {|person| person.last_name == @person.last_name}
+      @invoiceable = (related + (@invoiceable - related)).map {|person| [person.name, person.id]}
 
       @packages = Billable.where(type: @person.type).order(:order).pluck(:name, :id)
 

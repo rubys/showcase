@@ -22,10 +22,10 @@ class User < ApplicationRecord
     elsif ENV['RAILS_APP_OWNER'] == 'index'
       self.index_auth?(userid)
     else
-      return true if @@auth_event.include?(userid) 
+      return true if @@auth_event.include?(userid)
       load_auth
       @@auth_event.include?(userid)
-    end    
+    end
   end
 
   def self.index_auth?(userid)

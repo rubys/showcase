@@ -17,6 +17,9 @@ class Person < ApplicationRecord
   belongs_to :exclude, class_name: 'Person', optional: true
   belongs_to :package, class_name: 'Billable', optional: true
 
+  belongs_to :invoice_to, class_name: 'Person', optional: true
+  has_many :responsible_for, class_name: 'Person', foreign_key: :invoice_to_id
+
   has_one :judge, required: false, dependent: :destroy
 
   has_many :lead_entries, class_name: 'Entry', foreign_key: :lead_id,

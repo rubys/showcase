@@ -82,6 +82,14 @@
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <% if !@packages.empty? and %w(Student Guest).include?(@person.type) %>
+  <div class="my-5" data-person-target="invoice_to">
+    <%= form.label :invoice_to_id, 'Invoice to' %>
+    <%= form.select :invoice_to_id, @invoiceable, {include_blank: true},
+    class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  <% end %>
+
   <%= render partial: 'package', locals: { person: person } %>
   <%= render partial: 'options', locals: { form: form } %>
 <% end %>

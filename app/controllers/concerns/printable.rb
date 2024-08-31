@@ -236,8 +236,9 @@ module Printable
         Entry.joins(:lead).preload(preload).where(people: {type: 'Professional', studio: studio})).uniq
 
       if instructor
-        entries.select! {|entry| entry.lead == instructor || entry.follow == instructor || entry.instructor == instructor}
-        pentries.select! {|entry| entry.lead == instructor || entry.follow == instructor || entry.instructor == instructor}
+        people = [instructor] + instructor.responsible_for
+        entries.select! {|entry| [entry.lead, entry.follow, entry.instructor].intersect?(people)}
+        pentries.select! {|entry| [entry.lead, entry.follow, entry.instructor].intersect?(people)}
       else
         studios = Set.new(studio.pairs + [studio])
         entries.select! {|entry| studios.include?(entry.follow.studio) && studios.include?(entry.lead.studio)}
@@ -250,6 +251,7 @@ module Printable
 
       if instructor
         people << @person
+        people += @person.responsible_for
       elsif student && @person
         people = [@person]
 
