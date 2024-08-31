@@ -35,19 +35,19 @@ class Person < ApplicationRecord
   has_many :scores, dependent: :destroy, foreign_key: :judge_id
 
   def self.display_name(name)
-    name.split(/,\s*/).rotate.join(' ')
+    name && name.split(/,\s*/).rotate.join(' ')
   end
 
   def display_name
-    name.split(/,\s*/).rotate.join(' ')
+    name && name.split(/,\s*/).rotate.join(' ')
   end
 
   def first_name
-    name.split(/,\s*/).last
+    name && name.split(/,\s*/).last
   end
 
   def last_name
-    name.split(/,\s*/).first
+    name && name.split(/,\s*/).first
   end
 
   def back_name
