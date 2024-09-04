@@ -62,6 +62,7 @@ body {
       <% elsif ballrooms == 2 %>
       - <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
       <% elsif ballrooms == 3 %>
+      <% heats.select! {|heat| heat.ballroom.blank?} %>
       - <%= heats.index(heat) >= heats.length/2 ? 'B' : 'A' %>
       <% elsif ballrooms == 4 %>
       - <%= heat.subject.studio.ballroom || "" %>
@@ -150,6 +151,7 @@ body {
       <% elsif ballrooms == 2 %>
       - <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
       <% elsif ballrooms == 3 %>
+      <% heats.select! {|heat| heat.ballroom.blank?} %>
       - <%= heats.index(heat) >= heats.length/2 ? 'B' : 'A' %>
       <% elsif ballrooms == 4 %>
       - <%= heat.subject.studio.ballroom || "" %>
