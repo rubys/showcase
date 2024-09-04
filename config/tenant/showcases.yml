@@ -133,6 +133,8 @@
         :name: Graduation Nights
       in-studio:
         :name: In Studio
+      showcase-rounds-september:
+        :name: Showcase Rounds - September
   laval:
     :name: Laval
     :region: yul
