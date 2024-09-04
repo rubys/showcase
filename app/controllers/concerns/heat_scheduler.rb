@@ -24,6 +24,13 @@ module HeatScheduler
     heat_categories = {'Closed' => 0, 'Open' => 1, 'Solo' => 2, 'Multi' => 3}
     routines = Category.where(routines: true).all.zip(4..).map {|cat, num| [cat.id, num]}.to_h
 
+    true_order = {}
+    dance_orders = Dance.all.group_by(&:name).map {|name, list| [name, list.map(&:order)]}
+    dance_orders.each do |name, orders|
+      max = orders.max
+      orders.each {|order| true_order[order] = max}
+    end
+
     heats = @heats.map {|heat|
       if heat.solo&.category_override_id and routines[heat.solo.category_override_id]
         category = routines[heat.solo.category_override_id]
@@ -31,7 +38,7 @@ module HeatScheduler
       else
         category = heat_categories[heat.category]
         category += 4 if heat.entry.pro
-        order = heat.dance.order
+        order = true_order[heat.dance.order]
       end
 
       if heat.dance.semi_finals
@@ -258,9 +265,16 @@ module HeatScheduler
     new_order = []
     agenda = {}
 
+    true_order = {}
+    dance_orders = Dance.all.group_by(&:name).map {|name, list| [name, list.map(&:order)]}
+    dance_orders.each do |name, orders|
+      max = orders.max
+      orders.each {|order| true_order[order] = max}
+    end
+
     cats.each do |cat, groups|
       if Event.last.intermix
-        dances = groups.group_by {|group| [group.dcat, group.dance.order]}
+        dances = groups.group_by {|group| [group.dcat, true_order[group.dance.order]]}
         candidates = []
 
         max = dances.values.map(&:length).max || 1
