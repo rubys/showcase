@@ -376,6 +376,16 @@ class HeatsController < ApplicationController
     @heat.entry = replace
     @heat.number = 0
 
+    if Event.first.agenda_based_entries? and params[:heat][:number].to_i != 0
+      heat = Heat.find_by(number: params[:heat][:number].to_i)
+      category = heat&.dance_category
+      if category&.routines == true
+        dance = Dance.find(params[:heat][:dance_id])
+        dance = Dance.where(name: dance.name).find {|dance| dance.freestyle_category == category}
+        params[:heat][:dance_id] = dance.id
+      end
+    end
+
     if @heat.dance_id != params[:heat][:dance_id].to_i or @heat.category != params[:heat][:category]
       params[:heat].delete(:number)
       dance_limit = Event.last.dance_limit
