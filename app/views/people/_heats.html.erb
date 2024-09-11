@@ -40,7 +40,7 @@ body {
   <% @heats.each do |number, heats| %>
   <% heats.each do |heat| %>
     <% next unless heatlist.include? heat.id %>
-    <% count[heat.category] += 1 %>
+    <% count[heat.category] += 1 if heat.number > 0 %>
     <% if @start && @start[number]&.day != day %>
     <tr>
     <td colspan="6" class="p-1">
@@ -139,7 +139,7 @@ body {
         next unless heat.entry.subject.studio == @studio
       end
     %>
-    <% count[heat.category] += 1 %>
+    <% count[heat.category] += 1 if heat.number > 0 %>
     <% ballrooms = heat.dance_category&.ballrooms || @ballrooms %>
     <tr class="text-sm<% if heat.number < 0%> line-through<% end %>">
       <% if @start %>
