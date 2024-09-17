@@ -768,6 +768,29 @@ class ScoresController < ApplicationController
     redirect_to settings_event_index_path(tab: 'Advanced'), notice: 'Scores were successfully reset.'
   end
 
+  def comments
+    @comments = Score.includes(:judge, heat: {entry: [lead: :studio, follow: :studio]}).where.not(comments: nil).
+      map do |score|
+        scores = []
+
+        if score.heat.entry.lead.type == 'Student'
+          scores << [score.heat.number, score.heat.entry.lead.name, score.heat.entry.follow.name, score.heat.entry.lead.studio.name, score.judge.name, score.comments]
+        end
+
+        if score.heat.entry.follow.type == 'Student'
+          scores << [score.heat.number, score.heat.entry.follow.name, score.heat.entry.lead.name, score.heat.entry.lead.studio.name, score.judge.name, score.comments]
+        end
+
+        scores
+      end.flatten(1).sort
+
+    respond_to do |format|
+      format.html
+      format.csv
+      format.json
+    end
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_score

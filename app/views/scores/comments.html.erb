@@ -1,0 +1,17 @@
+<table>
+    <tr>
+        <th>Heat</th>
+        <th>Student</th>
+        <th>Partner</th>
+        <th>Studio</th>
+        <th>Judge</th>
+        <th>Comments</th>
+    </tr>
+    <% @comments.each do |cols| %>
+        <tr>
+        <% cols.each do |col| %>
+            <td><%= col %></td>
+        <% end %>
+        </tr>
+    <% end %>
+</table>

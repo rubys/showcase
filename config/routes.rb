@@ -170,6 +170,7 @@ Rails.application.routes.draw do
       match 'pros', on: :collection, action: :pros, via: %i(get post)
       match 'instructor', on: :collection, via: %i(get post)
       post 'reset', on: :collection
+      get 'comments', on: :collection
     end
 
     resources :solos do

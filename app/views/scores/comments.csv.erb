@@ -1,0 +1,12 @@
+<%= 
+  @comments.unshift [
+    "Heat",
+    "Student",
+    "Partner",
+    "Studio",
+    "Judge",
+    "Comments"
+  ]
+  
+  @comments.map(&:to_csv).join.html_safe
+%>
