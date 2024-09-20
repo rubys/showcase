@@ -475,7 +475,7 @@ class HeatsController < ApplicationController
           if heat.entry.lead.type == 'Student'
             heat.ballroom = 'B'
           else
-            heat.ballroom = 'B'
+            heat.ballroom = 'A'
           end
         end
 
