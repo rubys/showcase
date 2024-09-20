@@ -3,10 +3,10 @@ require 'yaml'
 
 if ARGV.empty?
   config = {
-    database: 'db/2024-livermore-barbecue-pep-rally.sqlite3',
-    log: Dir.home + '/Downloads/2024-07-07.log',
-    start: '2024-07-07T17:04:15.950656096Z',
-    finish: '2024-07-07T18:05:16.906959819Z',
+    database: 'db/2024-glenview-chicagoland-sept.sqlite3',
+    log: Dir.home + '/Downloads/2024-09-08.log',
+    start: '2024-09-08T15:00:00Z',
+    finish: '2024-09-08T15:56:48Z',
     controllers: ["ScoresController"],
     methods: ["post", "post_feedback"],
   }

@@ -472,7 +472,7 @@ class HeatsController < ApplicationController
 
         ballrooms = category&.ballrooms || event.ballrooms
         if ballrooms == 2
-          if heats.entry.lead.type == 'Student'
+          if heat.entry.lead.type == 'Student'
             heat.ballroom = 'B'
           else
             heat.ballroom = 'B'
