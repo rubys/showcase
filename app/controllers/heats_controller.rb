@@ -458,8 +458,11 @@ class HeatsController < ApplicationController
 
     scheduled = {true => 0, false => 0}
 
+    scored = Score.includes(:heat).where.not(value: nil, good: nil, bad: nil).distinct.pluck(:number)
+
     unscheduled.each do |heat|
       avail = Heat.joins(:entry).where(dance_id: heat.dance_id, category: heat.category).group('number').
+        where.not(number: ..0).where.not(number: scored).
         pluck('number, AVG(entries.level_id) as avg_level, COUNT(heats.id) as count').
         sort_by {|number, level, count| (level - heat.entry.level_id).abs}
 
