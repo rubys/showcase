@@ -464,7 +464,7 @@ class HeatsController < ApplicationController
         sort_by {|number, level, count| (level - heat.entry.level_id).abs}
 
       avail.each do |number, level, count|
-        on_floor = Entry.joins(:heats).where(heats: {number: number}).pluck(:lead_id, :follow_id).flatten
+        on_floor = Entry.joins(:heats).where(heats: {number: [-number, number]}).pluck(:lead_id, :follow_id).flatten
         next if on_floor.include?(heat.entry.lead_id) || on_floor.include?(heat.entry.follow_id)
 
         category = heat.dance_category
