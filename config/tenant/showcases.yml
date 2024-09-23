@@ -1,4 +1,14 @@
 ---
+2025:
+  livermore:
+    :name: Livermore
+    :region: sjc
+    :logo: arthur-murray-logo.gif
+    :events:
+      the-music-of-prince:
+        :name: The Music of Prince
+      james-bond:
+        :name: James Bond
 2024:
   adelaide:
     :name: Adelaide
