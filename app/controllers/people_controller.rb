@@ -718,7 +718,18 @@ class PeopleController < ApplicationController
       unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).pluck(:id)
 
       @event = Event.last
-      if @event.ballrooms > 1
+
+      if Category.where.not(ballrooms: nil).any?
+        generate_agenda unless @agenda
+        cat_ballrooms = Category.pluck(:name, :ballrooms).to_h
+        heat_ballrooms = @agenda.map {|cat, heats|
+          [cat, heats.map {|heat, ballrooms| [heat, cat_ballrooms[cat] || @event.ballrooms]}]
+        }.to_h.values.flatten(1).to_h
+      else
+        heat_ballrooms = {}
+      end
+
+      if @event.ballrooms > 1 || heat_ballrooms.any?
         eligable = {
           A: judges.select {|judge| Person.find(judge).judge&.ballroom != 'B'},
           B: judges.select {|judge| Person.find(judge).judge&.ballroom != 'A'}
@@ -731,33 +742,33 @@ class PeopleController < ApplicationController
         dancers = @heats.map {|number, heats| [number.to_f, heats.map {|heat| [heat.entry.lead_id, heat.entry.follow_id]}.flatten]}.to_h
       end
 
-      if @event.ballrooms > 1 && Judge.where.not(ballroom: 'Both').any? && !eligable[:A].empty? && !eligable[:B].empty?
-        counts = judges.map {|id| [id, 0]}.to_h
-        unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).group_by(&:number)
+      counts = judges.map {|id| [id, 0]}.to_h
+      queue = []
+      unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).group_by(&:number)
+      splittable = Judge.where.not(ballroom: 'Both').any? && !eligable[:A].empty? && !eligable[:B].empty?
+
+      Score.transaction do
         unscored.each do |number, heats|
-          assign_rooms(@event.ballrooms, heats, -number).each do |room, heats|
+          ballrooms = splittable ? (heat_ballrooms[heats.first.number] || @event.ballrooms) : 1
+          if ballrooms > 1
+            assign_rooms(ballrooms, heats, -number).each do |room, heats|
+              heats.each do |heat|
+                judge = counts.sort_by(&:last).find {|id, count| eligable[room].include? id}.first
+                counts[judge] += 1
+                redo if judge_dancers.include?(judge) and dancers[number.to_f].include?(judge_dancers[judge])
+                Score.create! heat_id: heat.id, judge_id: judge
+              end
+            end
+          else
             heats.each do |heat|
-              judge = counts.sort_by(&:last).find {|id, count| eligable[room].include? id}.first
-              counts[judge] += 1
-              redo if judge_dancers.include?(judge) and dancers[number.to_f].include?(judge_dancers[judge])
+              queue = judges.dup if queue.empty?
+              judge = queue.pop
+              redo if judge_dancers.include?(judge) and dancers[number].include?(judge_dancers[judge])
               Score.create! heat_id: heat.id, judge_id: judge
             end
           end
         end
-      else
-        unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).pluck(:number, :id)
-
-        queue = []
-        Score.transaction do
-          unscored.each do |number, heat_id|
-            queue = judges.dup if queue.empty?
-            judge = queue.pop
-            redo if judge_dancers.include?(judge) and dancers[number].include?(judge_dancers[judge])
-            Score.create! heat_id: heat_id, judge_id: judge
-          end
-        end
       end
-
     end
 
     redirect_to person_path(params[:id]), notice: "#{unscored.count} entries assigned to #{judges.count} judges."
