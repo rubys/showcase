@@ -9,6 +9,15 @@
         :name: The Music of Prince
       james-bond:
         :name: James Bond
+  raleigh:
+    :name: Raleigh
+    :region: iad
+    :logo: arthur-murray-logo.gif
+    :events:
+      disney:
+        :name: Disney
+      in-house:
+        :name: In House
 2024:
   adelaide:
     :name: Adelaide
