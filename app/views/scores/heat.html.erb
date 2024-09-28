@@ -199,7 +199,7 @@ Swiping left and right on mobile devices and tablets also work.
       <% subcat = subject.entry.pro ? 'Pro' : "#{subject.entry.subject_category(@track_ages)} - #{subject.entry.level.initials}" %>
       <% if (@sort == 'level' and lastcat and subcat != lastcat) || (@event.assign_judges > 0 && assign != lastassign && lastcat) %>
       <tr>
-        <td class="<% if @event.judge_comments %>h-12<% else %>h-4<% end %>"></td>
+        <td class="<% if @event.judge_comments %>h-12<% elsif @sort == 'level' %>h-6<% else %>h-4<% end %>"></td>
       </tr>
       <% end %>
       <% lastcat = subcat %>
@@ -210,9 +210,9 @@ Swiping left and right on mobile devices and tablets also work.
       <tr class="hover:bg-yellow-200 line-through opacity-50">
       <% end %>
         <% if @event.assign_judges > 0 && assign && @show != 'only' %>
-        <td class="py-2 font-bold text-xl"><span class="border-2 border-red-600 px-2 rounded-full"><%= subject.lead.back || '&#9733;'.html_safe %></span>
+        <td class="<% if @sort != 'level' %>py-2 <% end %>font-bold text-xl"><span class="border-2 border-red-600 px-2 rounded-full"><%= subject.lead.back || '&#9733;'.html_safe %></span>
         <% else %>
-        <td class="py-2 text-xl"><%= subject.lead.back %>
+        <td class="<% if @sort != 'level' %>py-2 <% end %>text-xl"><%= subject.lead.back %>
         <% end %>
         <% if subject.lead.type == 'Student' %>
         <td><%= subject.follow.display_name %>
@@ -238,7 +238,7 @@ Swiping left and right on mobile devices and tablets also work.
         <% end %>
         <% end %>
       </tr>
-      <% if @style != 'emcee' # and @scores.empty? %>
+      <% if @style != 'emcee' and !%w(1 G #).include?(@scoring) # and @scores.empty? %>
       <tr data-controller="open-feedback" class="open-fb-row" data-heat="<%= subject.id %>" data-feedback-action="<%= post_feedback_path(judge: @judge) %>">
       <td colspan="5">
       <% if @scoring == '&' || @scoring == '@' %>
