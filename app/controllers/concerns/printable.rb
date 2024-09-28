@@ -21,7 +21,8 @@ module Printable
     first_time = nil
     @categories.each do |name, category|
       if last_cat
-        category.day = last_cat.day if category.blank?
+        category.day = last_cat.day if category.day.blank?
+        first_time = nil if category.day != last_cat.day
         if category.time.blank?
           if last_cat&.day == category.day
             category.time = last_cat&.time
