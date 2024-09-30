@@ -29,14 +29,15 @@ class Heat < ApplicationRecord
       dance.closed_category
     end
 
-    if !cat or cat.heats == nil or cat.extensions.empty?
+    extensions = cat.extensions.order(:start_heat)
+    if !cat or cat.heats == nil or extensions.empty?
       cat
-    elsif cat.extensions.first.start_heat == nil or number == nil
+    elsif extensions.first.start_heat == nil or number == nil
       cat
-    elsif number < cat.extensions.first.start_heat
+    elsif number < extensions.first.start_heat
       cat
     else
-      cat.extensions.first
+      extensions.reverse.find { |ext| number >= ext.start_heat } || cat
     end
   end
 

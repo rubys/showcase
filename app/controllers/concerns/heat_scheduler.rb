@@ -297,7 +297,7 @@ module HeatScheduler
 
       if cat
         if cat.heats and groups.length > cat.heats
-          extensions_needed = 1 # (groups.length.to_f / cat.heats).ceil - 1
+          extensions_needed = (groups.length.to_f / cat.heats).ceil - 1
         else
           extensions_needed = 0
         end
@@ -314,7 +314,9 @@ module HeatScheduler
         end
 
         if extensions_needed > 0
-          agenda[extensions_found.first] = groups[cat.heats..]
+          extensions_found.each_with_index do |extension, index|
+            agenda[extension] = groups[cat.heats*(index+1)...cat.heats*(index+2)]
+          end
           groups = groups[..cat.heats-1]
         end
       end
