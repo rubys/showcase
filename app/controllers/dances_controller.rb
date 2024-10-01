@@ -150,7 +150,7 @@ class DancesController < ApplicationController
   end
 
   def agenda
-    @categories = dance_categories(@dance)
+    @categories = dance_categories(@dance, params[:solo])
     respond_to do |format|
       format.turbo_stream { render turbo_stream: turbo_stream.replace('category-override',
         render_to_string(partial: 'categories'))}
