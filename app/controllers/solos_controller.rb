@@ -72,7 +72,7 @@ class SolosController < ApplicationController
 
       @categories = dance_categories(@solo.heat.dance, true)
 
-      @category = @dance.id
+      @category = @dance
 
       if not dances.include? @solo.heat.dance
         @dance = dances.find {|dance| dance.name == @solo.heat.dance.name}&.id || @dance
