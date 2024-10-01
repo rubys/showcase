@@ -65,6 +65,7 @@
   <tr>
     <th class="row-head-left">Name
     <th class="row-head">Purchases
+    <th class="row-head">Price
   </thead>
   <tbody>
     
@@ -79,6 +80,14 @@
     <tr>
       <td><div class="mx-4"><%= person.name %>
       <td><div class="mx-4"><%= purchases.map {|name, list| list.length == 1 ? name : "#{list.length} &#215; #{name}"}.join(' + ').html_safe %>
+      <td class="text-right"><%= number_to_currency purchases.values.flatten.map(&:price).sum, precision: 2, unit: '' %>
+    </tr>
+    <% end %>
+    <% invoice[:other_charges].sort.each do |name, price| %>
+    <tr>
+      <td><div class="mx-4"><%= studio.name %>
+      <td><div class="mx-4"><%= name %>
+      <td class="text-right"><%= number_to_currency price, precision: 2, unit: '' %>
     </tr>
     <% end %>
   </tbody>

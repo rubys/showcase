@@ -207,6 +207,8 @@ module Printable
     end
 
     studios.each do |studio|
+      other_charges = {}
+
       @cost = {
         'Closed' => studio.heat_cost || @event.heat_cost || 0,
         'Open' => studio.heat_cost || @event.heat_cost || 0,
@@ -293,6 +295,11 @@ module Printable
           category = dance_category.name if dance_category&.cost_override
           category = heat.dance.name if heat.dance.cost_override
 
+          if dance_category.studio_cost_override
+            other_charges[dance_category.name] ||= 0
+            other_charges[dance_category.name] += dance_category.studio_cost_override
+          end
+
           if entry.lead.type == 'Student' and @dances[entry.lead]
             @dances[entry.lead][:dances] += 1 / split
             @dances[entry.lead][:cost] += @cost[category] / split
@@ -322,9 +329,10 @@ module Printable
 
       @invoices[studio] = {
         dance_count: @dances.map {|person, info| info[:dances]}.sum,
-        purchases: @dances.map {|person, info| info[:purchases]}.sum,
+        purchases: @dances.map {|person, info| info[:purchases]}.sum + other_charges.values.sum,
         dance_cost: @dances.map {|person, info| info[:cost]}.sum,
         total_cost: @dances.map {|person, info| info[:cost] + info[:purchases]}.sum,
+        other_charges: other_charges,
 
         dances: @dances,
 
