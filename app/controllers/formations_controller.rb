@@ -49,7 +49,21 @@ class FormationsController < ApplicationController
 
     @partner = @solo.heat.entry.partner(@person).id
 
-    @dances = Dance.order(:name).all.map {|dance| [dance.name, dance.id]}
+    if Event.first.agenda_based_entries?
+      dances = Dance.where(order: 0...).order(:name)
+
+      @categories = dance_categories(@solo.heat.dance, true)
+
+      @category = @solo.heat.dance.id
+
+      if not dances.include? @solo.heat.dance
+        @dance = dances.find {|dance| dance.name == @solo.heat.dance.name}&.id || @dance
+      end
+
+      @dances = dances.map {|dance| [dance.name, dance.id]}
+    else
+      @dances = Dance.order(:name).all.pluck(:name, :id)
+    end
 
     @instructor = @solo.heat.entry.instructor
     @age = @solo.heat.entry.age_id

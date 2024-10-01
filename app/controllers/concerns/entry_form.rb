@@ -129,11 +129,11 @@ module EntryForm
 
   def dance_categories(dance, solo=false)
     if solo
-      Dance.where(name: dance.name, order: ...0).select {|dance| dance.solo_category}.
+      Dance.where(name: dance.name).select {|dance| dance.solo_category}.
         sort_by {|dance| dance.solo_category.order || 0}.
         map {|dance| [dance.solo_category.name, dance.id]}
     else
-      Dance.where(name: dance.name, order: ...0).select {|dance| dance.freestyle_category}.
+      Dance.where(name: dance.name).select {|dance| dance.freestyle_category}.
         sort_by {|dance| dance.freestyle_category.order || 0}.
         map {|dance| [dance.freestyle_category.name, dance.id]}
     end
