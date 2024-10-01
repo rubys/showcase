@@ -57,6 +57,15 @@ start times for each heat will show up on the heats page.
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <% if Event.first.agenda_based_entries? %>
+    <div class="my-5">
+    <%= form.label :studio_cost_override, 'Studio Cost Override (if different)' %>
+    <%= form.number_field :studio_cost_override, step: :any,
+      value: !form.object.studio_cost_override ? '' : number_to_currency(form.object.studio_cost_override.to_f, delimiter: '', unit: ''),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+    </div>
+  <% end %>
+
   <div class="my-5">
     <%= form.check_box :routines, class: 'entry-count h-10', data: {agenda: Event.first.agenda_based_entries?} %>
     <%= form.label :routines, (Event.first.agenda_based_entries? \

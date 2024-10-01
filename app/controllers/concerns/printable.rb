@@ -287,7 +287,10 @@ module Printable
         entry.heats.each do |heat|
           next if heat.number <= 0
           category = heat.category
-          category = heat.dance_category.name if heat.dance_category&.cost_override
+
+          dance_category = heat.dance_category
+          dance_category = dance_category.category if dance_category.is_a? CatExtension
+          category = dance_category.name if dance_category&.cost_override
           category = heat.dance.name if heat.dance.cost_override
 
           if entry.lead.type == 'Student' and @dances[entry.lead]

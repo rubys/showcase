@@ -38,7 +38,7 @@
        cost_category = heat.dance_category.name if heat.dance_category&.cost_override
        cost_category = heat.dance.name if heat.dance.cost_override
 
-       cost = @cost[cost_category]
+       cost = @cost[cost_category] || 0
        cost -= 5 if ENV['RAILS_APP_DB'] == '2024-laval' && entry.age.category.start_with?('J')
        cost = age_cost[entry.age_id].heat_cost || cost if age_cost[entry.age_id]
        %>

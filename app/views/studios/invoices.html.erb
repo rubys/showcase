@@ -59,7 +59,7 @@
       <td class="row-foot-right"><div class="mx-4"><%= number_with_precision total_heats, strip_insignificant_zeros: true %></td>
       <td class="row-foot-right"><div class="mx-4"><%= number_to_currency total_cost, precision: 2, unit: '' %></td>
       <td class="row-foot-right"><div class="mx-4"><%= number_to_currency total_purchases, precision: 2, unit: '' %></td>
-      <td class="row-foot-right"><div class="mx-4"><%= number_to_currency @total_invoice, precision: 2, unit: '' %></td>
+      <td class="row-foot-right"><div class="mx-4"><%= number_to_currency total_cost + total_purchases, precision: 2, unit: '' %></td>
       </tr>
   </tbody>
   </table>
