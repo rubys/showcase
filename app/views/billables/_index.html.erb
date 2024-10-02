@@ -86,4 +86,28 @@
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <% if @event.pro_heats %>
+  <h2 class="font-bold text-2xl mt-4">Pro Dances</h1>
+
+  <div class="my-5">
+    <%= form.label :pro_heat_cost, 'Pro heats' %>
+    <%= form.number_field :pro_heat_cost, step: :any,
+      value: number_to_currency(form.object.pro_heat_cost.to_f, delimiter: '', unit: ''),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :pro_solo_cost, 'Pro solos' %>
+    <%= form.number_field :pro_solo_cost, step: :any,
+      value: number_to_currency(form.object.pro_solo_cost.to_f, delimiter: '', unit: ''),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :pro_multi_cost, 'Pro multi-dances' %>
+    <%= form.number_field :pro_multi_cost, step: :any,
+      value: number_to_currency(form.object.pro_multi_cost.to_f, delimiter: '', unit: ''),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  <% end %>
   <% end %>

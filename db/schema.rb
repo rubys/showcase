@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_10_01_130746) do
+ActiveRecord::Schema[7.1].define(version: 2024_10_02_125818) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -196,6 +196,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_10_01_130746) do
     t.string "heat_order", default: "L"
     t.integer "dance_limit"
     t.string "counter_color", default: "#FFFFFF"
+    t.decimal "pro_heat_cost", precision: 7, scale: 2
+    t.decimal "pro_solo_cost", precision: 7, scale: 2
+    t.decimal "pro_multi_cost", precision: 7, scale: 2
     t.index ["solo_level_id"], name: "index_events_on_solo_level_id"
   end
 

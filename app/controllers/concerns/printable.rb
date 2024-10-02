@@ -227,6 +227,13 @@ module Printable
 
       @cost.merge! overrides
 
+      @pcost = @cost.merge(
+        'Closed' => @event.pro_heat_cost || 0.0,
+        'Open' => @event.pro_heat_cost || 0.0,
+        'Solo' => @event.pro_solo_cost || 0.0,
+        'Multi' => @event.pro_multi_cost || 0.0
+    )
+
       preload = {
         lead: [:studio, {options: :option, package: {package_includes: :option}}],
         follow: [:studio, {options: :option, package: {package_includes: :option}}],
@@ -235,8 +242,12 @@ module Printable
       entries = (Entry.joins(:follow).preload(preload).where(people: {type: 'Student', studio: studio}) +
         Entry.joins(:lead).preload(preload).where(people: {type: 'Student', studio: studio})).uniq
 
+      # add professional entries - this one is used to detect pros who are not in the studio
       pentries = (Entry.joins(:follow).preload(preload).where(people: {type: 'Professional', studio: studio}) +
         Entry.joins(:lead).preload(preload).where(people: {type: 'Professional', studio: studio})).uniq
+
+      # add professional entries - this one is contains all pro entries
+      pro_entries = pentries.select {|entry| entry.lead.type == 'Professional' && entry.follow.type == 'Professional'}
 
       if instructor
         people = [instructor] + instructor.responsible_for
@@ -248,7 +259,7 @@ module Printable
         pentries.select! {|entry| !studios.include?(entry.follow.studio) || !studios.include?(entry.lead.studio)}
       end
 
-      entries += pentries
+      entries += pentries + pro_entries
 
       people = entries.map {|entry| [entry.lead, entry.follow]}.flatten
 
@@ -317,6 +328,28 @@ module Printable
               @dances[entry.follow][category] = (@dances[entry.follow][category] || 0) + 1/split
             end
           end
+        end
+      end
+
+      pro_entries.uniq.each do |entry|
+        entry.heats.each do |heat|
+          next if heat.number <= 0
+          category = heat.category
+
+          dance_category = heat.dance_category
+          dance_category = dance_category.category if dance_category.is_a? CatExtension
+          category = dance_category.name if dance_category&.cost_override
+
+          if dance_category.studio_cost_override
+            other_charges[dance_category.name] ||= 0
+            other_charges[dance_category.name] += dance_category.studio_cost_override
+          end
+
+          @dances[entry.lead][:dances] += 0.5
+          @dances[entry.lead][:cost] += @pcost[category] / 2.0
+
+          @dances[entry.follow][:dances] += 0.5
+          @dances[entry.follow][:cost] += @pcost[category] / 2.0
         end
       end
 
