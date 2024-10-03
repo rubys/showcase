@@ -29,6 +29,8 @@ class Heat < ApplicationRecord
       dance.closed_category
     end
 
+    return unless cat
+
     extensions = cat.extensions.order(:start_heat)
     if !cat or cat.heats == nil or extensions.empty?
       cat
