@@ -6,7 +6,7 @@
   <% @scores.each do |dance, entries| %>
     <% next if entries.empty? %>
     <% empty = false %>
-    <h2 class="font-bold pt-4 text-2xl pb-5"><%= dance.name %></h2>
+    <h2 class="font-bold pt-4 text-2xl pb-5"><% if dance.heats.where.not(number: ..0).distinct.pluck(:number).count == 1 %>Heat <%= dance.heats.first.number %>: <% end %><%= dance.name %></h2>
     <table class="mb-8">
       <thead>
         <tr>
