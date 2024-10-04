@@ -3,6 +3,10 @@
 
   <% empty = true %>
 
+  <% @scores = @scores.to_a.sort_by do |dance, entries|
+    dance.heats.where.not(number: ..0).distinct.pluck(:number).first || 0
+  end %>
+
   <% @scores.each do |dance, entries| %>
     <% next if entries.empty? %>
     <% empty = false %>
