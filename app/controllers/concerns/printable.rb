@@ -249,6 +249,8 @@ module Printable
       # add professional entries - this one is contains all pro entries
       pro_entries = pentries.select {|entry| entry.lead.type == 'Professional' && entry.follow.type == 'Professional'}
 
+      pentries -= pro_entries
+
       if instructor
         people = [instructor] + instructor.responsible_for
         entries.select! {|entry| [entry.lead, entry.follow, entry.instructor].intersect?(people)}
@@ -293,6 +295,10 @@ module Printable
       entries.uniq.each do |entry|
         if entry.lead.type == 'Student' and entry.follow.type == 'Student'
           split = 2.0
+        elsif entry.lead.type == "Professional" and entry.lead.studio != studio
+          split = 2.0
+        elsif entry.follow.type == "Professional" and entry.follow.studio != studio
+          split = 2.0
         else
           split = 1
         end
@@ -307,8 +313,12 @@ module Printable
           category = heat.dance.name if heat.dance.cost_override
 
           if dance_category.studio_cost_override
-            other_charges[dance_category.name] ||= 0
-            other_charges[dance_category.name] += dance_category.studio_cost_override
+            other_charges[dance_category.name] ||= {entries: 0, count: 0, cost: 0}
+            other_charges[dance_category.name] = {
+              entries: other_charges[dance_category.name][:entries] + 1,
+              count: other_charges[dance_category.name][:count] + 1 / split,
+              cost: other_charges[dance_category.name][:cost] + dance_category.studio_cost_override / split
+            }
           end
 
           if entry.lead.type == 'Student' and @dances[entry.lead]
@@ -340,16 +350,13 @@ module Printable
           dance_category = dance_category.category if dance_category.is_a? CatExtension
           category = dance_category.name if dance_category&.cost_override
 
-          if dance_category.studio_cost_override
-            other_charges[dance_category.name] ||= 0
-            other_charges[dance_category.name] += dance_category.studio_cost_override
+          if @pcost[category] > 0
+            @dances[entry.lead][:dances] += 0.5
+            @dances[entry.lead][:cost] += @pcost[category] / 2.0
+
+            @dances[entry.follow][:dances] += 0.5
+            @dances[entry.follow][:cost] += @pcost[category] / 2.0
           end
-
-          @dances[entry.lead][:dances] += 0.5
-          @dances[entry.lead][:cost] += @pcost[category] / 2.0
-
-          @dances[entry.follow][:dances] += 0.5
-          @dances[entry.follow][:cost] += @pcost[category] / 2.0
         end
       end
 
@@ -360,11 +367,20 @@ module Printable
         end
       end
 
+      @dances.reject! do |person, info|
+        person.type == "Professional" and person.studio != studio
+      end
+
+      total_other_charges = {
+        count: other_charges.values.map {|charge| charge[:count]}.sum,
+        cost: other_charges.values.map {|charge| charge[:cost]}.sum
+      }
+
       @invoices[studio] = {
-        dance_count: @dances.map {|person, info| info[:dances]}.sum,
-        purchases: @dances.map {|person, info| info[:purchases]}.sum + other_charges.values.sum,
-        dance_cost: @dances.map {|person, info| info[:cost]}.sum,
-        total_cost: @dances.map {|person, info| info[:cost] + info[:purchases]}.sum,
+        dance_count: @dances.map {|person, info| info[:dances]}.sum + total_other_charges[:count],
+        purchases: @dances.map {|person, info| info[:purchases]}.sum,
+        dance_cost: @dances.map {|person, info| info[:cost]}.sum + total_other_charges[:cost],
+        total_cost: @dances.map {|person, info| info[:cost] + info[:purchases]}.sum  + total_other_charges[:cost],
         other_charges: other_charges,
 
         dances: @dances,

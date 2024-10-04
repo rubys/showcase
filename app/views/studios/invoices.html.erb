@@ -32,7 +32,7 @@
   <% total_heats = total_cost = total_purchases = 0 %>
   <% @studios.each do |studio| %>
       <% 
-        total_heats += heats = @invoices[studio][:dances].values.map {|value| value[:dances]}.sum
+        total_heats += heats = @invoices[studio][:dance_count]
         total_cost += cost = @invoices[studio][:dance_cost]
         total_purchases += purchases = @invoices[studio][:purchases]
        %>

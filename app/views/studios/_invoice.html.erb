@@ -43,7 +43,17 @@
     </tr>
     <% total_dance_cost += dance_cost %>
     <% total_purchases += purchases %>
-  <% end %>
+    <% end %>
+    <% invoice[:other_charges].sort.each do |name, charge| %>
+    <tr>
+      <td><div class="mx-4"><%= name %>
+      <td><div class="mx-4 text-right"><%= charge[:count] %>
+      <td class="pr-4 text-right"><%= number_to_currency charge[:cost], precision: 2, unit: '' %>
+      <td class="pr-4 text-right"><%= number_to_currency 0, precision: 2, unit: '' %>
+      <td class="pr-4 text-right"><%= number_to_currency charge[:cost], precision: 2, unit: '' %>
+      <% total_dance_cost += charge[:cost] %>
+    </tr>
+    <% end %>
     <tr class="text-base">
       <th class="row-foot">total
       <td><div class="row-foot text-right"><%= number_with_precision invoice[:dance_count], strip_insignificant_zeros: true %></div>
@@ -81,13 +91,6 @@
       <td><div class="mx-4"><%= person.name %>
       <td><div class="mx-4"><%= purchases.map {|name, list| list.length == 1 ? name : "#{list.length} &#215; #{name}"}.join(' + ').html_safe %>
       <td class="text-right"><%= number_to_currency purchases.values.flatten.map(&:price).sum, precision: 2, unit: '' %>
-    </tr>
-    <% end %>
-    <% invoice[:other_charges].sort.each do |name, price| %>
-    <tr>
-      <td><div class="mx-4"><%= studio.name %>
-      <td><div class="mx-4"><%= name %>
-      <td class="text-right"><%= number_to_currency price, precision: 2, unit: '' %>
     </tr>
     <% end %>
   </tbody>
