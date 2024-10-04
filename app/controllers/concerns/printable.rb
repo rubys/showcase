@@ -313,12 +313,16 @@ module Printable
           category = heat.dance.name if heat.dance.cost_override
 
           if dance_category.studio_cost_override
+            split = 1 if dance_category.cost_override == 0 && entry.lead.studio == entry.follow.studio
+
             other_charges[dance_category.name] ||= {entries: 0, count: 0, cost: 0}
             other_charges[dance_category.name] = {
               entries: other_charges[dance_category.name][:entries] + 1,
               count: other_charges[dance_category.name][:count] + 1 / split,
               cost: other_charges[dance_category.name][:cost] + dance_category.studio_cost_override / split
             }
+
+            next if dance_category.cost_override == 0
           end
 
           if entry.lead.type == 'Student' and @dances[entry.lead]
