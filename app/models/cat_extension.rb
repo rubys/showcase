@@ -5,7 +5,7 @@ class CatExtension < ApplicationRecord
     "#{category.name} - Part #{part}"
   end
 
-  def ballroomsroutines
+  def ballrooms
     category.ballrooms
   end
 
