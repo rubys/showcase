@@ -40,6 +40,7 @@
 # Ignore all environment files.
 /.env*
 !/.env.example
+/.kamal/secrets
 
 # Ignore nginx password file
 /config/htpasswd

@@ -13,6 +13,7 @@
 # Ignore all environment files.
 /.env*
 !/.env.example
+/.kamal/secrets
 
 # Ignore all logfiles and tempfiles.
 /log/*
