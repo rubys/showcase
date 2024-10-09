@@ -331,7 +331,7 @@
   vabeach:
     :name: Virginia Beach
     :region: iad
-    :logo: arthur-murray-logo.gif
+    :logo: ''
     :events:
       newsome-twosome:
         :name: Medal Ball - Newsome Twosome
@@ -352,6 +352,10 @@
         :name: June Warsaw Freestyle
       july-kiev:
         :name: July Kiev
+      freestyle-showcase-warsaw-2024:
+        :name: Freestyle Showcase Warsaw 2024
+      freestyle-showcase-kyiv-2024:
+        :name: Freestyle Showcase Kyiv 2024
   westchester:
     :name: West Chester
     :region: ord
@@ -471,7 +475,7 @@
   vabeach:
     :name: Virginia Beach
     :region: iad
-    :logo: arthur-murray-logo.gif
+    :logo: ''
   woodlands:
     :name: Woodlands
     :region: dfw
@@ -507,4 +511,4 @@
   vabeach:
     :name: Virginia Beach
     :region: iad
-    :logo: arthur-murray-logo.gif
+    :logo: ''
