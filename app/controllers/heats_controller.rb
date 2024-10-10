@@ -87,6 +87,7 @@ class HeatsController < ApplicationController
   # GET /heats/book or /heats/book.json
   def book
     @type = params[:type]
+    @show_solos = params[:solos]
     @event = Event.last
     @ballrooms = Event.last.ballrooms
     index

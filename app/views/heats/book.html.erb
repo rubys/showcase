@@ -160,6 +160,11 @@ end
     <% heat = heats.first %>
     <% next unless heat %>
     <% if @type == 'judge' and heats.first.category == 'Solo' %>
+    <% if @show_solos
+        next if @show_solos == 'none'
+        next if @show_solos == 'even' and heat.number.odd?
+        next if @show_solos == 'odd' and heat.number.even?
+      end %>
     <div class="page break-before-page">
     <span class="mt-12 number"><%= number %></span>
     <header>
