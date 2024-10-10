@@ -296,7 +296,7 @@ module HeatScheduler
         multis[cat]
 
       if cat
-        if cat.heats and groups.length > cat.heats
+        if cat.heats.to_i > 0 and groups.length > cat.heats
           extensions_needed = (groups.length.to_f / cat.heats).ceil - 1
         else
           extensions_needed = 0
