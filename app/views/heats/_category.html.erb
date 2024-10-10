@@ -1,4 +1,4 @@
-<% category = Category.where(name: cat).first %>
+<% category = @categories[cat] %>
 <% solos_only = heats.map {|number, ballrooms| ballrooms.values}.flatten.all? {|heat| heat.category == 'Solo'} %>
 <% locked = category && (@locked || category.locked || solos_only) %>
 <div id="cat-<%= cat.downcase.gsub(/[^\w]+/, '-') %>"
@@ -23,7 +23,7 @@
     <% else %>
     <h1 class="font-bold text-4xl">
       <%= cat %>
-      <% if category && !solos_only %>
+      <% if category && category.is_a?(Category) && !solos_only %>
       <%= button_to image_tag(
           category.locked ? 'Padlock-bronze-closed.svg' : 'Padlock-bronze-open.svg',
           height: 33, width: 33, class: 'ml-4 mb-1'

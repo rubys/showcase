@@ -21,6 +21,10 @@ class CatExtension < ApplicationRecord
     category.routines
   end
 
+  def locked
+    category.locked
+  end
+  
   def base_category
     category
   end

@@ -51,6 +51,8 @@ class HeatsController < ApplicationController
       }.flatten.tally.select {|person, count| number > 0 && count > 1}
       ]
     }.select {|number, issues| !issues.empty?}
+
+    @categories = (Category.all + CatExtension.all).map {|cat| [cat.name, cat]}.to_h
   end
 
   def mobile
