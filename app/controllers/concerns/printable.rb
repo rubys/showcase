@@ -304,7 +304,7 @@ module Printable
         end
 
         entry.heats.each do |heat|
-          next if heat.number <= 0
+          next if heat.number < 0
           category = heat.category
 
           dance_category = heat.dance_category
@@ -312,7 +312,7 @@ module Printable
           category = dance_category.name if dance_category&.cost_override
           category = heat.dance.name if heat.dance.cost_override
 
-          if dance_category.studio_cost_override
+          if dance_category&.studio_cost_override
             split = 1 if dance_category.cost_override == 0 && entry.lead.studio == entry.follow.studio
 
             other_charges[dance_category.name] ||= {entries: 0, count: 0, cost: 0}

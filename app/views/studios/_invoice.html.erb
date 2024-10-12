@@ -86,7 +86,7 @@
     <% purchases["#{person.type} #{person.package.name}"] = [person.package] if person.package_id %>
     <% next if purchases.empty? %>
     <% next unless person.studio == studio %>
-    <% next if @instructor && person != @instructor %>
+    <% next if person.type == 'Professional' && @instructor && person != @instructor %>
     <tr>
       <td><div class="mx-4"><%= person.name %>
       <td><div class="mx-4"><%= purchases.map {|name, list| list.length == 1 ? name : "#{list.length} &#215; #{name}"}.join(' + ').html_safe %>
