@@ -38,6 +38,22 @@ export default class extends Controller {
       });
     }
 
+    let review_solos = this.element.querySelector("select[id=review_solos]");
+    if (review_solos) {
+      review_solos.addEventListener("change", (event) => {
+        fetch(event.target.dataset.reviewSolosUrl, {
+          method: "POST",
+          headers: window.inject_region({
+            "X-CSRF-Token": token,
+            "Content-Type": "application/json"
+          }),
+          credentials: "same-origin",
+          redirect: "follow",
+          body: JSON.stringify({ review_solos: event.target.value })
+        });
+      });
+    }
+
     let dancing_checkbox = this.element.querySelector("input[type=checkbox][name=dancing_judge]");
     if (dancing_checkbox) {
       dancing_checkbox.addEventListener("click", (event) => {

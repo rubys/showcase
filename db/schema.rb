@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_10_02_125818) do
+ActiveRecord::Schema[7.1].define(version: 2024_10_10_143111) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -233,6 +233,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_10_02_125818) do
     t.string "show_assignments", default: "first", null: false
     t.boolean "present", default: true, null: false
     t.string "ballroom", default: "Both", null: false
+    t.string "review_solos", default: "All"
     t.index ["person_id"], name: "index_judges_on_person_id"
   end
 

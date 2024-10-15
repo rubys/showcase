@@ -137,6 +137,7 @@ Rails.application.routes.draw do
       get 'staff', on: :collection
       post 'toggle_present', on: :member
       post 'ballroom', on: :member
+      post 'review_solos', on: :member
       post 'assign_judges', on: :member
       post 'reset_assignments', on: :member
       post 'remove_option', on: :member
