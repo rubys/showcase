@@ -963,6 +963,36 @@ class EventController < ApplicationController
     end
   end
 
+  def select
+    if request.post?
+      FileUtils.rm "tmp/pids/server.pid", force: true
+      FileUtils.touch "tmp/reload.txt"
+
+      Thread.new do
+        sleep 0.5
+
+        if params[:date].blank?
+          puts "exec cd #{Rails.root} && bin/dev #{params[:db]}"
+          Bundler.original_exec "cd #{Rails.root} && bin/dev #{params[:db]}"
+        else
+          puts "exec cd #{Rails.root} && bin/dev #{params[:db]} #{params[:date]}"
+          Bundler.original_exec "cd #{Rails.root} && bin/dev #{params[:db]} #{params[:date]}"
+        end
+      end
+
+      render file: 'public/503.html'
+    elsif File.exist? "tmp/reload.txt"
+      FileUtils.rm "tmp/reload.txt"
+      redirect_to root_path
+    else
+      @dbs = Dir["db/2*.sqlite3"].
+        sort_by {|name| File.mtime(name)}[-20..].
+        map {|name| File.basename(name, '.sqlite3')}.
+        reverse
+
+      @dates = (0..19).map {|i| (Date.today-i).iso8601}
+    end
+  end
 
 private
 
