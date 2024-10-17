@@ -1,0 +1,21 @@
+<div class="mx-auto">
+
+<h1 class="font-bold text-4xl my-6 text-center">Select event</h1>
+
+<%= form_with url: select_path, data: {turbo: false} do |form| %>
+  <div class="my-5">
+    <%= form.select :db, @dbs, {},
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.select :date, @dates, {include_blank: true},
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="flex justify-center">
+    <%= form.submit value: 'Open', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  </div>
+<% end %>
+
+</div>
