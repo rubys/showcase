@@ -66,6 +66,9 @@
         </tr>
         <% end %>
         <tr id="<%= dom_id heat %>" class="text-<%= (@scored[heat.number] || !@missed.include?(heat.number)) ? 'slate-400' : 'black' %>">
+        <% next if @show_solos == 'none'
+           next if @show_solos == 'even' and heat.number.odd?
+           next if @show_solos == 'odd' and heat.number.even? %>
         <%
           link = heat.category == 'Multi' ?
             judge_heat_slot_path(judge: @judge, heat: heat.number, slot: 1, style: @style)

@@ -51,6 +51,8 @@ class ScoresController < ApplicationController
         !@scored[number] || @scored[number].length != @count[number.to_f]
       end
     end
+
+    @show_solos = @judge&.judge&.review_solos&.downcase
   end
 
   # GET /scores/:judge/heat/:heat
@@ -188,6 +190,16 @@ class ScoresController < ApplicationController
     agenda = heats.group_by(&:dance_category).
       sort_by {|category, heats| [category&.order || 0, heats.map(&:number).min]}
     heats = agenda.to_h.values.flatten
+
+    show_solos = params[:solos] || @judge&.judge&.review_solos&.downcase
+    if show_solos == 'none'
+      heats = heats.reject {|heat| heat.category == 'Solo'}
+    elsif show_solos == 'even'
+      heats = heats.reject {|heat| heat.category == 'Solo' && heat.number.odd?}
+    elsif show_solos == 'odd'
+      heats = heats.reject {|heat| heat.category == 'Solo' && heat.number.even?}
+    end
+
     index = heats.index {|heat| heat.number == @heat.number}
 
     if @heat.dance.heat_length and (@slot||0) < @heat.dance.heat_length * (@heat.dance.semi_finals ? 2 : 1)

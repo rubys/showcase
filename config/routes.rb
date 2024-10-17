@@ -42,6 +42,7 @@ Rails.application.routes.draw do
 
     get '/env', to: 'event#env'
     get '/console', to: 'event#console' if Rails.env.development?
+    match '/select', to: 'event#select', via: %i(get post)
     get '/auth', to: 'event#auth'
     get '/instructions', to: 'event#instructions'
     get '/landing', to: 'event#landing'
@@ -137,6 +138,7 @@ Rails.application.routes.draw do
       get 'staff', on: :collection
       post 'toggle_present', on: :member
       post 'ballroom', on: :member
+      post 'review_solos', on: :member
       post 'assign_judges', on: :member
       post 'reset_assignments', on: :member
       post 'remove_option', on: :member

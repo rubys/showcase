@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash -e
 
 if ! command -v foreman &> /dev/null
 then
@@ -17,7 +17,15 @@ if [[ $# -gt 0 ]]; then
   export RAILS_STORAGE=$BASE/storage/$(basename -s .sqlite3 $1)
 
   if [[ $# -gt 1 ]]; then
-    export HTTP_X_REMOTE_USER=$2
+    if [[ $2 =~ ^[0-9][-0-9]+$ ]]; then
+      scp rubymini:git/showcase/db/backup/$2/$RAILS_APP_DB.sqlite3.gz ~/tmp/$RAILS_APP_DB.sqlite3.in.gz
+      rm -f ~/tmp/$RAILS_APP_DB.sqlite3.in
+      gzip -d ~/tmp/$RAILS_APP_DB.sqlite3.in.gz
+      mv ~/git/showcase/db/$RAILS_APP_DB.sqlite3 ~/tmp
+      sqlite3 ~/git/showcase/db/$RAILS_APP_DB.sqlite3 < ~/tmp/$RAILS_APP_DB.sqlite3.in
+    else
+      export HTTP_X_REMOTE_USER=$2
+    fi
   fi
 
   if [[ "$1" = "test" ]]; then

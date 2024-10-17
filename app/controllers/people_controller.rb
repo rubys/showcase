@@ -3,7 +3,7 @@ class PeopleController < ApplicationController
   include Retriable
 
   before_action :set_person, only:
-    %i[ show edit update destroy get_entries post_entries toggle_present ballroom remove_option invoice instructor_invoice ]
+    %i[ show edit update destroy get_entries post_entries toggle_present ballroom review_solos remove_option invoice instructor_invoice ]
 
   permit_site_owners :show, :get_entries, trust_level: 25
   permit_site_owners :new, :create, :post_type, :edit, :update, :destroy,
@@ -642,6 +642,17 @@ class PeopleController < ApplicationController
         format.json { render json: { ballroom: judge.ballroom } }
       else
         format.json { render json: { ballroom: judge.ballroom }, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  def review_solos
+    respond_to do |format|
+      judge = Judge.find_or_create_by(person_id: @person.id)
+      if judge.update({review_solos: params[:review_solos] || 'Both'})
+        format.json { render json: { review_solos: judge.review_solos } }
+      else
+        format.json { render json: { review_solos: judge.review_solos }, status: :unprocessable_entity }
       end
     end
   end
