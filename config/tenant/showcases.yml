@@ -179,6 +179,10 @@
         :name: Willie Wonka’s Magical Night
       extravaganza:
         :name: Extravaganza
+  manchester:
+    :name: Manchester
+    :region: ewr
+    :logo: ''
   mdballroom:
     :name: Memorial DanceSport Ballroom
     :region: dfw
