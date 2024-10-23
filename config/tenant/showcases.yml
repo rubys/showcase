@@ -72,6 +72,11 @@
     :name: Carmel
     :region: ord
     :logo: arthur-murray-logo.gif
+    :events:
+      spring-showcase:
+        :name: Spring Showcase
+      back-to-the-80s:
+        :name: Back to the 80’s
   cary:
     :name: Cary
     :region: iad
