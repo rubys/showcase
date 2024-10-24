@@ -150,7 +150,7 @@ module HeatScheduler
 
     groups = reorder(groups)
 
-    if event.heat_range_level == 0 && ENV['RAILS_APP_DB'] == '2024-lakeview-graduation-nights'
+    if event.heat_range_level == 0
       i = 0
       groups.sort_by! {|group| [group.first.entry.level_id, i += 1]}
     end

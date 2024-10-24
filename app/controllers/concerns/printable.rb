@@ -136,7 +136,7 @@ module Printable
       end
     end
 
-    if event.heat_range_level == 0 && ENV['RAILS_APP_DB'] == '2024-lakeview-graduation-nights'
+    if event.heat_range_level == 0
       heat_level = Heat.joins(:entry).pluck(:number, :level_id).to_h
       agenda = @agenda
       @agenda = {}
