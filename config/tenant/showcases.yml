@@ -1,5 +1,18 @@
 ---
 2025:
+  bellevue:
+    :name: Bellevue
+    :region: sea
+    :logo: ''
+    :events:
+      hawaii:
+        :name: Hawaii
+      winter:
+        :name: Winter
+      summer-medal-ball:
+        :name: Summer Medal Ball
+      summer-showcase:
+        :name: Summer Showcase
   livermore:
     :name: Livermore
     :region: sjc
@@ -62,6 +75,8 @@
         :name: August Showcase
       october-mini-comp:
         :name: October Mini Comp
+      spotlight-ball:
+        :name: Spotlight ball
       december-medal-ball:
         :name: December Medal Ball
   boston:
@@ -159,6 +174,8 @@
         :name: In Studio
       showcase-rounds-september:
         :name: Showcase Rounds - September
+      graduation-nights-2:
+        :name: Graduation Nights 2
   laval:
     :name: Laval
     :region: yul
