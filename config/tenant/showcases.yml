@@ -153,6 +153,11 @@
     :name: Nashville-Green Hills
     :region: atl
     :logo: arthur-murray-logo.gif
+    :events:
+      spring:
+        :name: Spring
+      music-city:
+        :name: Music City
   harrisburg:
     :name: Harrisburg
     :region: iad
