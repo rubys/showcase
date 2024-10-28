@@ -333,6 +333,10 @@
         :name: March
       september:
         :name: September
+  sarasota:
+    :name: Sarasota
+    :region: mia
+    :logo: arthur-murray-logo.gif
   schaumburg:
     :name: Schaumburg
     :region: ord
