@@ -259,6 +259,11 @@
     :name: Montreal
     :region: yul
     :logo: arthur-murray-logo.gif
+    :events:
+      june:
+        :name: June
+      november:
+        :name: November
   perth:
     :name: Perth
     :region: syd
