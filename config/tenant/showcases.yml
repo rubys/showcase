@@ -31,6 +31,10 @@
         :name: Disney
       in-house:
         :name: In House
+  sydney:
+    :name: Sydney
+    :region: syd
+    :logo: arthur-murray-logo.gif
 2024:
   adelaide:
     :name: Adelaide
