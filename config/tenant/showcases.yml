@@ -31,10 +31,6 @@
         :name: Disney
       in-house:
         :name: In House
-  sydney:
-    :name: Sydney
-    :region: syd
-    :logo: arthur-murray-logo.gif
 2024:
   adelaide:
     :name: Adelaide
@@ -376,6 +372,11 @@
     :name: Sydney
     :region: syd
     :logo: arthur-murray-logo.gif
+    :events:
+      gatsby:
+        :name: Gatsby
+      dancing-with-the-stars:
+        :name: Dancing With The Stars
   vabeach:
     :name: Virginia Beach
     :region: iad
