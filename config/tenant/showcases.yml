@@ -81,7 +81,7 @@
         :name: December Medal Ball
   boston:
     :name: Boston
-    :region: ewr
+    :region: bos
     :logo: ''
   carmel:
     :name: Carmel
@@ -183,7 +183,7 @@
         :name: Graduation Nights 2
   laval:
     :name: Laval
-    :region: yul
+    :region: bos
     :logo: arthur-murray-logo.gif
   lincolnshire:
     :name: Lincolnshire
@@ -212,7 +212,7 @@
     :logo: ''
   manchester:
     :name: Manchester
-    :region: ewr
+    :region: bos
     :logo: ''
   mdballroom:
     :name: Memorial DanceSport Ballroom
@@ -257,7 +257,7 @@
         :name: Swing & Sway
   montreal:
     :name: Montreal
-    :region: yul
+    :region: bos
     :logo: arthur-murray-logo.gif
     :events:
       june:
@@ -483,7 +483,7 @@
     :logo: arthur-murray-logo.gif
   montreal:
     :name: Montreal
-    :region: yul
+    :region: bos
     :logo: arthur-murray-logo.gif
   raleigh:
     :name: Raleigh

@@ -13,6 +13,13 @@ regions:
     map: us
     x: 666.8622894496666
     y: 334.50323467265434
+  bos:
+    name: Boston, Massachusetts (US)
+    lat: 42.366978
+    lon: -71.02236
+    map: us
+    x: 827.1098175107608
+    y: 136.23009703027913
   ord:
     name: Chicago, Illinois (US)
     lat: 41.891544
@@ -34,13 +41,6 @@ regions:
     map: us
     x: 755.3064170132483
     y: 469.82316642663625
-  yul:
-    name: Montreal, Canada
-    lat: 45.48647
-    lon: -73.75549
-    map: us
-    x: 777.2374221552278
-    y: 88.56635457692141
   sjc:
     name: San Jose, California (US)
     lat: 37.3516
