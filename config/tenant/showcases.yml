@@ -13,6 +13,17 @@
         :name: Summer Medal Ball
       summer-showcase:
         :name: Summer Showcase
+  boston:
+    :name: Boston
+    :region: bos
+    :logo: ''
+    :events:
+      april:
+        :name: April
+      mini-comp:
+        :name: Mini Comp
+      october:
+        :name: October
   livermore:
     :name: Livermore
     :region: sjc
