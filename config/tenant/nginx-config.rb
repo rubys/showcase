@@ -351,7 +351,9 @@ server {
 <% if ENV['GEM_PATH'] -%>
   passenger_env_var GEM_PATH <%= ENV['GEM_PATH'] %>;
 <% end -%>
+<% if ROOT != "" -%>
   passenger_env_var RAILS_RELATIVE_URL_ROOT <%= ROOT %>;
+<% end -%>
 <% if ENV['RAILS_LOG_VOLUME'] -%>
   passenger_env_var RAILS_LOG_VOLUME <%= ENV['RAILS_LOG_VOLUME'] %>;
 <% end -%>
