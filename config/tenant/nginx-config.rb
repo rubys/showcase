@@ -295,7 +295,7 @@ server {
 <% if ENV['FLY_APP_NAME'] -%>
   listen 3000;
   listen [::]:3000;
-  server_name <%= ENV['FLY_APP_NAME'] %>.fly.dev;
+  server_name showcase.party <%= ENV['FLY_APP_NAME'] %>.fly.dev;
 <% elsif ENV['KAMAL_CONTAINER_NAME'] -%>
   listen 3000;
   listen [::]:3000;
@@ -306,13 +306,15 @@ server {
 <% end -%>
   port_in_redirect off;
 <% if ENV['FLY_REGION'] -%>
-  rewrite ^/$ /showcase/regions/ redirect;
-  rewrite ^/showcase(/studios/?)?$ /showcase/ redirect;
-  rewrite ^/showcase/demo$ /showcase/demo/ redirect;
+  rewrite ^/$ <%= ROOT %>/regions/ redirect;
+  rewrite ^<%= ROOT %>(/studios/?)?$ <%= ROOT %>/ redirect;
+  rewrite ^<%= ROOT %>/demo$ <%= ROOT %>/demo/ redirect;
 <% else -%>
-  rewrite ^/(showcase)?$ /showcase/ redirect;
+  rewrite ^/(showcase)?$ <%= ROOT %>/ redirect;
 <% end -%>
-  rewrite ^/assets/ /showcase/assets/ last;
+<% if ROOT != "" -%>
+  rewrite ^/assets/ <%= ROOT %>/assets/ last;
+<% end -%>
 
   # Authentication
 <% if File.exist? "#{@dbpath}/htpasswd" -%>
@@ -321,14 +323,14 @@ server {
   allow ::1;
 
   set $realm "Showcase";
-  if ($request_uri ~ "^/showcase/(assets/|cable$|docs/|password/|publish/|regions/((<%= @regions.join('|') %>)(/demo/.*)?)?$|studios/(<%= @studios.join('|') %>)$|$)") { set $realm off; }
+  if ($request_uri ~ "^<%= ROOT %>/(assets/|cable$|docs/|password/|publish/|regions/((<%= @regions.join('|') %>)(/demo/.*)?)?$|studios/(<%= @studios.join('|') %>)$|$)") { set $realm off; }
   <%- if @region -%>
-  if ($request_uri ~ "^/showcase/<%= @cables %>/cable$") { set $realm off; }
+  if ($request_uri ~ "^<%= ROOT %>/<%= @cables %>/cable$") { set $realm off; }
   <%- end -%>
-  if ($request_uri ~ "^/showcase/<%= @indexes %>/?$") { set $realm off; }
-  if ($request_uri ~ "^/showcase/[-\w]+\.\w+$") { set $realm off; }
-  if ($request_uri ~ "^/showcase/\d+/\w+/([-\w]+/)?public/") { set $realm off; }
-  if ($request_uri ~ "^/showcase/events/console$") { set $realm off; }
+  if ($request_uri ~ "^<%= ROOT %>/<%= @indexes %>/?$") { set $realm off; }
+  if ($request_uri ~ "^<%= ROOT %>/[-\w]+\.\w+$") { set $realm off; }
+  if ($request_uri ~ "^<%= ROOT %>/\d+/\w+/([-\w]+/)?public/") { set $realm off; }
+  if ($request_uri ~ "^<%= ROOT %>/events/console$") { set $realm off; }
   auth_basic $realm;
   auth_basic_user_file <%= @dbpath %>/htpasswd;
 <% else -%>
@@ -360,25 +362,25 @@ server {
 <% if ENV['FLY_REGION'] -%>
 
   # Password reset
-  location /showcase/password {
+  location <%= ROOT %>/password {
     proxy_set_header Host $http_host;
     proxy_set_header X-Forwarded-Host $host;
     proxy_pass https://rubix.intertwingly.net/showcase/password;
   }
 
   # Demo
-  location = /showcase/demo/ {
-    return 302 /showcase/regions/<%= @region %>/demo/;
+  location = <%= ROOT %>/demo/ {
+    return 302 <%= ROOT %>/regions/<%= @region %>/demo/;
   }
 
   # PDF generation
-  location ~ /showcase/.+\.pdf$ {
+  location ~ <%= ROOT %>/.+\.pdf$ {
     add_header Fly-Replay app=smooth-pdf;
     return 307;
   }
 
   # XLSX generation
-  location ~ /showcase/.+\.xlsx$ {
+  location ~ <%= ROOT %>/.+\.xlsx$ {
     add_header Fly-Replay app=smooth-pdf;
     return 307;
   }
@@ -439,7 +441,7 @@ server {
 <% @regions.to_a.sort.each do |region| -%>
   # <%= region %> region
 <% if region == ENV['FLY_REGION'] -%>
-  location /showcase/regions/<%= region %>/logs/ {
+  location <%= ROOT %>/regions/<%= region %>/logs/ {
     types {
       text/plain log;
     }
@@ -448,7 +450,7 @@ server {
     alias /data/log/;
   }
 <% else -%>
-  location /showcase/regions/<%= region %>/ {
+  location <%= ROOT %>/regions/<%= region %>/ {
     add_header Fly-Replay region=<%= region %>;
     return 307;
   }
@@ -457,7 +459,7 @@ server {
   years = "(?<year>#{data[:years].to_a.sort.join('|')})"
   sites = "(?<site>#{data[:sites].to_a.sort.join('|')})"
 %>
-  location ~ /showcase/<%= years %>/<%= sites %>(?<rest>/.*)?$ {
+  location ~ <%= ROOT %>/<%= years %>/<%= sites %>(?<rest>/.*)?$ {
     if ($request_method = 'GET') {
       add_header Fly-Replay region=<%= region %>;
       return 307;
