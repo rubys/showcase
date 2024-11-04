@@ -24,8 +24,6 @@ class EntriesController < ApplicationController
     @partner = nil
     @age = @person.age_id
     @level = @person.level_id
-
-    agenda_init
   end
 
   # GET /entries/1/edit
@@ -306,6 +304,8 @@ class EntriesController < ApplicationController
           @agenda.push(title: cat.name, dances: dances, category: category)
         end
       else
+        dances = dances.all.to_a.select {|dance| dance.order > 0} if event.agenda_based_entries and !clean
+
         @agenda = [
           {title: 'CLOSED CATEGORY', dances: dances, category: 'Closed'},
           {title: 'OPEN CATEGORY', dances: dances, category: 'Open'}
