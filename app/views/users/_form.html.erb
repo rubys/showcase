@@ -49,7 +49,7 @@
   <input type="hidden" name="admin" value="<%= @admin %>">
   
   <div class="my-5">
-    <%= form.label :token %> <% if user.token != "" %> - <a href="https://smooth.fly.dev/showcase/password/verify?token=<%= user.token %>">link</a><% end %>
+    <%= form.label :token %> <% if user.token != "" %> - <a href="https://showcase.party/password/verify?token=<%= user.token %>">link</a><% end %>
     <%= form.text_field :token, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 

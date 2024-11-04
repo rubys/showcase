@@ -28,7 +28,7 @@
   <%
     path = regions_path
     path = path[1..] if request.local?
-    link = URI::join('https://smooth.fly.dev/showcase/', path).to_s
+    link = URI::join('https://showcase.party/', path).to_s
   %>
   <p class="text-center mt-2"><%= link_to pluralize(@cities, 'City'), link %> -
   <%= link_to pluralize(@events, 'Event'), inventory_path %></p>
@@ -45,7 +45,7 @@
 
     <%= link_to "rubix", "https://rubix.intertwingly.net/showcase/", class: "btn-pale-green" %>
     <%= link_to "hetzner", "https://hetzner.intertwingly.net/showcase/", class: "btn-pale-green" %>
-    <%= link_to "fly", "https://smooth.fly.dev/showcase/regions/", class: "btn-pale-green" %>
+    <%= link_to "fly", "https://showcase.party/regions/", class: "btn-pale-green" %>
 
     <%= link_to "Logs",  "https://rubix.intertwingly.net/scu", class: "btn-pale-orange" %>
     <%= link_to "Logs",  "https://rubix.intertwingly.net/scu2", class: "btn-pale-orange" %>

@@ -149,7 +149,7 @@ class UsersController < ApplicationController
 
         if @link.blank?
           location = user.locations.first
-          @link = "https://smooth.fly.dev/showcase/studios/#{location.key}" if location
+          @link = "https://showcase.party/studios/#{location.key}" if location
         end
       end
 

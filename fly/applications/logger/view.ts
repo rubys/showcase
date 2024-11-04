@@ -6,7 +6,7 @@ import escape from "escape-html"
 const { NODE_ENV } = process.env
 export const LOGS = NODE_ENV == 'development' ? './logs' : '/logs'
 const VISITTIME = `${LOGS}/.time`
-const HOST = "https://smooth.fly.dev"
+const HOST = "https://showcase.party"
 
 // lines to be selected to be send to the browser
 export const pattern = new RegExp([
@@ -16,7 +16,7 @@ export const pattern = new RegExp([
   /([\d:a-fA-F, .]+) /,              // ip addresses (#2)
   /- (-|\w+) /,                      // - user (#3)
   /\[([\w\/: +-]+)\] /,              // time (#4)
-  /"(\w+) \/showcase\/(\S*) (.*?)" /,// method (#5), url (#6), protocol (#7)
+  /"(\w+) \/(\S*) (.*?)" /,          // method (#5), url (#6), protocol (#7)
   /(\d+) (\d+) /,                    // status (#8), length (#9)
   /\[(\w+)\] /,                      // request id (#10)
   /([.\d]+)?/,                       // request time (#11)
@@ -43,14 +43,16 @@ export function format(match: RegExpMatchArray) {
     status = `<a href="request/${request_id}">${status}</a>`
   }
 
-  let link = `<a href="${HOST}/showcase/${match[6]}">${match[6]}</a>`
+  let path = match[6]
+  if (path.startsWith("showcase/")) path = path.slice(9)
+  let link = `<a href="${HOST}/${path}">${path}</a>`
   let ip = match[2].split(',')[0]
 
   let regionColor = request_region && request_region[1] === match[1] ? 'green' : 'maroon'
 
   return [
     `<time>${match[4].replace(' +0000', 'Z')}</time>`,
-    `<a href="https://smooth.fly.dev/showcase/regions/${match[1]}/status"><span style="color: ${regionColor}">${match[1]}</span></a>`,
+    `<a href="https://showcase.party/regions/${match[1]}/status"><span style="color: ${regionColor}">${match[1]}</span></a>`,
     status,
     match[11],
     `<span style="color: blue">${match[3]}</span>`,

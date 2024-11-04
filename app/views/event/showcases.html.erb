@@ -9,7 +9,7 @@
     <%
       path = request.original_fullpath
       path = path[1..] if request.local?
-      link = URI::join('https://smooth.fly.dev/showcase/', path).to_s
+      link = URI::join('https://showcase.party/', path).to_s
     %>
     <a class="underline" href="<%= link %>"><%= link %></a>.
   </div>

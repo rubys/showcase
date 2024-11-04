@@ -185,7 +185,7 @@ app.get("/", async (req, res) => {
             results.push([
               `<time>${match[1]}</time>`,
               `[${match[2]}]`,
-              `<a href="https://smooth.fly.dev/showcase/regions/${match[3]}/status"><span style="color: maroon">${match[3]}</span></a>`,
+              `<a href="https://showcase.party/regions/${match[3]}/status"><span style="color: maroon">${match[3]}</span></a>`,
               convert?.toHtml(match[4]) || ''
             ].join(' '))
           }
@@ -210,6 +210,7 @@ app.get("/", async (req, res) => {
         if (!match) return;
         if (demo && !line.includes('demo')) return;
 
+        if (match[6].startsWith("/assets")) return
         if (filter && filtered(match)) return
         let log = format(match)
 

@@ -7,8 +7,6 @@ require 'fileutils'
 require 'ostruct'
 require 'json'
 
-ROOT = '/showcase'
-
 HOST = if ENV['FLY_APP_NAME']
   "#{ENV['FLY_APP_NAME']}.fly.dev"
 elsif `hostname` =~ /^ubuntu/ || ENV['KAMAL_CONTAINER_NAME']
@@ -75,6 +73,8 @@ end
 
 @region = ENV['FLY_REGION']
 REGIONS = @region ? `dig +short txt regions.smooth.internal`.scan(/\w+/) : []
+
+ROOT = @region ? '' : '/showcase'
 
 if @region
   regions = {}
@@ -295,7 +295,21 @@ server {
 <% if ENV['FLY_APP_NAME'] -%>
   listen 3000;
   listen [::]:3000;
-  server_name showcase.party <%= ENV['FLY_APP_NAME'] %>.fly.dev;
+  server_name <%= ENV['FLY_APP_NAME'] %>.fly.dev;
+
+  location ~ ^/showcase/(.*)$ {
+    return 307 https://showcase.party/$1;
+  }
+
+  location ~ ^/(.*)$ {
+    return 307 https://showcase.party/$1;
+  }
+}
+
+server {
+  listen 3000;
+  listen [::]:3000;
+  server_name showcase.party;
 <% elsif ENV['KAMAL_CONTAINER_NAME'] -%>
   listen 3000;
   listen [::]:3000;
