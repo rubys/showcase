@@ -74,7 +74,7 @@ end
 @region = ENV['FLY_REGION']
 REGIONS = @region ? `dig +short txt regions.smooth.internal`.scan(/\w+/) : []
 
-ROOT = @region ? '' : '/showcase'
+ROOT = @region ? '/showcase' : '/showcase'
 
 if @region
   regions = {}
@@ -295,21 +295,21 @@ server {
 <% if ENV['FLY_APP_NAME'] -%>
   listen 3000;
   listen [::]:3000;
-  server_name <%= ENV['FLY_APP_NAME'] %>.fly.dev;
+  server_name showcase.party;
 
   location ~ ^/showcase/(.*)$ {
-    return 307 https://showcase.party/$1;
+    return 307 https://smooth.fly.dev/showcase/$1;
   }
 
   location ~ ^/(.*)$ {
-    return 307 https://showcase.party/$1;
+    return 307 https://smooth.fly.dev/showcase/$1;
   }
 }
 
 server {
   listen 3000;
   listen [::]:3000;
-  server_name showcase.party;
+  server_name <%= ENV['FLY_APP_NAME'] %>.fly.dev;
 <% elsif ENV['KAMAL_CONTAINER_NAME'] -%>
   listen 3000;
   listen [::]:3000;
