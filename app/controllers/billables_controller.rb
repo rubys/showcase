@@ -215,7 +215,7 @@ class BillablesController < ApplicationController
 
     def update_includes
       if @billable.type == 'Option'
-        desired_packages = billable_params[:packages]
+        desired_packages = billable_params[:packages] || {}
         current_packages = @billable.option_included_by.map(&:package_id)
         Billable.where(type: ['Student', 'Guest', 'Professional']).each do |package|
           if desired_packages[package.id.to_s].to_i == 1
