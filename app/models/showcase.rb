@@ -7,4 +7,12 @@ class Showcase < ApplicationRecord
   validates :key, presence: true, uniqueness: { scope: %i[location_id year] }
 
   belongs_to :location
+
+  def self.url
+    "https://smooth.fly.dev/showcase"
+  end
+
+  def self.hostname
+    "smooth.fly.dev"
+  end
 end

@@ -9,7 +9,7 @@ import * as bcrypt from "bcrypt"
 
 import { startWs } from './websocket.ts'
 
-import { pattern, filtered, format, highlight, visit, LOGS } from "./view.ts"
+import { pattern, filtered, format, highlight, visit, HOST, LOGS } from "./view.ts"
 
 const PORT = 3000
 const { NODE_ENV } = process.env
@@ -185,7 +185,7 @@ app.get("/", async (req, res) => {
             results.push([
               `<time>${match[1]}</time>`,
               `[${match[2]}]`,
-              `<a href="https://showcase.party/regions/${match[3]}/status"><span style="color: maroon">${match[3]}</span></a>`,
+              `<a href="${HOST}/regions/${match[3]}/status"><span style="color: maroon">${match[3]}</span></a>`,
               convert?.toHtml(match[4]) || ''
             ].join(' '))
           }

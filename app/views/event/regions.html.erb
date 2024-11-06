@@ -8,7 +8,7 @@ can click on it to see helpful hints.</li>
   <li>Click on it again to dismiss the hints.</li>
   <li>Skim the <%= link_to "Documentation", docs_path, class: "x-2 rounded-lg py-1 px-2 text-white bg-green-600 font-medium" %> pages.
   A <%= link_to "docs", docs_path %> link appears at the bottom of the main page for each event.
-  <li>Try the <%= link_to "Demo", "https://showcase.party/demo/", class: "x-2 rounded-lg py-1 px-2 text-white bg-green-600 font-medium" %>.
+  <li>Try the <%= link_to "Demo", "#{Showcase.url}/demo/", class: "x-2 rounded-lg py-1 px-2 text-white bg-green-600 font-medium" %>.
   Any data entered there will normally be reset after about an hour of inactivity.
 </li>
   <li>Click a city below to get started.  Access to an individual event will require a 
@@ -25,7 +25,7 @@ can click on it to see helpful hints.</li>
 
 <div class="flex-none">
 <div class="flex flex-col justify-end">
-  <%= link_to 'Demo', "https://showcase.party/demo/", class: "btn-green" %>
+  <%= link_to 'Demo', "#{Showcase.url}/demo/", class: "btn-green" %>
   <%= link_to 'Documentation', docs_path, class: "btn-green my-2" %>
 </div>
 </div>

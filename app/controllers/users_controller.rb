@@ -75,7 +75,7 @@ class UsersController < ApplicationController
           @user.token = ""
           @user.save!
 
-          format.html { redirect_to link || root_path, 
+          format.html { redirect_to link || root_path,
             notice: "#{@user.userid} was successfully updated.",
             status: 303, allow_other_host: true }
         else
@@ -149,7 +149,7 @@ class UsersController < ApplicationController
 
         if @link.blank?
           location = user.locations.first
-          @link = "https://showcase.party/studios/#{location.key}" if location
+          @link = "#{Showcase.url}/studios/#{location.key}" if location
         end
       end
 
@@ -163,7 +163,7 @@ class UsersController < ApplicationController
       mail = Mail.new do
         from 'Sam Ruby <rubys@intertwingly.net>'
         to "#{user.name1.inspect} <#{user.email}>"
-        subject "Showcase password reset for #{user.userid}"  
+        subject "Showcase password reset for #{user.userid}"
       end
 
       mail.part do |part|
@@ -173,7 +173,7 @@ class UsersController < ApplicationController
         @logo = part.attachments.first.url
         part.html_part = render_to_string(:reset_email, formats: %i(html), layout: false)
       end
-  
+
       mail.delivery_method :smtp,
         Rails.application.credentials.smtp || { address: 'mail.twc.com' }
 

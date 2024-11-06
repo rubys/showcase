@@ -6,7 +6,7 @@ import escape from "escape-html"
 const { NODE_ENV } = process.env
 export const LOGS = NODE_ENV == 'development' ? './logs' : '/logs'
 const VISITTIME = `${LOGS}/.time`
-const HOST = "https://showcase.party"
+export const HOST = "https://smooth.fly.dev/showcase" // "https://showcase.party"
 
 // lines to be selected to be send to the browser
 export const pattern = new RegExp([
@@ -52,7 +52,7 @@ export function format(match: RegExpMatchArray) {
 
   return [
     `<time>${match[4].replace(' +0000', 'Z')}</time>`,
-    `<a href="https://showcase.party/regions/${match[1]}/status"><span style="color: ${regionColor}">${match[1]}</span></a>`,
+    `<a href="${HOST}/regions/${match[1]}/status"><span style="color: ${regionColor}">${match[1]}</span></a>`,
     status,
     match[11],
     `<span style="color: blue">${match[3]}</span>`,
