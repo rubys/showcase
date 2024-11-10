@@ -53,3 +53,13 @@ scans/
 /config/credentials/production.key
 node_modules
 utils/mapper/*.zip
+
+cf/worker/showcase/node_modules
+cf/worker/showcase/src/index.js
+cf/worker/showcase/.wrangler
+
+public/docs/
+public/regions/
+public/showcase.js
+public/site/
+public/studios/

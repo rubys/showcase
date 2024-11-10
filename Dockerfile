@@ -64,7 +64,7 @@ FROM base
 
 # Install packages needed for deployment
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl dnsutils libnginx-mod-http-passenger nginx openssh-server poppler-utils procps redis-server rsync ruby-foreman sqlite3 sudo vim && \
+    apt-get install --no-install-recommends -y curl dnsutils libnginx-mod-http-passenger nginx openssh-server poppler-utils procps redis-server rsync ruby-foreman sqlite3 sudo vim unzip && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # configure nginx and passenger
@@ -84,6 +84,9 @@ RUN echo "daemon off;" >> /etc/nginx/nginx.conf && \
 # Copy built artifacts: gems, application
 COPY --from=build /usr/local/bundle /usr/local/bundle
 COPY --from=build /rails /rails
+
+# Copy in rclone binary
+COPY --from=rclone/rclone:latest /usr/local/bin/rclone /usr/local/bin/rclone
 
 # Copy passenger native support
 COPY --from=build /root/.passenger/native_support /root/.passenger/native_support
