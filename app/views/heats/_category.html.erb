@@ -146,22 +146,22 @@
               p1, p2 = heat.follow, heat.lead
             end
            %>
-           <td class="row <%= (tally[p1.id] || 0) > 1 ? 'text-white bg-red-600' : '' %>">
+           <td class="row <%= p1.id > 0 && (tally[p1.id] || 0) > 1 ? 'text-white bg-red-600' : '' %>">
            <%= link_to p1.display_name, polymorphic_path(p1, anchor: 'heats') if p1.id != 0 %>
            <% if heat.solo and not heat.solo.formations.empty? %>
            <% heat.solo.formations.each_with_index do |formation, index| %>
            <% if index % 2 == 0 and formation.on_floor %>
-           <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
+           <% if index > 1 || p1.id != 0%><br><% end %><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
            <% end %>
            <% end %>
            <% end %>
            <% if (tally[p1.id] || 0) > 1 %><span class="text-white bg-red-600"><% end %>
-           <td class="row <%= (tally[p2.id] || 0) > 1 ? 'text-white bg-red-600' : '' %>">
+           <td class="row <%= (p2.id > 0 && tally[p2.id] || 0) > 1 ? 'text-white bg-red-600' : '' %>">
            <%= link_to p2.display_name, polymorphic_path(p2, anchor: 'heats') if p2.id != 0 %>
             <% if heat.solo and not heat.solo.formations.empty? %>
            <% heat.solo.formations.each_with_index do |formation, index| %>
            <% if index % 2 == 1 and formation.on_floor %>
-           <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
+           <% if index > 1 || p2.id != 0%><br><% end %><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
            <% end %>
            <% end %>
            <% end %>
