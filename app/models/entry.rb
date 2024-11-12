@@ -94,6 +94,8 @@ class Entry < ApplicationRecord
 private
 
   def has_one_instructor
+    return if lead.id == 0 && follow.id == 0
+    
     instructors = 0
     instructors += 1 if lead.type == 'Professional'
     instructors += 1 if follow.type == 'Professional'

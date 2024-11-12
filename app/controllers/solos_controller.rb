@@ -119,13 +119,16 @@ class SolosController < ApplicationController
 
     respond_to do |format|
       if @solo.save
+        target = @person
+
         formation.each do |dancer|
           person = Person.find(dancer.to_i)
           Formation.create! solo: @solo, person: person,
             on_floor: (person.type != 'Professional' || solo[:on_floor] != '0')
+          target = person.studio if target.id == 0
         end
 
-        format.html { redirect_to @person,
+        format.html { redirect_to target,
           notice: "#{formation.empty? ? 'Solo' : 'Formation'} was successfully created." }
         format.json { render :show, status: :created, location: @solo }
       else

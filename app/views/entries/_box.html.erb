@@ -32,7 +32,7 @@
   class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'partner' %>
   <% end %>
 
-  <% if @studio && @person&.id== 0 %>
+  <% if @studio && @person&.id== 0 && (!@formation || @formation.empty?) %>
   <%= form.select :instructor, @instructors, {}, data: {target => 'instructor'}, disabled: true,
     class: "hidden mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'instructor' %>
   <% elsif @formation %>
