@@ -211,6 +211,7 @@ app.get("/", async (req, res) => {
         if (demo && !line.includes('demo')) return;
 
         if (match[6].startsWith("/assets")) return
+        if (match[6].startsWith("/showcase/assets")) return
         if (filter && filtered(match)) return
         let log = format(match)
 
