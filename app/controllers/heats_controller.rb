@@ -265,6 +265,42 @@ class HeatsController < ApplicationController
     end
   end
 
+  def merge
+    before = params['before'].to_f
+    after = params['after'].to_f
+    cat = nil
+
+    Heat.transaction do
+      Heat.where(number: before).each do |heat|
+        heat.number = after
+        heat.save
+        cat = heat.dance_category
+      end
+    end
+
+    respond_to do |format|
+      format.turbo_stream {
+        generate_agenda
+        catname = cat&.name || 'Uncategorized'
+        heats = @agenda[catname]
+        @locked = Event.last.locked?
+        @renumber = !@locked && renumber_needed
+        @undoable = !@locked && undoable
+
+        render turbo_stream: [
+          turbo_stream.replace("cat-#{ catname.downcase.gsub(/[^\w]+/, '-') }",
+            render_to_string(partial: 'category', layout: false, locals: {cat: catname, heats: heats})
+          ),
+          turbo_stream.replace("renumber",
+            render_to_string(partial: 'renumber')
+          ),
+        ]
+      }
+
+      format.html { redirect_to heats_url }
+    end
+  end
+
   def drop
     if params[:source].start_with? '-'
       params[:before] = params[:source][1..]
@@ -275,7 +311,10 @@ class HeatsController < ApplicationController
         params[:after] = Heat.find(params[:target]).number
       end
 
-      return renumber
+      if params[:shift]
+        return merge
+      end
+        return renumber
     end
 
     source = Heat.find(params[:source])

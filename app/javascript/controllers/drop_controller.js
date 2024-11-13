@@ -11,13 +11,14 @@ export default class extends Controller {
 
       if (child.draggable) {
         child.addEventListener("dragstart", event => {
+          if (event.shiftKey) child.style.cursor = "move"
           event.dataTransfer.setData("application/drag-id", child.dataset.dragId);
           event.dataTransfer.effectAllowed = "move";
           child.style.opacity = 0.4;
           event.stopPropagation();
         });
 
-        child.addEventListener("dragend", _event => {
+        child.addEventListener("dragend", event => {
           child.style.opacity = 1;
           child.style.cursor = "default";
           event.stopPropagation();
@@ -46,7 +47,7 @@ export default class extends Controller {
             }),
             credentials: "same-origin",
             redirect: "follow",
-            body: JSON.stringify({source, target, id: this.element.id})
+            body: JSON.stringify({source, target, id: this.element.id, shift: event.shiftKey})
           }).then (response => response.text())
             .then(html => Turbo.renderStreamMessage(html));
 

@@ -47,3 +47,12 @@
 
 utils/mapper/*.zip
 scans
+
+cf/worker/showcase/node_modules
+cf/worker/showcase/.wrangler
+
+public/docs/
+public/regions/
+public/showcase.js
+public/site/
+public/studios/
