@@ -151,6 +151,10 @@
     :name: Durham
     :region: iad
     :logo: arthur-murray-logo.gif
+  everett:
+    :name: everett
+    :region: sea
+    :logo: ''
   glenview:
     :name: Glenview
     :region: ord
