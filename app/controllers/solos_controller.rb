@@ -185,6 +185,11 @@ class SolosController < ApplicationController
     end
 
     respond_to do |format|
+      # shouldn't happen, but apparently does.
+      if Solo.where(order: @solo.order).count > 1
+        @solo.order = Solo.maximum(:order) + 1
+      end
+
       if @solo.update(solo_params)
         format.html { redirect_to params['return-to'] || @person,
           notice: "#{formation.empty? ? 'Solo' : 'Formation'} was successfully updated." }
