@@ -212,6 +212,10 @@ class HeatsController < ApplicationController
 
     else
 
+      # remove all scratches and orphaned entries
+      Heat.where(number: ...0).each {|heat| heat.destroy}
+      Entry.includes(:heats).where(heats: {id: nil}).each {|entry| entry.destroy}
+
       generate_agenda
       newnumbers = @agenda.map {|category, heats| heats.map {|heat| heat.first.to_f}}.
         flatten.select {|number| number > 0}.zip(1..).to_h
