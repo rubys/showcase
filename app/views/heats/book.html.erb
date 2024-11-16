@@ -289,8 +289,8 @@ end
           <% if @start %>
           <span class="text-base" style="opacity: 50%">- <%= @start[number]&.strftime("%-I:%M %P") %></span>
           <% end %>
-          <% if @type == 'judge' || @type=='emcee' %>
-          <span class="text-base">(<%= ballrooms.values.flatten.length %> entries)</span>
+          <% if (@type == 'judge' || @type=='emcee') and heats.first.category != 'Solo' %>
+          <span class="text-base">(<%= pluralize(ballrooms.values.flatten.length, 'entry') %>)</span>
           <% end %>
         </td>
       </tr>
