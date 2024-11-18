@@ -9,6 +9,21 @@
         <% end %>
       </ul>
     </div>
+
+    <% if person.type == 'Professional' && person.errors.any? {|error| error.full_message.include? "Name has already been taken"} %>
+    <div>
+      <ul class="info-box block">
+        <% pair = Person.find_by_name(@person.name) %>
+        <li>
+          <b>Tip</b>: You can enable instructors to dance with students from different studios by pairing the studios.
+          Edit the <%= link_to person.studio.name, edit_studio_path(person.studio), class: "x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium" %> studio
+          <% if pair %>
+          and select <%= pair.studio.name %> from the "pair" dropdown.
+          <% end %>
+        </li>
+      </ul>
+    </div>
+    <% end %>
   <% end %>
 
   <% if @source == 'settings' %>

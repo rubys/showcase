@@ -1,7 +1,9 @@
 class Person < ApplicationRecord
   self.inheritance_column = nil
 
-  normalizes :name, with: -> name { name.strip }
+  normalizes :name, with: -> name do
+    name.strip.gsub(/\s+/, ' ').gsub(/\s*,\s*/, ', ')
+  end
 
   validates :name, presence: true, uniqueness: { scope: :type }
   validates :back, allow_nil: true, uniqueness: true

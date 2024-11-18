@@ -582,6 +582,7 @@ class PeopleController < ApplicationController
           notice: "#{@person.display_name} was successfully added." }
         format.json { render :show, status: :created, location: @person }
       else
+        params[:studio] = @person.studio_id
         new
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @person.errors, status: :unprocessable_entity }
