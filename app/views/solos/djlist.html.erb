@@ -34,7 +34,7 @@
        </ul>
        <% if heat.solo.song_file.attached? %>
        <td>
-         <audio controls preload="auto" style="display: inline">
+         <audio controls style="display: inline">
            <source src=<%= heat.solo.song_file.url %> type=<%= heat.solo.song_file.content_type %>>
          </audio>
        <% else %>
