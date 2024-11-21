@@ -24,6 +24,10 @@
         :name: Mini Comp
       october:
         :name: October
+  folsom:
+    :name: Folsom
+    :region: sjc
+    :logo: ''
   livermore:
     :name: Livermore
     :region: sjc
