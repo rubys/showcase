@@ -37,6 +37,8 @@
     :region: sjc
     :logo: arthur-murray-logo.gif
     :events:
+      pep-rally:
+        :name: Pep Rally
       the-music-of-prince:
         :name: The Music of Prince
       james-bond:
@@ -287,6 +289,8 @@
         :name: June
       november:
         :name: November
+      december:
+        :name: December
   perth:
     :name: Perth
     :region: syd
