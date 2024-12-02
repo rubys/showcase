@@ -3,7 +3,7 @@
 <p>Using a prior event as a starting point may save you some data entry.  What will <strong>not</strong>
 be copied is entries, heats, scores, and any package and options a participant may have selected.</p>
 
-<%= form_with url: clone_event_index_path, data: {turbo: false} do |form| %>
+<%= form_with url: clone_event_index_path do |form| %>
 
   <div class="my-5">
     <%= form.label :source %>

@@ -96,6 +96,23 @@ if ENV['FLY_APP_NAME']
     source = nil
   end
 
+  if File.executable? '/usr/local/bin/rclone'
+    config = "#{Dir.home}/.config/rclone/rclone.conf"
+    File.mkdir_p File.dirname(config)
+    File.write config, <<~CONFIG unless File.exist? config
+      [tigris]
+      type = s3
+      endpoint = https://fly.storage.tigris.dev
+      access_key_id = #{ENV['AWS_ACCESS_KEY_ID']}
+      secret_access_key = #{ENV['AWS_SECRET_ACCESS_KEY']}
+    CONFIG
+    #
+    # Migration notes:
+    # cp -p /data/storage/2023-*/*/*/* .
+    # rclone sync --progress . tigris:showcase
+    # ActiveStorage::Blob.update_all(service_name: 'tigris')
+  end
+
   if source
     # get authorized keys
     authkeys = "#{VOLUME}/.ssh/authorized_keys"
