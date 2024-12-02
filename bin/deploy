@@ -98,7 +98,7 @@ if ENV['FLY_APP_NAME']
 
   if File.executable? '/usr/local/bin/rclone'
     config = "#{Dir.home}/.config/rclone/rclone.conf"
-    File.mkdir_p File.dirname(config)
+    FileUtils.mkdir_p File.dirname(config)
     File.write config, <<~CONFIG unless File.exist? config
       [tigris]
       type = s3
