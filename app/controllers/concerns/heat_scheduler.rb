@@ -13,6 +13,8 @@ module HeatScheduler
     Heat.where(number: ...0).each {|heat| heat.destroy}
     Entry.includes(:heats).where(heats: {id: nil}).each {|entry| entry.destroy}
 
+    fixups
+
     # extract heats
     @heats = Heat.eager_load(
       :solo,
@@ -552,4 +554,27 @@ module HeatScheduler
     end
   end
 
+  def fixups
+    open_orphans = Dance.joins(:open_category).where(order: ...0, open_category: {routines: false})
+    open_orphans.each do |dance|
+      base = Dance.where(name: dance.name, order: 1...).first
+
+      if base
+        Heats.where(id: dance.heats.pluck(:id).update_all(dance_id base.id))
+      else
+        dance.update(order: Dance.maximum(:order) + 1)
+      end
+    end
+
+    closed_orphans = Dance.joins(:closed_category).where(order: ...0, closed_category: {routines: false})
+    closed_orphans.each do |dance|
+      base = Dance.where(name: dance.name, order: 1...).first
+
+      if base
+        Heats.where(id: dance.heats.pluck(:id).update_all(dance_id base.id))
+      else
+        dance.update(order: Dance.maximum(:order) + 1)
+      end
+    end
+  end
 end
