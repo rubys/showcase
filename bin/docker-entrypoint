@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-if [ "${*}" == "foreman start --procfile=Procfile.fly" ]; then
+if [ "$1" == "foreman" ] && [ "$2" == "start" ]; then
   bin/deploy
 fi
 

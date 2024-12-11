@@ -156,4 +156,4 @@ ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
 VOLUME /data
-CMD ["foreman", "start", "--procfile=Procfile.fly"]
+CMD ["foreman", "start", "--procfile=Procfile.kamal"]

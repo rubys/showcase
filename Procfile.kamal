@@ -1,0 +1,2 @@
+web: bundle exec thrust nginx
+redis: redis-server /etc/redis/redis.conf

@@ -5,6 +5,9 @@ app = "smooth"
 primary_region = "iad"
 swap_size_mb = 2048
 
+[processes]
+  app = "foreman start --procfile=Procfile.fly"
+
 [[mounts]]
   source = "smooth_volume"
   destination = "/data"
@@ -13,6 +16,7 @@ swap_size_mb = 2048
   auto_extend_size_limit = "100GB"
 
 [http_service]
+  processes = ['app']
   internal_port = 3000
   force_https = true
   auto_stop_machines = false
@@ -20,6 +24,7 @@ swap_size_mb = 2048
   min_machines_running = 1
 
 [[services]]
+  processes = ['app']
   internal_port = 2222
   protocol = "tcp"
   [[services.ports]]

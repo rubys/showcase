@@ -1,7 +1,3 @@
-#!/usr/bin/env ruby
+#!/bin/sh
 
-# A sample docker-setup hook
-#
-# Sets up a Docker network which can then be used by the application’s containers
-
-ssh user@example.com docker network create kamal
+echo "Docker set up on $KAMAL_HOSTS..."
