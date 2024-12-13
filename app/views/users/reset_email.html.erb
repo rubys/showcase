@@ -53,7 +53,7 @@
                                             You can reset your password by clicking the link below and following
                                             the instructions you find there.
                                         </p>
-                                        <a href="<%= password_verify_url(token: @user.token).sub('rubix.intertwingly.net/showcase', 'showcase.party') %>"
+                                        <a href="<%= password_verify_url(token: @user.token) %>"
                                             style="background:#20e277;text-decoration:none !important; font-weight:500; margin-top:5px; color:#fff;text-transform:uppercase; font-size:14px;padding:10px 24px;display:inline-block;border-radius:50px;">Reset
                                             Password</a>
                                         <p style="color:#455056; font-size:15px;line-height:24px; margin:10px 0;">
