@@ -36,6 +36,7 @@ builder:
   context: .
   arch: amd64
   remote: ssh://root@65.109.81.136
+  local: false
 
 # Inject ENV variables into containers (secrets come from .kamal/secrets).
 #
@@ -49,6 +50,13 @@ env:
     KAMAL_HETZNER: 1
   secret:
     - RAILS_MASTER_KEY
+
+# Configure logging
+logging:
+  driver: local
+  options:
+    max-size: 20m
+    max-file: 5
 
 # Aliases are triggered with "bin/kamal <alias>". You can overwrite arguments on invocation:
 # "bin/kamal logs -r job" will tail logs from the first server in the job section.
