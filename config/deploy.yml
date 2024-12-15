@@ -77,6 +77,7 @@ aliases:
 #   - "app_storage:/app/storage"
 volumes:
   - /home/rubys/db:/data/db
+  - /home/rubys/log:/data/log
   - /home/rubys/storage:/data/storage
 
 # Bridge fingerprinted assets, like JS and CSS, between versions to avoid

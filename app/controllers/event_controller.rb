@@ -556,7 +556,7 @@ class EventController < ApplicationController
   def region
     @region = params[:region]
     @passenger_status = ''
-    @passenger_status = `sudo passenger-status` if ENV['FLY_MACHINE_ID']
+    @passenger_status = `sudo passenger-status` if ENV['FLY_MACHINE_ID'] || ENV['KAMAL_CONTAINER_NAME']
 
     logdir = Rails.root.join('log').to_s
     logdir = '/data/log' if Dir.exist?('/data/log')

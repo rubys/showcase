@@ -175,6 +175,10 @@ FileUtils.mkdir_p log_volume if log_volume
 @dbpath = ENV.fetch('RAILS_DB_VOLUME') { "#{@git_path}/db" }
 FileUtils.mkdir_p @dbpath
 
+mem = File.exist?('/proc/meminfo') ?
+   IO.read('/proc/meminfo')[/\d+/].to_i : `sysctl -n hw.memsize`.to_i/1024
+pool_size = 6 + mem / 1024 / 1024
+
 old_conf = IO.read(SHOWCASE_CONF) rescue ''
 new_conf = ERB.new(DATA.read, trim_mode: '-').result(binding)
 
@@ -289,7 +293,7 @@ error_log /dev/stderr;
 access_log /dev/stdout main if=$loggable;
 
 <% end -%>
-passenger_max_pool_size 16;
+passenger_max_pool_size <%= pool_size %>;
 
 server {
 <% if ENV['FLY_APP_NAME'] -%>
