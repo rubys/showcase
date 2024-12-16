@@ -74,7 +74,7 @@ end
 @region = ENV['FLY_REGION']
 REGIONS = @region ? `dig +short txt regions.smooth.internal`.scan(/\w+/) : []
 
-ROOT = @region ? '/showcase' : '/showcase'
+ROOT = ENV['KAMAL_CONTAINER_NAME'] ? '' : '/showcase'
 
 if @region
   regions = {}
@@ -317,7 +317,7 @@ server {
 <% elsif ENV['KAMAL_CONTAINER_NAME'] -%>
   listen 3000;
   listen [::]:3000;
-  server_name hetzner.intertwingly.net;
+  server_name showcase.party;
 <% else -%>
   listen 9999;
   server_name localhost;
@@ -327,8 +327,10 @@ server {
   rewrite ^/$ <%= ROOT %>/regions/ redirect;
   rewrite ^<%= ROOT %>(/studios/?)?$ <%= ROOT %>/ redirect;
   rewrite ^<%= ROOT %>/demo$ <%= ROOT %>/demo/ redirect;
-<% else -%>
+<% elsif ROOT != "" -%>
   rewrite ^/(showcase)?$ <%= ROOT %>/ redirect;
+<% else -%>
+  rewrite ^/$ <%= ROOT %>/studios/ redirect;
 <% end -%>
 <% if ROOT != "" -%>
   rewrite ^/assets/ <%= ROOT %>/assets/ last;
@@ -341,7 +343,7 @@ server {
   allow ::1;
 
   set $realm "Showcase";
-  if ($request_uri ~ "^<%= ROOT %>/(assets/|cable$|docs/|password/|publish/|regions/((<%= @regions.join('|') %>)(/demo/.*)?)?$|studios/(<%= @studios.join('|') %>)$|$)") { set $realm off; }
+  if ($request_uri ~ "^<%= ROOT %>/(assets/|cable$|docs/|password/|publish/|regions/((<%= @regions.join('|') %>)(/demo/.*)?)?$|studios/(<%= @studios.join('|') %>|)$|$)") { set $realm off; }
   <%- if @region -%>
   if ($request_uri ~ "^<%= ROOT %>/<%= @cables %>/cable$") { set $realm off; }
   <%- end -%>
