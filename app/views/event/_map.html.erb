@@ -11,6 +11,7 @@
    <%= render "#{map}map" %>
    <% @map['regions'].each do |token, region| -%>
    <% 
+     next unless ENV['FLY_REGION']
      next unless @regions[token]
      point = @map['regions'][token]
      next unless point and point['x'] and point['map'] == map

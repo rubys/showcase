@@ -31,6 +31,7 @@ can click on it to see helpful hints.</li>
 </div>
 </div>
 
+<% if ENV['FLY_REGION'] %>
 <div id="region-list" class="w-full">
 <table class="table-auto mt-8 w-full">
 <% @regions.to_a.sort.each do |region, cities| %>
@@ -42,6 +43,23 @@ can click on it to see helpful hints.</li>
 <% end %>
 </table>
 </div>
+<% else -%>
+<div id="studios-list" class="w-full">
+<ul class="grid gap-4 grid-cols-4">
+<% cities = @cities.to_a.sort %>
+<% rows = (cities.length.to_f/4).ceil %>
+<% (0...rows).each do |row| %>
+<% (0...4).each do |col| %>
+<% name, city = cities[col*rows + row] %>
+<% next unless city %>
+  <li class="w-full">
+    <span class="text-slate-500"><%= link_to name, studio_events_path(city), class: "cursor-pointer" %>
+  </li>
+<% end %>
+<% end %>
+</ul>
+</div>
+<% end %>
 
 <p class="mt-4">Click on the <span class="text-emerald-600">&#x24D8;</span> in the top
     left corner of this page to see helpful hints.</p>
