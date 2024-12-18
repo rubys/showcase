@@ -25,6 +25,7 @@ let lastRegionCheck = 0
 let lastRegions: string[] = []
 
 async function getRegions(): Promise<string[]> {
+  if (!process.env.FLY_REGION) return []
   let checkTime = new Date().getTime()
 
   if (NODE_ENV != 'development' && checkTime - lastRegionCheck > 60000) {
@@ -55,6 +56,11 @@ async function getLatest() {
 }
 
 startWs(app)
+
+// health check (not authenticated)
+app.get("/up", (_, response) => {
+  response.status(200).send("OK")
+})
 
 // authentication middleware
 app.use(async (req, res, next) => {
@@ -271,7 +277,11 @@ app.get("/", async (req, res) => {
     }
   }
   results.push(`<small style="font-weight: normal">`)
-  results.push(`<a href="https://smooth.fly.dev/">smooth.fly.dev</a> logs: ${FLY_REGION}`)
+  if (process.env.FLY_REGION) {
+    results.push(`<a href="https://smooth.fly.dev/">smooth.fly.dev</a> logs: ${FLY_REGION}`)
+  } else {
+    results.push(`<a href="https://showcase.party/">showcase.party</a> logs`)
+  }
   results.push(`<h2>`)
 
   res.send(`

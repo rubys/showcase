@@ -4,8 +4,11 @@
 #
 
 app = "smooth-logger"
-primary_region = "dfw"
+primary_region = "iad"
 swap_size_mb = 2048
+
+[processes]
+  app = 'bun run start'
 
 [[mounts]]
   source = "log"
@@ -24,5 +27,6 @@ swap_size_mb = 2048
 [[services]]
   internal_port = 2222
   protocol = "tcp"
+  processes = ["app"]
   [[services.ports]]
     port = 2222

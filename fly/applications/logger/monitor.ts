@@ -11,6 +11,7 @@ import { alert } from "./sentry.ts"
 
 // get the list of vms from for the smooth application
 async function vms() {
+  if (!process.env.FLY_REGION) return [];
   return (await dns.resolveTxt('vms.smooth.internal')).
     map(lines => lines.join('')).join('').split(',')
 }

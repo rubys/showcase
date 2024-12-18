@@ -11,12 +11,19 @@ fs.mkdirSync("/logs", { recursive: true });
   while (true) {
     try {
 
-      // to create a connection to a nats-server:
-      const nc = await connect({
-        servers: "[fdaa::3]:4223",
-        user: "dance-showcase",
-        pass: process.env.ACCESS_TOKEN
-      });
+      // create a connection to a nats-server
+      let nc;
+      if (process.env.FLY_REGION) {
+        nc = await connect({
+          servers: "[fdaa::3]:4223",
+          user: "dance-showcase",
+          pass: process.env.ACCESS_TOKEN
+        });
+      } else {
+        nc = await connect({
+          servers: "host.docker.internal:4222",
+        });
+      }
 
       // keep track of current log file
       let current = {
@@ -52,7 +59,7 @@ fs.mkdirSync("/logs", { recursive: true });
         if (data.message.endsWith("\u001b[31mERROR\u001b[0m No such file or directory (os error 2)")) continue;
 
         // report errors to this apps's log
-        let reportError: NoParamCallback = error => {
+        let reportError: (error: NodeJS.ErrnoException | null) => void = error => {
           if (error) console.error(error)
         }
 
