@@ -46,17 +46,44 @@ fs.mkdirSync("/logs", { recursive: true });
       // create a simple subscriber and iterate over messages
       // matching the subscription
       const sub = nc.subscribe("logs.>");
+
+      const FLY_REGION = process.env.FLY_REGION;
+      const HOSTNAME = process.env.HOSTNAME || 'unknown';
+
       for await (const m of sub) {
-        const data = JSON.parse(sc.decode(m.data));
+        let data : any;
+        if (!m.data) continue;
+        let message = sc.decode(m.data);
+        if (!message) continue;
 
-        // skip log entries from builders
-        if (data.fly.app.name.match(/^fly-builder-/)) continue;
+        if (FLY_REGION) {
+          data = JSON.parse(message);
 
-        // skip logs from THIS app
-        if (data.fly.app.name === process.env.FLY_APP_NAME) continue;
+          // skip log entries from builders
+          if (data.fly.app.name.match(/^fly-builder-/)) continue;
 
-        // skip static file miss log messages
-        if (data.message.endsWith("\u001b[31mERROR\u001b[0m No such file or directory (os error 2)")) continue;
+          // skip logs from THIS app
+          if (data.fly.app.name === process.env.FLY_APP_NAME) continue;
+
+          // skip static file miss log messages
+          if (data.message.endsWith("\u001b[31mERROR\u001b[0m No such file or directory (os error 2)")) continue;
+        } else {
+          if (!message.match(/^\d+:\d+:\d+\s\w+\.\d\s+\|\s/)) continue;
+          data = {
+            timestamp: new Date().toISOString(),
+            fly: {
+              app: {
+                name: "showcase",
+                instance: HOSTNAME
+              },
+              region: "hel"
+            },
+            log: {
+              level: "info"
+            },
+            message: message
+          }
+        }
 
         // report errors to this apps's log
         let reportError: (error: NodeJS.ErrnoException | null) => void = error => {
