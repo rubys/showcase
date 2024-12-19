@@ -51,14 +51,20 @@ fs.mkdirSync("/logs", { recursive: true });
       const HOSTNAME = process.env.HOSTNAME || 'unknown';
 
       for await (const m of sub) {
-        let data : any;
+        let data: any;
         if (!m.data) continue;
         let message = sc.decode(m.data);
         if (!message) continue;
 
-        if (FLY_REGION) {
+        try {
           data = JSON.parse(message);
+        } catch (error) {
+          console.error(`logfiler error: ${error}`);
+          console.error(`logfiler message: ${message}`);
+          continue;
+        }
 
+        if (FLY_REGION) {
           // skip log entries from builders
           if (data.fly.app.name.match(/^fly-builder-/)) continue;
 
@@ -68,20 +74,18 @@ fs.mkdirSync("/logs", { recursive: true });
           // skip static file miss log messages
           if (data.message.endsWith("\u001b[31mERROR\u001b[0m No such file or directory (os error 2)")) continue;
         } else {
-          if (!message.match(/^\d+:\d+:\d+\s\w+\.\d\s+\|\s/)) continue;
-          data = {
-            timestamp: new Date().toISOString(),
-            fly: {
-              app: {
-                name: "showcase",
-                instance: HOSTNAME
-              },
-              region: "hel"
+          if (data.label?.service == "showcase-logger") continue;
+
+          data.fly = {
+            app: {
+              name: data.label?.service || "showcase",
+              instance: HOSTNAME
             },
-            log: {
-              level: "info"
-            },
-            message: message
+            region: "hel"
+          }
+
+          data.log = {
+            level: data.stream
           }
         }
 
@@ -134,7 +138,7 @@ fs.mkdirSync("/logs", { recursive: true });
 
       console.log("log nats subscription closed");
 
-    } catch (error : any) {
+    } catch (error: any) {
       let message = "message" in error ? error.message : error.toString();
       alert(`logfiler error: ${message}`);
       console.error(error);
