@@ -79,7 +79,7 @@ fs.mkdirSync("/logs", { recursive: true });
           data.fly = {
             app: {
               name: data.label?.service || "showcase",
-              instance: HOSTNAME
+              instance: (data.container_id || HOSTNAME).slice(-12)
             },
             region: "hel"
           }
