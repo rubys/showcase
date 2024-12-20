@@ -94,3 +94,5 @@ gem "kamal", require: false
 gem "csv", "~> 3.3"
 
 gem "thruster", "~> 0.1.9"
+
+gem "logger", "~> 1.6"
