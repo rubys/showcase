@@ -413,6 +413,20 @@ server {
     default_type text/html;
     return 200 "OK";
   }
+
+  # PDF generation
+  location ~ <%= ROOT %>/.+\.pdf$ {
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_ssl_server_name on;
+    proxy_pass https://printer.showcase.party;
+  }
+
+  # XLSX generation
+  location ~ <%= ROOT %>/.+\.xlsx$ {
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_ssl_server_name on;
+    proxy_pass https://printer.showcase.party;
+  }
 <% end %>
 <% @tenants.each do |tenant| -%>
 <% next if @region and tenant.region and @region != tenant.region -%>

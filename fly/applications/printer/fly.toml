@@ -7,6 +7,9 @@ app = "smooth-pdf"
 primary_region = "iad"
 swap_size_mb = 2048
 
+[processes]
+  app = "bun server.ts --colors"
+
 [env]
   HOSTNAME = "smooth.fly.dev"
   # PORT = 3000

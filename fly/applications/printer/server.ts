@@ -22,7 +22,7 @@ const FETCH_TIMEOUT = 30_000
 const FORMAT = (process.env.FORMAT || "letter") as PaperFormat
 const JAVASCRIPT = (process.env.JAVASCRIPT != "false")
 const TIMEOUT = (parseInt(process.env.TIMEOUT || '15')) * 60 * 1000 // minutes
-const HOSTNAME = process.env.HOSTNAME ||
+const HOSTNAME = process.env.BASE_HOSTNAME || process.env.HOSTNAME ||
   (process.env.FLY_APP_NAME?.endsWith("-pdf") &&
     `${process.env.FLY_APP_NAME.slice(0, -4)}.fly.dev`)
 
@@ -38,12 +38,18 @@ const chrome = process.platform == "darwin"
 
 let browser: puppeteer.Browser = null
 
+let puppeteerOptions : puppeteer.PuppeteerLaunchOptions = {
+  headless: "new",
+  executablePath: chrome
+}
+
+if (!process.env.FLY_REGION) {
+  puppeteerOptions.args = ['--no-sandbox', '--disable-setuid-sandbox']
+}
+
 // launch a single headless Chrome instance to be used by all requests
 try {
-  browser = await puppeteer.launch({
-    headless: "new",
-    executablePath: chrome
-  })
+  browser = await puppeteer.launch(puppeteerOptions)
 } catch (error: any) {
   console.error(chalk.white.bgRed.bold(`Error launching browser - exiting`))
   console.error(chalk.white.bgRed.bold(error.stack || error))
@@ -86,6 +92,10 @@ const server = Bun.serve({
     url.hostname = HOSTNAME
     url.protocol = 'https:'
     url.port = ''
+
+    if (url.pathname == "/up") {
+      return new Response("OK")
+    }
 
     if (url.pathname.endsWith('.xlsx')) {
       url.pathname = url.pathname.slice(0, -4) + 'json'
@@ -160,7 +170,7 @@ const server = Bun.serve({
       // copy headers (including auth, excluding host) from original request
       const headers = {} as Record<string, string>
       request.headers.forEach((value, key) => {
-        if (key != 'host') headers[key] = value
+        if (key != 'host' && key != 'te') headers[key] = value
       })
       await page.setExtraHTTPHeaders(headers)
 
