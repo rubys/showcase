@@ -93,14 +93,16 @@ if @region
   unless missing.empty?
     STDERR.puts "Missing regions: #{missing.join(', ')}"
   end
+end
 
+if @region || ENV['KAMAL_CONTAINER_NAME']
   # add demo tenant
   @tenants << OpenStruct.new(
     owner:  'Demo',
     region: @region,
     name:   'demo',
     label:  "demo",
-    scope:  "regions/#{@region}/demo",
+    scope:  @region ? "regions/#{@region}/demo" : "demo",
     logo:   "intertwingly.png",
   )
 

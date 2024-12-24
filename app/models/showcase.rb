@@ -9,7 +9,7 @@ class Showcase < ApplicationRecord
   belongs_to :location
 
   def self.url
-    "https://smooth.fly.dev/showcase"
+    "https://#{hostname}/showcase"
   end
 
   def self.hostname
