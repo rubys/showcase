@@ -12,6 +12,10 @@ class ScoresTest < ApplicationSystemTestCase
 
     source = page.find('textarea[data-score-target=comments]')
     target = page.find('input[data-score-target=score]')
+    source.drag_to(target)
+
+    visit by_level_scores_path
+    assert_selector "td", text: "6"
   end
 
   test "should update score - closed" do
@@ -19,25 +23,11 @@ class ScoresTest < ApplicationSystemTestCase
     click_on "Score heats - cards"
     click_on "Closed Waltz"
 
-    # this doesn't work
     source = page.find('div[draggable=true]')
     target = page.find('div[data-score=G]')
     source.drag_to(target)
 
-    if false
-    # this also doesn't work
-    page.driver.browser.action.drag_and_drop(source.native, target.native).perform
-
-    # nor does this
-    page.driver.browser.action.
-      click_and_hold(source.native).
-      move_to(target.native).
-      release.
-      click(target.native).
-      perform
-    end
-
     visit by_level_scores_path
-
+    assert_selector "td", text: "6"
   end
 end
