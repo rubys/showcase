@@ -8,12 +8,17 @@ class User < ApplicationRecord
 
   has_many :locations, dependent: :nullify
 
-  dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
-  @@db = ENV['RAILS_APP_OWNER'] && SQLite3::Database.new("#{dbpath}/index.sqlite3")
+  def self.dbopen
+    dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
+    SQLite3::Database.new("#{dbpath}/index.sqlite3")
+  end
+
+  @@db = ENV['RAILS_APP_OWNER'] && dbopen
   @@trust_level = 0
 
   def self.authorized?(userid, site=nil)
     return true unless @@db
+    @@db = dbopen if @@db.closed?
 
     if site
       return true if @@auth_studio[userid]&.include?(site)
@@ -90,6 +95,8 @@ class User < ApplicationRecord
 
     def self.load_auth
       return unless @@db
+      @@db = dbopen if @@db.closed?
+
       @@auth_studio = @@db.execute('select userid, sites from users').
         map {|userid, sites| [userid, sites.to_s.split(',')]}.to_h
 
