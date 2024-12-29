@@ -24,10 +24,22 @@
         :name: Mini Comp
       october:
         :name: October
+  charlotte:
+    :name: Charlotte
+    :region: atl
+    :logo: ''
   folsom:
     :name: Folsom
     :region: sjc
     :logo: ''
+  harrisburg:
+    :name: Harrisburg
+    :region: iad
+    :logo: arthur-murray-logo.gif
+  kennesaw:
+    :name: Kennesaw
+    :region: atl
+    :logo: arthur-murray-logo.gif
   laval:
     :name: Laval
     :region: bos
