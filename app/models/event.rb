@@ -1,3 +1,5 @@
+require 'ostruct'
+
 class Event < ApplicationRecord
   validate :valid_date?
   has_one_attached :counter_art
