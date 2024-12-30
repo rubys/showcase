@@ -15,7 +15,7 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body<% if ENV['FLY_REGION'] %> data-region="<%= ENV['FLY_REGION'] %>" data-controller="region"<% end %>>
+  <body<% if ENV['FLY_REGION'] %> data-region="<%= ENV['FLY_REGION'] %>" data-controller="region"<% end %> data-turbo-prefetch="false">
 
     <% unless @nologo %>
     <% if ENV['RAILS_APP_DB'] != 'index'
