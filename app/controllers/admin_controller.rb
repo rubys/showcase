@@ -79,6 +79,22 @@ class AdminController < ApplicationController
     @deployed = (deployed['ProcessGroupRegions'].
       find {|process| process['Name'] == 'app'}["Regions"]+ (@pending['add'] || [])).sort.
       map {|code| [code, @regions.find {|region| region['Code'] == code}]}.to_h
+
+    exists = Region.where(code: @deployed.keys).pluck(:code)
+    @deployed.each do |code, region|
+      next if exists.include? code
+      Region.create!(
+        code: code,
+        type: 'fly',
+        location: region['Name'],
+        latitude: region['Latitude'],
+        longitude: region['Longitude']
+      )
+    end
+
+    Region.where.not(code: @deployed.keys).each do |region|
+      region.destroy! if regions.type == "fly"
+    end
   end
 
   def show_region
@@ -123,7 +139,7 @@ class AdminController < ApplicationController
     if pending
       deployed += pending["add"] || []
       deployed -= pending["delete"] || []
-    end  
+    end
 
     @regions = JSON.parse(IO.read(REGIONS)).
       select {|region| not deployed.include?(region['Code'])}.
