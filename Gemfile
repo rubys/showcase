@@ -96,3 +96,5 @@ gem "csv", "~> 3.3"
 gem "thruster", "~> 0.1.9"
 
 gem "logger", "~> 1.6"
+
+gem "aws-sdk-s3", "~> 1.176"

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-test -e public/assets && bin/rake assets:clobber
+if [[ "$RAILS_ENV" != "production" ]]; then
+  test -e public/assets && bin/rake assets:clobber
+fi
 
 if [[ $# -gt 0 ]]; then
   DIR="$( dirname -- "${BASH_SOURCE[0]}"; )";   # Get the directory name
@@ -13,6 +15,11 @@ if [[ $# -gt 0 ]]; then
 
   export RAILS_APP_DB=$(basename -s .sqlite3 $1)
   export RAILS_STORAGE=$BASE/storage/$(basename -s .sqlite3 $1)
+
+  if [[ -e /data/db ]]; then
+    export RAILS_DB_VOLUME=/data/db
+    export DATABASE_URL=sqlite3:///data/db/$RAILS_APP_DB.sqlite3
+  fi
 
   if [[ $# -gt 1 ]]; then
     export HTTP_X_REMOTE_USER=$2

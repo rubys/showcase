@@ -41,6 +41,7 @@
 /.env*
 !/.env.example
 /.kamal/secrets
+/.kamal/secrets-common
 
 # Ignore nginx password file
 /config/htpasswd

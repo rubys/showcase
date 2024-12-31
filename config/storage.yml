@@ -7,6 +7,13 @@ local:
   public: true
   root: <%= ENV.fetch('RAILS_STORAGE', Rails.root.join("storage")) %>
 
+tigris:
+  service: S3
+  access_key_id: <%= ENV["AWS_ACCESS_KEY_ID"] %>
+  secret_access_key: <%= ENV["AWS_SECRET_ACCESS_KEY"] %>
+  endpoint: <%= ENV["AWS_ENDPOINT_URL_S3"] %>
+  bucket: <%= ENV["BUCKET_NAME"] %>
+
 # Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
 # amazon:
 #   service: S3
