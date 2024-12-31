@@ -115,3 +115,14 @@ volumes:
 #     port: 6379
 #     directories:
 #       - data:/data
+
+############################################################################
+#
+# To deploy a replica:
+#   * Obtain a VPS/dedicated server; install Ubuntu; add rsync
+#   * Install any necessary ssh authorized_keys
+#   * Rsync volumes from existing host
+#   * Create an "A" DNS record with a new name
+#   * Update servers.web and proxy.host with ip addr and dns name
+#   * kamal server setup
+#   * VERSION=latest kamal deploy -P
