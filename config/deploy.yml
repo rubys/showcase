@@ -50,6 +50,11 @@ env:
     KAMAL_HETZNER: 1
   secret:
     - RAILS_MASTER_KEY
+    - AWS_ACCESS_KEY_ID
+    - AWS_ENDPOINT_URL_S3
+    - AWS_REGION
+    - AWS_SECRET_ACCESS_KEY
+    - BUCKET_NAME
 
 # Configure logging
 logging:

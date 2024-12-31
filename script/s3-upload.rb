@@ -1,22 +1,25 @@
 require "fileutils"
-require "aws-sdk"
+require "aws-sdk-s3"
 
-Dir.chdir Dir.home
+Dir.chdir (Dir.exist?("/data") ? "/data" : Dir.home)
+WORKDIR = "flat-storage"
 
 files = Dir.glob("storage/*/*/*/*")
-FileUtils.mkdir_p "flat-storage"
+cleanup = not Dir.exist? WORKDIR
+FileUtils.mkdir_p WORKDIR
 
 print "linking..."
 dbs = Set.new
 files.each do |file|
   base = File.basename(file)
   dbs.add file.split("/")[1]
-  dest = "flat-storage/#{base}"
+  dest = "#{WORKDIR}/#{base}"
+  File.link file, dest unless File.exist? dest
 end
 
 puts
 
-Dir.chdir "flat-storage"
+Dir.chdir WORKDIR
 
 bucket_name = ENV["BUCKET_NAME"]
 
@@ -46,6 +49,7 @@ Dir["*"].sort.each do |file|
 end
 
 Dir.chdir ".."
+FileUtils.rm_rf WORKDIR if cleanup
 
 puts
 
