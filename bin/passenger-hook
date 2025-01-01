@@ -79,7 +79,29 @@ begin
 
     hostenv = `env | grep FLY`
 
-    # rsync db and storage directories to each instance
+    # in primary region sync tigris to storage
+    if ENV['FLY_REGION'] == ENV['PRIMARY_REGION']
+      Dir.chdir "/data" do
+        if not Dir.exist? 'tigris'
+          FileUtils.rm_rf 'storage'
+        end
+
+        system "rclone sync --progress tigris:showcase ./tigris"
+
+        files = Dir.chdir('tigris') {Dir["*"]}
+        files.each do |file|
+          dest = file.sub(/(..)(..)/, 'storage/\1/\2/\1\2')
+          if not File.exist? dest
+            FileUtils.mkdir_p File.dirname(dest)
+            File.link "tigris/#{file}", dest
+          end
+        end
+      end
+    else
+      FileUtils.rm_rf '/data/storage'
+    end
+
+    # rsync db directories to each instance
     addrs.each do |addr|
       cmd = %W[
         rsync
@@ -88,7 +110,6 @@ begin
         --update
         --exclude db/.time
         /data/db
-        /data/storage
         rsync://[#{addr}]/data/
       ]
 
@@ -108,10 +129,10 @@ begin
     uri = URI('https://rubix.intertwingly.net/webhook/showcase')
     res = Net::HTTP.get_response(uri)
     if res.is_a?(Net::HTTPSuccess)
-      puts res.body 
+      puts res.body
     else
       STDERR.puts res
-      STDERR.puts res.body 
+      STDERR.puts res.body
       Sentry.capture_message("webhook failure:\n\n#{hostenv}\n#{res.body}")
     end
   end

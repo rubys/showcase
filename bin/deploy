@@ -102,6 +102,7 @@ if ENV['FLY_APP_NAME']
     File.write config, <<~CONFIG unless File.exist? config
       [tigris]
       type = s3
+      provider = AWS
       endpoint = https://fly.storage.tigris.dev
       access_key_id = #{ENV['AWS_ACCESS_KEY_ID']}
       secret_access_key = #{ENV['AWS_SECRET_ACCESS_KEY']}
