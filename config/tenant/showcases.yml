@@ -64,6 +64,10 @@
         :name: Disney
       in-house:
         :name: In House
+  sugarland:
+    :name: Sugar Land
+    :region: dfw
+    :logo: arthur-murray-logo.gif
 2024:
   adelaide:
     :name: Adelaide
