@@ -138,6 +138,8 @@ if ENV['FLY_APP_NAME']
   end
 
   LATEST = Dir["#{VOLUME}/db/2*.sqlite3"].map {|name| File.mtime(name) rescue Time.at(0)}.max
+elsif not ENV['KAMAL_CONTAINER_NAME']
+  File.cp 'config/storage/development.yml', 'config/storage/production.yml'
 end
 
 # set up nginx and run migrations
