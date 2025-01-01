@@ -126,13 +126,12 @@ if ENV['FLY_APP_NAME']
       )
     end
 
-    # synch databases and storage
+    # synch databases
     system *%W(
       rsync
       -av
       --update
       #{source}#{VOLUME}/db
-      #{source}#{VOLUME}/storage
       #{VOLUME}
     )
   end
@@ -165,7 +164,7 @@ if ENV['FLY_APP_NAME']
     if ENV['FLY_REGION'] != ENV['PRIMARY_REGION']
       dest = "rsync://#{ENV['PRIMARY_REGION']}.#{ENV['FLY_APP_NAME']}.internal"
 
-      # synch databases and storage
+      # synch databases
       system *%W(
         rsync
         -av
