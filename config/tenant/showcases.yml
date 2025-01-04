@@ -28,6 +28,29 @@
     :name: Charlotte
     :region: atl
     :logo: ''
+  clearwater:
+    :name: Clearwater
+    :region: mia
+    :logo: arthur-murray-logo.gif
+    :events:
+      valentines-opener:
+        :name: Valentine’s Opener
+      portland-opener:
+        :name: Portland Opener
+      beach-ball:
+        :name: Beach Ball
+      unique-opener:
+        :name: Unique Opener
+      national-dance-day:
+        :name: National Dance Day
+      glass-slipper-gala:
+        :name: Glass Slipper Gala
+      flamingo-opener:
+        :name: Flamingo Opener
+      fright-fest:
+        :name: Fright Fest
+      snowball:
+        :name: Snowball
   folsom:
     :name: Folsom
     :region: sjc
