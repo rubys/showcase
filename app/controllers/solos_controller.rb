@@ -47,7 +47,11 @@ class SolosController < ApplicationController
       @overrides = Category.where(routines: true).map {|category| [category.name, category.id]}
     end
 
-    @dances = Dance.order(:name).all.map {|dance| [dance.name, dance.id]}
+    if Event.first.agenda_based_entries?
+      @dances = Dance.where(order: 0...).where.not(solo_category_id: nil).order(:name).all.map {|dance| [dance.name, dance.id]}
+    else
+      @dances = Dance.where(order: 0...).order(:name).all.map {|dance| [dance.name, dance.id]}
+    end
 
     @partner = nil
     @age = @person&.age_id
@@ -68,7 +72,7 @@ class SolosController < ApplicationController
     @number = @solo.heat.number
 
     if event.agenda_based_entries?
-      dances = Dance.where(order: 0...).order(:name)
+      dances = Dance.where(order: 0...).where.not(solo_category_id: nil).order(:name)
 
       @categories = dance_categories(@solo.heat.dance, true)
 
