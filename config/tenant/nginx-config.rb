@@ -215,7 +215,9 @@ migrations = Dir["#{@git_path}/db/migrate/2*"].map {|name| name[/\d+/]}
       File.rename basedb, database
       Dir.chdir @dbpath do
         File.symlink File.basename(database), File.basename(basedb)
-        FileUtils.chown_R 'rails', 'rails', File.basename(basedb)
+        unless HOST == 'rubix.intertwingly.net'
+          FileUtils.chown_R 'rails', 'rails', File.basename(basedb)
+        end
       end
     end
   end
@@ -238,7 +240,9 @@ migrations = Dir["#{@git_path}/db/migrate/2*"].map {|name| name[/\d+/]}
       count = `sqlite3 #{database} "select count(*) from events"`.to_i
       system 'bin/rails db:seed' if count == 0
 
-      FileUtils.chown_R 'rails', 'rails', database
+      unless HOST == 'rubix.intertwingly.net'
+        FileUtils.chown_R 'rails', 'rails', File.basename(basedb)
+      end
     end
 
     if tenant.owner == "Demo"
@@ -253,12 +257,16 @@ migrations = Dir["#{@git_path}/db/migrate/2*"].map {|name| name[/\d+/]}
       File.rename basestore, storage
       Dir.chdir @storage do
         File.symlink File.basename(storage), File.basename(basestore)
-        FileUtils.chown_R 'rails', 'rails', File.basename(basestore)
+        unless HOST == 'rubix.intertwingly.net'
+          FileUtils.chown_R 'rails', 'rails', File.basename(basedb)
+        end
       end
     else
       unless Dir.exist? storage
         FileUtils.mkdir_p storage
-        FileUtils.chown_R 'rails', 'rails', storage
+        unless HOST == 'rubix.intertwingly.net'
+          FileUtils.chown_R 'rails', 'rails', File.basename(basedb)
+        end
       end
     end
   end
