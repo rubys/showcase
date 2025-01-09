@@ -145,7 +145,7 @@
     :logo: ''
   carmel:
     :name: Carmel
-    :region: ord
+    :region: atl
     :logo: arthur-murray-logo.gif
     :events:
       spring-showcase:
@@ -162,7 +162,7 @@
     :logo: ''
   chicago:
     :name: Chicago
-    :region: ord
+    :region: iad
     :logo: arthur-murray-logo.gif
   clearwater:
     :name: Clearwater
@@ -194,7 +194,7 @@
         :name: Fall Freestyles
   dayton:
     :name: Dayton
-    :region: ord
+    :region: iad
     :logo: arthur-murray-logo.gif
   durham:
     :name: Durham
@@ -206,7 +206,7 @@
     :logo: ''
   glenview:
     :name: Glenview
-    :region: ord
+    :region: iad
     :logo: arthur-murray-logo.gif
     :events:
       chicagoland-feb:
@@ -234,7 +234,7 @@
     :logo: arthur-murray-logo.gif
   lakeview:
     :name: Lakeview
-    :region: ord
+    :region: iad
     :logo: arthur-murray-logo.gif
     :events:
       showcase-rounds:
@@ -253,7 +253,7 @@
     :logo: arthur-murray-logo.gif
   lincolnshire:
     :name: Lincolnshire
-    :region: ord
+    :region: iad
     :logo: arthur-murray-logo.gif
   livermore:
     :name: Livermore
@@ -291,7 +291,7 @@
         :name: June Team Match
   merrillville:
     :name: Merrillville
-    :region: ord
+    :region: iad
     :logo: arthur-murray-logo.gif
     :events:
       medal-ball:
@@ -310,7 +310,7 @@
     :logo: ''
   montgomery:
     :name: Montgomery
-    :region: ord
+    :region: iad
     :logo: ''
     :events:
       dreamland:
@@ -412,7 +412,7 @@
     :logo: arthur-murray-logo.gif
   schaumburg:
     :name: Schaumburg
-    :region: ord
+    :region: iad
     :logo: arthur-murray-logo.gif
   slc:
     :name: Salt Lake City
@@ -475,7 +475,7 @@
         :name: Freestyle Showcase Kyiv 2024
   westchester:
     :name: West Chester
-    :region: ord
+    :region: iad
     :logo: arthur-murray-logo.gif
   woodlands:
     :name: Woodlands
@@ -495,7 +495,7 @@
         :name: Gratitude Gala
   carmel:
     :name: Carmel
-    :region: ord
+    :region: atl
     :logo: arthur-murray-logo.gif
   charlotte:
     :name: Charlotte
@@ -503,7 +503,7 @@
     :logo: ''
   chicago:
     :name: Chicago
-    :region: ord
+    :region: iad
     :logo: arthur-murray-logo.gif
   clearwater:
     :name: Clearwater
@@ -538,7 +538,7 @@
     :logo: arthur-murray-logo.gif
   lakeview:
     :name: Lakeview
-    :region: ord
+    :region: iad
     :logo: arthur-murray-logo.gif
     :events:
       showcase:

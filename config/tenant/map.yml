@@ -20,13 +20,6 @@ regions:
     map: us
     x: 827.1098175107608
     y: 136.23009703027913
-  ord:
-    name: Chicago, Illinois (US)
-    lat: 41.891544
-    lon: -87.63039
-    map: us
-    x: 604.0234830583017
-    y: 184.81812492869688
   dfw:
     name: Dallas, Texas (US)
     lat: 32.778286
