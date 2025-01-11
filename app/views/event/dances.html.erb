@@ -16,7 +16,7 @@
   </ul>
 </div>
 
-<%= form_with(url: dances_event_index_path, class: "contents", data: {turbo: false}) do |form| %>
+<%= form_with(url: dances_event_index_path, class: "contents") do |form| %>
 
 <%= form.text_area :dances, value: @dances, rows: @dances.split("\n").length + 1,
   class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>

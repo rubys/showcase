@@ -20,14 +20,14 @@
 <div class="flex">
 <input type="submit" name="commit" value="Update prices" class="btn-blue" form="billable-form" data-disable-with="Update prices">
 <% unless AgeCost.any? %>
-<%= button_to 'Age discounts', add_age_costs_billables_path, class: "btn-green", data: {turbo: false} %>
+<%= button_to 'Age discounts', add_age_costs_billables_path, class: "btn-green" %>
 <% end %>
 </div>
 
 <% if AgeCost.any? %>
 <h2 id="age-costs" class="font-bold text-2xl mt-8 mb-4">Age Discounts</h2>
 
-<%= form_with url: update_age_costs_billables_path, method: "post", id: 'age-discounts', data: {turbo: false} do |form| %>
+<%= form_with url: update_age_costs_billables_path, method: "post", id: 'age-discounts' do |form| %>
 <table>
   <thead>
     <tr>
@@ -55,7 +55,7 @@
 <div class="flex mt-4">
 <button name="button" type="submit" class="btn-blue" form="age-discounts">Save</button>
 <%= button_to 'Add Age', add_age_costs_billables_path, disabled: !Age.includes(:costs).where(costs: {id: nil}).any?,
-  class: "btn-green disabled:opacity-50 disabled:cursor-not-allowed", data: {turbo: false} %>
+  class: "btn-green disabled:opacity-50 disabled:cursor-not-allowed" %>
 </div>
 </div>
 <% end %>

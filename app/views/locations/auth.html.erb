@@ -1,7 +1,7 @@
 <div class="mx-auto md:w-2/3 w-full">
   <h1 class="mt-8 font-bold text-4xl" id="authorization"><%= @location.name %> - Authorization</h1>
 
-  <%= form_with url: locations_users_path, data: {turbo: false} do |form| %>
+  <%= form_with url: locations_users_path do |form| %>
   <%= form.hidden_field :location, value: @location.id %>
   <% @auth.each do |user| %>
   <div class="my-5">
