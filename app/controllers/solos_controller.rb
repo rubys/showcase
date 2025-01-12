@@ -48,7 +48,8 @@ class SolosController < ApplicationController
     end
 
     if Event.first.agenda_based_entries?
-      @dances = Dance.where(order: 0...).where.not(solo_category_id: nil).order(:name).all.map {|dance| [dance.name, dance.id]}
+      category = (@person.type == 'Professional') ? :pro_solo_category : :solo_category
+      @dances = Dance.where(order: 0...).where.not(category => nil).order(:name).all.map {|dance| [dance.name, dance.id]}
     else
       @dances = Dance.where(order: 0...).order(:name).all.map {|dance| [dance.name, dance.id]}
     end
@@ -72,7 +73,8 @@ class SolosController < ApplicationController
     @number = @solo.heat.number
 
     if event.agenda_based_entries?
-      dances = Dance.where(order: 0...).where.not(solo_category_id: nil).order(:name)
+      category = (@person.type == 'Professional' && Person.find(@partner)&.type == 'Professional') ? :pro_solo_category : :solo_category
+      dances = Dance.where(order: 0...).where.not(category => nil).order(:name)
 
       @categories = dance_categories(@solo.heat.dance, true)
 
