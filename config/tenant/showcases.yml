@@ -30,7 +30,7 @@
     :logo: ''
   clearwater:
     :name: Clearwater
-    :region: mia
+    :region: atl
     :logo: arthur-murray-logo.gif
     :events:
       valentines-opener:
@@ -98,7 +98,7 @@
         :name: Medal Ball
   sugarland:
     :name: Sugar Land
-    :region: dfw
+    :region: atl
     :logo: arthur-murray-logo.gif
 2024:
   adelaide:
@@ -131,7 +131,7 @@
         :name: Gratitude Gala
   austin:
     :name: Austin
-    :region: dfw
+    :region: atl
     :logo: arthur-murray-logo.gif
   bellevue:
     :name: Bellevue
@@ -154,7 +154,7 @@
     :logo: ''
   carmel:
     :name: Carmel
-    :region: atl
+    :region: ord
     :logo: arthur-murray-logo.gif
     :events:
       spring-showcase:
@@ -171,11 +171,11 @@
     :logo: ''
   chicago:
     :name: Chicago
-    :region: iad
+    :region: ord
     :logo: arthur-murray-logo.gif
   clearwater:
     :name: Clearwater
-    :region: mia
+    :region: atl
     :logo: arthur-murray-logo.gif
     :events:
       texas-opener:
@@ -203,7 +203,7 @@
         :name: Fall Freestyles
   dayton:
     :name: Dayton
-    :region: iad
+    :region: ord
     :logo: arthur-murray-logo.gif
   durham:
     :name: Durham
@@ -215,7 +215,7 @@
     :logo: ''
   glenview:
     :name: Glenview
-    :region: iad
+    :region: ord
     :logo: arthur-murray-logo.gif
     :events:
       chicagoland-feb:
@@ -243,7 +243,7 @@
     :logo: arthur-murray-logo.gif
   lakeview:
     :name: Lakeview
-    :region: iad
+    :region: ord
     :logo: arthur-murray-logo.gif
     :events:
       showcase-rounds:
@@ -262,7 +262,7 @@
     :logo: arthur-murray-logo.gif
   lincolnshire:
     :name: Lincolnshire
-    :region: iad
+    :region: ord
     :logo: arthur-murray-logo.gif
   livermore:
     :name: Livermore
@@ -283,7 +283,7 @@
         :name: Extravaganza
   lwr:
     :name: Lakewood Ranch
-    :region: mia
+    :region: atl
     :logo: ''
   manchester:
     :name: Manchester
@@ -291,7 +291,7 @@
     :logo: ''
   mdballroom:
     :name: Memorial DanceSport Ballroom
-    :region: dfw
+    :region: atl
     :logo: mdballroom.webp
     :events:
       february-team-match:
@@ -300,7 +300,7 @@
         :name: June Team Match
   merrillville:
     :name: Merrillville
-    :region: iad
+    :region: ord
     :logo: arthur-murray-logo.gif
     :events:
       medal-ball:
@@ -319,7 +319,7 @@
     :logo: ''
   montgomery:
     :name: Montgomery
-    :region: iad
+    :region: ord
     :logo: ''
     :events:
       dreamland:
@@ -417,11 +417,11 @@
         :name: September
   sarasota:
     :name: Sarasota
-    :region: mia
+    :region: atl
     :logo: arthur-murray-logo.gif
   schaumburg:
     :name: Schaumburg
-    :region: iad
+    :region: ord
     :logo: arthur-murray-logo.gif
   slc:
     :name: Salt Lake City
@@ -443,7 +443,7 @@
         :name: Dance Down Memory Lane
   sugarland:
     :name: Sugar Land
-    :region: dfw
+    :region: atl
     :logo: arthur-murray-logo.gif
   sydney:
     :name: Sydney
@@ -467,11 +467,11 @@
         :name: Virginia Beach Freestyles
   vicenza:
     :name: Vicenza
-    :region: waw
+    :region: ams
     :logo: ''
   warsaw:
     :name: Warsaw
-    :region: waw
+    :region: ams
     :logo: arthur-murray-logo.gif
     :events:
       june-warsaw-freestyle:
@@ -484,11 +484,11 @@
         :name: Freestyle Showcase Kyiv 2024
   westchester:
     :name: West Chester
-    :region: iad
+    :region: ord
     :logo: arthur-murray-logo.gif
   woodlands:
     :name: Woodlands
-    :region: dfw
+    :region: atl
     :logo: arthur-murray-logo.gif
 2023:
   annapolis:
@@ -504,7 +504,7 @@
         :name: Gratitude Gala
   carmel:
     :name: Carmel
-    :region: atl
+    :region: ord
     :logo: arthur-murray-logo.gif
   charlotte:
     :name: Charlotte
@@ -512,11 +512,11 @@
     :logo: ''
   chicago:
     :name: Chicago
-    :region: iad
+    :region: ord
     :logo: arthur-murray-logo.gif
   clearwater:
     :name: Clearwater
-    :region: mia
+    :region: atl
     :logo: arthur-murray-logo.gif
     :events:
       glassslipper:
@@ -547,7 +547,7 @@
     :logo: arthur-murray-logo.gif
   lakeview:
     :name: Lakeview
-    :region: iad
+    :region: ord
     :logo: arthur-murray-logo.gif
     :events:
       showcase:
@@ -588,11 +588,11 @@
     :logo: arthur-murray-logo.gif
   sarasota:
     :name: Sarasota
-    :region: mia
+    :region: atl
     :logo: arthur-murray-logo.gif
   sugarland:
     :name: Sugar Land
-    :region: dfw
+    :region: atl
     :logo: arthur-murray-logo.gif
   sydney:
     :name: Sydney
@@ -604,7 +604,7 @@
     :logo: ''
   woodlands:
     :name: Woodlands
-    :region: dfw
+    :region: atl
     :logo: arthur-murray-logo.gif
 2022:
   annapolis:

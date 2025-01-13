@@ -1,4 +1,11 @@
 regions:
+  ams:
+    name: Amsterdam, Netherlands
+    lat: 52.374344
+    lon: 4.895439
+    map: eu
+    x: 325.62897709065885
+    y: 227.85920498623625
   iad:
     name: Ashburn, Virginia (US)
     lat: 39.02214
@@ -20,20 +27,13 @@ regions:
     map: us
     x: 827.1098175107608
     y: 136.23009703027913
-  dfw:
-    name: Dallas, Texas (US)
-    lat: 32.778286
-    lon: -96.7984
+  ord:
+    name: Chicago, Illinois (US)
+    lat: 41.891544
+    lon: -87.63039
     map: us
-    x: 476.1993201496286
-    y: 361.5248496538476
-  mia:
-    name: Miami, Florida (US)
-    lat: 25.7877
-    lon: -80.2241
-    map: us
-    x: 755.3064170132483
-    y: 469.82316642663625
+    x: 604.0234830583017
+    y: 184.81812492869688
   sjc:
     name: San Jose, California (US)
     lat: 37.3516
@@ -62,13 +62,6 @@ regions:
     map: au
     x: 534.6930403393228
     y: 372.7978615141456
-  waw:
-    name: Warsaw, Poland
-    lat: 52.1657
-    lon: 20.9671
-    map: eu
-    x: 489.9988070156121
-    y: 247.14159559144218
 studios:
   adelaide:
     lat: -34.9281805
