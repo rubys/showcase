@@ -101,7 +101,11 @@
 
     <%= link_to "Summary", summary_event_index_path , class: "btn-grey" %>
     <%= link_to "Publish",  publish_event_index_path, class: "btn-pale-orange" %>
+    <% if @cloneable %>
+    <%= link_to "Clone", settings_event_index_path , class: "btn-purple" %>
+    <% else %>
     <%= link_to "Settings", settings_event_index_path , class: "btn-grey" %>
+    <% end %>
   </div>
 
   <p class="mt-4 text-right">
@@ -119,6 +123,9 @@
 <p class="mt-4">Click on the <span class="text-emerald-600">ⓘ</span> in the top
 left corner of this page to see helpful hints.</p>
 
+<% if @cloneable %>
+<p class="font-bold mt-4">Click on the <span class="text-white bg-purple-600 p-1 rounded-md">Clone</span> button to copy data from previous events.</p>
+<% end %>
 <% end -%>
 <% if ENV['RAILS_APP_DB'] == "demo" -%>
 <p class="mt-4 p-2 border border-red-600 rounded-md">
