@@ -87,6 +87,15 @@
         :name: Disney
       in-house:
         :name: In House
+  slc:
+    :name: Salt Lake City
+    :region: sjc
+    :logo: arthur-murray-logo.gif
+    :events:
+      winter-wonderland:
+        :name: Winter Wonderland
+      medal-ball:
+        :name: Medal Ball
   sugarland:
     :name: Sugar Land
     :region: dfw
