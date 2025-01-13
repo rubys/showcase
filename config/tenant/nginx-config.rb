@@ -241,7 +241,7 @@ migrations = Dir["#{@git_path}/db/migrate/2*"].map {|name| name[/\d+/]}
       system 'bin/rails db:seed' if count == 0
 
       unless HOST == 'rubix.intertwingly.net'
-        FileUtils.chown_R 'rails', 'rails', File.basename(basedb)
+        FileUtils.chown_R 'rails', 'rails', database
       end
     end
 
@@ -258,14 +258,14 @@ migrations = Dir["#{@git_path}/db/migrate/2*"].map {|name| name[/\d+/]}
       Dir.chdir @storage do
         File.symlink File.basename(storage), File.basename(basestore)
         unless HOST == 'rubix.intertwingly.net'
-          FileUtils.chown_R 'rails', 'rails', File.basename(basedb)
+          FileUtils.chown_R 'rails', 'rails', File.basename(basestore)
         end
       end
     else
       unless Dir.exist? storage
         FileUtils.mkdir_p storage
         unless HOST == 'rubix.intertwingly.net'
-          FileUtils.chown_R 'rails', 'rails', File.basename(basedb)
+          FileUtils.chown_R 'rails', 'rails', storage
         end
       end
     end
