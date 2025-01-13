@@ -93,7 +93,7 @@ class AdminController < ApplicationController
     end
 
     Region.where.not(code: @deployed.keys).each do |region|
-      region.destroy! if regions.type == "fly"
+      region.destroy! if region.type == "fly"
     end
   end
 
