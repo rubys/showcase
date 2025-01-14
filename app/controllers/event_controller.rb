@@ -264,7 +264,8 @@ class EventController < ApplicationController
   end
 
   def index
-    @people = Person.order(:name).includes(:level, :age, :studio)
+    @people = Person.includes(:level, :age, :studio, :lead_entries, :follow_entries)
+      .order(:name)
     @judges = Person.where(type: 'Judge').order(:name)
     @heats = Heat.joins(entry: :lead).
       includes(:scores, :dance, entry: [:level, :age, :lead, :follow]).
