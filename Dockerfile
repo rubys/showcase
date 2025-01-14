@@ -33,7 +33,7 @@ FROM base AS build
 
 # Install packages needed to build gems
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential pkg-config
+    apt-get install --no-install-recommends -y build-essential libyaml-dev pkg-config zlib1g-dev
 
 # Install application gems
 COPY --link Gemfile Gemfile.lock ./
