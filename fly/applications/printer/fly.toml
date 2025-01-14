@@ -31,6 +31,6 @@ swap_size_mb = 2048
     hard_limit = 1
 
 [[vm]]
-  cpu_kind = "shared"
+  cpu_kind = "performance"
   cpus = 1
   memory_mb = 2048
