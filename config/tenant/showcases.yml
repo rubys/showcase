@@ -59,6 +59,10 @@
     :name: Folsom
     :region: sjc
     :logo: ''
+  glenview:
+    :name: Glenview
+    :region: ord
+    :logo: arthur-murray-logo.gif
   harrisburg:
     :name: Harrisburg
     :region: iad
