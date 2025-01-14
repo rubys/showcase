@@ -25,6 +25,8 @@ export const pattern = new RegExp([
 
 // identify which lines are to be filtered
 export function filtered(match: RegExpMatchArray) {
+  if (match[6].startsWith("assets")) return true
+  if (match[6].startsWith("showcase/assets")) return true
   return match[3] === '-' || match[3] === 'rubys' || match[6].endsWith('/cable')
 }
 
