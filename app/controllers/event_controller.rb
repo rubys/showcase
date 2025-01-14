@@ -175,6 +175,17 @@ class EventController < ApplicationController
     old_open_scoring = @event.open_scoring
     old_multi_scoring = @event.multi_scoring
 
+    # Combine start_date and end_date if present
+    if params[:event][:start_date]
+      if params[:event][:start_date].present? &&params[:event][:end_date].present? && params[:event][:end_date] != params[:event][:start_date]
+        params[:event][:date] = "#{params[:event][:start_date]} - #{params[:event][:end_date]}"
+      else
+        params[:event][:date] = params[:event][:start_date]
+      end
+      params[:event].delete(:start_date)
+      params[:event].delete(:end_date)
+    end
+
     @event.assign_attributes params.require(:event).permit(:name, :theme, :location, :date, :heat_range_cat, :heat_range_level, :heat_range_age,
       :intermix, :ballrooms, :column_order, :backnums, :track_ages, :heat_length, :solo_length, :open_scoring, :multi_scoring,
       :heat_cost, :solo_cost, :multi_cost, :max_heat_size, :package_required, :student_package_description, :payment_due,
@@ -225,8 +236,6 @@ class EventController < ApplicationController
         end
       end
     end
-
-    anchor = nil
 
     if ok
       tab = 'Description' if params[:event][:name]
@@ -572,7 +581,6 @@ class EventController < ApplicationController
   end
 
   def region_log
-    region = params[:region]
     file = params[:file]
 
     render plain: IO.read(Rails.root.join('log', file).to_s)
@@ -622,7 +630,7 @@ class EventController < ApplicationController
 
           line = ERB::Util.h(line)
 
-          line.sub! /&quot;([A-Z]+) (\S+) (\S+)&quot; (\d+)/ do
+          line.sub!(/&quot;([A-Z]+) (\S+) (\S+)&quot; (\d+)/) do
             method, path, protocol, status = $1, $2, $3, $4
             if status == '200' and method == 'GET'
             elsif status == '302' and method == 'POST'
@@ -944,7 +952,7 @@ class EventController < ApplicationController
       if name.end_with? '.sqlite3' or name == 'htpasswd'
         IO.binwrite File.join(db, name), params[:file].read
       elsif name.end_with? '.sqlite3.gz'
-        stdout, status = Open3.capture2 'sqlite3', File.join(db, File.basename(name, '.gz')),
+        Open3.capture2 'sqlite3', File.join(db, File.basename(name, '.gz')),
           stdin_data: Zlib::GzipReader.new(params[:file].tempfile).read
       end
 

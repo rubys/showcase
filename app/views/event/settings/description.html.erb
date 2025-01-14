@@ -50,11 +50,27 @@
     class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <% if !@event.date.present? or @event.date =~ /^\d{4}-\d{2}-\d{2}( - \d{4}-\d{2}-\d{2})?$/ %>
+  <div data-controller="date-range"">
+  <div class="my-5">
+  <% start_date = @event.date.present? ? @event.date.split(' - ')[0] : nil %>
+  <%= form.label :start_date, 'Start Date' %>
+  <%= form.date_field :start_date, value: start_date,
+    class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  <div class="my-5">
+  <% end_date = @event.date.present? ? @event.date.split(' - ')[1] : nil %>
+  <%= form.label :end_date, 'End Date' %>
+  <%= form.date_field :end_date, value: end_date.blank? || end_date < start_date ? start_date : end_date,
+    class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  </div>
+  <% else %>
   <div class="my-5">
   <%= form.label :date, 'Date(s)' %>
   <%= form.text_field :date, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
-
+  <% end %>
   <div class="my-5">
   <%= form.label :heat_length, 'Time between start of one heat to the start of the next (in seconds)' %><br>
   <span class="text-sm">(Be sure to include time for people to enter the floor, dance, and exit)</span>

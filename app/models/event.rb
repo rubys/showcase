@@ -46,8 +46,10 @@ class Event < ApplicationRecord
   def self.parse_date(date, options={})
     return unless date
 
-    if date =~ /^\d+-\d+-\d+/
+    if date =~ /^\d+-\d+-\d+$/
       date = date.gsub('-', '/')
+    elsif date =~ /^(\d+-\d+-\d+) - (\d+-\d+-\d+)$/
+      return parse_date($1, options) && parse_date($2, options)
     elsif date !~ /^\d+\//
       date = date.sub(/((^|[a-z]+\s+)\d+)(-|\sand\s|\/|\s*&\s*)\d+/, '\1')
     end
