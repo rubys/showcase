@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["output"]
-  static values = { date: String }
+  static values = { date: String, year: String }
 
   connect() {
     if (this.hasDateValue && this.dateValue.match(/^\d{4}-\d{2}-\d{2}( - \d{4}-\d{2}-\d{2})?$/)) {
@@ -32,7 +32,7 @@ export default class extends Controller {
 
       const formatter = new Intl.DateTimeFormat(undefined, {
         weekday: (dates.length === 1) ? 'long' : undefined,
-        year: 'numeric',
+        year: this.yearValue === dates[0].getFullYear().toString() ? undefined : 'numeric',
         month: 'long',
         day: 'numeric'
       })
