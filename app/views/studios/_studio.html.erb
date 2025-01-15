@@ -15,7 +15,7 @@
       </tr>
     </thead>
     <tbody>
-    <% @studio.people.sort_by {|person| person.name}.each do |person| %>
+    <% @studio.people.sort_by {|person| person.name.downcase}.each do |person| %>
       <% if not person.active? %>
       <tr class="bg-slate-200" title="no entries defined">
       <% elsif not person.package_id and @packages[person.type].to_i > 0 %>

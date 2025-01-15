@@ -27,7 +27,7 @@
   <tbody>
     <% total_dance_cost = total_purchases = 0 %>
     <% dances = invoice[:dances] %>
-    <% dances.keys.sort_by(&:name).each do |person| %>
+    <% dances.keys.sort_by {|person| person.name.downcase}.each do |person| %>
     <% next if @student and !%w(Student Guest).include? person.type %>
     <% dance_cost = dances[person][:cost] %>
     <% purchases = dances[person][:purchases] %>

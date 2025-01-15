@@ -298,7 +298,7 @@ class PeopleController < ApplicationController
   # GET /people/labels
   def labels
     @event = Event.first
-    @people = Person.where.not(studio_id: nil).includes(:studio).order('studios.name', :name).to_a
+    @people = Person.where.not(studio_id: nil).includes(:studio).order('studios.name', 'people.name COLLATE NOCASE').to_a
     staff = @people.select {|person| person.studio_id == 0}
     @people -= staff
     @people += staff
@@ -924,7 +924,7 @@ class PeopleController < ApplicationController
     end
 
     def sort_order
-      order = params[:sort] || 'name'
+      order = params[:sort] || 'name COLLATE NOCASE'
       order = 'studios.name' if order == 'studio'
       order = 'age_id' if order == 'age'
       order = 'level_id' if order == 'level'

@@ -400,7 +400,7 @@ module Printable
 
   def heat_sheets
     generate_agenda
-    @people ||= Person.where(type: ['Student', 'Professional']).order(:name)
+    @people ||= Person.where(type: ['Student', 'Professional']).order('name COLLATE NOCASE')
 
     @heatlist = @people.map {|person| [person, []]}.to_h
     @heats.each do |number, heats|
