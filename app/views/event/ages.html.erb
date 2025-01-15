@@ -16,7 +16,7 @@
   </ul>
 </div>
 
-<%= form_with(url: ages_event_index_path, class: "contents"}) do |form| %>
+<%= form_with(url: ages_event_index_path, class: "contents") do |form| %>
 
 <%= form.text_area :ages, value: @ages, rows: @ages.split("\n").length + 1,
   class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
