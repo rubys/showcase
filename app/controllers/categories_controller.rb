@@ -50,7 +50,7 @@ class CategoriesController < ApplicationController
 
     @category = Category.new(category_params)
 
-    @category.order = (Category.maximum(:order) || 0) + 1
+    @category.order = ([Category.maximum(:order) || 0, CatExtension.maximum(:order) || 0]).max + 1
 
     respond_to do |format|
       if @category.save
