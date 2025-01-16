@@ -77,7 +77,7 @@ module Printable
           max = cat.heats
 
           if max && @agenda[cat.name].length >= max
-            cat.extensions.sort_by {|extension| extension.name}.each do |extension|
+            cat.extensions.order(:part).each do |extension|
               if @agenda[extension.name].length < max
                 cat = extension
                 break

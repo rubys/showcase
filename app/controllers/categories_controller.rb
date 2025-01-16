@@ -76,6 +76,22 @@ class CategoriesController < ApplicationController
       params[:category][:heats] = ''
     end
 
+    if @category.instance_of?(Category) && !params[:category][:heats].blank?
+      generate_agenda
+      heats = @agenda[@category.name].length + @category.extensions.map {|ext| @agenda[ext.name].length}.sum
+      extensions_needed = (heats.to_f / params[:category][:heats].to_i).ceil - 1
+      extensions_found = @category.extensions.order(:part).all.to_a
+
+      while extensions_found.length > extensions_needed
+        extensions_found.pop.destroy!
+      end
+
+      while extensions_needed > extensions_found.length
+        order = [Category.maximum(:order), CatExtension.maximum(:order)].compact.max + 1
+        extensions_found << CatExtension.create!(category: @category, order: order, part: extensions_found.length + 2)
+      end
+    end
+
     respond_to do |format|
       if @category.update(category_params)
         update_dances(params[:category][:include], params[:category][:pro])
