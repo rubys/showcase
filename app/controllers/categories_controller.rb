@@ -86,7 +86,6 @@ class CategoriesController < ApplicationController
         extensions_needed = (heats.to_f / params[:category][:heats].to_i).ceil - 1
       end
 
-
       while extensions_found.length > extensions_needed
         extensions_found.pop.destroy!
       end
