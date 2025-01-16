@@ -388,19 +388,18 @@ when most dances for an individual are with one instructor but one or two are ch
     </div>
     <% end %>
 
-    <% if @person.type == 'Emcee' %>
+    <% if %w(Emcee DJ).include?(@person.type) %>
     <div class="mt-4 mx-auto">
-    <%= link_to 'heats', judge_heatlist_path(judge: @person, style: 'emcee', sort: 'back'), class: "btn-purple" %>
-    </div>
+    <% if @person.type == 'Emcee' || (@person.type == 'DJ' && Person.where(type: 'Emcee').count == 0) %>
+    <%= link_to 'Heats', judge_heatlist_path(judge: @person, style: 'emcee', sort: 'back'), class: "btn-purple" %>
     <% end %>
 
-    <% if @person.type == 'DJ' %>
-    <div class="mt-4 mx-auto">
+    <% if @person.type == 'DJ' || (@person.type == 'Emcee' && Person.where(type: 'DJ').count == 0) %>
     <%= link_to 'Solos', djlist_solos_path, class: "btn-purple" %>
-    <%= link_to 'Heats', djlist_heats_path(format: :pdf), class: "btn-blue" %>
+    <%= link_to 'Dance list', djlist_heats_path(format: :pdf), class: "btn-blue" %>
+    <% end %>
     </div>
     <% end %>
-
 
     <div class="mx-auto mt-4 grid grid-cols-3">
       <% if @person.type == 'Student' %>

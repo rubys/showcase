@@ -71,7 +71,7 @@
   </u>
 
   <% unless @djs.length == 0 %>
-  <h2 class="font-bold text-2xl mt-4 mb-2">DJ</h2>
+  <h2 class="font-bold text-2xl mt-4 mb-2">DJ<% if @emcees.length == 0 %> / Emcee<% end %></h2>
   <ul class="list-disc list-inside">
     <% @djs.each do |dj| %>
       <li><%= link_to dj.display_name, dj %></li>

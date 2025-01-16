@@ -35,6 +35,11 @@ class EventController < ApplicationController
     @djs    = Person.where(type: 'DJ').order(:name)
     @emcees = Person.where(type: 'Emcee').order(:name)
 
+    # If there are no DJs, but there are emcees, swap them as DJs will be used as emcees
+    if @djs.empty? && !@emcees.empty?
+      @djs, @emcees = @emcees, []
+    end
+
     @event = Event.last
 
     @heats = Heat.where.not(number: ..0).distinct.count(:number)
