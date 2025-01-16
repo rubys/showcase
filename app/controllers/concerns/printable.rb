@@ -73,7 +73,23 @@ module Printable
         current = cat
         ballrooms = cat&.ballrooms || event.ballrooms || 1
 
-        cat = cat&.name || 'Uncategorized'
+        if cat
+          max = cat.heats
+
+          if max && @agenda[cat.name].length >= max
+            cat.extensions.sort_by {|extension| extension.name}.each do |extension|
+              if @agenda[extension.name].length < max
+                cat = extension
+                break
+              end
+            end
+          end
+
+          cat = cat.name
+        else
+          cat = 'Uncategorized'
+        end
+
         @agenda[cat] << [number, assign_rooms(ballrooms, heats,
           (judge_ballrooms && ballrooms == 2) ? -number : nil)]
       end
