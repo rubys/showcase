@@ -93,8 +93,10 @@
     :events:
       disney:
         :name: Disney
-      in-house:
-        :name: In House
+      team-match:
+        :name: Team Match
+      shimmer-shine:
+        :name: Shimmer & Shine
   slc:
     :name: Salt Lake City
     :region: sjc
