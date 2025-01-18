@@ -1,7 +1,9 @@
+#!/usr/bin/env ruby
+
 require "fileutils"
 require "aws-sdk-s3"
 
-Dir.chdir (Dir.exist?("/data") ? "/data" : Dir.home)
+Dir.chdir (Dir.exist?("/data") ? "/data" : File.join(Dir.home, 'git/showcase'))
 WORKDIR = "flat-storage"
 
 files = Dir.glob("storage/*/*/*/*")
@@ -21,6 +23,18 @@ puts
 
 Dir.chdir WORKDIR
 
+if ENV["BUCKET_NAME"].nil?
+  config = IO.read(File.join(Dir.home, '.config/rclone/rclone.conf'))
+  showcase = config[/\[showcase\](.*?)(^\[|\z)/m, 1]
+  if showcase
+    ENV["BUCKET_NAME"] = "showcase"
+    ENV["AWS_REGION"] = showcase[/region = (.*)/, 1]
+    ENV["AWS_ENDPOINT_URL_S3"] = showcase[/endpoint = (.*)/, 1] || "https://fly.storage.tigris.dev"
+    ENV["AWS_ACCESS_KEY_ID"] = showcase[/access_key_id = (.*)/, 1]
+    ENV["AWS_SECRET_ACCESS_KEY"] = showcase[/secret_access_key = (.*)/, 1]
+  end
+end
+
 bucket_name = ENV["BUCKET_NAME"]
 
 s3 = Aws::S3::Client.new(
@@ -36,16 +50,14 @@ Dir["*"].sort.each do |file|
       bucket: bucket_name,
       key: file
     )
-
-    next
-  rescue Aws::S3::Errors::NotFound => e
+  rescue Aws::S3::Errors::NotFound
+    puts "*\n"
+    s3.put_object(
+      bucket: bucket_name,
+      key: file,
+      body: IO.read(file)
+    )
   end
-
-  s3.put_object(
-    bucket: bucket_name,
-    key: file,
-    body: IO.read(file)
-  )
 end
 
 Dir.chdir ".."
