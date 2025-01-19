@@ -452,7 +452,7 @@ server {
     passenger_env_var DATABASE_URL sqlite3://<%= "#{ENV['RAILS_DB_VOLUME']}/#{tenant.label}.sqlite3" %>;
     passenger_env_var RAILS_DB_VOLUME <%= ENV['RAILS_DB_VOLUME'] %>;
 <% end -%>
-    passenger_env_var RAILS_STORAGE <%= File.join(@storage, tenant.label) %>;
+    passenger_env_var RAILS_STORAGE <%= @storage %>;
 <% end -%>
     passenger_env_var RAILS_APP_DB <%= tenant.label %>;
 <% if tenant.label == 'index' -%>
