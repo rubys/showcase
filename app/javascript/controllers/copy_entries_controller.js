@@ -1,5 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
+import { checkNumber } from './check_number_controller'
+
 // Connects to data-controller="copy-entries"
 export default class extends Controller {
   connect() {
@@ -21,6 +23,7 @@ export default class extends Controller {
         clone.id = open_id
         clone.name = input.name.replace('[Closed]', '[Open]')
         clone.addEventListener('change', this.hideShowButton)
+        checkNumber(clone)
         open_input.replaceWith(clone)
       })
 
