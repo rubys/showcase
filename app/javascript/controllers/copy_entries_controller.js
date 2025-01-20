@@ -12,11 +12,11 @@ export default class extends Controller {
     this.copy_from_closed.addEventListener('click', event => {
       event.preventDefault()
 
-      let checkNumber = null;
+      let checkNumberController = null;
 
-      const enclosingController = this.element.closest('[data-controller="check-number"]');
-      if (enclosingController) {
-        checkNumber = this.application.getControllerForElementAndIdentifier(enclosingController, 'check-number');
+      const entryForm = this.element.closest('[data-controller="check-number"]');
+      if (entryForm) {
+        checkNumberController = this.application.getControllerForElementAndIdentifier(entryForm, 'check-number');
       }
       
       this.closed_entries.querySelectorAll('input').forEach(input => {
@@ -29,7 +29,7 @@ export default class extends Controller {
         clone.name = input.name.replace('[Closed]', '[Open]')
         clone.addEventListener('change', this.hideShowButton)
 
-        if (checkNumber) checkNumber.constructor.checkNumber(clone);
+        if (checkNumberController) checkNumberController.checkNumber(clone);
 
         open_input.replaceWith(clone)
       })

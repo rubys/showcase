@@ -6,11 +6,13 @@ export default class extends Controller {
   connect() {
     let checkboxes = this.element.querySelectorAll("input[type=checkbox]");
     for (let checkbox of [...checkboxes]) {
-      this.constructor.checkNumber(checkbox);
+      this.checkNumber(checkbox);
     }
   }
 
-  static checkNumber(checkbox) {
+  checkNumber(checkbox) {
+    let pressTimer;
+
     checkbox.addEventListener("change", _event => {
       checkbox.focus();  // needed for safari
     });
@@ -40,7 +42,7 @@ export default class extends Controller {
     });
   }
 
-  static createInput(checkbox) {
+  createInput(checkbox) {
     let input = document.createElement("input");
     input.setAttribute("type", "text");
     input.setAttribute("id", checkbox.getAttribute("id"));
