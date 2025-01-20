@@ -1,7 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
 
-import { checkNumber } from './check_number_controller'
-
 // Connects to data-controller="copy-entries"
 export default class extends Controller {
   connect() {
@@ -13,6 +11,13 @@ export default class extends Controller {
 
     this.copy_from_closed.addEventListener('click', event => {
       event.preventDefault()
+
+      let checkNumber = null;
+
+      const enclosingController = this.element.closest('[data-controller="check-number"]');
+      if (enclosingController) {
+        checkNumber = this.application.getControllerForElementAndIdentifier(enclosingController, 'check-number');
+      }
       
       this.closed_entries.querySelectorAll('input').forEach(input => {
         if (!input.id) return
@@ -23,7 +28,9 @@ export default class extends Controller {
         clone.id = open_id
         clone.name = input.name.replace('[Closed]', '[Open]')
         clone.addEventListener('change', this.hideShowButton)
-        checkNumber(clone)
+
+        if (checkNumber) checkNumber.constructor.checkNumber(clone);
+
         open_input.replaceWith(clone)
       })
 
