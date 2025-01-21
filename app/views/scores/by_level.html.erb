@@ -1,5 +1,15 @@
 <div class="mx-auto md:w-5/6 w-full flex">
+
   <div class="mx-auto">
+    <% unless @details %>
+      <div data-controller="info-box">
+        <div class="info-button">ⓘ</div>
+        <ul class="info-box" style="display: none;">
+        <li>Click on <em>Followers</em> or <em>Leaders</em> or <em>Couples</em> to see the scores for each couple.
+        </li>
+        </ul>
+      </div>
+    <% end %>
     <% if notice.present? %>
       <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
     <% end %>
@@ -7,7 +17,7 @@
     <%= turbo_stream_from "live-scores-#{ENV['RAILS_APP_DB']}" %>
     <%= render partial: "last_update", locals: {action: by_level_scores_path, timestamp: @last_score_update} %>
 
-    <%= render "by_level" %>
+    <%= render @details ? "scores/details/by_level" : "by_level" %>
 
     <%= link_to 'Back to summary', summary_event_index_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
   </div>

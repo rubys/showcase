@@ -1,0 +1,76 @@
+<div id="scores-by-level">
+  <h1 class="font-bold mt-8 text-4xl pb-5 text-center">Scores by Level</h1>
+  <% empty = true %>
+
+  <% @scores.each do |group, levels| %>
+    <% next if levels.values.all? {|students| students.empty?} %>
+
+    <h2 class="font-bold pt-4 text-4xl pb-5"><%= group %></h2>
+
+    <% levels.each do |level, students| %>
+      <% next if students.empty? %>
+      <% empty = false %>
+      <h3 class="font-bold pt-4 text-2xl pb-5" id="<%= "#{group}-#{level.name}".gsub(/\W+/, '-') %>"><%= level.name %></h3>
+      <table class="mb-8">
+        <thead>
+          <% if @open_scoring == '1' %>
+          <tr>
+            <th colspan="2">
+            <th colspan="4" class="bg-slate-200">Closed
+            <th colspan="4">Open
+          </tr>
+          <% end %>
+
+          <tr>
+          <th class="row-head">Points
+          <th class="row-head">Name
+          <% if @open_scoring != '#' %>
+          <% if !%w(# =).include?(@event.closed_scoring) or @open_scoring == 'G' %>
+          <% ScoresController::SCORES['Closed'].each do |score| %>
+          <th class="row-head bg-slate-200"><%= score %>
+          <% end %>
+          <% end %>
+          <% if @open_scoring == '&' %>
+          <% 5.downto(1).each do |score| %>
+          <th class="row-head"><%= score %>
+          <% end %>
+          <% elsif !%w(+ G).include? @open_scoring %>
+          <% ScoresController::SCORES['Open'].each do |score| %>
+          <th class="row-head"><%= score %>
+          <% end %>
+          <% end %>
+          <% end %>
+          </tr>
+        </thead>
+      <% students.sort_by {|students, results| results['points']}.reverse.each do |students, results| %>
+        <tr>
+          <td class="row-main text-right"><%= number_with_delimiter results['points'] %>
+          <% if students.length == 1 %>
+          <td class="row-main"><%= link_to students.first.display_name , students.first %></td>
+          <% else %>
+          <% names = students.first.join(students.last).split(' and ') %>
+          <td class="row-main">
+          <%= link_to names.first, students.first %> and
+          <%= link_to names.last, students.last %></td>
+          <% end %>
+          <% if @open_scoring != '#' %>
+          <% if !%w(# =).include?(@event.closed_scoring) or @open_scoring == 'G' %>
+          <% results['Closed'].each do |score| %>
+          <td class="row text-right px-4 bg-slate-200"><%= score == 0 ? '' : score %></td>
+          <% end %>
+          <% end %>
+          <% if @open_scoring != 'G' %>
+          <% results['Open'].each do |score| %>
+          <td class="row text-right px-4"><%= score == 0 ? '' : score %></td>
+          <% end %>
+          <% end %>
+          <% end %>
+      <% end %>
+      </table>
+    <% end %>
+  <% end %>
+
+  <% if empty %>
+  <p class="my-8">No scores entered yet.</p>
+  <% end %>
+</div>

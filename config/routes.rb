@@ -167,7 +167,6 @@ Rails.application.routes.draw do
     post '/scores/:judge/sort', to: 'scores#sort', as: 'sort_scores'
     post '/scores/:judge/post-feedback', to: 'scores#post_feedback', as: 'post_feedback'
     resources :scores do
-      match 'results', on: :collection, action: :results, via: %i(get post)
       match 'by-studio', on: :collection, action: :by_studio, via: %i(get post)
       match 'by-level', on: :collection, action: :by_level, via: %i(get post)
       match 'by-age', on: :collection, action: :by_age, via: %i(get post)
@@ -176,6 +175,8 @@ Rails.application.routes.draw do
       match 'instructor', on: :collection, via: %i(get post)
       post 'reset', on: :collection
       get 'comments', on: :collection
+
+      match 'details/by-level', on: :collection, action: :by_level, via: %i(get post), defaults: {details: true}
     end
 
     resources :solos do

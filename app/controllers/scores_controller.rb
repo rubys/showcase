@@ -340,19 +340,9 @@ class ScoresController < ApplicationController
     @scores = Score.all
   end
 
-  def results
-    by_level
-
-    @results = {}
-    @scores.each do |group, levels|
-      levels.each do |level, students|
-        @results[level] ||= {}
-        @results[level][group] = students
-      end
-    end
-  end
-
   def by_level
+    @details = params[:details]
+
     @event = Event.first
     @open_scoring = @event.open_scoring
     @closed_scoring = @event.closed_scoring
@@ -412,6 +402,16 @@ class ScoresController < ApplicationController
             @scores[group][level][students][category][value] += count
             @scores[group][level][students]['points'] += count * WEIGHTS[value]
           end
+        end
+      end
+    end
+
+    unless @details
+      @results = {}
+      @scores.each do |group, levels|
+        levels.each do |level, students|
+          @results[level] ||= {}
+          @results[level][group] = students
         end
       end
     end
