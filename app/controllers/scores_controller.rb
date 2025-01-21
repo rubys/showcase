@@ -340,6 +340,18 @@ class ScoresController < ApplicationController
     @scores = Score.all
   end
 
+  def results
+    by_level
+
+    @results = {}
+    @scores.each do |group, levels|
+      levels.each do |level, students|
+        @results[level] ||= {}
+        @results[level][group] = students
+      end
+    end
+  end
+
   def by_level
     @event = Event.first
     @open_scoring = @event.open_scoring

@@ -10,7 +10,7 @@
     <% levels.each do |level, students| %>
       <% next if students.empty? %>
       <% empty = false %>
-      <h3 class="font-bold pt-4 text-2xl pb-5"><%= level.name %></h3>
+      <h3 class="font-bold pt-4 text-2xl pb-5" id="<%= "#{group}-#{level.name}".gsub(/\W+/, '-') %>"><%= level.name %></h3>
       <table class="mb-8">
         <thead>
           <% if @open_scoring == '1' %>

@@ -1,0 +1,42 @@
+<div id="scores-by-level">
+  <h1 class="font-bold mt-8 text-4xl pb-5 text-center">Scores by Level</h1>
+  <% empty = true %>
+
+  <% @results.each do |level, groups| %>
+    <% next if groups.values.all? {|students| students.empty?} %>
+
+    <h2 class="font-bold pt-4 text-4xl pb-5"><%= level.name %></h2>
+
+    <table class="mb-8">
+      <thead>
+        <tr>
+        <th class="row-head">Level
+        <th class="row-head">Points
+        <th class="row-head">Name
+        </tr>
+      </thead>
+    <% groups.each do |group, students| %>
+      <% next if students.empty? %>
+      <% empty = false %>
+      <% students.sort_by {|students, results| results['points']}.reverse.each do |students, results| %>
+        <tr>
+          <td class="row-main"><%= link_to group, by_level_scores_path(anchor: "#{group}-#{level.name}".gsub(/\W+/, '-')) %></td>
+          <td class="row-main text-right"><%= number_with_delimiter results['points'] %>
+          <% if students.length == 1 %>
+          <td class="row-main"><%= link_to students.first.display_name , students.first %></td>
+          <% else %>
+          <% names = students.first.join(students.last).split(' and ') %>
+          <td class="row-main">
+          <%= link_to names.first, students.first %> and
+          <%= link_to names.last, students.last %></td>
+          <% end %>
+          <% break %>
+      <% end %>
+    <% end %>
+    </table>
+  <% end %>
+
+  <% if empty %>
+  <p class="my-8">No scores entered yet.</p>
+  <% end %>
+</div>
