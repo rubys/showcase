@@ -523,6 +523,8 @@ class ScoresController < ApplicationController
   end
 
   def by_age
+    @details = params[:details]
+
     @event = Event.first
     @open_scoring = @event.open_scoring
     @closed_scoring = @event.closed_scoring
@@ -581,6 +583,16 @@ class ScoresController < ApplicationController
             @scores[group][age][students][category][value] += count
             @scores[group][age][students]['points'] += count * WEIGHTS[value]
           end
+        end
+      end
+    end
+
+    unless @details
+      @results = {}
+      @scores.each do |group, ages|
+        ages.each do |age, students|
+          @results[age] ||= {}
+          @results[age][group] = students
         end
       end
     end

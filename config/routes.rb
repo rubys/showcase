@@ -177,6 +177,7 @@ Rails.application.routes.draw do
       get 'comments', on: :collection
 
       match 'details/by-level', on: :collection, action: :by_level, via: %i(get post), defaults: {details: true}
+      match 'details/by-age', on: :collection, action: :by_age, via: %i(get post), defaults: {details: true}
     end
 
     resources :solos do
