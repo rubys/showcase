@@ -605,6 +605,8 @@ class ScoresController < ApplicationController
   end
 
   def multis
+    @details = params[:details]
+
     @multi_scoring = Event.first.multi_scoring
     dances = Dance.where.not(multi_category_id: nil).
       includes(multi_children: :dance, heats: [{entry: [:lead, :follow]}, :scores]).

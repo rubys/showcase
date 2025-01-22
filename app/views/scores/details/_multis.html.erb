@@ -1,5 +1,5 @@
 <div id="multis-scores">
-  <h1 class="font-bold mt-8 text-4xl pb-5 text-center">Top Multi Scores</h1>
+  <h1 class="font-bold mt-8 text-4xl pb-5 text-center">Multi Scores</h1>
 
   <% empty = true %>
 
@@ -10,24 +10,30 @@
   <% @scores.each do |dance, entries| %>
     <% next if entries.empty? %>
     <% empty = false %>
-    <a href="details/multis#<%= dance.name.gsub(/\W+/, '-') %>">
-    <h2 class="font-bold pt-4 text-2xl pb-5"><% if dance.heats.where.not(number: ..0).distinct.pluck(:number).count == 1 %>Heat <%= dance.heats.first.number %>: <% end %><%= dance.name %></h2>
-    </a>
+    <h2 class="font-bold pt-4 text-2xl pb-5" id="<%= dance.name.gsub(/\W+/, '-') %>"><% if dance.heats.where.not(number: ..0).distinct.pluck(:number).count == 1 %>Heat <%= dance.heats.first.number %>: <% end %><%= dance.name %></h2>
     <table class="mb-8">
       <thead>
         <tr>
         <th class="row-head">Points
         <th class="row-head">Lead
         <th class="row-head">Follow
+        <% if @multi_scoring != '#' %>
+        <% @score_range.each do |score| %>
+        <th class="row-head bg-slate-200"><%= score %>
+        <% end %>
+        <% end %>
         </tr>
       </thead>
-      <% results = entries.sort_by {|entry, results| results['points']}.reverse; top = results.first[1]['points'] %>
-      <% results.each do |entry, results| %>
-        <% next unless results['points'] == top %>
+      <% entries.sort_by {|entry, results| results['points']}.reverse.each do |entry, results| %>
         <tr>
           <td class="row-main text-right"><%= number_with_delimiter results['points'] %>
           <td class="row-main"><%= link_to entry.lead.display_name, entry.lead %></td>
           <td class="row-main"><%= link_to entry.follow.display_name, entry.follow %></td>
+          <% if @open_scoring != '#' %>
+          <% results['Multi'].each do |score| %>
+          <td class="row text-right px-4 bg-slate-200"><%= score == 0 ? '' : score %></td>
+          <% end %>
+          <% end %>
         </tr>
       <% end %>
     </table>
