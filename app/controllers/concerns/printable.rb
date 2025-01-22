@@ -73,7 +73,7 @@ module Printable
         current = cat
         ballrooms = cat&.ballrooms || event.ballrooms || 1
 
-        if cat
+        if cat && cat.instance_of?(Category)
           max = cat.heats
 
           if max && @agenda[cat.name].length >= max
