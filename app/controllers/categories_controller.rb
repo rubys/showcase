@@ -87,7 +87,7 @@ class CategoriesController < ApplicationController
       end
 
       while extensions_found.length > extensions_needed
-        extensions_found.pop.destroy!
+        extensions_found.pop&.destroy!
       end
 
       while extensions_needed > extensions_found.length
