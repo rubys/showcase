@@ -65,7 +65,7 @@ can click on it to see helpful hints.</li>
         <li>
           <a href="<%= "#{@scope}/#{year}/#{token}/#{subtoken}".squeeze('/') %>/">
             <span class="text-xl"><%= info[:name] %><span>
-            <% if info['date'].to_s =~ /^\d{4}-\d{2}-\d{2}$/ %>
+            <% if info['date'].to_s =~ /^\d{4}-\d{2}-\d{2}( - \d{4}-\d{2}-\d{2})?$/ %>
             <span class="text-slate-400">- <span data-controller="date-range" data-date-range-year-value="<%= year %>" data-date-range-date-value="<%= info['date'] %>" data-date-range-target="output"><%= info['date'] %></span><span>
             <% else %>
             <span class="text-slate-400">- <%= info['date'] %><span>
@@ -77,7 +77,7 @@ can click on it to see helpful hints.</li>
       <% else %>
       <a href="<%= "#{@scope}/#{year}/#{token}".squeeze('/') %>/">
         <span class="text-xl"><%= info[:name] %><span>
-        <% if info['date'].to_s =~ /^\d{4}-\d{2}-\d{2}$/ %>
+        <% if info['date'].to_s =~ /^\d{4}-\d{2}-\d{2}( - \d{4}-\d{2}-\d{2})?$/ %>
         <span class="text-slate-400">- <span data-controller="date-range" data-date-range-year-value="<%= year %>" data-date-range-date-value="<%= info['date'] %>" data-date-range-target="output"><%= info['date'] %></span><span>
         <% else %>
         <span class="text-slate-400">- <%= info['date'] %><span>
