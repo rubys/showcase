@@ -14,8 +14,9 @@
 <div data-controller="info-box">
 <div class="info-button">&#x24D8;</div>
 <ul class="info-box">
-<li>Day and time is optional, but if entered will appear on the <%= link_to 'Heat List', heats_path, class: 'x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium' %> page.
+<li>In order to add dates or times, you must add a start date in the <%= link_to 'Settings', settings_event_index_path, class: 'x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium' %> page.
 <ul class="ml-4 list-disc list-outside">
+<li>Day and time are optional, but if entered will appear on the <%= link_to 'Heat List', heats_path, class: 'x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium' %> page.
 <li>If the first agenda item has a time <strong>and</strong> a time between events is provided in the settings page, then
 start times for each heat will show up on the heats page.
 <li>Times on agenda items after the first indicate a time that the agenda item will start no earlier than.  Too many heats in previous agenda items may delay the start.
@@ -34,15 +35,19 @@ start times for each heat will show up on the heats page.
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+<% unless Event.first.date.blank? %>
+<% unless Event.first.date =~ /^\d{4}-\d{2}-\d{2}$/ %>
   <div class="my-5">
     <%= form.label :day %>
     <%= form.text_field :day, placeholder: @day_placeholder || 'Saturday', class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full placeholder-indigo-300" %>
   </div>
+<% end %>
 
   <div class="my-5">
     <%= form.label :time %>
     <%= form.text_field :time, placeholder: '1 pm', class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+<% end %>
 
   <div class="my-5">
     <%= form.label :duration, 'Minimum Duration (minutes)' %>

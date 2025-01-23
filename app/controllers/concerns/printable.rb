@@ -48,7 +48,8 @@ module Printable
       end
     end
 
-    @oneday = @categories.values.map(&:day).uniq.length <= 1
+    @oneday = event.date.blank? || event.date =~ /^\d{4}-\d{2}-\d{2}$/
+    @oneday ||= @categories.values.map(&:day).uniq.length <= 1
 
     # sort heats into categories
 
