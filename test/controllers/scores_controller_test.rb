@@ -11,13 +11,13 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should get scores by age" do
-    get by_age_scores_url
+    get details_by_age_scores_url
     assert_response :success
     assert_select 'h3', 'C (66-75)'
   end
 
   test "should get scores by level" do
-    get by_level_scores_url
+    get details_by_level_scores_url
     assert_response :success
     assert_select 'h3', 'Full Silver'
   end
