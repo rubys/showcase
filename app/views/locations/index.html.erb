@@ -11,13 +11,13 @@
     <table class="table-fixed mx-auto">
     <thead>
       <tr>
-        <td class="row-head">Identifier
-        <td class="row-head">Name
-        <td class="row-head">Owner
+        <td class="row-head">Identifier</td>
+        <td class="row-head">Name</td>
+        <td class="row-head">Owner</td>
       </tr>
     </thead>
     <tbody>
-    <% @locations.each do |studio| %>
+    <% (@locations || []).each do |studio| %>
       <tr>
         <td class="text-black font-medium"><%= link_to studio.key, edit_location_path(studio) %></td>
         <td class="text-black font-medium px-4"><%= link_to studio.name, edit_location_path(studio) %></td>
@@ -34,3 +34,5 @@
     <%= link_to "Back to Admin", admin_path, class: "btn-green" %>
   </div>
 </div>
+
+

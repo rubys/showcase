@@ -189,8 +189,8 @@ class LocationsController < ApplicationController
         generate_showcases
         generate_map
 
-        sites = @location.user.sites.to_s.split(',')
-        unless sites.include? @location.name
+        sites = @location.user&.sites&.to_s&.split(',')
+        unless !sites || sites.include?(@location.name)
           sites.push @location.name
           @location.user.sites = sites.join(',')
           @location.user.save!
@@ -254,7 +254,7 @@ class LocationsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def location_params
-      params.require(:location).permit(:key, :name, :latitude, :longitude, :user_id, :region, :logo, :trust_level)
+      params.require(:location).permit(:key, :name, :latitude, :longitude, :user_id, :region, :logo, :trust_level, :locale)
     end
 
     def user_params

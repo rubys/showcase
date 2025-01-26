@@ -6,6 +6,7 @@ one:
   latitude: 1.5
   longitude: 1.5
   user: two
+  locale: en_US
 
 two:
   key: texas
@@ -13,3 +14,24 @@ two:
   latitude: 1.5
   longitude: 1.5
   user: two
+  locale: en_US
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

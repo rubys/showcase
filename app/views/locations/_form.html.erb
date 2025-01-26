@@ -54,6 +54,25 @@
   </div>
 
   <div class="my-5">
+  <%= form.label :locale %>
+  <%= form.select :locale,
+    options_for_select([
+      ["English (US)", "en_US"],
+      ["English (UK)", "en_GB"],
+      ["English (CA)", "en_CA"],
+      ["English (AU)", "en_AU"],
+      ["French (CA)", "fr_CA"],
+      ["French (FR)", "fr_FR"],
+      ["Polish (PL)", "pl_PL"],
+      ["German (DE)", "de_DE"],
+      ["Spanish (ES)", "es_ES"],
+      ["Italian (IT)", "it_IT"],
+    ], location.locale),
+    { include_blank: false },
+    class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
   <%= form.label :region %>
   <%= form.select :region, options_for_select(@regions, @location.region), {include_blank: true},
     class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
