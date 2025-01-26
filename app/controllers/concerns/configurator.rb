@@ -54,7 +54,7 @@ module Configurator
         distance = haversine_distance(geo_a, geo_b)
         if distance < best
           code = region
-          best = distance 
+          best = distance
         end
       end
 
@@ -72,7 +72,8 @@ module Configurator
         entry = {
           name: events.first.location.name,
           region: select_region[events.first.location],
-          logo: events.first.location.logo || 'arthur-murray-logo.gif'
+          logo: events.first.location.logo || 'arthur-murray-logo.gif',
+          locale: events.first.location.locale || 'en_US',
         }
 
         if events.length > 1
@@ -104,9 +105,9 @@ private
     dLat = (lat2 - lat1) * Math::PI / 180
     dLon = (lon2 - lon1) * Math::PI / 180
 
-    a = Math.sin(dLat / 2) * 
+    a = Math.sin(dLat / 2) *
         Math.sin(dLat / 2) +
-        Math.cos(lat1 * Math::PI / 180) * 
+        Math.cos(lat1 * Math::PI / 180) *
         Math.cos(lat2 * Math::PI / 180) *
         Math.sin(dLon / 2) * Math.sin(dLon / 2)
 

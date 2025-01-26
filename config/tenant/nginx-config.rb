@@ -56,6 +56,7 @@ showcases.each do |year, list|
           label:  "#{year}-#{token}-#{subtoken}",
           scope:  "#{year}/#{token}/#{subtoken}",
           logo:   info[:logo],
+          locale: info[:locale],
         )
       end
     else
@@ -66,6 +67,7 @@ showcases.each do |year, list|
         label:  "#{year}-#{token}",
         scope:  "#{year}/#{token}",
         logo:   info[:logo],
+        locale: info[:locale],
       )
     end
   end
@@ -461,8 +463,9 @@ server {
 <% else -%>
     passenger_env_var RAILS_APP_SCOPE <%= tenant.scope %>;
 <% if tenant.logo -%>
-    passenger_env_var SHOWCASE_LOGO <%= tenant.logo == '' ? "arthur-murray-logo.gif" : tenant.logo %>;
+    passenger_env_var SHOWCASE_LOGO <%= tenant.logo == "" ? "arthur-murray-logo.gif" : tenant.logo %>;
 <% end -%>
+    passenger_env_var RAILS_LOCALE <%= (tenant.locale.nil? || tenant.locale == "") ? "en_US" : tenant.locale %>;
 <% end -%>
     passenger_env_var PIDFILE <%= @git_path %>/tmp/pids/<%= tenant.label %>.pid;
 <% end -%>
