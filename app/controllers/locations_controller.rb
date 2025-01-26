@@ -42,7 +42,7 @@ class LocationsController < ApplicationController
     @regions.unshift ["", nil]
 
     Dir.chdir 'public' do
-      @logos = Dir['*'].select do |name| 
+      @logos = Dir['*'].select do |name|
         name.include? '.' and not name.include? '.html' and not name.start_with? 'apple-' and not name.include? '.txt'
       end
     end
@@ -240,10 +240,19 @@ class LocationsController < ApplicationController
     respond_to do |format|
       generate_showcases
       generate_map
-      
+
       format.html { redirect_to locations_url, notice: "#{@location.name} was successfully destroyed.", status: 303 }
       format.json { head :no_content }
     end
+  end
+
+  def locale
+    latitude = params[:lat].to_f
+    longitude = params[:lng].to_f
+
+    locale = suggest_locale(latitude, longitude) rescue "en_US"
+
+    render json: {locale: locale}
   end
 
   private
@@ -263,5 +272,48 @@ class LocationsController < ApplicationController
 
     def showcase_params
       params.require(:showcase).permit(:year, :key, :name)
+    end
+
+    def suggest_locale(lat, lng)
+      return "en_US" if lat.blank? || lng.blank?
+      result = Geocoder.search([lat, lng]).first
+      return "en_US" unless result
+
+      country_code = result.country_code&.upcase
+      case country_code
+      when "US"
+        "en_US"
+      when "GB"
+        "en_GB"
+      when "AU"
+        "en_AU"
+      when "CA"
+        if in_quebec?(lat, lng) || result.state_code == "QC"
+          "fr_CA"
+        else
+          "en_CA"
+        end
+      when "NL"
+        "nl_NL"
+      when "PL"
+        "pl_PL"
+      when "IT"
+        "it_IT"
+      else
+        "en_US"
+      end
+    end
+
+    def in_quebec?(lat, lng)
+      # Montreal region boundaries (approximate)
+      montreal_bounds = {
+        north: 46.0,  # Northern boundary
+        south: 45.0,  # Southern boundary
+        east: -73.0,  # Eastern boundary
+        west: -74.0   # Western boundary
+      }
+
+      lat.between?(montreal_bounds[:south], montreal_bounds[:north]) &&
+        lng.between?(montreal_bounds[:west], montreal_bounds[:east])
     end
 end

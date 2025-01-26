@@ -101,3 +101,5 @@ gem "thruster", "~> 0.1.9"
 gem "logger", "~> 1.6"
 
 gem "aws-sdk-s3", "~> 1.176"
+
+gem "geocoder", "~> 1.8"

@@ -226,6 +226,7 @@ Rails.application.routes.draw do
       get 'auth', on: :member
       get 'sisters', on: :member
       post 'update_sisters', on: :member
+      get 'locale', on: :collection
     end
   end
 

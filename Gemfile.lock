@@ -131,6 +131,9 @@ GEM
       ffi (> 1.9, < 2)
     ffi (1.17.1-arm64-darwin)
     ffi (1.17.1-x86_64-linux-gnu)
+    geocoder (1.8.5)
+      base64 (>= 0.1.0)
+      csv (>= 3.0.0)
     globalid (1.2.1)
       activesupport (>= 6.1)
     hotwire-spark (0.1.12)
@@ -342,6 +345,7 @@ DEPENDENCIES
   debug
   dockerfile-rails
   fast_excel (~> 0.5.0)
+  geocoder (~> 1.8)
   hotwire-spark
   importmap-rails
   jbuilder

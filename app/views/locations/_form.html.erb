@@ -1,4 +1,4 @@
-<%= form_with(model: location, class: "contents", id: 'location-form', data: {controller: 'geocode'}) do |form| %>
+<%= form_with(model: location, class: "contents", id: 'location-form', data: {controller: 'geocode', locale: locale_locations_path}) do |form| %>
   <% errors = (@location&.errors&.full_messages || []) + 
     (@user&.errors&.full_messages || []) + (@showcase&.errors&.full_messages || []) %>
   <% if errors.any? %>
@@ -69,6 +69,7 @@
       ["Italian (IT)", "it_IT"],
     ], location.locale),
     { include_blank: false },
+    data: { "geocode-target" => "locale" },
     class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
