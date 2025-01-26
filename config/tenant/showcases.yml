@@ -343,7 +343,7 @@
   montreal:
     :name: Montreal
     :region: bos
-    :logo: arthur-murray-logo.gif
+    :logo: ''
     :events:
       june:
         :name: June
@@ -482,7 +482,7 @@
   warsaw:
     :name: Warsaw
     :region: ams
-    :logo: arthur-murray-logo.gif
+    :logo: ''
     :events:
       june-warsaw-freestyle:
         :name: June Warsaw Freestyle
@@ -571,7 +571,7 @@
   montreal:
     :name: Montreal
     :region: bos
-    :logo: arthur-murray-logo.gif
+    :logo: ''
   raleigh:
     :name: Raleigh
     :region: iad
