@@ -30,7 +30,7 @@ export default class extends Controller {
         return dateValues.join(' - ')
       }
 
-      const formatter = new Intl.DateTimeFormat(undefined, {
+      const formatter = new Intl.DateTimeFormat(document.body.dataset.locale, {
         weekday: (dates.length === 1) ? 'long' : undefined,
         year: this.yearValue === dates[0].getFullYear().toString() ? undefined : 'numeric',
         month: 'long',
