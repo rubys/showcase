@@ -73,7 +73,7 @@ module Configurator
           name: events.first.location.name,
           region: select_region[events.first.location],
           logo: events.first.location.logo || 'arthur-murray-logo.gif',
-          locale: events.first.location.locale || 'en_US',
+          locale: (events.first.location.locale || 'en_US').gsub('_', '-'),
         }
 
         if events.length > 1
