@@ -413,11 +413,15 @@ class EventController < ApplicationController
       @showcases.select! {|year, sites| year.to_s == params[:year]}
 
       if params[:city] and @showcases[params[:year].to_i]
+        city = params[:city]
+
         @showcases.each do |year, sites|
           sites.select! do |token, value|
-            token == params[:city]
+            token == city
           end
         end
+
+        @locale = Location.where(key: city).first&.locale
       end
     end
 
