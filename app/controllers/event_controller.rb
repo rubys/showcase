@@ -426,6 +426,8 @@ class EventController < ApplicationController
       @showcases.each do |year, sites|
         sites.select! {|token, info| token == @studio}
       end
+
+      @locale = Location.where(name: @studio.name).first&.locale
     end
 
     @region = params[:region]

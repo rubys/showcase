@@ -15,7 +15,7 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body<% if ENV['FLY_REGION'] %> data-region="<%= ENV['FLY_REGION'] %>" data-controller="region"<% end %> data-turbo-prefetch="false" data-locale="<%= ENV.fetch("RAILS_LOCALE", "en_US").gsub('_', '-') %>">
+  <body<% if ENV['FLY_REGION'] %> data-region="<%= ENV['FLY_REGION'] %>" data-controller="region"<% end %> data-turbo-prefetch="false" data-locale="<%= (@locale || ENV.fetch("RAILS_LOCALE", "en_US")).gsub('_', '-') %>">
 
     <% unless @nologo %>
     <% if ENV['RAILS_APP_DB'] != 'index'
