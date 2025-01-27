@@ -427,7 +427,7 @@ class EventController < ApplicationController
         sites.select! {|token, info| token == @studio}
       end
 
-      @locale = Location.where(name: @studio.name).first&.locale
+      @locale = Location.where(name: @studio).first&.locale
     end
 
     @region = params[:region]
