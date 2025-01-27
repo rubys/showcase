@@ -128,8 +128,8 @@
   adelaide:
     :name: Adelaide
     :region: syd
-    :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :logo: ''
+    :locale: en_AU
     :events:
       starry-night:
         :name: Starry Night
@@ -399,7 +399,7 @@
     :name: Perth
     :region: syd
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en_AU
     :events:
       karaoke:
         :name: Karaoke
@@ -515,8 +515,8 @@
   sydney:
     :name: Sydney
     :region: syd
-    :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :logo: ''
+    :locale: en_AU
     :events:
       gatsby:
         :name: Gatsby
@@ -687,8 +687,8 @@
   sydney:
     :name: Sydney
     :region: syd
-    :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :logo: ''
+    :locale: en_AU
   vabeach:
     :name: Virginia Beach
     :region: iad
