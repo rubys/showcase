@@ -7,7 +7,42 @@ class EntriesController < ApplicationController
 
   # GET /entries or /entries.json
   def index
-    @entries = Entry.all
+    @track_ages = Event.first.track_ages
+
+    where = {}
+
+    @dance = params[:dance]
+    where[:dance_id] = params[:dance] unless @dance.blank?
+
+    @age = params[:age]
+    where[:age] = {id: params[:age]} unless @age.blank?
+
+    @level = params[:level]
+    where[:level] = {id: params[:level]} unless @level.blank?
+
+    plus = nil
+
+    @couple = params[:couple]
+    if @couple == 'Pro-Am'
+      where[:lead] = {type: 'Professional'}
+      where[:follow] = {type: 'Student'}
+      plus = Heat.where(where.merge(lead: {type: 'Student'}, follow: {type: 'Professional'}))
+    elsif @couple == 'Amateur Couple'
+      where[:lead] = {type: 'Student'}
+      where[:follow] = {type: 'Student'}
+    elsif @couple == 'Professional'
+      where[:lead] = {type: 'Professional'}
+      where[:follow] = {type: 'Professional'}
+    end
+
+    @ages = Age.order(:id).pluck(:description, :id)
+    @levels = Level.order(:id).pluck(:name, :id)
+    @couple_types = ['Pro-Am', 'Amateur Couple', 'Professional']
+
+    selected = Heat.where(where)
+    selected = selected.or(plus) if plus
+    selected = selected.includes(entry: [:lead, :follow, :level, :age])
+    @heats = selected.all
   end
 
   # GET /entries/1 or /entries/1.json

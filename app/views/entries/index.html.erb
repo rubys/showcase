@@ -3,12 +3,65 @@
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
-  <div class="flex justify-between items-center">
-    <h1 class="font-bold text-4xl">Entries</h1>
-    <%= link_to 'New entry', new_entry_path, class: "rounded-lg py-3 px-5 bg-blue-600 text-white block font-medium" %>
+  <div>
+    <h1 class="font-bold text-4xl text-center mb-4">Entries</h1>
   </div>
 
-  <div id="entries" class="min-w-full">
-    <%= render @entries %>
+  <div class="flex align-center justify-center mb-4">
+  <form class="flex columns-3 gap-4" data-controller="auto-submit">
+    <div>
+      <%= select_tag "couple", options_for_select(@couple_types, @couple), prompt: "Couple Type",
+        class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-40" %>
+    </div>
+    <div>
+      <%= select_tag "level", options_for_select(@levels, @level), prompt: "Level",
+        class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-40" %>
+    </div>
+    <% if @track_ages %>
+    <div>
+      <%= select_tag "age", options_for_select(@ages, @age), prompt: "Age",
+        class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-40" %>
+    </div>
+    <% end %>
+    <input type="hidden" name="dance" value="<%= @dance %>">
+    <button type="submit" class="hidden">Filter</button>
+  </form>
   </div>
+
+  <table class="mx-auto">
+    <thead>
+      <th>lead
+      <th>follow
+      <th>dance
+      <th>level
+      <% if @track_ages %>
+      <th>age
+      <% end %>
+    </thead>
+
+    <tbody>
+      <% @heats.each do |heat| %>
+        <% entry = heat.entry %>
+          <% if heat.number < 0 %>
+        <tr class="group line-through opacity-50">
+        <% else %>
+        <tr class="group">
+        <% end %>
+          <td class="row"><%= link_to entry.lead.display_name, entry.lead %>
+          <td class="row"><%= link_to entry.follow.display_name, entry.follow %>
+          <td class="row"><%= link_to heat.dance.name, heat.dance %>
+          <td class="row"><%= entry.level_name %>
+          <% if @track_ages %>
+          <td class="row"><%= entry.age.description %>
+          <% end %>
+          <td>
+          <form method="get" action="<%= edit_heat_path(heat) %>">
+          <button type="submit" class='group-hover:inline hidden x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium'>Edit</button>
+          </form>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
 </div>
