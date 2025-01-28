@@ -4,7 +4,7 @@
     :name: Bellevue
     :region: sea
     :logo: ''
-    :locale: en_US
+    :locale: en-US
     :events:
       hawaii:
         :name: Hawaii
@@ -18,7 +18,7 @@
     :name: Boston
     :region: bos
     :logo: ''
-    :locale: en_US
+    :locale: en-US
     :events:
       april:
         :name: April
@@ -30,12 +30,12 @@
     :name: Charlotte
     :region: atl
     :logo: ''
-    :locale: en_US
+    :locale: en-US
   clearwater:
     :name: Clearwater
     :region: atl
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       valentines-opener:
         :name: Valentine’s Opener
@@ -59,37 +59,37 @@
     :name: Coquitlam
     :region: sea
     :logo: ''
-    :locale: en_CA
+    :locale: en-CA
   folsom:
     :name: Folsom
     :region: sjc
     :logo: ''
-    :locale: en_US
+    :locale: en-US
   glenview:
     :name: Glenview
     :region: ord
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   harrisburg:
     :name: Harrisburg
     :region: iad
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   kennesaw:
     :name: Kennesaw
     :region: atl
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   laval:
     :name: Laval
     :region: bos
     :logo: arthur-murray-logo.gif
-    :locale: fr_CA
+    :locale: fr-CA
   livermore:
     :name: Livermore
     :region: sjc
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       pep-rally:
         :name: Pep Rally
@@ -101,7 +101,7 @@
     :name: Raleigh
     :region: iad
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       disney:
         :name: Disney
@@ -113,23 +113,28 @@
     :name: Salt Lake City
     :region: sjc
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       winter-wonderland:
         :name: Winter Wonderland
       medal-ball:
         :name: Medal Ball
+  stockton:
+    :name: Stockton
+    :region: sjc
+    :logo: ''
+    :locale: en-US
   sugarland:
     :name: Sugar Land
     :region: atl
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
 2024:
   adelaide:
     :name: Adelaide
     :region: syd
     :logo: ''
-    :locale: en_AU
+    :locale: en-AU
     :events:
       starry-night:
         :name: Starry Night
@@ -143,12 +148,12 @@
     :name: Alexandria
     :region: iad
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   annapolis:
     :name: Annapolis
     :region: iad
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       medalball:
         :name: Metal Ball
@@ -160,12 +165,12 @@
     :name: Austin
     :region: atl
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   bellevue:
     :name: Bellevue
     :region: sea
     :logo: ''
-    :locale: en_US
+    :locale: en-US
     :events:
       june-medal-ball:
         :name: June Medal Ball
@@ -181,12 +186,12 @@
     :name: Boston
     :region: bos
     :logo: ''
-    :locale: en_US
+    :locale: en-US
   carmel:
     :name: Carmel
     :region: ord
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       spring-showcase:
         :name: Spring Showcase
@@ -196,22 +201,22 @@
     :name: Cary
     :region: iad
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   charlotte:
     :name: Charlotte
     :region: atl
     :logo: ''
-    :locale: en_US
+    :locale: en-US
   chicago:
     :name: Chicago
     :region: ord
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   clearwater:
     :name: Clearwater
     :region: atl
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       texas-opener:
         :name: Texas Opener
@@ -231,7 +236,7 @@
     :name: Cranford
     :region: ewr
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       spring-freestyles:
         :name: Spring Freestyles
@@ -241,22 +246,22 @@
     :name: Dayton
     :region: ord
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   durham:
     :name: Durham
     :region: iad
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   everett:
     :name: Everett
     :region: sea
     :logo: ''
-    :locale: en_US
+    :locale: en-US
   glenview:
     :name: Glenview
     :region: ord
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       chicagoland-feb:
         :name: Chicagoland Feb
@@ -266,7 +271,7 @@
     :name: Nashville-Green Hills
     :region: atl
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       spring:
         :name: Spring
@@ -278,17 +283,17 @@
     :name: Harrisburg
     :region: iad
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   kennesaw:
     :name: Kennesaw
     :region: atl
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   lakeview:
     :name: Lakeview
     :region: ord
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       showcase-rounds:
         :name: Showcase Rounds
@@ -304,17 +309,17 @@
     :name: Laval
     :region: bos
     :logo: arthur-murray-logo.gif
-    :locale: fr_CA
+    :locale: fr-CA
   lincolnshire:
     :name: Lincolnshire
     :region: ord
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   livermore:
     :name: Livermore
     :region: sjc
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       pep-rally:
         :name: Pep Rally
@@ -332,17 +337,17 @@
     :name: Lakewood Ranch
     :region: atl
     :logo: ''
-    :locale: en_US
+    :locale: en-US
   manchester:
     :name: Manchester
     :region: bos
     :logo: ''
-    :locale: en_US
+    :locale: en-US
   mdballroom:
     :name: Memorial DanceSport Ballroom
     :region: atl
     :logo: mdballroom.webp
-    :locale: en_US
+    :locale: en-US
     :events:
       february-team-match:
         :name: February Team Match
@@ -352,7 +357,7 @@
     :name: Merrillville
     :region: ord
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       medal-ball:
         :name: Medal Ball
@@ -368,12 +373,12 @@
     :name: Monterey
     :region: sjc
     :logo: ''
-    :locale: en_US
+    :locale: en-US
   montgomery:
     :name: Montgomery
     :region: ord
     :logo: ''
-    :locale: en_US
+    :locale: en-US
     :events:
       dreamland:
         :name: Dreamland
@@ -387,7 +392,7 @@
     :name: Montreal
     :region: bos
     :logo: ''
-    :locale: fr_CA
+    :locale: fr-CA
     :events:
       june:
         :name: June
@@ -399,7 +404,7 @@
     :name: Perth
     :region: syd
     :logo: arthur-murray-logo.gif
-    :locale: en_AU
+    :locale: en-AU
     :events:
       karaoke:
         :name: Karaoke
@@ -415,12 +420,12 @@
     :name: Petaluma
     :region: sjc
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   raleigh:
     :name: Raleigh
     :region: iad
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       casino-royale:
         :name: Casino Royale
@@ -430,7 +435,7 @@
     :name: Richmond
     :region: atl
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       medal-ball:
         :name: Medal Ball
@@ -442,12 +447,12 @@
     :name: Ridgewood
     :region: ewr
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   roanoke:
     :name: Roanoke
     :region: iad
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       team-match:
         :name: Team Match
@@ -461,7 +466,7 @@
     :name: Salem
     :region: sea
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       spring:
         :name: Spring
@@ -471,7 +476,7 @@
     :name: San Jose
     :region: sjc
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       march:
         :name: March
@@ -481,17 +486,17 @@
     :name: Sarasota
     :region: atl
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   schaumburg:
     :name: Schaumburg
     :region: ord
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   slc:
     :name: Salt Lake City
     :region: sjc
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       june:
         :name: June
@@ -501,7 +506,7 @@
     :name: Stockton
     :region: sjc
     :logo: ''
-    :locale: en_US
+    :locale: en-US
     :events:
       walk-this-way:
         :name: Walk This Way
@@ -511,12 +516,12 @@
     :name: Sugar Land
     :region: atl
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   sydney:
     :name: Sydney
     :region: syd
     :logo: ''
-    :locale: en_AU
+    :locale: en-AU
     :events:
       gatsby:
         :name: Gatsby
@@ -526,7 +531,7 @@
     :name: Virginia Beach
     :region: iad
     :logo: ''
-    :locale: en_US
+    :locale: en-US
     :events:
       newsome-twosome:
         :name: Medal Ball - Newsome Twosome
@@ -538,12 +543,12 @@
     :name: Vicenza
     :region: ams
     :logo: ''
-    :locale: it_IT
+    :locale: it-IT
   warsaw:
     :name: Warsaw
     :region: ams
     :logo: ''
-    :locale: pl_PL
+    :locale: pl-PL
     :events:
       june-warsaw-freestyle:
         :name: June Warsaw Freestyle
@@ -557,18 +562,18 @@
     :name: West Chester
     :region: ord
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   woodlands:
     :name: Woodlands
     :region: atl
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
 2023:
   annapolis:
     :name: Annapolis
     :region: iad
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       medalball:
         :name: Metal Ball
@@ -580,22 +585,22 @@
     :name: Carmel
     :region: ord
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   charlotte:
     :name: Charlotte
     :region: atl
     :logo: ''
-    :locale: en_US
+    :locale: en-US
   chicago:
     :name: Chicago
     :region: ord
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   clearwater:
     :name: Clearwater
     :region: atl
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       glassslipper:
         :name: Glass Slipper Gala
@@ -611,27 +616,27 @@
     :name: Durham
     :region: iad
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   greenhills:
     :name: Nashville-Green Hills
     :region: atl
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   harrisburg:
     :name: Harrisburg
     :region: iad
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   kennesaw:
     :name: Kennesaw
     :region: atl
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   lakeview:
     :name: Lakeview
     :region: ord
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       showcase:
         :name: Showcase
@@ -641,17 +646,17 @@
     :name: Livermore
     :region: sjc
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   montreal:
     :name: Montreal
     :region: bos
     :logo: ''
-    :locale: fr_CA
+    :locale: fr-CA
   raleigh:
     :name: Raleigh
     :region: iad
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       night-in-paris:
         :name: A Night In Paris
@@ -661,7 +666,7 @@
     :name: Richmond
     :region: atl
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       medalball:
         :name: Medal Ball
@@ -673,38 +678,38 @@
     :name: Salem
     :region: sea
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   sarasota:
     :name: Sarasota
     :region: atl
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   sugarland:
     :name: Sugar Land
     :region: atl
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   sydney:
     :name: Sydney
     :region: syd
     :logo: ''
-    :locale: en_AU
+    :locale: en-AU
   vabeach:
     :name: Virginia Beach
     :region: iad
     :logo: ''
-    :locale: en_US
+    :locale: en-US
   woodlands:
     :name: Woodlands
     :region: atl
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
 2022:
   annapolis:
     :name: Annapolis
     :region: iad
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
     :events:
       medalball:
         :name: Metal Ball
@@ -716,24 +721,24 @@
     :name: Cary
     :region: iad
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   charlotte:
     :name: Charlotte
     :region: atl
     :logo: ''
-    :locale: en_US
+    :locale: en-US
   harrisburg:
     :name: Harrisburg
     :region: iad
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   kennesaw:
     :name: Kennesaw
     :region: atl
     :logo: arthur-murray-logo.gif
-    :locale: en_US
+    :locale: en-US
   vabeach:
     :name: Virginia Beach
     :region: iad
     :logo: ''
-    :locale: en_US
+    :locale: en-US
