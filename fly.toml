@@ -31,7 +31,7 @@ swap_size_mb = 2048
     port = 2222
 
 [[vm]]
-  cpu_kind = "shared"
+  cpu_kind = "performance"
   cpus = 1
   memory_mb = 1024
 
