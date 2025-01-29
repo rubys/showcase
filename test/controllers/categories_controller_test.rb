@@ -17,7 +17,7 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
 
   test "should create category" do
     assert_difference("Category.count") do
-      post categories_url, params: { category: { 
+      post categories_url, params: { category: {
         name: @category.name + " Part II",
         order: @category.order,
         time: @category.time,
@@ -56,7 +56,7 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should update category" do
-    patch category_url(@category), params: { category: { 
+    patch category_url(@category), params: { category: {
       name: @category.name,
       order: @category.order,
       time: @category.time,
@@ -82,7 +82,7 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
 
   test "should reorder categories" do
     get categories_url
-    
+
     assert_response :success
 
     assert_select 'tr td:first-child a' do |links|
@@ -94,7 +94,7 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
         "Closed American Rhythm",
         "All Arounds",
         "Open American Smooth",
-        "Open American Rhythm" 
+        "Open American Rhythm"
       ], links.map(&:text)
     end
 
@@ -102,19 +102,18 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
       source: categories(:one).id,
       target: categories(:four).id
     }
-      
+
     assert_response :success
 
     assert_select 'tr td:first-child a' do |links|
       assert_equal [
-        "Unscheduled",
         "Closed American Rhythm",
         "Open American Smooth - Part 1",
         "Closed American Smooth - Part 1",
         "All Arounds",
         "Open American Smooth",
         "Open American Rhythm",
-        "Closed American Smooth" 
+        "Closed American Smooth"
       ], links.map(&:text)
     end
 

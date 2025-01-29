@@ -76,6 +76,7 @@ class CategoriesController < ApplicationController
       params[:category][:heats] = ''
     end
 
+    needs_renumbering = false
     if @category.instance_of?(Category) && (!params[:category][:heats].blank? || @category.extensions.any?)
       generate_agenda
       heats = @agenda[@category.name].length + @category.extensions.map {|ext| @agenda[ext.name].length}.sum
@@ -93,12 +94,15 @@ class CategoriesController < ApplicationController
       while extensions_needed > extensions_found.length
         order = [Category.maximum(:order), CatExtension.maximum(:order)].compact.max + 1
         extensions_found << CatExtension.create!(category: @category, order: order, part: extensions_found.length + 2)
+        needs_renumbering = true
       end
     end
 
     respond_to do |format|
       if @category.update(category_params)
         update_dances(params[:category][:include], params[:category][:pro])
+
+        renumber_extensions if needs_renumbering
 
         format.html { redirect_to categories_url, notice: "#{@category.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @category }
@@ -164,6 +168,8 @@ class CategoriesController < ApplicationController
 
       raise ActiveRecord::Rollback unless categories.all? {|category| category.valid?}
     end
+
+    renumber_extensions
 
     index
     flash.now.notice = "#{source.name} was successfully moved."
@@ -440,6 +446,34 @@ class CategoriesController < ApplicationController
           dance.save!
           @total += 1
         end
+      end
+    end
+
+    def renumber_extensions
+      CatExtension.update_all(start_heat: nil)
+
+      generate_agenda
+
+      ActiveRecord::Base.transaction do
+        number = 1
+        @agenda.each do |name, groups|
+          groups.each do |_number, ballrooms|
+            ballrooms.each do |ballroom, heats|
+              heats.each do |heat|
+                heat.number = number
+                heat.save validate: false
+              end
+            end
+            number += 1
+          end
+        end
+      end
+
+      generate_agenda
+
+      CatExtension.all.each do |ext|
+        start = @agenda[ext.name]&.first&.first
+        ext.update(start_heat: start) if start
       end
     end
 end

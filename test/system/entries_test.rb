@@ -30,7 +30,7 @@ class EntriesTest < ApplicationSystemTestCase
     visit person_url(people(:Kathryn))
 
     within find('caption', text: 'Entries').sibling('tbody') do
-      find('td', text: 'Full Silver').hover
+      find('td', text: 'Assoc. Silver').hover
       click_on "Edit"
     end
 

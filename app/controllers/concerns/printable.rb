@@ -70,6 +70,7 @@ module Printable
         @agenda['Unscheduled'] << [number, {nil => heats}]
       else
         cat = heats.first.dance_category
+        cat = cat.category if cat.is_a? CatExtension
         cat = current if cat != current and event.heat_range_cat == 1 and (heats.first.dance.open_category == current or heats.first.dance.closed_category == current)
         current = cat
         ballrooms = cat&.ballrooms || event.ballrooms || 1
