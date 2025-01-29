@@ -87,6 +87,8 @@ when most dances for an individual are with one instructor but one or two are ch
             <% active_heats = entry.active_heats %>
             <% if active_heats.length == 0 %>
             <tr class="group line-through opacity-50">
+            <% elsif @event.strict_scoring && (entry.level_id != @person.level_id || (@event.track_ages && entry.age_id != @person.age_id)) %>
+            <tr class="group bg-gray-200" title="Excluded due to strict scoring">
             <% else %>
             <tr class="group">
             <% end %>

@@ -44,6 +44,8 @@ with your studio.
 
 * Limit number of dances per category - prevent any student from having more than this number of entries in any dance.
 
+* Strict scoring - exclude scores for entries when tabulating for a top student 
+
 ## Event Staff
 
 * Enter Judges, DJs, Emcees, Officials, Organizers, and Conference Guests.  The first three have specific [roles](../#roles).

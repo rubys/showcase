@@ -841,19 +841,45 @@ class ScoresController < ApplicationController
     end
 
     def student_results
-      scores = {
+      event = Event.first
+      strict = event.strict_scoring
+
+      if not strict
+        additional = {
+          followers: nil,
+          leaders: nil,
+          couples: nil
+        }
+      elsif event.track_ages
+        additional = {
+          followers: 'follow.level_id = entries.level_id and follow.age_id = entries.age_id',
+          leaders: 'lead.level_id = entries.level_id and lead.age_id = entries.age_id',
+          couples: 'MAX(lead.level_id, follow.level_id) = entries.level_id and MIN(lead.age_id, follow.age_id) = entries.age_id'
+        }
+      else
+        additional = {
+          followers: 'follow.level_id = entries.level_id',
+          leaders: 'lead.level_id = entries.level_id',
+          couples: 'MAX(lead.level_id, follow.level_id) = entries.level_id'
+        }
+      end
+
+      {
         'Followers' => Score.joins(heat: {entry: [:lead, :follow]}).
           group(:value, :follow_id).
           where(follow: {type: 'Student'}, lead: {type: 'Professional'}).
+          where(additional[:followers]).
           count(:value),
         'Leaders' => Score.joins(heat: {entry: [:lead, :follow]}).
           group(:value, :lead_id).
           where(lead: {type: 'Student'}, follow: {type: 'Professional'}).
+          where(additional[:leaders]).
           count(:value),
         'Couples' => Score.joins(heat: {entry: [:lead, :follow]}).
           group(:value, :follow_id, :lead_id).
           where(lead: {type: 'Student'}, follow: {type: 'Student'},
             heat: {category: ['Open', 'Closed']}).
+          where(additional[:couples]).
           count(:value)
        }
     end
