@@ -69,8 +69,7 @@ class EventController < ApplicationController
 
     @browser_warn = browser_warn
 
-    if @heats == 0 && @unscheduled == 0 && !Studio.where.not(name: 'Event Staff').any?
-      clone unless ENV['RAILS_APP_OWNER'] == 'Demo'
+    if @heats == 0 && @unscheduled == 0 && !Studio.where.not(name: 'Event Staff').any? && !ENV['RAILS_APP_OWNER'] == 'Demo'
       @cloneable = !@sources&.empty?
     end
 
