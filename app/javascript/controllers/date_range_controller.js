@@ -29,7 +29,7 @@ export default class extends Controller {
     this.element.querySelectorAll('td[data-start][data-finish]').forEach(cell => {
       const start = new Date(Date.parse(cell.dataset.start))
       const finish = new Date(Date.parse(cell.dataset.finish))
-      cell.textContent = formatter.formatRange(start, finish).replaceAll(/ /g, '\u00A0');
+      cell.textContent = formatter.formatRange(start, finish).toLowerCase().replaceAll(/ /g, '\u00A0');
     })
   }
 
