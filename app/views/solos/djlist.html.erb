@@ -1,3 +1,10 @@
+<script>
+  function audioSourceError(event) {
+    const enclosing = event.target.parentNode.parentNode;
+    enclosing.style.backgroundColor = "red";
+  }
+</script>
+
 <div class="w-full">
   <% if notice.present? %>
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
@@ -35,7 +42,7 @@
        <% if heat.solo.song_file.attached? %>
        <td>
          <audio controls style="display: inline">
-           <source src=<%= heat.solo.song_file.url %> type=<%= heat.solo.song_file.content_type %>>
+           <source src=<%= heat.solo.song_file.url %> type=<%= heat.solo.song_file.content_type %> onerror="audioSourceError(event)">
          </audio>
        <% else %>
        <td class="bg-red-200">
@@ -59,11 +66,3 @@
 </div>
 
 </div>
-
-<script>
-  for (const audio of document.querySelectorAll('audio')) {
-    audio.addEventListener('error', function() {
-      audio.parentElement.style.backgroundColor = 'red';
-    });
-  }
-</script>
