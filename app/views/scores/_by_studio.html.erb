@@ -17,11 +17,13 @@
 <div id="scores-by-studio">
 
   <% totals = @scores.find {|level, studios| level.name == 'Total'}.last.map {|studio, results| [studio,results['points']]} %>
+  <% if totals.any? %>
   <% highest = totals.sort_by {|studio, results| results}.last[1] %>
   <% top_studios = totals.select {|studio, results| results == highest} %>
   <h1 class="font-bold mt-8 text-4xl p-5 text-center border-4 border-green-600 rounded-2xl bg-green-500 text-white">
     Top <%= 'Studio'.pluralize(top_studios.length) %>: <%= top_studios.map {|studio, results| studio}.join(', ') %>
   </h1>
+  <% end %>
   
   <h1 class="font-bold mt-8 text-4xl pb-5 text-center">Scores by Studio</h1>
 
