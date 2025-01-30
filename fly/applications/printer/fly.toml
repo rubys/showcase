@@ -15,7 +15,6 @@ swap_size_mb = 2048
   # PORT = 3000
   TIMEOUT = 15
   FORMAT = "letter"
-  JAVASCRIPT = "false"
 
 [http_service]
   internal_port = 3000
