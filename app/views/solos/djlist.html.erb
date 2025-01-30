@@ -59,3 +59,11 @@
 </div>
 
 </div>
+
+<script>
+  for (const audio of document.querySelectorAll('audio')) {
+    audio.addEventListener('error', function() {
+      audio.parentElement.style.backgroundColor = 'red';
+    });
+  }
+</script>
