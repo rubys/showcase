@@ -111,7 +111,7 @@ end
   <h2 class="font-bold text-xl text-center" style="font-family: '<%= @font_family %>'">Agenda</h2>
 </div>
 
-  <table class="table-fixed mt-4 mx-auto mb-0">
+  <table class="table-fixed mt-4 mx-auto mb-0" data-controller="date-range">
     <tr>
       <th class="row-head">Category
       <th colspan="2" class="row-head">Heats
@@ -119,7 +119,7 @@ end
       <% unless @oneday %>
       <th class="row-head">Day
       <% end %>
-      <th class="row-head" colspan="2">Time
+      <th class="row-head">Time
       <% elsif not @oneday %>
       <th class="row-head">Day
       <% end %>
@@ -133,8 +133,10 @@ end
         <% unless @oneday %>
         <td class="row"><%= @start && Date::DAYNAMES[@cat_start[cat]&.wday || 7] %>
         <% end %>
-        <td class="row text-right"><%= @start && @cat_start[cat]&.strftime("%l:%M %P") %>
-        <td class="row text-right"><%= @finish && @cat_finish[cat]&.strftime("%l:%M %P") %>
+        <td class="row text-right" data-start="<%= @cat_start[cat].iso8601 %>" data-finish="<%= @cat_finish[cat].iso8601 %>">
+          <%= @start && @cat_start[cat]&.strftime("%l:%M %P") %> -
+          <%= @finish && @cat_finish[cat]&.strftime("%l:%M %P") %>
+        </td>
         <% elsif not @categories[cat]&.day.blank? and not @oneday %>
         <td class="row"><%= @categories[cat].day %>
         <% end %>

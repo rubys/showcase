@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 
+// Connects to data-controller="date-range"
 export default class extends Controller {
   static targets = ["output"]
   static values = { date: String, year: String }
@@ -19,6 +20,17 @@ export default class extends Controller {
         if (endDate.value < startDate.value) startDate.value = endDate.value
       })
     }
+
+    const formatter = new Intl.DateTimeFormat(document.body.dataset.locale, {
+      hour: 'numeric',
+      minute: 'numeric'
+    })
+
+    this.element.querySelectorAll('td[data-start][data-finish]').forEach(cell => {
+      const start = new Date(Date.parse(cell.dataset.start))
+      const finish = new Date(Date.parse(cell.dataset.finish))
+      cell.textContent = formatter.formatRange(start, finish).replaceAll(/ /g, '\u00A0');
+    })
   }
 
   formatDate(dateValues) {
