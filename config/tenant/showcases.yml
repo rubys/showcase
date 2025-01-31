@@ -33,7 +33,7 @@
     :locale: en-US
   clearwater:
     :name: Clearwater
-    :region: atl
+    :region: mia
     :logo: arthur-murray-logo.gif
     :locale: en-US
     :events:
@@ -131,7 +131,7 @@
     :locale: en-US
   sugarland:
     :name: Sugar Land
-    :region: atl
+    :region: dfw
     :logo: arthur-murray-logo.gif
     :locale: en-US
 2024:
@@ -168,7 +168,7 @@
         :name: Gratitude Gala
   austin:
     :name: Austin
-    :region: atl
+    :region: dfw
     :logo: arthur-murray-logo.gif
     :locale: en-US
   bellevue:
@@ -219,7 +219,7 @@
     :locale: en-US
   clearwater:
     :name: Clearwater
-    :region: atl
+    :region: mia
     :logo: arthur-murray-logo.gif
     :locale: en-US
     :events:
@@ -340,7 +340,7 @@
         :name: Extravaganza
   lwr:
     :name: Lakewood Ranch
-    :region: atl
+    :region: mia
     :logo: ''
     :locale: en-US
   manchester:
@@ -350,7 +350,7 @@
     :locale: en-US
   mdballroom:
     :name: Memorial DanceSport Ballroom
-    :region: atl
+    :region: dfw
     :logo: mdballroom.webp
     :locale: en-US
     :events:
@@ -489,7 +489,7 @@
         :name: September
   sarasota:
     :name: Sarasota
-    :region: atl
+    :region: mia
     :logo: arthur-murray-logo.gif
     :locale: en-US
   schaumburg:
@@ -519,7 +519,7 @@
         :name: Dance Down Memory Lane
   sugarland:
     :name: Sugar Land
-    :region: atl
+    :region: dfw
     :logo: arthur-murray-logo.gif
     :locale: en-US
   sydney:
@@ -570,7 +570,7 @@
     :locale: en-US
   woodlands:
     :name: Woodlands
-    :region: atl
+    :region: dfw
     :logo: arthur-murray-logo.gif
     :locale: en-US
 2023:
@@ -603,7 +603,7 @@
     :locale: en-US
   clearwater:
     :name: Clearwater
-    :region: atl
+    :region: mia
     :logo: arthur-murray-logo.gif
     :locale: en-US
     :events:
@@ -686,12 +686,12 @@
     :locale: en-US
   sarasota:
     :name: Sarasota
-    :region: atl
+    :region: mia
     :logo: arthur-murray-logo.gif
     :locale: en-US
   sugarland:
     :name: Sugar Land
-    :region: atl
+    :region: dfw
     :logo: arthur-murray-logo.gif
     :locale: en-US
   sydney:
@@ -706,7 +706,7 @@
     :locale: en-US
   woodlands:
     :name: Woodlands
-    :region: atl
+    :region: dfw
     :logo: arthur-murray-logo.gif
     :locale: en-US
 2022:

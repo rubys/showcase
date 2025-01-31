@@ -34,6 +34,20 @@ regions:
     map: us
     x: 604.0234830583017
     y: 184.81812492869688
+  dfw:
+    name: Dallas, Texas (US)
+    lat: 32.778286
+    lon: -96.7984
+    map: us
+    x: 476.1993201496286
+    y: 361.5248496538476
+  mia:
+    name: Miami, Florida (US)
+    lat: 25.7877
+    lon: -80.2241
+    map: us
+    x: 755.3064170132483
+    y: 469.82316642663625
   sjc:
     name: San Jose, California (US)
     lat: 37.3516
