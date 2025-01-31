@@ -67,6 +67,7 @@ let deadManSwitch = false
 
 // process HTTP requests
 const server = Bun.serve({
+  idleTimeout: 255,
   port: PORT,
 
   async fetch(request) {
