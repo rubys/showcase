@@ -9,4 +9,4 @@ pin "@rails/actioncable", to: "actioncable.esm.js"
 pin_all_from "app/javascript/channels", under: "channels"
 pin "trix"
 pin "@rails/actiontext", to: "actiontext.js"
-pin "xterm", to: "https://ga.jspm.io/npm:xterm@5.3.0/lib/xterm.js"
+pin "@xterm/xterm", to: "@xterm--xterm.js" # @5.5.0
