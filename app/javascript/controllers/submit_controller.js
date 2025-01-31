@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import consumer from 'channels/consumer'
-import { Terminal } from '@xterm/xterm';
+import xterm from '@xterm/xterm';
 
 // Connects to data-controller="submit"
 export default class extends Controller {
@@ -28,7 +28,7 @@ export default class extends Controller {
           submitTarget.disabled=true
           outputTarget.parentNode.classList.remove("hidden")
 
-          this.terminal = new Terminal()
+          this.terminal = new xterm.Terminal()
           this.terminal.open(outputTarget)
         },
 
