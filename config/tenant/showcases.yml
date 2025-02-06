@@ -102,6 +102,24 @@
         :name: The Music of Prince
       james-bond:
         :name: James Bond
+  merrillville:
+    :name: Merrillville
+    :region: ord
+    :logo: arthur-murray-logo.gif
+    :locale: en-US
+    :events:
+      team-match:
+        :name: Team Match
+      arthur-murray-prom:
+        :name: Arthur Murray Prom
+      graduation-night:
+        :name: Graduation Night
+      club-arthur-murray:
+        :name: Club Arthur Murray
+      harvest-moon:
+        :name: Harvest Moon
+      winter-wonderland:
+        :name: Winter Wonderland
   raleigh:
     :name: Raleigh
     :region: iad
