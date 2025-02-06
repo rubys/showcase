@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:1
 
 # Adjust BUN_VERSION as desired
-ARG BUN_VERSION=1.2.1
+ARG BUN_VERSION=1.2.2
 FROM oven/bun:${BUN_VERSION}-slim AS base
 
 LABEL fly_launch_runtime="Bun"
@@ -38,7 +38,7 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Install npm modules
-COPY --link bun.lockb package.json ./
+COPY --link bun.lock package.json ./
 RUN bun install --production --frozen-lockfile
 
 # Copy thruster
