@@ -152,6 +152,11 @@
     :region: dfw
     :logo: arthur-murray-logo.gif
     :locale: en-US
+  woodlands:
+    :name: Woodlands
+    :region: dfw
+    :logo: arthur-murray-logo.gif
+    :locale: en-US
 2024:
   adelaide:
     :name: Adelaide
