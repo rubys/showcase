@@ -1,0 +1,24 @@
+# fly.toml app configuration file generated for smooth-proxy on 2025-02-09T09:01:18-05:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'smooth-proxy'
+primary_region = 'iad'
+
+[build]
+  [build.args]
+    GO_VERSION = '1.23.6'
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'suspend'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
