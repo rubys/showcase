@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:1
 
 # Adjust BUN_VERSION as desired
-ARG BUN_VERSION=1.2.1
+ARG BUN_VERSION=1.2.2
 FROM oven/bun:${BUN_VERSION}-slim AS base
 
 LABEL fly_launch_runtime="Bun"
@@ -15,8 +15,8 @@ ENV NODE_ENV="production"
 
 # Build thruster
 FROM base AS thruster
-ARG GO_VERSION=1.23.4
-ARG THRUSTER_VERSION=0.1.8
+ARG GO_VERSION=1.23.6
+ARG THRUSTER_VERSION=0.1.10
 RUN apt-get update \
  && apt-get install -y wget \
  && cd /root \

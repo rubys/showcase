@@ -51,10 +51,11 @@ export function format(match: RegExpMatchArray) {
   let ip = match[2].split(',')[0]
 
   let regionColor = request_region && request_region[1] === match[1] ? 'green' : 'maroon'
+  let title = request_region && request_region[1] !== match[1] ? ` title="${request_region[1].toUpperCase()}"` : ''
 
   return [
     `<time>${match[4].replace(' +0000', 'Z')}</time>`,
-    `<a href="${HOST}/regions/${match[1]}/status"><span style="color: ${regionColor}">${match[1]}</span></a>`,
+    `<a href="${HOST}/regions/${match[1]}/status"><span style="color: ${regionColor}"${title}>${match[1]}</span></a>`,
     status,
     match[11],
     `<span style="color: blue">${match[3]}</span>`,
