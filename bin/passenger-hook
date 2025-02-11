@@ -86,7 +86,7 @@ begin
           FileUtils.rm_rf 'storage'
         end
 
-        system "rclone sync --progress tigris:showcase ./tigris"
+        system "rclone copy --progress tigris:showcase ./tigris"
 
         files = Dir.chdir('tigris') {Dir["*"]}
         files.each do |file|
