@@ -55,6 +55,11 @@
         :name: Fright Fest
       snowball:
         :name: Snowball
+  columbia:
+    :name: Columbia
+    :region: iad
+    :logo: ''
+    :locale: en-US
   coquitlam:
     :name: Coquitlam
     :region: sea
