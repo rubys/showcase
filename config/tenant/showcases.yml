@@ -90,6 +90,22 @@
     :region: atl
     :logo: arthur-murray-logo.gif
     :locale: en-US
+  lakeview:
+    :name: Lakeview
+    :region: ord
+    :logo: arthur-murray-logo.gif
+    :locale: en-US
+    :events:
+      medal-ball-graduation-night-may:
+        :name: Medal Ball Graduation Night - May
+      summer-showcase-rounds:
+        :name: Summer Showcase Rounds
+      summer-showcase:
+        :name: Summer Showcase
+      showcase-rounds:
+        :name: Showcase Rounds
+      medal-ball-graduation-night-nov:
+        :name: Medal Ball Graduation Night - Nov
   laval:
     :name: Laval
     :region: bos
