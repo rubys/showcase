@@ -65,6 +65,15 @@
     :region: sea
     :logo: ''
     :locale: en-CA
+    :events:
+      ballroom-blitz:
+        :name: Ballroom Blitz
+      showcase:
+        :name: Showcase
+      spotlight-ball:
+        :name: Spotlight Ball
+      medal-ball:
+        :name: Medal Ball
   dayton:
     :name: Dayton
     :region: ord
@@ -146,6 +155,15 @@
     :region: ord
     :logo: ''
     :locale: en-US
+    :events:
+      cddc:
+        :name: CDDC
+      grand-rapids:
+        :name: Grand Rapids
+      fall-cddc:
+        :name: Fall CDDC
+      swing-sway:
+        :name: Swing & Sway
   raleigh:
     :name: Raleigh
     :region: iad
