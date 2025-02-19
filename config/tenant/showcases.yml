@@ -141,6 +141,11 @@
         :name: Harvest Moon
       winter-wonderland:
         :name: Winter Wonderland
+  montgomery:
+    :name: Montgomery
+    :region: ord
+    :logo: ''
+    :locale: en-US
   raleigh:
     :name: Raleigh
     :region: iad
