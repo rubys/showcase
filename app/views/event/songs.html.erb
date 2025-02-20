@@ -1,0 +1,36 @@
+<div class="mx-auto">
+
+<h1 class="mt-8 text-center font-bold text-4xl mb-8">
+<span class="text-blue-600"><%= link_to @region, region_path(@region) %></span> Songs</h1>
+
+<p>
+  <span class="inline-block w-[100px]">Database:</span>
+  <%= @database.length %>
+</p>
+
+<p>
+  <span class="inline-block w-[100px]">Tigris:</span>
+  <%= @tigris.length %>
+</p>
+
+<p>
+  <span class="inline-block w-[100px]">Files:</span>
+  <%= @files.length %>
+</p>
+
+<h2 class="mt-8 font-bold text-2xl mb-8">Missing Files</h2>
+
+<table class="table table-auto border-separate border-spacing-x-8 border-spacing-y-2">
+  <% (@database - @tigris).each do |file| %>
+  <% attachment = @attachments[file] %>
+  <tr>
+    <td class="text-sm font-mono<%= @files.include?(file) ? "" : " text-red-600" %>"}><%= file %></td>
+    <td><%= attachment[:name] %></td>
+    <td><%= attachment[:record_type] %></td>
+    <td align="right"><%= attachment[:record_id] %></td>
+    <td><%= attachment[:event] %></td>
+  </tr>
+  <% end %>
+</table>
+
+</div>

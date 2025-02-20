@@ -8,8 +8,13 @@
 <pre class="text-sm">
 <%= @passenger_status %>
 </pre>
-<h2 class="mt-8 font-bold text-2xl mb-8">Logs</h2>
 <% end %>
+
+<p>
+  <%= link_to 'Songs', region_songs_path(@region), class: "btn-blue" %>
+</p>
+
+<h2 class="mt-8 font-bold text-2xl mb-8">Logs</h2>
 
 <table class="table table-auto border-separate border-spacing-x-8 border-spacing-y-2">
 <% @logs.reverse.each do |mtime, log| %>

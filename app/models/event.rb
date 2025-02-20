@@ -2,7 +2,7 @@ require 'ostruct'
 
 class Event < ApplicationRecord
   validate :valid_date?
-  has_one_attached :counter_art
+  has_one_attached :counter_art, dependent: false
   validate :correct_document_mime_type
 
   belongs_to :solo_level, class_name: 'Level', optional: true

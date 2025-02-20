@@ -55,6 +55,7 @@ Rails.application.routes.draw do
     get '/event.sqlite3', to: "event#database", as: 'event_database'
     get '/regions/', to: "event#regions", trailing_slash: true
     get '/regions/:region/status', to: "event#region", as: 'region_status'
+    get '/regions/:region/songs', to: "event#songs", as: 'region_songs'
     get '/regions/:region/logs/:file', to: "event#region_log", as: "region_log",
       constraints: { file: /[-\w.]+/ }
 
