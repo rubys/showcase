@@ -132,6 +132,11 @@
         :name: The Music of Prince
       james-bond:
         :name: James Bond
+  mdballroom:
+    :name: Memorial DanceSport Ballroom
+    :region: dfw
+    :logo: mdballroom.webp
+    :locale: en-US
   merrillville:
     :name: Merrillville
     :region: ord
