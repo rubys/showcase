@@ -1,7 +1,7 @@
 # Showcase
 
 In between updates to [Agile Web Development with Rails
-7](https://pragprog.com/titles/rails7/agile-web-development-with-rails-7/), I
+8](https://pragprog.com/titles/rails8/agile-web-development-with-rails-8/), I
 keep my Rails skills sharp by developing small applications.
 
 I also take ballroom dance lessons with my wife, and we have competed
@@ -62,7 +62,7 @@ Visit http://localhost:9999/showcase/ to see the list of events.
 # Implementation overview
 
 This is pretty much a standard
-[CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) Rails 7
+[CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) Rails 8
 application using import maps for JavaScript and
 [TailwindCSS](https://tailwindcss.com/) for CSS. 
 
