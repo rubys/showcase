@@ -74,6 +74,16 @@
         :name: Spotlight Ball
       medal-ball:
         :name: Medal Ball
+  cranford:
+    :name: Cranford
+    :region: ewr
+    :logo: arthur-murray-logo.gif
+    :locale: en-US
+    :events:
+      spring-freestyles:
+        :name: Spring Freestyles
+      fall-freestyles:
+        :name: Fall Freestyles
   dayton:
     :name: Dayton
     :region: ord
