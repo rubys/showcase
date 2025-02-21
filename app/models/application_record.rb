@@ -22,4 +22,21 @@ class ApplicationRecord < ActiveRecord::Base
     def self.normalizes *args
     end
   end
+
+  RAILS_STORAGE = Pathname.new(ENV.fetch("RAILS_STORAGE", Rails.root.join("storage")))
+
+  def download_blob(blob)
+    return unless ENV['FLY_REGION']
+
+    Thread.new do
+      sleep 5
+      dest = RAILS_STORAGE.join(blob.key.sub(/(..)(..)/, '\1/\2/\1\2'))
+      FileUtils.mkdir_p File.dirname(dest)
+      File.open(dest, 'wb') do |file|
+        file.binmode
+        counter_art.blob.download { |chunk| file.write(chunk) }
+        file.flush
+      end
+    end
+  end
 end

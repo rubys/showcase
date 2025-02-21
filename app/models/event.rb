@@ -7,6 +7,8 @@ class Event < ApplicationRecord
 
   belongs_to :solo_level, class_name: 'Level', optional: true
 
+  after_save :download_counter_art, if: -> { counter_art.attached? && counter_art.blob.created_at > 1.minute.ago }
+
   def self.list
     showcases = YAML.load_file("#{__dir__}/../../config/tenant/showcases.yml")
 
@@ -69,5 +71,9 @@ class Event < ApplicationRecord
     if counter_art.attached? && !counter_art.content_type.in?(acceptable_types)
       errors.add(:counter_art, 'Must be an image or video')
     end
+  end
+
+  def download_counter_art
+    download_blob(counter_art.blob)
   end
 end
