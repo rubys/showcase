@@ -70,6 +70,7 @@ logging:
 #   shell: app exec --interactive --reuse "bash"
 aliases:
   console: app exec --interactive --reuse "bash"
+  apps: server exec docker exec kamal-proxy kamal-proxy list
 
 # Use a different ssh user than root
 #
