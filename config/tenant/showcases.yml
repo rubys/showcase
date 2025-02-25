@@ -179,6 +179,11 @@
         :name: Fall CDDC
       swing-sway:
         :name: Swing & Sway
+  princeton:
+    :name: Princeton
+    :region: ewr
+    :logo: ''
+    :locale: en-US
   raleigh:
     :name: Raleigh
     :region: iad
