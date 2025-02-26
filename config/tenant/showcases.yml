@@ -196,6 +196,11 @@
         :name: Team Match
       shimmer-shine:
         :name: Shimmer & Shine
+  sanjose:
+    :name: San Jose
+    :region: sjc
+    :logo: arthur-murray-logo.gif
+    :locale: en-US
   slc:
     :name: Salt Lake City
     :region: sjc
