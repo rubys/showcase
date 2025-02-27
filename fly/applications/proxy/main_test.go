@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
@@ -74,5 +76,59 @@ func TestProxyHeaderDeduplication(t *testing.T) {
 	resp := w.Result()
 	if resp.Header.Get("Location") != "https://smooth-proxy.fly.dev/redirected" {
 		t.Errorf("Expected Location header to be rewritten to smooth-proxy.fly.dev, got %q", resp.Header.Get("Location"))
+	}
+}
+
+// TestLoggingMiddleware verifies that the logging middleware properly logs request and response information
+func TestLoggingMiddleware(t *testing.T) {
+	// Create a handler that returns a 200 status
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+
+	// Wrap it with our logging middleware
+	loggingHandler := NewLoggingMiddleware(handler)
+
+	// Create a test request
+	req := httptest.NewRequest("GET", "http://example.com/test-path", nil)
+	req.Header.Set("User-Agent", "test-agent")
+	req.RemoteAddr = "192.168.1.1:12345"
+
+	// Capture log output
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	defer log.SetOutput(nil) // Reset log output
+
+	// Record the response
+	w := httptest.NewRecorder()
+	loggingHandler.ServeHTTP(w, req)
+
+	// Check the response
+	resp := w.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+	}
+
+	// Verify log output contains expected information
+	logOutput := buf.String()
+	
+	// Check request logging
+	if !strings.Contains(logOutput, "REQUEST: [GET] /test-path HTTP/1.1") {
+		t.Errorf("Expected request method and path to be logged, got: %s", logOutput)
+	}
+	if !strings.Contains(logOutput, "From: 192.168.1.1:12345") {
+		t.Errorf("Expected client IP to be logged, got: %s", logOutput)
+	}
+	if !strings.Contains(logOutput, "User-Agent: test-agent") {
+		t.Errorf("Expected User-Agent to be logged, got: %s", logOutput)
+	}
+
+	// Check response logging
+	if !strings.Contains(logOutput, "RESPONSE: [GET] /test-path - Status: 200") {
+		t.Errorf("Expected response status to be logged, got: %s", logOutput)
+	}
+	if !strings.Contains(logOutput, "Duration:") {
+		t.Errorf("Expected response duration to be logged, got: %s", logOutput)
 	}
 }

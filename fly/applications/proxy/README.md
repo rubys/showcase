@@ -24,6 +24,10 @@ Rails applications validate the Origin header against the request's base URL for
   - X-Forwarded-Proto
   - X-Forwarded-Server
 - Rewrites Location headers in redirects
+- **Request logging for monitoring and debugging:**
+  - Logs all incoming requests with method, path, protocol, client IP, and user agent
+  - Logs all responses with method, path, status code, and response time
+  - Helps track potential issues and monitor traffic patterns
 
 ## Usage
 
@@ -51,6 +55,12 @@ curl -v -H "Origin: http://localhost:3000" http://localhost:3000/your-path
 
 # Test redirect handling
 curl -v -L http://localhost:3000/your-path
+
+# Test request logging
+curl -H "User-Agent: MyCustomAgent" http://localhost:3000/your-path
+# Check server logs for output like:
+# REQUEST: [GET] /your-path HTTP/1.1 - From: 127.0.0.1:xxxxx - User-Agent: MyCustomAgent
+# RESPONSE: [GET] /your-path - Status: 200 - Duration: xxxms
 ```
 
 ## Development
@@ -59,3 +69,6 @@ The proxy includes a test suite to verify its behavior:
 
 ```bash
 go test -v
+```
+
+The test suite now includes verification of the logging middleware to ensure request and response details are properly captured.

@@ -104,10 +104,13 @@ func main() {
 		},
 	}
 
+	// Wrap the proxy with our logging middleware
+	loggingHandler := NewLoggingMiddleware(proxy)
+
 	// Start the server
 	server := &http.Server{
 		Addr:    listenAddr,
-		Handler: proxy,
+		Handler: loggingHandler,
 	}
 
 	log.Printf("Starting proxy server on %s\n", listenAddr)
