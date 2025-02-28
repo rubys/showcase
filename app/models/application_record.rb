@@ -43,7 +43,7 @@ class ApplicationRecord < ActiveRecord::Base
 
       local_attachments = ActiveStorage::Attachment.joins(:blob).where(blob: {service_name: 'local'})
       local_attachments.each do |attachment|
-        next uless attachment.blob.service_name == 'local'
+        next unless attachment.blob.service_name == 'local'
         blob = RAILS_STORAGE.join(attachment.blob.key.sub(/(..)(..)/, '\1/\2/\1\2'))
 
         logger.info "Uploading #{blob} to tigris"
