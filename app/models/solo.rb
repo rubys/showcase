@@ -8,7 +8,7 @@ class Solo < ApplicationRecord
   validates_associated :heat
   validates :order, uniqueness: true
 
-  after_save :download_song_file, if: -> { song_file.attached? && song_file.blob.created_at > 1.minute.ago }
+  after_save :upload_blobs, if: -> { song_file.attached? && song_file.blob.created_at > 1.minute.ago }
 
   # what to show in the 'partners' column.  Special case: show instructors if
   # on the page of the only student in the solo.

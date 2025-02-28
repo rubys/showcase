@@ -7,7 +7,7 @@ class Song < ApplicationRecord
   validates :title, presence: true, uniqueness: { scope: :dance_id }
   validates :order, presence: true, uniqueness: true
 
-  after_save :download_song_file, if: -> { song_file.attached? && song_file.blob.created_at > 1.minute.ago }
+  after_save :upload_blobs, if: -> { song_file.attached? && song_file.blob.created_at > 1.minute.ago }
 
   def download_song_file
     download_blob(song_file.blob)
