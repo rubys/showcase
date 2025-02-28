@@ -40,8 +40,8 @@ Rails.application.configure do
   # Set storage location for uploaded files based on environment
   if ENV["RAILS_APP_OWNER"] == "Demo"
     config.active_storage.service = :local
-  elsif ENV["BUCKET_NAME"]
-    config.active_storage.service = :tigris
+  # elsif ENV["BUCKET_NAME"]
+  #   config.active_storage.service = :tigris
   else
     config.active_storage.service = :local
   end

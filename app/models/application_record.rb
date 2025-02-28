@@ -26,7 +26,7 @@ class ApplicationRecord < ActiveRecord::Base
   RAILS_STORAGE = Pathname.new(ENV.fetch("RAILS_STORAGE", Rails.root.join("storage")))
 
   def download_blob(blob)
-    return unless ENV['FLY_REGION']
+    return # unless ENV['FLY_REGION']
 
     Thread.new do
       sleep 5
