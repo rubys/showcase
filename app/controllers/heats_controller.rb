@@ -429,7 +429,7 @@ class HeatsController < ApplicationController
       if category&.routines == true
         dance = Dance.find(params[:heat][:dance_id])
         dance = Dance.where(name: dance.name).find {|dance| dance.freestyle_category == category}
-        params[:heat][:dance_id] = dance.id
+        params[:heat][:dance_id] = dance.id if dance
       end
     end
 
