@@ -128,6 +128,29 @@ begin
       end
     end
 
+    # if not in primary region sync storage to primary region
+    if ENV['REGION'] != ENV['PRIMARY_REGION']
+      cmd = %W[
+        rsync
+        -av
+        --no-perms --no-owner --no-group
+        --update
+        /data/storage
+        rsync://#{ENV['FLY_REGION']}.#{ENV['FLY_APP_NAME']}.internal:/data/
+      ]
+
+      puts cmd.join(' ')
+      output, status = Open3.capture2e *cmd
+      puts output
+
+      unless status.success?
+        Sentry.capture_message("rsync failure:\n\n#{hostenv}\n" +
+          "cmd: #{cmd.join(' ')}\n\n" +
+          "addrs: #{addrs.join(' ')}\n\n" +
+          "rsync to: #{addr}\n\n#{output}")
+      end
+    end
+
     # run webhook
     uri = URI('https://rubix.intertwingly.net/webhook/showcase')
     res = Net::HTTP.get_response(uri)
