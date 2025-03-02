@@ -129,14 +129,14 @@ begin
     end
 
     # if not in primary region sync storage to primary region
-    if ENV['REGION'] != ENV['PRIMARY_REGION']
+    if ENV['FLY_REGION'] != ENV['PRIMARY_REGION']
       cmd = %W[
         rsync
         -av
         --no-perms --no-owner --no-group
         --update
         /data/storage
-        rsync://#{ENV['FLY_REGION']}.#{ENV['FLY_APP_NAME']}.internal:/data/
+        rsync://#{ENV['PRIMARY_REGION']}.#{ENV['FLY_APP_NAME']}.internal:/data/
       ]
 
       puts cmd.join(' ')
