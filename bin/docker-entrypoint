@@ -2,6 +2,8 @@
 
 if [ "$1" == "foreman" ] && [ "$2" == "start" ]; then
   bin/deploy
+
+  nohup bin/bundle exec rake prerender &
 fi
 
 exec "${@}"

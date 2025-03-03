@@ -6,6 +6,7 @@ namespace :prerender do
     ENV['RAILS_ENV'] = 'production'
     ENV['RAILS_APP_DB'] = 'index'
     ENV['RAILS_APP_SCOPE'] = '/showcase'
+    ENV['DATABASE_URL'] = nil
     Rake::Task['environment'].invoke
   end
 end
