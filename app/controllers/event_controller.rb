@@ -317,35 +317,66 @@ class EventController < ApplicationController
 
     sheet = []
 
-    headers = [
-      'Number',
-      'Student',
-      'Open or Closed',
-      'Dance',
-      'Back #',
-      'Lead',
-      'Follow',
-      'Level',
-      'Category',
-      'Studio',
-    ] + @judges.map(&:first_name)
+    if Event.first.column_order == 1
+      headers = [
+        'Number',
+        'Student',
+        'Open or Closed',
+        'Dance',
+        'Back #',
+        'Lead',
+        'Follow',
+        'Level',
+        'Category',
+        'Studio',
+      ] + @judges.map(&:first_name)
 
-    @heats.each do |heat|
-      scores = heat.scores
-      scores_by_judge = @judges.map {|judge| scores.find {|score| score.judge == judge}&.value}
-      sheet << headers.zip([
-        heat.number,
-        heat.entry.subject.name,
-        heat.category,
-        heat.dance.name,
-        heat.entry.lead.back,
-        heat.entry.lead.name,
-        heat.entry.follow.name,
-        heat.entry.level.name,
-        heat.entry.subject_category,
-        heat.entry.subject.studio.name,
-        *scores_by_judge
-      ]).to_h
+      @heats.each do |heat|
+        scores = heat.scores
+        scores_by_judge = @judges.map {|judge| scores.find {|score| score.judge == judge}&.value}
+        sheet << headers.zip([
+          heat.number,
+          heat.entry.subject.name,
+          heat.category,
+          heat.dance.name,
+          heat.entry.lead.back,
+          heat.entry.lead.name,
+          heat.entry.follow.name,
+          heat.entry.level.name,
+          heat.entry.subject_category,
+          heat.entry.subject.studio.name,
+          *scores_by_judge
+        ]).to_h
+      end
+    else
+      headers = [
+        'Number',
+        'Student',
+        'Partner',
+        'Open or Closed',
+        'Dance',
+        'Back #',
+        'Level',
+        'Category',
+        'Studio',
+      ] + @judges.map(&:first_name)
+
+      @heats.each do |heat|
+        scores = heat.scores
+        scores_by_judge = @judges.map {|judge| scores.find {|score| score.judge == judge}&.value}
+        sheet << headers.zip([
+          heat.number,
+          heat.entry.subject.name,
+          heat.entry.partner(heat.entry.subject).name,
+          heat.category,
+          heat.dance.name,
+          heat.entry.lead.back,
+          heat.entry.level.name,
+          heat.entry.subject_category,
+          heat.entry.subject.studio.name,
+          *scores_by_judge
+        ]).to_h
+      end
     end
 
     @sheets['Heats'] = sheet
