@@ -1,0 +1,4 @@
+
+bin/bundle exec rake prerender > /rails/log/prerender.log
+
+sleep infinity

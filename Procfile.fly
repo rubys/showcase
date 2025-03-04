@@ -1,3 +1,4 @@
 web: nginx
 redis: redis-server /etc/redis/redis.conf
 heartbeat: bin/log-heartbeat.sh
+prerender: bin/prerender
