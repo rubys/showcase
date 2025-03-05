@@ -89,7 +89,7 @@ start times for each heat will show up on the heats page.
   <div class="my-5">
     <%= form.check_box :customize, class: 'entry-count h-10',
       data: {'category-override-target' => "toggle"},
-      checked: !!(category.ballrooms || category.max_heat_size || category.heats) %>
+      checked: !!(category.ballrooms || category.max_heat_size || category.split) %>
     <%= form.label :customize, 'Customize ballroom and heat size?' %>
   </div>
 
@@ -114,8 +114,8 @@ start times for each heat will show up on the heats page.
 
   <div class="my-5" data-category-override-target="form">
     <%= form.label :heats, 'Split Agenda after this many heats' %>
-    <%= form.number_field :heats,
-      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+    <%= form.text_field :split, pattern: "[0-9]+([, ] *[0-9]+)*",
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full invalid:border-red-600 invalid:border-4" %>
   </div>
   </div>
 

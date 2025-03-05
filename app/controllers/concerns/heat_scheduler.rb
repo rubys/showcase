@@ -298,10 +298,18 @@ module HeatScheduler
         multis[cat]
 
       if cat
-        if cat.heats.to_i > 0 and groups.length > cat.heats
-          extensions_needed = (groups.length.to_f / cat.heats).ceil - 1
-        else
-          extensions_needed = 0
+        extensions_needed = 0
+
+        if !cat.split.blank?
+          split = cat.split.split(/[, ]+/).map(&:to_i)
+          heat_count = groups.length
+          loop do
+            block = split.shift
+            break if block >= heat_count
+            extensions_needed += 1
+            heat_count -= block
+            split.push block if split.empty?
+          end
         end
 
         extensions_found = cat.extensions.order(:part).all.to_a
@@ -316,10 +324,16 @@ module HeatScheduler
         end
 
         if extensions_needed > 0
-          extensions_found.each_with_index do |extension, index|
-            agenda[extension] = groups[cat.heats*(index+1)...cat.heats*(index+2)]
+          split = cat.split.split(/[, ]+/).map(&:to_i)
+          block = split.shift
+          remainder = groups[block..]
+          groups = groups[0...block]
+          extensions_found.each do |extension|
+            split.push block if split.empty?
+            block = split.shift
+            agenda[extension] = remainder[0...block]
+            remainder = remainder[block..]
           end
-          groups = groups[..cat.heats-1]
         end
       end
 
