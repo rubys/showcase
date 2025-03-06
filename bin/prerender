@@ -1,4 +1,4 @@
-
+#!/bin/bash
 bin/bundle exec rake prerender > /rails/log/prerender.log
 
 input_file="tmp/tenant.list"
