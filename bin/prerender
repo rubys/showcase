@@ -4,7 +4,7 @@ bin/bundle exec rake prerender > /rails/log/prerender.log
 input_file="tmp/tenant.list"
 lines=()
 
-if [ -f "$input_file" ]; then
+if [ -f "$input_file" ] && [ -n "$FLY_REGION" ]; then
   while IFS= read -r line; do
     lines+=("$line")
   done < "$input_file"

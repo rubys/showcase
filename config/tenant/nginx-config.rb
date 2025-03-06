@@ -204,11 +204,15 @@ end
 
 migrations = Dir["#{@git_path}/db/migrate/2*"].map {|name| name[/\d+/]}
 
+tenant_lists = File.open('tmp/tenants.list', 'w')
+
 @tenants.each do |tenant|
   next if @region and tenant.region and @region != tenant.region
   ENV['RAILS_APP_DB'] = tenant.label
   database = "#{@dbpath}/#{tenant.label}.sqlite3"
   database = "/demo/db/#{tenant.label}.sqlite3" if tenant.owner == "Demo"
+
+  tenant_lists.puts database
 
   # rename the database if it is not a symlink and there is a base
   if tenant.base and not File.exist?(database)
@@ -224,32 +228,8 @@ migrations = Dir["#{@git_path}/db/migrate/2*"].map {|name| name[/\d+/]}
     end
   end
 
-  if @region
-    applied = []
-    if File.exist?(database) and File.size(database) > 0
-      begin
-        applied = JSON.parse(`sqlite3 #{database} "select version from schema_migrations" --json`).map(&:values).flatten
-      rescue
-      end
-    end
-
-    unless (migrations - applied).empty?
-      # only run migrations in one place - fly.io; rely on rsync to update others
-      ENV['DATABASE_URL'] = "sqlite3://#{database}"
-      system 'bin/rails db:prepare'
-
-      # not sure why this is needed...
-      count = `sqlite3 #{database} "select count(*) from events"`.to_i
-      system 'bin/rails db:seed' if count == 0
-
-      unless HOST == 'rubix.intertwingly.net'
-        FileUtils.chown_R 'rails', 'rails', database
-      end
-    end
-
-    if tenant.owner == "Demo"
-      FileUtils.cp database, "#{database}.seed", preserve: true
-    end
+  if @region && tenant.owner == "Demo"
+    FileUtils.cp database, "#{database}.seed", preserve: true
   end
 
   storage = File.join(@storage, tenant.label)
@@ -273,6 +253,8 @@ migrations = Dir["#{@git_path}/db/migrate/2*"].map {|name| name[/\d+/]}
     end
   end
 end
+
+tenant_lists.close
 
 __END__
 <% if @region -%>
