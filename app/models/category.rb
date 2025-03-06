@@ -52,4 +52,12 @@ class Category < ApplicationRecord
     pro_solo_dances.where(order: ...0).delete_all
     pro_multi_dances.where(order: ...0).delete_all
   end
+
+  def heats
+    if split.blank?
+      nil
+    else
+      split.split(/[, ]+/).first.to_i
+    end
+  end
 end
