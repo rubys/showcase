@@ -82,7 +82,7 @@ module Printable
           max = split.shift
 
           if max && @agenda[cat.name].length >= max
-            extensions[cat].each do |extension|
+            (extensions[cat] || []).each do |extension|
               split.push max if split.empty?
               max = split.shift
 
