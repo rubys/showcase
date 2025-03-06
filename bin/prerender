@@ -1,4 +1,17 @@
 
 bin/bundle exec rake prerender > /rails/log/prerender.log
 
+input_file="tmp/tenant.list"
+lines=()
+
+if [ -f "$input_file" ]; then
+  while IFS= read -r line; do
+    lines+=("$line")
+  done < "$input_file"
+
+  if [ ${#lines[@]} -gt 0 ]; then
+    ruby bin/prepare.rb "${lines[@]}"
+  fi
+fi
+
 sleep infinity
