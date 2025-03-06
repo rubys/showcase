@@ -32,7 +32,7 @@ class Heat < ApplicationRecord
     return unless cat
 
     extensions = cat.extensions.order(:start_heat)
-    if !cat or cat.split == nil or extensions.empty?
+    if !cat or cat.heats == nil or extensions.empty?
       cat
     elsif extensions.first.start_heat == nil or number == nil
       cat

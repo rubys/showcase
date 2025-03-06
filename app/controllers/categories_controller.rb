@@ -77,35 +77,24 @@ class CategoriesController < ApplicationController
     end
 
     needs_renumbering = false
-    redo_agenda = false
-
     if @category.instance_of?(Category) && (!params[:category][:heats].blank? || @category.extensions.any?)
       generate_agenda
       heats = @agenda[@category.name].length + @category.extensions.map {|ext| @agenda[ext.name].length}.sum
       extensions_found = @category.extensions.order(:part).all.to_a
-      extensions_needed = 0
-      if !params[:category][:split].blank?
-        split = params[:category][:split].split(/[, ]+/).map(&:to_i)
-        heat_count = heats
-         loop do
-           block = split.shift
-           break if block >= heat_count
-           extensions_needed += 1
-           heat_count -= block
-           split.push block if split.empty?
-         end
+      if params[:category][:heats].blank?
+        extensions_needed = 0
+      else
+        extensions_needed = (heats.to_f / params[:category][:heats].to_i).ceil - 1
       end
 
       while extensions_found.length > extensions_needed
         extensions_found.pop&.destroy!
-        redo_agenda = true
       end
 
       while extensions_needed > extensions_found.length
         order = [Category.maximum(:order), CatExtension.maximum(:order)].compact.max + 1
         extensions_found << CatExtension.create!(category: @category, order: order, part: extensions_found.length + 2)
         needs_renumbering = true
-        redo_agenda = true
       end
     end
 
@@ -114,11 +103,6 @@ class CategoriesController < ApplicationController
         update_dances(params[:category][:include], params[:category][:pro])
 
         renumber_extensions if needs_renumbering
-
-        if redo_agenda
-          ActiveRecord::Base.connection.query_cache.clear
-          generate_agenda
-        end
 
         format.html { redirect_to categories_url, notice: "#{@category.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @category }
@@ -219,7 +203,7 @@ class CategoriesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def category_params
-      params.require(:category).permit(:name, :order, :day, :time, :ballrooms, :max_heat_size, :split, :duration, :routines, :cost_override, :pro, :studio_cost_override)
+      params.require(:category).permit(:name, :order, :day, :time, :ballrooms, :max_heat_size, :heats, :duration, :routines, :cost_override, :pro, :studio_cost_override)
     end
 
     def form_init
