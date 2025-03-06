@@ -65,6 +65,8 @@ module Printable
 
     judge_ballrooms = Judge.where.not(ballroom: 'Both').exists?
 
+    extensions = CatExtension.order(:part).all.reload.group_by(&:category)
+
     @heats.each do |number, heats|
       if number == 0
         @agenda['Unscheduled'] << [number, {nil => heats}]
@@ -76,10 +78,14 @@ module Printable
         ballrooms = cat&.ballrooms || event.ballrooms || 1
 
         if cat && cat.instance_of?(Category)
-          max = cat.heats
+          split = cat.split.to_s.split(/[, ]+/).map(&:to_i)
+          max = split.shift
 
           if max && @agenda[cat.name].length >= max
-            cat.extensions.order(:part).each do |extension|
+            extensions[cat].each do |extension|
+              split.push max if split.empty?
+              max = split.shift
+
               if @agenda[extension.name].length < max
                 cat = extension
                 break
