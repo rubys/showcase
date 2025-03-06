@@ -45,7 +45,7 @@ class CategoriesController < ApplicationController
     if params[:category][:customize] != '1'
       params[:category][:ballrooms] = ''
       params[:category][:max_heat_size] = ''
-      params[:category][:heats] = ''
+      params[:category][:split] = ''
     end
 
     @category = Category.new(category_params)
@@ -73,13 +73,13 @@ class CategoriesController < ApplicationController
     if params[:category][:customize] != '1' and @category.instance_of? Category
       params[:category][:ballrooms] = ''
       params[:category][:max_heat_size] = ''
-      params[:category][:heats] = ''
+      params[:category][:split] = ''
     end
 
     needs_renumbering = false
     redo_agenda = false
 
-    if @category.instance_of?(Category) && (!params[:category][:heats].blank? || @category.extensions.any?)
+    if @category.instance_of?(Category) && (!params[:category][:split].blank? || @category.extensions.any?)
       generate_agenda
       heats = @agenda[@category.name].length + @category.extensions.map {|ext| @agenda[ext.name].length}.sum
       extensions_found = @category.extensions.order(:part).all.to_a
