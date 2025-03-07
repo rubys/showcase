@@ -5,6 +5,8 @@ class Person < ApplicationRecord
     name.strip.gsub(/\s+/, ' ').gsub(/\s*,\s*/, ', ')
   end
 
+  normalizes :available, with: -> { _1.presence }
+
   validates :name, presence: true, uniqueness: { scope: :type }
   validates :back, allow_nil: true, uniqueness: true
 
