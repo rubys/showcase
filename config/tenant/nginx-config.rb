@@ -212,7 +212,8 @@ tenant_lists = File.open('tmp/tenants.list', 'w')
   database = "#{@dbpath}/#{tenant.label}.sqlite3"
   database = "/demo/db/#{tenant.label}.sqlite3" if tenant.owner == "Demo"
 
-  tenant_lists.puts database
+  tenant_lists.puts database unless %w(index demo).include?(tenant.label)
+  tenant_lists.puts database if tenant.label == 'index' && @region == ENV['PRIMARY_REGION']
 
   # rename the database if it is not a symlink and there is a base
   if tenant.base and not File.exist?(database)
