@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_03_07_070516) do
+ActiveRecord::Schema[8.0].define(version: 2025_03_07_070551) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -293,6 +293,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_07_070516) do
     t.integer "package_id"
     t.boolean "independent", default: false
     t.integer "invoice_to_id"
+    t.string "available"
     t.index ["age_id"], name: "index_people_on_age_id"
     t.index ["exclude_id"], name: "index_people_on_exclude_id"
     t.index ["invoice_to_id"], name: "index_people_on_invoice_to_id"
