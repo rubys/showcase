@@ -196,6 +196,16 @@
         :name: Team Match
       shimmer-shine:
         :name: Shimmer & Shine
+  salem:
+    :name: Salem
+    :region: sea
+    :logo: arthur-murray-logo.gif
+    :locale: en-US
+    :events:
+      spring:
+        :name: Spring
+      fall:
+        :name: Fall
   sanjose:
     :name: San Jose
     :region: sjc
