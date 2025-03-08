@@ -64,3 +64,5 @@ public/regions/
 public/showcase.js
 public/site/
 public/studios/
+
+config/storage/production.yml
