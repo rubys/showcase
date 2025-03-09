@@ -14,13 +14,13 @@
   <div data-controller="info-box">
     <div class="info-button">&#x24D8;</div>
    
-    <ul class="info-box">
-    <li>Having Trouble?</li>
+    <ul class="info-box list-none">
+    <li class="text-xl mb-4">Having Trouble?</li>
     <ul class="list-disc list-inside">
     <li>Refresh the page, there may have been wifi issues</li>
     <li>Try a different browser.  Safari, Chrome, Firefox, and Edge all support different audio formats</li>
-    <li>Try a different site:
-    <ul class="list-disc list-inside ml-4">
+    <li class="">Try a different site:
+    <ul class="mt-4 list-disc list-inside ml-4">
     <% prefix = ENV['RAILS_APP_SCOPE'] ? "" : "/" + ENV['RAILS_APP_DB'].sub('-', '/') %>
     <% unless ENV['FLY_REGION'] %>
     <li><a class="underline" href="https://smooth.fly.dev/showcase<%= prefix + djlist_solos_path.sub('/showcase', '') %>">fly.io</a> - Primary cloud host
@@ -31,8 +31,8 @@
     <% unless ENV['RAILS_PROXY_HOST'].to_s.split('.').first == 'rubix' %>
     <li><a class="underline" href="https://rubix.intertwingly.net/showcase<%= prefix + djlist_solos_path.sub('/showcase', '') %>">rubix</a> - Sam's attic
     <% end %>
+    <p class="text-red-600 mt-4"><span class="font-bold">Important</span>: never <span class="underline font-bold">update</span> data on multiple hosts or you will lose data.</p>
     </ul>
-    <p class="text-red-600"><span class="font-bold">Important</span>: never <span class="font-bold">update</span> data on multiple hosts or you will lose data.</p>
     </ul>
     </ul>
   </div>
