@@ -59,3 +59,4 @@ public/site/
 public/studios/
 
 config/storage/production.yml
+flat-storage
