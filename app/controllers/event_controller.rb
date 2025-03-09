@@ -391,35 +391,66 @@ class EventController < ApplicationController
       sheet = []
       assignments = judge.scores.pluck(:heat_id, :value).to_h
 
-      headers = [
-        'Number',
-        'Student',
-        'Open or Closed',
-        'Dance',
-        'Back #',
-        'Lead',
-        'Follow',
-        'Level',
-        'Category',
-        'Studio',
-        'Score'
-      ]
+      if Event.first.column_order == 1
+        headers = [
+          'Heat',
+          'Back #',
+          'Student',
+          'Open or Closed',
+          'Dance',
+          'Lead',
+          'Follow',
+          'Category',
+          'Level',
+          'Studio',
+          'Score'
+        ]
 
-      @heats.each do |heat|
-        next unless assignments.include? heat.id
-        sheet << headers.zip([
-          heat.number,
-          heat.entry.subject.name,
-          heat.category,
-          heat.dance.name,
-          heat.entry.lead.back,
-          heat.entry.lead.name,
-          heat.entry.follow.name,
-          heat.entry.level.name,
-          heat.entry.subject_category,
-          heat.entry.subject.studio.name,
-          assignments[heat.id]
-        ]).to_h
+        @heats.each do |heat|
+          next unless assignments.include? heat.id
+          sheet << headers.zip([
+            heat.number,
+            heat.entry.lead.back,
+            heat.entry.subject.name,
+            heat.category,
+            heat.dance.name,
+            heat.entry.lead.name,
+            heat.entry.follow.name,
+            heat.entry.subject_category,
+            heat.entry.level.name,
+            heat.entry.subject.studio.name,
+            assignments[heat.id]
+          ]).to_h
+        end
+      else
+        headers = [
+          'Heat',
+          'Back #',
+          'Student',
+          'Partner',
+          'Open or Closed',
+          'Dance',
+          'Category',
+          'Level',
+          'Studio',
+          'Score'
+        ]
+
+        @heats.each do |heat|
+          next unless assignments.include? heat.id
+          sheet << headers.zip([
+            heat.number,
+            heat.entry.lead.back,
+            heat.entry.subject.name,
+            heat.entry.partner(heat.entry.subject).name,
+            heat.category,
+            heat.dance.name,
+            heat.entry.subject_category,
+            heat.entry.level.name,
+            heat.entry.subject.studio.name,
+            assignments[heat.id]
+          ]).to_h
+        end
       end
 
       @sheets[judge.display_name] = sheet
