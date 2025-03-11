@@ -236,6 +236,11 @@
     :region: dfw
     :logo: arthur-murray-logo.gif
     :locale: en-US
+  vabeach:
+    :name: Virginia Beach
+    :region: iad
+    :logo: ''
+    :locale: en-US
   vicenza:
     :name: Vicenza
     :region: ams
