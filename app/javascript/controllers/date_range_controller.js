@@ -21,7 +21,7 @@ export default class extends Controller {
       })
     }
 
-    const formatter = new Intl.DateTimeFormat(document.body.dataset.locale, {
+    let formatter = new Intl.DateTimeFormat(document.body.dataset.locale, {
       hour: 'numeric',
       minute: 'numeric'
     })
@@ -31,6 +31,20 @@ export default class extends Controller {
       const finish = new Date(Date.parse(cell.dataset.finish))
       cell.textContent = formatter.formatRange(start, finish).toLowerCase().replaceAll(/ /g, '\u00A0');
     })
+
+    const direction = this.element.querySelector('#avail_direction')
+    if (direction) {
+      direction.addEventListener('change', () => this.update_avail_direction())
+      this.update_avail_direction()
+    }
+
+    formatter = new Intl.DateTimeFormat(document.body.dataset.locale, {
+      weekday: 'long'
+    })
+
+    for (let option of this.element.querySelectorAll('#avail_date option' )) {
+      option.textContent = formatter.format(new Date(option.value))
+    }
   }
 
   formatDate(dateValues) {
@@ -57,6 +71,30 @@ export default class extends Controller {
     } catch (e) {
       // Fallback to original date string if there's any error
       return dateValues.join(' - ')
+    }
+  }
+
+  update_avail_direction() {
+    const direction = this.element.querySelector('#avail_direction')
+    if (!direction) return
+    const date = this.element.querySelector('#avail_date')
+    const time = this.element.querySelector('#avail_time')
+
+    if (direction.value === '*') {
+      direction.classList.add("col-span-3")
+      date.classList.add("hidden")
+      time.classList.add("hidden")
+    } else {
+      direction.classList.remove("col-span-3")
+      date.classList.remove("hidden")
+      time.classList.remove("hidden")
+
+      if (date.querySelectorAll("option").length === 1) {
+        date.classList.add("hidden")
+      } else {
+        date.classList.remove("hidden")
+        time.classList.remove("col-span-2")
+      }
     }
   }
 } 

@@ -603,6 +603,12 @@ class PeopleController < ApplicationController
       update = {exclude_id: update[:exclude_id]}
     end
 
+    if params[:avail_direction] && params[:avail_direction] != "*"
+      update[:available] = "#{params[:avail_direction]}#{params[:avail_date]}T#{params[:avail_time]}"
+    else
+      update[:available] = nil
+    end
+
     respond_to do |format|
       if @person.update(update)
         update_options
@@ -838,7 +844,7 @@ class PeopleController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def person_params
-      params.require(:person).permit(:name, :studio_id, :type, :back, :level_id, :age_id, :category, :role, :exclude_id, :package_id, :independent, :invoice_to_id, options: {})
+      params.require(:person).permit(:name, :studio_id, :type, :back, :level_id, :age_id, :category, :role, :exclude_id, :package_id, :independent, :invoice_to_id, :available, options: {})
     end
 
     def filtered_params(person)
@@ -921,6 +927,25 @@ class PeopleController < ApplicationController
 
       @track_ages = @event.track_ages
       @include_independent_instructors = @event.independent_instructors
+
+      if Event.first.date.blank?
+        @date_range = []
+      elsif Event.first.date =~ /(\d{4})-(\d{2})-(\d{2}) - (\d{4})-(\d{2})-(\d{2})/
+        start = Date.new($1.to_i, $2.to_i, $3.to_i)
+        finish = Date.new($4.to_i, $5.to_i, $6.to_i)
+        @date_range = (start..finish).map {|date| date.strftime('%Y-%m-%d')}
+      else
+        @date_range = [Event.parse_date(Event.first.date).strftime('%Y-%m-%d')]
+      end
+
+      if @person.available =~ /([<>])(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/
+        @avail_direction = $1
+        @avail_date = $2
+        @avail_time = $3
+      else
+        @avail_date = @date_range.first
+        @avail_time = "12:00"
+      end
     end
 
     def sort_order

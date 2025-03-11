@@ -105,6 +105,17 @@
   </div>
   <% end %>
 
+  <% if Rails.env.development? && @event.heat_order == "R" %>
+  <div class="my-5" data-person-target="availability" data-controller="date-range">
+    <%= form.label :availability %>
+    <div class="grid grid-cols-3 gap-4">
+      <%= select_tag "avail_direction", options_for_select({"entire event" => "*", "before" => "<", "after" => ">"}, @avail_direction), class: "col-span-3 min-w-36 block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+      <%= select_tag "avail_date", options_for_select(@date_range, @avail_date), class: "text-center min-w-36 block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+      <input type="time" id="avail_time" name="avail_time" value="<%= @avail_time %>" class="block col-span-2 text-center shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full">
+    </div>
+  </div>
+  <% end %>
+
   <%= render partial: 'package', locals: { person: person } %>
   <%= render partial: 'options', locals: { form: form } %>
 <% end %>
