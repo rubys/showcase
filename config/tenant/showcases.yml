@@ -241,6 +241,11 @@
     :region: iad
     :logo: ''
     :locale: en-US
+    :events:
+      medal-ball:
+        :name: Medal Ball
+      freestyles:
+        :name: Freestyles
   vicenza:
     :name: Vicenza
     :region: ams
