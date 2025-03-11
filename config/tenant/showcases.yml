@@ -142,6 +142,11 @@
         :name: The Music of Prince
       james-bond:
         :name: James Bond
+  marlton:
+    :name: Marlton
+    :region: ewr
+    :logo: ''
+    :locale: en-US
   mdballroom:
     :name: Memorial DanceSport Ballroom
     :region: dfw
