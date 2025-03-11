@@ -105,7 +105,7 @@
   </div>
   <% end %>
 
-  <% if Rails.env.development? && @event.heat_order == "R" %>
+  <% if @event.heat_order == "R" %>
   <div class="my-5" data-person-target="availability" data-controller="date-range">
     <%= form.label :availability %>
     <div class="grid grid-cols-3 gap-4">

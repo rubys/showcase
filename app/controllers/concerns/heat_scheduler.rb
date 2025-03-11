@@ -166,6 +166,16 @@ module HeatScheduler
       end
     end
 
+    limited_availability = Person.where.not(available: nil).all
+    if limited_availability.any? && Event.first.heat_order == "R"
+      exchange_heats(limited_availability)
+      @heats = Heat.eager_load(
+        :solo,
+        dance: [:open_category, :closed_category, :solo_category, :multi_category],
+        entry: [{lead: :studio}, {follow: :studio}]
+      )
+    end
+
     @stats = groups.each_with_index.
       map {|group, index| [group, index+1]}.
       group_by {|group, heat| group.size}.
@@ -564,6 +574,62 @@ module HeatScheduler
         )
 
         solo.destroy!
+      end
+    end
+  end
+
+  def exchange_heats(people)
+    pinned = Set.new
+    problems = []
+
+    generate_agenda
+
+    return unless @start
+
+    start_times = @heats.map {|heat| heat.first.to_f}.zip(@start.compact)
+
+    people.each do |person|
+      available = Time.parse(person.available[1..])
+
+      if person.available[0] == '<'
+        ok = Set.new(start_times.select {|number, time| time < available}.map(&:first))
+      else
+        ok = Set.new(start_times.select {|number, time| time > available}.map(&:first))
+      end
+
+      heats = Heat.joins(:entry).
+        includes(:dance, entry: [:lead, :follow]).
+        where(entry: {lead: person}).
+        or(Heat.where(entry: {follow: person})).
+        or(Heat.where(id: Formation.joins(:solo).where(person: person, on_floor: true).pluck(:heat_id)))
+
+      heats.each do |heat|
+        if ok.include? heat.number.to_f
+          pinned.add heat.number.to_f
+        else
+          problems << [heat, ok]
+        end
+      end
+    end
+
+    problems.shuffle!
+
+    problems.each do |heat, available|
+      numbers = available - pinned - [heat.number.to_f]
+      alternate = Heat.where(category: heat.category, dance_id: heat.dance_id, number: numbers).distinct.pluck(:number).sample
+      
+      if alternate
+        source = Heat.where(number: heat.number).all
+        destination = Heat.where(number: alternate).all
+
+        ActiveRecord::Base.transaction do
+          source.each {|heat| heat.update(number: alternate)}
+          destination.each {|heat| heat.update(number: heat.number)}
+        end
+
+        pinned.add alternate
+      else
+        heat.update(number: 0)
       end
     end
   end

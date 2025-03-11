@@ -933,6 +933,7 @@ class EventController < ApplicationController
             person.delete 'level_id' unless tables[:levels]
             person.delete 'studio_id' unless tables[:studios]
             person.delete 'package_id'
+            person.delete 'available'
             excludes[person['id']] = person.delete('exclude_id') if person['exclude_id']
 
             Person.create person
