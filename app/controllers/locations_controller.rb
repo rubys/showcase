@@ -94,7 +94,7 @@ class LocationsController < ApplicationController
 
     @checked = {}
     @auth = User.order(:userid).select do |user|
-      if user.sites.split(',').include? @location.name
+      if user.sites.to_s.split(',').include? @location.name
         @checked[user.id] = true
       elsif owners.include?(user.userid)
         true
