@@ -98,7 +98,7 @@ class LocationsController < ApplicationController
         @checked[user.id] = true
       elsif owners.include?(user.userid)
         true
-      elsif user.sites.split(',').include? @location.name
+      elsif user.sites.to_s.split(',').include? @location.name
         true
       else
         false
