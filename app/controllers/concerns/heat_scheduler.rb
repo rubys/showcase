@@ -173,7 +173,7 @@ module HeatScheduler
         :solo,
         dance: [:open_category, :closed_category, :solo_category, :multi_category],
         entry: [{lead: :studio}, {follow: :studio}]
-      )
+      ).all
     end
 
     @stats = groups.each_with_index.
@@ -589,13 +589,7 @@ module HeatScheduler
     start_times = @heats.map {|heat| heat.first.to_f}.zip(@start.compact)
 
     people.each do |person|
-      available = Time.parse(person.available[1..])
-
-      if person.available[0] == '<'
-        ok = Set.new(start_times.select {|number, time| time < available}.map(&:first))
-      else
-        ok = Set.new(start_times.select {|number, time| time > available}.map(&:first))
-      end
+      ok = person.eligible_heats(start_times)
 
       heats = Heat.joins(:entry).
         includes(:dance, entry: [:lead, :follow]).
@@ -619,12 +613,13 @@ module HeatScheduler
       alternate = Heat.where(category: heat.category, dance_id: heat.dance_id, number: numbers).distinct.pluck(:number).sample
       
       if alternate
-        source = Heat.where(number: heat.number).all
-        destination = Heat.where(number: alternate).all
+        original = heat.number
+        source = Heat.where(number: original).all.to_a
+        destination = Heat.where(number: alternate).all.to_a
 
         ActiveRecord::Base.transaction do
-          source.each {|heat| heat.update(number: alternate)}
-          destination.each {|heat| heat.update(number: heat.number)}
+          source.each {|heat| heat.update!(number: alternate)}
+          destination.each {|heat| heat.update!(number: original)}
         end
 
         pinned.add alternate
