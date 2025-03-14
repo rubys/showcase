@@ -58,15 +58,15 @@ class HeatsController < ApplicationController
 
       limited_availability.each do |person|
         ok = person.eligible_heats(start_times)
-  
+
         heats = Heat.joins(:entry).
           includes(:dance, entry: [:lead, :follow]).
           where(entry: {lead: person}).
           or(Heat.where(entry: {follow: person})).
           or(Heat.where(id: Formation.joins(:solo).where(person: person, on_floor: true).pluck(:heat_id)))
-  
+
         heats.each do |heat|
-          if !ok.include? heat.number.to_f
+          if !ok.include?(heat.number.to_f) && heat.number > 0
             @issues << [heat.number, [[person.id, 0]]]
           end
         end
@@ -522,7 +522,20 @@ class HeatsController < ApplicationController
   # attempt to schedule unscheduled heats when locked
   def schedule_unscheduled
     event = Event.first
-    unscheduled = Heat.joins(:entry).where(number: 0)
+    unscheduled = Heat.includes(:entry).where(number: 0)
+
+    # find people with time restrictions
+    people = unscheduled.map {|heat| [heat.entry.lead_id, heat.entry.follow_id]}.flatten.uniq
+    limited_availability = Person.where(id: people).where.not(available: nil)
+    time_restrictions = {}
+    if people.any?
+      generate_agenda
+      start_times = @heats.map {|heat| heat.first.to_f}.zip(@start.compact)
+
+      limited_availability.each do |person|
+        time_restrictions[person.id] = person.eligible_heats(start_times)
+      end
+    end
 
     scheduled = {true => 0, false => 0}
 
@@ -535,6 +548,9 @@ class HeatsController < ApplicationController
         sort_by {|number, level, count| (level - heat.entry.level_id).abs}
 
       avail.each do |number, level, count|
+        next if time_restrictions[heat.entry.lead_id] && !time_restrictions[heat.entry.lead_id].include?(number.to_f)
+        next if time_restrictions[heat.entry.follow_id] && !time_restrictions[heat.entry.follow_id].include?(number.to_f)
+
         on_floor = Entry.joins(:heats).where(heats: {number: [-number, number]}).pluck(:lead_id, :follow_id).flatten
         next if on_floor.include?(heat.entry.lead_id) || on_floor.include?(heat.entry.follow_id)
 
