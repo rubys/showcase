@@ -52,6 +52,27 @@ class HeatsController < ApplicationController
       ]
     }.select {|number, issues| !issues.empty?}
 
+    limited_availability = Person.where.not(available: nil).all
+    if @start && limited_availability.any?
+      start_times = @heats.map {|heat| heat.first.to_f}.zip(@start.compact)
+
+      limited_availability.each do |person|
+        ok = person.eligible_heats(start_times)
+  
+        heats = Heat.joins(:entry).
+          includes(:dance, entry: [:lead, :follow]).
+          where(entry: {lead: person}).
+          or(Heat.where(entry: {follow: person})).
+          or(Heat.where(id: Formation.joins(:solo).where(person: person, on_floor: true).pluck(:heat_id)))
+  
+        heats.each do |heat|
+          if !ok.include? heat.number.to_f
+            @issues << [heat.number, [[person.id, 0]]]
+          end
+        end
+      end
+    end
+
     @categories = (Category.all + CatExtension.all).map {|cat| [cat.name, cat]}.to_h
   end
 
