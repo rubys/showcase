@@ -9,7 +9,11 @@ Within a category heats are ordered by the order of dances on the dance page, wh
  * From the front page click on the agenda button, then on new category.
  * Optionally add a start date and time.  It is important that the first agenda item have a start date and time.  For agenda items that are expected to start immediately after the previous item, leave these fields blank.  To add either an intra-day break or a end of day break add a start time to the agenda item that will start after the break.
  * You can also specify a minimum duration, and add agenda items with no dances.  This can be useful for breaks, general dancing, awards, etc..
+ * Depending on your _Match entry forms to agenda?_ setting, you can either create a category for routines or as many categories as you like separate from the main agenda.
+   Either way, dances listed in these categories aren't exclusive to this category and can be repeated in categories which do not check this box.
  * Click customize ballroom and heat size if you want these values to be different than the overall event for this category.
+ * You can also specify that you want an agenda item to be split after a specified number of heats.  In this field you can even provide multiple numbers if you want a different number of heats in different splits.
+   If you have more heats than you provide numbers for, the last number is considered repeating.
  * Select dances by category to be included in this agenda item.
  * Click create category at the bottom of the page.
 
