@@ -136,7 +136,7 @@
            <% end %>
            <% end %>
            <% if @backnums %>
-           <td class="row"><% if heat.category != 'Solo' %><% if heat.back -%><%= heat.back %><% else %><%= link_to 'TBD', backs_people_path %><% end %><% end %>
+           <td class="row"><% if heat.category != 'Solo' %><% if heat.back -%><%= heat.back %><% else %><%= link_to 'TBD', backs_people_path, title: 'back number' %><% end %><% end %>
            <% end %>
            <%
             if @column_order == 1 or heat.lead.type == 'Student'
