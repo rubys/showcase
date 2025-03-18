@@ -236,6 +236,11 @@
     :region: dfw
     :logo: arthur-murray-logo.gif
     :locale: en-US
+  sydney:
+    :name: Sydney
+    :region: syd
+    :logo: ''
+    :locale: en-AU
   vabeach:
     :name: Virginia Beach
     :region: iad
