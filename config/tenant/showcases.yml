@@ -201,6 +201,18 @@
         :name: Team Match
       shimmer-shine:
         :name: Shimmer & Shine
+  richmond:
+    :name: Richmond
+    :region: atl
+    :logo: arthur-murray-logo.gif
+    :locale: en-US
+    :events:
+      medal-ball:
+        :name: Medal Ball
+      team-match:
+        :name: Team Match
+      nouveau-duo:
+        :name: Nouveau Duo
   salem:
     :name: Salem
     :region: sea
