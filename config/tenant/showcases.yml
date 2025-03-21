@@ -70,6 +70,8 @@
         :name: Ballroom Blitz
       showcase:
         :name: Showcase
+      showcase-2:
+        :name: Showcase 2
       spotlight-ball:
         :name: Spotlight Ball
       medal-ball:
