@@ -228,6 +228,11 @@
     :region: sjc
     :logo: arthur-murray-logo.gif
     :locale: en-US
+    :events:
+      march:
+        :name: March
+      september:
+        :name: September
   slc:
     :name: Salt Lake City
     :region: sjc
