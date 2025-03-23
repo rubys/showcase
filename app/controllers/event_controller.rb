@@ -458,6 +458,7 @@ class EventController < ApplicationController
   end
 
   def showcases
+    @inventory = JSON.parse(File.read('tmp/inventory.json')) rescue []
     @showcases = YAML.load_file('config/tenant/showcases.yml')
     logos = Set.new
 
@@ -511,22 +512,40 @@ class EventController < ApplicationController
         if info[:events]
           info[:events].each do |subtoken, subinfo|
             db = "#{year}-#{token}-#{subtoken}"
-            begin
-              subinfo.merge! dbquery(db, 'events', 'date').first
-            rescue
+            mtime = File.mtime(File.join('db', "#{db}.sqlite3")).to_i rescue nil
+            cache = @inventory.find {|e| e['db'] == db}
+            if cache and cache['mtime'] == mtime
+              subinfo['date'] = cache['date'] unless cache['date'] =~ /^\d{4}$/
+            else
+              begin
+                subinfo.merge! dbquery(db, 'events', 'date').first
+                @inventory.delete cache if cache
+                @inventory << {'db' => db, 'mtime' => mtime, 'date' => subinfo['date']}
+              rescue
+              end
             end
           end
         else
           db = "#{year}-#{token}"
-          begin
-            info.merge! dbquery(db, 'events', 'date').first
-          rescue
+          mtime = File.mtime(File.join('db', "#{db}.sqlite3")).to_i rescue nil
+          cache = @inventory.find {|e| e['db'] == db}
+          if cache and cache['mtime'] == mtime
+            info['date'] = cache['date'] unless cache['date'] =~ /^\d{4}$/
+          else
+            begin
+              info.merge! dbquery(db, 'events', 'date').first
+              @inventory.delete cache if cache
+              @inventory << {'db' => db, 'mtime' => mtime, 'date' => subinfo['date']}
+            rescue
+            end
           end
         end
       end
 
       set_scope
     end
+
+    File.write('tmp/inventory.json', JSON.pretty_generate(@inventory))
 
     if logos.size == 1
       EventController.logo = logos.first
@@ -582,6 +601,21 @@ class EventController < ApplicationController
     end
 
     @events.each do |event|
+       mtime = File.mtime(File.join('db', "#{event[:db]}.sqlite3")).to_i rescue nil
+
+       cache = @inventory.find {|e| e['db'] == event[:db]}
+       if cache and cache['mtime'] == mtime and !cache['heats'].blank?
+         event[:mtime] = cache['mtime']
+         event[:date] = cache['date']
+         event[:name] = cache['name']
+         event[:people] = cache['people']
+         event[:entries] = cache['entries']
+         event[:heats] = cache['heats']
+         next
+       end
+
+       event[:mtime] = mtime
+
       if event["date"].blank?
         event[:date] = event[:year].to_s
       else
@@ -595,6 +629,8 @@ class EventController < ApplicationController
       event[:entries] = dbquery(event[:db], 'heats', 'count(id)', 'number > 0').first&.values&.first || 0
       event[:heats] = dbquery(event[:db], 'heats', 'count(distinct number)', 'number > 0').first&.values&.first || 0
     end
+
+    File.write('tmp/inventory.json', JSON.pretty_generate(@events))
 
     @events.sort_by! {|event| event[:studio]}
     @events.reverse!
