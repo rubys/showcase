@@ -1,0 +1,158 @@
+#!/usr/bin/env ruby
+require 'csv'
+require 'sqlite3'
+require 'fuzzy_match'
+
+if ARGV.empty?
+  database = "db/2025-coquitlam-showcase-2.sqlite3"
+else
+  database = ARGV.first
+end
+
+if !defined? Rails
+  exec "bin/run", database, $0, *ARGV
+end
+
+page = CSV.parse(IO.read(File.join(Dir.home, "tmp/MASTER LIST-Table 1.csv")))
+
+dancers = Set.new
+
+heats = []
+
+page[12..].each do |row|
+  heat = {
+    category: row[1],
+    number: row[3].to_f,
+    ballroom: row[2],
+    back: row[6].to_i,
+    dance: row[9],
+  }
+
+  if row[7].include? '&'
+    people = row[7].split("&").map(&:strip)
+
+    if !people[0].include? ' '
+      people[0] += ' ' + people[1].split(' ')[1..].join(' ')
+    end
+  else
+    people = [ row[7].strip ]
+  end
+
+  heat[:students] = people.dup
+
+  if row[8].include? '&'
+    staff = row[8].split("&").map(&:strip)
+  else
+    staff = [ row[8].strip ]
+  end
+
+  heat[:staff] = staff
+  people += staff
+
+  people.each do |person|
+    dancers.add(person.strip)
+  end
+
+  heats << heat
+end
+
+people = Person.all.to_a.map do |person|
+  [person.display_name, person]
+end.to_h
+
+matcher = FuzzyMatch.new(people.values.map(&:display_name))
+dancers.to_a.sort.each do |name|
+  next if people[name]
+  match = matcher.find(name)
+  people[name] = people[match] if match
+end
+
+dances = Dance.all.to_a.map do |dance|
+  [dance.name, dance]
+end.to_h
+
+matcher = FuzzyMatch.new(dances.keys)
+heats.map {|heat| heat[:dance]}.uniq.each do |name|
+  next if dances[name]
+  match = matcher.find(name)
+  dances[name] = dances[match] if match
+end
+
+categories = {
+  "DANCE-O-RAMA" => "Open",
+  "MEDALIST" => "Closed",
+  "SOLO" => "Solo",
+  "SPOTLIGHT" => "Solo",
+}
+
+Formation.delete_all
+Solo.delete_all
+Heat.delete_all
+Entry.delete_all
+
+default_age = Age.first
+
+heats.each do |heat|
+  p heat
+
+  students = heat[:students].map {|name| people[name] }
+  staff = heat[:staff].map {|name| people[name] }
+
+  if students.length == 2
+    if students.first.role == "Leader"
+      leader = students.first
+      follower = students.last
+    else
+      leader = students.last
+      follower = students.first
+    end
+
+    entry = Entry.find_or_create_by!(
+      lead: leader,
+      follow: follower,
+      instructor: staff.first,
+      age: leader.age || default_age,
+      level: leader.level,
+    )
+  elsif students.first.role == "Leader"
+    entry = Entry.find_or_create_by!(
+      lead: students.first,
+      follow: staff.first,
+      age: students.first.age || default_age,
+      level: students.first.level,
+    )
+  else
+    entry = Entry.find_or_create_by!(
+      follow: students.first,
+      lead: staff.first,
+      age: students.first.age || default_age,
+      level: students.first.level,
+    )
+  end
+
+  if entry.lead.back.nil?
+    entry.lead.update(back: heat[:back]) # ignore error
+  end
+
+  heat = Heat.create!(
+    category: categories[heat[:category]] || "Open",
+    entry: entry,
+    number: heat[:number],
+    ballroom: heat[:ballroom].blank? ? nil : heat[:ballroom],
+    dance: dances[heat[:dance]],
+  )
+
+  if heat.category = "Solo"
+    solo = Solo.create!(
+      heat: heat,
+      order: (Solo.maximum(:order) || 0) + 1,
+    )
+
+    if staff.length == 2
+      Formation.create(
+        solo: solo,
+        person: staff.last,
+      )
+    end
+  end
+end

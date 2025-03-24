@@ -68,6 +68,8 @@ group :development do
 
   # Hot reloading for Hotwire
   gem "hotwire-spark"
+
+  gem "fuzzy_match"
 end
 
 group :test do

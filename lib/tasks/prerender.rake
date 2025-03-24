@@ -58,7 +58,10 @@ task :prerender => "prerender:env" do
       dir = File.join(public, File.dirname(path))
       dir = File.join(public, path.chomp('/')) if path.end_with?('/')
       mkdir_p dir if not Dir.exist?(dir)
-      File.write File.join(public, html), response.body.force_encoding('utf-8')
+      dest = File.join(public, html)
+      if !File.exist?(dest) || IO.read(dest) != response.body.force_encoding('utf-8')
+        File.write File.join(public, html), response.body.force_encoding('utf-8')
+      end
     else
       puts code
       puts path
@@ -141,5 +144,8 @@ task :prerender => "prerender:env" do
     };
   JS
 
-  IO.write(File.join(public, 'showcase.js'), script)
+  dest = File.join(public, 'showcase.js')
+  if !File.exist?(dest) || IO.read(dest) != script
+    IO.write(dest, script)
+  end
 end

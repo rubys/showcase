@@ -11,6 +11,7 @@ require 'open3'
 require 'sentry-ruby'
 
 MARKTIME = "/data/db/.time"
+PREPRENDER = "/data/db/.prerender"
 DEMO = '/demo/db/demo.sqlite3'
 
 if Process.uid == 0
@@ -24,6 +25,9 @@ if ENV["SENTRY_DSN"]
     config.dsn = ENV["SENTRY_DSN"]
   end
 end
+
+prerender = File.exist?(PREPRENDER) ? File.mtime(PREPRENDER) : Time.at(0)
+lastupdated = Time.at(0)
 
 begin
 
@@ -46,13 +50,15 @@ begin
 
     # Don't rsync if no local sqlite3 files changed
     updated = false
-    marktime = File.exist?(MARKTIME) ? File.mtime(MARKTIME) : 0
+    marktime = File.exist?(MARKTIME) ? File.mtime(MARKTIME) : Time.at(0)
+
     conf = IO.read("/etc/nginx/sites-enabled/showcase.conf")
     Dir["/data/db/2*.sqlite3"].each do |name|
-      next unless conf.include? name
-      next if File.mtime(name) < marktime
-      updated = true
+      mtime = File.mtime(name)
+      lastupdated = mtime if mtime > lastupdated
+      updated = true if conf.include?(name) && mtime > martktime
     end
+
     exit 0 unless updated
     FileUtils.touch MARKTIME
 
@@ -165,4 +171,10 @@ begin
 
 rescue => exception
   Sentry.capture_exception(exception)
+
+ensure
+  if prerender < lastupdated
+    system 'bin/rails prerender'
+    FileUtils.touch PREPRENDER
+  end
 end
