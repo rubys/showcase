@@ -13,7 +13,11 @@
 </thead>
 <tbody>
 <% @events.each do |event| %>
+<% if event[:entries].to_i == 0 && !event[:date].start_with?(Date.today.year.to_s) %>
+<tr class="bg-gray-200">
+<% else %>
 <tr>
+<% end %>
   <% year, city, token = event[:db].split('-', 3) %>
   <td><%= link_to event[:studio], studio_events_path(city) %>
   <td><%= link_to event[:name], "#{@scope}/#{year}/#{city}/#{token}/".squeeze('/') %>
