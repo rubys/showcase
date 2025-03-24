@@ -56,7 +56,7 @@ begin
     Dir["/data/db/2*.sqlite3"].each do |name|
       mtime = File.mtime(name)
       lastupdated = mtime if mtime > lastupdated
-      updated = true if conf.include?(name) && mtime > martktime
+      updated = true if conf.include?(name) && mtime > marktime
     end
 
     exit 0 unless updated
