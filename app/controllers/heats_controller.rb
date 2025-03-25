@@ -415,6 +415,15 @@ class HeatsController < ApplicationController
         @instructors[partner.display_name] = @partner
       end
     end
+
+    if Event.first.assign_judges?
+      scores = @heat.scores.where(value: nil, good: nil, bad: nil)
+
+      if scores.length == 1
+        @judge_id = scores.first.judge.id
+        @judges = Judge.includes(:person).where(present: true).order(:name).all.to_a.map {|judge| [judge.person.display_name, judge.person.id]}
+      end
+    end
   end
 
   # POST /heats or /heats.json
@@ -481,6 +490,14 @@ class HeatsController < ApplicationController
 
     respond_to do |format|
       if not @heat.errors.any? and @heat.update(heat_params)
+
+        if params[:judge_id]
+          scores = @heat.scores.where(value: nil, good: nil, bad: nil)
+          if scores.length == 1
+            scores.first.update!(judge_id: params[:judge_id])
+          end
+        end
+
         format.html { redirect_to params['return-to'] || person_path(@person),
           notice: "Heat was successfully updated." }
         format.json { render :show, status: :ok, location: @heat }
