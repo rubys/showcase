@@ -157,9 +157,13 @@ heats.each do |heat|
   end
 end
 
-category_count = Category.all.map {|category| [category, []]}.to_h
+Category.update_all(split: nil, order: nil)
+CatExtension.delete_all
+category_count = Category.order(:order).all.map {|category| [category, []]}.to_h
 current_category = nil
 current_heat = nil
+order = []
+max_order = Category.maximum(:order) || 0
 
 Heat.order(:number).each do |heat|
   if heat.number != current_heat
@@ -167,18 +171,35 @@ Heat.order(:number).each do |heat|
       current_category = heat.dance_category
       current_category = current_category.category if current_category.is_a? CatExtension
       category_count[current_category] << 1 if category_count[current_category]
+
+      if category_count[current_category].length > 1
+         order << CatExtension.create!(
+          category: current_category,
+          order: max_order,
+          part: category_count[current_category].length,
+         )
+
+         max_order += 1
+      else
+        order << current_category
+      end
     else
       category_count[current_category][-1] += 1 if category_count[current_category]
     end
 
     current_heat = heat.number
   end
-end 
+end
 
-category_count.each do |category, counts|
-  if counts.length > 1
-    category.update!(split: counts.join(' '))
-  else
-    category.update!(count: nil)
+order += (category_count.keys - order)
+
+order.each_with_index do |category, index|
+  category.order = index + 1
+
+  counts = category_count[category]
+  if counts && counts.length > 1
+    category.split = counts.join(' ')
   end
+
+  category.save(validate: false)
 end
