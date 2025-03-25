@@ -142,7 +142,7 @@ heats.each do |heat|
     dance: dances[heat[:dance]],
   )
 
-  if heat.category = "Solo"
+  if heat.category == "Solo"
     solo = Solo.create!(
       heat: heat,
       order: (Solo.maximum(:order) || 0) + 1,
@@ -154,5 +154,31 @@ heats.each do |heat|
         person: staff.last,
       )
     end
+  end
+end
+
+category_count = Category.all.map {|category| [category, []]}.to_h
+current_category = nil
+current_heat = nil
+
+Heat.order(:number).each do |heat|
+  if heat.number != current_heat
+    if current_category != heat.dance_category
+      current_category = heat.dance_category
+      current_category = current_category.category if current_category.is_a? CatExtension
+      category_count[current_category] << 1 if category_count[current_category]
+    else
+      category_count[current_category][-1] += 1 if category_count[current_category]
+    end
+
+    current_heat = heat.number
+  end
+end 
+
+category_count.each do |category, counts|
+  if counts.length > 1
+    category.update!(split: counts.join(' '))
+  else
+    category.update!(count: nil)
   end
 end
