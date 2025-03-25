@@ -343,18 +343,18 @@ when most dances for an individual are with one instructor but one or two are ch
     <% assign_judges = @event.assign_judges > 0 && Person.where(type: 'Judge').count > 1 %>
     <% if assign_judges %>
     <div class="mt-4" data-controller="assign-judges" data-present-url=<%= toggle_present_person_path %>>
-      <span class="mx-4">On floor?</span>
-      <input type='checkbox' name="active" <% if @person.present? %>checked <% end %>class="w-6 h-6 mr-3">
+      <span class="mx-4">On floor?</span><%= @disable_judge_assignments.inspect %>
+      <input type='checkbox' name="active" <% if @person.present? %>checked <% end %>class="w-6 h-6 mr-3<% if @disable_judge_assignments %> diabled opacity-50 cursor-not-allowed<% end %>">
 
       <% if @event.ballrooms > 1 || Category.maximum(:ballrooms).to_i > 1 %>
       Ballroom: <%= select_tag "ballroom", options_for_select(%w[Both A B], @person.judge&.ballroom || 'Both'),
         data: {ballroom_url: ballroom_person_path},
-        class: "text-center pr-10 shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 ml-2 w-22" %>
+        class: "text-center pr-10 shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 ml-2 w-22#{@disable_judge_assignments ? ' diabled opacity-50 cursor-not-allowed' : ''}" %>
       <% end %>
 
       Solos: <%= select_tag "review_solos", options_for_select(%w[All Even Odd None], @person.judge&.review_solos || 'Both'),
         data: {review_solos_url: review_solos_person_path},
-        class: "text-center pr-10 shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 ml-2 w-22" %>
+        class: "text-center pr-10 shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 ml-2 w-22#{@disable_judge_assignments ? ' diabled opacity-50 cursor-not-allowed' : ''}" %>
     <% if @dancing_judge %>
     <div class="mt-4 mx-4">
       <label for="dancing_judge">Dancing judge</label>
@@ -375,8 +375,8 @@ when most dances for an individual are with one instructor but one or two are ch
     </div>
     <% if assign_judges %>
     <div class="mt-4 flex">
-    <%= button_to 'Assign judges', assign_judges_person_path(@person), class: "btn-blue" %>
-    <%= button_to 'Reset assignments', reset_assignments_person_path(@person), class: "btn-pale-blue" %>
+    <%= button_to 'Assign judges', assign_judges_person_path(@person), class: "btn-blue#{@disable_judge_assignments ? ' diabled opacity-50 cursor-not-allowed' : ''}" %>
+    <%= button_to 'Reset assignments', reset_assignments_person_path(@person), class: "btn-pale-blue#{@disable_judge_assignments ? ' diabled opacity-50 cursor-not-allowed' : ''}" %>
     <%= link_to 'Heat Book', book_heats_path(type: 'judge', format: :pdf, judge: @person.id), class: "btn-pale-orange" %>
     </div>
     <% end %>
