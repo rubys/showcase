@@ -70,4 +70,9 @@ class Heat < ApplicationRecord
   def back
     entry.lead.back
   end
+
+  def self.rank_callbacks(number)
+    scores = Score.joins(heat: :entry).where(heats: {number: number.to_f}, value: 1..).group(:entry_id).count.
+      sort_by { |entry_id, count| count }.reverse.map { |entry_id, count| [Entry.find(entry_id), count] }.to_h
+  end
 end
