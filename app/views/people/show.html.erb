@@ -343,7 +343,7 @@ when most dances for an individual are with one instructor but one or two are ch
     <% assign_judges = @event.assign_judges > 0 && Person.where(type: 'Judge').count > 1 %>
     <% if assign_judges %>
     <div class="mt-4" data-controller="assign-judges" data-present-url=<%= toggle_present_person_path %>>
-      <span class="mx-4">On floor?</span><%= @disable_judge_assignments.inspect %>
+      <span class="mx-4">On floor?</span>
       <input type='checkbox' name="active" <% if @disable_judge_assignments %> disabled<% end %><% if @person.present? %>checked <% end %>class="w-6 h-6 mr-3<% if @disable_judge_assignments %> disabled opacity-50 cursor-not-allowed<% end %>">
 
       <% if @event.ballrooms > 1 || Category.maximum(:ballrooms).to_i > 1 %>

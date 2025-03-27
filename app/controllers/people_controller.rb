@@ -404,7 +404,7 @@ class PeopleController < ApplicationController
       @score_range = ScoresController::SCORES['Closed']
     end
 
-    @disable_judge_assignments = true if ENV['RAILS_APP_DB'] = '2025-coquitlam-showcase'
+    @disable_judge_assignments = true if ENV['RAILS_APP_DB'] == '2025-coquitlam-showcase'
   end
 
   # GET /people/new
