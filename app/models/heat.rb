@@ -83,12 +83,18 @@ class Heat < ApplicationRecord
       group_by { |score| score.heat.entry_id }.map { |entry_id, scores| [entry_id, scores.map {|score| score.value.to_i}] }.to_h
     entries = Entry.includes(:lead, :follow).where(id: scores.keys).index_by(&:id)
     rankings = {}
-    scores.values.flatten.uniq.sort.each do |rank|
-      places = scores.map { |entry_id, scores| [entry_id, scores.count {|score| score <= rank}] }.to_h
-      top = places.sort_by { |entry_id, count| count }.last.first
-      rankings[entries[top]] = rank
-      scores.delete top
+    rank = 1
+    
+    while !scores.empty?
+      places = scores.map { |entry_id, scores| [entry_id, scores.count {|score| score <= rank}] }.
+        select { |entry_id, count| count >= majority }
+      places.sort_by { |entry_id, count| count }.reverse.each do |entry_id, count|
+        rankings[entries[entry_id]] = rank
+        scores.delete entry_id
+        rank += 1
+      end
     end
+
     rankings
   end
 end

@@ -71,6 +71,26 @@ class HeatTest < ActiveSupport::TestCase
           55 => 5,
           56 => 6,
        }
+    },
+
+    6 => {
+      places: {
+        a: {61 => 1, 62 => 6, 63 => 2, 64 => 3, 65 => 4, 66 => 5},
+        b: {61 => 1, 62 => 2, 63 => 4, 64 => 3, 65 => 5, 66 => 6},
+        c: {61 => 2, 62 => 1, 63 => 3, 64 => 5, 65 => 6, 66 => 4},
+        d: {61 => 1, 62 => 5, 63 => 3, 64 => 2, 65 => 4, 66 => 6},
+        e: {61 => 4, 62 => 2, 63 => 6, 64 => 1, 65 => 3, 66 => 5},
+        f: {61 => 2, 62 => 1, 63 => 3, 64 => 5, 65 => 6, 66 => 4},
+        g: {61 => 1, 62 => 2, 63 => 3, 64 => 4, 65 => 5, 66 => 6},
+       },
+       results: {
+          61 => 1,
+          62 => 2,
+          63 => 3,
+          64 => 4,
+          65 => 5,
+          66 => 6,
+       }
     }
   }
 
@@ -114,7 +134,7 @@ class HeatTest < ActiveSupport::TestCase
 
       assert_equal(
         test_data[:results],
-        Heat.rank_placement(heat_number, 3).map {|entry, count| [entry.lead.back, count]}.to_h
+        Heat.rank_placement(heat_number, places.keys.length/2+1).map {|entry, count| [entry.lead.back, count]}.to_h
       )
     end
   end
