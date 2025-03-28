@@ -71,8 +71,24 @@ class Heat < ApplicationRecord
     entry.lead.back
   end
 
+  # scrutineering
+
   def self.rank_callbacks(number)
     scores = Score.joins(heat: :entry).where(heats: {number: number.to_f}, value: 1..).group(:entry_id).count.
       sort_by { |entry_id, count| count }.reverse.map { |entry_id, count| [Entry.find(entry_id), count] }.to_h
+  end
+
+  def self.rank_placement(number, majority)
+    scores = Score.joins(heat: :entry).where(heats: {number: number.to_f}, value: 1..).
+      group_by { |score| score.heat.entry_id }.map { |entry_id, scores| [entry_id, scores.map {|score| score.value.to_i}] }.to_h
+    entries = Entry.includes(:lead, :follow).where(id: scores.keys).index_by(&:id)
+    rankings = {}
+    scores.values.flatten.uniq.sort.each do |rank|
+      places = scores.map { |entry_id, scores| [entry_id, scores.count {|score| score <= rank}] }.to_h
+      top = places.sort_by { |entry_id, count| count }.last.first
+      rankings[entries[top]] = rank
+      scores.delete top
+    end
+    rankings
   end
 end

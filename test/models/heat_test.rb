@@ -53,4 +53,70 @@ class HeatTest < ActiveSupport::TestCase
 
     assert_equal [7, 6, 6, 6, 4, 4, 4, 3, 2], Heat.rank_callbacks(heat_number).values
   end
+
+  rule_examples = {
+    5 => {
+      places: {
+        a: {51 => 1, 52 => 4, 53 => 3, 54 => 2, 55 => 5, 56 => 6},
+        b: {51 => 1, 52 => 2, 53 => 3, 54 => 4, 55 => 6, 56 => 5},
+        c: {51 => 1, 52 => 2, 53 => 3, 54 => 5, 55 => 4, 56 => 6},
+        d: {51 => 2, 52 => 1, 53 => 5, 54 => 4, 55 => 3, 56 => 6},
+        e: {51 => 1, 52 => 2, 53 => 4, 54 => 3, 55 => 5, 56 => 6},
+       },
+       results: {
+          51 => 1,
+          52 => 2,
+          53 => 3,
+          54 => 4,
+          55 => 5,
+          56 => 6,
+       }
+    }
+  }
+
+  rule_examples.each do |rule, test_data|
+    test "rule #{rule}" do
+      places = test_data[:places]
+
+      # create judges
+      staff = Studio.find(0)
+      judges = {}
+      places.keys.each do |name|
+        judges[name] = Person.create!(name: name, type: "Judge", studio: staff)
+      end
+
+      # create entries, heats, and scores
+      studio = studios(:one)
+      leaders = []
+      heat_number = 200
+      places.values.map(&:keys).flatten.uniq.sort.each do |back_number|
+        leaders[back_number] = Person.create(name: back_number, type: "Leader", studio: studio, back: back_number)
+
+        entry = Entry.create!(
+          lead: leaders[back_number],
+          follow: people(:Kathryn),
+          instructor: people(:Arthur),
+          age: ages(:A),
+          level: levels(:FB)
+        )
+
+        heat = Heat.create!(
+          number: heat_number,
+          entry: entry,
+          dance: dances(:waltz),
+        )
+
+        places.each do |judge_name, scores|
+          judge = judges[judge_name]
+          Score.create!(heat_id: heat.id, judge_id: judge.id, value: scores[back_number])
+        end
+      end
+
+      assert_equal(
+        test_data[:results],
+        Heat.rank_placement(heat_number, 3).map {|entry, count| [entry.lead.back, count]}.to_h
+      )
+    end
+  end
+
 end
