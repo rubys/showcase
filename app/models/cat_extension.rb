@@ -28,4 +28,8 @@ class CatExtension < ApplicationRecord
   def base_category
     category
   end
+
+  def routines?
+    category.routines?
+  end
 end
