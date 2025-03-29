@@ -172,6 +172,11 @@
         :name: Harvest Moon
       winter-wonderland:
         :name: Winter Wonderland
+  millbrae:
+    :name: Millbrae
+    :region: sjc
+    :logo: ''
+    :locale: en-US
   montgomery:
     :name: Montgomery
     :region: ord
