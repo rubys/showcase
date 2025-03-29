@@ -153,7 +153,7 @@ begin
         Sentry.capture_message("rsync failure:\n\n#{hostenv}\n" +
           "cmd: #{cmd.join(' ')}\n\n" +
           "addrs: #{addrs.join(' ')}\n\n" +
-          "rsync to: #{addr}\n\n#{output}")
+          "rsync to: #{ENV['PRIMARY_REGION']}.#{ENV['FLY_APP_NAME']}.internal\n\n#{output}")
       end
     end
 
