@@ -1,25 +1,41 @@
-<% content_for :title, "Feedbacks" %>
 
 <div class="w-full">
   <% if notice.present? %>
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-md inline-block" id="notice"><%= notice %></p>
   <% end %>
 
-  <div class="flex justify-between items-center">
-    <h1 class="font-bold text-4xl">Feedbacks</h1>
-    <%= link_to "New feedback", new_feedback_path, class: "rounded-md px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white block font-medium" %>
+  <div data-controller="info-box">
+    <div class="info-button">ⓘ</div>
+    <ul class="info-box" style="display: block;">
+    <li>Click on a button to edit its name.</li>
+    <li>Change its name to blank to delete it.</li>
+    <li>Drag and drop to reorder.</li>
+    </ul>
   </div>
 
-  <div id="feedbacks" class="min-w-full">
-    <% if @feedbacks.any? %>
-      <% @feedbacks.each do |feedback| %>
-        <%= render feedback %>
-        <p>
-          <%= link_to "Show this feedback", feedback, class: "ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
-        </p>
-      <% end %>
-    <% else %>
-      <p class="text-center my-10">No feedbacks found.</p>
+  <h1 class="font-bold text-4xl pb-5 text-center">Feedback Buttons</h1>
+
+  <%= render partial: 'buttons' %>
+
+  <h2 class="font-bold text-2xl mt-5 mb-3">Legend</h2>
+
+  <div class="ml-4">
+  <div class="grid grid-cols-2 gap-x-4" style="grid-template-columns: auto 1fr">
+    <% @feedbacks.sort_by {|feedback| feedback.abbr }.each do |feedback| %>
+      <span><%= feedback.abbr %></span>
+      <span><%= feedback.value %></span>
     <% end %>
   </div>
+  </div>
+
+  <div class="mx-auto w-full mt-4 text-center">
+    <%= button_to 'Reset', reset_feedbacks_path,
+      form_class: "inline-block",
+      class: "btn-orange", method: :post,
+      data: {turbo_confirm: 'Are you sure?'} %>
+
+    <%= link_to 'Back to settings',
+      settings_event_index_path(tab: 'Advanced'),
+      class: "btn-grey" %>
+    </div>
 </div>

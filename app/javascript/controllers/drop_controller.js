@@ -7,7 +7,9 @@ export default class extends Controller {
     let targets = dragable.map (node => node.dataset.dragId);
 
     for (let child of dragable) {
-      child.style.cursor = "grab";
+      if (![...child.classList].some(name => name.startsWith("cursor"))) {
+        child.style.cursor = "grab";
+      }
 
       if (child.draggable) {
         child.addEventListener("dragstart", event => {

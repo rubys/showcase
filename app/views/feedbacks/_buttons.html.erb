@@ -1,0 +1,14 @@
+  <form data-controller="drop auto-submit" method="post" id="buttons"
+    action="<%= update_all_feedbacks_path %>"
+    class="grid gap-x-2" style="grid-template-columns: repeat(5, 1fr)"
+    data-drop-action="<%= drop_feedbacks_path %>">
+
+    <% @feedbacks.each do |feedback| %>
+    <input
+      id="<%= feedback.order %>" name="<%= feedback.order %>"
+      draggable="true" data-drag-id="<%= feedback.order %>"
+      class="cursor-text w-full m-2 rounded-lg my-2 py-1 bg-gray-100 inline-block font-medium text-center"
+      value="<%= feedback.value %>"
+    />
+    <% end %>
+  </form>

@@ -37,6 +37,10 @@ and heats that you have entered so far.</span>
 <%= link_to 'Levels', levels_event_index_path, class: 'btn-grey' %>
 <%= link_to 'Dances', dances_event_index_path, class: 'btn-grey' %>
 
+<% if %w(+).include? @event.open_scoring %>
+  <%= link_to 'Feedback', feedbacks_path, class: 'btn-grey' %>
+<% end %>
+
 <%= form_with model: @event, id: 'advanced-form' do |form| %>
   <div class="my-5">
     <%= form.label :solo_level_id, "Solo levels start with:" %>

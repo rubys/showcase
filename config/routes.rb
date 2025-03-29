@@ -230,7 +230,11 @@ Rails.application.routes.draw do
       get 'locale', on: :collection
     end
 
-    resources :feedbacks
+    resources :feedbacks do
+      post 'update_all', on: :collection
+      post 'drop', on: :collection
+      post 'reset', on: :collection
+    end
   end
 
   post '/showcase/events/console', to: 'event#console'
