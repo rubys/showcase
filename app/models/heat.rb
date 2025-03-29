@@ -30,9 +30,10 @@ class Heat < ApplicationRecord
     end
 
     return unless cat
+    return cat if cat.split.blank?
 
     extensions = cat.extensions.order(:start_heat)
-    if !cat or cat.split == nil or extensions.empty?
+    if extensions.empty?
       cat
     elsif extensions.first.start_heat == nil or number == nil
       cat
@@ -84,7 +85,7 @@ class Heat < ApplicationRecord
     entries = Entry.includes(:lead, :follow).where(id: scores.keys).index_by(&:id)
     rankings = {}
     rank = 1
-    
+
     while !scores.empty?
       places = scores.map { |entry_id, scores| [entry_id, scores.count {|score| score <= rank}] }.
         select { |entry_id, count| count >= majority }

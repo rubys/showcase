@@ -148,7 +148,15 @@
   <td colspan="<%= 3 + @judges.length*2 %>">
   <h2 class="mt-4 ml-4 font-bold">Legend:</h2>
   <table class="ml-8 w-full">
-  <% if @event.open_scoring == '+' %>
+  <% if Feedback.any? %>
+    <% Feedback.order(:order).each_slice(5) do |feedbacks| %>
+    <tr>
+      <% feedbacks.each do |feedback| %>
+        <td><abbr><%= feedback.abbr %></abbr>: <span><%= feedback.value %></span></td>
+      <% end %>
+    </tr>
+    <% end %>
+  <% elsif @event.open_scoring == '+' %>
     <tr>
       <td><abbr>DF</abbr>: <span>Dance Frame</span></td>
       <td><abbr>T</abbr>: <span>Timing</span></td>

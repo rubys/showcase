@@ -241,7 +241,6 @@ Swiping left and right on mobile devices and tablets also work.
       <% if @style != 'emcee' and !%w(1 G #).include?(@scoring) # and @scores.empty? %>
       <tr data-controller="open-feedback" class="open-fb-row" data-heat="<%= subject.id %>" data-feedback-action="<%= post_feedback_path(judge: @judge) %>">
       <td colspan="5">
-      <% if @scoring == '&' || @scoring == '@' %>
       <% if @scoring == '&' %>
       <div class="grid value w-full" data-value="<%= @value[subject.id] %>" style="grid-template-columns: 100px repeat(5, 1fr)">
         <div class="bg-gray-200 inline-flex justify-center items-center">Overall</div>
@@ -251,7 +250,7 @@ Swiping left and right on mobile devices and tablets also work.
         <button class="open-fb"><abbr>4</abbr><span>4</span></button>
         <button class="open-fb"><abbr>5</abbr><span>5</span></button>
       </div>
-      <% else %>
+      <% elsif @scoring == '@' %>
       <div class="grid value w-full" data-value="<%= @value[subject.id] %>" style="grid-template-columns: 100px repeat(4, 1fr)">
         <div class="bg-gray-200 inline-flex justify-center items-center">Overall</div>
         <button class="open-fb"><abbr>B</abbr><span>B</span></button>
@@ -260,6 +259,29 @@ Swiping left and right on mobile devices and tablets also work.
         <button class="open-fb"><abbr>GH</abbr><span>GH</span></button>
       </div>
       <% end %>
+      <% if !@feedbacks.empty? %>
+      <div class="grid grid-cols-2 w-full divide-x-2 divide-black">
+        <div class="grid grid-cols-5 good" data-value="<%= @good[subject.id] %>" title="Good Job With">
+          <% (1..@feedbacks.map(&:order).max).each do |order| %>
+          <% feedback = @feedbacks.find {|feedback| feedback.order == order } %>
+          <% if feedback %>
+          <button class="open-fb"><abbr><%= feedback.abbr %></abbr><span><%= feedback.value %></span></button>
+          <% else %>
+          <span></span>
+          <% end %>
+          <% end %>
+        </div>
+        <div class="grid grid-cols-5 bad"  data-value="<%= @bad[subject.id] %>" title="Needs Work On">
+          <% (1..@feedbacks.map(&:order).max).each do |order| %>
+          <% feedback = @feedbacks.find {|feedback| feedback.order == order } %>
+          <% if feedback %>
+          <button class="open-fb"><abbr><%= feedback.abbr %></abbr><span><%= feedback.value %></span></button>
+          <% else %>
+          <span></span>
+          <% end %>
+          <% end %>
+      </div>
+      <% elsif @scoring == '&' || @scoring == '@' %>
       <div class="grid good" data-value="<%= @good[subject.id] %>" style="grid-template-columns: 100px repeat(6, 1fr)">
         <div class="bg-gray-200 inline-flex justify-center items-center">Good</div>
         <button class="open-fb"><abbr>F</abbr><span>Frame</span></button>
