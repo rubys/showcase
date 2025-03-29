@@ -10,6 +10,7 @@
     <li>Click on a button to edit its name.</li>
     <li>Change its name to blank to delete it.</li>
     <li>Drag and drop to reorder.</li>
+    <li>Click on an abbreviation to edit it.  Make sure abbreviations are unique. If not, they will show up with a red background.</li>
     </ul>
   </div>
 
@@ -19,14 +20,21 @@
 
   <h2 class="font-bold text-2xl mt-5 mb-3">Legend</h2>
 
-  <div class="ml-4">
-  <div class="grid grid-cols-2 gap-x-4" style="grid-template-columns: auto 1fr">
+  <% issues = @feedbacks.group_by(&:abbr).select {|abbr, feedbacks| feedbacks.length > 1}.keys %>
+
+  <form class="ml-4" data-controller="auto-submit" method="post" id="abbreviations"
+    action="<%= update_abbrs_feedbacks_path %>">
+  <div class="grid grid-cols-2 gap-x-4" style="grid-template-columns: auto 1fr; column-count: 2;">
     <% @feedbacks.sort_by {|feedback| feedback.abbr }.each do |feedback| %>
-      <span><%= feedback.abbr %></span>
+      <% next if feedback.abbr.blank? %>
+      <input
+        id="abbr-<%= feedback.order %>" name="<%= feedback.order %>" type="text"
+        class="appearance-none py-0 border-none w-12 mb-1 text-sm <% if issues.include? feedback.abbr %> bg-red-300 text-center<% end %>"
+        value="<%= feedback.abbr %>">
       <span><%= feedback.value %></span>
     <% end %>
   </div>
-  </div>
+  </form>
 
   <div class="mx-auto w-full mt-4 text-center">
     <%= button_to 'Reset', reset_feedbacks_path,

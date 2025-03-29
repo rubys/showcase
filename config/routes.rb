@@ -231,7 +231,8 @@ Rails.application.routes.draw do
     end
 
     resources :feedbacks do
-      post 'update_all', on: :collection
+      post 'update_values', on: :collection
+      post 'update_abbrs', on: :collection
       post 'drop', on: :collection
       post 'reset', on: :collection
     end

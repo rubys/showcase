@@ -39,7 +39,7 @@ class FeedbacksController < ApplicationController
     @feedbacks.sort_by!(&:order)
   end
 
-  def update_all
+  def update_values
     params.each do |key, value|
       next unless key =~ /^\d+$/
       feedback = Feedback.find_or_create_by(order: key.to_i)
@@ -50,6 +50,16 @@ class FeedbacksController < ApplicationController
         feedback.abbr = value.gsub(/[^A-Z]/, '')
         feedback.save!
       end
+    end
+    redirect_to feedbacks_path
+  end
+
+  def update_abbrs
+    params.each do |key, abbr|
+      next unless key =~ /^\d+$/
+      feedback = Feedback.find_or_create_by(order: key.to_i)
+      feedback.abbr = abbr
+      feedback.save!
     end
     redirect_to feedbacks_path
   end
