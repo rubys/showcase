@@ -1,0 +1,9 @@
+<% content_for :title, "New feedback" %>
+
+<div class="md:w-2/3 w-full">
+  <h1 class="font-bold text-4xl">New feedback</h1>
+
+  <%= render "form", feedback: @feedback %>
+
+  <%= link_to "Back to feedbacks", feedbacks_path, class: "ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
+</div>
