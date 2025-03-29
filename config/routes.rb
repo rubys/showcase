@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :feedbacks
   unless ENV['FLY_REGION']
     mount ActionCable.server => "/showcase/cable"
   end
