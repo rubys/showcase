@@ -1,5 +1,4 @@
 Rails.application.routes.draw do
-  resources :feedbacks
   unless ENV['FLY_REGION']
     mount ActionCable.server => "/showcase/cable"
   end
@@ -230,6 +229,8 @@ Rails.application.routes.draw do
       post 'update_sisters', on: :member
       get 'locale', on: :collection
     end
+
+    resources :feedbacks
   end
 
   post '/showcase/events/console', to: 'event#console'
