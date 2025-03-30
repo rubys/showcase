@@ -21,6 +21,8 @@ if !defined? Rails
   exec "bin/run", database, $0, *ARGV
 end
 
+Event.first.update!(include_closed: false)
+
 heat = nil
 level = nil
 dance = nil
@@ -33,6 +35,8 @@ dances = Set.new
 studios = Set.new
 people = Hash.new {|k, v| k[v] = {} }
 heats = []
+categories = []
+current_category = Set.new
 
 AGE_MAP = {
   "JR" => "J",
@@ -94,11 +98,11 @@ CSV.foreach("#{__dir__}/boston.csv") do |line|
     next
   end
 
-  next unless heat
-  next if line[0] == nil
-  next if line[0].start_with?("......")
+  next if line[0] =~ /^Pro heat (TBD|\d+)\s\[.*?\]\s*/
+  next if line[0] =~ /^Heat TBD\s\[.*?\]\s*/
 
   if line[0] == "___"
+    next unless heat
     _, category, back, student, partner, studio = line
 
     instructor = nil
@@ -163,8 +167,13 @@ CSV.foreach("#{__dir__}/boston.csv") do |line|
       studio: studio,
     }
 
+    current_category.add(heat)
     next
   end
+
+  next if line[0] == nil
+  next if line[0].start_with?("......")
+  next if line[0].start_with?("------")
 
   if line[0] =~ /^(Associate|Full)\s(?:Bronze|Silver|Gold)$/
     level = line[0]
@@ -183,11 +192,26 @@ CSV.foreach("#{__dir__}/boston.csv") do |line|
     next
   end
 
+  if line[1..].compact.length == 0
+    category = line[0].strip.
+      sub(/^\[\d+:\d+[AP]M\]\s*/, "").
+      sub(/(Saturday|Sunday)\s+/, "").
+      sub(/\s*-\s+Part \d$/, "").
+      sub(/\s+Continued$/, "")
+
+    break if category == "End of competition"
+
+    current_category = Set.new
+    categories.push([category, current_category])
+    next
+  end
+
   p line
 end
 
 ages = Age.all.map { |age| [age.category, age] }.to_h
 
+puts "Levels"
 person_levels = {
   "Newcomer" => Level.find_or_create_by!(name: "Newcomer"),
   "Bronze 1" => Level.find_or_create_by!(name: "Assoc. Bronze"),
@@ -228,11 +252,13 @@ solo_levels = {
   "Advanced" => Level.find_or_create_by!(name: "Advanced"),
 }
 
+puts "Studios"
 Studio.where(id: 1..).destroy_all
 studios = studios.sort.map do |studio|
   [studio, Studio.create!(name: studio)]
 end.to_h
 
+puts "Dances"
 Dance.destroy_all
 order = 0
 dances = dances.sort.map do |dance|
@@ -240,6 +266,50 @@ dances = dances.sort.map do |dance|
   [dance, Dance.create!(name: dance, order: order)]
 end.to_h
 
+puts "Categories"
+cat_map = {}
+Category.destroy_all
+event = Event.first
+
+if categories.length > 1 && categories[0][1].length == 0
+  name, _ = categories.shift
+
+  event.update!(name: name.split(' - ').first)
+end
+
+categories.each_with_index do |(name, heats), index|
+  next if name.include?(" - ") && name.split(' - ').first == event.name
+
+  category = Category.find_by(name: name)
+
+  if category
+    extension = CatExtension.create!(
+      category: category,
+      start_heat: heats.to_a.min,
+      order: index+1,
+      part: category.extensions.length + 2
+    )
+  else
+    split = nil
+
+    parts = categories.select { |cat, _| cat == name }
+    if parts.length > 1
+      split = parts.map { |cat, heats| heats.length }.join(" ")
+    end
+
+    category = Category.create!(
+      name: name,
+      order: index+1,
+      split: split,
+    )
+  end
+
+  heats.each do |number|
+    cat_map[number] = category
+  end
+end
+
+puts "People"
 Person.destroy_all
 people.each do |name, person|
   person[:name] = name
@@ -304,12 +374,21 @@ heats.each do |heat|
     level: level || lead.level || follow.level,
   )
 
+  dance = dances[heat[:dance]]
+  if category == "Open"
+    dance.update(open_category: cat_map[heat[:number]]) if dance.open_category_id.nil?
+  elsif category == "Closed"
+    dance.update(closed_category: cat_map[heat[:number]]) if dance.closed_category_id.nil?
+  elsif category == "Solo"
+    dance.update(solo_category: cat_map[heat[:number]]) if dance.solo_category_id.nil?
+  end
+
   heat = Heat.create!(
     category: category,
     entry: entry,
     number: heat[:number],
     ballroom: heat[:ballroom].blank? ? nil : heat[:ballroom],
-    dance: dances[heat[:dance]],
+    dance: dance,
   )
 
   if category == "Solo"
