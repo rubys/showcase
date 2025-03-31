@@ -93,7 +93,7 @@ a scheduled heat time will be added to each heat.
 <div class="ml-6 mb-8">
 <h2 class="text-red-600 font-bold text-2xl">Issues:</h1>
 <ul class="list-disc list-inside ml-4">
-<% @issues.sort.each do |heat, issues| %>
+<% @issues.sort_by {|heat, issues| heat}.each do |heat, issues| %>
 <% issues.each do |person_id, count| %>
 <li>
   <a href="#heat-<%= heat %>">Heat <%= heat %></a>:
