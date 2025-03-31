@@ -196,6 +196,30 @@
         :name: Harvest Moon
       winter-wonderland:
         :name: Winter Wonderland
+  miami:
+    :name: Miami
+    :region: mia
+    :logo: ''
+    :locale: en-US
+    :events:
+      april:
+        :name: April
+      may:
+        :name: May
+      june:
+        :name: June
+      july:
+        :name: July
+      august:
+        :name: August
+      september:
+        :name: September
+      october:
+        :name: October
+      november:
+        :name: November
+      december:
+        :name: December
   milano:
     :name: Milano
     :region: ams
@@ -240,7 +264,7 @@
       swing-sway:
         :name: Swing & Sway
   monza:
-    :name: monza
+    :name: Monza
     :region: ams
     :logo: ''
     :locale: it-IT
@@ -377,6 +401,12 @@
     :logo: ''
     :locale: it-IT
     :events:
+      april:
+        :name: April
+      may:
+        :name: May
+      june:
+        :name: June
       july:
         :name: July
       august:
