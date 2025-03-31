@@ -82,6 +82,7 @@ class HeatsController < ApplicationController
     @layout = 'mx-0'
     @nologo = true
     @search = params[:q] || params[:search]
+    @combine_open_and_closed = @event.heat_range_cat == 1
   end
 
   def djlist
