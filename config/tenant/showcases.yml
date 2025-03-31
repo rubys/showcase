@@ -1,5 +1,29 @@
 ---
 2025:
+  barcelona:
+    :name: Barcelona
+    :region: ams
+    :logo: ''
+    :locale: es-ES
+    :events:
+      april:
+        :name: April
+      may:
+        :name: May
+      june:
+        :name: June
+      july:
+        :name: July
+      august:
+        :name: August
+      september:
+        :name: September
+      october:
+        :name: October
+      november:
+        :name: November
+      december:
+        :name: December
   bellevue:
     :name: Bellevue
     :region: sea
@@ -172,6 +196,30 @@
         :name: Harvest Moon
       winter-wonderland:
         :name: Winter Wonderland
+  milano:
+    :name: Milano
+    :region: ams
+    :logo: ''
+    :locale: it-IT
+    :events:
+      april:
+        :name: April
+      may:
+        :name: May
+      june:
+        :name: June
+      july:
+        :name: July
+      august:
+        :name: August
+      september:
+        :name: September
+      october:
+        :name: October
+      november:
+        :name: November
+      december:
+        :name: December
   millbrae:
     :name: Millbrae
     :region: sjc
@@ -191,6 +239,30 @@
         :name: Fall CDDC
       swing-sway:
         :name: Swing & Sway
+  monza:
+    :name: monza
+    :region: ams
+    :logo: ''
+    :locale: it-IT
+    :events:
+      april:
+        :name: April
+      may:
+        :name: May
+      june:
+        :name: June
+      july:
+        :name: July
+      august:
+        :name: August
+      september:
+        :name: September
+      october:
+        :name: October
+      november:
+        :name: November
+      december:
+        :name: December
   princeton:
     :name: Princeton
     :region: ewr
@@ -265,6 +337,30 @@
     :region: syd
     :logo: ''
     :locale: en-AU
+  torino:
+    :name: Torino
+    :region: ams
+    :logo: ''
+    :locale: it-IT
+    :events:
+      april:
+        :name: April
+      may:
+        :name: May
+      june:
+        :name: June
+      july:
+        :name: July
+      august:
+        :name: August
+      september:
+        :name: September
+      october:
+        :name: October
+      november:
+        :name: November
+      december:
+        :name: December
   vabeach:
     :name: Virginia Beach
     :region: iad
@@ -280,6 +376,19 @@
     :region: ams
     :logo: ''
     :locale: it-IT
+    :events:
+      july:
+        :name: July
+      august:
+        :name: August
+      september:
+        :name: September
+      october:
+        :name: October
+      november:
+        :name: November
+      december:
+        :name: December
   woodlands:
     :name: Woodlands
     :region: dfw
