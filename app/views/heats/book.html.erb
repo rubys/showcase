@@ -238,7 +238,7 @@ end
     </div>
     <% else %>
     <% feedback = (@event.closed_scoring == "=" || @combine_open_and_closed) && %w(+ & @).include?(@event.open_scoring) %>
-    <table class="<% unless feedback %>break-inside-avoid <% end %>table-fixed w-full" style="font-size: 11.5px">
+    <table class="<% unless feedback && @type != 'emcee' %>break-inside-avoid <% end %>table-fixed w-full" style="font-size: 11.5px">
       <colgroup>
         <col width="5px">
         <% unless heat.category == 'Solo' %>
