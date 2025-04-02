@@ -101,7 +101,7 @@ class HeatTest < ActiveSupport::TestCase
         d: {71 => 1, 72 => 5, 73 => 2, 74 => 4, 75 => 3, 76 => 6},
         e: {71 => 1, 72 => 3, 73 => 2, 74 => 6, 75 => 5, 76 => 4},
         f: {71 => 2, 72 => 1, 73 => 6, 74 => 5, 75 => 4, 76 => 3},
-        g: {71 => 1, 72 => 3, 73 => 2, 74 => 4, 75 => 5, 76 => 6},
+        g: {71 => 1, 72 => 3, 73 => 2, 74 => 4, 75 => 6, 76 => 5},
       },
       results: {
         71 => 1,
@@ -115,7 +115,6 @@ class HeatTest < ActiveSupport::TestCase
   }
 
   rule_examples.each do |rule, test_data|
-    next if rule == 7 # TODO
     test "rule #{rule}" do
       places = test_data[:places]
 
