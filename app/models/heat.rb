@@ -82,18 +82,76 @@ class Heat < ApplicationRecord
   def self.rank_placement(number, majority)
     scores = Score.joins(heat: :entry).where(heats: {number: number.to_f}, value: 1..).
       group_by { |score| score.heat.entry_id }.map { |entry_id, scores| [entry_id, scores.map {|score| score.value.to_i}] }.to_h
-    entries = Entry.includes(:lead, :follow).where(id: scores.keys).index_by(&:id)
+    max_score = scores.values.flatten.max
+    entry_map = Entry.includes(:lead, :follow).where(id: scores.keys).index_by(&:id)
     rankings = {}
     rank = 1
+    examining = 1
 
-    while !scores.empty?
-      places = scores.map { |entry_id, scores| [entry_id, scores.count {|score| score <= rank}] }.
+    while !scores.empty? && examining <= max_score
+      places = scores.map { |entry_id, scores| [entry_id, scores.count {|score| score <= examining}] }.
         select { |entry_id, count| count >= majority }
-      places.sort_by { |entry_id, count| count }.reverse.each do |entry_id, count|
-        rankings[entries[entry_id]] = rank
-        scores.delete entry_id
-        rank += 1
+
+      groups = places.group_by { |entry_id, count| count }.sort_by { |count, entries| count }.
+        map { |count, entries| [count, entries.map(&:first)] }.reverse
+
+      groups.each do |count, entries|
+        abort = false
+
+        if entries.length == 1
+          entry_id = entries.first
+          rankings[entry_map[entry_id]] = rank
+          scores.delete entry_id
+          rank += 1
+        else
+          subscores = entries.map { |entry_id| [entry_id, scores[entry_id]] }.to_h
+          totals = subscores.
+            map {|entry_id, scores| [entry_id, scores.select {|score| score <= examining}.sum]}.
+            group_by {|entry_id, score| score}.sort_by {|score, entries| score}.
+            map { |score, entries| [score, entries.map(&:first)] }
+
+          totals.each do |score, entries|
+            if entries.length == 1
+              entry_id = entries.first
+              rankings[entry_map[entry_id]] = rank
+              subscores.delete entry_id
+              scores.delete entry_id
+              rank += 1
+            else
+              max_score = subscores.values.flatten.max
+              (examining..max_score).each do |column|
+                focus = subscores.map { |entry_id, scores| [entry_id, scores.select {|score| score <= column}] }
+
+                focus_places = focus.map { |entry_id, scores| [entry_id, scores.count] }.
+                  group_by {|entry_id, count| count}.sort_by {|count, entries| count}.
+                  map { |count, entries| [count, entries.map(&:first)] }.reverse
+
+                focus_places.each do |count, entries|
+                  if entries.length == 1
+                    entry_id = entries.first
+                    rankings[entry_map[entry_id]] = rank
+                    subscores.delete entry_id
+                    scores.delete entry_id
+                    rank += 1
+                  else
+                    abort = true
+                    break
+                  end
+                end
+
+                break if subscores.empty?
+              end
+            end
+
+            break if abort
+          end
+
+          break if abort
+          next unless subscores.empty?
+        end
       end
+
+      examining += 1
     end
 
     rankings
