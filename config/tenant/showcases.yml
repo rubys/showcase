@@ -1,5 +1,17 @@
 ---
 2025:
+  annapolis:
+    :name: Annapolis
+    :region: iad
+    :logo: arthur-murray-logo.gif
+    :locale: en-US
+    :events:
+      medal-ball:
+        :name: Medal Ball
+      chesapeake-classic:
+        :name: Chesapeake Classic
+      gratitude-gala:
+        :name: Gratitude Gala
   barcelona:
     :name: Barcelona
     :region: ams
