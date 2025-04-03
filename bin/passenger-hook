@@ -105,8 +105,10 @@ begin
       end
     end
 
-    # remove all 0 byte sqlite3 files from /data/db
+    # remove all 0 byte sqlite3 files from /data/db; chown the rest
     Dir["/data/db/*.sqlite3"].each do |name|
+      next unless File.exist? name
+      system "chown rails:rails #{name}" if File.stat(name).uid == 0
       File.unlink name if File.size(name) == 0
     end
 
