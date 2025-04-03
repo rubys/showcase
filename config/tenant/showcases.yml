@@ -351,6 +351,11 @@
     :region: sjc
     :logo: ''
     :locale: en-US
+    :events:
+      mdna-medal-ball:
+        :name: MDNA Medal Ball
+      extravaganza:
+        :name: Extravaganza
   sugarland:
     :name: Sugar Land
     :region: dfw
