@@ -72,16 +72,22 @@ class Heat < ApplicationRecord
     entry.lead.back
   end
 
-  # scrutineering
+  # scrutineering: https://www.dancepartner.com/articles/dancesport-skating-system.asp
 
+  # Rule 1: callbacks
   def self.rank_callbacks(number)
     scores = Score.joins(heat: :entry).where(heats: {number: number.to_f}, value: 1..).group(:entry_id).count.
       sort_by { |entry_id, count| count }.reverse.map { |entry_id, count| [Entry.find(entry_id), count] }.to_h
   end
 
+  # Rules 2 through 4 apply to the judges, not to the evaluation of the scores
+
+  # Rules 5-8: placement
   def self.rank_placement(number, majority)
+    number = number.is_a?(Enumerable) ? number.map(&:to_f) : number.to_f
+
     # extract all scores for the given heat, grouped by entry_id
-    scores = Score.joins(heat: :entry).where(heats: {number: number.to_f}, value: 1..).
+    scores = Score.joins(heat: :entry).where(heats: {number: number}, value: 1..).
       group_by { |score| score.heat.entry_id }.map { |entry_id, scores| [entry_id, scores.map {|score| score.value.to_i}] }.to_h
 
     max_score = scores.values.flatten.max
@@ -89,7 +95,7 @@ class Heat < ApplicationRecord
     rankings = {}
     rank = 1
 
-    # in each iteration, try to identify the next entry to be ranked
+    # in each iteration or focused runoff, try to identify the next entry to be ranked
     runoff = lambda do |entries, examining|
       # find all entries that have a majority of scores less than or equal to the current place we are examining
       places = scores.select { |entry_id, scores| entries.include? entry_id }.
@@ -99,6 +105,8 @@ class Heat < ApplicationRecord
       # sort the entries by the number of scores that are less than or equal to the current place
       groups = places.group_by { |entry_id, count| count }.sort_by { |count, entries| count }.
         map { |count, entries| [count, entries.map(&:first)] }.reverse
+
+      # Rules 5 (only one entry) and 8 (no entries) fall out naturally and need no special handling
 
       groups.each do |count, entries|
         if entries.length == 1
@@ -140,11 +148,16 @@ class Heat < ApplicationRecord
       end
     end
 
+    # Iterate over the rankings, attempting to identify the next entry to be ranked
+    # * Rules 5, 6, 7 (part 1) will identify exactly one entry to be ranked
+    # * Rule 7 (part 2 and 3) will identify two or more entries to be ranked
+    # * Rule 8 will identify no entries to be ranked
     (1..max_score).each do |examining|
       break if scores.empty?
       runoff.call(scores.keys, examining)
     end
 
+    # return the final rankings
     rankings
   end
 end
