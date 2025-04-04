@@ -171,7 +171,7 @@ module Compmngr
       end
 
       if line[0] =~ /^Ballroom (A|B)\s*(.*)/
-        ballroom = $1.downcase
+        ballroom = $1.upcase
         level = $2 if $2 != ""
         next
       end
@@ -335,7 +335,7 @@ module Compmngr
     Entry.destroy_all
 
     if heats.any? {|heat| heat[:ballroom]}
-      Event.first.update!(ballrooms: 2)
+      Event.first.update!(ballrooms: 1)
     end
 
     solo_order = 0

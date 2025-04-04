@@ -177,7 +177,11 @@ module Printable
   end
 
   def assign_rooms(ballrooms, heats, number)
-    if ballrooms == 1 or heats.all? {|heat| heat.category == 'Solo'}
+    if heats.all? {|heat| heat.category == 'Solo'}
+      {nil => heats}
+    elsif heats.all? {|heat| !heat.ballroom.nil?}
+      heats.group_by(&:ballroom)
+    elsif ballrooms == 1
       {nil => heats}
     elsif ballrooms == 2
       b = heats.select {|heat| heat.entry.lead.type == "Student"}
