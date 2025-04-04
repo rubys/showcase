@@ -15,7 +15,7 @@ module Compmngr
   def import_from_compmngr(spreadsheet)
     event = self.is_a?(Event) ? self : Event.first
 
-    event.update!(include_closed: false)
+    event.update!(include_closed: false, pro_heats: true)
 
     heat = nil
     level = nil
@@ -53,9 +53,6 @@ module Compmngr
 
         if dance =~ /\(([A-Z]+\/+\w+)\)$/
           multis.add($1)
-          heat = nil
-          level = nil
-          dance = nil
         elsif dance =~ /^(.*?)\s+\((.*)\)$/
           song = $1
           dance = $2
@@ -82,7 +79,14 @@ module Compmngr
         next
       end
 
-      next if line[0] =~ /^Pro heat (TBD|\d+)\s\[.*?\]\s*/
+      if line[0] =~ /^Pro heat (TBD|\d+)\s\[.*?\]\s*(.*)/
+        heat = $1.to_i + 500
+        dance = $2
+        level = 'Pro'
+        dances.add(dance) if dance
+        next
+      end
+
       next if line[0] =~ /^Heat TBD\s\[.*?\]\s*/
 
       if line[0] == "___"
@@ -119,7 +123,10 @@ module Compmngr
           else
             people[partner][:level] = level if level
           end
+        elsif level == "Pro"
+          lead, follow = student, partner
         else
+          p heat
           p line
           next
         end
@@ -225,6 +232,7 @@ module Compmngr
       "Gold 4" => Level.find_or_create_by!(name: "Full Gold"),
       "Full Gold" => Level.find_or_create_by!(name: "Full Gold"),
       "Advanced" => Level.find_or_create_by!(name: "Advanced"),
+      "Pro" => Level.find_or_create_by!(name: "Professional"),
     }
 
     solo_levels = {
@@ -303,6 +311,8 @@ module Compmngr
     puts "People"
     Person.destroy_all
     people.each do |name, person|
+      person[:instructor] = true unless person[:level]
+
       person[:name] = name
       person[:studio] = studios[person[:studio]] if person[:studio]
       person[:age] = ages[person[:age]] if person[:age]
@@ -333,10 +343,6 @@ module Compmngr
     Solo.destroy_all
     Formation.destroy_all
     Entry.destroy_all
-
-    if heats.any? {|heat| heat[:ballroom]}
-      Event.first.update!(ballrooms: 1)
-    end
 
     solo_order = 0
     heats.each do |heat|
