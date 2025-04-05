@@ -159,4 +159,58 @@ class HeatTest < ActiveSupport::TestCase
     end
   end
 
+  summary_examples = {
+    9 => {
+      places: {
+        91 => {w: 1, t: 1, v: 1, f: 1, q: 1},
+        92 => {w: 4, t: 2, v: 2, f: 2, q: 2},
+        93 => {w: 2, t: 3, v: 3, f: 3, q: 3},
+        94 => {w: 5, t: 5, v: 6, f: 4, q: 5},
+        95 => {w: 3, t: 4, v: 5, f: 7, q: 7},
+        96 => {w: 6, t: 7, v: 4, f: 5, q: 6},
+        97 => {w: 7, t: 6, v: 7, f: 6, q: 4},
+        98 => {w: 8, t: 8, v: 8, f: 8, q: 8},
+      },
+      results: {
+        91 => 1,
+        92 => 2,
+        93 => 3,
+        94 => 4,
+        95 => 5,
+        96 => 6,
+        97 => 7,
+        98 => 8
+      }
+    },
+
+    10 => {
+      places: {
+        101 => {w: 1, t: 1, f: 3},
+        102 => {w: 2, t: 2, f: 1},
+        103 => {w: 6, t: 4, f: 2},
+        104 => {w: 5, t: 3, f: 4},
+        105 => {w: 4, t: 5, f: 5},
+        106 => {w: 3, t: 6, f: 6},
+      },
+      results: {
+        101 => 1,
+        102 => 2,
+        103 => 3,
+        104 => 4,
+        105 => 5,
+        106 => 6,
+      }
+    },
+  }
+
+  summary_examples.each do |rule, test_data|
+    test "rule #{rule}" do
+
+      assert_equal(
+        test_data[:results],
+        Heat.rank_summaries(test_data[:places])
+      )
+    end
+  end
+
 end

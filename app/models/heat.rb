@@ -160,4 +160,54 @@ class Heat < ApplicationRecord
     # return the final rankings
     rankings
   end
+
+  def self.rank_summaries(places)
+    # Rule 9: sort by minimum total place marks
+    initial_rankings = places.map {|couple, results| [couple, results.values.sum]}.
+      group_by {|couple, total| total}.
+      map {|total, couples| [total, couples.map(&:first)]}.
+      sort_by {|total, couples| total}
+
+    # Rule 10: break ties by the number of place marks
+    place = 0
+    runoff = lambda do |couples, examining|
+      # find all entries that have a majority of scores less than or equal to the current place we are examining
+      counts = couples.map { |couple| [couple, places[couple].values.count {|score| score <= examining}] }.
+        group_by { |couple, count| count }.sort_by { |count, entries| count }.
+        map { |count, entries| [count, entries.map(&:first)] }.reverse
+
+      counts.map do |count, entries|
+        if entries.length == 1
+          entries
+        elsif examining < place
+          runoff.call(entries, examining + 1)
+        else
+          Set.new(entries)
+        end
+      end.flatten
+    end
+
+    revised_rankings = initial_rankings.map do |total, couples|
+      place += couples.length
+      if couples.length == 1
+        couples.first
+      else
+        runoff.call(couples, 1)
+      end
+    end.flatten
+
+    # Identify the placement of each couple
+    place = 1
+    revised_rankings.map do |couples|
+      if couples.is_a?(Set)
+        result = couples.to_a.map {|couple| [couple, place] }
+        place += couples.length
+      else
+        result = [couples, place]
+        place += 1
+      end
+
+      result
+    end.to_h
+  end
 end
