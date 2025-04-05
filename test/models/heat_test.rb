@@ -183,7 +183,26 @@ class HeatTest < ActiveSupport::TestCase
       }
     },
 
-    10 => {
+    # Note: my read of the rules is that there is a tie for third place:
+    #
+    # * Having placed the first 4 places we must now award 5th place. #105 and
+    #   #106 have the same total so we count “5th and higher” places for the
+    #   two couples.
+    #
+    # * If the two couples have the same number of places and the same total
+    #   you do not go to the lower places to break the tie.
+    #
+    # So:
+    #  103 has a second place, and 104 has a third place, so both have exactly
+    #  one "3rd and higher" place.
+    #
+    # Note:
+    #  If we ignore the rule to start at the nth place, and instead always
+    #  start at the first place, then 10B should place couple 106 as 5th
+    #  as both 105 and 106 have a single 3rd place finishing, but only
+    #  couple 106 has a fourth.
+
+    "10A" => {
       places: {
         101 => {w: 1, t: 1, f: 3},
         102 => {w: 2, t: 2, f: 1},
@@ -191,6 +210,25 @@ class HeatTest < ActiveSupport::TestCase
         104 => {w: 5, t: 3, f: 4},
         105 => {w: 4, t: 5, f: 5},
         106 => {w: 3, t: 6, f: 6},
+      },
+      results: {
+        101 => 1,
+        102 => 2,
+        103 => 3,
+        104 => 3,
+        105 => 5,
+        106 => 6,
+      }
+    },
+
+    "10B" => {
+      places: {
+        101 => {w: 1, t: 6, f: 4, q: 1},
+        102 => {w: 6, t: 2, f: 2, q: 2},
+        103 => {w: 2, t: 1, f: 6, q: 3},
+        104 => {w: 3, t: 4, f: 1, q: 4},
+        105 => {w: 5, t: 3, f: 5, q: 5},
+        106 => {w: 4, t: 5, f: 3, q: 6},
       },
       results: {
         101 => 1,
@@ -205,7 +243,6 @@ class HeatTest < ActiveSupport::TestCase
 
   summary_examples.each do |rule, test_data|
     test "rule #{rule}" do
-
       assert_equal(
         test_data[:results],
         Heat.rank_summaries(test_data[:places])

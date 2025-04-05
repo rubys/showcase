@@ -176,38 +176,52 @@ class Heat < ApplicationRecord
         group_by { |couple, count| count }.sort_by { |count, entries| count }.
         map { |count, entries| [count, entries.map(&:first)] }.reverse
 
-      counts.map do |count, entries|
-        if entries.length == 1
-          entries
+      top = counts.first.last
+
+      entries =
+        if top.length == 1
+          top
         elsif examining < place
-          runoff.call(entries, examining + 1)
+          runoff.call(top, examining + 1)
         else
-          Set.new(entries)
+          Set.new(top)
         end
-      end.flatten
+
+      entries = [ entries ] unless entries.is_a?(Enumerable)
+
+      remaining = couples - entries.to_a
+
+      if remaining.empty?
+        entries
+      else
+        [entries, runoff.call(remaining, examining + 1)].flatten
+      end
     end
 
+    place = 0
     revised_rankings = initial_rankings.map do |total, couples|
+      examining = place + 1
       place += couples.length
       if couples.length == 1
         couples.first
       else
-        runoff.call(couples, 1)
+        runoff.call(couples, examining)
       end
     end.flatten
 
-    # Identify the placement of each couple
+    # Identify the placement of each couple, handling ties
     place = 1
+    result = []
     revised_rankings.map do |couples|
       if couples.is_a?(Set)
-        result = couples.to_a.map {|couple| [couple, place] }
+        couples.each {|couple| result << [couple, place] }
         place += couples.length
       else
-        result = [couples, place]
+        result << [couples, place]
         place += 1
       end
+    end
 
-      result
-    end.to_h
+    result.to_h
   end
 end
