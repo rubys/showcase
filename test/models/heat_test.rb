@@ -250,4 +250,77 @@ class HeatTest < ActiveSupport::TestCase
     end
   end
 
+  final_example = {
+    waltz: {
+      a: {111 => 2, 112 => 6, 113 => 8, 114 => 7, 115 => 1, 116 => 4, 117 => 5, 118 => 3},
+      b: {111 => 5, 112 => 8, 113 => 3, 114 => 4, 115 => 1, 116 => 2, 117 => 7, 118 => 6},
+      c: {111 => 6, 112 => 1, 113 => 2, 114 => 3, 115 => 5, 116 => 4, 117 => 8, 118 => 7},
+      d: {111 => 6, 112 => 5, 113 => 8, 114 => 3, 115 => 2, 116 => 1, 117 => 7, 118 => 4},
+      e: {111 => 4, 112 => 7, 113 => 8, 114 => 2, 115 => 6, 116 => 1, 117 => 3, 118 => 5},
+    },
+    tango: {
+      a: {111 => 3, 112 => 7, 113 => 8, 114 => 6, 115 => 1, 116 => 5, 117 => 2, 118 => 4},
+      b: {111 => 6, 112 => 8, 113 => 5, 114 => 3, 115 => 1, 116 => 2, 117 => 7, 118 => 4},
+      c: {111 => 5, 112 => 3, 113 => 4, 114 => 1, 115 => 2, 116 => 6, 117 => 7, 118 => 8},
+      d: {111 => 5, 112 => 8, 113 => 6, 114 => 3, 115 => 4, 116 => 2, 117 => 7, 118 => 1},
+      e: {111 => 4, 112 => 7, 113 => 8, 114 => 3, 115 => 5, 116 => 2, 117 => 1, 118 => 6},
+    },
+    summary: {
+      111 => {waltz: 4, tango: 5},
+      112 => {waltz: 6, tango: 8},
+      113 => {waltz: 8, tango: 6},
+      114 => {waltz: 3, tango: 3},
+      115 => {waltz: 2, tango: 1},
+      116 => {waltz: 1, tango: 2},
+      117 => {waltz: 7, tango: 7},
+      118 => {waltz: 5, tango: 4},
+    }
+  }
+
+  test "rule 11" do
+    # create judges
+    staff = Studio.find(0)
+    judges = {}
+    final_example[:waltz].keys.each do |name|
+      judges[name] = Person.create!(name: name, type: "Judge", studio: staff)
+    end
+
+    # create entries, heats, and scores
+    studio = studios(:one)
+    leaders = {}
+    heats = {waltz: 100, tango: 101}
+    heats.map do |dance, heat_number|
+      final_example[dance].values.map(&:keys).flatten.uniq.sort.each do |back_number|
+        leaders[back_number] ||= Person.create(name: back_number, type: "Leader", studio: studio, back: back_number)
+
+        entry = Entry.create!(
+          lead: leaders[back_number],
+          follow: people(:Kathryn),
+          instructor: people(:Arthur),
+          age: ages(:A),
+          level: levels(:FB)
+        )
+
+        heat = Heat.create!(
+          number: heat_number,
+          entry: entry,
+          dance: dances(dance),
+        )
+
+        final_example[dance].each do |judge_name, scores|
+          judge = judges[judge_name]
+          Score.create!(heat_id: heat.id, judge_id: judge.id, value: scores[back_number])
+        end
+      end
+    end
+
+    summary = leaders.values.map {|leader| [leader.back, {}]}.to_h
+    %i(waltz tango).each do |dance|
+      Heat.rank_placement(heats[dance], judges.keys.length/2+1).each do |entry, rank|
+        summary[entry.lead.back][dance] = rank
+      end
+    end
+
+    assert_equal final_example[:summary], summary
+  end
 end
