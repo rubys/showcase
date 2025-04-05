@@ -274,6 +274,16 @@ class HeatTest < ActiveSupport::TestCase
       116 => {waltz: 1, tango: 2},
       117 => {waltz: 7, tango: 7},
       118 => {waltz: 5, tango: 4},
+    },
+    ranks: {
+      111 => 4,
+      112 => 6,
+      113 => 7,
+      114 => 3,
+      115 => 1,
+      116 => 2,
+      117 => 8,
+      118 => 5,
     }
   }
 
@@ -293,7 +303,7 @@ class HeatTest < ActiveSupport::TestCase
       final_example[dance].values.map(&:keys).flatten.uniq.sort.each do |back_number|
         leaders[back_number] ||= Person.create(name: back_number, type: "Leader", studio: studio, back: back_number)
 
-        entry = Entry.create!(
+        entry = Entry.find_or_create_by!(
           lead: leaders[back_number],
           follow: people(:Kathryn),
           instructor: people(:Arthur),
@@ -322,5 +332,9 @@ class HeatTest < ActiveSupport::TestCase
     end
 
     assert_equal final_example[:summary], summary
+
+    ranks = Heat.rank_summaries(summary, heats.values).to_a.sort.to_h
+
+    # assert_equal final_example[:ranks], ranks
   end
 end

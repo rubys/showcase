@@ -82,15 +82,17 @@ class Heat < ApplicationRecord
 
   # Rules 2 through 4 apply to the judges, not to the evaluation of the scores
 
-  # Rules 5-8: placement
-  def self.rank_placement(number, majority)
+  # Rules 5-8: placement.  Note: optional parameters are for Rule 11 purposes
+  def self.rank_placement(number, majority, entries=nil, max_score=nil)
     number = number.is_a?(Enumerable) ? number.map(&:to_f) : number.to_f
 
     # extract all scores for the given heat, grouped by entry_id
     scores = Score.joins(heat: :entry).where(heats: {number: number}, value: 1..).
       group_by { |score| score.heat.entry_id }.map { |entry_id, scores| [entry_id, scores.map {|score| score.value.to_i}] }.to_h
 
-    max_score = scores.values.flatten.max
+    scores.slice!(*entries.map(&:id)) if entries
+
+    max_score ||= scores.values.flatten.max
     entry_map = Entry.includes(:lead, :follow).where(id: scores.keys).index_by(&:id)
     rankings = {}
     rank = 1
@@ -161,7 +163,7 @@ class Heat < ApplicationRecord
     rankings
   end
 
-  def self.rank_summaries(places)
+  def self.rank_summaries(places, heats=[], majority=1)
     # Rule 9: sort by minimum total place marks
     initial_rankings = places.map {|couple, results| [couple, results.values.sum]}.
       group_by {|couple, total| total}.
@@ -184,7 +186,16 @@ class Heat < ApplicationRecord
         elsif examining < place
           runoff.call(top, examining + 1)
         else
-          Set.new(top)
+          # Rule 11
+          entries = Entry.joins(:heats, :lead).where(heats: {number: heats}, lead: {back: top})
+          placement = rank_placement(heats, majority, entries, examining - top.length + 1).
+            select { |entry, rank| rank == 1 }
+
+          if placement.length == 1
+            placement.first.first.lead.back
+          else
+            Set.new(top)
+          end
         end
 
       entries = [ entries ] unless entries.is_a?(Enumerable)
