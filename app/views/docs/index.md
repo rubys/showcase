@@ -45,6 +45,16 @@ Think of the application like a calculator with buttons you may never use.  That
  * [Scratches and Walk-ons](./tasks/Scratches-and-Walk-ons) - handling last minute changes
  * [Solos](./tasks/Solos) - entering and ordering solos, uploading and playing music
 
+## Coming Attractions
+
+Some of these features may be partially available on an experimental basis. If you use them you may see bugs. If you are interested, let me know.
+
+* [Availability](./experimental/Availability) - students with late arrivals / early departures
+* [Compmngr](./experimental/Compmngr) - importing of entries from Compmngr
+* [Internationalization](./experimental/I18n) - languages, dates, times, and currency
+* [Scrutineering](./experimental/Scrutineering) - multi-heats with callbacks and rankings
+* [Voice](./experimental/Voice) - capturing Judge comments using voice input
+
 ## Operations
 
 Following are things that you don't need to worry about to use the program, but might
