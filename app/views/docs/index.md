@@ -51,6 +51,7 @@ Some of these features may be partially available on an experimental basis. If y
 
 * [Availability](./experimental/Availability) - students with late arrivals / early departures
 * [Compmngr](./experimental/Compmngr) - importing of entries from Compmngr
+* [Feedback](./experimental/Feedback) - customize judge feedback options
 * [Internationalization](./experimental/I18n) - languages, dates, times, and currency
 * [Scrutineering](./experimental/Scrutineering) - multi-heats with callbacks and rankings
 * [Voice](./experimental/Voice) - capturing Judge comments using voice input
