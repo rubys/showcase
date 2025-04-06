@@ -83,7 +83,7 @@ class Heat < ApplicationRecord
   # Rules 2 through 4 apply to the judges, not to the evaluation of the scores
 
   # Rules 5-8: placement.  Note: optional parameters are for Rule 11 purposes
-  def self.rank_placement(number, majority, entries=nil, max_score=nil)
+  def self.rank_placement(number, majority, entries=nil, examine=nil)
     number = number.is_a?(Enumerable) ? number.map(&:to_f) : number.to_f
 
     # extract all scores for the given heat, grouped by entry_id
@@ -92,7 +92,7 @@ class Heat < ApplicationRecord
 
     scores.slice!(*entries.map(&:id)) if entries
 
-    max_score ||= scores.values.flatten.max
+    max_score = examine&.last || scores.values.flatten.max
     entry_map = Entry.includes(:lead, :follow).where(id: scores.keys).index_by(&:id)
     rankings = {}
     rank = 1
@@ -154,7 +154,7 @@ class Heat < ApplicationRecord
     # * Rules 5, 6, 7 (part 1) will identify exactly one entry to be ranked
     # * Rule 7 (part 2 and 3) will identify two or more entries to be ranked
     # * Rule 8 will identify no entries to be ranked
-    (1..max_score).each do |examining|
+    (examine || (1..max_score)).each do |examining|
       break if scores.empty?
       runoff.call(scores.keys, examining)
     end
@@ -184,11 +184,12 @@ class Heat < ApplicationRecord
         if top.length == 1
           top
         elsif examining < place
-          runoff.call(top, examining + 1)
+          runoff.call(top, examining + (counts.length == 1 ? 1 : 0))
         else
           # Rule 11
-          entries = Entry.joins(:heats, :lead).where(heats: {number: heats}, lead: {back: top})
-          placement = rank_placement(heats, majority, entries, examining - top.length + 1).
+          entries = Entry.joins(:heats, :lead).where(heats: {number: heats}, lead: {back: top}).all.uniq
+          examine = (examining - top.length + 1.. examining)
+          placement = rank_placement(heats, majority, entries, examine).
             select { |entry, rank| rank == 1 }
 
           if placement.length == 1

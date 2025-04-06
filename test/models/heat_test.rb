@@ -301,7 +301,7 @@ class HeatTest < ActiveSupport::TestCase
     heats = {waltz: 100, tango: 101}
     heats.map do |dance, heat_number|
       final_example[dance].values.map(&:keys).flatten.uniq.sort.each do |back_number|
-        leaders[back_number] ||= Person.create(name: back_number, type: "Leader", studio: studio, back: back_number)
+        leaders[back_number] ||= Person.create!(name: back_number, type: "Leader", studio: studio, back: back_number)
 
         entry = Entry.find_or_create_by!(
           lead: leaders[back_number],
@@ -333,8 +333,10 @@ class HeatTest < ActiveSupport::TestCase
 
     assert_equal final_example[:summary], summary
 
-    ranks = Heat.rank_summaries(summary, heats.values).to_a.sort.to_h
+    majority = judges.keys.length * heats.values.length / 2 + 1
 
-    # assert_equal final_example[:ranks], ranks
+    ranks = Heat.rank_summaries(summary, heats.values, majority).to_a.sort.to_h
+
+    assert_equal final_example[:ranks], ranks
   end
 end
