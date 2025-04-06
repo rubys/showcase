@@ -922,6 +922,11 @@ class EventController < ApplicationController
         event.delete 'locked'
         event.delete 'payment_due'
         Event.first.update(event)
+
+        Feedback.transaction do
+          Feedback.destroy_all
+          dbquery(source, 'feedbacks').each {|feedback| Feedback.create feedback}
+        end
       end
 
       if tables[:levels]
