@@ -180,6 +180,12 @@
         :name: The Music of Prince
       james-bond:
         :name: James Bond
+      extravaganza:
+        :name: Extravaganza
+      bbq-pep-rally:
+        :name: BBQ Pep Rally
+      district-showcase:
+        :name: District Showcase
   marlton:
     :name: Marlton
     :region: ewr
