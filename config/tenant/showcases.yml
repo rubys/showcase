@@ -442,6 +442,16 @@
         :name: November
       december:
         :name: December
+  warsaw:
+    :name: Warsaw
+    :region: ams
+    :logo: ''
+    :locale: pl-PL
+    :events:
+      wroclaw:
+        :name: Wroclaw
+      warsaw:
+        :name: Warsaw
   woodlands:
     :name: Woodlands
     :region: dfw
