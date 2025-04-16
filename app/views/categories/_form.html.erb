@@ -36,17 +36,31 @@ start times for each heat will show up on the heats page.
   </div>
 
 <% unless Event.first.date.blank? %>
-<% unless Event.first.date =~ /^\d{4}-\d{2}-\d{2}$/ %>
+<% if Event.first.date =~ /^\d{4}-\d{2}-\d{2} -/ %>
+  <% dates = Range.new(*Event.first.date.split(" - ").map {Date.parse(it)}).to_a.map {it.iso8601} %>
+  <div class="my-5" data-controller="date-range">
+    <%= form.label :day %>
+    <%= form.select :day, dates, {include_blank: true}, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+<% elsif Event.first.date !~ /^\d{4}-\d{2}-\d{2}$/ %>
   <div class="my-5">
     <%= form.label :day %>
     <%= form.text_field :day, placeholder: @day_placeholder || 'Saturday', class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full placeholder-indigo-300" %>
   </div>
 <% end %>
 
+  
+  <% if Event.first.date =~ /^\d{4}-\d{2}-\d{2}/ %>
+  <div class="my-5">
+    <%= form.label :time %>
+    <%= form.time_field :time, placeholder: '1 pm', class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  <% else %>
   <div class="my-5">
     <%= form.label :time %>
     <%= form.text_field :time, placeholder: '1 pm', class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+  <% end %>
 <% end %>
 
   <div class="my-5">
