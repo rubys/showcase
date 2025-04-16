@@ -1,5 +1,17 @@
 ---
 2025:
+  abq:
+    :name: Albuquerque
+    :region: dfw
+    :logo: ''
+    :locale: en-US
+    :events:
+      freestyle:
+        :name: Freestyle
+      showcase:
+        :name: Showcase
+      medal-ball:
+        :name: Medal Ball
   annapolis:
     :name: Annapolis
     :region: iad
