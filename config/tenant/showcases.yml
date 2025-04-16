@@ -147,6 +147,11 @@
     :region: atl
     :logo: arthur-murray-logo.gif
     :locale: en-US
+  kiev:
+    :name: kiev
+    :region: ams
+    :logo: ''
+    :locale: en-US
   lakeview:
     :name: Lakeview
     :region: ord
