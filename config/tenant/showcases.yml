@@ -622,6 +622,16 @@
     :region: atl
     :logo: arthur-murray-logo.gif
     :locale: en-US
+  kiev:
+    :name: Kiev
+    :region: ams
+    :logo: ''
+    :locale: en-US
+    :events:
+      july:
+        :name: July
+      freestyle-showcase:
+        :name: Freestyle Showcase
   lakeview:
     :name: Lakeview
     :region: ord
@@ -885,12 +895,8 @@
     :events:
       june-warsaw-freestyle:
         :name: June Warsaw Freestyle
-      july-kiev:
-        :name: July Kiev
       freestyle-showcase-warsaw-2024:
         :name: Freestyle Showcase Warsaw 2024
-      freestyle-showcase-kyiv-2024:
-        :name: Freestyle Showcase Kyiv 2024
   westchester:
     :name: West Chester
     :region: ord
