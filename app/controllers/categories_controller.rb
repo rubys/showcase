@@ -28,6 +28,7 @@ class CategoriesController < ApplicationController
   def new
     @category ||= Category.new
     @category.order ||= Category.pluck(:order).max.to_i + 1
+    @date = Event.first.date
 
     form_init
   end
@@ -36,6 +37,12 @@ class CategoriesController < ApplicationController
   def edit
     generate_agenda
     @day_placeholder = Date::DAYNAMES[@cat_start&.dig(@category.name)&.wday || 7]
+    @event_date = Event.first.date
+
+    # canonicalize time
+    if @event_date =~ /\d{4}-\d{2}-\d{2}/ && !@category.time.blank? && @category.time !~ /\d{2}:\d{2}$/
+      @category.time = Chronic.parse(@category.time).iso8601[11..15]
+    end
 
     form_init
   end

@@ -125,7 +125,12 @@ module Printable
         end
 
         if cat and not cat.time.blank?
-          time = Chronic.parse(cat.time, now: start) || start
+          if cat.time =~ /^\d{1,2}:\d{2}$/
+            cattime = Time.parse(cat.time)
+            time = start.change(hour: cattime.hour, min: cattime.min)
+          else
+            time = Chronic.parse(cat.time, now: start) || start
+          end
           start = time if time and time > start
         end
 
