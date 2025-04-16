@@ -151,7 +151,7 @@
     :name: Kyiv
     :region: ams
     :logo: ''
-    :locale: en-US
+    :locale: uk-UA
   lakeview:
     :name: Lakeview
     :region: ord
@@ -626,7 +626,7 @@
     :name: Kyiv
     :region: ams
     :logo: ''
-    :locale: en-US
+    :locale: uk-UA
     :events:
       july:
         :name: July
