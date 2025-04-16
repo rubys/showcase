@@ -147,8 +147,8 @@
     :region: atl
     :logo: arthur-murray-logo.gif
     :locale: en-US
-  kiev:
-    :name: Kiev
+  kyiv:
+    :name: Kyiv
     :region: ams
     :logo: ''
     :locale: en-US
@@ -622,8 +622,8 @@
     :region: atl
     :logo: arthur-murray-logo.gif
     :locale: en-US
-  kiev:
-    :name: Kiev
+  kyiv:
+    :name: Kyiv
     :region: ams
     :logo: ''
     :locale: en-US
