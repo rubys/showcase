@@ -6,7 +6,7 @@
 %>
 <div style="width: 100%">
 
-<% %w{us eu au}.each do |map| %>
+<% %w{us eu au jp}.each do |map| %>
 <svg version="1.1" width="100%" xmlns="http://www.w3.org/2000/svg" style="overflow: hidden; position: relative; left: -0.5px; display: <%= map == shown ? 'block' : 'none' %>" viewBox="<%= map == 'us' ? "50 -10 900 510" : "50 0 600 500" %>" preserveAspectRatio="xMinYMin" xmlns:xlink="http://www.w3.org/1999/xlink">
    <%= render "#{map}map" %>
    <% @map['regions'].each do |token, region| -%>
