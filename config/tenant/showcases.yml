@@ -12,6 +12,22 @@
         :name: Showcase
       medal-ball:
         :name: Medal Ball
+  adelaide:
+    :name: Adelaide
+    :region: syd
+    :logo: ''
+    :locale: en-AU
+    :events:
+      adelaide-combined:
+        :name: Adelaide Combined
+      adelaide-local:
+        :name: Adelaide Local
+      northside:
+        :name: Northside
+      inner-west:
+        :name: Inner West
+      inner-west-special:
+        :name: Inner West Special
   annapolis:
     :name: Annapolis
     :region: iad
