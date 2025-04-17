@@ -301,6 +301,8 @@ class LocationsController < ApplicationController
         "it_IT"
       when "UA"
         "uk_UA"
+      when "JP"
+        "ja_JP"
       else
         "en_US"
       end
