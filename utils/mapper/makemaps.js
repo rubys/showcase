@@ -11,7 +11,9 @@ const PROJECTIONS = {
   eu: d3.geoConicConformal().rotate([-20, 0]).center([0, 52])
     .parallels([35.0, 65.0]).scale(1000),
   au: d3.geoConicConformal().rotate([-132, 0]).center([13, -25])
-    .parallels([-18, -36]).scale(750)
+    .parallels([-18, -36]).scale(750),
+  jp: d3.geoConicEquidistant().rotate([-137, 0]).center([0, 36])
+    .parallels([24, 46]).scale(1000),
 }
 
 process.chdir(new URL('.', import.meta.url).pathname)
@@ -23,6 +25,7 @@ let map = yaml.parse(oldYaml)
 let points = { ...map.regions, ...map.studios }
 
 for (let files of allfiles.maps) {
+  console.log(`Making map for ${files.projection}...`)
   let [width, height] = files.projection == 'us' ? [900, 500] : [600, 500]
 
   const projection = PROJECTIONS[files.projection]
@@ -39,6 +42,7 @@ for (let files of allfiles.maps) {
   let dbf = null;
 
   for await (const entry of zip) {
+    if (files.select && !entry.filename.startsWith(files.select)) continue
     if (entry.filename.endsWith('.shp')) {
       shp = await entry.openReadStream();
     }
@@ -134,7 +138,7 @@ for (let files of allfiles.maps) {
     }
 
     if (d) {
-      const name = feature.properties.NAME || feature.properties.STE_NAME21
+      const name = feature.properties.NAME || feature.properties.STE_NAME21 || feature.properties.ADM0_EN
       paths.push(`<path title="${name.replace(/\0/g, '')}" fill="#e5ecf9" stroke="#AAA" stroke-width="1" d="${d}"/>`)
     }
   }

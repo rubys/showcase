@@ -1,6 +1,6 @@
 ---
 files:
-  map_yaml: ../../db/map.yml
+  map_yaml: ../../config/tenant/map.yml
 maps:
   - shapefile_url: https://www2.census.gov/geo/tiger/GENZ2018/shp/cb_2018_us_state_20m.zip
     shapefile_zip: cb_2018_us_state_20m.zip
@@ -26,3 +26,12 @@ maps:
     max_lat: -10
     min_lon: 110
     max_lon: 155
+  - shapefile_url: https://data.humdata.org/dataset/6ba099c6-350b-4711-9a65-d85a1c5e519c/resource/f82faadf-a608-42cf-ae15-75ce672d7e69/download/jpn_adm_2019_shp.zip
+    shapefile_zip: jpn_adm_2019_shp.zip
+    select: jpn_admbnda_adm0_2019
+    map_svg: ../../app/views/event/_jpmap.html.erb
+    projection: jp
+    min_lat: 24
+    max_lat: 46
+    min_lon: 122
+    max_lon: 153
