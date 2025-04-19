@@ -175,6 +175,18 @@
     :region: atl
     :logo: arthur-murray-logo.gif
     :locale: en-US
+  kobe:
+    :name: Kobe
+    :region: nrt
+    :logo: ''
+    :locale: ja-JP
+    :events:
+      medal-ball:
+        :name: Medal Ball
+      yokohama-showcase:
+        :name: Yokohama Showcase
+      fall-showcase:
+        :name: Fall Showcase
   kyiv:
     :name: Kyiv
     :region: ams
