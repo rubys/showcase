@@ -155,6 +155,11 @@
     :region: ord
     :logo: arthur-murray-logo.gif
     :locale: en-US
+  everett:
+    :name: Everett
+    :region: sea
+    :logo: ''
+    :locale: en-US
   folsom:
     :name: Folsom
     :region: sjc
