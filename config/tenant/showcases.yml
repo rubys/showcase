@@ -90,6 +90,16 @@
         :name: Mini Comp
       october:
         :name: October
+  carmel:
+    :name: Carmel
+    :region: ord
+    :logo: arthur-murray-logo.gif
+    :locale: en-US
+    :events:
+      paint-the-town-red:
+        :name: Paint the Town Red
+      toys-to-life:
+        :name: Toys to Life
   charlotte:
     :name: Charlotte
     :region: atl
