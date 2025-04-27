@@ -73,6 +73,8 @@ class EventController < ApplicationController
       @cloneable = !@sources&.empty?
     end
 
+    ActiveRecord::Base.connection.query_cache.clear unless Rails.env.production?
+
     render :root, status: (@browser_warn ? :upgrade_required : :ok)
   end
 
