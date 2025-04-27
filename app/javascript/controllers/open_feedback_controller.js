@@ -26,6 +26,8 @@ export default class extends Controller {
     }
 
     for (let button of this.element.querySelectorAll("button")) {
+      button.disabled = false;
+      
       let span = button.querySelector("span");
       let abbr = button.querySelector("abbr");
       if (span && abbr) {

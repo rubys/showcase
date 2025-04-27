@@ -411,6 +411,8 @@ export default class extends Controller {
     }
 
     for (let button of this.element.querySelectorAll("input[type=radio],input[type=checkbox]")) {
+      button.disabled = false;
+
       button.addEventListener("change", _event => {
         this.post({
           heat: parseInt(button.name),
@@ -428,6 +430,8 @@ export default class extends Controller {
     }
 
     for (let target of this.scoreTargets) {
+      target.disabled = false;
+
       target.addEventListener("change", _event => {
         target.disabled = true;
 
