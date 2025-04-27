@@ -17,6 +17,29 @@ class ApplicationController < ActionController::Base
     end
   end
 
+  # https://github.com/rails/rails/blob/main/actionpack/lib/action_controller/metal/allow_browser.rb
+  MODERN_BROWSER = {
+    "Chrome" => 119,
+    "Safari" => 17.2,
+    "Firefox" => 121,
+    "Internet Explorer" => false,
+    "Opera" => 104
+  }
+
+  def browser_warn
+    user_agent = UserAgent.parse(request.user_agent)
+    min_version = MODERN_BROWSER[user_agent.browser]
+    # return if min_version == nil
+    if min_version != false || user_agent.version < UserAgent::Version.new(min_version.to_s)
+      browser = "You are running #{user_agent.browser} 15.6."
+      if user_agent.browser == 'Safari' and user_agent.platform == 'Macintosh'
+        "#{browser} Please upgrade your operating system or swtich to a different browser."
+      else
+        "#{browser} Please upgrade your browser."
+      end
+    end
+  end
+
   private
     def authenticate_user
       return authenticate_site_owner if User.trust_level >= 75

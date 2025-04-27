@@ -53,6 +53,10 @@ class ScoresController < ApplicationController
     end
 
     @show_solos = @judge&.judge&.review_solos&.downcase
+
+    @browser_warn = browser_warn
+
+    render :heatlist, status: (@browser_warn ? :upgrade_required : :ok)
   end
 
   # GET /scores/:judge/heat/:heat
