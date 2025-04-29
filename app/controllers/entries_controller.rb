@@ -159,6 +159,7 @@ class EntriesController < ApplicationController
       end
     end
 
+    @total = 0
     if not replace
       @entry.lead = lead
       @entry.follow = follow
@@ -166,7 +167,6 @@ class EntriesController < ApplicationController
       @entry.level_id = entry[:level]
     elsif replace != @entry
       @entry.reload
-      @total = 0
       @entry.heats.to_a.each do |heat|
         if heat.category != 'Solo'
           heat.entry = replace
