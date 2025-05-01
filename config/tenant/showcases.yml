@@ -185,6 +185,11 @@
     :region: iad
     :logo: arthur-murray-logo.gif
     :locale: en-US
+  honolulu:
+    :name: Honolulu
+    :region: sjc
+    :logo: ''
+    :locale: en-US
   kennesaw:
     :name: Kennesaw
     :region: atl
