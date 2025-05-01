@@ -6,9 +6,9 @@ maps:
     shapefile_zip: cb_2018_us_state_20m.zip
     map_svg: ../../app/views/event/_usmap.html.erb
     projection: us
-    min_lat: 24
+    min_lat: 21
     max_lat: 50
-    min_lon: -125
+    min_lon: -160
     max_lon: -66
   - shapefile_url: https://naciscdn.org/naturalearth/10m/cultural/ne_10m_admin_0_countries.zip
     shapefile_zip: ne_10m_admin_0_countries.zip

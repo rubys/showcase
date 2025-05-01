@@ -231,6 +231,9 @@ studios:
   honolulu:
     lat: 21.304547
     lon: -157.855676
+    map: us
+    x: 298.5243983473093
+    y: 451.0312519131176
   kennesaw:
     lat: 34.023
     lon: -84.616
