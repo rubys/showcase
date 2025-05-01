@@ -19,6 +19,16 @@
 .base-AS, .head-FS, .base-FS, .head-AG {background-color: #dcdcdc}
 .base-AG, .head-FG, .base-FG {background-color: #ffd700}
 
+.head-PB, .base-PB, .head-B1 {background-color: #90ee90}
+.base-B1, .head-B3, .base-B3, .head-S1 {background-color: #e7cfae}
+.base-S1, .head-S3, .base-S3, .head-G1 {background-color: #dcdcdc}
+.base-G1, .head-G3, .base-G3 {background-color: #ffd700}
+
+.head-NC, .base-NC, .head-B2 {background-color: #90ee90}
+.base-B2, .head-B4, .base-B4, .head-S2 {background-color: #e7cfae}
+.base-S4, .head-S4, .base-S4, .head-G2 {background-color: #dcdcdc}
+.base-G2, .head-G4, .base-G4 {background-color: #ffd700}
+
 #notice:empty {display: none}
 
 /* https://gist.github.com/anotheruiguy/7379570 */
