@@ -159,13 +159,13 @@ class EntriesController < ApplicationController
       end
     end
 
-    @total = 0
     if not replace
       @entry.lead = lead
       @entry.follow = follow
       @entry.age_id = entry[:age] if entry[:age]
       @entry.level_id = entry[:level]
     elsif replace != @entry
+      @total = 0
       @entry.reload
       @entry.heats.to_a.each do |heat|
         if heat.category != 'Solo'
@@ -181,13 +181,16 @@ class EntriesController < ApplicationController
 
     respond_to do |format|
       @entry.reload
-      case @entry.heats.length - previous
-      when @total
-        operation = 'added'
-      when -@total
-        operation = 'removed'
-      else
-        operation = 'changed'
+      operation = 'changed'
+      if @total
+        case @entry.heats.length - previous
+        when @total
+          operation = 'added'
+        when -@total
+          operation = 'removed'
+        else
+          operation = 'changed'
+        end
       end
 
       if @entry.update(entry_params)
