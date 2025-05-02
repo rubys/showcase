@@ -429,6 +429,13 @@ module Printable
           }.sort_by {|key, value| key}
       }
     end
+
+    # Identify dances being offered
+    @offered = {
+      freestyles: (Dance.where.not(open_category_id: nil).count + Dance.where.not(closed_category_id: nil).count) > 0,
+      solos: (Dance.where.not(solo_category_id: nil).count) > 0,
+      multis: (Dance.where.not(multi_category_id: nil).count) > 0
+    }
   end
 
   def heat_sheets

@@ -216,18 +216,24 @@
 
     </tr>
     <% end %>
+    <% if @offered[:freestyles] %>
   <tr>
-    <td>Freestyles
+    <td>Freestyles:
     <td align="right"><%= number_to_currency heat_cost * (dances.fetch('Open', 0) + dances.fetch('Closed', 0)) %></th>
   </tr>
+  <% end %>
+  <% if @offered[:solos] %>
   <tr>
-    <td>Routines
+    <td>Routines:
     <td align="right"><%= number_to_currency solo_cost * dances.fetch('Solo', 0) %></td>
   </tr>
-    <tr>
-    <td class="pr-8">3 dance event
+  <% end %>
+  <% if @offered[:multis] %>
+  <tr>
+    <td class="pr-8">Multi dance event:
     <td align="right"><%= number_to_currency multi_cost * dances.fetch('Multi', 0) %></td>
   </tr>
+  <% end %>
   <tr>
     <th class="pr-8">Total:
     <td align="right"><%= number_to_currency dances[:cost] + dances[:purchases] %></td>
