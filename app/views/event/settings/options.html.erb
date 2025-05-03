@@ -52,42 +52,7 @@
   <li classs="my-2"><%= form.radio_button :ballrooms, 4 %> Assign ballrooms by studio</li>
   </ul>
   </div>
-
-  <div class="my-5">
-  <%= form.label :open_scoring %>
-  <ul class="ml-6">
-  <li class="my-2"><%= form.radio_button :open_scoring, '1' %> 1/2/3/F
-  <li class="my-2"><%= form.radio_button :open_scoring, 'G' %> GH/G/S/B
-  <li class="my-2"><%= form.radio_button :open_scoring, '#' %> Number (85, 95, ...)
-  <li class="my-2"><%= form.radio_button :open_scoring, '+' %> Feedback (Needs Work On / Great Job With)
-  <li class="my-2"><%= form.radio_button :open_scoring, '&' %> Number (1-5) <b>and</b> Feedback
-  <li class="my-2"><%= form.radio_button :open_scoring, '@' %> GH/G/S/B <b>and</b> Feedback
-  </ul>
-  </div>
-
-  <div class="my-5">
-  <%= form.label :multi_scoring %>
-  <ul class="ml-6">
-  <li class="my-2"><%= form.radio_button :multi_scoring, 1 %> 1/2/3/F
-  <li class="my-2"><%= form.radio_button :multi_scoring, 'G' %> GH/G/S/B
-  <li class="my-2"><%= form.radio_button :multi_scoring, '#' %> Number (85, 95, ...)
-  </ul>
-  </div>
-
-  <% if @combine_open_and_closed %>
-  <% @event.closed_scoring = '=' %>
-  <div class="my-5 bg-slate-300 opacity-50 cursor-not-allowed" title="open and closed are combined">
-  <% else %>
-  <div class="my-5">
-  <% end %>
-  <%= form.label :closed_scoring %>
-  <ul class="ml-6">
-  <li class="my-2"><%= form.radio_button :closed_scoring, 'G', disabled: @combine_open_and_closed  %> GH/G/S/B
-  <li class="my-2"><%= form.radio_button :closed_scoring, '#' %> Number (85, 95, ...)
-  <li class="my-2"><%= form.radio_button :closed_scoring, '=', disabled: @combine_open_and_closed  %> Same as Open
-  </ul>
-  </div>
-
+  
   <div class="my-5">
   <%= form.label :heat_order %>
   <ul class="ml-6">

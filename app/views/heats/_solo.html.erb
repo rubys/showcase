@@ -1,0 +1,140 @@
+<div class="page break-before-page">
+<% if ENV['RAILS_APP_DB'] != '2025-annapolis-medal-ball'%>
+  <div class="page break-before-page">
+<span class="mt-12 number"><%= number %></span>
+<header>
+<div class="mt-8 mb-4">
+  <h2 class="font-bold text-center text-4xl" style="font-family: '<%= @font_family %>'"><%= @event.name %></h1>
+
+  <p class="mt-4">
+    <% (@event.theme || @event.location).to_s.lines.each do |line| %>
+      <div class="text-center text-2xl" style="font-family: '<%= @font_family %>'"><%= line.chomp %></div>
+    <% end %>
+  </p>
+  
+  <p class="mt-2 text-center" style="font-family: '<%= @font_family %>'"><%= @event.date %></p>
+
+  <span class="mt-8 -ml-12 rotate-shadow">Solo</span>
+  <span class="mt-8 -ml-12 rotate">Solo</span>
+</div>
+
+<%
+  if @column_order == 1 or heat.follow.type == 'Professional'
+    dancers = [heat.lead, heat.follow]
+  else
+    dancers = [heat.follow, heat.lead]
+  end
+
+  studio = dancers.first.studio.name
+
+  heat.solo.formations.each do |formation|
+    dancers << formation.person if formation.on_floor
+  end
+
+  if dancers.length == 2
+    dancers = dancers.first.join(dancers.last)
+  else
+    dancers.map! &:display_name
+    dancers[-1] = "and #{dancers.last}"
+    dancers = dancers.join(', ')
+  end
+%>
+
+<div class="mb-4">
+<div class="text-xl float-right"><b style="font-family: '<%= @font_family %>'">Studio</b>: <%= studio %></div>
+<div class="text-xl"><b style="font-family: '<%= @font_family %>'">Level</b>: <%= heat.entry.level_name %></div>
+</div>
+
+
+<div class="text-xl mb-4 grid grid-cols-2" style="grid-template-columns: auto 1fr"><span><b style="font-family: '<%= @font_family %>'">Names</b>:&nbsp;</span><span><%= dancers %></span></div>
+<div class="text-xl"><b style="font-family: '<%= @font_family %>'">Dance</b>: <%= heat.dance.name %>
+<% if heat.solo.combo_dance%>
+/ <%= heat.solo.combo_dance.name %>
+<% end %>
+</div>
+</header>
+
+<div class="mt-4 content truncate text-base">
+<div><b class="text-xl" style="font-family: '<%= @font_family %>'">Comments:</b> <span class="whitespace-pre underline"><%= ' ' * 400 %></span></div>
+<% 12.times do %>
+<div>&nbsp</div>
+<div><span class="whitespace-pre underline"><%= ' ' * 400 %></span></div>
+<% end %>
+</div>
+
+<footer>
+<div class="mt-12 grid grid-cols-2">
+<div class="text-xl mt-4"><span class="whitespace-pre underline"><%= @judge ? @judge.display_name : ' ' * 30 %></span><br><b>Adjudicator</b></div>
+<div class="text-xl items-end"><span style="float: right"><b>Score</b>: <span class="border-2 border-black" style="display: inline-block; min-height: .75in; min-width: 1in"></span></span></div>
+</div>
+</footer>
+<% else %>
+<div class="font-sans leading-relaxed p-5" id="<%= number %>">
+
+    <div class="text-center mb-5">
+        <div class="absolute top-0 right-0">Solo #: <%= number %></div>
+        <img src="/arthur-murray-logo-wide.png" alt="Arthur Murray Logo" class="max-w-[600px] h-auto mx-auto mb-5">
+    </div>
+    
+    <div class="text-center mb-8">
+        <div class="text-4xl mb-2"><%= @event.name %></div>
+        <div class="text-lg mt-4 mb-8 py-2 font-bold border-y-2 border-black">ROUTINE SCORING SHEET</div>
+    </div>
+    
+    <div class="grid grid-cols-2 gap-5 mb-8">
+        <div class="flex">
+            <div class="w-[100px] font-normal">Date:</div>
+            <div class="flex-grow border-b border-black pl-4"><%= @event.date %></div>
+        </div>
+        <div class="flex">
+            <div class="w-[100px] font-normal">Student:</div>
+            <div class="flex-grow border-b border-black pl-4"><%= heat.entry.instructor_id ? heat.entry.lead.join(heat.entry.follow): heat.subject.display_name %></div>
+        </div>
+        <div class="flex">
+            <div class="w-[100px] font-normal">Studio:</div>
+            <div class="flex-grow border-b border-black pl-4"><%= heat.subject.studio.name %></div>
+        </div>
+        <div class="flex">
+            <div class="w-[100px] font-normal">Standard:</div>
+            <div class="flex-grow border-b border-black pl-4"><%= heat.entry.level_name %></div>
+        </div>
+        <div class="flex">
+            <div class="w-[100px] font-normal">Teacher:</div>
+            <div class="flex-grow border-b border-black pl-4"><%= heat.entry.instructor_id ? heat.entry.instructor.display_name : heat.entry.partner(heat.subject).display_name %></div>
+        </div>
+        <div class="flex">
+            <div class="w-[100px] font-normal">Dance:</div>
+            <div class="flex-grow border-b border-black pl-4"><%= heat.dance.name %>
+            <% if heat.solo.combo_dance_id %>/ <%= heat.solo.combo_dance.name %><% end %></div>
+        </div>
+    </div>
+    
+    <div class="border-y-2 border-black py-2">
+        <div class="flex my-4 items-baseline">
+            <div class="flex-grow">Technique (Footwork, Movement & Control)</div>
+            <div class="w-[250px] text-center">Value (25 points) ___________</div>
+        </div>
+        <div class="flex mb-4 items-baseline">
+            <div class="flex-grow">Execution (Physical Skill & General Performance)</div>
+            <div class="w-[250px] text-center">Value (25 points) ___________</div>
+        </div>
+        <div class="flex mb-4 items-baseline">
+            <div class="flex-grow">Poise (Poise, Posture, Hold & Self-Confidence)</div>
+            <div class="w-[250px] text-center">Value (25 points) ___________</div>
+        </div>
+        <div class="flex mb-4 items-baseline">
+            <div class="flex-grow">Showmanship (Entrance, Exit, Style, Personality & Appeal)</div>
+            <div class="w-[250px] text-center">Value (25 points) ___________</div>
+        </div>
+    </div>
+    
+    <div class="p-2.5 h-[285px] mb-8">
+        <div class="text-center font-bold mb-2.5">COMMENTS</div>
+    </div>
+    
+    <div class="text-right mt-8">
+        <div class="inline-block w-[300px] border-t border-black text-center pt-1.5">Adjudicator</div>
+    </div>
+</div>
+<% end %>
+</div>

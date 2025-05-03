@@ -1,0 +1,84 @@
+<div class="mx-auto md:w-2/3 w-full" data-controller="anchored">
+
+<% if notice.present? %>
+<p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+<% end %>
+
+<div data-controller="info-box">
+  <div class="info-button">&#x24D8;</div>
+  <ul class="info-box">
+  <li>While national events tend to have a predefined set of rules, local and regional events may vary widely in how they are run.
+    Use this page to customize your event.
+  <li>This program has a lot of function, enough so that it could be overwhelming.  To help manage that, many features are hidden away until you need it; usually a checkbox somewhere (either here in the settings or on the individual part being customized) exposes more options.
+  <li>Detailed descriptions of these options can be found in the <a href="<%= File.join(docs_path, "tasks/Settings") %>" class="text-blue-800 underline">documentation</a>.</li>
+  </ul>
+</div>
+
+<h1 class="font-bold text-4xl mb-6" id="options">Scoring</h1>
+
+<%= form_with model: @event do |form| %>
+
+  <% if @event.errors.any? %>
+    <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
+      <h2><%= pluralize(@event.errors.count, "error") %> prohibited these settings from being saved:</h2>
+
+      <ul>
+        <% @event.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>  
+
+  <div class="my-5">
+  <%= form.label :open_scoring %>
+  <ul class="ml-6">
+  <li class="my-2"><%= form.radio_button :open_scoring, '1' %> 1/2/3/F
+  <li class="my-2"><%= form.radio_button :open_scoring, 'G' %> GH/G/S/B
+  <li class="my-2"><%= form.radio_button :open_scoring, '#' %> Number (85, 95, ...)
+  <li class="my-2"><%= form.radio_button :open_scoring, '+' %> Feedback (Needs Work On / Great Job With)
+  <li class="my-2"><%= form.radio_button :open_scoring, '&' %> Number (1-5) <b>and</b> Feedback
+  <li class="my-2"><%= form.radio_button :open_scoring, '@' %> GH/G/S/B <b>and</b> Feedback
+  </ul>
+  </div>
+
+  <div class="my-5">
+  <%= form.label :multi_scoring %>
+  <ul class="ml-6">
+  <li class="my-2"><%= form.radio_button :multi_scoring, 1 %> 1/2/3/F
+  <li class="my-2"><%= form.radio_button :multi_scoring, 'G' %> GH/G/S/B
+  <li class="my-2"><%= form.radio_button :multi_scoring, '#' %> Number (85, 95, ...)
+  </ul>
+  </div>
+
+  <% if @combine_open_and_closed %>
+  <% @event.closed_scoring = '=' %>
+  <div class="my-5 bg-slate-300 opacity-50 cursor-not-allowed" title="open and closed are combined">
+  <% else %>
+  <div class="my-5">
+  <% end %>
+  <%= form.label :closed_scoring %>
+  <ul class="ml-6">
+  <li class="my-2"><%= form.radio_button :closed_scoring, 'G', disabled: @combine_open_and_closed  %> GH/G/S/B
+  <li class="my-2"><%= form.radio_button :closed_scoring, '#' %> Number (85, 95, ...)
+  <li class="my-2"><%= form.radio_button :closed_scoring, '=', disabled: @combine_open_and_closed  %> Same as Open
+  </ul>
+  </div>
+
+  <% if ENV['RAILS_APP_DB'] == '2025-annapolis-medal-ball' %>
+  <div class="my-5">
+  <%= form.label :solo_scoring %>
+  <ul class="ml-6">
+  <li class="my-2"><%= form.radio_button :solo_scoring, '1' %> One number (0-100)
+  <li class="my-2"><%= form.radio_button :solo_scoring, '4' %> Technique, Execution, Poise, Showmanship (each 0-25)
+  </ul>
+  </div>
+  <% end %>
+
+  <div class="inline">
+    <%= form.button 'Save', name: 'tab', value: 'Scoring', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  </div>
+
+<% end %>
+
+</div>

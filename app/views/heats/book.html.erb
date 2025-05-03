@@ -167,75 +167,7 @@ end
         next if @show_solos == 'even' and heat.number.odd?
         next if @show_solos == 'odd' and heat.number.even?
       end %>
-    <div class="page break-before-page">
-    <span class="mt-12 number"><%= number %></span>
-    <header>
-    <div class="mt-8 mb-4">
-      <h2 class="font-bold text-center text-4xl" style="font-family: '<%= @font_family %>'"><%= @event.name %></h1>
-
-      <p class="mt-4">
-        <% (@event.theme || @event.location).to_s.lines.each do |line| %>
-          <div class="text-center text-2xl" style="font-family: '<%= @font_family %>'"><%= line.chomp %></div>
-        <% end %>
-      </p>
-      
-      <p class="mt-2 text-center" style="font-family: '<%= @font_family %>'"><%= @event.date %></p>
-
-      <span class="mt-8 -ml-12 rotate-shadow">Solo</span>
-      <span class="mt-8 -ml-12 rotate">Solo</span>
-    </div>
-
-    <%
-      if @column_order == 1 or heat.follow.type == 'Professional'
-        dancers = [heat.lead, heat.follow]
-      else
-        dancers = [heat.follow, heat.lead]
-      end
-
-      studio = dancers.first.studio.name
-
-      heat.solo.formations.each do |formation|
-        dancers << formation.person if formation.on_floor
-      end
-
-      if dancers.length == 2
-        dancers = dancers.first.join(dancers.last)
-      else
-        dancers.map! &:display_name
-        dancers[-1] = "and #{dancers.last}"
-        dancers = dancers.join(', ')
-      end
-    %>
-
-    <div class="mb-4">
-    <div class="text-xl float-right"><b style="font-family: '<%= @font_family %>'">Studio</b>: <%= studio %></div>
-    <div class="text-xl"><b style="font-family: '<%= @font_family %>'">Level</b>: <%= heat.entry.level_name %></div>
-    </div>
-
-   
-    <div class="text-xl mb-4 grid grid-cols-2" style="grid-template-columns: auto 1fr"><span><b style="font-family: '<%= @font_family %>'">Names</b>:&nbsp;</span><span><%= dancers %></span></div>
-    <div class="text-xl"><b style="font-family: '<%= @font_family %>'">Dance</b>: <%= heat.dance.name %>
-    <% if heat.solo.combo_dance%>
-    / <%= heat.solo.combo_dance.name %>
-    <% end %>
-    </div>
-    </header>
-
-    <div class="mt-4 content truncate text-base">
-    <div><b class="text-xl" style="font-family: '<%= @font_family %>'">Comments:</b> <span class="whitespace-pre underline"><%= ' ' * 400 %></span></div>
-    <% 12.times do %>
-    <div>&nbsp</div>
-    <div><span class="whitespace-pre underline"><%= ' ' * 400 %></span></div>
-    <% end %>
-    </div>
-
-    <footer>
-    <div class="mt-12 grid grid-cols-2">
-    <div class="text-xl mt-4"><span class="whitespace-pre underline"><%= @judge ? @judge.display_name : ' ' * 30 %></span><br><b>Adjudicator</b></div>
-    <div class="text-xl items-end"><span style="float: right"><b>Score</b>: <span class="border-2 border-black" style="display: inline-block; min-height: .75in; min-width: 1in"></span></span></div>
-    </div>
-    </footer>
-    </div>
+    <%= render partial: 'heats/solo', locals: {number: number, heat: heat, show_name: show_name} %>
     <% else %>
     <% feedback = (@event.closed_scoring == "=" || @combine_open_and_closed) && %w(+ & @).include?(@event.open_scoring) %>
     <table class="<% unless feedback && @type == 'judge' %>break-inside-avoid <% end %>table-fixed w-full" style="font-size: 11.5px">
