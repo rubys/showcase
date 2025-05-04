@@ -399,9 +399,9 @@ class ScoresController < ApplicationController
           value = SCORES['Closed'].index score
 
           if value
-            category = 'Closed'
-          else
             category = 'Open'
+          else
+            category = %w(G @).include?(@open_scoring) ? 'Open' : 'Closed'
             value = SCORES['Open'].index score
           end
 
@@ -486,7 +486,7 @@ class ScoresController < ApplicationController
           else
             value = SCORES['Closed'].index score
             if value
-              category = 'Closed'
+              category = %w(G @).include?(@open_scoring) ? 'Open' : 'Closed'
             else
               category = 'Open'
               value = SCORES['Open'].index score
