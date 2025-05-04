@@ -32,7 +32,7 @@
       <% end %>
       <% elsif @score_values != false %>
       <% judge_ids.each do |judge| %>
-        <td class="text-center"><%= heat.scores.select {|score| score.judge_id == judge}.sort_by(&:slot).map(&:value).join(' ') %>
+        <td class="text-center"><%= heat.scores.select {|score| score.judge_id == judge}.sort_by(&:slot).map(&:display_value).join(' ') %>
       <% end %>
       <% end %>
       <td><div class="mx-4"><%= heat.category %> <%= heat.dance.name %></div>

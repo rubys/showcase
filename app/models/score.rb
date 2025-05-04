@@ -16,4 +16,13 @@ class Score < ApplicationRecord
       partial: 'scores/last_update', target: 'last-score-update',
       locals: {action: false, timestamp: Time.zone.now}
   end
+
+  def display_value
+    if value.start_with?('{')
+      # This is a JSON object, so we need to parse it
+      JSON.parse(value).map {|k, v| "#{k}: #{v}" }.join(', ')
+    else
+      value
+    end
+  end
 end

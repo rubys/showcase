@@ -449,6 +449,10 @@ export default class extends Controller {
           };
         }
 
+        if (target.name) {
+          data.name = target.name;
+        }
+
         this.post(data).then(response => {
           target.disabled = false;
           if (response.ok) {

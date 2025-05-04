@@ -272,7 +272,14 @@ class ScoresController < ApplicationController
         render json: score.errors, status: :unprocessable_entity
       end
     elsif not params[:score].blank? or not score.comments.blank? or Event.first.assign_judges > 0
-      score.value = params[:score]
+      if params[:name]
+        value = score.value.start_with?('{') ? JSON.parse(score.value) : {}
+        value[params[:name]] = params[:score]
+        score.value = value.to_json
+      else
+        score.value = params[:score]
+      end
+
       if score.save
         render json: score.as_json
       else

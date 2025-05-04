@@ -145,9 +145,35 @@ Swiping left and right on mobile devices and tablets also work.
 
     <div>
     <div class="float-right mt-4">
+    <% if ENV['RAILS_APP_DB'] != '2025-annapolis-medal-ball' %>
     <b>Score:</b>
-    <input disabled data-score-target="score" value="<%= @results.keys.first %>" pattern="^\d\d$"
-      class="border-2 border-black invalid:border-red-600 w-24 h-24 text-6xl text-center"/>
+    <input disabled data-score-target="score" value="<%= @results.keys.first %>" type="number" min="0" max="100"
+      class="border-2 border-black invalid:border-red-600 w-40 h-24 text-6xl text-center"/>
+    <% else %>
+    <% results = @results.keys.first.start_with?('{') ? JSON.parse(@results.keys.first) : {} %>
+    <div class="grid grid-cols-4 gap-2">
+    <div>
+    <div class="text-center">Technique</div>
+    <input disabled data-score-target="score" name="technique" value="<%= results["technique"] %>" type="number" min="0" max="25"
+      class="border-2 border-black invalid:border-red-600 w-32 h-24 text-6xl text-center"/>
+    </div>
+    <div>
+    <div class="text-center">Execution</div>
+    <input disabled data-score-target="score" name="execution" value="<%= results["execution"] %>" type="number" min="0" max="25"
+      class="border-2 border-black invalid:border-red-600 w-32 h-24 text-6xl text-center"/>
+    </div>
+    <div>
+    <div class="text-center">Presentation</div>
+    <input disabled data-score-target="score" name="poise" value="<%= results["poise"] %>" type="number" min="0" max="25"
+      class="border-2 border-black invalid:border-red-600 w-32 h-24 text-6xl text-center"/>
+    </div>
+    <div>
+    <div class="text-center">Showmanship</div>
+    <input disabled data-score-target="score" name="showmanship" value="<%= results["showmanship"] %>" type="number" min="0" max="25"
+        class="border-2 border-black invalid:border-red-600 w-32 h-24 text-6xl text-center"/>
+    </div>
+    </div>
+    <% end %>
     </div>
     </div>
     <% end %>
