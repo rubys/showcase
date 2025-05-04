@@ -99,11 +99,17 @@ Swiping left and right on mobile devices and tablets also work.
         dancers << formation.person if formation.on_floor
       end
 
-      studio = dancers.first.studio.name
+      if dancers.first
+        studio = dancers.first.studio.name
+      elsif @heat.entry.instructor
+        studio = @heat.entry.instructor.studio.name
+      else
+        studio = ''
+      end
 
       if dancers.length == 2
         dancers = dancers.first.join(dancers.last)
-      else
+      elsif dancers.length > 0
         dancers.map! &:display_name
         dancers[-1] = "and #{dancers.last}"
         dancers = dancers.join(', ')
