@@ -40,11 +40,12 @@ let browser: puppeteer.Browser = null
 
 let puppeteerOptions : puppeteer.PuppeteerLaunchOptions = {
   headless: "new",
-  executablePath: chrome
+  executablePath: chrome,
+  args: ['--font-render-hinting=none']
 }
 
 if (!process.env.FLY_REGION) {
-  puppeteerOptions.args = ['--no-sandbox', '--disable-setuid-sandbox']
+  puppeteerOptions.args.push('--no-sandbox', '--disable-setuid-sandbox')
 }
 
 // launch a single headless Chrome instance to be used by all requests
