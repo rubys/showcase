@@ -18,6 +18,7 @@ class Score < ApplicationRecord
   end
 
   def display_value
+    return unless value
     if value.start_with?('{')
       # This is a JSON object, so we need to parse it
       JSON.parse(value).map {|k, v| "#{k}: #{v}" }.join(', ')

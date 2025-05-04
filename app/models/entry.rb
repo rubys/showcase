@@ -28,21 +28,41 @@ class Entry < ApplicationRecord
   def subject_category(show_ages = true)
     return '-' if pro
 
-    if show_ages
-      if follow.type == 'Professional' or not follow.age_id
-        "G - #{age.category}"
-      elsif lead.type == 'Professional' or not lead.age_id
-        "L - #{age.category}"
+    if Event.current.pro_am == 'G'
+      if show_ages
+        if follow.type == 'Professional' or not follow.age_id
+          "G - #{age.category}"
+        elsif lead.type == 'Professional' or not lead.age_id
+          "L - #{age.category}"
+        else
+          "AC - #{age.category}"
+        end
       else
-        "AC - #{age.category}"
+        if follow.type == 'Professional'
+          "G"
+        elsif lead.type == 'Professional'
+          "L"
+        else
+          "AC"
+        end
       end
     else
-      if follow.type == 'Professional'
-        "G"
-      elsif lead.type == 'Professional'
-        "L"
+      if show_ages
+        if follow.type == 'Professional' or not follow.age_id
+          "L - #{age.category}"
+        elsif lead.type == 'Professional' or not lead.age_id
+          "F - #{age.category}"
+        else
+          "AC - #{age.category}"
+        end
       else
-        "AC"
+        if follow.type == 'Professional'
+          "L"
+        elsif lead.type == 'Professional'
+          "F"
+        else
+          "AC"
+        end
       end
     end
   end

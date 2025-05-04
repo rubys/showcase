@@ -145,7 +145,7 @@ Swiping left and right on mobile devices and tablets also work.
 
     <div>
     <div class="float-right mt-4">
-    <% if ENV['RAILS_APP_DB'] != '2025-annapolis-medal-ball' %>
+    <% if @event.solo_scoring == '1' %>
     <b>Score:</b>
     <input disabled data-score-target="score" value="<%= @results.keys.first %>" type="number" min="0" max="100"
       class="border-2 border-black invalid:border-red-600 w-40 h-24 text-6xl text-center"/>

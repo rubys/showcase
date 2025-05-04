@@ -9,6 +9,15 @@ class Event < ApplicationRecord
 
   after_save :upload_blobs, if: -> { counter_art.attached? && counter_art.blob.created_at > 1.minute.ago }
 
+  @@current = nil
+  def self.current
+    @@current ||= Event.first
+  end
+
+  def self.current=(event)
+    @@current = event
+  end
+
   def self.list
     showcases = YAML.load_file("#{__dir__}/../../config/tenant/showcases.yml")
 

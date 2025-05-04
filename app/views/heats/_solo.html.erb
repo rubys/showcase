@@ -1,5 +1,5 @@
 <div class="page break-before-page">
-<% if ENV['RAILS_APP_DB'] != '2025-annapolis-medal-ball'%>
+<% if @event.solo_scoring == '1' %>
   <div class="page break-before-page">
 <span class="mt-12 number"><%= number %></span>
 <header>

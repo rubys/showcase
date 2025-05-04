@@ -1,5 +1,6 @@
 class ApplicationController < ActionController::Base
   before_action :authenticate_user
+  before_action :current_event
 
   rescue_from ActiveRecord::ReadOnlyRecord do
     flash[:error] = 'Database is in readonly mode'
@@ -41,6 +42,10 @@ class ApplicationController < ActionController::Base
   end
 
   private
+    def current_event
+      Event.current = Event.first
+    end
+
     def authenticate_user
       return authenticate_site_owner if User.trust_level >= 75
 
