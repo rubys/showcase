@@ -41,7 +41,8 @@ let browser: puppeteer.Browser = null
 let puppeteerOptions : puppeteer.PuppeteerLaunchOptions = {
   headless: "new",
   executablePath: chrome,
-  args: ['--font-render-hinting=none']
+  // https://www.browserless.io/blog/puppeteer-print
+  args: ['--font-render-hinting=none', '--disable-gpu']
 }
 
 if (!process.env.FLY_REGION) {
@@ -163,6 +164,7 @@ const server = Bun.serve({
 
     page.setDefaultNavigationTimeout(FETCH_TIMEOUT)
     page.setDefaultTimeout(FETCH_TIMEOUT)
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36')
 
     // main puppeteer logic: fetch url, convert to URL, return response
     try {
