@@ -170,7 +170,7 @@ end
     <%= render partial: 'heats/solo', locals: {number: number, heat: heat, show_name: show_name} %>
     <% else %>
     <% feedback = (@event.closed_scoring == "=" || @combine_open_and_closed) && %w(+ & @).include?(@event.open_scoring) %>
-    <table class="<% unless feedback && @type == 'judge' %>break-inside-avoid <% end %>table-fixed w-full border-y border-collapse border-solid border-gray-200" style="font-size: 11.5px">
+    <table class="<% unless feedback && @type == 'judge' %>break-inside-avoid <% end %>table-fixed w-full border-y border-collapse border-solid border-gray-400" style="font-size: 11.5px">
       <colgroup>
         <col width="5px">
         <% unless heat.category == 'Solo' %>
