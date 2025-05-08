@@ -180,6 +180,16 @@
     :region: ord
     :logo: arthur-murray-logo.gif
     :locale: en-US
+  greenhills:
+    :name: Nashville-Green Hills
+    :region: atl
+    :logo: arthur-murray-logo.gif
+    :locale: en-US
+    :events:
+      spring:
+        :name: Spring
+      music-city:
+        :name: Music City
   harrisburg:
     :name: Harrisburg
     :region: iad
