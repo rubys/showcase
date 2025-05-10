@@ -356,6 +356,8 @@
         :name: Fall CDDC
       swing-sway:
         :name: Swing & Sway
+      royal-oak:
+        :name: Royal Oak
   monza:
     :name: Monza
     :region: ams
