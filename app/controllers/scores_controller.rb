@@ -273,7 +273,7 @@ class ScoresController < ApplicationController
       end
     elsif not params[:score].blank? or not score.comments.blank? or Event.first.assign_judges > 0
       if params[:name]
-        value = score.value.start_with?('{') ? JSON.parse(score.value) : {}
+        value = score.value&.start_with?('{') ? JSON.parse(score.value) : {}
         value[params[:name]] = params[:score]
         score.value = value.to_json
       else
