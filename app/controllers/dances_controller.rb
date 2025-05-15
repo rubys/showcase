@@ -150,7 +150,15 @@ class DancesController < ApplicationController
   end
 
   def agenda
-    @categories = dance_categories(@dance, params[:solo])
+    if Category.where(routines: true).many? && !Event.current.agenda_based_entries?
+      @overrides = Category.where(routines: true).map {|category| [category.name, category.id]}
+
+      solo_id = params[:solo_id]
+      @solo = Solo.find(solo_id) if solo_id
+    else
+      @categories = dance_categories(@dance, params[:solo])
+    end
+
     respond_to do |format|
       format.turbo_stream { render turbo_stream: turbo_stream.replace('category-override',
         render_to_string(partial: 'categories'))}

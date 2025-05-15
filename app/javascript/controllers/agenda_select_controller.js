@@ -6,6 +6,11 @@ export default class extends Controller {
     this.token = document.querySelector('meta[name="csrf-token"]')?.content;
 
     let select = this.element.querySelector("select");
+    let solo = this.element.dataset.solo == "true";
+    let body = { id: select.value, solo }
+
+    let soloId = this.element.dataset.soloId;
+    if (soloId) body.solo_id = soloId;
 
     select.addEventListener("change", event => {
       fetch(this.element.dataset.url, {
@@ -16,10 +21,7 @@ export default class extends Controller {
         }),
         credentials: "same-origin",
         redirect: "follow",
-        body: JSON.stringify({
-          id: event.target.value,
-          solo: this.element.dataset.solo == "true"
-        })
+        body: JSON.stringify(body)
       }).then (response => response.text())
         .then(html => Turbo.renderStreamMessage(html));
     })

@@ -89,7 +89,7 @@ class SolosController < ApplicationController
       @dances = Dance.order(:name).all.pluck(:name, :id)
     end
 
-    if @solo.category_override_id and !event.agenda_based_entries?
+    if (@solo.category_override_id || Category.where(routines: true).many?) && !event.agenda_based_entries?
       @overrides = Category.where(routines: true).map {|category| [category.name, category.id]}
     end
 

@@ -23,7 +23,7 @@
   </div>
   <% end %>
 
-  <div class="my-5" data-controller="agenda-select" data-url=<%= agenda_dances_path %> data-solo="true">
+  <div class="my-5" data-controller="agenda-select" data-url=<%= agenda_dances_path %> data-solo="true" data-solo-id=<%= solo.id %>>
     <%= form.label :dance_id %>
     <%= form.select :dance_id, @dances, {selected: @dance},
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
