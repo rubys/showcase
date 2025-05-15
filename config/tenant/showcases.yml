@@ -443,6 +443,8 @@
         :name: Winter Wonderland
       medal-ball:
         :name: Medal Ball
+      extravaganza:
+        :name: Extravaganza
   stockton:
     :name: Stockton
     :region: sjc
