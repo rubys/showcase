@@ -497,6 +497,11 @@
         :name: Medal Ball
       freestyles:
         :name: Freestyles
+  vegas:
+    :name: Las Vegas
+    :region: sjc
+    :logo: ''
+    :locale: en-US
   vicenza:
     :name: Vicenza
     :region: ams
