@@ -32,7 +32,7 @@ class ApplicationController < ActionController::Base
     min_version = MODERN_BROWSER[user_agent.browser]
     return if min_version == nil
     if min_version == false || user_agent.version < UserAgent::Version.new(min_version.to_s)
-      browser = "You are running #{user_agent.browser} 15.6."
+      browser = "You are running #{user_agent.browser} #{user_agent.version}."
       if user_agent.browser == 'Safari' and user_agent.platform == 'Macintosh'
         "#{browser} Please upgrade your operating system or swtich to a different browser."
       else
