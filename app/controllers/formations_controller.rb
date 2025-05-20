@@ -77,6 +77,10 @@ class FormationsController < ApplicationController
       @formation.rotate! @formation.index(@instructor.id)
     end
 
+    if (@solo.category_override_id || Category.where(routines: true).many?) && !Event.current.agenda_based_entries?
+      @overrides = Category.where(routines: true).map {|category| [category.name, category.id]}
+    end
+
     @on_floor = @solo.formations.all? {|formation| formation.on_floor}
     @heat = params[:heat]
     @locked = Event.last.locked?
