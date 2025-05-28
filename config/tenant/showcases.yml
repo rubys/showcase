@@ -266,6 +266,11 @@
     :region: ewr
     :logo: ''
     :locale: en-US
+    :events:
+      freestyle:
+        :name: Freestyle
+      medal-ball:
+        :name: Medal Ball
   mdballroom:
     :name: Memorial DanceSport Ballroom
     :region: dfw
