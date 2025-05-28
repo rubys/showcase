@@ -78,7 +78,7 @@ class AdminController < ApplicationController
     @pending = deployed["pending"] || {}
     @deployed = (deployed['ProcessGroupRegions'].
       find {|process| process['Name'] == 'app'}["Regions"]+ (@pending['add'] || [])).sort.
-      map {|code| [code, @regions.find {|region| region['Code'] == code}]}.to_h
+      map {|code| [code, @regions.find {|region| region['code'] == code}]}.to_h
 
     exists = Region.where(code: @deployed.keys).pluck(:code)
     @deployed.each do |code, region|
@@ -86,9 +86,9 @@ class AdminController < ApplicationController
       Region.create!(
         code: code,
         type: 'fly',
-        location: region['Name'],
-        latitude: region['Latitude'],
-        longitude: region['Longitude']
+        location: region['name'],
+        latitude: region['latitude'],
+        longitude: region['longitude']
       )
     end
 

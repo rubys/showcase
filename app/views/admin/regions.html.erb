@@ -27,9 +27,9 @@
       <tr>
       <% end %>
         <td class="text-center"><%= link_to code, show_region_path(code) %></td>
-        <td class="text-left"><%= region['Name'] %></td>
-        <td class="text-right"><%= '%.4f' % region['Latitude'].to_f %></td>
-        <td class="text-right"><%= '%.4f' % region['Longitude'].to_f %></td>
+        <td class="text-left"><%= region['name'] %></td>
+        <td class="text-right"><%= '%.4f' % region['latitude'].to_f %></td>
+        <td class="text-right"><%= '%.4f' % region['longitude'].to_f %></td>
       </tr>
     <% end %>
     </tbody>

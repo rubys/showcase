@@ -14,8 +14,8 @@ module Configurator
     map['regions'] = regions.map do |region|
       [region['Code'], {
         'name' => region['Name'],
-        'lat' => region['Latitude'],
-        'lon' => region['Longitude']
+        'lat' => region['latitude'],
+        'lon' => region['longitude']
       }]
     end.to_h
 
@@ -39,7 +39,7 @@ module Configurator
     deployed = new_regions
 
     regions = JSON.parse(IO.read 'tmp/regions.json').
-      map {|region| [region['Code'], [region["Latitude"], region["Longitude"]]]}.
+      map {|region| [region['code'], [region["latitude"], region["longitude"]]]}.
       select {|region, geo| deployed.include? region}.to_h
 
     select_region = lambda do |location|
