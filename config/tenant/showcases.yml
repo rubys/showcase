@@ -105,6 +105,11 @@
     :region: atl
     :logo: ''
     :locale: en-US
+  chicago:
+    :name: Chicago
+    :region: ord
+    :logo: arthur-murray-logo.gif
+    :locale: en-US
   clearwater:
     :name: Clearwater
     :region: mia
