@@ -773,7 +773,7 @@ class PeopleController < ApplicationController
           if ballrooms > 1
             assign_rooms(ballrooms, heats, -number).each do |room, heats|
               heats.each do |heat|
-                judge = counts.sort_by(&:last).find {|id, count| eligable[room].include? id}.first
+                judge = counts.sort_by(&:last).find {|id, count| eligable[room.to_sym].include? id}.first
                 counts[judge] += 1
                 redo if judge_dancers.include?(judge) and dancers[number.to_f].include?(judge_dancers[judge])
                 Score.create! heat_id: heat.id, judge_id: judge
