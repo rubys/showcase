@@ -370,6 +370,16 @@
         :name: Royal Oak
       lincolnshire:
         :name: Lincolnshire
+  montreal:
+    :name: Montreal
+    :region: bos
+    :logo: ''
+    :locale: fr-CA
+    :events:
+      certification-exams:
+        :name: Certification Exams
+      graduation-ball:
+        :name: Graduation Ball
   monza:
     :name: Monza
     :region: ams
