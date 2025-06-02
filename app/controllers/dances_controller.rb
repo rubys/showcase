@@ -150,8 +150,13 @@ class DancesController < ApplicationController
   end
 
   def agenda
-    if Category.where(routines: true).many? && !Event.current.agenda_based_entries?
+    if Category.where(routines: true).any? && !Event.current.agenda_based_entries?
       @overrides = Category.where(routines: true).map {|category| [category.name, category.id]}
+      if params[:dance] and params[:dance][:id]
+        dance = Dance.find(params[:dance][:id])
+        cat = dance&.solo_category
+        @overrides.unshift [cat.name, cat.id] if cat
+      end
 
       solo_id = params[:solo_id]
       @solo = Solo.find(solo_id) if solo_id

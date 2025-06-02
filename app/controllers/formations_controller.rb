@@ -77,8 +77,10 @@ class FormationsController < ApplicationController
       @formation.rotate! @formation.index(@instructor.id)
     end
 
-    if (@solo.category_override_id || Category.where(routines: true).many?) && !Event.current.agenda_based_entries?
+    if (@solo.category_override_id || Category.where(routines: true).any?) && !Event.current.agenda_based_entries?
       @overrides = Category.where(routines: true).map {|category| [category.name, category.id]}
+      cat = @solo.heat.dance.solo_category
+      @overrides.unshift [cat.name, cat.id] if cat
     end
 
     @on_floor = @solo.formations.all? {|formation| formation.on_floor}

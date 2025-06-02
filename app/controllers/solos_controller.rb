@@ -89,8 +89,10 @@ class SolosController < ApplicationController
       @dances = Dance.order(:name).all.pluck(:name, :id)
     end
 
-    if (@solo.category_override_id || Category.where(routines: true).many?) && !event.agenda_based_entries?
+    if (@solo.category_override_id || Category.where(routines: true).any?) && !event.agenda_based_entries?
       @overrides = Category.where(routines: true).map {|category| [category.name, category.id]}
+      cat = @solo.heat.dance.solo_category
+      @overrides.unshift [cat.name, cat.id] if cat
     end
 
     @heat = params[:heat]
