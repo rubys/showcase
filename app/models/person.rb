@@ -132,9 +132,9 @@ class Person < ApplicationRecord
     avail_time = Time.parse(available[1..])
 
     if available[0] == '<'
-      Set.new(start_times.select {|number, time| time < avail_time}.map(&:first))
+      Set.new(start_times.select {|number, time| time && time < avail_time}.map(&:first))
     else
-      Set.new(start_times.select {|number, time| time > avail_time}.map(&:first))
+      Set.new(start_times.select {|number, time| time && time > avail_time}.map(&:first))
     end
   end
 
