@@ -30,9 +30,9 @@ class Entry < ApplicationRecord
 
     if Event.current.pro_am == 'G'
       if show_ages
-        if follow.type == 'Professional' or not follow.age_id
+        if follow.type == 'Professional' # or not follow.age_id
           "G - #{age.category}"
-        elsif lead.type == 'Professional' or not lead.age_id
+        elsif lead.type == 'Professional' # or not lead.age_id
           "L - #{age.category}"
         else
           "AC - #{age.category}"
@@ -48,9 +48,9 @@ class Entry < ApplicationRecord
       end
     else
       if show_ages
-        if follow.type == 'Professional' or not follow.age_id
+        if follow.type == 'Professional' # or not follow.age_id
           "L - #{age.category}"
-        elsif lead.type == 'Professional' or not lead.age_id
+        elsif lead.type == 'Professional' # or not lead.age_id
           "F - #{age.category}"
         else
           "AC - #{age.category}"
