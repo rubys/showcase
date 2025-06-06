@@ -473,6 +473,8 @@
     :events:
       mdna-medal-ball:
         :name: MDNA Medal Ball
+      beach-ball:
+        :name: Beach Ball
       extravaganza:
         :name: Extravaganza
   sugarland:
