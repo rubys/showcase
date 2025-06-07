@@ -29,7 +29,7 @@
           height: 33, width: 33, class: 'ml-4 mb-1'
         ), 
         toggle_lock_category_path(category),
-        form_class: "group-hover:inline hidden" %>
+        form_class: "group-hover:inline " + (category.locked ? "inline" : "hidden") %>
       <% end %>
     </h1>
 
