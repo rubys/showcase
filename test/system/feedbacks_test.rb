@@ -7,20 +7,17 @@ class FeedbacksTest < ApplicationSystemTestCase
 
   test "visiting the index" do
     visit feedbacks_url
-    assert_selector "h1", text: "Feedbacks"
+    assert_selector "h1", text: "Feedback Buttons"
   end
 
   test "should create feedback" do
     visit feedbacks_url
-    click_on "New feedback"
+    find_all("input[value='']").first.set("Poise")
+    find_all("input").first.click
 
-    fill_in "Abbr", with: @feedback.abbr
-    fill_in "Order", with: @feedback.order
-    fill_in "Value", with: @feedback.value
-    click_on "Create Feedback"
-
-    assert_text "Feedback was successfully created"
-    click_on "Back"
+    assert_selector "input[value='P']"
+    assert_selector "span", text: "Poise"
+    click_on "Back to settings"
   end
 
   test "should update Feedback" do
