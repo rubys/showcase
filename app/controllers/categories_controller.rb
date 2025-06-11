@@ -96,7 +96,7 @@ class CategoriesController < ApplicationController
         heat_count = heats
          loop do
            block = split.shift
-           break if block >= heat_count
+           break if block >= heat_count || block <= 0
            extensions_needed += 1
            heat_count -= block
            split.push block if split.empty?

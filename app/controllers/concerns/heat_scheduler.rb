@@ -318,7 +318,7 @@ module HeatScheduler
           heat_count = groups.length
           loop do
             block = split.shift
-            break if block >= heat_count
+            break if block >= heat_count || block <= 0
             extensions_needed += 1
             heat_count -= block
             split.push block if split.empty?
@@ -344,6 +344,7 @@ module HeatScheduler
           extensions_found.each do |extension|
             split.push block if split.empty?
             block = split.shift
+            break if block <= 0 || remainder.empty?
             agenda[extension] = remainder[0...block]
             remainder = remainder[block..]
           end
@@ -614,7 +615,7 @@ module HeatScheduler
     problems.each do |heat, available|
       numbers = available - pinned - [heat.number.to_f]
       alternate = Heat.where(category: heat.category, dance_id: heat.dance_id, number: numbers).distinct.pluck(:number).sample
-      
+
       if alternate
         original = heat.number
         source = Heat.where(number: original).all.to_a
