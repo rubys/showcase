@@ -519,6 +519,8 @@
     :events:
       medal-ball:
         :name: Medal Ball
+      beach-bash:
+        :name: Beach Bash
       freestyles:
         :name: Freestyles
   vegas:
