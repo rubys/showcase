@@ -33,13 +33,15 @@ bin/rails test
 # Run with coverage report (SimpleCov generates /coverage/index.html)
 bin/rails test
 
-# Current coverage: ~4.4% (366/8271 lines)
-# Recently added comprehensive tests for:
+# Current coverage: ~4.0% (331/8336 lines)
+# Comprehensive test coverage for core ballroom dance competition models:
 # - HeatScheduler concern (heat scheduling algorithm)
-# - Entry model (validation logic, pro-am relationships)
+# - Entry model (validation logic, pro-am relationships)  
 # - Heat model (basic functionality + scrutineering rules)
 # - Person model (STI, validations, billing, name parsing)
 # - Score model (judge scoring, JSON handling, scrutineering)
+# - Dance model (dance types, categories, multi-dance events)
+# - Category model (competition categories, extensions, scheduling)
 
 # Run system tests
 bin/rails test:system
