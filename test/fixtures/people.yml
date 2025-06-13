@@ -39,3 +39,31 @@ guest:
   name: Guest
   studio: one
   type: Guest
+
+instructor_one:
+  name: Instructor One
+  studio: one
+  type: Professional
+  back: 101
+  role: Leader
+
+instructor_two:
+  name: Instructor Two
+  studio: two
+  type: Professional
+  back: 102
+  role: Leader
+
+student_one:
+  name: Student One
+  studio: one
+  type: Student
+  role: Follower
+  level: one
+
+student_two:
+  name: Student Two
+  studio: one
+  type: Student
+  role: Follower
+  level: one

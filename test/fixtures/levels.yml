@@ -20,3 +20,9 @@ AB:
 
 N:
   name: Newcomer
+
+one:
+  name: Bronze
+
+two:
+  name: Silver

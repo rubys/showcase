@@ -77,6 +77,10 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
   # gem "webdrivers"
+  
+  # Code coverage
+  gem "simplecov", require: false
+  gem "simplecov-html", require: false
 end
 
 gem "dockerfile-rails"
