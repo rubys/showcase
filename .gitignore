@@ -67,3 +67,6 @@ public/studios/
 
 config/storage/production.yml
 flat-storage
+
+# Ignore SimpleCov coverage reports
+/coverage/
