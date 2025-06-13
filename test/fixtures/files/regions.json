@@ -1,0 +1,23 @@
+[
+  {
+    "Code": "NYC",
+    "Name": "New York",
+    "code": "NYC",
+    "latitude": 40.7128,
+    "longitude": -74.0060
+  },
+  {
+    "Code": "FL",
+    "Name": "Florida",
+    "code": "FL",
+    "latitude": 27.7663,
+    "longitude": -82.6404
+  },
+  {
+    "Code": "CA",
+    "Name": "California",
+    "code": "CA",
+    "latitude": 36.7783,
+    "longitude": -119.4179
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "ProcessGroupRegions": [
+    {
+      "Name": "app",
+      "Regions": ["NYC", "FL", "CA"]
+    }
+  ],
+  "pending": {
+    "add": [],
+    "delete": []
+  }
+}

@@ -35,7 +35,8 @@ class LocationsController < ApplicationController
     end
 
     regions = new_regions
-    @regions = JSON.parse(IO.read 'tmp/regions.json').
+    regions_file = Rails.env.test? ? 'test/fixtures/files/regions.json' : 'tmp/regions.json'
+    @regions = JSON.parse(IO.read regions_file).
       select {|region| regions.include? region['Code']}.
       map {|region| [region['Name'], region['Code']]}.
       sort

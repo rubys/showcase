@@ -117,7 +117,8 @@ private
   end
 
   def new_regions
-    deployed = JSON.parse(IO.read 'tmp/deployed.json')
+    deployed_file = Rails.env.test? ? 'test/fixtures/files/deployed.json' : 'tmp/deployed.json'
+    deployed = JSON.parse(IO.read deployed_file)
     pending = deployed['pending'] || {}
     deployed = deployed['ProcessGroupRegions'].
       find {|process| process['Name'] == 'app'}["Regions"]
