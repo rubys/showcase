@@ -6,13 +6,14 @@ export default class extends Controller {
     this.token = document.querySelector('meta[name="csrf-token"]')?.content;
 
     let select = this.element.querySelector("select");
-    let solo = this.element.dataset.solo == "true";
-    let body = { id: select.value, solo }
-
-    let soloId = this.element.dataset.soloId;
-    if (soloId) body.solo_id = soloId;
 
     select.addEventListener("change", event => {
+      let solo = this.element.dataset.solo == "true";
+      let body = { id: select.value, solo }
+
+      let soloId = this.element.dataset.soloId;
+      if (soloId) body.solo_id = soloId;
+
       fetch(this.element.dataset.url, {
         method: "POST",
         headers: window.inject_region({
