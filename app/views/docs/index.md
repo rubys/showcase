@@ -16,7 +16,7 @@ they can return to the task at hand.
 
 <p class="mt-4">Click on the <span class="text-emerald-600">ⓘ</span> in the top left corner of this page to see helpful hints.</p>
 
-**New to ballroom dance showcases?** Check out our [Glossary](./Glossary) for definitions of common terms.
+**New to ballroom dance showcases?** Start with our [Getting Started Guide](./Getting-Started) or check out our [Glossary](./Glossary) for definitions of common terms.
 
 ## Roles
 
