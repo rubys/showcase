@@ -30,6 +30,17 @@ bin/dev demo
 # Run all tests except system tests
 bin/rails test
 
+# Run with coverage report (SimpleCov generates /coverage/index.html)
+bin/rails test
+
+# Current coverage: ~4.4% (366/8271 lines)
+# Recently added comprehensive tests for:
+# - HeatScheduler concern (heat scheduling algorithm)
+# - Entry model (validation logic, pro-am relationships)
+# - Heat model (basic functionality + scrutineering rules)
+# - Person model (STI, validations, billing, name parsing)
+# - Score model (judge scoring, JSON handling, scrutineering)
+
 # Run system tests
 bin/rails test:system
 
