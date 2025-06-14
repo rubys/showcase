@@ -227,10 +227,8 @@ This guide assumes you have:
 ## Common Beginner Mistakes
 
 1. **Not testing the schedule early** - Generate a preliminary schedule as soon as you have entries
-2. **Forgetting to set start times** - Without agenda start times, you won't get time estimates
-3. **Making heat size limits too restrictive** - This can prevent successful scheduling
-4. **Not having paper backup** - Technology can fail; always have a manual alternative
-5. **Rushing event day setup** - Start tech setup early to handle any problems
+2. **Not having paper backup** - Technology can fail; always have a manual alternative
+3. **Rushing event day setup** - Start tech setup early to handle any problems
 
 ## Getting Help
 
