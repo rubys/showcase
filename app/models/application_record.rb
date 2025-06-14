@@ -74,7 +74,7 @@ class ApplicationRecord < ActiveRecord::Base
       FileUtils.mkdir_p File.dirname(dest)
       File.open(dest, 'wb') do |file|
         file.binmode
-        counter_art.blob.download { |chunk| file.write(chunk) }
+        blob.download { |chunk| file.write(chunk) }
         file.flush
       end
     end
