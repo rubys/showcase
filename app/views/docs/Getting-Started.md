@@ -2,9 +2,14 @@
 
 Welcome to the Showcase Application! This guide will walk you through setting up and running your first ballroom dance showcase event from start to finish.
 
+Following is a description of the steps needed for a typical, largish event. This program has also been used successfully by multiple studio owners for same day in studio events.
+
+Be aware that this application has a lot of features and options. Every option is there because some studio owner at some time asked for it. Just because some studio owner asked for some feature for their event doesn't mean that you have to use every feature in your event. Use only what you need.
+
 ## Before You Begin
 
 This guide assumes you have:
+
 - Received your event ID and set up your password
 - Basic familiarity with ballroom dance terminology (see our [Glossary](./Glossary))
 - An entry form or list of dances you want to offer
@@ -23,9 +28,8 @@ This guide assumes you have:
    - Choose Scoring
 
 3. **Set Up Packages** (if using invoicing):
-   - Create dance packages (e.g., "3-Dance Bronze Package")
-   - Set individual dance prices
-   - Configure student vs. studio billing options
+   - Create dance packages and options for students, guests, and instructors (e.g., "Saturday Only Package")
+   - Set individual dance prices for student and studio billing options for freestyles and solos
    - See [Invoicing](./tasks/Invoicing) for detailed setup
 
 4. **Configure Heat Settings**:
