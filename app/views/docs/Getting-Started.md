@@ -227,6 +227,6 @@ Once you're comfortable with basic event management:
 - [Scheduling Guide](./tasks/Scheduling) - Detailed scheduling instructions
 - [Invoicing Guide](./tasks/Invoicing) - Billing and payment setup
 - [Settings Guide](./tasks/Settings) - Complete settings reference
-- [Troubleshooting](./Troubleshooting) - Common problems and solutions
+- [Troubleshooting Guide](./Troubleshooting) - Common problems and solutions
 
 Remember: Every successful showcase started with someone's first event. Take it step by step, test everything early, and don't hesitate to ask for help!
