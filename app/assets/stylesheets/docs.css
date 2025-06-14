@@ -26,7 +26,17 @@ body.docs {
 
 .docs h2 {
   margin-top: 0.5em;
+  margin-bottom: 0.2em;
   font-size: xx-large;
+}
+
+.docs h3 {
+  margin-top: 0.5em;
+  font-size: x-large;
+}
+
+.docs h3 + div.step {
+  margin-left: 2em;  
 }
 
 .docs ul {

@@ -14,13 +14,13 @@ This guide assumes you have:
 ## Phase 1: Initial Setup (1-2 weeks before registration opens)
 
 ### Step 1: Configure Event Settings
+<div class="step" markdown="1">
 
 1. **Navigate to Settings** from your main event page
 2. **Fill in Event Details**:
    - Event name, date, location
-   - Contact information
-   - Registration deadlines
-   - Pricing structure
+   - Review options
+   - Choose Scoring
 
 3. **Set Up Packages** (if using invoicing):
    - Create dance packages (e.g., "3-Dance Bronze Package")
@@ -32,84 +32,90 @@ This guide assumes you have:
    - Heat interval (typically 90 seconds)
    - Maximum couples per heat (6-8 for competitions, 8-10 for showcases)
    - Age and level mixing preferences
+</div>
 
 ### Step 2: Set Up Your Dance List
+<div class="step" markdown="1">
 
-1. **Go to Dances** from the main page
-2. **Add Your Dances**:
+1. **Add Your Dances**:
    - Add each dance style you'll offer (Waltz, Cha Cha, etc.)
-   - Set skill levels (Newcomer, Bronze, Silver, Gold)
-   - Configure open/closed options if needed
-
-3. **Arrange Dance Columns**:
    - Click **Arrange** to organize dances into columns
    - Match your entry form layout using drag-and-drop
    - Save when complete
+</div>
 
-### Step 3: Create Your Agenda (Optional but Recommended)
+### Step 3: Create Your Agenda (Can be done or adjusted later)
+<div class="step" markdown="1">
 
 1. **Navigate to Agenda**
 2. **Create Categories** for different portions of your event:
-   - "Morning Newcomer/Bronze"
-   - "Afternoon Silver/Gold" 
-   - "Evening Solos and Formations"
-   - "Scholarship Events"
+   - "Open Smooth"
+   - "Closed Rhythm" 
+   - "Solos and Formations"
+   - "Multi heats"
 
 3. **Assign Dances** to appropriate categories
 4. **Set Start Times** for automatic scheduling
+</div>
 
 ## Phase 2: Registration Period (2-8 weeks)
 
 ### Step 4: Invite Studios (Optional)
+<div class="step" markdown="1">
 
 **Self-Entry Option**: Allow studios to enter their own students
+
 - Provide studio contact information to receive access
 - Studios can manage their own entries and changes
 - You maintain oversight and final control
 
 **Organizer Entry**: Enter all participants yourself
-- More control over the process
-- Studios send you entry forms to input
-- Good option for smaller events
+
+ - More control over the process
+ - Studios send you entry forms to input
+ - Good option for smaller events
+
+</div>
 
 ### Step 5: Manage Entries
+<div class="step" markdown="1">
 
 1. **Add Studios** (if not already done)
-2. **Add People**:
-   - Instructors, students, judges
-   - Contact information and skill levels
-   - Studio affiliations
+2. **Add People to Studios**:
+   - Instructors, students
+   - Lead, Follow, (or both)
+   - Age and skill levels
 
 3. **Create Entries**:
    - Select leader and follower for each dance
    - Choose appropriate skill level and age category
-   - Add to packages or individual billing
+   - Select dances. If you want mutliple entries for any dance, click on the dance then type a number.
 
-4. **Handle Changes**:
-   - Use [Scratches and Walk-ons](./tasks/Scratches-and-Walk-ons) for last-minute changes
-   - Update billing as needed
-
-## Phase 3: Pre-Event Preparation (1-2 weeks before)
-
-### Step 6: Add Solos and Formations
-
-1. **Navigate to Solos**
-2. **Add Individual Performances**:
+4. **Add Solos**:
+   - Select dance (and optional second dance)
+   - Enter song information
    - Upload music files for each solo
-   - Set performance order within categories
-   - Assign to appropriate agenda sections
 
-3. **Configure Formations**:
-   - Set up as student or studio formations
+5. **Add Formations**:
+   - Set up as student or click on Add Formation from a studio for studio formations
    - Add all participating dancers
    - Upload choreography music
 
-### Step 7: Generate and Review Schedule
+6. **Handle Changes**:
+   - Use [Scratches and Walk-ons](./tasks/Scratches-and-Walk-ons) for last-minute changes
+   - Update billing as needed
+</div>
+
+## Phase 3: Pre-Event Preparation (1-2 weeks before)
+
+### Step 6: Generate and Review Schedule
+<div class="step" markdown="1">
 
 1. **Go to Heats page**
-2. **Click Redo** to generate your schedule
-3. **Review Results**:
-   - Check heat sizes (aim for 4-8 couples)
+2. **Click Solos** to order your solos
+3. **Click Redo** to generate your schedule
+4. **Review Results**:
+   - Check heat sizes (aim for 4-8 couples). At the bottom of the page is a summary.
    - Verify no scheduling conflicts
    - Look for any problems flagged by the system
 
@@ -117,8 +123,10 @@ This guide assumes you have:
    - If schedule is too long, see [Scheduling](./tasks/Scheduling) troubleshooting
    - Adjust settings and regenerate as needed
    - Use [Reordering](./tasks/Reordering) for fine-tuning
+</div>
 
-### Step 8: Prepare Materials
+### Step 7: Prepare Materials
+<div class="step" markdown="1">
 
 1. **Generate Back Numbers**:
    - Go to [Back Numbers](./tasks/Back-Numbers)
@@ -130,26 +138,39 @@ This guide assumes you have:
    - Judge sheets (if using paper scoring)
    - Programs for spectators
    - See [Publishing](./tasks/Publishing) for options
+</div>
+
+### Step 8: Test Judging Functions
+<div class="step" markdown="1">
+
+1. **Tablets or laptops for each judge**
+
+   - **IMPORTANT** Check for browser warning on main page for the event on **each** device. Safari is problematic unlesss you keep up to date with operating system changes; otherwise consider using Chrome, Edge, or Firefox.
+
+2. **Test [Scoring](./tasks/Scoring) system**
+
+  - Finding out at the time of the event that scores or judge comments aren't being saved due to a browser issue will mean that your students won't get the value they are expecting out of the event.
+
+3. **Have paper backup ready**
+</div>
 
 ## Phase 4: Event Day
 
 ### Step 9: Set Up Technology
+<div class="step" markdown="1">
 
-1. **Set Up Judging Stations**:
-   - Tablets or laptops for each judge
-   - Test [Scoring](./tasks/Scoring) system
-   - Have paper backup ready
-
-2. **Configure Display Systems**:
+1. **Configure Display Systems**:
    - [Counter](./tasks/Counter) display for current heat
    - [Mobile](./tasks/Mobile) access for participants
    - DJ music system if handling audio
 
-3. **Brief Your Team**:
+2. **Brief Your Team**:
    - Share [Judge](./roles/Judge), [DJ](./roles/DJ), and [Emcee](./roles/Emcee) guides
    - Test all systems before guests arrive
+</div>
 
 ### Step 10: Run Your Event
+<div class="step" markdown="1">
 
 1. **Monitor Progress**:
    - Track current heat on counter display
@@ -163,12 +184,14 @@ This guide assumes you have:
 
 3. **Complete Scoring**:
    - Ensure all heats are scored
-   - Review results before announcing
+   - Review results before announcing by visiting the Summary page
    - Generate final results and awards
+</div>
 
 ## Phase 5: Post-Event
 
 ### Step 11: Finalize and Distribute Results
+<div class="step" markdown="1">
 
 1. **Complete Final Scoring**
 2. **Generate Reports**:
@@ -180,6 +203,7 @@ This guide assumes you have:
    - Generate final invoices
    - Process any outstanding payments
    - Send receipts and summaries
+</div>
 
 ## Quick Reference Checklists
 
