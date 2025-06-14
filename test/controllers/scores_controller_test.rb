@@ -661,4 +661,194 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select 'body'
   end
+
+  # ===== CRITICAL BUSINESS LOGIC TESTS =====
+
+  test "post handles readonly database correctly" do
+    # Mock readonly state
+    ApplicationRecord.class_variable_set(:@@readonly_showcase, true)
+    
+    post post_score_path(@judge), params: {
+      heat: @test_heat.id,
+      score: 'G'
+    }, xhr: true
+    
+    assert_response :service_unavailable
+    assert_equal 'database is readonly', response.body.delete('"')
+    
+  ensure
+    # Reset readonly state
+    ApplicationRecord.class_variable_set(:@@readonly_showcase, false)
+  end
+
+  test "post_feedback handles complex feedback state transitions" do
+    # Test good feedback addition
+    post post_feedback_path(@judge), params: {
+      heat: @test_heat.id,
+      good: 'timing'
+    }, xhr: true
+    
+    assert_response :success
+    @score.reload
+    assert_equal 'timing', @score.good
+    
+    # Test adding second good feedback item
+    post post_feedback_path(@judge), params: {
+      heat: @test_heat.id,
+      good: 'posture'  
+    }, xhr: true
+    
+    @score.reload
+    assert_includes @score.good.split(' '), 'timing'
+    assert_includes @score.good.split(' '), 'posture'
+    
+    # Test moving feedback from good to bad
+    post post_feedback_path(@judge), params: {
+      heat: @test_heat.id,
+      bad: 'timing'
+    }, xhr: true
+    
+    @score.reload
+    assert_includes @score.bad.split(' '), 'timing'
+    assert_not_includes @score.good.split(' '), 'timing'
+  end
+
+  test "post_feedback handles readonly database" do
+    ApplicationRecord.class_variable_set(:@@readonly_showcase, true)
+    
+    post post_feedback_path(@judge), params: {
+      heat: @test_heat.id,
+      good: 'timing'
+    }, xhr: true
+    
+    assert_response :service_unavailable
+    
+  ensure
+    ApplicationRecord.class_variable_set(:@@readonly_showcase, false)
+  end
+
+  test "post handles JSON value parsing and updates" do
+    # Create initial JSON value
+    initial_json = { placement: 1, callback: true }.to_json
+    @score.update!(value: initial_json)
+    
+    # Update specific key in JSON
+    post post_score_path(@judge), params: {
+      heat: @test_heat.id,
+      score: '2',
+      name: 'placement'
+    }, xhr: true
+    
+    assert_response :success
+    @score.reload
+    
+    parsed_value = JSON.parse(@score.value)
+    assert_equal '2', parsed_value['placement']
+    assert_equal true, parsed_value['callback']
+  end
+
+  test "post handles score deletion conditions correctly" do
+    # Test score deletion when all conditions are empty
+    @score.update!(comments: nil, good: nil, bad: nil)
+    
+    post post_score_path(@judge), params: {
+      heat: @test_heat.id,
+      score: ''
+    }, xhr: true
+    
+    assert_response :success
+    assert_raises(ActiveRecord::RecordNotFound) { @score.reload }
+  end
+
+  test "student_results calculates correct aggregations" do
+    # Create test data for student results
+    student = people(:student_one)
+    pro = people(:instructor1)
+    
+    entry = Entry.create!(lead: pro, follow: student, age: @age, level: @level)
+    heat = Heat.create!(number: 20, entry: entry, dance: @dance, category: 'Closed')
+    
+    Score.create!(heat: heat, judge: @judge, value: 'G')
+    Score.create!(heat: heat, judge: people(:Kathryn), value: 'S')
+    
+    controller = ScoresController.new
+    results = controller.send(:student_results)
+    
+    assert results.is_a?(Hash)
+    assert_includes results.keys, 'Followers'
+    assert_includes results.keys, 'Leaders' 
+    assert_includes results.keys, 'Couples'
+    
+    # Test that followers data includes our test score
+    followers_data = results['Followers']
+    assert followers_data.is_a?(Hash)
+  end
+
+  test "student_results respects strict scoring settings" do
+    event = Event.first
+    original_strict = event.strict_scoring
+    
+    # Test with strict scoring enabled
+    event.update!(strict_scoring: true, track_ages: true)
+    
+    controller = ScoresController.new
+    results = controller.send(:student_results)
+    
+    assert results.is_a?(Hash)
+    assert_equal 3, results.keys.length
+    
+  ensure
+    event.update!(strict_scoring: original_strict)
+  end
+
+  test "post_feedback handles malformed feedback gracefully" do
+    # Test with missing required parameters
+    post post_feedback_path(@judge), params: {
+      heat: @test_heat.id
+      # Missing good/bad/value parameter
+    }, xhr: true
+    
+    assert_response :bad_request
+  end
+
+  test "post handles comments update and deletion" do
+    post post_score_path(@judge), params: {
+      heat: @test_heat.id,
+      comments: 'Great improvement in posture'
+    }, xhr: true
+    
+    assert_response :success
+    @score.reload
+    assert_equal 'Great improvement in posture', @score.comments
+    
+    # Test comment deletion
+    post post_score_path(@judge), params: {
+      heat: @test_heat.id,
+      comments: ''
+    }, xhr: true
+    
+    @score.reload
+    assert_nil @score.comments
+  end
+
+  test "post handles score persistence with assign_judges setting" do
+    event = Event.first
+    original_assign = event.assign_judges
+    
+    # Test with assign_judges > 0 (should keep empty scores)
+    event.update!(assign_judges: 1)
+    
+    post post_score_path(@judge), params: {
+      heat: @test_heat.id,
+      score: ''
+    }, xhr: true
+    
+    assert_response :success
+    # Score should still exist due to assign_judges setting
+    assert_nothing_raised { @score.reload }
+    
+  ensure
+    event.update!(assign_judges: original_assign)
+  end
+
 end
