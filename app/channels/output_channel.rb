@@ -68,7 +68,7 @@ private
     rescue EOFError
     rescue Interrupt
     rescue => e
-      puts e.to_s
+      Rails.logger.error("OutputChannel error: #{e}")
       
     ensure
       read.close

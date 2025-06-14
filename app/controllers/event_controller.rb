@@ -1104,10 +1104,10 @@ class EventController < ApplicationController
         sleep 0.5
 
         if params[:date].blank?
-          puts "exec cd #{Rails.root} && bin/dev #{params[:db]}"
+          Rails.logger.info "exec cd #{Rails.root} && bin/dev #{params[:db]}"
           Bundler.original_exec "cd #{Rails.root} && bin/dev #{params[:db]}"
         else
-          puts "exec cd #{Rails.root} && bin/dev #{params[:db]} #{params[:date]}"
+          Rails.logger.info "exec cd #{Rails.root} && bin/dev #{params[:db]} #{params[:date]}"
           Bundler.original_exec "cd #{Rails.root} && bin/dev #{params[:db]} #{params[:date]}"
         end
       end
@@ -1163,8 +1163,7 @@ class EventController < ApplicationController
       begin
         results = db.execute(query)
       rescue SQLite3::Exception => e
-        puts "Exception occurred"
-        puts e
+        Rails.logger.error "SQLite3 Exception occurred: #{e}"
         exit
       end
 

@@ -1,5 +1,22 @@
 ENV["RAILS_ENV"] ||= "test"
 
+# Module to suppress unwanted output during tests
+module TestOutputSuppression
+  def system(*args)
+    if ENV['RAILS_ENV'] == 'test' && !ENV['VERBOSE_TESTS']
+      # Suppress system command output during tests
+      super(*args, out: File::NULL, err: File::NULL)
+    else
+      super(*args)
+    end
+  end
+end
+
+# Only apply output suppression in test environment
+if ENV['RAILS_ENV'] == 'test'
+  Object.prepend(TestOutputSuppression)
+end
+
 # Start SimpleCov for code coverage
 require 'simplecov'
 SimpleCov.start 'rails' do
@@ -28,4 +45,13 @@ class ActiveSupport::TestCase
   fixtures :all
 
   # Add more helper methods to be used by all tests here...
+  
+  # Helper to suppress stdout during operations that produce unwanted output
+  def suppress_stdout
+    original_stdout = $stdout
+    $stdout = File.open(File::NULL, "w")
+    yield
+  ensure
+    $stdout = original_stdout
+  end
 end

@@ -257,7 +257,11 @@ class SolosControllerTest < ActionDispatch::IntegrationTest
     end
     
     @solo.reload
-    assert_equal original_song, @solo.song, "Song should not change on failed update"
+    if original_song.nil?
+      assert_nil @solo.song, "Song should remain nil on failed update"
+    else
+      assert_equal original_song, @solo.song, "Song should not change on failed update"
+    end
   end
 
   # ===== RETURN PATH AND NAVIGATION TESTS =====

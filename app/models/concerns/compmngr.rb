@@ -126,8 +126,7 @@ module Compmngr
         elsif level == "Pro"
           lead, follow = student, partner
         else
-          p heat
-          p line
+          # Skip unhandled level types
           next
         end
 
@@ -197,7 +196,7 @@ module Compmngr
         next
       end
 
-      p line
+      # Skip unprocessed line
     end
 
     multis = multis.to_a.map {|dances| dances.split("/") }.flatten.uniq
@@ -205,12 +204,12 @@ module Compmngr
     dances.add("Club Swing")
     matcher = FuzzyMatch.new(dances.to_a)
     multis.each do |dance|
-      puts [dance, matcher.find(dance)].join(" => ")
+      # Fuzzy match: [dance, matcher.find(dance)].join(" => ")
     end
 
     ages = Age.all.map { |age| [age.category, age] }.to_h
 
-    puts "Levels"
+    # Processing levels
     person_levels = {
       "Newcomer" => Level.find_or_create_by!(name: "Newcomer"),
       "Bronze 1" => Level.find_or_create_by!(name: "Assoc. Bronze"),
@@ -252,13 +251,13 @@ module Compmngr
       "Advanced" => Level.find_or_create_by!(name: "Advanced"),
     }
 
-    puts "Studios"
+    # Processing studios
     Studio.where(id: 1..).destroy_all
     studios = studios.compact.sort.map do |studio|
       [studio, Studio.create!(name: studio)]
     end.to_h
 
-    puts "Dances"
+    # Processing dances
     Dance.destroy_all
     order = 0
     dances = dances.sort.map do |dance|
@@ -266,7 +265,7 @@ module Compmngr
       [dance, Dance.create!(name: dance, order: order)]
     end.to_h
 
-    puts "Categories"
+    # Processing categories
     cat_map = {}
     Category.destroy_all
 
@@ -308,7 +307,7 @@ module Compmngr
       end
     end
 
-    puts "People"
+    # Processing people
     Person.destroy_all
     people.each do |name, person|
       person[:instructor] = true unless person[:level]
@@ -346,7 +345,7 @@ module Compmngr
 
     solo_order = 0
     heats.each do |heat|
-      p heat
+      # Processing heat: #{heat}
       lead = people[heat[:lead]]
       follow = people[heat[:follow]]
       instructor = people[heat[:instructor]] if heat[:instructor]
