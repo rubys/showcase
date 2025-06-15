@@ -236,6 +236,9 @@ Rails.application.routes.draw do
       post 'drop', on: :collection
       post 'reset', on: :collection
     end
+
+    resources :recordings do
+    end
   end
 
   post '/showcase/events/console', to: 'event#console'

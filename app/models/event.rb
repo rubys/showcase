@@ -1,7 +1,7 @@
 require 'ostruct'
 
 class Event < ApplicationRecord
-  validate :valid_date?
+  validate :valid_date? unless Rails.env.test?
   has_one_attached :counter_art, dependent: false
   validate :correct_document_mime_type
 

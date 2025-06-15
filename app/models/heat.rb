@@ -5,6 +5,7 @@ class Heat < ApplicationRecord
 
   has_many :scores, dependent: :destroy
   has_one :solo, dependent: :destroy
+  has_many :recordings, dependent: :destroy
 
   def number
     return @number if @number

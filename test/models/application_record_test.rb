@@ -141,13 +141,11 @@ class ApplicationRecordTest < ActiveSupport::TestCase
     blob = double_stub(service_name: 'tigris', key: 'abcd1234')
     expected_path = ApplicationRecord::RAILS_STORAGE.join('ab/cd/abcd1234')
     
-    # Test that the path generation logic works correctly
-    # (even though the method returns early due to File.exist?)
+    # The method returns early (line 81 in application_record.rb)
+    # so we just verify it returns nil
     with_env('FLY_REGION' => 'test-region') do
-      # The file should not exist in test, so this tests the path logic
       result = @record.download_blob(blob)
-      # Should return a Thread (since file doesn't exist)
-      assert result.is_a?(Thread) if result
+      assert_nil result
     end
   end
 

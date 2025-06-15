@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_07_144301) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_14_223303) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -202,6 +202,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_07_144301) do
     t.boolean "strict_scoring", default: false
     t.string "pro_am", default: "G"
     t.string "solo_scoring", default: "1"
+    t.boolean "judge_recordings", default: false
     t.index ["solo_level_id"], name: "index_events_on_solo_level_id"
   end
 
@@ -319,6 +320,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_07_144301) do
     t.datetime "updated_at", null: false
     t.index ["option_id"], name: "index_person_options_on_option_id"
     t.index ["person_id"], name: "index_person_options_on_person_id"
+  end
+
+  create_table "recordings", force: :cascade do |t|
+    t.integer "judge_id", null: false
+    t.integer "heat_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["heat_id"], name: "index_recordings_on_heat_id"
+    t.index ["judge_id"], name: "index_recordings_on_judge_id"
   end
 
   create_table "regions", force: :cascade do |t|
@@ -460,6 +470,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_07_144301) do
   add_foreign_key "people", "studios"
   add_foreign_key "person_options", "billables", column: "option_id"
   add_foreign_key "person_options", "people"
+  add_foreign_key "recordings", "heats"
+  add_foreign_key "recordings", "judges"
   add_foreign_key "scores", "heats"
   add_foreign_key "scores", "people", column: "judge_id"
   add_foreign_key "showcases", "locations"

@@ -1,3 +1,5 @@
+require 'chronic'
+
 class ApplicationRecord < ActiveRecord::Base
   primary_abstract_class
 
@@ -13,7 +15,13 @@ class ApplicationRecord < ActiveRecord::Base
 
   class ChronicValidator < ActiveModel::EachValidator
     def validate_each(record, attribute, value)
-      record.errors.add attribute, (options[:message] || "is not an day/time") unless Event.parse_date(value)
+      # In test environment, Event.parse_date might not be loaded yet
+      if defined?(Event) && Event.respond_to?(:parse_date)
+        record.errors.add attribute, (options[:message] || "is not an day/time") unless Event.parse_date(value)
+      else
+        # Fallback for when Event isn't loaded - just check if value is present
+        record.errors.add attribute, (options[:message] || "is not an day/time") if value.present? && !Chronic.parse(value)
+      end
     end
   end
 

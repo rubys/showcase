@@ -1,0 +1,14 @@
+<div id="<%= dom_id recording %>">
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Judge:</strong>
+    <%= recording.judge_id %>
+  </p>
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Heat:</strong>
+    <%= recording.heat_id %>
+  </p>
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Audio:</strong>
+    <%= link_to recording.audio.filename, recording.audio if recording.audio.attached? %>
+  </p>
+</div>

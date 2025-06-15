@@ -1,0 +1,32 @@
+<%= form_with(model: recording, class: "contents") do |form| %>
+  <% if recording.errors.any? %>
+    <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-md mt-3">
+      <h2><%= pluralize(recording.errors.count, "error") %> prohibited this recording from being saved:</h2>
+
+      <ul class="list-disc ml-6">
+        <% recording.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="my-5">
+    <%= form.label :judge_id %>
+    <%= form.text_field :judge_id, class: ["block shadow rounded-md border outline-none px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": recording.errors[:judge_id].none?, "border-red-400 focus:outline-red-600": recording.errors[:judge_id].any?}] %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :heat_id %>
+    <%= form.text_field :heat_id, class: ["block shadow rounded-md border outline-none px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": recording.errors[:heat_id].none?, "border-red-400 focus:outline-red-600": recording.errors[:heat_id].any?}] %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :audio %>
+    <%= form.file_field :audio, class: ["block shadow rounded-md border outline-none px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": recording.errors[:audio].none?, "border-red-400 focus:outline-red-600": recording.errors[:audio].any?}] %>
+  </div>
+
+  <div class="inline">
+    <%= form.submit class: "rounded-md px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white inline-block font-medium cursor-pointer" %>
+  </div>
+<% end %>

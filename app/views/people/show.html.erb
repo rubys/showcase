@@ -367,6 +367,9 @@ when most dances for an individual are with one instructor but one or two are ch
     <% end %>
     <% sort = @person.judge&.sort || 'back'%>
     <div class="mt-4 mx-auto">
+    <% if @event.judge_recordings %>
+      <%= link_to "Record comments", judge_heatlist_path(judge: @person, style: 'recordings'), class: "btn-purple" %>
+    <% end %>
     <% if %w(# & +).include?(@event.open_scoring) || @event.closed_scoring == '#' || @event.judge_comments %>
     <%= link_to 'Score heats', judge_heatlist_path(judge: @person), class: "btn-purple" %>
     <% else %>
