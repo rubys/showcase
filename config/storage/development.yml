@@ -7,5 +7,10 @@ local: &local
   public: true
   root: <%= ENV.fetch('RAILS_STORAGE', Rails.root.join("storage")) %>
 
+dev:
+  service: Disk
+  public: true
+  root: <%= ENV.fetch('RAILS_STORAGE', Rails.root.join("tmp/storage")) %>
+
 tigris:
   <<: *local
