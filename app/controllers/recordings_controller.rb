@@ -1,6 +1,7 @@
 class RecordingsController < ApplicationController
   include ActiveStorage::SetCurrent
   
+  skip_before_action :authenticate_user, only: %i[ student ]
   before_action :set_recording, only: %i[ show edit update destroy ]
 
   # GET /recordings/:judge/heat/:heat
@@ -229,22 +230,26 @@ class RecordingsController < ApplicationController
       params.expect(recording: [ :judge_id, :heat_id, :audio ])
     end
 
-    # Encode student ID for non-guessable URLs
+    # Encode student ID for non-guessable URLs using encryption
     def self.encode_student_token(student_id)
-      Base64.urlsafe_encode64("student:#{student_id}:#{Rails.application.secret_key_base[0..15]}")
+      encryptor = ActiveSupport::MessageEncryptor.new(Rails.application.secret_key_base[0, 32])
+      encrypted = encryptor.encrypt_and_sign({ student_id: student_id, timestamp: Time.current.to_i })
+      Base64.urlsafe_encode64(encrypted)
     end
 
     # Decode student token back to ID
     def decode_student_token(token)
-      decoded = Base64.urlsafe_decode64(token)
-      parts = decoded.split(':')
+      encryptor = ActiveSupport::MessageEncryptor.new(Rails.application.secret_key_base[0, 32])
+      encrypted = Base64.urlsafe_decode64(token)
+      decrypted = encryptor.decrypt_and_verify(encrypted)
       
-      if parts.length == 3 && parts[0] == 'student' && parts[2] == Rails.application.secret_key_base[0..15]
-        parts[1].to_i
-      else
+      # Add timestamp validation for additional security (tokens expire after 30 days)
+      if Time.current.to_i - decrypted[:timestamp] > 30.days.to_i
         raise ActiveRecord::RecordNotFound
       end
-    rescue ArgumentError
+      
+      decrypted[:student_id]
+    rescue ActiveSupport::MessageEncryptor::InvalidMessage, ArgumentError
       raise ActiveRecord::RecordNotFound
     end
 end
