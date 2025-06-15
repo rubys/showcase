@@ -109,12 +109,10 @@
     <%= form.label :judge_comments, 'Enable judge comments?' %>
   </div>
 
-  <% if Rails.env.development? %>
   <div class="my-5">
     <%= form.check_box :judge_recordings, class: 'entry-count h-10' %>
-    <%= form.label :judge_recordings, 'Enable judge recordings?' %>
+    <%= form.label :judge_recordings, 'Enable judge recordings? - Experimental' %>
   </div>
-  <% end %>
 
   <div class="my-5">
     <%= form.check_box :assign_judges, class: 'entry-count h-10' %>
