@@ -2,10 +2,42 @@ import { Controller } from "@hotwired/stimulus"
 
 let mediaRecorder;
 
-// Connects to data-controller="main-controls"
+// Connects to data-controller="recordings"
 export default class extends Controller {
   disconnect() {
-    console.log("MainControlsController disconnected");
+  }
+
+  async deleteRecording(event) {
+    event.preventDefault();
+    
+    const button = event.target;
+    const form = button.closest('form');
+    const clipContainer = button.closest('.clip');
+    
+    if (!confirm('Are you sure you want to delete this recording?')) {
+      return;
+    }
+    
+    try {
+      const token = document.querySelector('meta[name="csrf-token"]').content;
+      const response = await fetch(form.action, {
+        method: 'DELETE',
+        headers: {
+          'X-CSRF-Token': token,
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        clipContainer.remove();
+      } else {
+        console.error('Failed to delete recording');
+        alert('Failed to delete recording. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error deleting recording:', error);
+      alert('Error deleting recording. Please try again.');
+    }
   }
   
   connect() {
@@ -26,7 +58,6 @@ export default class extends Controller {
 
     // Main block for doing the audio recording
     if (navigator.mediaDevices.getUserMedia) {
-      console.log("The mediaDevices.getUserMedia() method is supported.");
 
       const constraints = { audio: true };
       let chunks = [];
@@ -49,8 +80,6 @@ export default class extends Controller {
           }
           
           mediaRecorder.start();
-          console.log(mediaRecorder.state);
-          console.log("Recorder started.");
           record.style.background = "red";
 
           stop.disabled = false;
@@ -58,10 +87,7 @@ export default class extends Controller {
         };
 
         stop.onclick = function () {
-          console.log("stop clicked");
           mediaRecorder.stop();
-          console.log(mediaRecorder.state);
-          console.log("Recorder stopped.");
           record.style.background = "";
           record.style.color = "";
 
@@ -69,20 +95,13 @@ export default class extends Controller {
           record.disabled = false;
         };
 
-        mediaRecorder.onstop = async function (e) {
-          console.log("Last data to read (after MediaRecorder.stop() called).");
+        mediaRecorder.onstop = async function () {
 
           // Get selected subject info
           const subjectSelect = document.querySelector("#subject-select");
           const selectedOption = subjectSelect.options[subjectSelect.selectedIndex];
           const subjectName = selectedOption.text;
-          const heatInfo = document.querySelector('h1').textContent.trim();
           
-          const clipName = prompt(
-            "Enter a name for your recording?",
-            `${subjectName} - ${heatInfo}`
-          );
-
           const clipContainer = document.createElement("article");
           const clipLabel = document.createElement("p");
           const audio = document.createElement("audio");
@@ -92,12 +111,13 @@ export default class extends Controller {
           audio.setAttribute("controls", "");
           deleteButton.textContent = "Delete";
           deleteButton.className = "delete";
+          deleteButton.onclick = () => {
+            if (confirm('Are you sure you want to delete this recording?')) {
+              clipContainer.remove();
+            }
+          };
 
-          if (clipName === null) {
-            clipLabel.textContent = `${subjectName} - ${heatInfo}`;
-          } else {
-            clipLabel.textContent = clipName;
-          }
+          clipLabel.textContent = subjectName;
 
           clipContainer.appendChild(audio);
           clipContainer.appendChild(clipLabel);
@@ -110,24 +130,34 @@ export default class extends Controller {
           chunks = [];
           const audioURL = window.URL.createObjectURL(blob);
           audio.src = audioURL;
-          console.log("recorder stopped");
 
           try {
-            let response = await fetch("/recordings/", {
+            // Get upload path from selected subject option
+            const subjectSelect = document.querySelector("#subject-select");
+            const selectedOption = subjectSelect.options[subjectSelect.selectedIndex];
+            const uploadPath = selectedOption.dataset.uploadPath;
+            
+            if (!uploadPath) {
+              throw new Error("Upload path not found for selected subject");
+            }
+            
+            let response = await fetch(uploadPath, {
               method: "POST",
               body: blob,
               headers: {
                 "X-CSRF-Token": token,
-                "Content-Type": mediaRecorder.mimeType,
-                "Content-Disposition": "attachment; filename=\"" + encodeURIComponent(clipLabel.textContent) + "\""
+                "Content-Type": mediaRecorder.mimeType
               }
             });
 
             if (response.ok) {
+              const result = await response.json();
               clipContainer.style.opacity = 1;
               audio.preload = "none";
               audio.type = mediaRecorder.mimeType;
-              audio.src = response.url;
+              if (result.url) {
+                audio.src = result.url;
+              }
             } else {
               console.error("Failed to save recording");
               clipContainer.remove();
@@ -146,13 +176,13 @@ export default class extends Controller {
       };
 
       let onError = function (err) {
-        console.log("The following error occured: " + err);
+        console.error("The following error occured: " + err);
         alert("Error accessing microphone: " + err);
       };
 
       navigator.mediaDevices.getUserMedia(constraints).then(onSuccess, onError);
     } else {
-      console.log("MediaDevices.getUserMedia() not supported on your browser!");
+      console.error("MediaDevices.getUserMedia() not supported on your browser!");
       alert("Audio recording not supported in this browser!");
     }
 

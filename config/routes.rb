@@ -239,6 +239,7 @@ Rails.application.routes.draw do
 
     get '/recordings/:judge/heat/:heat', to: 'recordings#heat', as: 'recording_heat', heat: /\d+\.?\d*/
     get '/recordings/:judge/heat/:heat/:slot', to: 'recordings#heat', as: 'recording_heat_slot', heat: /\d+\.?\d*/
+    post '/recordings/:judge_id/heat/:heat_id/upload', to: 'recordings#upload', as: 'upload_recording'
     resources :recordings do
     end
   end

@@ -33,14 +33,14 @@
     <% end %>
   </h1>
 
-  <div class="h-full flex flex-col max-h-[85%] dictaphone-container">
+  <div class="h-full flex flex-col max-h-[85%] dictaphone-container" data-judge-id="<%= @judge.id %>" data-controller="recordings">
     <div id="main-controls" data-turbo-permanent>
-      <section class="main-controls" data-controller="main-controls" data-turbo-permanent>
+      <section class="main-controls" data-turbo-permanent>
         <canvas class="visualizer" height="60px"></canvas>
         <div class="subject-selector">
           <select id="subject-select" name="subject_id">
             <% @subjects.each do |subject| %>
-              <option value="<%= subject.id %>">
+              <option value="<%= subject.id %>" data-upload-path="<%= upload_recording_path(judge_id: @judge.id, heat_id: subject.id) %>">
                 <% if subject.lead.back %>
                   #<%= subject.lead.back %> - 
                 <% end %>
@@ -62,7 +62,7 @@
           <article class="clip" id="<%= dom_id recording %>">
             <audio controls="" src="<%= recording.audio.url %>" preload="none"></audio>
             <p>Heat <%= @number %> - <%= subject.entry.lead.display_name %> & <%= subject.entry.follow.display_name %></p>
-            <%= button_to "Delete", recording, method: :delete, class: "delete", form_class: 'delete' %>
+            <%= button_to "Delete", recording, method: :delete, class: "delete", form_class: 'delete', data: { action: "click->recordings#deleteRecording" } %>
           </article>
         <% end %>
       <% end %>

@@ -38,7 +38,8 @@ class RecordingsController < ApplicationController
     end
 
     # Get recordings for this heat
-    recordings = Recording.where(judge: @judge, heat: @subjects).all
+    judge_record = @judge.judge
+    recordings = judge_record ? Recording.where(judge: judge_record, heat: @subjects).all : []
     @recordings = {}
     @subjects.each do |subject|
       recording = recordings.find { |r| r.heat_id == subject.id }
@@ -171,6 +172,32 @@ class RecordingsController < ApplicationController
     respond_to do |format|
       format.html { redirect_to recordings_path, status: :see_other, notice: "Recording was successfully destroyed." }
       format.json { head :no_content }
+    end
+  end
+
+  # POST /recordings/:judge_id/heat/:heat_id/upload
+  def upload
+    person = Person.find(params[:judge_id])
+    heat = Heat.find(params[:heat_id])
+    
+    # Get or create the Judge record for this Person
+    judge = person.judge || person.create_judge!
+    
+    if request.body
+      recording = Recording.find_or_initialize_by(judge: judge, heat: heat)
+      recording.audio.attach(
+        io: request.body,
+        filename: "recording-#{person.id}-#{heat.id}-#{Time.current.to_i}.#{request.content_type.split('/').last}",
+        content_type: request.content_type
+      )
+      
+      if recording.save
+        render json: { status: 'success', message: 'Recording uploaded successfully', url: url_for(recording.audio) }
+      else
+        render json: { status: 'error', message: recording.errors.full_messages.join(', ') }, status: :unprocessable_entity
+      end
+    else
+      render json: { status: 'error', message: 'Missing audio data' }, status: :bad_request
     end
   end
 
