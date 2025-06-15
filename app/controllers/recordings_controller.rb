@@ -1,5 +1,122 @@
 class RecordingsController < ApplicationController
+  include ActiveStorage::SetCurrent
+  
   before_action :set_recording, only: %i[ show edit update destroy ]
+
+  # GET /recordings/:judge/heat/:heat
+  def heat
+    @event = Event.first
+    @judge = Person.find(params[:judge].to_i)
+    @number = params[:heat].to_f
+    @number = @number.to_i if @number == @number.to_i
+    @slot = params[:slot]&.to_i
+    @subjects = Heat.where(number: @number).includes(
+      dance: [:multi_children],
+      entry: [:age, :level, :lead, :follow]
+    ).to_a
+
+    @slot ||= 1 if @subjects.first&.category == 'Multi' and @slot.nil?
+
+    @combine_open_and_closed = @event.heat_range_cat == 1
+
+    category = @subjects.first&.category
+    category = 'Open' if category == 'Closed' and @event.closed_scoring == '='
+
+    if @subjects.empty?
+      @dance = '-'
+      @scores = []
+    else
+      if @subjects.first.dance_id == @subjects.last.dance_id
+        @dance = "#{@subjects.first.category} #{@subjects.first.dance.name}"
+      else
+        @dance = "#{@subjects.first.category} #{@subjects.first.dance_category.name}"
+      end
+      
+      if @combine_open_and_closed and %w(Open Closed).include? category
+        @dance.sub! /^\w+ /, ''
+      end
+    end
+
+    # Get recordings for this heat
+    recordings = Recording.where(judge: @judge, heat: @subjects).all
+    @recordings = {}
+    @subjects.each do |subject|
+      recording = recordings.find { |r| r.heat_id == subject.id }
+      @recordings[subject] = recording
+    end
+
+    @subjects.sort_by! {|heat| [heat.dance_id, heat.entry.lead.back || 0]}
+
+    @sort = @judge.sort_order || 'back'
+    @show = @judge.show_assignments || 'first'
+    @show = 'mixed' unless @event.assign_judges > 0 and @show != 'mixed' && Person.where(type: 'Judge').count > 1
+    if @sort == 'level'
+      @subjects.sort_by! do |subject|
+        entry = subject.entry
+        [entry.level_id || 0, entry.age_id || 0, entry.lead.back || 0]
+      end
+    end
+
+    # Navigation logic
+    @heat = @subjects.first
+    return unless @heat
+    
+    options = {}
+
+    heats = Heat.all.where(number: 1..).order(:number).group(:number).
+      includes(
+        dance: [:open_category, :closed_category, :multi_category, {solo_category: :extensions}],
+        entry: %i[lead follow],
+        solo: %i[category_override]
+      )
+    agenda = heats.group_by(&:dance_category).
+      sort_by {|category, heats| [category&.order || 0, heats.map(&:number).min]}
+    heats = agenda.to_h.values.flatten
+
+    show_solos = params[:solos] || @judge&.judge&.review_solos&.downcase
+    if show_solos == 'none'
+      heats = heats.reject {|heat| heat.category == 'Solo'}
+    elsif show_solos == 'even'
+      heats = heats.reject {|heat| heat.category == 'Solo' && heat.number.odd?}
+    elsif show_solos == 'odd'
+      heats = heats.reject {|heat| heat.category == 'Solo' && heat.number.even?}
+    end
+
+    index = heats.index {|heat| heat.number == @heat.number}
+
+    if @heat.dance.heat_length and (@slot||0) < @heat.dance.heat_length * (@heat.dance.semi_finals ? 2 : 1)
+      @next = recording_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||0)+1, **options)
+    else
+      @next = index + 1 >= heats.length ? nil : heats[index + 1]
+      if @next
+        if @next.dance.heat_length
+          @next = recording_heat_slot_path(judge: @judge, heat: @next.number, slot: 1, **options)
+        else
+          @next = recording_heat_path(judge: @judge, heat: @next.number, **options)
+        end
+      end
+    end
+
+    if @heat.dance.heat_length and (@slot||0) > 1
+      @prev = recording_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||2)-1, **options)
+    else
+      @prev = index > 0 ? heats[index - 1] : nil
+      if @prev
+        if @prev.dance.heat_length
+          @prev = recording_heat_slot_path(judge: @judge, heat: @prev.number, slot: @prev.dance.heat_length, **options)
+        else
+          @prev = recording_heat_path(judge: @judge, heat: @prev.number, **options)
+        end
+      end
+    end
+
+    @layout = 'mx-0 px-5'
+    @nologo = true
+    @backnums = @event.backnums
+    @track_ages = @event.track_ages
+
+    @assign_judges = false
+  end
 
   # GET /recordings or /recordings.json
   def index

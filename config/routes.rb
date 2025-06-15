@@ -237,6 +237,8 @@ Rails.application.routes.draw do
       post 'reset', on: :collection
     end
 
+    get '/recordings/:judge/heat/:heat', to: 'recordings#heat', as: 'recording_heat', heat: /\d+\.?\d*/
+    get '/recordings/:judge/heat/:heat/:slot', to: 'recordings#heat', as: 'recording_heat_slot', heat: /\d+\.?\d*/
     resources :recordings do
     end
   end
