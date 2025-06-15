@@ -1,0 +1,137 @@
+/* Dictaphone styles for recordings interface */
+
+.dictaphone-container {
+  position: relative;
+}
+
+.main-controls {
+  padding: 0.5rem 0;
+}
+
+.main-controls canvas {
+  display: block;
+  margin-bottom: 0.5rem;
+  width: 100%;
+}
+
+.subject-selector {
+  margin-bottom: 1rem;
+}
+
+.subject-selector select {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 2px solid #0088cc;
+  border-radius: 0.25rem;
+  background-color: white;
+  color: #333;
+  cursor: pointer;
+}
+
+.subject-selector select:focus {
+  outline: none;
+  border-color: #0ae;
+  box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.1);
+}
+
+#buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+#buttons button {
+  font-size: 1rem;
+  padding: 1rem;
+  width: calc(50% - 0.25rem);
+  background: #0088cc;
+  text-align: center;
+  color: white;
+  border: none;
+  transition: all 0.2s;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+#buttons button:hover,
+#buttons button:focus {
+  box-shadow: inset 0px 0px 10px rgba(255, 255, 255, 1);
+  background: #0ae;
+}
+
+#buttons button:active {
+  box-shadow: inset 0px 0px 20px rgba(0, 0, 0, 0.5);
+  transform: translateY(2px);
+}
+
+#buttons button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Make the clips use as much space as possible, and
+ * also show a scrollbar when there are too many clips to show
+ * in the available space */
+.sound-clips {
+  flex: 1;
+  overflow: auto;
+  padding: 1rem 0;
+}
+
+.clip {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 1rem;
+}
+
+.clip:last-child {
+  border-bottom: none;
+}
+
+.clip audio {
+  width: 100%;
+  display: block;
+  margin: 1rem auto 0.5rem;
+}
+
+.clip p {
+  display: inline-block;
+  font-size: 1rem;
+  margin: 0.5rem 0;
+}
+
+.clip button.delete {
+  font-size: 0.8rem;
+  float: right;
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.clip button.delete:hover {
+  background: #c82333;
+}
+
+.clip form.delete {
+  display: inline;
+}
+
+/* Responsive adjustments */
+@media all and (max-width: 768px) {
+  #buttons {
+    flex-direction: column;
+  }
+  
+  #buttons button {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+}
