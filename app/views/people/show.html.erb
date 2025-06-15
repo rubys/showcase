@@ -438,6 +438,7 @@ when most dances for an individual are with one instructor but one or two are ch
       <% if @person.invoice_to_id == nil %>
       <% if @person.type == 'Student' %>
       <%= link_to 'Invoice', invoice_person_path(@person, format: :pdf), class: "btn-pale-orange" %>
+      <%= link_to 'Recordings', student_recordings_path(RecordingsController.encode_student_token(@person.id)), class: "btn-purple" %>
       <% else %>
       <%= link_to 'Invoice', instructor_invoice_person_path(@person, format: :pdf), class: "btn-pale-orange" %>
       <% end %>

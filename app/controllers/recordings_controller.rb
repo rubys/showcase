@@ -124,6 +124,23 @@ class RecordingsController < ApplicationController
     @recordings = Recording.all
   end
 
+  # GET /recordings/student/:token
+  def student
+    student_id = decode_student_token(params[:token])
+    @student = Person.find(student_id)
+    
+    # Find all heats where this student participated (as lead or follow)
+    @recordings = Recording.includes(:judge, heat: [entry: [:lead, :follow]])
+                           .joins(heat: :entry)
+                           .where(
+                             'entries.lead_id = ? OR entries.follow_id = ?',
+                             @student.id, @student.id
+                           )
+                           .order('heats.number')
+  rescue ActiveRecord::RecordNotFound
+    redirect_to root_path, alert: 'Student not found'
+  end
+
   # GET /recordings/1 or /recordings/1.json
   def show
   end
@@ -210,5 +227,24 @@ class RecordingsController < ApplicationController
     # Only allow a list of trusted parameters through.
     def recording_params
       params.expect(recording: [ :judge_id, :heat_id, :audio ])
+    end
+
+    # Encode student ID for non-guessable URLs
+    def self.encode_student_token(student_id)
+      Base64.urlsafe_encode64("student:#{student_id}:#{Rails.application.secret_key_base[0..15]}")
+    end
+
+    # Decode student token back to ID
+    def decode_student_token(token)
+      decoded = Base64.urlsafe_decode64(token)
+      parts = decoded.split(':')
+      
+      if parts.length == 3 && parts[0] == 'student' && parts[2] == Rails.application.secret_key_base[0..15]
+        parts[1].to_i
+      else
+        raise ActiveRecord::RecordNotFound
+      end
+    rescue ArgumentError
+      raise ActiveRecord::RecordNotFound
     end
 end

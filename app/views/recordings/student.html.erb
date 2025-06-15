@@ -1,0 +1,61 @@
+<div class="mx-auto md:w-2/3 w-full">
+  <div class="mx-auto">
+    <% if notice.present? %>
+      <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+    <% end %>
+
+    <h1 class="font-bold text-4xl">Recordings for <%= @student.display_name %></h1>
+
+    <% if @recordings.any? %>
+      <div class="min-w-full overflow-hidden overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-300">
+          <thead>
+            <tr>
+              <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">Heat</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Partner</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Judge</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Recording</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <% @recordings.each do |recording| %>
+              <tr>
+                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">
+                  <%= recording.heat.number %>
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                  <% entry = recording.heat.entry %>
+                  <% partner = entry.lead_id == @student.id ? entry.follow : entry.lead %>
+                  <%= partner.display_name %>
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                  <%= recording.judge.person.display_name %>
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                  <% if recording.audio.attached? %>
+                    <audio controls preload="none" class="w-full max-w-xs">
+                      <source src="<%= recording.audio.url %>" type="<%= recording.audio.content_type %>">
+                      Your browser does not support the audio element.
+                    </audio>
+                  <% else %>
+                    <span class="text-gray-400">No recording</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="mt-8 text-center">
+        <p class="text-gray-500 text-lg">No recordings found for this student.</p>
+      </div>
+    <% end %>
+
+    <div class="mt-8 text-center">
+      <div class="inline-block w-60" title="<%= student_recordings_url(RecordingsController.encode_student_token(@student.id)) %>">
+        <%= RQRCode::QRCode.new(student_recordings_url(RecordingsController.encode_student_token(@student.id))).as_svg(viewbox: true).html_safe %>
+      </div>
+    </div>
+  </div>
+</div>

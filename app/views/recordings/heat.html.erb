@@ -61,7 +61,12 @@
         <% if recording %>
           <article class="clip" id="<%= dom_id recording %>">
             <audio controls="" src="<%= recording.audio.url %>" preload="none"></audio>
-            <p>Heat <%= @number %> - <%= subject.entry.lead.display_name %> & <%= subject.entry.follow.display_name %></p>
+            <p>
+              <% if subject.lead.back %>
+                #<%= subject.lead.back %> - 
+              <% end %>
+              <%= subject.entry.lead.display_name %> & <%= subject.entry.follow.display_name %>
+            </p>
             <%= button_to "Delete", recording, method: :delete, class: "delete", form_class: 'delete', data: { action: "click->recordings#deleteRecording" } %>
           </article>
         <% end %>

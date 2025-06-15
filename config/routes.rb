@@ -62,6 +62,7 @@ Rails.application.routes.draw do
     scope 'public' do
       get 'heats', to: 'heats#mobile', as: 'public_heats'
       get 'counter', to: 'event#counter', as: 'public_counter'
+      get 'recordings/student/:token', to: 'recordings#student', as: 'student_recordings'
     end
 
     resources 'event', only: [:update] do
