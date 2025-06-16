@@ -58,11 +58,6 @@ Some of these features may be partially available on an experimental basis. If y
 * [Scrutineering](./experimental/Scrutineering) - multi-heats with callbacks and rankings
 * [Voice](./experimental/Voice) - capturing Judge comments using voice input
 
-## Help and Resources
-
- * [Troubleshooting Guide](./Troubleshooting) - common problems and solutions
- * [Glossary](./Glossary) - ballroom dance terminology definitions
-
 ## Operations
 
 Following are things that you don't need to worry about to use the program, but might

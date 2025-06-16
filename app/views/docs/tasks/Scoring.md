@@ -182,4 +182,3 @@ Judges can choose between two scoring interfaces based on their preference:
 - [Settings](./Settings) - Detailed scoring configuration
 - [Publishing](./Publishing) - Printing scoresheets and results
 - [Counter](./Counter) - Real-time heat display
-- [Troubleshooting](../Troubleshooting) - Solving scoring problems

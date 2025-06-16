@@ -8,6 +8,7 @@ This guide covers common problems and their solutions when using the showcase ap
 **Problem**: Can't log in or reach my event page
 
 **Solutions**:
+
 1. **Check your URL**: Ensure you're using the correct event-specific URL
 2. **Password issues**: See [Passwords](./ops/Passwords) for reset instructions
 3. **Browser compatibility**: Use a modern browser (Chrome, Firefox, Safari, Edge)
