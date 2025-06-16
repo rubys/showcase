@@ -37,6 +37,8 @@ number, or feedback on areas that are particularly notable or need improvement (
 
 * Enable Judge comments - in addition to scoring, some judges will want to be able to enter short text comments
 
+* Enable judge recordings? [experimental] - enable judges to record comments in their own voice. Students can later visit the studio, scan a QRCode, and hear these comments for themselves.
+
 * Assign judges couples to evaluate? - this is useful if you have several judges and a large number of couples on the floor at a time.  This doesn't limit judges to only evaluate those couples, instead it indicates which couples a judge should to focus on.
 
 * Include independent instructors? - use this if your studio has instructors that are invoiced separately but otherwise participate
