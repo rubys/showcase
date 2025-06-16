@@ -487,6 +487,11 @@
     :region: syd
     :logo: ''
     :locale: en-AU
+    :events:
+      rhythm:
+        :name: Rhythm
+      winter:
+        :name: Winter
   torino:
     :name: Torino
     :region: ams
