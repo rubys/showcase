@@ -1,4 +1,88 @@
-regions: {}
+regions:
+  ams:
+    name: Amsterdam, Netherlands
+    lat: 52.374344
+    lon: 4.895439
+    map: eu
+    x: 325.62897709065885
+    y: 227.85920498623625
+  iad:
+    name: Ashburn, Virginia (US)
+    lat: 39.02214
+    lon: -77.462555
+    map: us
+    x: 753.3598022258124
+    y: 218.05721663167571
+  atl:
+    name: Atlanta, Georgia (US)
+    lat: 33.6407
+    lon: -84.4277
+    map: us
+    x: 666.8622894496666
+    y: 334.50323467265434
+  bos:
+    name: Boston, Massachusetts (US)
+    lat: 42.366978
+    lon: -71.02236
+    map: us
+    x: 827.1098175107608
+    y: 136.23009703027913
+  ord:
+    name: Chicago, Illinois (US)
+    lat: 41.891544
+    lon: -87.63039
+    map: us
+    x: 604.0234830583017
+    y: 184.81812492869688
+  dfw:
+    name: Dallas, Texas (US)
+    lat: 32.778286
+    lon: -96.7984
+    map: us
+    x: 476.1993201496286
+    y: 361.5248496538476
+  mia:
+    name: Miami, Florida (US)
+    lat: 25.7877
+    lon: -80.2241
+    map: us
+    x: 755.3064170132483
+    y: 469.82316642663625
+  sjc:
+    name: San Jose, California (US)
+    lat: 37.3516
+    lon: -121.89674
+    map: us
+    x: 112.63114487340647
+    y: 223.9075025700198
+  sea:
+    name: Seattle, Washington (US)
+    lat: 47.6097
+    lon: -122.3331
+    map: us
+    x: 159.108421435958
+    y: 37.01944688208971
+  ewr:
+    name: Secaucus, NJ (US)
+    lat: 40.789543
+    lon: -74.05653
+    map: us
+    x: 793.5743604788862
+    y: 175.28796263135462
+  syd:
+    name: Sydney, Australia
+    lat: -33.86603
+    lon: 151.20692
+    map: au
+    x: 534.6930403393228
+    y: 372.7978615141456
+  nrt:
+    name: Tokyo, Japan
+    lat: 35.62161
+    lon: 139.74185
+    map: jp
+    x: 518.1790441572085
+    y: 256.0833607493838
 studios:
   abq:
     lat: 35.0841034
