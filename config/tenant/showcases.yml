@@ -175,6 +175,26 @@
     :region: sea
     :logo: ''
     :locale: en-US
+  firenze:
+    :name: Firenze
+    :region: ams
+    :logo: ''
+    :locale: it-IT
+    :events:
+      june:
+        :name: June
+      july:
+        :name: July
+      august:
+        :name: August
+      september:
+        :name: September
+      october:
+        :name: October
+      november:
+        :name: November
+      december:
+        :name: December
   folsom:
     :name: Folsom
     :region: sjc
