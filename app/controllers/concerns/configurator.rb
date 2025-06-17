@@ -7,7 +7,7 @@ module Configurator
 
     deployed = new_regions
     regions = JSON.parse(IO.read 'tmp/regions.json').
-      select {|region| deployed.include? region['Code'] || region['code']}
+      select {|region| deployed.include?(region['Code'] || region['code'])}
 
     map = {}
 
