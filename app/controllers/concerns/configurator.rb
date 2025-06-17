@@ -12,10 +12,10 @@ module Configurator
     map = {}
 
     map['regions'] = regions.map do |region|
-      [region['Code'], {
-        'name' => region['Name'],
-        'lat' => region['latitude'],
-        'lon' => region['longitude']
+      [region['Code'] || region['code'], {
+        'name' => region['Name'] || region['name'],
+        'lat' => region['latitude'] || region['latitude'],
+        'lon' => region['longitude'] || region['longitude']
       }]
     end.to_h
 
