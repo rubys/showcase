@@ -22,55 +22,11 @@ class ConfiguratorTest < ActiveSupport::TestCase
   include Configurator
 
   setup do
-    # Skip if in test environment (methods return early)
-    skip_configurator_tests = Rails.env.test?
-    
-    # Create temporary files for testing if not in test env
-    unless skip_configurator_tests
-      FileUtils.mkdir_p('tmp')
-      
-      # Mock regions.json
-      @regions_data = [
-        {
-          'Code' => 'NYC',
-          'Name' => 'New York',
-          'code' => 'NYC',
-          'latitude' => 40.7128,
-          'longitude' => -74.0060
-        },
-        {
-          'Code' => 'LAX',
-          'Name' => 'Los Angeles', 
-          'code' => 'LAX',
-          'latitude' => 34.0522,
-          'longitude' => -118.2437
-        }
-      ]
-      
-      File.write('tmp/regions.json', @regions_data.to_json)
-      
-      # Mock deployed.json
-      @deployed_data = {
-        'ProcessGroupRegions' => [
-          {
-            'Name' => 'app',
-            'Regions' => ['NYC', 'LAX']
-          }
-        ],
-        'pending' => {
-          'add' => [],
-          'delete' => []
-        }
-      }
-      
-      File.write('tmp/deployed.json', @deployed_data.to_json)
-    end
+    # Tests now use fixtures in test/fixtures/files/, no need for tmp files
   end
 
   teardown do
-    # Clean up temporary files
-    FileUtils.rm_f('tmp/regions.json')
-    FileUtils.rm_f('tmp/deployed.json')
+    # No cleanup needed since we use fixtures, not tmp files
   end
 
   # ===== HAVERSINE DISTANCE TESTS =====
