@@ -3,9 +3,6 @@ class AdminController < ApplicationController
 
   before_action :admin_home
 
-  DEPLOYED = File.join(Rails.root, 'tmp', 'deployed.json')
-  REGIONS = File.join(Rails.root, 'tmp', 'regions.json')
-
   def index
     if ENV['FLY_REGION']
       redirect_to 'https://rubix.intertwingly.net/showcase/admin',
@@ -36,7 +33,7 @@ class AdminController < ApplicationController
     fly = File.join(Dir.home, '.fly/bin/flyctl')
 
     thread1 = Thread.new do
-      original = IO.read DEPLOYED rescue '{}'
+      original = IO.read RegionConfiguration::DEPLOYED_JSON_PATH rescue '{}'
       pending = JSON.parse(original)["pending"]
       stdout, status = Open3.capture2(fly, 'regions', 'list', '--json')
 
@@ -59,69 +56,43 @@ class AdminController < ApplicationController
       end
 
       if status.success? and stdout != original
-        IO.write DEPLOYED, stdout
+        IO.write RegionConfiguration::DEPLOYED_JSON_PATH, stdout
       end
     end
 
     thread2 = Thread.new do
       stdout, status = Open3.capture2(fly, 'platform', 'regions', '--json')
-      if status.success? and stdout != (IO.read REGIONS rescue nil)
-        IO.write REGIONS, stdout
+      if status.success? and stdout != (IO.read RegionConfiguration::REGIONS_JSON_PATH rescue nil)
+        IO.write RegionConfiguration::REGIONS_JSON_PATH, stdout
       end
     end
 
     thread1.join
     thread2.join
 
-    deployed = JSON.parse(IO.read(DEPLOYED))
-    @regions = JSON.parse(IO.read(REGIONS))
+    deployed = RegionConfiguration.load_deployed_data
+    @regions = RegionConfiguration.load_regions_data
     @pending = deployed["pending"] || {}
     @deployed = (deployed['ProcessGroupRegions'].
       find {|process| process['Name'] == 'app'}["Regions"]+ (@pending['add'] || [])).sort.
       map {|code| [code, @regions.find {|region| region['code'] == code}]}.to_h
 
-    exists = Region.where(code: @deployed.keys).pluck(:code)
-    @deployed.each do |code, region|
-      next if exists.include? code
-      Region.create!(
-        code: code,
-        type: 'fly',
-        location: region['name'],
-        latitude: region['latitude'],
-        longitude: region['longitude']
-      )
-    end
-
-    Region.where.not(code: @deployed.keys).each do |region|
-      region.destroy! if region.type == "fly"
-    end
+    # Synchronize Region model records
+    RegionConfiguration.synchronize_region_models
   end
 
   def show_region
     @primary_region = Tomlrb.load_file('fly.toml')['primary_region'] || 'iad'
-    @pending = JSON.parse(IO.read(DEPLOYED))['pending'] || {}
+    @pending = RegionConfiguration.load_deployed_data['pending'] || {}
     @code = params[:code]
-    @region = JSON.parse(IO.read(REGIONS)).
-      find {|region| region['Code'] == @code}
+    @region = RegionConfiguration.load_regions_data.find { |region| region['Code'] == @code }
     render :region
   end
 
   def destroy_region
     code = params[:code]
-    deployed = JSON.parse(IO.read(DEPLOYED))
-    deployed["pending"] ||= {}
-    deployed["pending"]["delete"] ||= []
-    if deployed["pending"]["add"]&.include? code
-      deployed["pending"]["add"].delete code
-      IO.write(DEPLOYED, JSON.pretty_generate(deployed))
-      notice = "Region #{code} pending addition undone."
-    elsif not deployed["pending"]["delete"].include? code
-      deployed["pending"]["delete"] << code
-      IO.write(DEPLOYED, JSON.pretty_generate(deployed))
-      notice = "Region #{code} deletion pending."
-    else
-      notice = "Region #{code} already pending deletion."
-    end
+    result = RegionConfiguration.remove_pending_region(code)
+    notice = result[:message]
 
     generate_map
 
@@ -132,36 +103,24 @@ class AdminController < ApplicationController
   end
 
   def new_region
-    deployed = JSON.parse(IO.read(DEPLOYED))
-    pending = deployed["pending"]
-    deployed = deployed['ProcessGroupRegions'].
+    deployed_data = RegionConfiguration.load_deployed_data
+    pending = deployed_data["pending"] || {}
+    deployed = deployed_data['ProcessGroupRegions'].
       find {|process| process['Name'] == 'app'}["Regions"]
-    if pending
-      deployed += pending["add"] || []
-      deployed -= pending["delete"] || []
-    end
+    
+    # Apply pending changes to get current effective deployment
+    deployed += pending["add"] || []
+    deployed -= pending["delete"] || []
 
-    @regions = JSON.parse(IO.read(REGIONS)).
+    @regions = RegionConfiguration.load_regions_data.
       select {|region| not deployed.include?(region['Code'])}.
       map {|region| [region['Name'], region['Code']]}.to_h
   end
 
   def create_region
     code = params[:code]
-    deployed = JSON.parse(IO.read(DEPLOYED))
-    deployed["pending"] ||= {}
-    deployed["pending"]["add"] ||= []
-    if deployed["pending"]["delete"]&.include? code
-      deployed["pending"]["delete"].delete code
-      IO.write(DEPLOYED, JSON.pretty_generate(deployed))
-      notice = "Region #{code} pending deletion undone."
-    elsif not deployed["pending"]["add"].include? code
-      deployed["pending"]["add"] << code
-      IO.write(DEPLOYED, JSON.pretty_generate(deployed))
-      notice = "Region #{code} addition pending."
-    else
-      notice = "Region #{code} already pending deletion."
-    end
+    result = RegionConfiguration.add_pending_region(code)
+    notice = result[:message]
 
     generate_map
 
@@ -191,7 +150,7 @@ class AdminController < ApplicationController
     @showcases_modified = showcases - previous
     @showcases_removed = previous - showcases - @showcases_modified
 
-    deployed = JSON.parse(IO.read(DEPLOYED))
+    deployed = RegionConfiguration.load_deployed_data
     @pending = deployed['pending'] || {}
     regions = deployed['ProcessGroupRegions'].
       find {|process| process['Name'] == 'app'}["Regions"]
