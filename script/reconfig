@@ -1,0 +1,315 @@
+#!/usr/bin/env ruby
+
+require 'json'
+require 'yaml'
+require 'fileutils'
+require 'open3'
+
+# Ensure tmp directory exists
+FileUtils.mkdir_p('tmp')
+
+puts "Regenerating configuration files..."
+
+# Helper method to check if file content has changed
+def file_changed?(path, new_content)
+  return true unless File.exist?(path)
+  
+  existing_content = File.read(path)
+  existing_content != new_content
+end
+
+# Helper method to write file only if changed
+def write_if_changed(path, content)
+  if file_changed?(path, content)
+    File.write(path, content)
+    puts "   ✓ Updated #{path}"
+    true
+  else
+    puts "   → No changes to #{path}"
+    false
+  end
+end
+
+# 1. Regenerate tmp/regions.json
+puts "\n1. Regenerating tmp/regions.json..."
+begin
+  stdout, stderr, status = Open3.capture3('flyctl platform regions --json')
+  if status.success?
+    write_if_changed('tmp/regions.json', stdout)
+  else
+    puts "   ✗ Error generating regions.json: #{stderr}"
+  end
+rescue => e
+  puts "   ✗ Error: #{e.message}"
+end
+
+# 2. Regenerate tmp/deployed.json
+puts "\n2. Regenerating tmp/deployed.json..."
+begin
+  stdout, stderr, status = Open3.capture3('flyctl regions list --json')
+  if status.success?
+    deployed = JSON.parse(stdout)
+    
+    # Initialize pending structure if not present
+    deployed['pending'] ||= {
+      'add' => [],
+      'delete' => []
+    }
+    
+    write_if_changed('tmp/deployed.json', JSON.pretty_generate(deployed))
+  else
+    puts "   ✗ Error generating deployed.json: #{stderr}"
+  end
+rescue => e
+  puts "   ✗ Error: #{e.message}"
+end
+
+# 3. Regenerate db/map.yml and config/tenant/map.yml
+puts "\n3. Regenerating map.yml files..."
+begin
+  # Set database to index.sqlite3
+  ENV['DATABASE_URL'] = "sqlite3:db/index.sqlite3"
+  
+  # Load Rails environment to access models
+  require_relative '../config/environment'
+  
+  # Generate map data from Location models and deployed regions
+  map_data = {
+    'regions' => {},
+    'studios' => {}
+  }
+  
+  # Load regions from regions.json if it exists
+  if File.exist?('tmp/regions.json')
+    regions = JSON.parse(File.read('tmp/regions.json'))
+    regions.each do |region|
+      code = region['Code'] || region['code']
+      name = region['Name'] || region['name']
+      next unless code && name  # Skip if missing required data
+      
+      map_data['regions'][code] = {
+        'name' => name,
+        'lat' => region['latitude'] || region['Latitude'],
+        'lon' => region['longitude'] || region['Longitude']
+      }
+    end
+  end
+  
+  # Load deployed regions to filter
+  deployed_regions = []
+  if File.exist?('tmp/deployed.json')
+    deployed = JSON.parse(File.read('tmp/deployed.json'))
+    if deployed['ProcessGroupRegions']
+      app_group = deployed['ProcessGroupRegions'].find { |g| g['Name'] == 'app' }
+      deployed_regions = app_group['Regions'] if app_group
+    end
+  end
+  
+  # Filter regions to only deployed ones
+  if deployed_regions.any?
+    map_data['regions'].select! { |code, _| deployed_regions.include?(code) }
+  end
+  
+  # Add studio locations
+  Location.all.each do |location|
+    next unless location.latitude && location.longitude
+    
+    # Use the location's key field directly since it's required in the model
+    studio_key = location.key
+    map_data['studios'][studio_key] = {
+      'lat' => location.latitude,
+      'lon' => location.longitude
+    }
+  end
+  
+  # Debug output if no studios found
+  if map_data['studios'].empty?
+    puts "   ⚠ No studio locations found with latitude/longitude data"
+  else
+    puts "   → Found #{map_data['studios'].size} studio locations"
+  end
+  
+  # Sort studios alphabetically by key
+  sorted_studios = map_data['studios'].sort.to_h
+  map_data['studios'] = sorted_studios
+  
+  # Write YAML file to db directory first
+  yaml_content = YAML.dump(map_data)
+  db_changed = write_if_changed('db/map.yml', yaml_content)
+  
+  # Then copy to config/tenant
+  config_changed = write_if_changed('config/tenant/map.yml', yaml_content)
+  
+  # Run makemaps.js if it exists and either file was updated
+  if (db_changed || config_changed) && File.exist?('utils/mapper/makemaps.js')
+    puts "   → Running makemaps.js to add x,y coordinates..."
+    system('node utils/mapper/makemaps.js')
+  end
+  
+rescue => e
+  puts "   ✗ Error: #{e.message}"
+end
+
+# 4. Regenerate db/showcases.yml and config/tenant/showcases.yml
+puts "\n4. Regenerating showcases.yml files..."
+begin
+  # Ensure Rails environment is loaded (should already be from previous step)
+  require_relative '../config/environment' unless defined?(Rails)
+  
+  showcases_data = {}
+  
+  # Get region mapping from the locations table and deployed regions
+  region_mapping = {}
+  Location.all.each do |location|
+    if location.key && location.region.present?
+      region_mapping[location.key] = location.region
+    end
+  end
+  
+  puts "   → Loaded #{region_mapping.size} region mappings from locations table"
+  
+  # Load deployed regions for geographic assignment - only use regions from deployed.json
+  deployed_regions_list = []
+  if File.exist?('tmp/deployed.json')
+    deployed = JSON.parse(File.read('tmp/deployed.json'))
+    if deployed['ProcessGroupRegions']
+      app_group = deployed['ProcessGroupRegions'].find { |g| g['Name'] == 'app' }
+      deployed_regions_list = app_group['Regions'] if app_group
+    end
+  end
+  
+  # Get coordinates for deployed regions from regions.json
+  available_regions = {}
+  if File.exist?('tmp/regions.json') && deployed_regions_list.any?
+    regions = JSON.parse(File.read('tmp/regions.json'))
+    regions.each do |region|
+      code = region['Code'] || region['code']
+      lat = region['latitude'] || region['Latitude']
+      lon = region['longitude'] || region['Longitude']
+      # Only include if this region is deployed
+      if code && lat && lon && deployed_regions_list.include?(code)
+        available_regions[code] = [lat, lon]
+      end
+    end
+  end
+  
+  # Helper method for haversine distance calculation
+  def haversine_distance(geo_a, geo_b)
+    lat1, lon1 = geo_a
+    lat2, lon2 = geo_b
+    
+    dLat = (lat2 - lat1) * Math::PI / 180
+    dLon = (lon2 - lon1) * Math::PI / 180
+    
+    a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math::PI / 180) *
+        Math.cos(lat2 * Math::PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    
+    c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+    d = 6371 * c  # Distance in kilometers
+  end
+  
+  # Function to select region for a location
+  def select_region_for_location(location, available_regions, region_mapping)
+    # First try explicit region from location database column
+    if location.region.present? && available_regions.keys.include?(location.region)
+      return location.region
+    end
+    
+    # Then try region mapping (but this is likely empty)
+    mapped_region = region_mapping[location.key]
+    if mapped_region && available_regions.keys.include?(mapped_region)
+      return mapped_region
+    end
+    
+    # Finally, find closest available region by geographic distance
+    return nil unless location.latitude && location.longitude
+    
+    geo_a = [location.latitude, location.longitude]
+    best_region = nil
+    best_distance = Float::INFINITY
+    
+    available_regions.each do |region_code, geo_b|
+      distance = haversine_distance(geo_a, geo_b)
+      if distance < best_distance
+        best_region = region_code
+        best_distance = distance
+      end
+    end
+    
+    best_region
+  end
+  
+  # Query all showcases with their locations
+  showcases = Showcase.includes(:location).order(:year, :order).reverse
+  
+  if showcases.empty?
+    puts "   ⚠ No showcases found in database"
+  else
+    puts "   → Processing #{showcases.count} showcases"
+    
+    # Group showcases by year
+    showcases.group_by(&:year).each do |year, year_showcases|
+      showcases_data[year] = {}
+      
+      # Group by location within each year
+      year_showcases.group_by(&:location).each do |location, location_showcases|
+        next unless location  # Skip if no location
+        
+        studio_key = location.key
+        
+        # Basic location info
+        studio_data = {
+          name: location.name
+        }
+        
+        # Add region - use sophisticated region selection
+        region = select_region_for_location(location, available_regions, region_mapping)
+        studio_data[:region] = region if region
+        
+        # Add logo if present
+        studio_data[:logo] = location.logo if location.logo.present?
+        
+        # Add locale if not default (convert underscores to dashes)
+        if location.locale && location.locale != 'en_US'
+          studio_data[:locale] = location.locale.gsub('_', '-')
+        end
+        
+        # If multiple showcases at same location in same year, add events
+        if location_showcases.length > 1
+          studio_data[:events] = {}
+          # Sort events by order (forward, not reverse)
+          location_showcases.sort_by(&:order).each do |showcase|
+            event_key = showcase.key
+            studio_data[:events][event_key] = {
+              name: showcase.name
+            }
+          end
+        end
+        
+        showcases_data[year][studio_key] = studio_data
+      end
+    end
+  end
+  
+  # Sort by year (descending) and alphabetize studio keys within each year
+  sorted_showcases = {}
+  showcases_data.keys.sort.reverse.each do |year|
+    sorted_showcases[year] = showcases_data[year].sort.to_h
+  end
+  
+  # Convert symbols to proper YAML format
+  yaml_content = sorted_showcases.to_yaml
+  
+  # Write to db directory first
+  db_changed = write_if_changed('db/showcases.yml', yaml_content)
+  
+  # Then copy to config/tenant
+  config_changed = write_if_changed('config/tenant/showcases.yml', yaml_content)
+  
+rescue => e
+  puts "   ✗ Error: #{e.message}"
+end
+
+puts "\nConfiguration regeneration complete!"
