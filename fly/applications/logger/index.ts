@@ -29,7 +29,12 @@ async function getRegions(): Promise<string[]> {
   let checkTime = new Date().getTime()
 
   if (NODE_ENV != 'development' && checkTime - lastRegionCheck > 60000) {
-    lastRegions = (await dns.resolveTxt(`regions.${appName}.internal`)).join(',').split(',')
+    try {
+      lastRegions = (await dns.resolveTxt(`regions.${appName}.internal`)).join(',').split(',')
+    } catch (err) {
+      console.error("DNSException in getRegions:", err)
+      lastRegions = []
+    }
     lastRegionCheck = checkTime
   }
 
