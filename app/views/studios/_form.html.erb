@@ -1,17 +1,17 @@
 <div data-controller="info-box">
   <div class="info-button">&#x24D8;</div>
   <ul class="info-box">
-  <li>Pairing studios enable Students from one studio to dance with Professionals and Students from a neighboring studio.
-  <li>Pairs can be removed by hovering over the associated studio name and clicking on the Unpair button that appears.
-  <li>If prices are not overridden for the studio, the prices defined in the settings will apply.
+  <li>Pairing studios enable Students from one studio to dance with Professionals and Students from a neighboring studio.</li>
+  <li>Pairs can be removed by hovering over the associated studio name and clicking on the Unpair button that appears.</li>
+  <li>If prices are not overridden for the studio, the prices defined in the settings will apply.</li>
   <% unless @student_packages.empty? and @professional_packages.empty? and @guest_packages.empty? %>
-  <li>If packages are not defaulted, the defaults will be the first package listed for each type on the settings page.
+  <li>If packages are not defaulted, the defaults will be the first package listed for each type on the settings page.</li>
   <% end %>
   <% if studio.id %>
   <li class="text-red-600 font-bold">Removing a studio will remove all professionals, guests, and students that are
   associated with the studio, and delete any heats and scores that have been entered for those individuals.
   <span class="font-normal">Any paired studios will no longer be paired with this studio, but will otherwise be
-  unaffected.</span>
+  unaffected.</span></li>
   <% end %>
   </ul>
 </div>

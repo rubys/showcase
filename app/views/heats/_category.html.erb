@@ -60,21 +60,21 @@
         <col width="10%">
       </colgroup>
       <thead>
-        <td>
+        <td></td>
         <% if number != 0 || heats.first.dance_id != heats.last.dance_id%>
-        <th width="5">
+        <th width="5"></th>
         <% else %>
-        <th>
-        <th>
+        <th></th>
+        <th></th>
         <% end %>
         <% if @backnums %>
-        <th>
+        <th></th>
         <% end %>
-        <th>
-        <th>
-        <th>
-        <th>
-        <th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
       </thead>
       <tbody id="heat-<%= number %>"<% if locked %> draggable="true" data-drag-id="-<%= number %>"<% end %>>
       <% if number and number != 0 %>
@@ -104,7 +104,7 @@
       <% next if heats.empty? %>
       <% if ballroom %>
       <tr>
-        <td>
+        <td></td>
         <td></td>
         <td colspan="8" class="text-xs pt-2">Ballroom  <%= ballroom %></td>
       </tr>
@@ -113,7 +113,7 @@
       <% heats.each_with_index do |heat, index| %>
          <% if heat.dance_id != dance %>
            <tr>
-             <td>
+             <td></td>
              <td></td>
              <td colspan="8" class="text-s pt-2"><%= heat.dance.name %></td>
           </tr>
@@ -126,17 +126,17 @@
          <% end %>
            <td></td>
            <% if number != 0 %>
-           <td class="row">
+           <td class="row"></td>
            <% else %>
-           <td class="row"><%= heat.category %>
+           <td class="row"><%= heat.category %></td>
            <% if heat.category == 'Solo' and heat.solo.combo_dance %>
-           <td class="row"><%= heat.dance.name %> / <%= heat.solo.combo_dance.name %>
+           <td class="row"><%= heat.dance.name %> / <%= heat.solo.combo_dance.name %></td>
            <% else %>
-           <td class="row"><%= heat.dance.name %>
+           <td class="row"><%= heat.dance.name %></td>
            <% end %>
            <% end %>
            <% if @backnums %>
-           <td class="row"><% if heat.category != 'Solo' %><% if heat.back -%><%= heat.back %><% else %><%= link_to 'TBD', backs_people_path, title: 'back number' %><% end %><% end %>
+           <td class="row"><% if heat.category != 'Solo' %><% if heat.back -%><%= heat.back %><% else %><%= link_to 'TBD', backs_people_path, title: 'back number' %><% end %><% end %></td>
            <% end %>
            <%
             if @column_order == 1 or heat.lead.type == 'Student'
@@ -154,7 +154,8 @@
            <% end %>
            <% end %>
            <% end %>
-           <% if (tally[p1.id] || 0) > 1 %><span class="text-white bg-red-600"><% end %>
+           <% if (tally[p1.id] || 0) > 1 %><span class="text-white bg-red-600"></span><% end %>
+           </td>
            <td class="row <%= (p2.id > 0 && tally[p2.id] || 0) > 1 ? 'text-white bg-red-600' : '' %>">
            <%= link_to p2.display_name, polymorphic_path(p2, anchor: 'heats') if p2.id != 0 %>
             <% if heat.solo and not heat.solo.formations.empty? %>
@@ -164,9 +165,10 @@
            <% end %>
            <% end %>
            <% end %>
-           <td class="row"><%= heat.entry.level_name %>
-           <td class="row text-center"><%= heat.entry.subject_category(@track_ages) %>
-           <td class="row"><%= link_to heat.studio.name, heat.studio %>
+           </td>
+           <td class="row"><%= heat.entry.level_name %></td>
+           <td class="row text-center"><%= heat.entry.subject_category(@track_ages) %></td>
+           <td class="row"><%= link_to heat.studio.name, heat.studio %></td>
            <td>
           <form method="get" action="<%= heat.solo ? (heat.solo.formations.empty? ? edit_solo_path(heat.solo) : edit_formation_path(heat.solo)) : edit_heat_path(heat) %>">
           <input type="hidden" name="primary" value="<%= heat.subject.id %>">

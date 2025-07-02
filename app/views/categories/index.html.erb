@@ -6,15 +6,15 @@
 <div data-controller="info-box">
 <div class="info-button">&#x24D8;</div>
 <ul class="info-box">
-<li>The order categories appear on this list affects the order they appear in the final agenda.  You can rearrange the order by using drag and drop.
-<li>Clicking a category name will let you edit that category's name and identify which dances are included in that category.
+<li>The order categories appear on this list affects the order they appear in the final agenda.  You can rearrange the order by using drag and drop.</li>
+<li>Clicking a category name will let you edit that category's name and identify which dances are included in that category.</li>
 <li>Adding date(s) in the settings page, as well as a time between start of one heat to the start of the next, and setting a time for the first agenda item will allow you to see the times heats will start.
-  When printing, there is an option to not show these times in printed materials.
+  When printing, there is an option to not show these times in printed materials.</li>
 <li>Once the event has "gone to print", clicking the lock icon will lock the agenda preventing large scale changes such as redo.
 Small changes such as scratching heats, replacing a person in a heat, and even moving an individual entry to
-another heat is still possible, even when the agenda is locked.
+another heat is still possible, even when the agenda is locked.</li>
 <li>For convinience, the "Show Settings" button will take you to the bottom of the page where you can adjust the heat settings.
-  If the event is unlocked, changing the max heat size, level, age, and open/closed settings will redo the agenda immediately.
+  If the event is unlocked, changing the max heat size, level, age, and open/closed settings will redo the agenda immediately.</li>
 </ul>
 </div>
 
@@ -36,16 +36,16 @@ another heat is still possible, even when the agenda is locked.
   <table class="table-fixed ml-6 mb-8">
     <thead>
     <tr>
-      <th class="row-head">Category
-      <th class="row-head">Entries
-      <th class="row-head">Heats
+      <th class="row-head">Category</th>
+      <th class="row-head">Entries</th>
+      <th class="row-head">Heats</th>
       <% if @start && !@start.compact.empty? %>
       <% unless @oneday %>
-      <th class="row-head">Day
+      <th class="row-head">Day</th>
       <% end %>
-      <th class="row-head" colspan="2">Time
+      <th class="row-head" colspan="2">Time</th>
       <% elsif not @oneday %>
-      <th class="row-head">Day
+      <th class="row-head">Day</th>
       <% end %>
     </tr>
     </thead>
@@ -54,9 +54,9 @@ another heat is still possible, even when the agenda is locked.
     <% heat_count += @agenda['Unscheduled'].count %>
     <tbody>
     <tr>
-      <td class="row text-red-600"><%= link_to 'Unscheduled', heats_path(anchor: 'cat-unscheduled') %>
-      <td class="row text-right"><%= count %>
-      <td class="row text-right"><%= @agenda['Unscheduled'].count %>
+      <td class="row text-red-600"><%= link_to 'Unscheduled', heats_path(anchor: 'cat-unscheduled') %></td>
+      <td class="row text-right"><%= count %></td>
+      <td class="row text-right"><%= @agenda['Unscheduled'].count %></td>
     </tr>
     </tbody>
     <% end %>
@@ -64,24 +64,24 @@ another heat is still possible, even when the agenda is locked.
     <% @categories.each do |cat| %>
       <tr class="hover:bg-yellow-200" draggable="true" data-drag-id="<%= cat.id %><%= cat.part ? "-#{cat.part}" : "" %>">
         <% heats = @agenda[cat.name] %>
-        <td class="row text-black font-medium"><%= link_to cat.name, edit_category_path(cat.id, part: cat.part) %></a>
+        <td class="row text-black font-medium"><%= link_to cat.name, edit_category_path(cat.id, part: cat.part) %></td>
         <% if heats %>
         <% entry_count += (count = heats.map {|number, ballrooms| ballrooms.values.flatten.length}.sum) %>
         <% heat_count += heats.length %>
-        <td class="row text-right"><%= count %>
-        <td class="row text-right"><%= heats.length %>
+        <td class="row text-right"><%= count %></td>
+        <td class="row text-right"><%= heats.length %></td>
         <% if @start and @cat_start[cat.name] %>
         <% unless @oneday %>
-        <td class="row"><%= Date::DAYNAMES[@cat_start[cat.name]&.wday || 7] %>
+        <td class="row"><%= Date::DAYNAMES[@cat_start[cat.name]&.wday || 7] %></td>
         <% end %>
-        <td class="row"><%= @cat_start[cat.name]&.strftime("%I:%M %P") %>
-        <td class="row"><%= @cat_finish[cat.name]&.strftime("%I:%M %P") %>
+        <td class="row"><%= @cat_start[cat.name]&.strftime("%I:%M %P") %></td>
+        <td class="row"><%= @cat_finish[cat.name]&.strftime("%I:%M %P") %></td>
         <% elsif not cat&.day.blank? and not @oneday %>
-        <td class="row"><%= cat.day %>
+        <td class="row"><%= cat.day %></td>
         <% end %>
         <% else %>
-        <td class="row text-right">0
-        <td class="row text-right">0
+        <td class="row text-right">0</td>
+        <td class="row text-right">0</td>
         <% end %>
       </tr>
     <% end %>
@@ -90,15 +90,15 @@ another heat is still possible, even when the agenda is locked.
     <% entry_count += (count = @agenda['Uncategorized'].map {|heat| heat.last.map {|ballroom, heats| heats.length}.sum}.sum) %>
     <tbody>
     <tr>
-      <td class="row text-red-600"><%= link_to 'Uncategorized', heats_path(anchor: 'cat-uncategorized'), data: { turbo: false } %>
-      <td class="row text-right"><%= count %>
-      <td class="row text-right"><%= @agenda['Uncategorized'].count %>
+      <td class="row text-red-600"><%= link_to 'Uncategorized', heats_path(anchor: 'cat-uncategorized'), data: { turbo: false } %></td>
+      <td class="row text-right"><%= count %></td>
+      <td class="row text-right"><%= @agenda['Uncategorized'].count %></td>
     </tr>
     </tbody>
     <% end %>
     <tfoot>
     <tr>
-      <th class="border-t-2 border-gray-200 row text-center font-bold">total
+      <th class="border-t-2 border-gray-200 row text-center font-bold">total</th>
       <td class="border-t-2 border-gray-200 row text-right">
         <%= entry_count %>
       </td>
@@ -107,11 +107,11 @@ another heat is still possible, even when the agenda is locked.
       </td>
       <% if @start && !@start.compact.empty? %>
       <% unless @oneday %>
-      <th class="border-t-2">
+      <th class="border-t-2"></th>
       <% end %>
-      <th class="border-t-2" colspan="2">
+      <th class="border-t-2" colspan="2"></th>
       <% elsif not @oneday %>
-      <th class="border-t-2">
+      <th class="border-t-2"></th>
       <% end %>
     </tr>
     </tfoot>
@@ -130,7 +130,7 @@ another heat is still possible, even when the agenda is locked.
   </div>
 
 <% if @settings %>
-<h2 class="font-bold text-2xl mt-4" id="settings">Heat settings</h1>
+<h2 class="font-bold text-2xl mt-4" id="settings">Heat settings</h2>
 <%= form_with model: @event do |form| %>
 
   <% if @event.errors.any? %>

@@ -7,10 +7,10 @@
 <div class="info-button">&#x24D8;</div>
 <ul class="info-box">
 <li>The order dances appear on this list affects the order in which dances are scheduled within an agenda category.
-You can rearrange the order by using drag and drop.
+You can rearrange the order by using drag and drop.</li>
 <li>The order also controls the default order in which dances are shown on entry forms.  This order can be overridden
-using the Arrange button at the bottom of this page.
-<li>Clicking a dance name will let you edit that dance's names and assigned categories.
+using the Arrange button at the bottom of this page.</li>
+<li>Clicking a dance name will let you edit that dance's names and assigned categories.</li>
 </ul>
 </div>
 
@@ -20,12 +20,12 @@ using the Arrange button at the bottom of this page.
   <table class="mx-auto table-fixed">
     <thead>
       <tr>
-        <th class="row-head">Dance
-        <th class="row-head">Categories
-        <th class="row-head">Entries
-        <th class="row-head">Heats
+        <th class="row-head">Dance</th>
+        <th class="row-head">Categories</th>
+        <th class="row-head">Entries</th>
+        <th class="row-head">Heats</th>
         <% unless @songs.empty? %>
-        <th class="row-head">Songs
+        <th class="row-head">Songs</th>
         <% end %>
       </tr>
     </thead>
@@ -58,7 +58,7 @@ using the Arrange button at the bottom of this page.
       </tr>
     <% end %>
     <tr>
-      <th colspan="2" class="border-t-2 border-gray-200 row text-center font-bold">total
+      <th colspan="2" class="border-t-2 border-gray-200 row text-center font-bold">total</th>
       <td class="border-t-2 border-gray-200 row text-right">
         <%= @dances.map {|dance| dance.heat_length ? 0 : @entries[dance.id] || 0}.sum %>
       </td>
@@ -81,10 +81,10 @@ using the Arrange button at the bottom of this page.
   <table class="mx-auto table-fixed">
     <thead>
       <tr>
-        <th class="row-head">Dance
-        <th class="row-head">Category
-        <th class="row-head">Entries
-        <th class="row-head">Heats
+        <th class="row-head">Dance</th>
+        <th class="row-head">Category</th>
+        <th class="row-head">Entries</th>
+        <th class="row-head">Heats</th>
       </tr>
     </thead>
     <tbody data-controller="drop" data-drop-action="<%= drop_dances_path %>">
@@ -102,7 +102,7 @@ using the Arrange button at the bottom of this page.
       </tr>
     <% end %>
     <tr>
-      <th colspan="2" class="border-t-2 border-gray-200 row text-center font-bold">total
+      <th colspan="2" class="border-t-2 border-gray-200 row text-center font-bold">total</th>
       <td class="border-t-2 border-gray-200 row text-right">
         <%= @dances.map {|dance| dance.heat_length ? @entries[dance.id] || 0 : 0}.sum %>
       </td>

@@ -1,5 +1,5 @@
 <div class="mb-4">
-  <h2 class="font-bold text-center text-4xl"><%= @event.name %></h1>
+  <h2 class="font-bold text-center text-4xl"><%= @event.name %></h2>
 
   <p class="mt-4">
     <% @event.location.to_s.lines.each do |line| %>
@@ -16,12 +16,12 @@
     <td colspan="5" class="font-bold text-2xl pb-4">Invoice/Confirmation - <%= @instructor ? @instructor.display_name : studio.name %></td>
   </tr>
   <tr>
-    <th class="row-head-left">Name
-    <th class="row-head-left"># Entries
-    <th class="row-head">Dances
+    <th class="row-head-left">Name</th>
+    <th class="row-head-left"># Entries</th>
+    <th class="row-head">Dances</th>
     <% if invoice[:purchases] != 0 %>
-    <th class="row-head">Registration
-    <th class="row-head">Total
+    <th class="row-head">Registration</th>
+    <th class="row-head">Total</th>
     <% end %>
   </thead>
   <tbody>
@@ -33,12 +33,12 @@
     <% purchases = dances[person][:purchases] %>
     <% next if purchases == 0 and dances[person][:dances] == 0 %>
     <tr class="text-base">
-      <td><div class="mx-4"><%= person.name %></div>
-      <td><div class="mx-4 text-right"><%= number_with_precision dances[person][:dances], strip_insignificant_zeros: true %></div>
-      <td class="pr-4 text-right"><%= number_to_currency dance_cost, precision: 2, unit: '' %>
+      <td><div class="mx-4"><%= person.name %></div></td>
+      <td><div class="mx-4 text-right"><%= number_with_precision dances[person][:dances], strip_insignificant_zeros: true %></div></td>
+      <td class="pr-4 text-right"><%= number_to_currency dance_cost, precision: 2, unit: '' %></td>
       <% if invoice[:purchases] > 0 %>
-      <td class="pr-4 text-right"><%= number_to_currency purchases, precision: 2, unit: '' %>
-      <td class="pr-4 text-right"><%= number_to_currency dance_cost + purchases, precision: 2, unit: '' %>
+      <td class="pr-4 text-right"><%= number_to_currency purchases, precision: 2, unit: '' %></td>
+      <td class="pr-4 text-right"><%= number_to_currency dance_cost + purchases, precision: 2, unit: '' %></td>
       <% end %>
     </tr>
     <% total_dance_cost += dance_cost %>
@@ -46,21 +46,21 @@
     <% end %>
     <% invoice[:other_charges].sort.each do |name, charge| %>
     <tr>
-      <td><div class="mx-4"><%= name %>
-      <td><div class="mx-4 text-right"><%= charge[:count] %>
-      <td class="pr-4 text-right"><%= number_to_currency charge[:cost], precision: 2, unit: '' %>
-      <td class="pr-4 text-right"><%= number_to_currency 0, precision: 2, unit: '' %>
-      <td class="pr-4 text-right"><%= number_to_currency charge[:cost], precision: 2, unit: '' %>
+      <td><div class="mx-4"><%= name %></div></td>
+      <td><div class="mx-4 text-right"><%= charge[:count] %></div></td>
+      <td class="pr-4 text-right"><%= number_to_currency charge[:cost], precision: 2, unit: '' %></td>
+      <td class="pr-4 text-right"><%= number_to_currency 0, precision: 2, unit: '' %></td>
+      <td class="pr-4 text-right"><%= number_to_currency charge[:cost], precision: 2, unit: '' %></td>
       <% total_dance_cost += charge[:cost] %>
     </tr>
     <% end %>
     <tr class="text-base">
-      <th class="row-foot">total
-      <td><div class="row-foot text-right"><%= number_with_precision invoice[:dance_count], strip_insignificant_zeros: true %></div>
-      <td class="row-foot text-right"><%= number_to_currency total_dance_cost, precision: 2, unit: '' %>
+      <th class="row-foot">total</th>
+      <td><div class="row-foot text-right"><%= number_with_precision invoice[:dance_count], strip_insignificant_zeros: true %></div></td>
+      <td class="row-foot text-right"><%= number_to_currency total_dance_cost, precision: 2, unit: '' %></td>
       <% if invoice[:purchases] > 0 %>
-      <td class="row-foot text-right"><%= number_to_currency total_purchases, precision: 2, unit: '' %>
-      <td class="row-foot text-right"><%= number_to_currency total_dance_cost + total_purchases, precision: 2, unit: '' %>
+      <td class="row-foot text-right"><%= number_to_currency total_purchases, precision: 2, unit: '' %></td>
+      <td class="row-foot text-right"><%= number_to_currency total_dance_cost + total_purchases, precision: 2, unit: '' %></td>
       <% end %>
     </tr>
   </tbody>
@@ -73,9 +73,9 @@
     <td colspan="2" class="font-bold text-2xl pb-4">Purchases</td>
   </tr>
   <tr>
-    <th class="row-head-left">Name
-    <th class="row-head">Purchases
-    <th class="row-head">Price
+    <th class="row-head-left">Name</th>
+    <th class="row-head">Purchases</th>
+    <th class="row-head">Price</th>
   </thead>
   <tbody>
     
@@ -88,9 +88,9 @@
     <% next unless person.studio == studio %>
     <% next if person.type == 'Professional' && @instructor && person != @instructor %>
     <tr>
-      <td><div class="mx-4"><%= person.name %>
-      <td><div class="mx-4"><%= purchases.map {|name, list| list.length == 1 ? name : "#{list.length} &#215; #{name}"}.join(' + ').html_safe %>
-      <td class="text-right"><%= number_to_currency purchases.values.flatten.map(&:price).sum, precision: 2, unit: '' %>
+      <td><div class="mx-4"><%= person.name %></div></td>
+      <td><div class="mx-4"><%= purchases.map {|name, list| list.length == 1 ? name : "#{list.length} &#215; #{name}"}.join(' + ').html_safe %></div></td>
+      <td class="text-right"><%= number_to_currency purchases.values.flatten.map(&:price).sum, precision: 2, unit: '' %></td>
     </tr>
     <% end %>
   </tbody>
@@ -126,7 +126,7 @@
   <div class="w-full mt-8" style="break-before: page">
 
   <div class="float-right mb-4"><%= person.display_name %><% if partner %><br><%= partner.display_name %><% end %></div>
-  <h2 class="font-bold text-center text-4xl"><%= @event.name %></h1>
+  <h2 class="font-bold text-center text-4xl"><%= @event.name %></h2>
 
   <p class="mt-4">
     <% @event.location.to_s.lines.each do |line| %>
@@ -151,36 +151,36 @@
   <tbody>
   <% if person.package_id %>
   <tr>
-    <th align="left" class="pr-8">Registration:
+    <th align="left" class="pr-8">Registration:</th>
     <th align="left"><%= number_to_currency registration %> per <%= person.package.couples ? "couple" : "person" %></th>
   </tr>
   <% end %>
   <% unless @event.student_package_description.blank? %>
   <tr>
-    <td colspan="2" class="whitespace-pre-wrap pt-4"><%= @event.student_package_description %>
+    <td colspan="2" class="whitespace-pre-wrap pt-4"><%= @event.student_package_description %></td>
   </tr>
   <% end %>
   <tr>
-    <th align="left">Freestyles:
+    <th align="left">Freestyles:</th>
     <th align="left"><%= number_to_currency heat_cost %> per entry</th>
   </tr>
   <% if solo_cost > 0 %>
   <tr>
-    <th align="left">Routines:
+    <th align="left">Routines:</th>
     <th align="left"><%= number_to_currency solo_cost %> per entry</th>
   </tr>
   <% end %>
   <% @cost.each do |name, cost| %>
   <% next if %w(Closed Open Solo Multi).include? name %>
   <tr>
-    <th align="left"><%= name %>:
+    <th align="left"><%= name %>:</th>
     <th align="left"><%= number_to_currency cost %> per entry</th>
   </tr>
   <% end %>
   <% if multi_cost and multi_cost > 0 %>
   </tr>
     <tr>
-    <th align="left" class="pr-8">Multi Dance Event:
+    <th align="left" class="pr-8">Multi Dance Event:</th>
     <th align="left"><%= number_to_currency multi_cost %> per entry</th>
   </tr>
   <% end %>
@@ -191,11 +191,11 @@
 
   <table class="float-right break-inside-avoid">
    <tr>
-    <th align="left" class="pr-8">Invoice:
+    <th align="left" class="pr-8">Invoice:</th>
   </tr>
   <% if person.package_id %>
   <tr>
-    <td class="pr-8">Registration:
+    <td class="pr-8">Registration:</td>
     <td align="right"><%= number_to_currency registration %></td>
   </tr>
   <% end %>
@@ -210,16 +210,12 @@
       <td align="right">
         <%= number_to_currency options.first.option.price * options.length %>
       </td>
-      </td>
-    </tr>
-    <tr>
-
     </tr>
     <% end %>
     <% if @offered[:freestyles] %>
   <tr>
-    <td>Freestyles:
-    <td align="right"><%= number_to_currency heat_cost * (dances.fetch('Open', 0) + dances.fetch('Closed', 0)) %></th>
+    <td>Freestyles:</td>
+    <td align="right"><%= number_to_currency heat_cost * (dances.fetch('Open', 0) + dances.fetch('Closed', 0)) %></td>
   </tr>
   <% end %>
   <% if @offered[:solos] %>
