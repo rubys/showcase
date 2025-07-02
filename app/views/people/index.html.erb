@@ -6,7 +6,7 @@
   <div data-controller="info-box">
   <div class="info-button">&#x24D8;</div>
   <ul class="info-box">
-  <li>Clicking on a column heading will sort the table by that column.
+  <li>Clicking on a column heading will sort the table by that column.</li>
   </ul>
   </div>
 
@@ -20,28 +20,28 @@
   <table class="table-fixed mx-auto">
   <thead>
     <tr>
-      <td class="row-head"><a href="?sort=name">Name
+      <td class="row-head"><a href="?sort=name">Name</a></td>
       <% unless @title == 'Students' %>
-      <td class="row-head"><a href="?sort=type">Type
+      <td class="row-head"><a href="?sort=type">Type</a></td>
       <% end %>
       <% if @people.any? {|person| not person.role.blank?} %>
-      <td class="row-head"><a href="?sort=role">Role
+      <td class="row-head"><a href="?sort=role">Role</a></td>
       <% end %>
       <% if @people.any? {|person| person.level_id} %>
-      <td class="row-head"><a href="?sort=level">Level
+      <td class="row-head"><a href="?sort=level">Level</a></td>
       <% end %>
       <% if @track_ages and @people.any? {|person| person.age_id} %>
-      <td class="row-head"><a href="?sort=age">Age
+      <td class="row-head"><a href="?sort=age">Age</a></td>
       <% end %>
-      <td class="row-head"><a href="?sort=studio">Studio
+      <td class="row-head"><a href="?sort=studio">Studio</a></td>
       <% if @people.any? {|person| @heats[person.id]} %>
-      <td class="row-head"><a href="?sort=heats">Heats
+      <td class="row-head"><a href="?sort=heats">Heats</a></td>
       <% end %>
       <% unless @solos.empty? %>
-      <td class="row-head"><a href="?sort=solos">Solos
+      <td class="row-head"><a href="?sort=solos">Solos</a></td>
       <% end %>
       <% unless @multis.empty? %>
-      <td class="row-head"><a href="?sort=multis">Multis
+      <td class="row-head"><a href="?sort=multis">Multis</a></td>
       <% end %>
     </tr>
   </thead>

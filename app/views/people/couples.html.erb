@@ -11,23 +11,23 @@
   <table class="table-fixed mx-auto">
     <thead>
       <tr>
-        <th class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Dances
-        <th class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Lead
-        <th class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Follow
-        <th class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Studio
-        <th class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Level
+        <th class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Dances</th>
+        <th class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Lead</th>
+        <th class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Follow</th>
+        <th class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Studio</th>
+        <th class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Level</th>
         <% if @track_ages %>
-        <th class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Category
+        <th class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">Category</th>
         <% end %>
       </tr>
     </thead>
     <tbody>
       <% @couples.each do |lead, follow, count| %>
       <tr>
-        <td class="text-right px-2"><%= count %>
-        <td class="px-2"><%= link_to lead.display_name, lead %>
-        <td class="px-2"><%= link_to follow.display_name, follow %>
-        <td class="px-2"><%= link_to lead.studio.name, lead.studio %>
+        <td class="text-right px-2"><%= count %></td>
+        <td class="px-2"><%= link_to lead.display_name, lead %></td>
+        <td class="px-2"><%= link_to follow.display_name, follow %></td>
+        <td class="px-2"><%= link_to lead.studio.name, lead.studio %></td>
         <td class="px-2">
           <%= lead.level_id > follow.level_id ? lead.level.name : follow.level.name %>
         </td>

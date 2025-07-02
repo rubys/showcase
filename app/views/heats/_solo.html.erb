@@ -4,7 +4,7 @@
 <span class="mt-12 number"><%= number %></span>
 <header>
 <div class="mt-8 mb-4">
-  <h2 class="font-bold text-center text-4xl" style="font-family: '<%= @font_family %>'"><%= @event.name %></h1>
+  <h2 class="font-bold text-center text-4xl" style="font-family: '<%= @font_family %>'"><%= @event.name %></h2>
 
   <p class="mt-4">
     <% (@event.theme || @event.location).to_s.lines.each do |line| %>

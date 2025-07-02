@@ -23,6 +23,7 @@
     <th class="row-head">Registration</th>
     <th class="row-head">Total</th>
     <% end %>
+  </tr>
   </thead>
   <tbody>
     <% total_dance_cost = total_purchases = 0 %>
@@ -76,6 +77,7 @@
     <th class="row-head-left">Name</th>
     <th class="row-head">Purchases</th>
     <th class="row-head">Price</th>
+  </tr>
   </thead>
   <tbody>
     
@@ -178,7 +180,6 @@
   </tr>
   <% end %>
   <% if multi_cost and multi_cost > 0 %>
-  </tr>
     <tr>
     <th align="left" class="pr-8">Multi Dance Event:</th>
     <th align="left"><%= number_to_currency multi_cost %> per entry</th>

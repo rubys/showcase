@@ -83,7 +83,7 @@ a scheduled heat time will be added to each heat.</li>
         <td class="row"><%= cat == 'Unscheduled' ? '' : @cat_start[cat]&.strftime("%I:%M %P") %>
         <td class="row"><%= cat == 'Unscheduled' ? '' : @cat_finish[cat]&.strftime("%I:%M %P") %>
         <% elsif not @categories[cat]&.day.blank? and not @oneday %>
-        <td class="row"><%= @categories[cat].day %>
+        <td class="row"><%= @categories[cat].day %></td>
         <% end %>
       </tr>
     <% end %>
@@ -91,7 +91,7 @@ a scheduled heat time will be added to each heat.</li>
 
 <% unless @issues.empty? %>
 <div class="ml-6 mb-8">
-<h2 class="text-red-600 font-bold text-2xl">Issues:</h1>
+<h2 class="text-red-600 font-bold text-2xl">Issues:</h2>
 <ul class="list-disc list-inside ml-4">
 <% @issues.sort_by {|heat, issues| heat}.each do |heat, issues| %>
 <% issues.each do |person_id, count| %>
@@ -123,14 +123,14 @@ a scheduled heat time will be added to each heat.</li>
   <div class="min-w-full print:hidden">
     <table class="mt-4 table-fixed mx-auto">
       <thead>
-        <th class="row-head">Couples
-        <th class="row-head">Heats
+        <th class="row-head">Couples</th>
+        <th class="row-head">Heats</th>
       </thead>
 
       <% @stats.each do |size, heats| %>
       <% next if size == 1 and (heats - @solos).empty? %>
       <tr>
-        <td class="row text-right pr-4"><%= size %>
+        <td class="row text-right pr-4"><%= size %></td>
         <td>
         <% heats.each do |heat| %>
         <% next if size == 1 and @solos.include? heat %>
@@ -142,7 +142,7 @@ a scheduled heat time will be added to each heat.</li>
 
       <% unless @solos.empty? %>
       <tr>
-        <td class="text-right row pr-4">Solos
+        <td class="text-right row pr-4">Solos</td>
         <td>
         <% @solos.each do |heat| %>
         <% next if heat < 0 %>
