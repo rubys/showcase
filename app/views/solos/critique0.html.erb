@@ -83,7 +83,7 @@ tbody::after {
 
     <header>
     <div class="mb-4">
-      <h2 class="font-bold text-center text-4xl" style="font-family: 'Bevan Regular'"><%= @event.name %></h1>
+      <h2 class="font-bold text-center text-4xl" style="font-family: 'Bevan Regular'"><%= @event.name %></h2>
 
       <p class="mt-4">
         <% (@event.theme || @event.location).to_s.lines.each do |line| %>
@@ -164,21 +164,22 @@ tbody::after {
         -->
       </colgroup>
       <thead class="w-full">
-        <td>
+        <tr>
         <% if heat.number != 0 %>
-        <th width="5">
+        <th width="5"></th>
         <% else %>
         <% unless heat.category == 'Solo' %>
-        <th>
+        <th></th>
         <% end %>
-        <th>
+        <th></th>
         <% end %>
-        <th>
-        <th>
-        <th>
-        <th>
-        <th>
-        <th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+        </tr>
       </thead>
       <% if heats.all? {|heat| heat.number < 0} %>
       <tbody class="line-through opacity-50" id="heat-<%= number %>">
@@ -204,7 +205,7 @@ tbody::after {
         <% next if heats.empty? %>
          <% if ballroom %>
          <tr>
-           <td>
+           <td></td>
            <td colspan="8" class="text-xs pt-2">Ballroom <%= ballroom %></td>
          </tr>
          <% end %>
@@ -215,17 +216,17 @@ tbody::after {
          <tr class="font-base" id="<%= dom_id heat %>">
          <% end %>
            <% if number != 0 %>
-           <td class="pl-4">
+           <td class="pl-4"></td>
            <% else %>
-           <td class="pl-4"><%= heat.category %>
+           <td class="pl-4"><%= heat.category %></td>
            <% if heat.category == 'Solo' and heat.solo.combo_dance %>
-           <td class="pl-4"><%= heat.dance.name %> / <%= heat.solo.combo_dance.name %>
+           <td class="pl-4"><%= heat.dance.name %> / <%= heat.solo.combo_dance.name %></td>
            <% else %>
-           <td class="pl-4"><%= heat.dance.name %>
+           <td class="pl-4"><%= heat.dance.name %></td>
            <% end %>
            <% end %>
            <% unless heat.category == 'Solo' %>
-           <td class="pl-4 font-bold"><%= heat.back %>
+           <td class="pl-4 font-bold"><%= heat.back %></td>
            <% end %>
            <%
              if @column_order == 1 or heat.lead.type == 'Student'
@@ -241,7 +242,7 @@ tbody::after {
              <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
              <% end %>
            <% end %>
-           <% end %>
+           <% end %></td>
            <td class="pl-4"><%= link_to p2.display_name, polymorphic_path(p2, anchor: 'heats') %>
            <% if heat.category == 'Solo' %>
            <% heat.solo.formations.each_with_index do |formation, index| %>
@@ -249,14 +250,14 @@ tbody::after {
              <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
              <% end %>
            <% end %>
-           <% end %>
+           <% end %></td>
            <% if @type == 'judge' %>
-           <td class="pl-4 text-center"><%= heat.entry.subject_lvlcat(@track_ages) %>
+           <td class="pl-4 text-center"><%= heat.entry.subject_lvlcat(@track_ages) %></td>
            <% else %>
-           <td class="pl-4"><%= heat.entry.level.name %>
+           <td class="pl-4"><%= heat.entry.level.name %></td>
            <!-- td class="pl-4 text-center"><%= heat.entry.subject_category(@track_ages) %> -->
            <% end %>
-           <td class="pl-4"><%= link_to heat.studio.name.gsub(/\s-/, "\xA0-"), heat.studio %>
+           <td class="pl-4"><%= link_to heat.studio.name.gsub(/\s-/, "\xA0-"), heat.studio %></td>
            <% if @type == 'judge' %>
            <td>
              <div class="w-24 pt-4 border-b-2 border-black">&nbsp;</div>

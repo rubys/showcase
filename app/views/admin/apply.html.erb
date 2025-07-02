@@ -9,7 +9,7 @@
 <% unless `rsync -i --dry-run db/index.sqlite3 smooth:/data/db/`.empty? %>
 <h2 class="font-bold text-2xl mt-4 mb-2">Sync databases</h2>
 <ul class="ml-8 list-disc list-outside">
-<li>index.sqlite3
+<li>index.sqlite3</li>
 </ul>
 <% changes = true %>
 <% end %>
@@ -18,7 +18,7 @@
 <h2 class="font-bold text-2xl mt-4 mb-2">Add regions</h2>
 <ul class="ml-8 list-disc list-outside">
 <% @pending['add'].sort.each do |region| %>
-<li><%= region %>
+<li><%= region %></li>
 <% end %>
 </ul>
 <% changes = true %>
@@ -29,17 +29,17 @@
 <table>
 <thead>
 <tr>
-  <th class="row-head">Site
-  <th class="row-head">From
-  <th class="row-head">To
+  <th class="row-head">Site</th>
+  <th class="row-head">From</th>
+  <th class="row-head">To</th>
 </tr>
 </thead>
 <tbody>
 <% @move.each do |site, change| %>
 <tr>
-  <td class="row"><%= site %>
-  <td class="row"><%= change[:from] %>
-  <td class="row"><%= change[:to] %>
+  <td class="row"><%= site %></td>
+  <td class="row"><%= change[:from] %></td>
+  <td class="row"><%= change[:to] %></td>
 </tr>
 <% end %>
 </tbody>
@@ -52,17 +52,17 @@
 <table>
 <thead>
 <tr>
-  <th class="row-head">Yera
-  <th class="row-head">Site
-  <th class="row-head">Event
+  <th class="row-head">Year</th>
+  <th class="row-head">Site</th>
+  <th class="row-head">Event</th>
 </tr>
 </thead>
 <tbody>
 <% @showcases_modified.each do |showcase| %>
 <tr>
-  <td class="row"><%= showcase[0] %>
-  <td class="row"><%= showcase[1] %>
-  <td class="row"><%= showcase[2] %>
+  <td class="row"><%= showcase[0] %></td>
+  <td class="row"><%= showcase[1] %></td>
+  <td class="row"><%= showcase[2] %></td>
 </tr>
 <% end %>
 </tbody>
@@ -75,17 +75,17 @@
 <table>
 <thead>
 <tr>
-  <th class="row-head">Yera
-  <th class="row-head">Site
-  <th class="row-head">Event
+  <th class="row-head">Year</th>
+  <th class="row-head">Site</th>
+  <th class="row-head">Event</th>
 </tr>
 </thead>
 <tbody>
 <% @showcases_removed.each do |showcase| %>
 <tr>
-  <td class="row"><%= showcase[0] %>
-  <td class="row"><%= showcase[1] %>
-  <td class="row"><%= showcase[2] %>
+  <td class="row"><%= showcase[0] %></td>
+  <td class="row"><%= showcase[1] %></td>
+  <td class="row"><%= showcase[2] %></td>
 </tr>
 <% end %>
 </tbody>
@@ -97,7 +97,7 @@
 <h2 class="font-bold text-2xl mt-4 mb-2">Delete regions</h2>
 <ul class="ml-8 list-disc list-outside">
 <% @pending['delete'].sort.each do |region| %>
-<li><%= region %>
+<li><%= region %></li>
 <% end %>
 </ul>
 <% changes = true %>
@@ -116,7 +116,7 @@
 </div>
 
 <button data-submit-target="submit"
-  class="flex mx-auto bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border-2 rounded-xl my-4 disabled:opacity-50 disabled:cursor-not-allowed"">submit</button>
+  class="flex mx-auto bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border-2 rounded-xl my-4 disabled:opacity-50 disabled:cursor-not-allowed">submit</button>
 
 <div class="hidden p-4 bg-black rounded-xl">
 <div data-submit-target="output" data-stream="<%= @stream %>"

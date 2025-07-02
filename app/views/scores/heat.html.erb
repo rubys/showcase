@@ -220,13 +220,13 @@ Swiping left and right on mobile devices and tablets also work.</li>
       <% next if subjects.empty? %>
       <% dance = subjects.first.dance_id %> 
       <% if ballroom.to_s == 'B' %>
-        <tr><td colspan="10" class="bg-black"></tr>
+        <tr><td colspan="10" class="bg-black"></td></tr>
       <% end %>
       <% subjects.each do |subject| %>
       <% assign = @event.assign_judges > 0 && subject.scores.any? {|score| score.judge_id == @judge.id} %>
       <% next if @show == 'only' and not assign %>
       <% if subject.dance_id != dance %>
-      <tr><td colspan="10" class="bg-gray-400"></tr>
+      <tr><td colspan="10" class="bg-gray-400"></td></tr>
       <% dance = subject.dance_id %>
       <% end %>
       <% subcat = subject.entry.pro ? 'Pro' : "#{subject.entry.subject_category(@track_ages)} - #{subject.entry.level.initials}" %>
@@ -243,30 +243,30 @@ Swiping left and right on mobile devices and tablets also work.</li>
       <tr class="hover:bg-yellow-200 line-through opacity-50">
       <% end %>
         <% if @event.assign_judges > 0 && assign && @show != 'only' %>
-        <td class="<% if @sort != 'level' %>py-2 <% end %>font-bold text-xl"><span class="border-2 border-red-600 px-2 rounded-full"><%= subject.lead.back || '&#9733;'.html_safe %></span>
+        <td class="<% if @sort != 'level' %>py-2 <% end %>font-bold text-xl"><span class="border-2 border-red-600 px-2 rounded-full"><%= subject.lead.back || '&#9733;'.html_safe %></span></td>
         <% else %>
-        <td class="<% if @sort != 'level' %>py-2 <% end %>text-xl"><%= subject.lead.back %>
+        <td class="<% if @sort != 'level' %>py-2 <% end %>text-xl"><%= subject.lead.back %></td>
         <% end %>
         <% if subject.lead.type == 'Student' %>
-        <td><%= subject.follow.display_name %>
-        <td><%= subject.lead.display_name %>
+        <td><%= subject.follow.display_name %></td>
+        <td><%= subject.lead.display_name %></td>
         <% else %>
-        <td><%= subject.follow.display_name %>
-        <td><%= subject.lead.display_name %>
+        <td><%= subject.follow.display_name %></td>
+        <td><%= subject.lead.display_name %></td>
         <% end %>
-        <td><% if @combine_open_and_closed and %w(Open Closed).include? subject.category %><%= subject.category %> - <% end %><%= subcat %>
-        <td><%= subject.subject.studio.name %>
+        <td><% if @combine_open_and_closed and %w(Open Closed).include? subject.category %><%= subject.category %> - <% end %><%= subcat %></td>
+        <td><%= subject.subject.studio.name %></td>
         <% unless @style == 'emcee' %>
         <% if @scoring == '#' %>
         <td><div class="mx-auto text-center">
           <input disabled data-score-target="score" class="text-center w-20 h-10 border-2 invalid:border-red-600" pattern="^\d\d$"
             name="<%= subject.id %>" value="<%= @results[subject] %>"%>
-        </div>
+        </div></td>
         <% elsif subject.dance.semi_finals %>
-        <td class="text-center"><input type="checkbox" name="<%= subject.id %>" value="<%= @results[subject] %>"<%= @results[subject].empty? ? '' : ' checked' %>>
+        <td class="text-center"><input type="checkbox" name="<%= subject.id %>" value="<%= @results[subject] %>"<%= @results[subject].empty? ? '' : ' checked' %>></td>
         <% elsif !%w(+ & @).include? @scoring %>
         <% @scores.each do |score| %>
-        <td class="text-center"><input type="radio" disabled name="<%= subject.id %>" value="<%= score %>"<%= @results[subject]==score ? ' checked' : '' %>>
+        <td class="text-center"><input type="radio" disabled name="<%= subject.id %>" value="<%= score %>"<%= @results[subject]==score ? ' checked' : '' %>></td>
         <% end %>
         <% end %>
         <% end %>

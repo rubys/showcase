@@ -4,25 +4,25 @@
   <div data-controller="info-box">
   <div class="info-button">&#x24D8;</div>
   <ul class="info-box">
-  <li>A separate entry form is required for each dance partner, dance level, and age category.
-  <li>Editing an existing entry form can be done by hovering over the entry and clicking on the edit button that appears.
+  <li>A separate entry form is required for each dance partner, dance level, and age category.</li>
+  <li>Editing an existing entry form can be done by hovering over the entry and clicking on the edit button that appears.</li>
   <li>Editing an individual heat can be done by hovering over the heat and clicking on the edit button that appears.  This may be useful
-when most dances for an individual are with one instructor but one or two are changed to be with a different instructor.
+when most dances for an individual are with one instructor but one or two are changed to be with a different instructor.</li>
   </ul>
   </div>
   <% elsif @person.type == 'Judge' %>
   <div data-controller="info-box">
   <div class="info-button">&#x24D8;</div>
   <ul class="info-box">
-  <li>Scores may be entered during the heats themselves, shortly thereafter, or even after the event entirely.
-  <li>If the scores are entered during the event, the program can be used to tally scores.
+  <li>Scores may be entered during the heats themselves, shortly thereafter, or even after the event entirely.</li>
+  <li>If the scores are entered during the event, the program can be used to tally scores.</li>
   <% unless %w(# &).include? @event.open_scoring || @event.judge_comments %>
   <li>Two methods are provided for entering scores:
   <ul class="ml-8 list-disc list-outside">
   <li><em>Cards</em> visually represent each couple, and scoring is accomplished by moving the cards to areas
-  corresponding to the desired score.
-  <li><em>Radio</em> shows participants in a tabular form and provides "radio buttons" next to each entry to record a score.
-  </ul>
+  corresponding to the desired score.</li>
+  <li><em>Radio</em> shows participants in a tabular form and provides "radio buttons" next to each entry to record a score.</li>
+  </ul></li>
   <% end %>
   </ul>
   </div>
