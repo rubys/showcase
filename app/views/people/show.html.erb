@@ -67,17 +67,17 @@ when most dances for an individual are with one instructor but one or two are ch
       <% instructor = @entries.any? {|parner, entries| entries.any? {|entry| entry.instructor}} %>
 
       <thead>
-        <th>heats
+        <th>heats</th>
         <% if @solos.length > 0 %>
-        <th>solos
+        <th>solos</th>
         <% end %>
-        <th>partner
+        <th>partner</th>
         <% if instructor %>
-        <th>instructor
+        <th>instructor</th>
         <% end %>
-        <th>level
+        <th>level</th>
         <% if @track_ages %>
-        <th>age
+        <th>age</th>
         <% end %>
       </thead>
 
@@ -98,11 +98,11 @@ when most dances for an individual are with one instructor but one or two are ch
               <% end %>
               <td class="row"><%= link_to partner.display_name, partner %>
               <% if instructor %>
-              <td class="row"><%= link_to_if entry.instructor_id, entry.instructor&.display_name, entry.instructor %>
+              <td class="row"><%= link_to_if entry.instructor_id, entry.instructor&.display_name, entry.instructor %></td>
               <% end %>
-              <td class="row"><%= entry.level_name %>
+              <td class="row"><%= entry.level_name %></td>
               <% if @track_ages %>
-              <td class="row"><%= entry.age_category %>
+              <td class="row"><%= entry.age_category %></td>
               <% end %>
               <td>
               <form method="get" action="<%= edit_entry_path(entry) %>">
@@ -114,11 +114,11 @@ when most dances for an individual are with one instructor but one or two are ch
           <% end %>
         <% end %>
         <tr>
-          <td class="border-t-2 border-gray-200 row text-right"d><%= @entries.values.flatten.map {|entry| (entry.active_heats - @solos).length}.sum %>
+          <td class="border-t-2 border-gray-200 row text-right"><%= @entries.values.flatten.map {|entry| (entry.active_heats - @solos).length}.sum %></td>
           <% if @solos.length > 0 %>
-          <td class="border-t-2 border-gray-200 row text-right"d><%= @solos.length %>
+          <td class="border-t-2 border-gray-200 row text-right"><%= @solos.length %></td>
           <% end %>
-          <th colspan="5" class="border-t-2 border-gray-200 row text-center font-bold">total
+          <th colspan="5" class="border-t-2 border-gray-200 row text-center font-bold">total</th>
         </tr>
       </tbody>
     </table>
@@ -134,14 +134,14 @@ when most dances for an individual are with one instructor but one or two are ch
     end %>
 
     <thead>
-      <th>dance
-      <th>partner
+      <th>dance</th>
+      <th>partner</th>
       <% if instructor %>
-      <th>instructor
+      <th>instructor</th>
       <% end %>
-      <th>level
+      <th>level</th>
       <% if @track_ages %>
-      <th>age
+      <th>age</th>
       <% end %>
     </thead>
 
@@ -154,9 +154,9 @@ when most dances for an individual are with one instructor but one or two are ch
           <tr class="group">
           <% end %>
             <% if heat.solo.combo_dance %>
-            <td class="row"><%= heat.dance.name %> / <%= heat.solo.combo_dance.name %>
+            <td class="row"><%= heat.dance.name %> / <%= heat.solo.combo_dance.name %></td>
             <% else %>
-            <td class="row"><%= heat.dance.name %>
+            <td class="row"><%= heat.dance.name %></td>
             <% end %>
 
             <td class="row">
@@ -164,6 +164,7 @@ when most dances for an individual are with one instructor but one or two are ch
             <% if index != 0%><br><% end %>
             <%= link_to partner.display_name, partner %>
             <% end %>
+            </td>
 
             <% if instructor %>
             <td class="row">
@@ -171,11 +172,12 @@ when most dances for an individual are with one instructor but one or two are ch
             <% if index != 0%><br><% end %>
             <%= link_to instructor.display_name, instructor %>
             <% end %>
+            </td>
             <% end %>
 
-            <td class="row"><%= entry.level.name %>
+            <td class="row"><%= entry.level.name %></td>
             <% if @track_ages %>
-            <td class="row"><%= entry.age.category %>
+            <td class="row"><%= entry.age.category %></td>
             <% end %>
             <td>
             <form method="get" action="<%= heat.solo.formations.empty? ? edit_solo_path(heat.solo) : edit_formation_path(heat.solo) %>">
@@ -218,7 +220,7 @@ when most dances for an individual are with one instructor but one or two are ch
       </tr>
       <% end %>
       <tr>
-        <th class="border-t-2 border-gray-200 row text-center font-bold">total
+        <th class="border-t-2 border-gray-200 row text-center font-bold">total</th>
         <% @partners.each do |partner| %>
           <td class="border-t-2 border-gray-200 row text-center">
             <%= @entries[partner].map {|entries| entries.active_heats.size}.sum %>
@@ -238,17 +240,17 @@ when most dances for an individual are with one instructor but one or two are ch
 
       <thead>
         <tr>
-          <td class="row-head">Heat
-          <td class="row-head">Type
-          <td class="row-head">Dance
+          <td class="row-head">Heat</td>
+          <td class="row-head">Type</td>
+          <td class="row-head">Dance</td>
           <% if @person.role != 'Leader' %>
-          <td class="row-head">Lead
+          <td class="row-head">Lead</td>
           <% end %>
           <% if @person.role != 'Follower' %>
-          <td class="row-head">Follow
+          <td class="row-head">Follow</td>
           <% end %>
-          <td class="row-head">Level
-          <td class="row-head">Category
+          <td class="row-head">Level</td>
+          <td class="row-head">Category</td>
         </tr>
       </thead>
       <tbody>
@@ -258,12 +260,12 @@ when most dances for an individual are with one instructor but one or two are ch
         <% else %>
         <tr class="group">
         <% end %>
-          <td class="row"><%= link_to heat.number.abs, heats_path(anchor: "heat-#{heat.number}")  %>
-          <td class="row"><%= heat.category %>
+          <td class="row"><%= link_to heat.number.abs, heats_path(anchor: "heat-#{heat.number}")  %></td>
+          <td class="row"><%= heat.category %></td>
           <% if heat.category == 'Solo' and heat.solo.combo_dance %>
-          <td class="row"><%= heat.dance.name %> / <%= heat.solo.combo_dance.name %>
+          <td class="row"><%= heat.dance.name %> / <%= heat.solo.combo_dance.name %></td>
           <% else %>
-          <td class="row"><%= heat.dance.name %>
+          <td class="row"><%= heat.dance.name %></td>
           <% end %>
           <% if @person.role != 'Leader' %>
           <td class="row"><%= link_to heat.entry.lead.display_name, heat.entry.lead if heat.entry.lead_id != 0 %>
@@ -274,6 +276,7 @@ when most dances for an individual are with one instructor but one or two are ch
           <% end %>
           <% end %>
           <% end %>
+          </td>
           <% end %>
           <% if @person.role != 'Follower' %>
           <td class="row"><%= link_to heat.entry.follow.display_name, heat.entry.follow if heat.entry.follow_id != 0 %>
@@ -284,9 +287,10 @@ when most dances for an individual are with one instructor but one or two are ch
           <% end %>
           <% end %>
           <% end %>
+          </td>
           <% end %>
-          <td class="row"><%= heat.entry.level_name %>
-          <td class="row text-center"><%= heat.entry.subject_category(@track_ages) %>
+          <td class="row"><%= heat.entry.level_name %></td>
+          <td class="row text-center"><%= heat.entry.subject_category(@track_ages) %></td>
           <td>
           <% if heat.category == 'Solo' %>
           <form method="get" action="<%= heat.solo.formations.empty? ? edit_solo_path(heat.solo) : edit_formation_path(heat.solo) %>">

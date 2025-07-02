@@ -1,0 +1,139 @@
+#!/usr/bin/env ruby
+
+require 'find'
+require 'nokogiri'
+
+class HtmlValidator
+  VOID_ELEMENTS = %w[area base br col embed hr img input link meta param source track wbr].freeze
+  
+  def initialize
+    @errors = []
+    @files_checked = 0
+    @files_with_errors = 0
+  end
+  
+  def validate_directory(path = 'app/views')
+    puts "🔍 Validating HTML templates in #{path}..."
+    puts "=" * 50
+    
+    Find.find(path) do |file|
+      next unless file.end_with?('.html.erb')
+      validate_file(file)
+    end
+    
+    print_summary
+  end
+  
+  private
+  
+  def validate_file(file_path)
+    @files_checked += 1
+    content = File.read(file_path)
+    
+    # Extract HTML from ERB by removing ERB tags for basic validation
+    html_content = extract_html_from_erb(content)
+    
+    file_errors = []
+    
+    # Check for basic unclosed tag patterns
+    file_errors.concat(check_unclosed_tags(html_content, file_path))
+    file_errors.concat(check_mismatched_tags(html_content, file_path))
+    
+    if file_errors.any?
+      @files_with_errors += 1
+      @errors.concat(file_errors)
+      
+      puts "❌ #{file_path}"
+      file_errors.each { |error| puts "   #{error}" }
+      puts
+    else
+      puts "✅ #{file_path}"
+    end
+  end
+  
+  def extract_html_from_erb(content)
+    # Remove ERB tags but keep the structure
+    content.gsub(/<%.*?%>/m, '').gsub(/<%=.*?%>/m, 'PLACEHOLDER')
+  end
+  
+  def check_unclosed_tags(content, file_path)
+    errors = []
+    lines = content.split("\n")
+    
+    # Common patterns for unclosed tags
+    patterns = {
+      'th' => /<th\b[^>]*>(?!.*<\/th>)/,
+      'td' => /<td\b[^>]*>(?!.*<\/td>)/,
+      'li' => /<li\b[^>]*>(?!.*<\/li>)/,
+      'div' => /<div\b[^>]*>(?!.*<\/div>)/,
+      'span' => /<span\b[^>]*>(?!.*<\/span>)/,
+      'p' => /<p\b[^>]*>(?!.*<\/p>)/,
+      'form' => /<form\b[^>]*>(?!.*<\/form>)/,
+      'ul' => /<ul\b[^>]*>(?!.*<\/ul>)/,
+      'ol' => /<ol\b[^>]*>(?!.*<\/ol>)/
+    }
+    
+    lines.each_with_index do |line, index|
+      patterns.each do |tag, pattern|
+        if line.match(pattern) && !line.include?('</#{tag}>')
+          # Simple check - if opening tag without closing tag on same line
+          if line.match(/<#{tag}\b[^>]*>[^<]*$/)
+            errors << "Line #{index + 1}: Unclosed <#{tag}> tag"
+          end
+        end
+      end
+    end
+    
+    errors
+  end
+  
+  def check_mismatched_tags(content, file_path)
+    errors = []
+    lines = content.split("\n")
+    
+    # Check for specific mismatched patterns we've seen
+    mismatched_patterns = {
+      'h2_h1' => [/<h2\b[^>]*>/, /<\/h1>/],
+      'h3_h2' => [/<h3\b[^>]*>/, /<\/h2>/],
+      'th_td' => [/<th\b[^>]*>/, /<\/td>/],
+      'td_th' => [/<td\b[^>]*>/, /<\/th>/]
+    }
+    
+    lines.each_with_index do |line, index|
+      mismatched_patterns.each do |name, (open_pattern, close_pattern)|
+        if line.match(open_pattern) && line.match(close_pattern)
+          errors << "Line #{index + 1}: Mismatched tags (#{name})"
+        end
+      end
+    end
+    
+    errors
+  end
+  
+  def print_summary
+    puts "=" * 50
+    puts "📊 VALIDATION SUMMARY"
+    puts "Files checked: #{@files_checked}"
+    puts "Files with errors: #{@files_with_errors}"
+    puts "Total errors: #{@errors.length}"
+    puts "Success rate: #{((@files_checked - @files_with_errors).to_f / @files_checked * 100).round(1)}%"
+    
+    if @files_with_errors > 0
+      puts "\n🎯 PRIORITY RECOMMENDATIONS:"
+      puts "1. Fix files with 10+ errors first"
+      puts "2. Focus on core user workflow templates"
+      puts "3. Address common patterns (th, td, div tags)"
+      exit 1
+    else
+      puts "\n🎉 All HTML templates validated successfully!"
+      exit 0
+    end
+  end
+end
+
+# Run validation
+if __FILE__ == $0
+  validator = HtmlValidator.new
+  path = ARGV[0] || 'app/views'
+  validator.validate_directory(path)
+end

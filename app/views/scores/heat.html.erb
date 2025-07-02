@@ -51,32 +51,33 @@
 <div class="info-button top-2">&#x24D8;</div>
 <ul class="info-box">
 <% if @heat.category == 'Solo' %>
-<li>Tab to or click on comments or score to edit.  Press escape or click elsewhere to save.
+<li>Tab to or click on comments or score to edit.  Press escape or click elsewhere to save.</li>
 <% else %>
 <% if @style != 'radio' %>
 <li>Scoring can be done multiple ways:
 <ul class="list-disc ml-4">
-<li>Drag and drop: Drag an entry box to the desired score.  
-<li>Point and click: Clicking on a entry back and then clicking on score.  Clicking on the back number again unselects it.
-<li>Keyboard: tab to the desired entry back, then move it up and down using the keyboard.  Clicking on escape unselects the back.
+<li>Drag and drop: Drag an entry box to the desired score.</li>
+<li>Point and click: Clicking on a entry back and then clicking on score.  Clicking on the back number again unselects it.</li>
+<li>Keyboard: tab to the desired entry back, then move it up and down using the keyboard.  Clicking on escape unselects the back.</li>
 </ul>
-<li>Dragging an entry back to the unlabelled box at the right returns the participant to the unscored state.
+</li>
+<li>Dragging an entry back to the unlabelled box at the right returns the participant to the unscored state.</li>
 <% elsif @event.open_scoring == '#' %>
-<li>Enter scores in the right most column.  Tab to move to the next entry.
+<li>Enter scores in the right most column.  Tab to move to the next entry.</li>
 <% elsif @event.open_scoring == '+' %>
-<li>Buttons on the left are used to indicated areas where the couple did well and will show up as <span class="good mx-0"><span class="open-fb selected px-2 mx-0">green</span></span> when selected.
-<li>Buttons on the right are used to indicate areas where the couple need improvement and will show up as <span class="bad mx-0"><span class="open-fb selected px-2 mx-0">red</span></span> when selected.
+<li>Buttons on the left are used to indicated areas where the couple did well and will show up as <span class="good mx-0"><span class="open-fb selected px-2 mx-0">green</span></span> when selected.</li>
+<li>Buttons on the right are used to indicate areas where the couple need improvement and will show up as <span class="bad mx-0"><span class="open-fb selected px-2 mx-0">red</span></span> when selected.</li>
 <% else %>
 <li>Click on the <em>radio</em> buttons on the right to score a couple.  The last column, with a dash (<code>-</code>),
-means the couple hasn't been scored / didn't participate.
+means the couple hasn't been scored / didn't participate.</li>
 <% end %>
 <% end %>
 <li>Clicking on the arrows at the bottom corners will advance you to the next or previous heats.
 Left and right arrows on the keyboard may also be used<% if @heat.category == 'Solo' %>
 when not editing comments or score<% elsif @event.open_scoring == '#' %>
 when not entering scores<% end %>.
-Swiping left and right on mobile devices and tablets also work.
-<li>Clicking on the heat information at the top center of the page will return you to the heat list where you can quickly scroll and select a different heat.
+Swiping left and right on mobile devices and tablets also work.</li>
+<li>Clicking on the heat information at the top center of the page will return you to the heat list where you can quickly scroll and select a different heat.</li>
 </ul>
 </div>
 
@@ -187,27 +188,27 @@ Swiping left and right on mobile devices and tablets also work.
     <table class="table-auto border-separate border-spacing-y-1 mx-4">
     <thead>
       <tr>
-        <th class="text-left border-b-2 border-black" rowspan="2">Back
-        <th class="text-left border-b-2 border-black" rowspan="2">Subject
-        <th class="text-left border-b-2 border-black" rowspan="2">Partner
-        <th class="text-left border-b-2 border-black" rowspan="2">Category
-        <th class="text-left border-b-2 border-black" rowspan="2">Studio
+        <th class="text-left border-b-2 border-black" rowspan="2">Back</th>
+        <th class="text-left border-b-2 border-black" rowspan="2">Subject</th>
+        <th class="text-left border-b-2 border-black" rowspan="2">Partner</th>
+        <th class="text-left border-b-2 border-black" rowspan="2">Category</th>
+        <th class="text-left border-b-2 border-black" rowspan="2">Studio</th>
       <% unless @style == 'emcee' or @scores.empty? %>
       <% if @event.open_scoring == '#' || @event.closed_scoring == '#' %>
-        <th class="text-center border-b-2 border-black">Score
+        <th class="text-center border-b-2 border-black">Score</th>
       <% elsif @heat.dance.semi_finals %>
-        <th class="text-center" colspan="<%= @scores.length %>%>">Callback?
+        <th class="text-center" colspan="<%= @scores.length %>%>">Callback?</th>
       </tr>
       <tr>
         <% @scores.each do |score| %>
-          <th class="border-b-2 border-black">
+          <th class="border-b-2 border-black"></th>
         <% end %>
       <% elsif !%w(& + @).include? @scoring %>
-        <th class="text-center" colspan="<%= @scores.length %>%>">Score
+        <th class="text-center" colspan="<%= @scores.length %>%>">Score</th>
       </tr>
       <tr>
         <% @scores.each do |score| %>
-          <th class="border-b-2 border-black"><%= score.blank? ? '-' : score %>
+          <th class="border-b-2 border-black"><%= score.blank? ? '-' : score %></th>
         <% end %>
       <% end %>
       <% end %>
@@ -364,11 +365,12 @@ Swiping left and right on mobile devices and tablets also work.
       <% end %>
       <% if @event.judge_comments and @style != 'emcee' %>
       <tr>
-        <td>
+        <td></td>
         <td colspan="4">
         <textarea disabled data-score-target="comments" data-heat="<%= subject.id %>"
           class="resize-none block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
           ><%= @comments[subject.id] %></textarea>
+        </td>
       </tr>
       <% end %>
 

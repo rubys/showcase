@@ -9,11 +9,11 @@
 
     <% %w(Student Professional Guest Judge DJ Emcee Official Organizer).each do |type| %>
     <% if @packages.include? type %>
-    <h2 class="font-bold text-2xl mt-4"><%= type %> Packages</h1>
+    <h2 class="font-bold text-2xl mt-4"><%= type %> Packages</h2>
     <table class="table-auto">
       <thead>
-        <th>Name
-        <th>Price
+        <th>Name</th>
+        <th>Price</th>
       </thead>
       <%= render partial: "billables/group", locals: { group: @packages[type], id: "#{type}-packages" } %>
     </table>
@@ -21,11 +21,11 @@
     <% end %>
 
     <% unless @options.empty? %>
-    <h2 class="font-bold text-2xl mt-4">Options</h1>
+    <h2 class="font-bold text-2xl mt-4">Options</h2>
     <table class="table-auto">
       <thead>
-        <th class="w-1/2">Name
-        <th>Price
+        <th class="w-1/2">Name</th>
+        <th>Price</th>
       </thead>
       <%= render partial: "billables/group", locals: { group: @options, id: 'billable-options' } %>
     </table>
@@ -51,7 +51,7 @@
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
-  <h2 class="font-bold text-2xl mt-4">Dances</h1>
+  <h2 class="font-bold text-2xl mt-4">Dances</h2>
 
   <% if @event.errors.any? %>
     <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
@@ -87,7 +87,7 @@
   </div>
 
   <% if @event.pro_heats %>
-  <h2 class="font-bold text-2xl mt-4">Pro Dances</h1>
+  <h2 class="font-bold text-2xl mt-4">Pro Dances</h2>
 
   <div class="my-5">
     <%= form.label :pro_heat_cost, 'Pro heats' %>

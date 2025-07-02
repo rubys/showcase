@@ -11,13 +11,13 @@
     <table class="table-fixed mx-auto">
     <thead>
       <tr>
-        <td class="row-head">Location
-        <td class="row-head">Count
+        <td class="row-head">Location</td>
+        <td class="row-head">Count</td>
         <% if @total_tables > 0 %>
-        <td class="row-head">Tables
+        <td class="row-head">Tables</td>
         <% end %>
         <% if @total_invoice > 0 %>
-        <td class="row-head">Invoice
+        <td class="row-head">Invoice</td>
         <% end %>
       </tr>
     </thead>
@@ -37,7 +37,7 @@
       </tr>
     <% end %>
       <tr>
-        <th class="row-foot-right">totals</td>
+        <th class="row-foot-right">totals</th>
         <td class="row-foot-right"><%= @total_count %></td>
         <% if @total_tables > 0 %>
         <td class="row-foot-right"><%= @total_tables %></td>

@@ -10,12 +10,12 @@
     </td>
   </tr>
   <tr>
-    <td class="row-head-left">Category
-    <td class="row-head-left">Dance
-    <td class="row-head-left">Level
-    <td class="row-head">Category
-    <td class="row-head">Count
-    <td class="row-head">Price
+    <td class="row-head-left">Category</td>
+    <td class="row-head-left">Dance</td>
+    <td class="row-head-left">Level</td>
+    <td class="row-head">Category</td>
+    <td class="row-head">Count</td>
+    <td class="row-head">Price</td>
   </tr>
   </thead>
   <tbody>
@@ -43,20 +43,20 @@
        cost = age_cost[entry.age_id].heat_cost || cost if age_cost[entry.age_id]
        %>
     <tr class="text-sm">
-      <td><div class="mx-4"><%= category %>
+      <td><div class="mx-4"><%= category %></div></td>
       <td><div class="mx-4"><%= dance %></div>
-      <td><%= level %>
-      <td class="text-center"><%= subjcat %>
-      <td class="text-right"><%= heats.length %>
-      <td class="text-right"><%= number_to_currency cost*heats.length/split, precision: 2, unit: '' %>
+      <td><%= level %></td>
+      <td class="text-center"><%= subjcat %></td>
+      <td class="text-right"><%= heats.length %></td>
+      <td class="text-right"><%= number_to_currency cost*heats.length/split, precision: 2, unit: '' %></td>
     </tr>
     <% count += heats.length %>
     <% total += cost/split * heats.length %>
   <% end %>
     <tr class="text-sm">
-      <th colspan="4">subtotal
-      <th class="text-right"><%= count %>
-      <th class="text-right"><%= number_to_currency total, precision: 2, unit: '' %>
+      <th colspan="4">subtotal</th>
+      <th class="text-right"><%= count %></th>
+      <th class="text-right"><%= number_to_currency total, precision: 2, unit: '' %></th>
     </tr>
   </tbody>
 </table>

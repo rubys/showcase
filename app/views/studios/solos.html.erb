@@ -10,22 +10,22 @@
   <div class="min-w-full">
   <table class="mt-4 table-auto mx-auto">
   <thead>
-    <th class="row-head">Heat
-    <th class="row-head">Dance
-    <th class="row-head">Song
-    <th class="row-head">Lead
-    <th class="row-head">Follow
+    <th class="row-head">Heat</th>
+    <th class="row-head">Dance</th>
+    <th class="row-head">Song</th>
+    <th class="row-head">Lead</th>
+    <th class="row-head">Follow</th>
   </thead>
   <% @solos.each do |solo| %>
     <% heat = solo.heat %>
     <% next if heat.number < 0 %>
     <tr class="hover:bg-yellow-200 group py-2" id="<%= dom_id solo %>">
-       <td class="text-center py-6"><%= heat.number %>
+       <td class="text-center py-6"><%= heat.number %></td>
        <% if heat.category == 'Solo' and solo.combo_dance %>
        <td class="row"><%= link_to heat.dance.name, edit_dance_path(heat.dance) %> / 
-       <%= link_to solo.combo_dance.name, edit_dance_path(solo.combo_dance) %>
+       <%= link_to solo.combo_dance.name, edit_dance_path(solo.combo_dance) %></td>
        <% else %>
-       <td class="row"><%= link_to heat.dance.name, edit_dance_path(heat.dance) %>
+       <td class="row"><%= link_to heat.dance.name, edit_dance_path(heat.dance) %></td>
        <% end %>
        <td>
        <ul>
@@ -39,13 +39,15 @@
        </li>
        <% end %>
        </ul>
-       <td class="row"><%= link_to heat.lead.display_name, polymorphic_path(heat.lead, anchor: 'heats') %>
+       </td>
+       <td class="row"><%= link_to heat.lead.display_name, polymorphic_path(heat.lead, anchor: 'heats') %></td>
        <% solo.formations.each_with_index do |formation, index| %>
          <% if index % 2 == 0 and formation.on_floor %>
          <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
          <% end %>
        <% end %>
-       <td class="row"><%= link_to heat.follow.display_name, polymorphic_path(heat.follow, anchor: 'heats') %>
+       </td>
+       <td class="row"><%= link_to heat.follow.display_name, polymorphic_path(heat.follow, anchor: 'heats') %></td>
        <% solo.formations.each_with_index do |formation, index| %>
          <% if index % 2 == 1 and formation.on_floor %>
          <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>

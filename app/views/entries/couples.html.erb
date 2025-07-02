@@ -10,19 +10,19 @@
 
 <table>
   <thead>
-    <th class="row-head">Leader
-    <th class="row-head">Follower
-    <th class="row-head">Instructor
-    <th class="row-head">Level
-    <th class="row-head">Age
+    <th class="row-head">Leader</th>
+    <th class="row-head">Follower</th>
+    <th class="row-head">Instructor</th>
+    <th class="row-head">Level</th>
+    <th class="row-head">Age</th>
   </thead>
 <% @entries.each do |entry| %>
   <tr class="group">
-    <td class="row"><%= link_to entry.lead.name, entry.lead %>
-    <td class="row"><%= link_to entry.follow.name, entry.follow %>
-    <td class="row"><%= link_to_if entry.instructor, entry.instructor&.name, entry.instructor %>
-    <td class="row"><%= entry.level.name %>
-    <td class="row"><%= entry.age.category %>
+    <td class="row"><%= link_to entry.lead.name, entry.lead %></td>
+    <td class="row"><%= link_to entry.follow.name, entry.follow %></td>
+    <td class="row"><%= link_to_if entry.instructor, entry.instructor&.name, entry.instructor %></td>
+    <td class="row"><%= entry.level.name %></td>
+    <td class="row"><%= entry.age.category %></td>
     <td>
     <form method="get" action="<%= edit_entry_path(entry) %>">
     <input type="hidden" name="primary" value="<%= entry.lead_id %>">
@@ -38,6 +38,7 @@
 <div class="mx-auto">
 <%= link_to 'Couples', couples_people_path, class: "btn-green" %>
 <%= link_to 'Back to event', root_path, class: "btn-green" %>
+</div>
 </div>
 </div>
 </div>

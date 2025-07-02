@@ -12,18 +12,18 @@
   <div class="min-w-full">
   <table class="mt-4 table-auto mx-auto">
   <thead>
-    <th class="row-head">Title
+    <th class="row-head">Title</th>
     <% if @includes_artists %>
-    <th class="row-head">Artist
+    <th class="row-head">Artist</th>
     <% end %>
-    <th class="row-head">Song
+    <th class="row-head">Song</th>
   </thead>
   <%= render 'list', locals: {includes_artists: @includes_artists} %>
   </table>
 </div>
 <% end %>
 
-    <h2 class="font-bold text-2xl my-4">Upload songs</h1>
+    <h2 class="font-bold text-2xl my-4">Upload songs</h2>
     <form method="post" enctype="multipart/form-data" action=<%= dance_song_upload_url %>>
     <input type="hidden" name="dance" value="<%= @dance.id %>">
     <%= file_field :song, :files, multiple: true %>
