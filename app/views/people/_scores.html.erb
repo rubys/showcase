@@ -10,20 +10,20 @@
       </td>
     </tr>
     <tr>
-      <td class="row-head">Heat
+      <td class="row-head">Heat</td>
       <% if @score_values != false %>
-      <td class="row-head" colspan="<%= [@judges.length, 1].max %>">Scores
+      <td class="row-head" colspan="<%= [@judges.length, 1].max %>">Scores</td>
       <% end %>
-      <td class="row-head">Dance
-      <td class="row-head">Partner
-      <td class="row-head" colspan="3">Cat/Lvl
+      <td class="row-head">Dance</td>
+      <td class="row-head">Partner</td>
+      <td class="row-head" colspan="3">Cat/Lvl</td>
     </tr>
   </thead>
   <tbody>
     <% @heats.each do |heat| %>
     <% next unless [heat.entry.lead, heat.entry.follow].include?(person) or @formations.any? {|id, number| id == person.id && number == heat.number} %>
     <tr class="text-sm">
-      <td class="text-center"><%= heat.number %>
+      <td class="text-center"><%= heat.number %></td>
       <% if @judges.empty? %>
       <td></td>
       <% elsif heat.category == 'Open' and @event.open_scoring == '+' %>
@@ -32,30 +32,30 @@
       <% end %>
       <% elsif @score_values != false %>
       <% judge_ids.each do |judge| %>
-        <td class="text-center"><%= heat.scores.select {|score| score.judge_id == judge}.sort_by {it.slot || 0}.map(&:display_value).join(' ') %>
+        <td class="text-center"><%= heat.scores.select {|score| score.judge_id == judge}.sort_by {it.slot || 0}.map(&:display_value).join(' ') %></td>
       <% end %>
       <% end %>
-      <td><div class="mx-4"><%= heat.category %> <%= heat.dance.name %></div>
+      <td><div class="mx-4"><%= heat.category %> <%= heat.dance.name %></div></td>
       <% if @formations.any? {|id, number| number == heat.number} %>
       <td><ul>
       <% ids = (@formations.select {|id, number| number == heat.number}.map(&:first) + [heat.entry.lead_id, heat.entry.follow_id]) - [person.id]
       Person.where(id: ids).order(:name).each do |dancer| %>
-      <li><div class="mx-4"><%= link_to dancer.display_name, dancer %></div>
+      <li><div class="mx-4"><%= link_to dancer.display_name, dancer %></div></li>
       <% end %>
       </ul></td>
       <% else %>
       <% if heat.entry.lead != person %>
-      <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div>
+      <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div></td>
       <% end %>
       <% if heat.entry.follow != person %>
-      <td><div class="mx-4"><%= link_to heat.entry.follow.display_name, heat.entry.follow %></div>
+      <td><div class="mx-4"><%= link_to heat.entry.follow.display_name, heat.entry.follow %></div></td>
       <% end %>
       <% end %>
       <% lvlcat = heat.entry.subject_lvlcat.split(/\s*-\s*/) %>
-      <td class="pl-4 text-right"><%= lvlcat[0] %>
-      <td class="pl-1">- <%= lvlcat[1] %>
+      <td class="pl-4 text-right"><%= lvlcat[0] %></td>
+      <td class="pl-1">- <%= lvlcat[1] %></td>
       <% if @track_ages %>
-      - <td class="text-left"><%= lvlcat[2]&.strip %>
+      <td class="text-left">- <%= lvlcat[2]&.strip %></td>
       <% end %>
     </tr>
     <% end %>
@@ -75,8 +75,8 @@
   <table class="table-auto mr-24 border-collapse">
   <thead>
     <tr>
-      <td class="row-head">Heat
-      <td class="row-head">Comments
+      <td class="row-head">Heat</td>
+      <td class="row-head">Comments</td>
     </tr>
   </thead>
   <tbody>
@@ -85,8 +85,8 @@
     <% heat.scores.each do |score| %>
     <% next unless score.comments %>
     <tr class="border-y border-3 border-gray-200 m-2">
-      <td class="text-center py-1"><%= heat.number %>
-      <td class="px-2"><%= score.comments %>
+      <td class="text-center py-1"><%= heat.number %></td>
+      <td class="px-2"><%= score.comments %></td>
     </tr>
     <% end %>
   <% end %>
@@ -119,18 +119,18 @@
       <td></td>
       <% else %>
       <% judge_ids.each do |judge| %>
-        <td class="text-left" class="ml-4"><span class="ml-2"><%= heat.scores.select {|score| score.judge_id == judge}.sort_by(&:slot).map(&:good).join(' | ') %></span>
+        <td class="text-left ml-4"><span class="ml-2"><%= heat.scores.select {|score| score.judge_id == judge}.sort_by(&:slot).map(&:good).join(' | ') %></span></td>
       <% end %>
       <% judge_ids.each do |judge| %>
-        <td class="text-left bg-gray-200"><span class="ml-2"><%= heat.scores.select {|score| score.judge_id == judge}.sort_by(&:slot).map(&:bad).join(' | ') %></span>
+        <td class="text-left bg-gray-200"><span class="ml-2"><%= heat.scores.select {|score| score.judge_id == judge}.sort_by(&:slot).map(&:bad).join(' | ') %></span></td>
       <% end %>
       <% end %>
-      <td><div class="mx-4"><%= heat.category %> <%= heat.dance.name %></div>
+      <td><div class="mx-4"><%= heat.category %> <%= heat.dance.name %></div></td>
       <% if heat.entry.lead != person %>
-      <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div>
+      <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div></td>
       <% end %>
       <% if heat.entry.follow != person %>
-      <td><div class="mx-4"><%= link_to heat.entry.follow.display_name, heat.entry.follow %></div>
+      <td><div class="mx-4"><%= link_to heat.entry.follow.display_name, heat.entry.follow %></div></td>
       <% end %>
       <!--
       <% lvlcat = heat.entry.subject_lvlcat.split(/\s*-\s*/) %>
@@ -170,7 +170,7 @@
       <td><abbr>AS</abbr>: <span>Arm Styling</span></td>
       <td><abbr>CB</abbr>: <span>Contra-Body</span></td>
       <td><abbr>FC</abbr>: <span>Floor Craft</span></td>
-    <tr>
+    </tr>
   <% else %>
     <tr>
       <td><abbr>F</abbr>: <span>Frame</span></td>
@@ -179,8 +179,7 @@
       <td><abbr>LF</abbr>: <span>Lead/&ZeroWidthSpace;Follow</span></td>
       <td><abbr>T</abbr>: <span>Timing</span></td>
       <td><abbr>S</abbr>: <span>Styling</span></td>
-
-    <tr>
+    </tr>
   <% end %>
     </table>
   </td>

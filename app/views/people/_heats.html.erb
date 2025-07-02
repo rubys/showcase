@@ -25,13 +25,13 @@ body {
   </tr>
   <tr>
     <% if @start %>
-    <td class="row-head">Time
+    <td class="row-head">Time</td>
     <% end %>
-    <td class="row-head">Heat
-    <td class="row-head">Partner
-    <td class="row-head">Dance
-    <td class="row-head">Type
-    <td class="row-head mr-2">Category
+    <td class="row-head">Heat</td>
+    <td class="row-head">Partner</td>
+    <td class="row-head">Dance</td>
+    <td class="row-head">Type</td>
+    <td class="row-head mr-2">Category</td>
   </tr>
   </thead>
   <tbody>
@@ -43,10 +43,10 @@ body {
     <% count[heat.category] += 1 if heat.number > 0 %>
     <% if @start && @start[number]&.day != day %>
     <tr>
-    <td colspan="6" class="p-1">
+    <td colspan="6" class="p-1"></td>
     </tr>
     <tr>
-    <td colspan="6" class="p-1 border-solid border-t-2 border-gray-400">
+    <td colspan="6" class="p-1 border-solid border-t-2 border-gray-400"></td>
     </tr>
     <% day = @start[number]&.day %>
     <% end %>
@@ -55,7 +55,7 @@ body {
       <% if @start %>
       <td class="text-right pr-4"><%= @start[number]&.strftime("%-I:%M") %></td>
       <% end %>
-      <td class="text-center"><%= heat.number.abs %>
+      <td class="text-center"><%= heat.number.abs %></td>
       <% unless heat.category == 'Solo' %>
       <% if heat.ballroom %>
        - <%= heat.ballroom %>
@@ -69,13 +69,13 @@ body {
       <% end %>
       <% end %>
       <% if heat.entry.lead != person %>
-      <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div>
+      <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div></td>
       <% elsif heat.entry.follow != person %>
-      <td><div class="mx-4"><%= link_to heat.entry.follow.display_name, heat.entry.follow %></div>
+      <td><div class="mx-4"><%= link_to heat.entry.follow.display_name, heat.entry.follow %></div></td>
       <% end %>
-      <td><div class="mx-4"><%= heat.dance.name %></div>
-      <td><div class="mx-4"><%= heat.category %>
-      <td class="text-center"><%= heat.entry.subject_lvlcat(@track_ages) %>
+      <td><div class="mx-4"><%= heat.dance.name %></div></td>
+      <td><div class="mx-4"><%= heat.category %></div></td>
+      <td class="text-center"><%= heat.entry.subject_lvlcat(@track_ages) %></td>
     </tr>
   <% end %>
   <% end %>
@@ -114,18 +114,18 @@ body {
   </tr>
   <tr>
     <% if @start %>
-    <td class="row-head">Time
+    <td class="row-head">Time</td>
     <% end %>
-    <td class="row-head">Heat
-    <td class="row-head">Type
-    <td class="row-head">Dance
+    <td class="row-head">Heat</td>
+    <td class="row-head">Type</td>
+    <td class="row-head">Dance</td>
     <% if person %>
-    <td class="row-head">Students
+    <td class="row-head">Students</td>
     <% else %>
-    <td class="row-head">Lead
-    <td class="row-head">Follow
+    <td class="row-head">Lead</td>
+    <td class="row-head">Follow</td>
     <% end %>
-    <td class="row-head">Category
+    <td class="row-head">Category</td>
   </tr>
   </thead>
   <tbody>
@@ -145,7 +145,7 @@ body {
       <% if @start %>
       <td class="text-right pr-4"><%= @start[number]&.strftime("%-I:%M") %></td>
       <% end %>
-      <td class="text-center"><%= heat.number.abs %>
+      <td class="text-center"><%= heat.number.abs %></td>
       <% if heat.ballroom %>
       - <%= heat.ballroom %>
       <% elsif ballrooms == 2 %>
@@ -156,15 +156,15 @@ body {
       <% elsif ballrooms == 4 %>
       - <%= heat.subject.studio.ballroom || "" %>
       <% end %>
-      <td><div class="mx-4"><%= heat.category %>
-      <td><div class="mx-4"><%= heat.dance.name %></div>
+      <td><div class="mx-4"><%= heat.category %></div></td>
+      <td><div class="mx-4"><%= heat.dance.name %></div></td>
       <% if person %>
-      <td><div class="mx-4"><%= link_to heat.entry.follow.join(heat.entry.lead), heat.entry.follow %></div>
+      <td><div class="mx-4"><%= link_to heat.entry.follow.join(heat.entry.lead), heat.entry.follow %></div></td>
       <% else %>
-      <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div>
-      <td><div class="mx-4"><%= link_to heat.entry.follow.display_name, heat.entry.follow %></div>
+      <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div></td>
+      <td><div class="mx-4"><%= link_to heat.entry.follow.display_name, heat.entry.follow %></div></td>
       <% end %>
-      <td class="text-center"><%= heat.entry.subject_lvlcat(@track_ages) %>
+      <td class="text-center"><%= heat.entry.subject_lvlcat(@track_ages) %></td>
     </tr>
   <% end %>
   <% end %>

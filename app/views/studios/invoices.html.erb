@@ -1,7 +1,7 @@
 <div class="mx-auto md:w-2/3 w-full print:w-full">
 
 <div class="mb-4">
-  <h2 class="font-bold text-center text-4xl"><%= @event.name %></h1>
+  <h2 class="font-bold text-center text-4xl"><%= @event.name %></h2>
 
   <p class="mt-4">
     <% @event.location.to_s.lines.each do |line| %>
@@ -20,12 +20,12 @@
   <table class="table-fixed">
   <thead>
       <tr>
-      <td class="row-head">Location
-      <td class="row-head">People
-      <td class="row-head"># Entries
-      <td class="row-head">Cost
-      <td class="row-head">Purchases
-      <td class="row-head">Total
+      <td class="row-head">Location</td>
+      <td class="row-head">People</td>
+      <td class="row-head"># Entries</td>
+      <td class="row-head">Cost</td>
+      <td class="row-head">Purchases</td>
+      <td class="row-head">Total</td>
       </tr>
   </thead>
   <tbody>
@@ -38,7 +38,7 @@
        %>
       <tr>
       <td class="text-black font-medium"><%= link_to studio.name, studio %></td>
-      <td class="text-right"><div class="mx-4"><%= studio.people.count %></td></div>
+      <td class="text-right"><div class="mx-4"><%= studio.people.count %></div></td>
       <td class="text-right"><div class="mx-4">
         <%= number_with_precision heats, strip_insignificant_zeros: true %>
       </div></td>
@@ -54,12 +54,12 @@
       </tr>
   <% end %>
       <tr>
-      <th class="row-foot-right">totals</td>
-      <td class="row-foot-right"><div class="mx-4"><%= @total_count %></td>
-      <td class="row-foot-right"><div class="mx-4"><%= number_with_precision total_heats, strip_insignificant_zeros: true %></td>
-      <td class="row-foot-right"><div class="mx-4"><%= number_to_currency total_cost, precision: 2, unit: '' %></td>
-      <td class="row-foot-right"><div class="mx-4"><%= number_to_currency total_purchases, precision: 2, unit: '' %></td>
-      <td class="row-foot-right"><div class="mx-4"><%= number_to_currency total_cost + total_purchases, precision: 2, unit: '' %></td>
+      <th class="row-foot-right">totals</th>
+      <td class="row-foot-right"><div class="mx-4"><%= @total_count %></div></td>
+      <td class="row-foot-right"><div class="mx-4"><%= number_with_precision total_heats, strip_insignificant_zeros: true %></div></td>
+      <td class="row-foot-right"><div class="mx-4"><%= number_to_currency total_cost, precision: 2, unit: '' %></div></td>
+      <td class="row-foot-right"><div class="mx-4"><%= number_to_currency total_purchases, precision: 2, unit: '' %></div></td>
+      <td class="row-foot-right"><div class="mx-4"><%= number_to_currency total_cost + total_purchases, precision: 2, unit: '' %></div></td>
       </tr>
   </tbody>
   </table>

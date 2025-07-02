@@ -21,17 +21,17 @@ tbody::after {
 <div data-controller="info-box">
 <div class="info-button">&#x24D8;</div>
 <ul class="info-box">
-<li>After any changes to a category or heats, you can click the <span class="x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium">Redo</span> button to regenerate the agenda.
-<li>Categories affect where each dance appears in the agenda, and are defined on the <%= link_to 'Agenda', categories_path, class: 'x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium' %> page.
+<li>After any changes to a category or heats, you can click the <span class="x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium">Redo</span> button to regenerate the agenda.</li>
+<li>Categories affect where each dance appears in the agenda, and are defined on the <%= link_to 'Agenda', categories_path, class: 'x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium' %> page.</li>
 <li>The order of Solos within a category is determined by the order in which the Solos appear on the
-<%= link_to "Solos", solos_path, class: "x-2 rounded-lg py-1 px-2 text-white bg-green-600 font-medium" %> page.
-<li>The <%= link_to "Settings", settings_event_index_path(tab: 'Heats') , class: "x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium" %> page contains some options that allow you to control heat sizes.
+<%= link_to "Solos", solos_path, class: "x-2 rounded-lg py-1 px-2 text-white bg-green-600 font-medium" %> page.</li>
+<li>The <%= link_to "Settings", settings_event_index_path(tab: 'Heats') , class: "x-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium" %> page contains some options that allow you to control heat sizes.</li>
 <li>If you set the time between start of heats in the settings and add a start time to at least one agenda item,
-a scheduled heat time will be added to each heat.
+a scheduled heat time will be added to each heat.</li>
 <% if @stats %>
-<li>A summary of how many couples are on the floor for each heat is at the <a href="#stats">bottom</a> of this page.
-<li>Once the event has "gone to print", clicking the lock icon will lock the agenda preventing large scale changes such as redo. Small changes such as scratching heats, replacing a person in a heat, and even moving an individual entry to another heat is still possible, even when the agenda is locked.
-<li>Locking the agenda also captures the heat numbers; if you unlock the agenda and make changes you will see an <span class="x-2 rounded-lg py-1 px-2 text-white bg-blue-400 font-medium">undo</span> button appear that will alow you to revert to the last locked state.
+<li>A summary of how many couples are on the floor for each heat is at the <a href="#stats">bottom</a> of this page.</li>
+<li>Once the event has "gone to print", clicking the lock icon will lock the agenda preventing large scale changes such as redo. Small changes such as scratching heats, replacing a person in a heat, and even moving an individual entry to another heat is still possible, even when the agenda is locked.</li>
+<li>Locking the agenda also captures the heat numbers; if you unlock the agenda and make changes you will see an <span class="x-2 rounded-lg py-1 px-2 text-white bg-blue-400 font-medium">undo</span> button appear that will alow you to revert to the last locked state.</li>
 <% end %>
 </ul>
 </div>
@@ -52,29 +52,29 @@ a scheduled heat time will be added to each heat.
 
   <table class="table-fixed ml-6 mb-8">
     <tr>
-      <th class="row-head">Category
-      <th colspan="2" class="row-head">Heats
+      <th class="row-head">Category</th>
+      <th colspan="2" class="row-head">Heats</th>
       <% if @start && !@start.compact.empty? %>
       <% unless @oneday %>
-      <th class="row-head">Day
+      <th class="row-head">Day</th>
       <% end %>
-      <th class="row-head" colspan="2">Time
+      <th class="row-head" colspan="2">Time</th>
       <% elsif not @oneday %>
-      <th class="row-head">Day
+      <th class="row-head">Day</th>
       <% end %>
     </tr>
     <% @agenda.each do |cat, heats| %>
       <tr>
         <% if %w(Uncategorized Unscheduled).include? cat %>
-        <td class="row text-red-600 font-bold"><a href="#cat-<%= cat.downcase.gsub(/[^\w]+/, '-') %>"><%= cat %></a>
+        <td class="row text-red-600 font-bold"><a href="#cat-<%= cat.downcase.gsub(/[^\w]+/, '-') %>"><%= cat %></a></td>
         <% else %>
-        <td class="row"><a href="#cat-<%= cat.downcase.gsub(/[^\w]+/, '-') %>"><%= cat %></a>
+        <td class="row"><a href="#cat-<%= cat.downcase.gsub(/[^\w]+/, '-') %>"><%= cat %></a></td>
         <% end %>
         <% if cat == "Unscheduled" %>
-        <td colspan="2" class="text-right">(<%= pluralize(Heat.where(number: 0).count, 'entry') %>)
+        <td colspan="2" class="text-right">(<%= pluralize(Heat.where(number: 0).count, 'entry') %>)</td>
         <% else %>
-        <td class="row text-right"><a href="#heat-<%= heats.first&.first %>"><%= heats.first&.first %></a>
-        <td class="row text-right"><a href="#heat-<%= heats.last&.first %>"><%= heats.last&.first %></a>
+        <td class="row text-right"><a href="#heat-<%= heats.first&.first %>"><%= heats.first&.first %></a></td>
+        <td class="row text-right"><a href="#heat-<%= heats.last&.first %>"><%= heats.last&.first %></a></td>
         <% end %>
         <% if @start and @cat_start[cat] %>
         <% unless @oneday %>
