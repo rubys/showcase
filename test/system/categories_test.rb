@@ -15,7 +15,7 @@ class CategoriesTest < ApplicationSystemTestCase
     click_on "New category"
 
     fill_in "Name", with: @category.name + ' Part II'
-    fill_in "Time", with: @category.time
+    fill_in "Time", with: Chronic.parse(@category.time)
     click_on "Create Category"
 
     assert_text "Closed American Smooth Part II was successfully created"
