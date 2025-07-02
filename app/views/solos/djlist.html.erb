@@ -23,13 +23,13 @@
     <ul class="mt-2 list-disc ml-4">
     <% prefix = ENV['RAILS_APP_SCOPE'] ? "" : "/" + ENV['RAILS_APP_DB'].sub('-', '/') %>
     <% unless ENV['FLY_REGION'] %>
-    <li><a class="underline" href="https://smooth.fly.dev/showcase<%= prefix + djlist_solos_path.sub('/showcase', '') %>">fly.io</a> - Primary cloud host
+    <li><a class="underline" href="https://smooth.fly.dev/showcase<%= prefix + djlist_solos_path.sub('/showcase', '') %>">fly.io</a> - Primary cloud host</li>
     <% end %>
     <% unless ENV['RAILS_PROXY_HOST'].to_s.split('.').first == 'hetzner' %>
-    <li><a class="underline" href="https://showcase.party<%= prefix + djlist_solos_path.sub('/showcase', '') %>">hetzner</a> - Backup cloud host
+    <li><a class="underline" href="https://showcase.party<%= prefix + djlist_solos_path.sub('/showcase', '') %>">hetzner</a> - Backup cloud host</li>
     <% end %>
     <% unless ENV['RAILS_PROXY_HOST'].to_s.split('.').first == 'rubix' %>
-    <li><a class="underline" href="https://rubix.intertwingly.net/showcase<%= prefix + djlist_solos_path.sub('/showcase', '') %>">rubix</a> - Sam's attic
+    <li><a class="underline" href="https://rubix.intertwingly.net/showcase<%= prefix + djlist_solos_path.sub('/showcase', '') %>">rubix</a> - Sam's attic</li>
     <% end %>
     <p class="mt-2">
     <span class="text-red-600 mt-2"><span class="font-bold">Important</span>: never <span class="underline font-bold">update</span> data on multiple hosts or you will lose data.</span>
@@ -47,17 +47,17 @@
   <div class="min-w-full">
   <table class="mt-4 table-auto mx-auto">
   <thead>
-    <th class="row-head">Heat
-    <th class="row-head">Dance
-    <th class="row-head">Song
-    <th class="row-head">Lead
-    <th class="row-head">Follow
-    <th class="row-head">Studio
+    <th class="row-head">Heat</th>
+    <th class="row-head">Dance</th>
+    <th class="row-head">Song</th>
+    <th class="row-head">Lead</th>
+    <th class="row-head">Follow</th>
+    <th class="row-head">Studio</th>
   </thead>
   <% @heats.each do |heat| %>
     <% next if heat.number <= 0 %>
     <tr class="hover:bg-yellow-200" id="<%= dom_id heat.solo %>">
-       <td class="text-center"><div style="line-height: 5rem"><%= heat.number %>
+       <td class="text-center"><div style="line-height: 5rem"><%= heat.number %></div></td>
        <td class="row">
        <ul class="list-none">
        <li><% if heat.category == 'Solo' and heat.solo.combo_dance %>
@@ -66,16 +66,19 @@
        <% else %>
        <%= link_to heat.dance.name, edit_dance_path(heat.dance) %>
        <% end %></li>
-       <% unless heat.solo.song.blank? %><li><%= heat.solo.song %><% end %>
-       <% unless heat.solo.artist.blank? %><li><%= heat.solo.artist %><% end %>
+       <% unless heat.solo.song.blank? %><li><%= heat.solo.song %></li><% end %>
+       <% unless heat.solo.artist.blank? %><li><%= heat.solo.artist %></li><% end %>
        </ul>
+       </td>
        <% if heat.solo.song_file.attached? %>
        <td>
          <audio controls style="display: inline">
            <source src=<%= heat.solo.song_file.url %> type=<%= heat.solo.song_file.content_type %> onerror="audioSourceError(event)">
          </audio>
+       </td>
        <% else %>
        <td class="bg-red-200">
+       </td>
        <% end %>
        <td class="row"><%= link_to heat.lead.display_name, polymorphic_path(heat.lead, anchor: 'heats') %>
        <% heat.solo.formations.each_with_index do |formation, index| %>
@@ -83,13 +86,15 @@
          <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
          <% end %>
        <% end %>
+       </td>
        <td class="row"><%= link_to heat.follow.display_name, polymorphic_path(heat.follow, anchor: 'heats') %>
        <% heat.solo.formations.each_with_index do |formation, index| %>
          <% if index % 2 == 1 and formation.on_floor %>
          <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
          <% end %>
        <% end %>
-       <td class="row"><%= link_to heat.studio.name, heat.studio %>
+       </td>
+       <td class="row"><%= link_to heat.studio.name, heat.studio %></td>
     </tr>
   <% end %>
   </table>

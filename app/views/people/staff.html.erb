@@ -2,20 +2,20 @@
   <table class="mx-auto">
   <thead>
   <tr>
-    <th colspan="3" class="font-bold pt-8 text-3xl pb-5" >Professionals</td>
+    <th colspan="3" class="font-bold pt-8 text-3xl pb-5" >Professionals</th>
   </tr>
   <tr>
-    <th class="row-head">Name
-    <th class="row-head">Studio
-    <th class="row-head">Back #
+    <th class="row-head">Name</th>
+    <th class="row-head">Studio</th>
+    <th class="row-head">Back #</th>
   </tr>
   </thead>
   <tbody>
   <% @professionals.each do |person| %>
     <tr>
-      <td><div class="mx-4"><%= person.name %>
-      <td><div class="mx-4"><%= person.studio.name %>
-      <td><div class="mx-4" align="right"><%= person.back %>
+      <td><div class="mx-4"><%= person.name %></div></td>
+      <td><div class="mx-4"><%= person.studio.name %></div></td>
+      <td><div class="mx-4" align="right"><%= person.back %></div></td>
     </tr>
   <% end %>
   </tbody>
@@ -25,18 +25,18 @@
   <table class="mx-auto break-inside-avoid">
   <thead>
   <tr>
-    <th colspan="2" class="font-bold pt-8 text-3xl pb-5" ><%= @staff.name %></td>
+    <th colspan="2" class="font-bold pt-8 text-3xl pb-5" ><%= @staff.name %></th>
   </tr>
   <tr>
-    <th class="row-head">Name
-    <th class="row-head">Role
+    <th class="row-head">Name</th>
+    <th class="row-head">Role</th>
   </tr>
   </thead>
   <tbody>
   <% @staff.people.order(:name).each do |person| %>
     <tr>
-      <td><div class="mx-4"><%= person.name %>
-      <td><div class="mx-4"><%= person.type %>
+      <td><div class="mx-4"><%= person.name %></div></td>
+      <td><div class="mx-4"><%= person.type %></div></td>
     </tr>
   <% end %>
   </tbody>

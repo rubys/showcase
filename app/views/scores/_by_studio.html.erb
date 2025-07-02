@@ -6,10 +6,10 @@
   Average points are the total points divided by the number of scores entered for a studio.  
   The average is rounded to the nearest percentage point.
   <ul class="ml-4 list-disc list-outside">
-    <li>Total Points rewards studios that have more entries.
-    <li>Average Points rewards studios that have higher scores.
+    <li>Total Points rewards studios that have more entries.</li>
+    <li>Average Points rewards studios that have higher scores.</li>
   </ul>
-<li>Averages may not total 100% due to rounding.
+<li>Averages may not total 100% due to rounding.</li>
 </ul>
 </div>
 
@@ -40,28 +40,28 @@
         <thead>
           <% if @open_scoring == '1' %>
           <tr>
-            <th colspan="2">
-            <th colspan="4" class="bg-slate-200">Closed
-            <th colspan="4">Open
+            <th colspan="2"></th>
+            <th colspan="4" class="bg-slate-200">Closed</th>
+            <th colspan="4">Open</th>
           </tr>
           <% end %>
 
           <tr>
-          <th class="row-head">Points
-          <th class="row-head">Name
+          <th class="row-head">Points</th>
+          <th class="row-head">Name</th>
           <% if !%w(# +).include? @open_scoring %>
           <% if !%w(# =).include?(@event.closed_scoring) or %w(G @).include?(@open_scoring) %>
           <% ScoresController::SCORES['Closed'].each do |score| %>
-          <th class="row-head bg-slate-200"><%= score %>
+          <th class="row-head bg-slate-200"><%= score %></th>
           <% end %>
           <% end %>
           <% if @open_scoring == '&' %>
           <% 5.downto(1).each do |score| %>
-          <th class="row-head"><%= score %>
+          <th class="row-head"><%= score %></th>
           <% end %>
           <% elsif !%w(+ G @).include? @open_scoring %>
           <% ScoresController::SCORES['Open'].each do |score| %>
-          <th class="row-head"><%= @open_scoring == '#' ? score.round : score %>
+          <th class="row-head"><%= @open_scoring == '#' ? score.round : score %></th>
           <% end %>
           <% end %>
           <% end %>
@@ -69,7 +69,7 @@
         </thead>
       <% studios.sort_by {|studio, results| results['points']}.reverse.each do |studio, results| %>
         <tr>
-          <td class="row-main text-right"><%= number_with_delimiter results['points'].round %>
+          <td class="row-main text-right"><%= number_with_delimiter results['points'].round %></td>
           <td class="row-main"><%= studio %></td>
           <% if @open_scoring != '#' %>
           <% if !%w(# =).include?(@event.closed_scoring) or @open_scoring == 'G' %>
@@ -101,28 +101,28 @@
         <thead>
           <% if @open_scoring == '1' %>
           <tr>
-            <th colspan="2">
-            <th colspan="4" class="bg-slate-200">Closed
-            <th colspan="4">Open
+            <th colspan="2"></th>
+            <th colspan="4" class="bg-slate-200">Closed</th>
+            <th colspan="4">Open</th>
           </tr>
           <% end %>
 
           <tr>
-          <th class="row-head">Points
-          <th class="row-head">Name
+          <th class="row-head">Points</th>
+          <th class="row-head">Name</th>
           <% if !%w(# +).include? @open_scoring %>
           <% if !%w(# =).include?(@event.closed_scoring) or @open_scoring == 'G' %>
           <% ScoresController::SCORES['Closed'].each do |score| %>
-          <th class="row-head bg-slate-200"><%= score %>
+          <th class="row-head bg-slate-200"><%= score %></th>
           <% end %>
           <% end %>
           <% if @open_scoring == '&' %>
           <% 5.downto(1).each do |score| %>
-          <th class="row-head"><%= score %>
+          <th class="row-head"><%= score %></th>
           <% end %>
           <% elsif @open_scoring != 'G' %>
           <% ScoresController::SCORES['Open'].each do |score| %>
-          <th class="row-head"><%= @open_scoring == '#' ? score.round : score %>
+          <th class="row-head"><%= @open_scoring == '#' ? score.round : score %></th>
           <% end %>
           <% end %>
           <% end %>
