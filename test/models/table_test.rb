@@ -40,7 +40,7 @@ class TableTest < ActiveSupport::TestCase
   
   test "name should show empty when no people assigned" do
     table = Table.new(number: 99)
-    assert_equal "99: Empty", table.name
+    assert_equal "Empty", table.name
   end
   
   test "name should show studio names when people assigned" do
@@ -52,7 +52,7 @@ class TableTest < ActiveSupport::TestCase
     person2.update!(table: table)
     
     # Both people are from studio "one" based on fixtures
-    assert_equal "1: One", table.name
+    assert_equal "One", table.name
   end
   
   test "should allow size field to be nil" do
