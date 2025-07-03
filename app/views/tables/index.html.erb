@@ -5,15 +5,27 @@
 
   <div id="grid" class="my-5" style="display: grid; grid-template-columns: repeat(<%= @columns %>, 1fr);  gap: 10px;">
     <% @tables.each do |table| %>
+      <% 
+        capacity_class = case table.capacity_status
+        when :empty_seats
+          "bg-green-50 border-green-600 border-2"
+        when :over_capacity
+          "bg-red-50 border-red-500 border-2"
+        else
+          "bg-gray-50 border-gray-300"
+        end
+      %>
       <% if table.row and table.col %>
-        <%= link_to edit_table_path(table), class: "p-2 border rounded bg-gray-50 hover:bg-blue-100 cursor-pointer block text-decoration-none", style: "grid-row:#{table.row}; grid-column:#{table.col}" do %>
+        <%= link_to edit_table_path(table), class: "p-2 border rounded #{capacity_class} hover:bg-blue-100 cursor-pointer block text-decoration-none", style: "grid-row:#{table.row}; grid-column:#{table.col}" do %>
           <div class="font-bold text-gray-900">Table <%= table.number %></div>
           <div class="text-sm text-gray-600"><%= table.name %></div>
+          <div class="text-xs text-gray-500"><%= table.people_count %>/<%= table.table_size %></div>
         <% end %>
       <% else %>
-        <%= link_to edit_table_path(table), class: "p-2 border rounded bg-gray-50 hover:bg-blue-100 cursor-pointer block text-decoration-none" do %>
+        <%= link_to edit_table_path(table), class: "p-2 border rounded #{capacity_class} hover:bg-blue-100 cursor-pointer block text-decoration-none" do %>
           <div class="font-bold text-gray-900">Table <%= table.number %></div>
           <div class="text-sm text-gray-600"><%= table.name %></div>
+          <div class="text-xs text-gray-500"><%= table.people_count %>/<%= table.table_size %></div>
         <% end %>
       <% end %>
     <% end %>
@@ -23,7 +35,7 @@
     <%= link_to 'Arrange Tables', arrange_tables_path, class: "btn-purple" %>
     <%= link_to 'New table', new_table_path, class: "btn-green" %>
     <%= button_to 'Assign People to Tables', assign_tables_path, method: :post, class: "btn-blue", 
-        data: { turbo_confirm: "This will delete all existing tables and reassign people. Are you sure?" } %>
+        data: @tables.any? ? { turbo_confirm: "This will delete all existing tables and reassign people. Are you sure?" } : {} %>
   </div>
 
   <div class="mt-6 p-4 bg-gray-50 rounded-lg">

@@ -86,6 +86,14 @@
      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <% if @tables && %w[Professional Student Guest].include?(person.type) %>
+  <div class="my-5">
+    <%= form.label :table_id, "Table" %>
+    <%= form.select :table_id, @tables, {include_blank: "No table assigned"}, 
+        class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  <% end %>
+
   <div class="my-5" data-person-target="back">
     <%= form.label :back, 'Back Number' %>
     <%= form.number_field :back, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>

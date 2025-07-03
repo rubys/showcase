@@ -69,6 +69,42 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
     assert_equal flash[:notice], 'Arthur Murray was successfully updated.'
   end
 
+  test "should update person with table assignment" do
+    table = tables(:one)
+    patch person_url(@person), params: { person: { age_id: @person.age_id, back: @person.back, level_id: @person.level_id, name: @person.name, role: @person.role, studio_id: @person.studio_id, type: @person.type, table_id: table.id, exclude_id: '' } }
+    assert_redirected_to person_url(@person)
+    assert_equal flash[:notice], 'Arthur Murray was successfully updated.'
+    @person.reload
+    assert_equal table.id, @person.table_id
+  end
+
+  test "should show table options for Professional in edit" do
+    get edit_person_url(@person)
+    assert_response :success
+    assert_match /Table \d+ -/, response.body
+  end
+
+  test "should show table options for Student in edit" do
+    student = people(:Kathryn)
+    get edit_person_url(student)
+    assert_response :success
+    assert_match /Table \d+ -/, response.body
+  end
+
+  test "should show table options for Guest in edit" do
+    guest = people(:guest)
+    get edit_person_url(guest)
+    assert_response :success
+    assert_match /Table \d+ -/, response.body
+  end
+
+  test "should not show table options for Judge in edit" do
+    judge = people(:Judy)
+    get edit_person_url(judge)
+    assert_response :success
+    assert_no_match /Table \d+ -/, response.body
+  end
+
   test "should destroy person" do
     assert_difference("Person.count", -1) do
       delete person_url(@person)

@@ -76,6 +76,56 @@ class PeopleTest < ApplicationSystemTestCase
     click_on "Back"
   end
 
+  test "should assign table to Student" do
+    visit person_url(@person)
+    click_on "Edit this person", match: :first
+
+    # Table dropdown should be visible for Student
+    assert_selector "#person_table_id"
+    select 'Table 1 -', from: 'Table'
+    click_on "Update Person"
+
+    assert_text "Kathryn Murray was successfully updated"
+    click_on "Back"
+  end
+
+  test "should assign table to Professional" do
+    professional = people(:Arthur)
+    visit person_url(professional)
+    click_on "Edit this person", match: :first
+
+    # Table dropdown should be visible for Professional
+    assert_selector "#person_table_id"
+    select 'Table 2 -', from: 'Table'
+    click_on "Update Person"
+
+    assert_text "Arthur Murray was successfully updated"
+    click_on "Back"
+  end
+
+  test "should assign table to Guest" do
+    guest = people(:guest)
+    visit person_url(guest)
+    click_on "Edit this person", match: :first
+
+    # Table dropdown should be visible for Guest
+    assert_selector "#person_table_id"
+    select 'Table 1 -', from: 'Table'
+    click_on "Update Person"
+
+    assert_text "Guest was successfully updated"
+    click_on "Back"
+  end
+
+  test "should not show table options for Judge" do
+    judge = people(:Judy)
+    visit person_url(judge)
+    click_on "Edit this person", match: :first
+
+    # Table dropdown should not be visible for Judge
+    assert_no_selector "#person_table_id"
+  end
+
   test "should destroy Person" do
     visit person_url(@person)
     click_on "Edit this person", match: :first

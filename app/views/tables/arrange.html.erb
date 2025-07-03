@@ -22,13 +22,24 @@
 
   <div id="grid" class="mb-4" style="display: grid; grid-template-columns: repeat(<%= @columns %>, 1fr);  gap: 10px;">
     <% @tables.each do |table| %>
+      <% 
+        capacity_class = case table.capacity_status
+        when :empty_seats
+          "bg-green-50 border-green-600 border-2"
+        when :over_capacity
+          "bg-red-50 border-red-500 border-2"
+        else
+          "bg-gray-50 border-gray-300"
+        end
+      %>
       <% if table.row and table.col %>
-      <div draggable="true" class="hover:bg-yellow-200 p-2 border rounded" data-id="<%= table.id %>" style="grid-row:<%= table.row %>; grid-column:<%= table.col %>">
+      <div draggable="true" class="hover:bg-yellow-200 p-2 border rounded <%= capacity_class %>" data-id="<%= table.id %>" style="grid-row:<%= table.row %>; grid-column:<%= table.col %>">
       <% else %>
-      <div draggable="true" class="hover:bg-yellow-200 p-2 border rounded" data-id="<%= table.id %>">
+      <div draggable="true" class="hover:bg-yellow-200 p-2 border rounded <%= capacity_class %>" data-id="<%= table.id %>">
       <% end %>
         <div class="font-bold">Table <%= table.number %></div>
         <div class="text-sm text-gray-600"><%= table.name %></div>
+        <div class="text-xs text-gray-500"><%= table.people_count %>/<%= table.table_size %></div>
       </div>
     <% end %>
   </div>

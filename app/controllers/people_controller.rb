@@ -846,7 +846,7 @@ class PeopleController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def person_params
-      params.require(:person).permit(:name, :studio_id, :type, :back, :level_id, :age_id, :category, :role, :exclude_id, :package_id, :independent, :invoice_to_id, :available, options: {})
+      params.require(:person).permit(:name, :studio_id, :type, :back, :level_id, :age_id, :category, :role, :exclude_id, :package_id, :independent, :invoice_to_id, :available, :table_id, options: {})
     end
 
     def filtered_params(person)
@@ -861,7 +861,8 @@ class PeopleController < ApplicationController
         exclude_id: person[:exclude_id],
         package_id: person[:package_id],
         independent: person[:independent],
-        invoice_to_id: person[:invoice_to_id]
+        invoice_to_id: person[:invoice_to_id],
+        table_id: person[:table_id]
       }
 
       unless %w(Student).include? base[:type]
@@ -904,6 +905,13 @@ class PeopleController < ApplicationController
       @invoiceable = (related + (@invoiceable - related)).map {|person| [person.name, person.id]}
 
       @packages = Billable.where(type: @person.type).order(:order).pluck(:name, :id)
+      
+      # Add table options for Professional, Student, and Guest types
+      if %w[Professional Student Guest].include?(@person.type) && Table.exists?
+        @tables = Table.includes(:people).order(:number).map do |table|
+          ["Table #{table.number} - #{table.name}", table.id]
+        end
+      end
 
       unless @packages.empty?
         if %w(Student Professional).include? @person.type
