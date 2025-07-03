@@ -106,15 +106,15 @@ class TablesTest < ApplicationSystemTestCase
     visit tables_url
     
     # Should show clickable table links
-    assert_selector "a[href='#{table_path(@table)}']"
+    assert_selector "a[href='#{edit_table_path(@table)}']"
     
-    # Click on a table and verify it goes to show page
+    # Click on a table and verify it goes to edit page
     click_on "Table #{@table.number}"
     
-    # Should be on the show page now
-    assert_selector "h1", text: "Showing table"
-    assert_text "Number:"
-    assert_text @table.number.to_s
+    # Should be on the edit page now
+    assert_selector "h1", text: "Editing table"
+    assert_selector "input[name='table[number]']"
+    assert_selector "input[name='table[size]']"
   end
 
   test "should have hover effects on table links" do
@@ -149,12 +149,12 @@ class TablesTest < ApplicationSystemTestCase
     visit tables_url
     
     # Should still show the table as a clickable link
-    assert_selector "a[href='#{table_path(table_without_position)}']"
+    assert_selector "a[href='#{edit_table_path(table_without_position)}']"
     assert_selector "div.font-bold", text: "Table #{table_without_position.number}"
     
     # Should not have grid positioning styles
-    assert_no_selector "a[href='#{table_path(table_without_position)}'][style*='grid-row']"
-    assert_no_selector "a[href='#{table_path(table_without_position)}'][style*='grid-column']"
+    assert_no_selector "a[href='#{edit_table_path(table_without_position)}'][style*='grid-row']"
+    assert_no_selector "a[href='#{edit_table_path(table_without_position)}'][style*='grid-column']"
   end
 
   test "should show table size form in index view" do
@@ -254,5 +254,87 @@ class TablesTest < ApplicationSystemTestCase
     form_position = page.evaluate_script("document.querySelector('div.mt-6.p-4.bg-gray-50.rounded-lg').getBoundingClientRect().top")
     
     assert form_position > buttons_position, "Table size form should be positioned below action buttons"
+  end
+
+  test "should show assign people to tables button" do
+    visit tables_url
+    
+    # Should have the assign button
+    assert_selector "button", text: "Assign People to Tables"
+    
+    # Should be a form button with POST method
+    assert_selector "form[method='post'][action='#{assign_tables_path}']"
+    
+    # Should have confirmation dialog
+    button = find("button", text: "Assign People to Tables")
+    assert button["data-turbo-confirm"].present?
+    assert_includes button["data-turbo-confirm"], "delete all existing tables"
+  end
+
+  test "should assign people to tables when button clicked" do
+    # Ensure we have some people to assign
+    assert Person.joins(:studio).where.not(studios: { id: 0 }).any?
+    
+    visit tables_url
+    
+    # Clear any existing tables for consistent test
+    Table.destroy_all
+    visit tables_url  # Refresh to see empty state
+    
+    # Click the assign button and accept confirmation
+    accept_confirm do
+      click_button "Assign People to Tables"
+    end
+    
+    # Should be redirected back to tables index
+    assert_selector "h1", text: "Tables"
+    
+    # Should show success message
+    assert_selector "#notice", text: "Tables have been assigned successfully."
+    
+    # Should show newly created tables
+    assert_selector "#grid div.font-bold", text: /Table \d+/
+    
+    # Tables should have studio names
+    assert_selector "#grid div.text-sm", text: /\w+/
+  end
+
+  test "should show people list in edit view" do
+    # Create a table and assign people to it
+    table = Table.create!(number: 99, row: 5, col: 5, size: 10)
+    people = Person.joins(:studio).where.not(studios: { id: 0 }).limit(2)
+    people.update_all(table_id: table.id)
+    
+    visit edit_table_url(table)
+    
+    # Should show the people section
+    assert_selector "h2", text: "People at this table"
+    
+    # Should show table headers
+    assert_selector "th", text: "Name"
+    assert_selector "th", text: "Studio"
+    assert_selector "th", text: "Type"
+    
+    # Should show people's information
+    Person.where(table_id: table.id).each do |person|
+      assert_selector "a[href='#{person_path(person)}']", text: person.name
+      assert_text person.studio.name
+      assert_text person.type
+    end
+    
+    # Should show total count
+    assert_text /Total: \d+ (person|people)/
+  end
+
+  test "should show empty message when table has no people" do
+    table = Table.create!(number: 100, row: 6, col: 6, size: 10)
+    
+    visit edit_table_url(table)
+    
+    # Should show the people section
+    assert_selector "h2", text: "People at this table"
+    
+    # Should show empty message
+    assert_text "No people assigned to this table yet."
   end
 end

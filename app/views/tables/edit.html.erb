@@ -7,4 +7,37 @@
 
   <%= link_to "Show this table", @table, class: "ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
   <%= link_to "Back to tables", tables_path, class: "ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
+  
+  <div class="mt-8">
+    <h2 class="font-bold text-2xl mb-4">People at this table</h2>
+    <% if @table.people.any? %>
+      <div class="bg-gray-50 rounded-lg p-4">
+        <table class="min-w-full">
+          <thead>
+            <tr class="text-left text-sm font-medium text-gray-700">
+              <th class="pb-2">Name</th>
+              <th class="pb-2">Studio</th>
+              <th class="pb-2">Type</th>
+            </tr>
+          </thead>
+          <tbody class="text-sm">
+            <% @table.people.includes(:studio).order('studios.name, people.name').each do |person| %>
+              <tr class="border-t border-gray-200">
+                <td class="py-2">
+                  <%= link_to person.name, person_path(person), class: "text-blue-600 hover:text-blue-800" %>
+                </td>
+                <td class="py-2">
+                  <%= link_to person.studio.name, studio_path(person.studio), class: "text-blue-600 hover:text-blue-800" %>
+                </td>
+                <td class="py-2"><%= person.type %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-2 text-sm text-gray-600">Total: <%= @table.people.count %> <%= 'person'.pluralize(@table.people.count) %></p>
+    <% else %>
+      <p class="text-gray-500">No people assigned to this table yet.</p>
+    <% end %>
+  </div>
 </div>

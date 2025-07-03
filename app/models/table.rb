@@ -1,5 +1,5 @@
 class Table < ApplicationRecord
-  has_many :people
+  has_many :people, dependent: :nullify
 
   validates :number, presence: true, uniqueness: true
   validates :row, uniqueness: { scope: :col, message: "and column combination already taken" }, allow_nil: true

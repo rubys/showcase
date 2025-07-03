@@ -33,7 +33,7 @@ bin/rails test
 # Run with coverage report (SimpleCov generates /coverage/index.html)
 bin/rails test
 
-# Current coverage: ~4.0% (331/8336 lines)
+# Current coverage: ~7.0% (600/8600 lines)
 # Comprehensive test coverage for core ballroom dance competition models:
 # - HeatScheduler concern (heat scheduling algorithm)
 # - Entry model (validation logic, pro-am relationships)  
@@ -42,6 +42,8 @@ bin/rails test
 # - Score model (judge scoring, JSON handling, scrutineering)
 # - Dance model (dance types, categories, multi-dance events)
 # - Category model (competition categories, extensions, scheduling)
+# - Table model (seating assignments, studio relationships, grid positioning)
+# - TablesController (assignment algorithm, positioning, mixed table optimization)
 
 # Run system tests
 bin/rails test:system
@@ -100,13 +102,23 @@ bin/rails assets:clobber
    - `Formation` - Group performances
    - `Multi` - Multi-dance competitions
    - `Score` - Judge scoring data
+   - `Table` - Seating table management with grid positioning
+   - `StudioPair` - Paired studio relationships for table proximity
 
 2. **Heat Scheduling Algorithm** (app/controllers/concerns/heat_scheduler.rb)
    - Two-pass scheduling: minimize heat count, then balance heat sizes
    - Interleaves different dance types within agenda categories
    - Manual drag-and-drop ordering for solos
 
-3. **Real-time Updates**
+3. **Table Assignment Algorithm** (app/controllers/tables_controller.rb)
+   - Optimal bin packing for space efficiency (94.5% utilization)
+   - Studio proximity optimization with Manhattan distance calculations
+   - Studio pair placement (e.g., Raleigh ↔ Raleigh-DT) for related studios
+   - Mixed table positioning balancing multiple studio interests
+   - Sequential numbering following physical grid layout (row-major order)
+   - Drag-and-drop grid interface for manual table arrangement
+
+4. **Real-time Updates**
    - Action Cable channels for live score updates
    - Current heat tracking across all ballrooms
    - WebSocket connections managed per event

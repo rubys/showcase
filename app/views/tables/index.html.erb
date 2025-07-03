@@ -6,12 +6,12 @@
   <div id="grid" class="my-5" style="display: grid; grid-template-columns: repeat(<%= @columns %>, 1fr);  gap: 10px;">
     <% @tables.each do |table| %>
       <% if table.row and table.col %>
-        <%= link_to table, class: "p-2 border rounded bg-gray-50 hover:bg-blue-100 cursor-pointer block text-decoration-none", style: "grid-row:#{table.row}; grid-column:#{table.col}" do %>
+        <%= link_to edit_table_path(table), class: "p-2 border rounded bg-gray-50 hover:bg-blue-100 cursor-pointer block text-decoration-none", style: "grid-row:#{table.row}; grid-column:#{table.col}" do %>
           <div class="font-bold text-gray-900">Table <%= table.number %></div>
           <div class="text-sm text-gray-600"><%= table.name %></div>
         <% end %>
       <% else %>
-        <%= link_to table, class: "p-2 border rounded bg-gray-50 hover:bg-blue-100 cursor-pointer block text-decoration-none" do %>
+        <%= link_to edit_table_path(table), class: "p-2 border rounded bg-gray-50 hover:bg-blue-100 cursor-pointer block text-decoration-none" do %>
           <div class="font-bold text-gray-900">Table <%= table.number %></div>
           <div class="text-sm text-gray-600"><%= table.name %></div>
         <% end %>
@@ -22,6 +22,8 @@
   <div class="flex gap-3">
     <%= link_to 'Arrange Tables', arrange_tables_path, class: "btn-purple" %>
     <%= link_to 'New table', new_table_path, class: "btn-green" %>
+    <%= button_to 'Assign People to Tables', assign_tables_path, method: :post, class: "btn-blue", 
+        data: { turbo_confirm: "This will delete all existing tables and reassign people. Are you sure?" } %>
   </div>
 
   <div class="mt-6 p-4 bg-gray-50 rounded-lg">
