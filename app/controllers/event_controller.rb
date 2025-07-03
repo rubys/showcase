@@ -244,6 +244,12 @@ class EventController < ApplicationController
     end
 
     if ok
+      # Redirect to tables index if table_size was updated
+      if params[:event][:table_size]
+        redirect_to tables_path, notice: "Default table size updated."
+        return
+      end
+
       tab = 'Description' if params[:event][:name]
       tab = 'Options' if params[:event][:intermix]
       tab = 'Prices' if params[:event][:heat_cost]

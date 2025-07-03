@@ -156,4 +156,103 @@ class TablesTest < ApplicationSystemTestCase
     assert_no_selector "a[href='#{table_path(table_without_position)}'][style*='grid-row']"
     assert_no_selector "a[href='#{table_path(table_without_position)}'][style*='grid-column']"
   end
+
+  test "should show table size form in index view" do
+    visit tables_url
+    
+    # Should show the table size form container
+    assert_selector "div.mt-6.p-4.bg-gray-50.rounded-lg"
+    
+    # Should show the form with auto-submit controller
+    assert_selector "form[data-controller='auto-submit']"
+    
+    # Should show the label and input field
+    assert_selector "label", text: "Default Table Size:"
+    assert_selector "input[type='number'][name='event[table_size]']"
+    
+    # Should show the helper text
+    assert_selector "span.text-sm.text-gray-500", text: "people per table"
+  end
+
+  test "should display default table size value of 10 when table_size is nil" do
+    # Set table_size to nil
+    Event.first.update(table_size: nil)
+    
+    visit tables_url
+    
+    # Should show default value of 10
+    table_size_field = find_field("event[table_size]")
+    assert_equal "10", table_size_field.value
+  end
+
+  test "should display default table size value of 10 when table_size is 0" do
+    # Set table_size to 0
+    Event.first.update(table_size: 0)
+    
+    visit tables_url
+    
+    # Should show default value of 10
+    table_size_field = find_field("event[table_size]")
+    assert_equal "10", table_size_field.value
+  end
+
+  test "should display actual table size value when set" do
+    # Set table_size to a specific value
+    Event.first.update(table_size: 8)
+    
+    visit tables_url
+    
+    # Should show the actual value
+    table_size_field = find_field("event[table_size]")
+    assert_equal "8", table_size_field.value
+  end
+
+  test "should have proper form styling and attributes" do
+    visit tables_url
+    
+    # Should have proper form styling
+    assert_selector "form.contents"
+    
+    # Should have proper input styling
+    assert_selector "input.block.shadow.rounded-md.border.border-gray-200.outline-none.px-3.py-2.w-20.text-sm"
+    
+    # Should have proper label styling
+    assert_selector "label.text-sm.font-medium.text-gray-700"
+    
+    # Should have min attribute set to 1
+    table_size_field = find_field("event[table_size]")
+    assert_equal "1", table_size_field["min"]
+  end
+
+  test "should have flexbox layout for form elements" do
+    visit tables_url
+    
+    # Should have flex container
+    assert_selector "div.flex.items-center.gap-3"
+    
+    # Should contain label, input, and helper text in flex layout
+    flex_container = find("div.flex.items-center.gap-3")
+    assert flex_container.has_selector?("label")
+    assert flex_container.has_selector?("input")
+    assert flex_container.has_selector?("span.text-sm.text-gray-500")
+  end
+
+  test "should position table size form below action buttons" do
+    visit tables_url
+    
+    # Should have action buttons first - find the specific one with the links
+    action_buttons = find("div.flex.gap-3", text: "Arrange Tables")
+    assert action_buttons.has_link?("Arrange Tables")
+    assert action_buttons.has_link?("New table")
+    
+    # Should have table size form after action buttons
+    table_size_form = find("div.mt-6.p-4.bg-gray-50.rounded-lg")
+    assert table_size_form.has_selector?("form[data-controller='auto-submit']")
+    
+    # Verify order by checking that form comes after buttons in DOM
+    buttons_position = page.evaluate_script("document.querySelector('div.flex.gap-3').getBoundingClientRect().bottom")
+    form_position = page.evaluate_script("document.querySelector('div.mt-6.p-4.bg-gray-50.rounded-lg').getBoundingClientRect().top")
+    
+    assert form_position > buttons_position, "Table size form should be positioned below action buttons"
+  end
 end

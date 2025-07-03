@@ -33,6 +33,17 @@ class EventControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to settings_event_index_path(tab: 'Options')
   end
 
+  test "should redirect to tables when updating table_size" do
+    @event = Event.last
+    patch event_url(@event), params: { event: { table_size: 8 } }
+    assert_redirected_to tables_path
+    assert_equal "Default table size updated.", flash[:notice]
+    
+    # Verify the table_size was actually updated
+    @event.reload
+    assert_equal 8, @event.table_size
+  end
+
   test "update should combine start_date and end_date into date field" do
     @event = Event.last
     patch event_url(@event), params: { event: {
