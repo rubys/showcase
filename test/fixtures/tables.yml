@@ -4,8 +4,10 @@ one:
   number: 1
   row: 1
   col: 1
+  size: 8
 
 two:
   number: 2
   row: 1
   col: 2
+  size: 6

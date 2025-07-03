@@ -8,7 +8,7 @@ class TableTest < ActiveSupport::TestCase
   end
   
   test "should be valid with required attributes" do
-    table = Table.new(number: 99, row: 3, col: 3)
+    table = Table.new(number: 99, row: 3, col: 3, size: 8)
     assert table.valid?
   end
   
@@ -53,5 +53,15 @@ class TableTest < ActiveSupport::TestCase
     
     # Both people are from studio "one" based on fixtures
     assert_equal "1: One", table.name
+  end
+  
+  test "should allow size field to be nil" do
+    table = Table.new(number: 99, row: 3, col: 3, size: nil)
+    assert table.valid?
+  end
+  
+  test "should allow size field to be a positive integer" do
+    table = Table.new(number: 99, row: 3, col: 3, size: 8)
+    assert table.valid?
   end
 end

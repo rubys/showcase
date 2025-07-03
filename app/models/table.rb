@@ -5,8 +5,8 @@ class Table < ApplicationRecord
   validates :row, uniqueness: { scope: :col, message: "and column combination already taken" }, allow_nil: true
 
   def name
-    return "#{number}: Empty" if people.empty?
+    return "Empty" if people.empty?
     
-    "#{number}: #{people.joins(:studio).pluck('studios.name').uniq.sort.join(', ')}"
+    people.joins(:studio).pluck('studios.name').uniq.sort.join(', ')
   end
 end
