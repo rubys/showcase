@@ -303,6 +303,20 @@ class PersonTest < ActiveSupport::TestCase
     assert_equal @age, person.age
   end
   
+  test "should optionally belong to table" do
+    person = Person.create!(
+      name: 'Smith, John',
+      type: 'Student',
+      studio: @studio,
+      level: @level
+    )
+    assert_nil person.table
+    
+    table = tables(:one)
+    person.update!(table: table)
+    assert_equal table, person.table
+  end
+  
   test "should have many lead entries with dependent destroy" do
     person = Person.create!(
       name: 'Smith, John',

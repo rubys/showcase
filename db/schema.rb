@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_14_223303) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_03_114033) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -203,6 +203,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_14_223303) do
     t.string "pro_am", default: "G"
     t.string "solo_scoring", default: "1"
     t.boolean "judge_recordings", default: false
+    t.integer "table_size"
     t.index ["solo_level_id"], name: "index_events_on_solo_level_id"
   end
 
@@ -305,12 +306,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_14_223303) do
     t.boolean "independent", default: false
     t.integer "invoice_to_id"
     t.string "available"
+    t.integer "table_id"
     t.index ["age_id"], name: "index_people_on_age_id"
     t.index ["exclude_id"], name: "index_people_on_exclude_id"
     t.index ["invoice_to_id"], name: "index_people_on_invoice_to_id"
     t.index ["level_id"], name: "index_people_on_level_id"
     t.index ["package_id"], name: "index_people_on_package_id"
     t.index ["studio_id"], name: "index_people_on_studio_id"
+    t.index ["table_id"], name: "index_people_on_table_id"
   end
 
   create_table "person_options", force: :cascade do |t|
@@ -421,6 +424,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_14_223303) do
     t.index ["default_student_package_id"], name: "index_studios_on_default_student_package_id"
   end
 
+  create_table "tables", force: :cascade do |t|
+    t.integer "number"
+    t.integer "row"
+    t.integer "col"
+    t.integer "size"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["row", "col"], name: "index_tables_on_row_and_col", unique: true
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "userid"
     t.string "password"
@@ -468,6 +481,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_14_223303) do
   add_foreign_key "people", "people", column: "exclude_id"
   add_foreign_key "people", "people", column: "invoice_to_id"
   add_foreign_key "people", "studios"
+  add_foreign_key "people", "tables"
   add_foreign_key "person_options", "billables", column: "option_id"
   add_foreign_key "person_options", "people"
   add_foreign_key "recordings", "heats"

@@ -162,6 +162,10 @@ Rails.application.routes.draw do
       get 'solos', on: :member
     end
 
+    resources :tables do
+      post 'update-positions', on: :collection, as: 'update_positions'
+    end
+
     get '/scores/:judge/heatlist', to: 'scores#heatlist', as: 'judge_heatlist'
     get '/scores/:judge/heat/:heat', to: 'scores#heat', as: 'judge_heat', heat: /\d+\.?\d*/
     get '/scores/:judge/heat/:heat/:slot', to: 'scores#heat', as: 'judge_heat_slot', heat: /\d+\.?\d*/

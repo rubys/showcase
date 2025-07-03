@@ -2,15 +2,20 @@ import { Controller } from "@hotwired/stimulus";
 
 // Connects to data-controller="form-builder"
 export default class extends Controller {
+  static values = { 
+    modelName: String,
+    saveUrl: String
+  }
+
   connect() {
     this.columns = document.getElementById("columns");
-    this.dances = document.getElementById("dances");
+    this.grid = document.getElementById("grid");
     this.columns.addEventListener("change", _event => {
       this.reflow();
-      this.dances.style.gridTemplateColumns = `repeat(${this.columns.value}, 1fr)`;
+      this.grid.style.gridTemplateColumns = `repeat(${this.columns.value}, 1fr)`;
     });
 
-    for (let child of this.dances.children) {
+    for (let child of this.grid.children) {
       if (child.draggable) {
         child.addEventListener("dragstart", event => {
           event.dataTransfer.setData("application/drag-id", child.dataset.id);
@@ -41,12 +46,12 @@ export default class extends Controller {
   reflow() {
     let columns = parseInt(this.columns.value);
 
-    for (let div of [...this.dances.children]) {
+    for (let div of [...this.grid.children]) {
       if (!div.draggable) div.remove();
     }
 
-    let rows = Math.floor((this.dances.childElementCount + columns - 1) / columns);
-    for (let child of this.dances.children) {
+    let rows = Math.floor((this.grid.childElementCount + columns - 1) / columns);
+    for (let child of this.grid.children) {
       if (child.style.gridRow && child.style.gridRow > rows) {
         rows = parseInt(child.style.gridRow);
       }
@@ -54,7 +59,7 @@ export default class extends Controller {
 
     rows+=2;
 
-    for (let i=this.dances.childElementCount; i < columns * rows; i++) {
+    for (let i=this.grid.childElementCount; i < columns * rows; i++) {
       let div = document.createElement("div");
       div.textContent = "\xA0";
       div.addEventListener("drop", this.drop);
@@ -65,22 +70,22 @@ export default class extends Controller {
         return true;
       });
 
-      this.dances.appendChild(div);
+      this.grid.appendChild(div);
     } 
 
-    let dances = [...this.dances.children];
+    let items = [...this.grid.children];
 
-    for (let dance of dances) {
-      if (dance.style.gridRow != "" && dance.style.gridColumn != "") {
-        if (parseInt(dance.style.gridColumn) <= columns) continue;
+    for (let item of items) {
+      if (item.style.gridRow != "" && item.style.gridColumn != "") {
+        if (parseInt(item.style.gridColumn) <= columns) continue;
       }
 
       let found = false;
       for (let row=1; !found; row++) {
         for (let col=1; col <= columns; col++) {
-          if (!dances.some(div => (div != dance && parseInt(div.style.gridRow || 0) == row && parseInt(div.style.gridColumn || 0) == col))) {
-            dance.style.gridRow = row;
-            dance.style.gridColumn = col;
+          if (!items.some(div => (div != item && parseInt(div.style.gridRow || 0) == row && parseInt(div.style.gridColumn || 0) == col))) {
+            item.style.gridRow = row;
+            item.style.gridColumn = col;
             found = true;
             break;
           }
@@ -91,7 +96,7 @@ export default class extends Controller {
 
   drop = event => {
     let source = event.dataTransfer.getData("application/drag-id");
-    source = this.dances.querySelector(`div[data-id="${source}"]`);
+    source = this.grid.querySelector(`div[data-id="${source}"]`);
     let target = event.target;
 
     [source.style.gridRow, target.style.gridRow] =
@@ -110,13 +115,16 @@ export default class extends Controller {
     const token = document.querySelector('meta[name="csrf-token"]').content;
 
     let positions = {};
-    for (let dance of this.dances.children) {
-      let id = dance.dataset.id;
+    for (let item of this.grid.children) {
+      let id = item.dataset.id;
       if (!id) continue;
-      positions[id] = {row: dance.style.gridRow, col: dance.style.gridColumn};
+      positions[id] = {row: item.style.gridRow, col: item.style.gridColumn};
     }
 
-    fetch(this.element.action, {
+    let data = {};
+    data[this.modelNameValue] = positions;
+
+    fetch(this.saveUrlValue, {
       method: "POST",
       headers: window.inject_region({
         "X-CSRF-Token": token,
@@ -124,7 +132,7 @@ export default class extends Controller {
       }),
       credentials: "same-origin",
       redirect: "follow",
-      body: JSON.stringify({dance: positions})
+      body: JSON.stringify(data)
     }).then (response => response.text())
       .then(text => {document.getElementById("notice").textContent = text;});
 

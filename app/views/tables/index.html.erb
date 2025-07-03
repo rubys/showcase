@@ -1,0 +1,40 @@
+<div class="mx-auto md:w-2/3 w-full">
+<p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+
+  <h1 class="font-bold text-4xl">Table Arrangement</h1>
+
+<%= form_with(url: update_positions_tables_path, class: "contents", data: {controller: 'form-builder', 'form-builder-model-name-value': 'table', 'form-builder-save-url-value': update_positions_tables_path}) do |form| %>
+
+<div data-controller="info-box">
+<div class="info-button">&#x24D8;</div>
+<ul class="info-box">
+<li>Use drag and drop to arrange tables in the ballroom.
+<li>Each table shows the studios seated at that table.
+<li>Leave alone, or reset, to allow the arrangement to be determined by the screen width.
+</ul>
+</div>
+
+  <div class="my-5">
+    <%= form.label :columns, "Grid Columns" %>
+    <%= form.number_field :columns, value: @columns,
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div id="grid" class="mb-4" style="display: grid; grid-template-columns: repeat(<%= @columns %>, 1fr);  gap: 10px;">
+    <% @tables.each do |table| %>
+      <% if table.row and table.col %>
+      <div draggable="true" class="hover:bg-yellow-200 p-2 border rounded" data-id="<%= table.id %>" style="grid-row:<%= table.row %>; grid-column:<%= table.col %>">
+      <% else %>
+      <div draggable="true" class="hover:bg-yellow-200 p-2 border rounded" data-id="<%= table.id %>">
+      <% end %>
+        <div class="font-bold">Table <%= table.number %></div>
+        <div class="text-sm text-gray-600"><%= table.name %></div>
+      </div>
+    <% end %>
+  </div>
+
+  <button id="save" class="btn-blue">Save</button>
+  <%= form.submit "Reset", class: 'btn-grey' %>
+  <%= link_to 'New Table', new_table_path, class: "btn-green" %>
+<% end %>
+</div>

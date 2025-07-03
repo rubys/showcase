@@ -20,6 +20,7 @@ class Person < ApplicationRecord
   belongs_to :age, optional: true
   belongs_to :exclude, class_name: 'Person', optional: true
   belongs_to :package, class_name: 'Billable', optional: true
+  belongs_to :table, optional: true
 
   belongs_to :invoice_to, class_name: 'Person', optional: true
   has_many :responsible_for, class_name: 'Person', foreign_key: :invoice_to_id
