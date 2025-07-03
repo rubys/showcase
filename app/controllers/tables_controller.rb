@@ -7,6 +7,11 @@ class TablesController < ApplicationController
     @columns = Table.maximum(:col) || 8
   end
 
+  def arrange
+    @tables = Table.includes(people: :studio).all
+    @columns = Table.maximum(:col) || 8
+  end
+
   # GET /tables/1 or /tables/1.json
   def show
   end

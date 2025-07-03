@@ -163,6 +163,7 @@ Rails.application.routes.draw do
     end
 
     resources :tables do
+      get 'arrange', on: :collection
       post 'update-positions', on: :collection, as: 'update_positions'
     end
 

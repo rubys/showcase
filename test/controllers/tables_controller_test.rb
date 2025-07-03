@@ -10,6 +10,11 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "should get arrange" do
+    get arrange_tables_url
+    assert_response :success
+  end
+
   test "should get new" do
     get new_table_url
     assert_response :success
@@ -71,5 +76,27 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     
     # Check that the response body contains the correct number value
     assert_includes response.body, "value=\"#{expected_number}\""
+  end
+
+  test "should update positions" do
+    post update_positions_tables_url, params: { 
+      table: { 
+        @table.id => { row: 3, col: 3 } 
+      } 
+    }
+    
+    assert_response :success
+    @table.reload
+    assert_equal 3, @table.row
+    assert_equal 3, @table.col
+  end
+
+  test "should reset positions" do
+    post update_positions_tables_url, params: { commit: 'Reset' }
+    
+    assert_redirected_to tables_url
+    @table.reload
+    assert_nil @table.row
+    assert_nil @table.col
   end
 end
