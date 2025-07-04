@@ -15,6 +15,35 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "should get list as pdf" do
+    get list_tables_url(format: :pdf)
+    assert_response :success
+    assert_equal "application/pdf", response.content_type
+  end
+
+  test "should reset all tables" do
+    assert_difference("Table.count", -Table.count) do
+      delete reset_tables_url
+    end
+    
+    assert_redirected_to tables_url
+    assert_equal "All tables have been deleted.", flash[:notice]
+  end
+
+  test "should remove table associations when resetting" do
+    # Assign a person to a table
+    person = people(:Arthur)
+    table = tables(:one)
+    person.update!(table: table)
+    
+    assert_not_nil person.table_id
+    
+    delete reset_tables_url
+    
+    person.reload
+    assert_nil person.table_id
+  end
+
   test "should get arrange" do
     get arrange_tables_url
     assert_response :success
@@ -79,7 +108,41 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
 
   test "should update table" do
     patch table_url(@table), params: { table: { row: 3, col: 3, number: @table.number, size: 12 } }
-    assert_redirected_to table_url(@table)
+    assert_redirected_to tables_url
+  end
+
+  test "should swap table numbers when updating to existing number" do
+    table1 = tables(:one)
+    table2 = tables(:two)
+    original_table1_number = table1.number
+    original_table2_number = table2.number
+    
+    # Update table1 to have table2's number
+    patch table_url(table1), params: { table: { number: original_table2_number } }
+    
+    assert_redirected_to tables_url
+    assert_match /swapped numbers/i, flash[:notice]
+    
+    # Reload both tables
+    table1.reload
+    table2.reload
+    
+    # Verify the swap occurred
+    assert_equal original_table2_number, table1.number
+    assert_equal original_table1_number, table2.number
+  end
+
+  test "should update table number without swap when no conflict" do
+    table1 = tables(:one)
+    new_number = 999  # A number that doesn't exist
+    
+    patch table_url(table1), params: { table: { number: new_number } }
+    
+    assert_redirected_to tables_url
+    assert_no_match /swapped/i, flash[:notice]
+    
+    table1.reload
+    assert_equal new_number, table1.number
   end
 
   test "should destroy table" do

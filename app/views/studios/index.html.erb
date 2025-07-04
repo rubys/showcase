@@ -56,6 +56,9 @@
 
   <div class="mt-4 flex justify-between items-center">
     <%= up_link 'New studio', new_studio_path, class: "btn-blue" %>
-    <%= link_to "Back to Event", root_path, class: "btn-green" %>
+    <div class="flex gap-2">
+      <%= link_to "Tables", tables_path, class: "btn-green" %>
+      <%= link_to "Back to Event", root_path, class: "btn-green" %>
+    </div>
   </div>
 </div>

@@ -170,6 +170,7 @@ Rails.application.routes.draw do
       get 'studio/:id', on: :collection, action: :studio, as: 'studio'
       get 'list', on: :collection
       post 'move-person', on: :collection, action: :move_person, as: 'move_person'
+      delete 'reset', on: :collection
     end
 
     get '/scores/:judge/heatlist', to: 'scores#heatlist', as: 'judge_heatlist'

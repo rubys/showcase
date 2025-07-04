@@ -34,9 +34,12 @@
   <div class="flex gap-3 justify-center">
     <%= link_to 'New table', new_table_path, class: "btn-green" %>
     <%= link_to 'Arrange Tables', arrange_tables_path, class: "btn-purple" %>
-    <%= link_to 'List View', list_tables_path, class: "btn-gray" %>
     <%= button_to 'Assign People to Tables', assign_tables_path, method: :post, class: "btn-blue", 
         data: @tables.any? ? { turbo_confirm: "This will delete all existing tables and reassign people. Are you sure?" } : {} %>
+    <% if @tables.any? %>
+      <%= button_to 'Reset Tables', reset_tables_path, method: :delete, class: "btn-grey", 
+          data: { turbo_confirm: "This will delete all tables. Are you sure?" } %>
+    <% end %>
   </div>
 
   <div class="mt-6 p-4 bg-gray-50 rounded-lg">

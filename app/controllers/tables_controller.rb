@@ -89,8 +89,31 @@ class TablesController < ApplicationController
   # PATCH/PUT /tables/1 or /tables/1.json
   def update
     respond_to do |format|
-      if @table.update(table_params)
-        format.html { redirect_to @table, notice: "Table was successfully updated." }
+      # Check if we're changing the number and if there's a conflict
+      new_number = table_params[:number].to_i
+      if new_number != @table.number && Table.exists?(number: new_number)
+        # Swap numbers with the existing table
+        Table.transaction do
+          other_table = Table.find_by(number: new_number)
+          old_number = @table.number
+          
+          # Temporarily set the current table to 0 to avoid uniqueness constraint
+          @table.update!(number: 0)
+          
+          # Update the other table to the old number
+          other_table.update!(number: old_number)
+          
+          # Update the current table to the new number
+          if @table.update(table_params)
+            format.html { redirect_to tables_path, notice: "Table was successfully updated. Swapped numbers with Table #{old_number}." }
+            format.json { render :show, status: :ok, location: @table }
+          else
+            format.html { render :edit, status: :unprocessable_entity }
+            format.json { render json: @table.errors, status: :unprocessable_entity }
+          end
+        end
+      elsif @table.update(table_params)
+        format.html { redirect_to tables_path, notice: "Table was successfully updated." }
         format.json { render :show, status: :ok, location: @table }
       else
         format.html { render :edit, status: :unprocessable_entity }
@@ -226,6 +249,11 @@ class TablesController < ApplicationController
         render_as_pdf basename: "table-list"
       end
     end
+  end
+
+  def reset
+    Table.destroy_all
+    redirect_to tables_path, notice: "All tables have been deleted."
   end
 
   def move_person
