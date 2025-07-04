@@ -10,6 +10,57 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "should show unassigned people when less than or equal to 10" do
+    # Assign all existing people to tables to start fresh
+    Person.where(table_id: nil, type: ['Student', 'Professional', 'Guest']).where.not(studio_id: 0).update_all(table_id: tables(:one).id)
+    
+    # Create people without table assignments
+    studio = studios(:one)
+    level = levels(:FS)
+    age = ages(:A)
+    person1 = Person.create!(name: "Test Student", studio: studio, type: "Student", level: level, age: age)
+    person2 = Person.create!(name: "Test Pro", studio: studio, type: "Professional")
+    
+    get tables_url
+    assert_response :success
+    
+    # Check that unassigned section appears
+    assert_select "div.bg-yellow-50"
+    assert_select "h3", text: "People Without Table Assignments"
+    
+    # Should show individual people since count <= 10
+    assert_select "ul.list-disc"
+    assert_select "li", text: /Test Student.*Student/
+    assert_select "li", text: /Test Pro.*Professional/
+  end
+
+  test "should show studio summary when more than 10 unassigned people" do
+    # Assign all existing people to tables to start fresh
+    Person.where(table_id: nil, type: ['Student', 'Professional', 'Guest']).where.not(studio_id: 0).update_all(table_id: tables(:one).id)
+    
+    # Create more than 10 people without table assignments across different studios
+    studio1 = studios(:one)
+    studio2 = studios(:two)
+    level = levels(:FS)
+    age = ages(:A)
+    
+    # Create 6 people in studio1
+    6.times do |i|
+      Person.create!(name: "Student #{i}", studio: studio1, type: "Student", level: level, age: age)
+    end
+    
+    # Create 6 people in studio2  
+    6.times do |i|
+      Person.create!(name: "Pro #{i}", studio: studio2, type: "Professional")
+    end
+    
+    get tables_url
+    assert_response :success
+    assert_select "div.bg-yellow-50", 1
+    assert_select "div.grid", 1  # Grid layout for studio summary
+    assert_select "div.bg-white", 2  # Two studio cards
+  end
+
   test "should get list" do
     get list_tables_url
     assert_response :success

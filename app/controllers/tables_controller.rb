@@ -26,6 +26,24 @@ class TablesController < ApplicationController
       table.define_singleton_method(:people_count) { people_count }
       table.define_singleton_method(:table_size) { table_size }
     end
+    
+    # Get unassigned people (students, professionals, guests)
+    @unassigned_people = Person.includes(:studio)
+                               .where(table_id: nil)
+                               .where(type: ['Student', 'Professional', 'Guest'])
+                               .where.not(studio_id: 0)  # Exclude Event Staff
+                               .order('studios.name, people.name')
+    
+    # If more than 10, group by studio for summary
+    if @unassigned_people.count > 10
+      @unassigned_by_studio = @unassigned_people.group_by(&:studio).map do |studio, people|
+        {
+          studio: studio,
+          count: people.count,
+          people: people
+        }
+      end.sort_by { |group| group[:studio].name }
+    end
   end
 
   def arrange

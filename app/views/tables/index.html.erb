@@ -56,4 +56,33 @@
       </div>
     <% end %>
   </div>
+
+  <% if @unassigned_people.any? %>
+    <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+      <h3 class="font-bold text-lg text-yellow-800 mb-3">People Without Table Assignments</h3>
+      
+      <% if @unassigned_people.count <= 10 %>
+        <div class="text-sm text-yellow-700">
+          <p class="mb-2"><%= pluralize(@unassigned_people.count, 'person') %> without table assignment:</p>
+          <ul class="list-disc list-inside space-y-1">
+            <% @unassigned_people.each do |person| %>
+              <li><%= person.name %> (<%= person.studio.name %>) - <%= person.type %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% else %>
+        <div class="text-sm text-yellow-700">
+          <p class="mb-3"><%= pluralize(@unassigned_people.count, 'person') %> without table assignments across <%= pluralize(@unassigned_by_studio.count, 'studio') %>:</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <% @unassigned_by_studio.each do |group| %>
+              <div class="bg-white p-3 rounded border">
+                <div class="font-medium text-yellow-800"><%= group[:studio].name %></div>
+                <div class="text-yellow-600"><%= pluralize(group[:count], 'person') %></div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
 </div>
