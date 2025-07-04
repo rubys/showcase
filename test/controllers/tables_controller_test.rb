@@ -402,8 +402,6 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
       people_from_studio.each do |person|
         assert_select "div", text: person.name
       end
-      # Should show "People at table:" header
-      assert_select "div", text: "People at table:"
     end
   end
 
@@ -447,5 +445,82 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
       # Should show no tables message
       assert_select "h2", text: "No Tables Found"
     end
+  end
+
+  test "should move person between tables" do
+    # Create test data: two tables and a person
+    max_number = Table.maximum(:number) || 0
+    table1 = Table.create!(number: max_number + 1, size: 10)
+    table2 = Table.create!(number: max_number + 2, size: 10)
+    
+    # Get a person from a studio (not Event Staff)
+    person = Person.joins(:studio).where.not(studios: { id: 0 }).first
+    assert person, "Should have a person to test with"
+    
+    # Assign person to table1
+    person.update!(table_id: table1.id)
+    
+    # Move person from table1 to table2
+    post move_person_tables_url, params: { source: "person-#{person.id}", target: "table-#{table2.id}" }
+    
+    # Should respond with turbo stream
+    assert_response :success
+    
+    # Verify person was moved
+    person.reload
+    assert_equal table2.id, person.table_id, "Person should be moved to table2"
+    
+    # Verify response contains success message
+    assert_match /moved to Table #{table2.number}/, response.body
+  end
+
+  test "should move person to same table as another person" do
+    # Create test data: tables and people
+    max_number = Table.maximum(:number) || 0
+    table1 = Table.create!(number: max_number + 1, size: 10)
+    table2 = Table.create!(number: max_number + 2, size: 10)
+    
+    # Get two people from studios (not Event Staff)
+    people = Person.joins(:studio).where.not(studios: { id: 0 }).limit(2)
+    assert people.count >= 2, "Should have at least 2 people to test with"
+    
+    person1 = people.first
+    person2 = people.second
+    
+    # Assign people to different tables
+    person1.update!(table_id: table1.id)
+    person2.update!(table_id: table2.id)
+    
+    # Move person1 to person2's table by dropping on person2
+    post move_person_tables_url, params: { source: "person-#{person1.id}", target: "person-#{person2.id}" }
+    
+    # Should respond with turbo stream
+    assert_response :success
+    
+    # Verify person1 was moved to table2 (same as person2)
+    person1.reload
+    assert_equal table2.id, person1.table_id, "Person1 should be moved to table2 (same as person2)"
+    
+    # Verify response contains success message
+    assert_match /moved to Table #{table2.number}/, response.body
+  end
+
+  test "should ignore requests to move tables" do
+    # Create test data: two tables
+    max_number = Table.maximum(:number) || 0
+    table1 = Table.create!(number: max_number + 1, size: 10)
+    table2 = Table.create!(number: max_number + 2, size: 10)
+    
+    # Try to "move" table1 to table2 (should be ignored)
+    post move_person_tables_url, params: { source: "table-#{table1.id}", target: "table-#{table2.id}" }
+    
+    # Should respond with 200 OK but do nothing
+    assert_response :ok
+    
+    # Verify tables still exist and weren't modified
+    table1.reload
+    table2.reload
+    assert_equal max_number + 1, table1.number
+    assert_equal max_number + 2, table2.number
   end
 end

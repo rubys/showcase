@@ -1,0 +1,32 @@
+<div id="studio-tables" class="my-5 flex flex-wrap gap-4" data-controller="drop" data-drop-action="<%= move_person_tables_path %>">
+  <% @tables.each do |table| %>
+    <% 
+      capacity_class = case table.capacity_status
+      when :empty_seats
+        "bg-green-50 border-green-600 border-2"
+      when :over_capacity
+        "bg-red-50 border-red-500 border-2"
+      else
+        "bg-gray-50 border-gray-300"
+      end
+    %>
+    <div class="p-2 border rounded <%= capacity_class %> hover:bg-blue-100 flex-1 min-w-0 relative min-h-24" data-drag-id="table-<%= table.id %>" data-droppable="true">
+      <div class="font-bold text-gray-900">Table <%= table.number %></div>
+      <div class="text-sm text-gray-600"><%= table.name %></div>
+      <div class="text-base mt-1">
+        <% all_people = table.people.includes(:studio).order(:name) %>
+        <% if all_people.any? %>
+          <% all_people.each do |person| %>
+            <% if person.studio == @studio %>
+              <div class="text-blue-600 font-medium cursor-grab" draggable="true" data-drag-id="person-<%= person.id %>"><%= person.name %></div>
+            <% else %>
+              <div class="text-gray-500" title="<%= person.studio.name %>" data-drag-id="person-<%= person.id %>" data-droppable="true"><%= person.name %></div>
+            <% end %>
+          <% end %>
+        <% else %>
+          <div class="text-gray-400 text-sm">Drop people here</div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

@@ -168,6 +168,7 @@ Rails.application.routes.draw do
       post 'assign', on: :collection
       patch 'renumber', on: :collection
       get 'studio/:id', on: :collection, action: :studio, as: 'studio'
+      post 'move-person', on: :collection, action: :move_person, as: 'move_person'
     end
 
     get '/scores/:judge/heatlist', to: 'scores#heatlist', as: 'judge_heatlist'

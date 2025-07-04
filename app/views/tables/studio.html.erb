@@ -7,44 +7,14 @@
 <div class="info-button">&#x24D8;</div>
 <ul class="info-box">
 <li>Tables where people from <%= @studio.name %> are seated, ordered by table number.
-<li>Shows all people at each table: <span class="text-blue-600 font-medium"><%= @studio.name %> people in blue</span>, <span class="text-gray-500">others in gray with studio name</span>.
+<li>Shows all people at each table: <span class="text-blue-600 font-medium"><%= @studio.name %> people in blue</span>, <span class="text-gray-500">others in gray (hover for studio name)</span>.
 <li>Shows capacity status: green (empty seats), red (over capacity), gray (at capacity).
 <li>Click on a table to edit it.
 </ul>
 </div>
 
   <% if @tables.any? %>
-    <div class="my-5 flex flex-wrap gap-4">
-      <% @tables.each do |table| %>
-        <% 
-          capacity_class = case table.capacity_status
-          when :empty_seats
-            "bg-green-50 border-green-600 border-2"
-          when :over_capacity
-            "bg-red-50 border-red-500 border-2"
-          else
-            "bg-gray-50 border-gray-300"
-          end
-        %>
-        <%= link_to edit_table_path(table), class: "p-2 border rounded #{capacity_class} hover:bg-blue-100 cursor-pointer block text-decoration-none w-48" do %>
-          <div class="font-bold text-gray-900">Table <%= table.number %></div>
-          <div class="text-sm text-gray-600"><%= table.name %></div>
-          <div class="text-xs mt-1">
-            <% all_people = table.people.includes(:studio).order(:name) %>
-            <% if all_people.any? %>
-              <div class="font-medium mb-1">People at table:</div>
-              <% all_people.each do |person| %>
-                <% if person.studio == @studio %>
-                  <div class="text-blue-600 font-medium"><%= person.name %></div>
-                <% else %>
-                  <div class="text-gray-500"><%= person.name %> (<%= person.studio.name %>)</div>
-                <% end %>
-              <% end %>
-            <% end %>
-          </div>
-        <% end %>
-      <% end %>
-    </div>
+    <%= render 'studio_tables' %>
 
     <div class="mt-6 p-4 bg-gray-50 rounded-lg">
       <h2 class="font-bold text-lg mb-2">Summary for <%= @studio.name %></h2>

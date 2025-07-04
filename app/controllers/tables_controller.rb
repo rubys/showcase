@@ -214,6 +214,66 @@ class TablesController < ApplicationController
     redirect_to arrange_tables_path, notice: "Tables have been renumbered successfully."
   end
 
+  def move_person
+    # Ignore requests to move tables
+    return head :ok if params[:source].start_with?('table-')
+    
+    person_id = params[:source].gsub('person-', '').to_i
+    
+    # Handle both dropping on a table or on another person
+    if params[:target].start_with?('table-')
+      # Dropped directly on a table
+      table_id = params[:target].gsub('table-', '').to_i
+      table = Table.find(table_id)
+    else
+      # Dropped on another person - move to that person's table
+      target_person_id = params[:target].gsub('person-', '').to_i
+      target_person = Person.find(target_person_id)
+      table = target_person.table
+    end
+    
+    person = Person.find(person_id)
+    
+    # Update the person's table assignment
+    person.update!(table_id: table.id)
+    
+    # Refresh the data for the studio view
+    @studio = person.studio
+    @tables = Table.joins(people: :studio).where(studios: { id: @studio.id }).distinct.includes(people: :studio).order(:number)
+    
+    # Add capacity status for each table (same as studio action)
+    @tables.each do |table|
+      table_size = table.size || Event.current&.table_size || 10
+      people_count = table.people.count
+      
+      table.define_singleton_method(:capacity_status) do
+        if people_count < table_size
+          :empty_seats
+        elsif people_count == table_size
+          :at_capacity
+        else
+          :over_capacity
+        end
+      end
+      
+      table.define_singleton_method(:people_count) { people_count }
+      table.define_singleton_method(:table_size) { table_size }
+    end
+    
+    # Return a Turbo Stream response to update both notice and tables
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.replace("notice", "<p class=\"py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block\" id=\"notice\">#{person.name} moved to Table #{table.number}</p>"),
+          turbo_stream.replace("studio-tables", partial: "studio_tables")
+        ]
+      end
+      format.html do
+        render plain: "#{person.name} moved to Table #{table.number}"
+      end
+    end
+  end
+
   private
 
   def create_and_assign_table(number, people)
