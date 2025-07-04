@@ -41,6 +41,12 @@ export default class extends Controller {
     this.reflow();
 
     document.getElementById("save").addEventListener("click", this.save);
+    
+    // Add save-and-renumber functionality
+    const saveAndRenumberBtn = document.getElementById("save-and-renumber");
+    if (saveAndRenumberBtn) {
+      saveAndRenumberBtn.addEventListener("click", this.saveAndRenumber);
+    }
   }
 
   reflow() {
@@ -137,5 +143,56 @@ export default class extends Controller {
       .then(text => {document.getElementById("notice").textContent = text;});
 
     event.preventDefault();
+  };
+
+  saveAndRenumber = (event) => {
+    event.preventDefault();
+    
+    const token = document.querySelector('meta[name="csrf-token"]').content;
+    const renumberUrl = event.target.dataset.renumberUrl;
+
+    let positions = {};
+    for (let item of this.grid.children) {
+      let id = item.dataset.id;
+      if (!id) continue;
+      positions[id] = {row: item.style.gridRow, col: item.style.gridColumn};
+    }
+
+    let data = {};
+    data[this.modelNameValue] = positions;
+
+    // First save the positions
+    fetch(this.saveUrlValue, {
+      method: "POST",
+      headers: window.inject_region({
+        "X-CSRF-Token": token,
+        "Content-Type": "application/json"
+      }),
+      credentials: "same-origin",
+      redirect: "follow",
+      body: JSON.stringify(data)
+    }).then(response => {
+      if (response.ok) {
+        // Then submit the renumber form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = renumberUrl;
+        
+        const methodInput = document.createElement('input');
+        methodInput.type = 'hidden';
+        methodInput.name = '_method';
+        methodInput.value = 'patch';
+        
+        const tokenInput = document.createElement('input');
+        tokenInput.type = 'hidden';
+        tokenInput.name = 'authenticity_token';
+        tokenInput.value = token;
+        
+        form.appendChild(methodInput);
+        form.appendChild(tokenInput);
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
   };
 }

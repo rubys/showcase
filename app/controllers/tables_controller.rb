@@ -92,7 +92,7 @@ class TablesController < ApplicationController
           table = Table.find(id)
           table.row = position['row'].to_i
           table.col = position['col'].to_i
-          table.save!
+          table.save! validate: false
         end
       end
 
@@ -167,6 +167,26 @@ class TablesController < ApplicationController
     end
     
     redirect_to tables_path, notice: "Tables have been assigned successfully."
+  end
+
+  def renumber
+    Table.transaction do
+      # Get all tables ordered by their position (row first, then column)
+      # Tables without positions will be at the end
+      tables_by_position = Table.order(Arel.sql('row IS NULL, row, col IS NULL, col'))
+      
+      # First, temporarily set all numbers to negative values to avoid conflicts
+      tables_by_position.each_with_index do |table, index|
+        table.update!(number: -(index + 1))
+      end
+      
+      # Then set them to their final positive values
+      tables_by_position.each_with_index do |table, index|
+        table.update!(number: index + 1)
+      end
+    end
+    
+    redirect_to arrange_tables_path, notice: "Tables have been renumbered successfully."
   end
 
   private

@@ -3,8 +3,6 @@
 
   <h1 class="font-bold text-4xl">Arrange Tables</h1>
 
-<%= form_with(url: update_positions_tables_path, class: "contents", data: {controller: 'form-builder', 'form-builder-model-name-value': 'table', 'form-builder-save-url-value': update_positions_tables_path}) do |form| %>
-
 <div data-controller="info-box">
 <div class="info-button">&#x24D8;</div>
 <ul class="info-box">
@@ -14,6 +12,7 @@
 </ul>
 </div>
 
+<%= form_with(url: update_positions_tables_path, class: "contents", data: {controller: 'form-builder', 'form-builder-model-name-value': 'table', 'form-builder-save-url-value': update_positions_tables_path}) do |form| %>
   <div class="my-5">
     <%= form.label :columns, "Grid Columns" %>
     <%= form.number_field :columns, value: @columns,
@@ -44,8 +43,11 @@
     <% end %>
   </div>
 
-  <button id="save" class="btn-blue">Save</button>
-  <%= form.submit "Reset", class: 'btn-grey' %>
-  <%= link_to 'Back to Tables', tables_path, class: "btn-green" %>
 <% end %>
+
+<div class="flex gap-3 justify-center">
+  <button id="save" class="btn-blue">Save</button>
+  <button id="save-and-renumber" class="btn-orange" data-renumber-url="<%= renumber_tables_path %>">Renumber</button>
+  <%= link_to 'Back to Tables', tables_path, class: "btn-green" %>
+</div>
 </div>

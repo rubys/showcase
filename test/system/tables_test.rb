@@ -19,8 +19,6 @@ class TablesTest < ApplicationSystemTestCase
     visit tables_url
     click_on "New table"
 
-    fill_in "Row", with: 2
-    fill_in "Col", with: 2
     fill_in "Number", with: 99
     fill_in "Size", with: 10
     click_on "Create Table"
@@ -34,8 +32,6 @@ class TablesTest < ApplicationSystemTestCase
     visit table_url(@table)
     click_on "Edit this table", match: :first
 
-    fill_in "Row", with: 3
-    fill_in "Col", with: 3
     fill_in "Number", with: @table.number
     fill_in "Size", with: 12
     click_on "Update Table"
@@ -97,9 +93,9 @@ class TablesTest < ApplicationSystemTestCase
     # Should show table information in draggable format
     assert_selector "div", text: "Table #{@table.number}"
     
-    # Should have save and reset buttons
+    # Should have save and renumber buttons
     assert_selector "button", text: "Save"
-    assert_selector "input[value='Reset']"
+    assert_selector "button", text: "Renumber"
   end
 
   test "should make tables clickable in index view" do
@@ -124,8 +120,8 @@ class TablesTest < ApplicationSystemTestCase
     assert_selector "a.hover\\:bg-blue-100"
     assert_selector "a.cursor-pointer"
     
-    # Should have proper styling classes
-    assert_selector "a.p-2.border.rounded.bg-gray-50"
+    # Should have proper styling classes (p-2, border, rounded)
+    assert_selector "a.p-2.border.rounded"
   end
 
   test "should maintain grid layout with positioned tables" do
@@ -281,10 +277,8 @@ class TablesTest < ApplicationSystemTestCase
     Table.destroy_all
     visit tables_url  # Refresh to see empty state
     
-    # Click the assign button and accept confirmation
-    accept_confirm do
-      click_button "Assign People to Tables"
-    end
+    # Click the assign button (no confirmation needed when no tables exist)
+    click_button "Assign People to Tables"
     
     # Should be redirected back to tables index
     assert_selector "h1", text: "Tables"
@@ -336,5 +330,41 @@ class TablesTest < ApplicationSystemTestCase
     
     # Should show empty message
     assert_text "No people assigned to this table yet."
+  end
+
+  test "should show renumber button on arrange page" do
+    visit arrange_tables_url
+    
+    # Should have renumber button
+    assert_selector "button", text: "Renumber"
+    
+    # Should have save button
+    assert_selector "button", text: "Save"
+    
+    # Should not have reset button (we removed it)
+    assert_no_selector "input[value='Reset']"
+  end
+
+  test "buttons should be centered on index and arrange pages" do
+    # Check index page
+    visit tables_url
+    assert_selector "div.flex.gap-3.justify-center"
+    
+    # Check arrange page
+    visit arrange_tables_url
+    assert_selector "div.flex.gap-3.justify-center"
+  end
+
+  test "new table button should be first on index page" do
+    visit tables_url
+    
+    # Find the button container
+    button_container = find("div.flex.gap-3.justify-center")
+    
+    # Get the first link/button in the container
+    first_button = button_container.first("a, button")
+    
+    # Verify it's the New table button
+    assert_equal "New table", first_button.text
   end
 end

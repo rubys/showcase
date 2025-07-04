@@ -166,6 +166,7 @@ Rails.application.routes.draw do
       get 'arrange', on: :collection
       post 'update-positions', on: :collection, as: 'update_positions'
       post 'assign', on: :collection
+      patch 'renumber', on: :collection
     end
 
     get '/scores/:judge/heatlist', to: 'scores#heatlist', as: 'judge_heatlist'

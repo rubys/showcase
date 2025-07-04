@@ -31,9 +31,9 @@
     <% end %>
   </div>
 
-  <div class="flex gap-3">
-    <%= link_to 'Arrange Tables', arrange_tables_path, class: "btn-purple" %>
+  <div class="flex gap-3 justify-center">
     <%= link_to 'New table', new_table_path, class: "btn-green" %>
+    <%= link_to 'Arrange Tables', arrange_tables_path, class: "btn-purple" %>
     <%= button_to 'Assign People to Tables', assign_tables_path, method: :post, class: "btn-blue", 
         data: @tables.any? ? { turbo_confirm: "This will delete all existing tables and reassign people. Are you sure?" } : {} %>
   </div>

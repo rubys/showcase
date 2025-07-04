@@ -306,4 +306,76 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
       end
     end
   end
+
+  test "should renumber tables based on position" do
+    # Clear existing tables
+    Table.destroy_all
+    
+    # Create tables in non-sequential order with positions
+    table3 = Table.create!(number: 3, row: 1, col: 2, size: 8)
+    table1 = Table.create!(number: 1, row: 1, col: 1, size: 8)
+    table4 = Table.create!(number: 4, row: 2, col: 1, size: 8)
+    table2 = Table.create!(number: 2, row: 2, col: 2, size: 8)
+    
+    # Call renumber action
+    patch renumber_tables_url
+    
+    assert_redirected_to arrange_tables_path
+    assert_equal "Tables have been renumbered successfully.", flash[:notice]
+    
+    # Verify tables are renumbered by position (row first, then col)
+    table1.reload
+    table2.reload
+    table3.reload
+    table4.reload
+    
+    assert_equal 1, table1.number, "Table at position (1,1) should be numbered 1"
+    assert_equal 2, table3.number, "Table at position (1,2) should be numbered 2"
+    assert_equal 3, table4.number, "Table at position (2,1) should be numbered 3"
+    assert_equal 4, table2.number, "Table at position (2,2) should be numbered 4"
+  end
+
+  test "should renumber tables with null positions last" do
+    # Clear existing tables
+    Table.destroy_all
+    
+    # Create tables with mixed positions
+    table_no_pos = Table.create!(number: 99, row: nil, col: nil, size: 8)
+    table_pos_1 = Table.create!(number: 88, row: 1, col: 1, size: 8)
+    table_partial = Table.create!(number: 77, row: 2, col: nil, size: 8)
+    table_pos_2 = Table.create!(number: 66, row: 1, col: 2, size: 8)
+    
+    # Call renumber action
+    patch renumber_tables_url
+    
+    assert_redirected_to arrange_tables_path
+    
+    # Reload tables
+    table_pos_1.reload
+    table_pos_2.reload
+    table_partial.reload
+    table_no_pos.reload
+    
+    # Verify positioned tables come first
+    assert_equal 1, table_pos_1.number, "Table at (1,1) should be numbered 1"
+    assert_equal 2, table_pos_2.number, "Table at (1,2) should be numbered 2"
+    
+    # Tables with partial or no positions should be numbered last
+    assert table_partial.number > 2, "Table with partial position should be numbered after positioned tables"
+    assert table_no_pos.number > 2, "Table with no position should be numbered after positioned tables"
+  end
+
+  test "should handle renumber with no tables" do
+    # Clear all tables
+    Table.destroy_all
+    
+    # Call renumber action
+    patch renumber_tables_url
+    
+    assert_redirected_to arrange_tables_path
+    assert_equal "Tables have been renumbered successfully.", flash[:notice]
+    
+    # Should not raise any errors
+    assert_equal 0, Table.count
+  end
 end
