@@ -22,4 +22,20 @@
     <%= form.number_field :size, class: ["block shadow rounded-md border outline-none px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": table.errors[:size].none?, "border-red-400 focus:outline-red-600": table.errors[:size].any?}] %>
   </div>
 
+  <% if defined?(@studios_with_unassigned) && @studios_with_unassigned.any? %>
+    <div class="my-5">
+      <% if defined?(@available_seats) %>
+        <%= form.label :studio_id, "Add people from studio (optional)" %>
+        <%= form.select :studio_id, options_for_select([["Select a studio...", ""]] + @studios_with_unassigned.map { |id, name| [name, id] }), {}, 
+            { class: "block shadow rounded-md border border-gray-400 outline-none px-3 py-2 mt-2 w-full focus:outline-blue-600" } %>
+        <p class="text-sm text-gray-500 mt-1">If selected, up to <%= @available_seats %> unassigned people from this studio will be added to the table.</p>
+      <% else %>
+        <%= form.label :studio_id, "Fill table with people from studio (optional)" %>
+        <%= form.select :studio_id, options_for_select([["Select a studio...", ""]] + @studios_with_unassigned.map { |id, name| [name, id] }), {}, 
+            { class: "block shadow rounded-md border border-gray-400 outline-none px-3 py-2 mt-2 w-full focus:outline-blue-600" } %>
+        <p class="text-sm text-gray-500 mt-1">If selected, the table will be automatically filled with unassigned people from this studio.</p>
+      <% end %>
+    </div>
+  <% end %>
+
 <% end %>

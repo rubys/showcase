@@ -83,21 +83,58 @@ class TablesController < ApplicationController
   def new
     @table = Table.new
     @table.number = (Table.maximum(:number) || 0) + 1
+    
+    # Get studios that have unassigned people
+    @studios_with_unassigned = Studio.joins(:people)
+                                     .where(people: { table_id: nil, type: ['Student', 'Professional', 'Guest'] })
+                                     .where.not(id: 0)  # Exclude Event Staff
+                                     .distinct
+                                     .order(:name)
+                                     .pluck(:id, :name)
   end
 
   # GET /tables/1/edit
   def edit
+    # Check if table has capacity for more people
+    table_size = @table.size || Event.current&.table_size || 10
+    table_size = 10 if table_size.nil? || table_size.zero?
+    current_people_count = @table.people.count
+    
+    # Only show studio selection if table isn't at capacity
+    if current_people_count < table_size
+      @studios_with_unassigned = Studio.joins(:people)
+                                       .where(people: { table_id: nil, type: ['Student', 'Professional', 'Guest'] })
+                                       .where.not(id: 0)  # Exclude Event Staff
+                                       .distinct
+                                       .order(:name)
+                                       .pluck(:id, :name)
+      @available_seats = table_size - current_people_count
+    end
   end
 
   # POST /tables or /tables.json
   def create
-    @table = Table.new(table_params)
+    @table = Table.new(table_params.except(:studio_id))
 
     respond_to do |format|
       if @table.save
+        # Auto-fill table with people from selected studio if provided
+        if params[:table][:studio_id].present?
+          studio_id = params[:table][:studio_id].to_i
+          fill_table_with_studio_people(@table, studio_id)
+        end
+        
         format.html { redirect_to tables_path, notice: "Table was successfully created." }
         format.json { render :show, status: :created, location: @table }
       else
+        # Reload studio data for the form in case of errors
+        @studios_with_unassigned = Studio.joins(:people)
+                                         .where(people: { table_id: nil, type: ['Student', 'Professional', 'Guest'] })
+                                         .where.not(id: 0)
+                                         .distinct
+                                         .order(:name)
+                                         .pluck(:id, :name)
+        
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @table.errors, status: :unprocessable_entity }
       end
@@ -122,7 +159,13 @@ class TablesController < ApplicationController
           other_table.update!(number: old_number)
           
           # Update the current table to the new number
-          if @table.update(table_params)
+          if @table.update(table_params.except(:studio_id))
+            # Auto-fill table with people from selected studio if provided
+            if params[:table][:studio_id].present?
+              studio_id = params[:table][:studio_id].to_i
+              fill_table_with_studio_people(@table, studio_id)
+            end
+            
             format.html { redirect_to tables_path, notice: "Table was successfully updated. Swapped numbers with Table #{old_number}." }
             format.json { render :show, status: :ok, location: @table }
           else
@@ -130,10 +173,31 @@ class TablesController < ApplicationController
             format.json { render json: @table.errors, status: :unprocessable_entity }
           end
         end
-      elsif @table.update(table_params)
+      elsif @table.update(table_params.except(:studio_id))
+        # Auto-fill table with people from selected studio if provided
+        if params[:table][:studio_id].present?
+          studio_id = params[:table][:studio_id].to_i
+          fill_table_with_studio_people(@table, studio_id)
+        end
+        
         format.html { redirect_to tables_path, notice: "Table was successfully updated." }
         format.json { render :show, status: :ok, location: @table }
       else
+        # Reload studio data for the form in case of errors
+        table_size = @table.size || Event.current&.table_size || 10
+        table_size = 10 if table_size.nil? || table_size.zero?
+        current_people_count = @table.people.count
+        
+        if current_people_count < table_size
+          @studios_with_unassigned = Studio.joins(:people)
+                                           .where(people: { table_id: nil, type: ['Student', 'Professional', 'Guest'] })
+                                           .where.not(id: 0)
+                                           .distinct
+                                           .order(:name)
+                                           .pluck(:id, :name)
+          @available_seats = table_size - current_people_count
+        end
+        
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @table.errors, status: :unprocessable_entity }
       end
@@ -335,6 +399,29 @@ class TablesController < ApplicationController
   end
 
   private
+
+  def fill_table_with_studio_people(table, studio_id)
+    # Determine table size
+    table_size = table.size || Event.current&.table_size || 10
+    table_size = 10 if table_size.nil? || table_size.zero?
+    
+    # Calculate available seats
+    current_people_count = table.people.count
+    available_seats = table_size - current_people_count
+    
+    # Don't add anyone if table is at or over capacity
+    return if available_seats <= 0
+    
+    # Get unassigned people from the studio, limited to available seats
+    unassigned_people = Person.where(studio_id: studio_id, table_id: nil, type: ['Student', 'Professional', 'Guest'])
+                              .order(:name)
+                              .limit(available_seats)
+    
+    # Assign them to the table
+    unassigned_people.each do |person|
+      person.update!(table_id: table.id)
+    end
+  end
 
   def create_and_assign_table(number, people)
     table = Table.create!(number: number)
@@ -642,6 +729,6 @@ class TablesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def table_params
-      params.expect(table: [ :number, :row, :col, :size ])
+      params.expect(table: [ :number, :row, :col, :size, :studio_id ])
     end
 end

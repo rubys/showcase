@@ -113,6 +113,152 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to tables_url
   end
 
+  test "should create table and auto-fill with studio people" do
+    # Assign all existing people to tables to start fresh
+    Person.where(table_id: nil, type: ['Student', 'Professional', 'Guest']).where.not(studio_id: 0).update_all(table_id: tables(:one).id)
+    
+    # Create unassigned people for a studio
+    studio = studios(:one)
+    level = levels(:FS)
+    age = ages(:A)
+    
+    person1 = Person.create!(name: "Auto Student 1", studio: studio, type: "Student", level: level, age: age)
+    person2 = Person.create!(name: "Auto Student 2", studio: studio, type: "Student", level: level, age: age)
+    person3 = Person.create!(name: "Auto Pro", studio: studio, type: "Professional")
+    
+    assert_difference("Table.count") do
+      post tables_url, params: { table: { number: 999, size: 2, studio_id: studio.id } }
+    end
+
+    assert_redirected_to tables_url
+    
+    # Check that the table was created and people were assigned
+    new_table = Table.find_by(number: 999)
+    assert_not_nil new_table
+    assert_equal 2, new_table.people.count  # Should be limited by table size
+    
+    # Check that the first 2 people (alphabetically) were assigned
+    assigned_people = new_table.people.order(:name)
+    assert_equal "Auto Pro", assigned_people.first.name
+    assert_equal "Auto Student 1", assigned_people.second.name
+    
+    # Third person should still be unassigned (table size was 2)
+    person2.reload
+    assert_nil person2.table_id
+  end
+
+  test "should show studio select on new table page when unassigned people exist" do
+    # Assign all existing people to tables to start fresh
+    Person.where(table_id: nil, type: ['Student', 'Professional', 'Guest']).where.not(studio_id: 0).update_all(table_id: tables(:one).id)
+    
+    # Create unassigned people
+    studio = studios(:two)  # Use a different studio to avoid conflicts
+    level = levels(:FS)
+    age = ages(:A)
+    Person.create!(name: "Unassigned Student", studio: studio, type: "Student", level: level, age: age)
+    
+    get new_table_url
+    assert_response :success
+    assert_select "select[name='table[studio_id]']"
+    # Just check that some studio option exists, don't worry about specific value
+    assert_select "option", minimum: 2  # At least the default option plus one studio
+  end
+
+  test "should show studio select on edit page when table has capacity" do
+    # Create a table with some people but not at capacity
+    table = Table.create!(number: 998, size: 5)
+    studio = studios(:one)
+    level = levels(:FS)
+    age = ages(:A)
+    
+    # Add 2 people to the table (leaving 3 seats available)
+    person1 = Person.create!(name: "Seated Person 1", studio: studio, type: "Student", level: level, age: age, table: table)
+    person2 = Person.create!(name: "Seated Person 2", studio: studio, type: "Student", level: level, age: age, table: table)
+    
+    # Create unassigned people in a different studio
+    studio2 = studios(:two)
+    Person.create!(name: "Unassigned Student", studio: studio2, type: "Student", level: level, age: age)
+    
+    get edit_table_url(table)
+    assert_response :success
+    assert_select "select[name='table[studio_id]']"
+    assert_select "p", text: /up to 3 unassigned people/
+  end
+
+  test "should not show studio select on edit page when table is at capacity" do
+    # Create a table at capacity
+    table = Table.create!(number: 997, size: 2)
+    studio = studios(:one)
+    level = levels(:FS)
+    age = ages(:A)
+    
+    # Fill the table to capacity
+    person1 = Person.create!(name: "Seated Person 1", studio: studio, type: "Student", level: level, age: age, table: table)
+    person2 = Person.create!(name: "Seated Person 2", studio: studio, type: "Student", level: level, age: age, table: table)
+    
+    get edit_table_url(table)
+    assert_response :success
+    assert_select "select[name='table[studio_id]']", count: 0
+  end
+
+  test "should update table and add people from studio" do
+    # Assign all existing people to tables to start fresh
+    Person.where(table_id: nil, type: ['Student', 'Professional', 'Guest']).where.not(studio_id: 0).update_all(table_id: tables(:one).id)
+    
+    # Create a table with capacity
+    table = Table.create!(number: 996, size: 4)
+    
+    # Create unassigned people
+    studio = studios(:one)
+    level = levels(:FS)
+    age = ages(:A)
+    person1 = Person.create!(name: "Update Student 1", studio: studio, type: "Student", level: level, age: age)
+    person2 = Person.create!(name: "Update Student 2", studio: studio, type: "Student", level: level, age: age)
+    
+    patch table_url(table), params: { table: { size: 4, studio_id: studio.id } }
+    
+    assert_redirected_to tables_url
+    
+    # Check that people were added to the table
+    table.reload
+    assert_equal 2, table.people.count
+    assert_includes table.people.pluck(:name), "Update Student 1"
+    assert_includes table.people.pluck(:name), "Update Student 2"
+  end
+
+  test "should only add available seats when updating table with existing people" do
+    # Assign all existing people to tables to start fresh
+    Person.where(table_id: nil, type: ['Student', 'Professional', 'Guest']).where.not(studio_id: 0).update_all(table_id: tables(:one).id)
+    
+    # Create a table with size 10 and add 4 people to it
+    table = Table.create!(number: 995, size: 10)
+    studio = studios(:one)
+    level = levels(:FS)
+    age = ages(:A)
+    
+    # Add 4 people to the table
+    4.times do |i|
+      person = Person.create!(name: "Existing Person #{i}", studio: studio, type: "Student", level: level, age: age, table: table)
+    end
+    
+    # Create 10 more unassigned people from the same studio
+    10.times do |i|
+      Person.create!(name: "Unassigned Person #{i}", studio: studio, type: "Student", level: level, age: age)
+    end
+    
+    # Update the table and select the studio - should only add 6 people (available seats)
+    patch table_url(table), params: { table: { size: 10, studio_id: studio.id } }
+    
+    assert_redirected_to tables_url
+    
+    # Check that only 6 more people were added (total should be 10, not 14)
+    table.reload
+    assert_equal 10, table.people.count, "Table should have exactly 10 people (4 existing + 6 added)"
+    
+    # Verify table is now at capacity (people count equals table size)
+    assert_equal table.size, table.people.count, "Table should be at capacity"
+  end
+
   test "should show table" do
     get table_url(@table)
     assert_response :success
