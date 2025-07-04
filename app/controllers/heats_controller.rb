@@ -472,6 +472,8 @@ class HeatsController < ApplicationController
         @heat.category = params[:heat][:category]
         count = 0
 
+        dance_limit = Dance.find(@heat.dance_id)&.limit || dance_limit
+
         entry = @heat.entry
         if entry.follow.type == 'Student'
           entries = Entry.where(lead_id: entry.follow_id).or(Entry.where(follow_id: entry.follow_id)).pluck(:id)
