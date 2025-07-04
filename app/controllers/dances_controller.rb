@@ -131,7 +131,7 @@ class DancesController < ApplicationController
           dance = Dance.find(id)
           dance.row = position['row'].to_i
           dance.col = position['col'].to_i
-          dance.save!
+          dance.save! validate: false
         end
       end
 
