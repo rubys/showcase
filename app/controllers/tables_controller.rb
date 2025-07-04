@@ -1,4 +1,6 @@
 class TablesController < ApplicationController
+  include Printable
+  
   before_action :set_table, only: %i[ show edit update destroy ]
 
   # GET /tables or /tables.json
@@ -212,6 +214,18 @@ class TablesController < ApplicationController
     end
     
     redirect_to arrange_tables_path, notice: "Tables have been renumbered successfully."
+  end
+
+  def list
+    @tables = Table.includes(people: :studio).order(:number)
+    @event = Event.current
+    
+    respond_to do |format|
+      format.html
+      format.pdf do
+        render_as_pdf basename: "table-list"
+      end
+    end
   end
 
   def move_person

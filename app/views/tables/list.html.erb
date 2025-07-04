@@ -1,0 +1,70 @@
+<div class="mx-auto print:w-full">
+  <style type="text/css" media="print">
+    .table-list-item {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    
+    @media print {
+      body {
+        font-size: 12pt;
+      }
+      
+      .no-print {
+        display: none !important;
+      }
+      
+      .table-list-item {
+        margin-bottom: 2em;
+        border: 1px solid #ccc;
+        padding: 1em;
+      }
+    }
+  </style>
+
+  <div class="mb-6 no-print">
+    <h1 class="font-bold text-4xl">Table List</h1>
+  </div>
+
+  <div class="print:block">
+    <h1 class="font-bold text-3xl text-center mb-4 hidden print:block"><%= @event&.name || "Table List" %></h1>
+    
+    <% @tables.each do |table| %>
+      <div class="table-list-item mb-6 p-4 border rounded-lg print:border print:rounded-none">
+        <div class="flex justify-between items-start mb-3">
+          <h2 class="font-bold text-2xl">Table <%= table.number %></h2>
+          <% if table.row && table.col %>
+            <span class="text-gray-600">Position: Row <%= table.row %>, Column <%= table.col %></span>
+          <% end %>
+        </div>
+        
+        <% # Get studios for this table %>
+        <% studios = table.people.joins(:studio).pluck('studios.name').uniq.sort %>
+        <% if studios.any? %>
+          <div class="mb-3">
+            <span class="font-semibold">Studios:</span> <%= studios.join(', ') %>
+          </div>
+        <% end %>
+        
+        <% if table.people.any? %>
+          <div>
+            <span class="font-semibold">People (<%= table.people.count %>):</span>
+            <ul class="list-disc list-inside mt-2">
+              <% table.people.includes(:studio).order('studios.name', :name).each do |person| %>
+                <li class="ml-4">
+                  <%= person.name %>
+                  <span class="text-gray-600">(<%= person.studio.name %>)</span>
+                  <% if person.type %>
+                    <span class="text-sm text-gray-500"><%= person.type %></span>
+                  <% end %>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        <% else %>
+          <div class="text-gray-500 italic">No people assigned to this table</div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

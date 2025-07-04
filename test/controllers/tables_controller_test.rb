@@ -10,6 +10,11 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "should get list" do
+    get list_tables_url
+    assert_response :success
+  end
+
   test "should get arrange" do
     get arrange_tables_url
     assert_response :success

@@ -65,6 +65,9 @@
   <% end %>
 
   <li class=""><%= link_to "Labels", labels_people_path(format: :pdf), class: "btn-pale-orange w-60" %>
+  <% if Table.any? %>
+  <li class=""><%= link_to "Table List", list_tables_path(format: :pdf), class: "btn-pale-orange w-60" %>
+  <% end %>
   <li class=""><%= link_to "Student Scores", scores_people_path(format: :pdf), class: "btn-pale-orange w-60" %>
   <li class=""><%= link_to "Staff", staff_people_path(format: :pdf), class: "btn-pale-orange w-60" %>
   <li class=""><%= link_to "Certificates", people_certificates_path, class: "btn-blue w-60" %>
