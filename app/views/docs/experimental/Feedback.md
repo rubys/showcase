@@ -11,6 +11,7 @@ There are a number of different options as to how heats are scored:
   </li><li class="my-2"><input type="radio" value="+" name="event[open_scoring]" id="event_open_scoring_"> Feedback (Needs Work On / Great Job With)
   </li><li class="my-2"><input type="radio" value="&amp;" name="event[open_scoring]" id="event_open_scoring_"> Number (1-5) <b>and</b> Feedback
   </li><li class="my-2"><input type="radio" value="@" checked="checked" name="event[open_scoring]" id="event_open_scoring_"> GH/G/S/B <b>and</b> Feedback
+  </li><li class="my-2"><input type="radio" value="0" checked="checked" name="event[open_scoring]" id="event_open_scoring_"> None
   </li></ul>
 </div>
 
