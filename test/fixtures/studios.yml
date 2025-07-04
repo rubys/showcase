@@ -6,12 +6,9 @@ zero:
 
 one:
   name: One
-  tables: 1
 
 two:
   name: Two
-  tables: 2
 
 three:
   name: Three
-  tables: 3

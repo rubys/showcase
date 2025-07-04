@@ -13,7 +13,7 @@
       <tr>
         <td class="row-head">Location</td>
         <td class="row-head">Count</td>
-        <% if @total_tables > 0 %>
+        <% if @studio_tables.values.flatten.any? %>
         <td class="row-head">Tables</td>
         <% end %>
         <% if @total_invoice > 0 %>
@@ -26,8 +26,12 @@
       <tr>
         <td class="text-black font-medium"><%= link_to studio.name, studio %></td>
         <td class="text-right"><%= studio.people.count %></td>
-        <% if @total_tables > 0 %>
-        <td class="text-right"><%= studio.tables.to_i %></td>
+        <% if @studio_tables.values.flatten.any? %>
+        <td class="text-right">
+          <% if @studio_tables[studio.id].any? %>
+            <%= link_to @studio_tables[studio.id].join(', '), studio_tables_path(studio.id) %>
+          <% end %>
+        </td>
         <% end %>
         <% if @total_invoice > 0 %>
         <td class="text-right">
@@ -39,8 +43,8 @@
       <tr>
         <th class="row-foot-right">totals</th>
         <td class="row-foot-right"><%= @total_count %></td>
-        <% if @total_tables > 0 %>
-        <td class="row-foot-right"><%= @total_tables %></td>
+        <% if @studio_tables.values.flatten.any? %>
+        <td class="row-foot-right"><%= @studio_tables.values.flatten.uniq.count %></td>
         <% end %>
         <% if @total_invoice > 0 %>
         <td class="row-foot-right text-right"><%= number_to_currency @total_invoice, precision: 2, unit: '' %></td>

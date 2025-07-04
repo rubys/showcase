@@ -15,7 +15,14 @@ class StudiosController < ApplicationController
     # generate_invoice @studios, @student
 
     @total_count = Person.where.not(studio_id: nil).count
-    @total_tables = Studio.sum(:tables)
+    
+    # Create a hash of studio_id => array of table numbers
+    @studio_tables = {}
+    @studios.each do |studio|
+      table_numbers = studio.people.joins(:table).where.not(table_id: nil).pluck('tables.number').uniq.sort
+      @studio_tables[studio.id] = table_numbers
+    end
+    
     # @total_invoice = @invoices.values.map {|info| info[:total_cost]}.sum
     @total_invoice = 0
   end
@@ -281,7 +288,7 @@ class StudiosController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def studio_params
-      params.require(:studio).permit(:name, :tables, :pair,
+      params.require(:studio).permit(:name, :pair,
         :default_student_package_id, :ballroom,
         :cost_override, :heat_cost, :solo_cost, :multi_cost,
         :student_cost_override, :student_registration_cost,
