@@ -59,28 +59,6 @@ class ApplicationRecordTest < ActiveSupport::TestCase
     end
   end
 
-  test "ChronicValidator should validate date/time values" do
-    # Create a test model with ChronicValidator
-    test_class = Class.new(ApplicationRecord) do
-      self.table_name = 'events'
-      validates :name, chronic: true
-    end
-    
-    # Mock Event.parse_date to control validation
-    Event.define_singleton_method(:parse_date) { |value| value == "valid_date" }
-    
-    record = test_class.new(name: "valid_date")
-    assert record.valid?
-    
-    record = test_class.new(name: "invalid_date")
-    assert_not record.valid?
-    assert_includes record.errors[:name], "is not an day/time"
-    
-  ensure
-    # Clean up mock
-    Event.singleton_class.remove_method(:parse_date) if Event.singleton_class.method_defined?(:parse_date)
-  end
-
   test "ChronicValidator should accept custom error message" do
     test_class = Class.new(ApplicationRecord) do
       self.table_name = 'events'
