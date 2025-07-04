@@ -73,6 +73,21 @@
   </ul>
   </div>
 
+  <div class="my-5">
+    <%= form.check_box :judge_comments, class: 'entry-count h-10' %>
+    <%= form.label :judge_comments, 'Enable judge comments?' %>
+  </div>
+
+  <div class="my-5">
+    <%= form.check_box :judge_recordings, class: 'entry-count h-10' %>
+    <%= form.label :judge_recordings, 'Enable judge recordings? - Experimental' %>
+  </div>
+
+  <div class="my-5">
+    <%= form.check_box :assign_judges, class: 'entry-count h-10' %>
+    <%= form.label :agenda_based_entries, 'Assign judges couples to evaluate?' %>
+  </div>
+
   <div class="inline">
     <%= form.button 'Save', name: 'tab', value: 'Scoring', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
   </div>
