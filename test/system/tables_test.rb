@@ -367,4 +367,36 @@ class TablesTest < ApplicationSystemTestCase
     # Verify it's the New table button
     assert_equal "New table", first_button.text
   end
+
+  test "should show studio tables page" do
+    # Create a studio and assign people to tables
+    studio = Studio.joins(:people).where.not(people: { studio_id: 0 }).first
+    if studio
+      # Assign people from this studio to the test table
+      people = Person.where(studio: studio).limit(2)
+      people.update_all(table_id: @table.id) if people.any?
+      
+      visit studio_tables_url(studio)
+      
+      # Should show the studio tables page
+      assert_selector "h1", text: "Tables for #{studio.name}"
+      
+      if people.any?
+        # Should show the table
+        assert_selector "div", text: "Table #{@table.number}"
+        
+        # Should show summary section
+        assert_selector "h2", text: "Summary for #{studio.name}"
+      else
+        # Should show no tables message
+        assert_selector "h2", text: "No Tables Found"
+      end
+      
+      # Should have navigation buttons
+      assert_selector "a", text: "All Tables"
+      assert_selector "a", text: "Back to Studio"
+    else
+      skip "No studio with people found for testing"
+    end
+  end
 end

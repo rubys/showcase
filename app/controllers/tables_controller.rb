@@ -30,6 +30,31 @@ class TablesController < ApplicationController
     index
   end
 
+  def studio
+    @studio = Studio.find(params[:id])
+    @tables = Table.joins(people: :studio).where(studios: { id: @studio.id }).distinct.includes(people: :studio).order(:number)
+    @columns = Table.maximum(:col) || 8
+    
+    # Add capacity status for each table
+    @tables.each do |table|
+      table_size = table.size || Event.current&.table_size || 10
+      people_count = table.people.count
+      
+      table.define_singleton_method(:capacity_status) do
+        if people_count < table_size
+          :empty_seats
+        elsif people_count == table_size
+          :at_capacity
+        else
+          :over_capacity
+        end
+      end
+      
+      table.define_singleton_method(:people_count) { people_count }
+      table.define_singleton_method(:table_size) { table_size }
+    end
+  end
+
   # GET /tables/1 or /tables/1.json
   def show
   end

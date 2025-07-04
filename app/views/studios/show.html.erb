@@ -14,6 +14,13 @@
     <% if @studio.id != 0 %>
     <%= link_to 'Solos', solos_studio_path(@studio), class: "btn-blue" %>
     <%= up_link 'Add formation', new_formation_path(studio: @studio), class: "btn-blue" %>
+    <% 
+      # Check if this studio has people assigned to multiple tables
+      studio_table_count = Table.joins(people: :studio).where(studios: { id: @studio.id }).distinct.count
+    %>
+    <% if studio_table_count > 1 %>
+      <%= link_to 'Tables', studio_tables_path(@studio), class: "btn-blue" %>
+    <% end %>
     <%= link_to 'Heat sheets', heats_studio_path(@studio, format: :pdf), class: "btn-pale-orange" %>
     <%= link_to 'Studio Invoice', invoice_studio_path(@studio, format: :pdf), class: "btn-pale-orange" %>
     <%= link_to 'Student Invoices', student_invoices_studio_path(@studio, format: :pdf), class: "btn-pale-orange" %>

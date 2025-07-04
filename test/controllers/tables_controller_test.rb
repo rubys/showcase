@@ -378,4 +378,74 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     # Should not raise any errors
     assert_equal 0, Table.count
   end
+
+  test "should show tables for a specific studio" do
+    # Create test data: assign people to tables
+    studio = Studio.joins(:people).where.not(people: { studio_id: 0 }).first
+    assert studio, "Should have a studio with people"
+    
+    # Assign some people from this studio to a table
+    people_from_studio = Person.where(studio: studio).limit(2)
+    if people_from_studio.any?
+      people_from_studio.update_all(table_id: @table.id)
+    end
+    
+    get studio_tables_url(studio)
+    
+    assert_response :success
+    assert_select "h1", text: "Tables for #{studio.name}"
+    
+    # Should show tables with people from this studio if any are assigned
+    if people_from_studio.any?
+      assert_select "div", text: "Table #{@table.number}"
+      # Should show the names of people from this studio
+      people_from_studio.each do |person|
+        assert_select "div", text: person.name
+      end
+      # Should show "People at table:" header
+      assert_select "div", text: "People at table:"
+    end
+  end
+
+  test "should show studio with no table assignments" do
+    # Create a studio with no people assigned to tables
+    studio = Studio.create!(name: "Test Studio")
+    
+    get studio_tables_url(studio)
+    
+    assert_response :success
+    assert_select "h1", text: "Tables for #{studio.name}"
+    assert_select "h2", text: "No Tables Found"
+    assert_select "p", text: /doesn't have anyone assigned to tables yet/
+  end
+
+  test "should show summary information for studio tables" do
+    # Create test data: assign people to tables
+    studio = Studio.joins(:people).where.not(people: { studio_id: 0 }).first
+    assert studio, "Should have a studio with people"
+    
+    # Assign some people from this studio to a table
+    people_from_studio = Person.where(studio: studio).limit(2)
+    people_from_studio.update_all(table_id: @table.id) if people_from_studio.any?
+    
+    get studio_tables_url(studio)
+    
+    assert_response :success
+    
+    if people_from_studio.any?
+      # Should show summary section
+      assert_select "h2", text: "Summary for #{studio.name}"
+      
+      # Should show table count
+      studio_table_count = Table.joins(people: :studio).where(studios: { id: studio.id }).distinct.count
+      assert_select "p", text: /has people seated at.*#{studio_table_count}.*table/
+      
+      # Should show people count
+      studio_people_count = Person.where(studio: studio).where.not(table_id: nil).count
+      assert_select "p", text: /Total people from this studio:.*#{studio_people_count}/
+    else
+      # Should show no tables message
+      assert_select "h2", text: "No Tables Found"
+    end
+  end
 end
