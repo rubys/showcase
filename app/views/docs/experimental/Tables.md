@@ -16,4 +16,6 @@ Once done, return to the Studios page to see table assignments. If a studio has 
 
 If you edit a person, you can see and change the table the person is seated at, or change it so that the person is not assigned to any table.
 
+On the publish page, you will see a button where you can get a list of table assignements that you can print.
+
 *This feature is experimental. Please report any issues or suggestions for improvement.*
