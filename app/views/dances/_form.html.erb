@@ -31,17 +31,21 @@ Changing the name here will change it everywhere.
     <%= form.text_field :name, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <% if @event.include_closed %>
   <div class="my-5">
     <%= form.label :closed_category_id %>
     <%= form.select :closed_category_id, @categories, {include_blank: true},
        class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+  <% end %>
 
+  <% if @event.include_open %>
   <div class="my-5">
     <%= form.label :open_category_id %>
     <%= form.select :open_category_id, @categories, {include_blank: true},
        class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+  <% end %>
 
   <div class="my-5">
   <%= form.label :solo_category_id %>
@@ -49,12 +53,14 @@ Changing the name here will change it everywhere.
      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <% if (@event.heat_cost || 0.0) > 0.0 %>
   <div class="my-5">
     <%= form.label :cost_override, 'Cost Override (if different)' %>
     <%= form.number_field :cost_override, step: :any,
       value: !form.object.cost_override ? '' : number_to_currency(form.object.cost_override.to_f, delimiter: '', unit: ''),
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+  <% end %>
 
   <% if @event.dance_limit != nil %>
   <div class="my-5">

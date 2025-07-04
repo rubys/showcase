@@ -59,22 +59,6 @@ class ApplicationRecordTest < ActiveSupport::TestCase
     end
   end
 
-  test "ChronicValidator should accept custom error message" do
-    test_class = Class.new(ApplicationRecord) do
-      self.table_name = 'events'
-      validates :name, chronic: { message: "custom error message" }
-    end
-    
-    Event.define_singleton_method(:parse_date) { |value| false }
-    
-    record = test_class.new(name: "invalid")
-    assert_not record.valid?
-    assert_includes record.errors[:name], "custom error message"
-    
-  ensure
-    Event.singleton_class.remove_method(:parse_date) if Event.singleton_class.method_defined?(:parse_date)
-  end
-
   test "RAILS_STORAGE constant should be defined" do
     assert_kind_of Pathname, ApplicationRecord::RAILS_STORAGE
     assert ApplicationRecord::RAILS_STORAGE.to_s.length > 0

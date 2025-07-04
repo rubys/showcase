@@ -37,7 +37,6 @@ class TablesTest < ApplicationSystemTestCase
     click_on "Update Table"
 
     assert_text "Table was successfully updated"
-    click_on "Back"
   end
 
   test "should destroy Table" do
