@@ -475,15 +475,12 @@ class HeatsController < ApplicationController
         dance_limit = Dance.find(@heat.dance_id)&.limit || dance_limit
 
         entry = @heat.entry
-        if entry.follow.type == 'Student'
-          entries = Entry.where(lead_id: entry.follow_id).or(Entry.where(follow_id: entry.follow_id)).pluck(:id)
-          count = Heat.where(entry_id: entries, dance_id: @heat.dance_id, category: @heat.category).count
-        end
+      
+        entries = Entry.where(lead_id: entry.follow_id).or(Entry.where(follow_id: entry.follow_id)).pluck(:id)
+        count = Heat.where(entry_id: entries, dance_id: @heat.dance_id, category: @heat.category).count
 
-        if entry.lead.type == 'Student'
-          entries = Entry.where(lead_id: entry.lead_id).or(Entry.where(follow_id: entry.lead_id)).pluck(:id)
-          count = [count, Heat.where(entry_id: entries, dance_id: @heat.dance_id, category: @heat.category).count].max
-        end
+        entries = Entry.where(lead_id: entry.lead_id).or(Entry.where(follow_id: entry.lead_id)).pluck(:id)
+        count = [count, Heat.where(entry_id: entries, dance_id: @heat.dance_id, category: @heat.category).count].max
 
         if count >= dance_limit
           @heat.errors.add(:dance_id, "limit of #{dance_limit} reached for this category.")
