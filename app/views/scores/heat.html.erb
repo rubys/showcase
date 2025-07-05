@@ -215,7 +215,7 @@ Swiping left and right on mobile devices and tablets also work.</li>
       </tr>
     </thead>
     <% lastcat = nil %>
-    <% lastassign = true %>
+    <% lastassign = nil %>
     <% @ballrooms.each do |ballroom, subjects| %>
       <% next if subjects.empty? %>
       <% dance = subjects.first.dance_id %> 
@@ -375,6 +375,15 @@ Swiping left and right on mobile devices and tablets also work.</li>
       <% end %>
 
     <% end %>
+    <% end %>
+    <% unless lastassign %>
+      <tr>
+        <% if @event.assign_judges > 0 %>
+        <td colspan="10"><p class="m-5">No couples assigned to this judge for this heat.</p></td>
+        <% else %>
+        <td colspan="5"><p class="m-5">No couples on the floor for this heat.</p></td>
+        <% end %>
+      </tr>
     <% end %>
     </table>
     </div>
