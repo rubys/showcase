@@ -30,8 +30,9 @@
     </div>
   <% end %>  
 
+  <% if @event.include_closed || @event.include_open %>
   <div class="my-5">
-  <%= form.label :open_scoring %>
+  <%= form.label @event.include_open ? :open_scoring : :closed_scoring %>
   <ul class="ml-6">
   <li class="my-2"><%= form.radio_button :open_scoring, '1' %> 1/2/3/F
   <li class="my-2"><%= form.radio_button :open_scoring, 'G' %> GH/G/S/B
@@ -42,6 +43,7 @@
   <li class="my-2"><%= form.radio_button :open_scoring, '0' %> None
   </ul>
   </div>
+  <% end %>
 
   <div class="my-5">
   <%= form.label :multi_scoring %>
@@ -52,6 +54,7 @@
   </ul>
   </div>
 
+  <% if @event.include_closed && @event.include_open %>
   <% if @combine_open_and_closed %>
   <% @event.closed_scoring = '=' %>
   <div class="my-5 bg-slate-300 opacity-50 cursor-not-allowed" title="open and closed are combined">
@@ -65,6 +68,7 @@
   <li class="my-2"><%= form.radio_button :closed_scoring, '=', disabled: @combine_open_and_closed  %> Same as Open
   </ul>
   </div>
+  <% end %>
 
   <div class="my-5">
   <%= form.label :solo_scoring %>

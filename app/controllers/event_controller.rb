@@ -201,6 +201,8 @@ class EventController < ApplicationController
 
     @event.dance_limit = nil if @event.dance_limit == 0
 
+    @event.closed_scoring = "=" if @event.include_closed && !@event.include_open && @event.closed_scoring != '='
+
     redo_schedule = @event.max_heat_size_changed? || @event.heat_range_level_changed? || @event.heat_range_age_changed? || @event.heat_range_cat_changed?
 
     ok = @event.save
