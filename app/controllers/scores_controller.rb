@@ -56,6 +56,8 @@ class ScoresController < ApplicationController
 
     @browser_warn = browser_warn
 
+    @unassigned = Event.current.assign_judges > 0 ? Heat.includes(:scores).where(scores: { id: nil }).distinct.pluck(:number) : []
+
     render :heatlist, status: (@browser_warn ? :upgrade_required : :ok)
   end
 
@@ -265,7 +267,7 @@ class ScoresController < ApplicationController
         score.comments = params[:comments]
       end
 
-      keep = score.good || score.bad || score.comments || score.value || Event.first.assign_judges > 0
+      keep = score.good || score.bad || (!score.comments.blank?) || score.value || Event.first.assign_judges > 0
       if keep ? score.save : score.delete
         render json: score.as_json
       else
@@ -337,7 +339,7 @@ class ScoresController < ApplicationController
         return
       end
 
-      keep = score.good || score.bad || score.comments || score.value || Event.first.assign_judges > 0
+      keep = score.good || score.bad || (!score.comments.blank?) || score.value || Event.first.assign_judges > 0
 
       if keep ? score.save : score.delete
         render json: score.as_json

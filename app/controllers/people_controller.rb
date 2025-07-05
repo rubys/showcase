@@ -796,6 +796,7 @@ class PeopleController < ApplicationController
 
   def reset_assignments
     Score.where(value: nil, comments: nil, good: nil, bad: nil).delete_all
+    Score.where(value: nil, good: nil, bad: nil).to_a.select {it.comments.blank?}.each(&:delete)
 
     redirect_to person_path(params[:id]), :notice => "Assignments cleared"
   end

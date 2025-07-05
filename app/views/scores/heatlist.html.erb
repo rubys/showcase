@@ -22,6 +22,9 @@
     or waiting 10 seconds will cause the data to be sent and the yellow background removed.
     <li>Even if you are planning on having judges enter scores in realtime during the application, it is best to print out paper copies in case of application or network failures.
 <% end %>
+ <% unless @unassigned.empty? %>
+    <li class="text-red-600">Heats with unassigned couples are shown in red. This may be because scores were entered before assigning heats to judges. If the event hasn't started yet, remove the scores, reset assignments, and reassign judges.
+  <% end %>
   </ul>
   </div>
 
@@ -67,16 +70,20 @@
   <% end %>
   </div>
 
+  <% unless @unassigned.empty? %>
+  <p class="mt-4 text-red-500">Unassigned couples in heats: <%= @unassigned.sort.map {it.to_i == it ? it.to_i : it}.join(', ') %></p>
+  <% end %>
+
   <table>
     <tbody>
       <% @heats.each do |heat| %>
         <% next if heat.number == 0 %>
         <% if @agenda[heat.number] %>
-        <tr class="text-<%= @scored.include?(heat.number) ? 'slate-400' : 'black' %>">
+        <tr class="text-<%= @unassigned.include?(heat.number.to_f) ? "red-500" : (@scored.include?(heat.number) ? 'slate-400' : 'black') %>">
           <td colspan="2" class="py-4 text-xl"><%= @agenda[heat.number] %></td>
         </tr>
         <% end %>
-        <tr id="<%= dom_id heat %>" class="text-<%= (@scored[heat.number] || !@missed.include?(heat.number)) ? 'slate-400' : 'black' %>">
+        <tr id="<%= dom_id heat %>" class="text-<%= @unassigned.include?(heat.number.to_f) ? "red-500" : ((@scored[heat.number] || !@missed.include?(heat.number)) ? 'slate-400' : 'black') %>">
         <% next if @show_solos == 'none'
            next if @show_solos == 'even' and heat.number.odd?
            next if @show_solos == 'odd' and heat.number.even? %>
