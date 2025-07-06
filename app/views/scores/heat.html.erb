@@ -215,7 +215,7 @@ Swiping left and right on mobile devices and tablets also work.</li>
       </tr>
     </thead>
     <% lastcat = nil %>
-    <% lastassign = nil %>
+    <% lastassign = false %>
     <% @ballrooms.each do |ballroom, subjects| %>
       <% next if subjects.empty? %>
       <% dance = subjects.first.dance_id %> 
@@ -223,7 +223,7 @@ Swiping left and right on mobile devices and tablets also work.</li>
         <tr><td colspan="10" class="bg-black"></td></tr>
       <% end %>
       <% subjects.each do |subject| %>
-      <% assign = @event.assign_judges > 0 && subject.scores.any? {|score| score.judge_id == @judge.id} %>
+      <% assign = @event.assign_judges > 0 ? subject.scores.any? {|score| score.judge_id == @judge.id} : true %>
       <% next if @show == 'only' and not assign %>
       <% if subject.dance_id != dance %>
       <tr><td colspan="10" class="bg-gray-400"></td></tr>
