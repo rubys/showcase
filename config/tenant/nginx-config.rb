@@ -44,7 +44,7 @@ index = OpenStruct.new(
 @regions = Set.new
 showcases.each do |year, list|
   list.each do |token, info|
-    @regions << info[:region]
+    @regions << info[:region] if info[:region]
 
     if info[:events]
       info[:events].each do |subtoken, subinfo|
