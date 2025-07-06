@@ -478,6 +478,7 @@ class EventController < ApplicationController
     @showcases.each do |year, list|
       list.each  do |city, defn|
         region = defn[:region]
+        next unless region  # Skip entries with nil regions
         regions[region] ||= []
         regions[region] << defn[:name]
       end
@@ -667,6 +668,7 @@ class EventController < ApplicationController
       list.each  do |city, defn|
         @cities[defn[:name]] = city
         region = defn[:region]
+        next unless region  # Skip entries with nil regions
         @regions[region] ||= []
         @regions[region] << defn[:name]
       end
