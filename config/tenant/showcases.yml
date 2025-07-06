@@ -376,6 +376,9 @@
         :name: Team Match
       shimmer-shine:
         :name: Shimmer & Shine
+  reno:
+    :name: Reno
+    :region:
   richmond:
     :name: Richmond
     :region: atl

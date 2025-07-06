@@ -378,6 +378,9 @@ studios:
     map: us
     x: 747.7831716008914
     y: 281.2636146992004
+  reno:
+    lat: null
+    lon: null
   richmond:
     lat: 37.541
     lon: -77.434
