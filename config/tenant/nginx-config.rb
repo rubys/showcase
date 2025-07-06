@@ -445,7 +445,7 @@ server {
     passenger_base_uri /;
 <% else -%>
     passenger_env_var RAILS_APP_SCOPE <%= tenant.scope %>;
-    passenger_env_var SHOWCASE_LOGO <%= tenant.logo.blank? ? "arthur-murray-logo.gif" : tenant.logo %>;
+    passenger_env_var SHOWCASE_LOGO <%= (tenant.logo || "") == "" ? "arthur-murray-logo.gif" : tenant.logo %>;
     passenger_env_var RAILS_LOCALE <%= (tenant.locale.nil? || tenant.locale == "") ? "en_US" : tenant.locale %>;
 <% end -%>
     passenger_env_var PIDFILE <%= @git_path %>/tmp/pids/<%= tenant.label %>.pid;
