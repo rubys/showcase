@@ -23,8 +23,8 @@ task :prerender => "prerender:env" do
   showcases = YAML.load_file(File.join(Rails.application.root, 'config/tenant/showcases.yml'))
   showcases.each do |year, cities|
     cities.each do |city, data|
-      regions << data[:region]
-      studios[city] = data[:region]
+      regions << data[:region] if data[:region]
+      studios[city] = data[:region] if data[:region]
     end
   end
 
