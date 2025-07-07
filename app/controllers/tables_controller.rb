@@ -220,6 +220,13 @@ class TablesController < ApplicationController
       redirect_to tables_url, notice: "Table positions reset."
     else
       Table.transaction do
+        # First, collect all table IDs that are being updated
+        table_ids = params[:table].keys
+        
+        # Clear positions for all tables being updated to avoid constraint violations
+        Table.where(id: table_ids).update_all(row: nil, col: nil)
+        
+        # Now apply the new positions
         params[:table].each do |id, position|
           table = Table.find(id)
           table.row = position['row'].to_i
