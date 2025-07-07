@@ -1,7 +1,12 @@
 <div class="mx-auto md:w-2/3 w-full">
 <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
 
-  <h1 class="font-bold text-4xl">Tables for <%= @studio.name %></h1>
+  <h1 class="font-bold text-4xl">
+    Tables for <%= @studio.name %>
+    <% if @option %>
+      <span class="text-2xl text-gray-600">at <%= @option.name %></span>
+    <% end %>
+  </h1>
 
 <div data-controller="info-box">
 <div class="info-button">&#x24D8;</div>
@@ -22,7 +27,11 @@
         <strong><%= @studio.name %></strong> has people seated at 
         <strong><%= pluralize(@tables.count, 'table') %></strong>
       </p>
-      <% studio_people_count = @tables.sum { |table| table.people.where(studio: @studio).count } %>
+      <% if @option %>
+        <% studio_people_count = @tables.sum { |table| table.person_options.joins(:person).where(people: { studio_id: @studio.id }).count } %>
+      <% else %>
+        <% studio_people_count = @tables.sum { |table| table.people.where(studio: @studio).count } %>
+      <% end %>
       <p class="text-sm text-gray-600">
         Total people from this studio: <strong><%= studio_people_count %></strong>
       </p>
@@ -37,7 +46,7 @@
   <% end %>
 
   <div class="flex gap-3 justify-center mt-6">
-    <%= link_to 'All Tables', tables_path, class: "btn-blue" %>
+    <%= link_to 'All Tables', tables_path(option_id: @option&.id), class: "btn-blue" %>
     <%= link_to 'Back to Studio', studio_path(@studio), class: "btn-green" %>
   </div>
 </div>

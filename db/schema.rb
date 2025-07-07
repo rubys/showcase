@@ -435,7 +435,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_07_210441) do
     t.datetime "updated_at", null: false
     t.integer "option_id"
     t.index ["option_id"], name: "index_tables_on_option_id"
-    t.index ["row", "col"], name: "index_tables_on_row_and_col", unique: true
+    t.index ["row", "col", "option_id"], name: "index_tables_on_row_and_col_and_option_id", unique: true
   end
 
   create_table "users", force: :cascade do |t|

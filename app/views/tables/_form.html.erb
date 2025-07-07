@@ -10,6 +10,10 @@
       </ul>
     </div>
   <% end %>
+  
+  <% if table.option_id %>
+    <%= form.hidden_field :option_id %>
+  <% end %>
 
   <div class="my-5">
     <%= form.label :number %>

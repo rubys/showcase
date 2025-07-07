@@ -1,4 +1,4 @@
-<div id="studio-tables" class="my-5 flex flex-wrap gap-4" data-controller="drop" data-drop-action="<%= move_person_tables_path %>">
+<div id="studio-tables" class="my-5 flex flex-wrap gap-4" data-controller="drop" data-drop-action="<%= move_person_tables_path(option_id: @option&.id) %>">
   <% @tables.each do |table| %>
     <% 
       capacity_class = case table.capacity_status
@@ -14,17 +14,35 @@
       <div class="font-bold text-gray-900">Table <%= table.number %></div>
       <div class="text-sm text-gray-600"><%= table.name %></div>
       <div class="text-base mt-1">
-        <% all_people = table.people.includes(:studio).order(:name) %>
-        <% if all_people.any? %>
-          <% all_people.each do |person| %>
-            <% if person.studio == @studio %>
-              <div class="text-blue-600 font-medium cursor-grab" draggable="true" data-drag-id="person-<%= person.id %>"><%= person.name %></div>
-            <% else %>
-              <div class="text-gray-500" title="<%= person.studio.name %>" data-drag-id="person-<%= person.id %>" data-droppable="true"><%= person.name %></div>
+        <% if @option %>
+          <% # For option tables, get people through person_options %>
+          <% person_options = table.person_options.includes(:person => :studio).order('people.name') %>
+          <% if person_options.any? %>
+            <% person_options.each do |person_option| %>
+              <% person = person_option.person %>
+              <% if person.studio == @studio %>
+                <div class="text-blue-600 font-medium cursor-grab" draggable="true" data-drag-id="person-<%= person.id %>"><%= person.name %></div>
+              <% else %>
+                <div class="text-gray-500" title="<%= person.studio.name %>" data-drag-id="person-<%= person.id %>" data-droppable="true"><%= person.name %></div>
+              <% end %>
             <% end %>
+          <% else %>
+            <div class="text-gray-400 text-sm">Drop people here</div>
           <% end %>
         <% else %>
-          <div class="text-gray-400 text-sm">Drop people here</div>
+          <% # For main event tables, use direct people association %>
+          <% all_people = table.people.includes(:studio).order(:name) %>
+          <% if all_people.any? %>
+            <% all_people.each do |person| %>
+              <% if person.studio == @studio %>
+                <div class="text-blue-600 font-medium cursor-grab" draggable="true" data-drag-id="person-<%= person.id %>"><%= person.name %></div>
+              <% else %>
+                <div class="text-gray-500" title="<%= person.studio.name %>" data-drag-id="person-<%= person.id %>" data-droppable="true"><%= person.name %></div>
+              <% end %>
+            <% end %>
+          <% else %>
+            <div class="text-gray-400 text-sm">Drop people here</div>
+          <% end %>
         <% end %>
       </div>
     </div>

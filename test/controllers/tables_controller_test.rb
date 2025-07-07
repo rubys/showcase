@@ -788,4 +788,122 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     assert_equal max_number + 1, table1.number
     assert_equal max_number + 2, table2.number
   end
+  
+  # Option-scoped table tests
+  test "should filter tables by option_id in index" do
+    option = billables(:two)  # This is an Option type
+    table1 = tables(:one)
+    table2 = tables(:two)
+    
+    # Assign table1 to option
+    table1.update!(option: option)
+    
+    # Request tables for this option
+    get tables_url(option_id: option.id)
+    assert_response :success
+    
+    # Should only show table1
+    assert_select "div.font-bold", text: "Table #{table1.number}"
+    assert_select "div.font-bold", text: "Table #{table2.number}", count: 0
+  end
+  
+  test "should show only main event tables when no option_id" do
+    option = billables(:two)  # This is an Option type
+    table1 = tables(:one)
+    table2 = tables(:two)
+    
+    # Assign table1 to option
+    table1.update!(option: option)
+    
+    # Request tables without option_id
+    get tables_url
+    assert_response :success
+    
+    # Should only show table2 (main event table)
+    assert_select "div.font-bold", text: "Table #{table2.number}"
+    assert_select "div.font-bold", text: "Table #{table1.number}", count: 0
+  end
+  
+  test "should create table with option_id" do
+    option = billables(:two)  # This is an Option type
+    
+    assert_difference("Table.count") do
+      post tables_url(option_id: option.id), params: { table: { number: 99, size: 10 } }
+    end
+    
+    table = Table.last
+    assert_equal option, table.option
+    assert_redirected_to tables_url(option_id: option.id)
+  end
+  
+  test "should show unassigned people for option in index" do
+    option = billables(:two)  # This is an Option type
+    person = people(:Arthur)
+    
+    # Create person_option without table assignment
+    PersonOption.create!(person: person, option: option)
+    
+    get tables_url(option_id: option.id)
+    assert_response :success
+    
+    # Should show the person as unassigned
+    assert_select "div.bg-yellow-50"
+    assert_select "li", text: /#{person.name}/
+  end
+  
+  test "should assign people to option tables" do
+    option = billables(:two)  # This is an Option type
+    person1 = people(:Arthur)
+    person2 = people(:Kathryn)
+    
+    # Create person_options without table assignments
+    PersonOption.create!(person: person1, option: option)
+    PersonOption.create!(person: person2, option: option)
+    
+    # Run assign for option tables
+    post assign_tables_url(option_id: option.id)
+    assert_redirected_to tables_url(option_id: option.id)
+    
+    # Verify tables were created for the option
+    option_tables = Table.where(option_id: option.id)
+    assert_not_empty option_tables
+    
+    # Verify person_options were assigned to tables
+    person1_option = PersonOption.find_by(person: person1, option: option)
+    person2_option = PersonOption.find_by(person: person2, option: option)
+    
+    assert_not_nil person1_option.table_id
+    assert_not_nil person2_option.table_id
+  end
+  
+  test "should reset only option tables" do
+    option = billables(:two)  # This is an Option type
+    table1 = tables(:one)
+    table2 = tables(:two)
+    
+    # Assign table1 to option
+    table1.update!(option: option)
+    
+    # Reset option tables
+    delete reset_tables_url(option_id: option.id)
+    assert_redirected_to tables_url(option_id: option.id)
+    
+    # table1 should be deleted, table2 should remain
+    assert_not Table.exists?(table1.id)
+    assert Table.exists?(table2.id)
+  end
+  
+  test "should validate option exists when option_id provided" do
+    assert_raises(ActiveRecord::RecordNotFound) do
+      get tables_url(option_id: 999999)
+    end
+  end
+  
+  test "should validate option is actually an option not a package" do
+    package = billables(:one)  # This is a Student package type
+    
+    assert_raises(ActiveRecord::RecordNotFound) do
+      get tables_url(option_id: package.id)
+    end
+  end
 end

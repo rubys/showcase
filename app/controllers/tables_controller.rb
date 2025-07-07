@@ -2,10 +2,11 @@ class TablesController < ApplicationController
   include Printable
   
   before_action :set_table, only: %i[ show edit update destroy ]
+  before_action :set_option, only: %i[ index new create arrange assign studio list move_person reset update_positions renumber ]
 
   # GET /tables or /tables.json
   def index
-    @tables = Table.includes(people: :studio).all
+    @tables = Table.includes(people: :studio).where(option_id: @option&.id)
     @columns = Table.maximum(:col) || 8
     
     # Add capacity status for each table
@@ -28,11 +29,22 @@ class TablesController < ApplicationController
     end
     
     # Get unassigned people (students, professionals, guests)
-    @unassigned_people = Person.includes(:studio)
-                               .where(table_id: nil)
-                               .where(type: ['Student', 'Professional', 'Guest'])
-                               .where.not(studio_id: 0)  # Exclude Event Staff
-                               .order('studios.name, people.name')
+    if @option
+      # For option tables, get people who have this option but no table assignment
+      @unassigned_people = Person.includes(:studio)
+                                 .joins(:options)
+                                 .where(person_options: { option_id: @option.id, table_id: nil })
+                                 .where(type: ['Student', 'Professional', 'Guest'])
+                                 .where.not(studio_id: 0)  # Exclude Event Staff
+                                 .order('studios.name, people.name')
+    else
+      # For main event tables, get people without any table assignment
+      @unassigned_people = Person.includes(:studio)
+                                 .where(table_id: nil)
+                                 .where(type: ['Student', 'Professional', 'Guest'])
+                                 .where.not(studio_id: 0)  # Exclude Event Staff
+                                 .order('studios.name, people.name')
+    end
     
     # If more than 10, group by studio for summary
     if @unassigned_people.count > 10
@@ -52,8 +64,26 @@ class TablesController < ApplicationController
 
   def studio
     @studio = Studio.find(params[:id])
-    @tables = Table.joins(people: :studio).where(studios: { id: @studio.id }).distinct.includes(people: :studio).order(:number)
-    @columns = Table.maximum(:col) || 8
+    
+    if @option
+      # For option tables, find tables where people from this studio have this option
+      @tables = Table.joins(:person_options => :person)
+                     .where(person_options: { option_id: @option.id })
+                     .where(people: { studio_id: @studio.id })
+                     .distinct
+                     .includes(:person_options => {:person => :studio})
+                     .order(:number)
+    else
+      # For main event tables
+      @tables = Table.joins(people: :studio)
+                     .where(studios: { id: @studio.id })
+                     .where(option_id: nil)
+                     .distinct
+                     .includes(people: :studio)
+                     .order(:number)
+    end
+    
+    @columns = Table.where(option_id: @option&.id).maximum(:col) || 8
     
     # Add capacity status for each table
     @tables.each do |table|
@@ -81,16 +111,28 @@ class TablesController < ApplicationController
 
   # GET /tables/new
   def new
-    @table = Table.new
-    @table.number = (Table.maximum(:number) || 0) + 1
+    @table = Table.new(option_id: @option&.id)
+    @table.number = (Table.where(option_id: @option&.id).maximum(:number) || 0) + 1
     
     # Get studios that have unassigned people
-    @studios_with_unassigned = Studio.joins(:people)
-                                     .where(people: { table_id: nil, type: ['Student', 'Professional', 'Guest'] })
-                                     .where.not(id: 0)  # Exclude Event Staff
-                                     .distinct
-                                     .order(:name)
-                                     .pluck(:id, :name)
+    if @option
+      # For option tables, get studios with people who have this option but no table
+      @studios_with_unassigned = Studio.joins(:people => :options)
+                                       .where(person_options: { option_id: @option.id, table_id: nil })
+                                       .where(people: { type: ['Student', 'Professional', 'Guest'] })
+                                       .where.not(id: 0)  # Exclude Event Staff
+                                       .distinct
+                                       .order(:name)
+                                       .pluck(:id, :name)
+    else
+      # For main event tables, get studios with unassigned people
+      @studios_with_unassigned = Studio.joins(:people)
+                                       .where(people: { table_id: nil, type: ['Student', 'Professional', 'Guest'] })
+                                       .where.not(id: 0)  # Exclude Event Staff
+                                       .distinct
+                                       .order(:name)
+                                       .pluck(:id, :name)
+    end
   end
 
   # GET /tables/1/edit
@@ -115,6 +157,7 @@ class TablesController < ApplicationController
   # POST /tables or /tables.json
   def create
     @table = Table.new(table_params.except(:studio_id))
+    @table.option_id = @option&.id
 
     respond_to do |format|
       if @table.save
@@ -124,7 +167,7 @@ class TablesController < ApplicationController
           fill_table_with_studio_people(@table, studio_id)
         end
         
-        format.html { redirect_to tables_path, notice: "Table was successfully created." }
+        format.html { redirect_to tables_path(option_id: @option&.id), notice: "Table was successfully created." }
         format.json { render :show, status: :created, location: @table }
       else
         # Reload studio data for the form in case of errors
@@ -166,7 +209,7 @@ class TablesController < ApplicationController
               fill_table_with_studio_people(@table, studio_id)
             end
             
-            format.html { redirect_to tables_path, notice: "Table was successfully updated. Swapped numbers with Table #{old_number}." }
+            format.html { redirect_to tables_path(option_id: @table.option_id), notice: "Table was successfully updated. Swapped numbers with Table #{old_number}." }
             format.json { render :show, status: :ok, location: @table }
           else
             format.html { render :edit, status: :unprocessable_entity }
@@ -180,7 +223,7 @@ class TablesController < ApplicationController
           fill_table_with_studio_people(@table, studio_id)
         end
         
-        format.html { redirect_to tables_path, notice: "Table was successfully updated." }
+        format.html { redirect_to tables_path(option_id: @table.option_id), notice: "Table was successfully updated." }
         format.json { render :show, status: :ok, location: @table }
       else
         # Reload studio data for the form in case of errors
@@ -209,22 +252,22 @@ class TablesController < ApplicationController
     @table.destroy!
 
     respond_to do |format|
-      format.html { redirect_to tables_path, status: :see_other, notice: "Table was successfully destroyed." }
+      format.html { redirect_to tables_path(option_id: @table.option_id), status: :see_other, notice: "Table was successfully destroyed." }
       format.json { head :no_content }
     end
   end
 
   def update_positions
     if params[:commit] == 'Reset'
-      Table.update_all(row: nil, col: nil)
-      redirect_to tables_url, notice: "Table positions reset."
+      Table.where(option_id: @option&.id).update_all(row: nil, col: nil)
+      redirect_to tables_url(option_id: @option&.id), notice: "Table positions reset."
     else
       Table.transaction do
         # First, collect all table IDs that are being updated
         table_ids = params[:table].keys
         
         # Clear positions for all tables being updated to avoid constraint violations
-        Table.where(id: table_ids).update_all(row: nil, col: nil)
+        Table.where(id: table_ids, option_id: @option&.id).update_all(row: nil, col: nil)
         
         # Now apply the new positions
         params[:table].each do |id, position|
@@ -241,15 +284,31 @@ class TablesController < ApplicationController
 
   def assign
     Table.transaction do
-      # Remove all existing tables (dependent: :nullify will clear people's table_id)
-      Table.destroy_all
+      # Remove all existing tables for this option context
+      if @option
+        # For option tables, also clear table_id from person_options
+        PersonOption.where(option_id: @option.id).update_all(table_id: nil)
+        Table.where(option_id: @option.id).destroy_all
+      else
+        # For main event, clear people's table_id (dependent: :nullify will handle this)
+        Table.where(option_id: nil).destroy_all
+      end
       
       # Get table size from event, defaulting to 10
       event = Event.first
       table_size = (event.table_size.nil? || event.table_size == 0) ? 10 : event.table_size
       
-      # Get all people excluding Event Staff (studio_id 0)
-      people = Person.joins(:studio).where.not(studios: { id: 0 }).order('studios.name, people.name')
+      # Get people based on context
+      if @option
+        # For option tables, get people who have registered for this option
+        people = Person.joins(:studio, :options)
+                       .where(person_options: { option_id: @option.id })
+                       .where.not(studios: { id: 0 })
+                       .order('studios.name, people.name')
+      else
+        # For main event tables, get all people
+        people = Person.joins(:studio).where.not(studios: { id: 0 }).order('studios.name, people.name')
+      end
       
       # Group people by studio
       studio_groups = people.group_by(&:studio_id).map do |studio_id, studio_people|
@@ -633,14 +692,14 @@ class TablesController < ApplicationController
       renumber_tables_by_position
     end
     
-    redirect_to tables_path, notice: "Tables have been assigned successfully."
+    redirect_to tables_path(option_id: @option&.id), notice: "Tables have been assigned successfully."
   end
 
   def renumber
     Table.transaction do
       # Get all tables ordered by their position (row first, then column)
       # Tables without positions will be at the end
-      tables_by_position = Table.order(Arel.sql('row IS NULL, row, col IS NULL, col'))
+      tables_by_position = Table.where(option_id: @option&.id).order(Arel.sql('row IS NULL, row, col IS NULL, col'))
       
       # First, temporarily set all numbers to negative values to avoid conflicts
       tables_by_position.each_with_index do |table, index|
@@ -653,11 +712,11 @@ class TablesController < ApplicationController
       end
     end
     
-    redirect_to arrange_tables_path, notice: "Tables have been renumbered successfully."
+    redirect_to arrange_tables_path(option_id: @option&.id), notice: "Tables have been renumbered successfully."
   end
 
   def list
-    @tables = Table.includes(people: :studio).order(:number)
+    @tables = Table.includes(people: :studio).where(option_id: @option&.id).order(:number)
     @event = Event.current
     
     respond_to do |format|
@@ -669,8 +728,14 @@ class TablesController < ApplicationController
   end
 
   def reset
-    Table.destroy_all
-    redirect_to tables_path, notice: "All tables have been deleted."
+    if @option
+      # For option tables, also clear table assignments in person_options
+      PersonOption.where(option_id: @option.id).update_all(table_id: nil)
+      Table.where(option_id: @option.id).destroy_all
+    else
+      Table.where(option_id: nil).destroy_all
+    end
+    redirect_to tables_path(option_id: @option&.id), notice: "All tables have been deleted."
   end
 
   def move_person
@@ -688,17 +753,44 @@ class TablesController < ApplicationController
       # Dropped on another person - move to that person's table
       target_person_id = params[:target].gsub('person-', '').to_i
       target_person = Person.find(target_person_id)
-      table = target_person.table
+      
+      if @option
+        # For option tables, find the table through person_options
+        person_option = PersonOption.find_by(person_id: target_person_id, option_id: @option.id)
+        table = person_option&.table
+      else
+        table = target_person.table
+      end
     end
     
     person = Person.find(person_id)
     
     # Update the person's table assignment
-    person.update!(table_id: table.id)
+    if @option
+      # For option tables, update the person_options record
+      PersonOption.where(person_id: person.id, option_id: @option.id).update_all(table_id: table&.id)
+    else
+      # For main event tables, update the person's table_id
+      person.update!(table_id: table&.id)
+    end
     
     # Refresh the data for the studio view
     @studio = person.studio
-    @tables = Table.joins(people: :studio).where(studios: { id: @studio.id }).distinct.includes(people: :studio).order(:number)
+    if @option
+      @tables = Table.joins(:person_options => :person)
+                     .where(person_options: { option_id: @option.id })
+                     .where(people: { studio_id: @studio.id })
+                     .distinct
+                     .includes(:person_options => {:person => :studio})
+                     .order(:number)
+    else
+      @tables = Table.joins(people: :studio)
+                     .where(studios: { id: @studio.id })
+                     .where(option_id: nil)
+                     .distinct
+                     .includes(people: :studio)
+                     .order(:number)
+    end
     
     # Add capacity status for each table (same as studio action)
     @tables.each do |table|
@@ -741,26 +833,54 @@ class TablesController < ApplicationController
     table_size = 10 if table_size.nil? || table_size.zero?
     
     # Calculate available seats
-    current_people_count = table.people.count
+    if table.option_id
+      # For option tables, count people assigned via person_options
+      current_people_count = PersonOption.where(table_id: table.id).count
+    else
+      # For main event tables, count people assigned directly
+      current_people_count = table.people.count
+    end
     available_seats = table_size - current_people_count
     
     # Don't add anyone if table is at or over capacity
     return if available_seats <= 0
     
-    # Get unassigned people from the studio, limited to available seats
-    unassigned_people = Person.where(studio_id: studio_id, table_id: nil, type: ['Student', 'Professional', 'Guest'])
-                              .order(:name)
-                              .limit(available_seats)
-    
-    # Assign them to the table
-    unassigned_people.each do |person|
-      person.update!(table_id: table.id)
+    if table.option_id
+      # Get unassigned people from the studio who have this option
+      unassigned_people = Person.joins(:options)
+                                .where(studio_id: studio_id, type: ['Student', 'Professional', 'Guest'])
+                                .where(person_options: { option_id: table.option_id, table_id: nil })
+                                .order(:name)
+                                .limit(available_seats)
+      
+      # Assign them to the table via person_options
+      unassigned_people.each do |person|
+        PersonOption.where(person_id: person.id, option_id: table.option_id).update_all(table_id: table.id)
+      end
+    else
+      # Get unassigned people from the studio for main event
+      unassigned_people = Person.where(studio_id: studio_id, table_id: nil, type: ['Student', 'Professional', 'Guest'])
+                                .order(:name)
+                                .limit(available_seats)
+      
+      # Assign them to the table
+      unassigned_people.each do |person|
+        person.update!(table_id: table.id)
+      end
     end
   end
 
   def create_and_assign_table(number, people)
-    table = Table.create!(number: number)
-    people.each { |person| person.update!(table_id: table.id) }
+    table = Table.create!(number: number, option_id: @option&.id)
+    if @option
+      # For option tables, update the person_options record
+      people.each do |person|
+        PersonOption.where(person_id: person.id, option_id: @option.id).update_all(table_id: table.id)
+      end
+    else
+      # For main event tables, update the person's table_id
+      people.each { |person| person.update!(table_id: table.id) }
+    end
     table
   end
 
@@ -1007,7 +1127,7 @@ class TablesController < ApplicationController
   
   def renumber_tables_by_position
     # Get all tables ordered by their position (row first, then column)
-    tables_by_position = Table.order(:row, :col)
+    tables_by_position = Table.where(option_id: @option&.id).order(:row, :col)
     
     # First, temporarily set all numbers to negative values to avoid conflicts
     tables_by_position.each_with_index do |table, index|
@@ -1090,9 +1210,17 @@ class TablesController < ApplicationController
     def set_table
       @table = Table.find(params.expect(:id))
     end
+    
+    def set_option
+      if params[:option_id].present?
+        @option = Billable.find(params[:option_id])
+        # Ensure it's actually an option, not a package
+        raise ActiveRecord::RecordNotFound unless @option.type == 'Option'
+      end
+    end
 
     # Only allow a list of trusted parameters through.
     def table_params
-      params.expect(table: [ :number, :row, :col, :size, :studio_id ])
+      params.expect(table: [ :number, :row, :col, :size, :studio_id, :option_id ])
     end
 end

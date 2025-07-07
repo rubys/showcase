@@ -64,4 +64,81 @@ class TableTest < ActiveSupport::TestCase
     table = Table.new(number: 99, row: 3, col: 3, size: 8)
     assert table.valid?
   end
+  
+  test "should belong to option" do
+    table = tables(:one)
+    option = billables(:two)  # This is an Option type
+    table.update!(option: option)
+    
+    assert_equal option, table.option
+  end
+  
+  test "should have many person_options" do
+    table = tables(:one)
+    option = billables(:two)  # This is an Option type
+    table.update!(option: option)
+    
+    person_option = person_options(:one)
+    person_option.update!(table: table)
+    
+    assert_includes table.person_options, person_option
+  end
+  
+  test "should enforce unique number within option scope" do
+    option = billables(:two)  # This is an Option type
+    table1 = tables(:one)
+    table1.update!(option: option)
+    
+    # Should be able to create table with same number for different option
+    # Create another option for testing (e.g., dinner tables vs. main event tables)
+    dinner_option = Billable.create!(type: 'Option', name: 'Dinner', price: 25.0)
+    table2 = Table.new(number: table1.number, row: 2, col: 2, option: dinner_option)
+    assert table2.valid?
+    
+    # Should not be able to create table with same number for same option
+    table3 = Table.new(number: table1.number, row: 3, col: 3, option: option)
+    assert_not table3.valid?
+    assert_includes table3.errors[:number], "has already been taken"
+  end
+  
+  test "should enforce unique row and col within option scope" do
+    option = billables(:two)  # This is an Option type
+    table1 = tables(:one)
+    table1.update!(option: option)
+    
+    # Should be able to create table with same position for different option
+    # Create another option for testing (e.g., dinner tables vs. main event tables)
+    dinner_option = Billable.create!(type: 'Option', name: 'Dinner', price: 25.0)
+    table2 = Table.new(number: 99, row: table1.row, col: table1.col, option: dinner_option)
+    assert table2.valid?
+    
+    # Should not be able to create table with same position for same option
+    table3 = Table.new(number: 100, row: table1.row, col: table1.col, option: option)
+    assert_not table3.valid?
+    assert_includes table3.errors[:row], "and column combination already taken"
+  end
+  
+  test "name should show studios from person_options for option tables" do
+    table = tables(:one)
+    option = billables(:two)  # This is an Option type
+    table.update!(option: option)
+    
+    # Create person_options for this table
+    person1 = people(:Arthur)
+    person2 = people(:instructor1)
+    
+    PersonOption.create!(person: person1, option: option, table: table)
+    PersonOption.create!(person: person2, option: option, table: table)
+    
+    # Both people are from studio "one" based on fixtures
+    assert_equal "One", table.name
+  end
+  
+  test "name should return empty for option table with no person_options" do
+    table = tables(:one)
+    option = billables(:two)  # This is an Option type
+    table.update!(option: option)
+    
+    assert_equal "Empty", table.name
+  end
 end
