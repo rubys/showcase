@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_03_114033) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_07_210441) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -321,8 +321,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_03_114033) do
     t.integer "option_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "table_id"
     t.index ["option_id"], name: "index_person_options_on_option_id"
     t.index ["person_id"], name: "index_person_options_on_person_id"
+    t.index ["table_id"], name: "index_person_options_on_table_id"
   end
 
   create_table "recordings", force: :cascade do |t|
@@ -431,6 +433,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_03_114033) do
     t.integer "size"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "option_id"
+    t.index ["option_id"], name: "index_tables_on_option_id"
     t.index ["row", "col"], name: "index_tables_on_row_and_col", unique: true
   end
 
@@ -484,6 +488,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_03_114033) do
   add_foreign_key "people", "tables"
   add_foreign_key "person_options", "billables", column: "option_id"
   add_foreign_key "person_options", "people"
+  add_foreign_key "person_options", "tables"
   add_foreign_key "recordings", "heats"
   add_foreign_key "recordings", "judges"
   add_foreign_key "scores", "heats"
@@ -498,4 +503,5 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_03_114033) do
   add_foreign_key "studios", "billables", column: "default_guest_package_id"
   add_foreign_key "studios", "billables", column: "default_professional_package_id"
   add_foreign_key "studios", "billables", column: "default_student_package_id"
+  add_foreign_key "tables", "billables", column: "option_id"
 end
