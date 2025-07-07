@@ -180,8 +180,8 @@ class PeopleController < ApplicationController
     @multis = {}
 
     counts =
-      Heat.joins(:entry).group(:category, 'entries.follow_id').count.to_a +
-      Heat.joins(:entry).group(:category, 'entries.lead_id').count.to_a +
+      Heat.joins(:entry).where(number: 0..).group(:category, 'entries.follow_id').count.to_a +
+      Heat.joins(:entry).where(number: 0..).group(:category, 'entries.lead_id').count.to_a +
       Formation.pluck(:person_id).map {|id| [['Solo', id], 1]}
 
     counts.each do |(category, id), count|
@@ -190,7 +190,7 @@ class PeopleController < ApplicationController
       list = case category
         when "Solo"
           @solos
-        when "Mutli"
+        when "Multi"
           @multis
         else
           @heats

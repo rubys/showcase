@@ -71,7 +71,8 @@ class Person < ApplicationRecord
   def self.active
     (Entry.distinct(:lead_id).pluck(:lead_id) +
       Entry.distinct(:follow_id).pluck(:follow_id) +
-      Entry.distinct(:follow_id).pluck(:follow_id)).uniq
+      Entry.distinct(:follow_id).pluck(:follow_id) +
+      Formation.pluck(:person_id)).uniq
   end
 
   def default_package
@@ -98,6 +99,7 @@ class Person < ApplicationRecord
     when 'Guest'
       package_id != nil or not Billable.where(type: 'Guest').exists?
     when 'Student', 'Professional'
+      return true if Formation.where(person_id: id).exists?
       if role == 'Leader'
         not lead_entries.empty? or not follow_entries.empty?
       else

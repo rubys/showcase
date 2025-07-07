@@ -49,7 +49,7 @@
   <tbody>
   <% @people.each do |person| %>
     <% strike = @strike && @strike.include?(person) %>
-    <% if not person.active? %>
+    <% if !person.active? || (@heats[person.id].blank? && @solos[person.id].blank? && @multis[person.id].blank?) %>
     <tr class="bg-slate-200" title="no entries defined">
     <% elsif strike %>
     <tr class="group" title="already included in package">
