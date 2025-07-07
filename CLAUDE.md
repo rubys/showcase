@@ -111,12 +111,15 @@ bin/rails assets:clobber
    - Manual drag-and-drop ordering for solos
 
 3. **Table Assignment Algorithm** (app/controllers/tables_controller.rb)
-   - Optimal bin packing for space efficiency (94.5% utilization)
-   - Studio proximity optimization with Manhattan distance calculations
-   - Studio pair placement (e.g., Raleigh ↔ Raleigh-DT) for related studios
-   - Mixed table positioning balancing multiple studio interests
+   - Multi-pass optimization for studio relationships and space efficiency
+   - **Studio Pair Handling**: Prioritizes placing paired studios together when possible
+   - **Remainder Optimization**: Combines remainder groups from large studios with their paired studios
+   - **Smart Consolidation**: Automatically combines tables under 75% capacity to maximize space utilization
+   - **Studio Proximity**: Manhattan distance calculations for optimal positioning
+   - **Mixed Table Placement**: Balances multiple studio interests, especially for remainder groups
    - Sequential numbering following physical grid layout (row-major order)
    - Drag-and-drop grid interface for manual table arrangement
+   - Handles studio pairs defined in `StudioPair` model (e.g., Raleigh ↔ Raleigh-DT)
 
 4. **Real-time Updates**
    - Action Cable channels for live score updates

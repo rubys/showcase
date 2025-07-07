@@ -250,49 +250,377 @@ class TablesController < ApplicationController
           studio_id: studio_id,
           people: studio_people,
           size: studio_people.size,
-          studio_name: studio_people.first.studio.name
+          studio_name: studio_people.first.studio.name,
+          studio: studio_people.first.studio
         }
       end
       
-      # Sort all studios by size (largest first) for optimal packing
-      studio_groups.sort_by! { |g| -g[:size] }
+      # Get all studio pairs
+      studio_pairs = StudioPair.includes(:studio1, :studio2).map do |pair|
+        [pair.studio1.id, pair.studio2.id]
+      end
       
-      # Use a hybrid approach: keep studios together when possible, but optimize packing
+      # Create a hash for quick pair lookup
+      pair_lookup = {}
+      studio_pairs.each do |id1, id2|
+        pair_lookup[id1] = id2
+        pair_lookup[id2] = id1
+      end
+      
+      # Track which studios have been assigned
+      assigned_studios = Set.new
+      
       table_number = 1
       tables = []
-      remaining_people = []
       
-      # First pass: handle studios that fit exactly
+      # First pass: handle paired studios where both fit on one table
       studio_groups.each do |group|
-        if group[:size] == table_size
-          # Perfect fit - create a table just for this studio
-          table = { number: table_number, people: group[:people] }
-          tables << table
-          table_number += 1
-        else
-          # All other studios - add to remaining people for optimal packing
-          remaining_people.concat(group[:people])
+        next if assigned_studios.include?(group[:studio_id])
+        
+        paired_studio_id = pair_lookup[group[:studio_id]]
+        if paired_studio_id
+          # Find the paired studio group
+          paired_group = studio_groups.find { |g| g[:studio_id] == paired_studio_id }
+          
+          if paired_group && !assigned_studios.include?(paired_studio_id)
+            # Check if both studios can fit on one table completely
+            combined_size = group[:size] + paired_group[:size]
+            
+            if combined_size <= table_size
+              # Both studios fit on one table
+              table = { 
+                number: table_number, 
+                people: group[:people] + paired_group[:people],
+                studios: [group[:studio_name], paired_group[:studio_name]]
+              }
+              tables << table
+              table_number += 1
+              assigned_studios.add(group[:studio_id])
+              assigned_studios.add(paired_studio_id)
+            end
+            # Don't handle the case where they don't fit - we'll handle them separately
+            # to allow for better remainder grouping
+          end
         end
       end
       
-      # Second pass: optimally pack remaining people from small studios
-      while remaining_people.any?
-        # Take up to table_size people for this table
-        table_people = remaining_people.shift(table_size)
-        table = { number: table_number, people: table_people }
+      # Second pass: handle studios that fit exactly on one table
+      studio_groups.each do |group|
+        next if assigned_studios.include?(group[:studio_id])
+        
+        if group[:size] == table_size
+          # Perfect fit - create a table just for this studio
+          table = { 
+            number: table_number, 
+            people: group[:people],
+            studios: [group[:studio_name]]
+          }
+          tables << table
+          table_number += 1
+          assigned_studios.add(group[:studio_id])
+        end
+      end
+      
+      # Third pass: handle remaining studios
+      unassigned_groups = studio_groups.reject { |g| assigned_studios.include?(g[:studio_id]) }
+      unassigned_groups.sort_by! { |g| -g[:size] }
+      
+      # Collect partial tables (remainders from large studios)
+      partial_tables = []
+      
+      # Separate paired and unpaired unassigned groups
+      paired_unassigned = []
+      unpaired_unassigned = []
+      
+      unassigned_groups.each do |group|
+        next if assigned_studios.include?(group[:studio_id])
+        
+        if pair_lookup[group[:studio_id]]
+          paired_unassigned << group
+        else
+          unpaired_unassigned << group
+        end
+      end
+      
+      # Process unpaired studios first
+      unpaired_unassigned.each do |group|
+        if group[:size] <= table_size
+          # Studio fits on one table - add to partial tables for optimal packing
+          partial_tables << {
+            studio_id: group[:studio_id],
+            studio_name: group[:studio_name],
+            people: group[:people],
+            size: group[:size],
+            parent_tables: [] # No parent tables for small studios
+          }
+          assigned_studios.add(group[:studio_id])
+        else
+          # Large studio needs multiple tables
+          full_table_count = group[:size] / table_size
+          remainder_size = group[:size] % table_size
+          
+          # Create full tables
+          parent_table_numbers = []
+          group[:people].first(full_table_count * table_size).each_slice(table_size) do |people_slice|
+            table = { 
+              number: table_number, 
+              people: people_slice,
+              studios: [group[:studio_name]]
+            }
+            tables << table
+            parent_table_numbers << table_number
+            table_number += 1
+          end
+          
+          # If there's a remainder, add it to partial tables
+          if remainder_size > 0
+            remainder_people = group[:people].last(remainder_size)
+            partial_tables << {
+              studio_id: group[:studio_id],
+              studio_name: group[:studio_name],
+              people: remainder_people,
+              size: remainder_size,
+              parent_tables: parent_table_numbers # Track which tables this studio already has
+            }
+          end
+          
+          assigned_studios.add(group[:studio_id])
+        end
+      end
+      
+      # First, process all paired studios to create full tables and identify ALL remainders
+      paired_unassigned.sort_by! { |g| -g[:size] }  # Process largest first
+      
+      paired_unassigned.each do |group|
+        next if assigned_studios.include?(group[:studio_id])
+        
+        if group[:size] > table_size
+          # Large studio needs multiple tables
+          full_table_count = group[:size] / table_size
+          remainder_size = group[:size] % table_size
+          
+          # Create full tables
+          parent_table_numbers = []
+          group[:people].first(full_table_count * table_size).each_slice(table_size) do |people_slice|
+            table = { 
+              number: table_number, 
+              people: people_slice,
+              studios: [group[:studio_name]]
+            }
+            tables << table
+            parent_table_numbers << table_number
+            table_number += 1
+          end
+          
+          # If there's a remainder, add it to partial tables
+          if remainder_size > 0
+            remainder_people = group[:people].last(remainder_size)
+            partial_tables << {
+              studio_id: group[:studio_id],
+              studio_name: group[:studio_name],
+              people: remainder_people,
+              size: remainder_size,
+              parent_tables: parent_table_numbers # Track which tables this studio already has
+            }
+          end
+          
+          assigned_studios.add(group[:studio_id])
+        end
+      end
+      
+      # Now process small paired studios that can combine with remainders
+      paired_unassigned.each do |group|
+        next if assigned_studios.include?(group[:studio_id])
+        
+        if group[:size] <= table_size
+          # Check if the paired studio has a remainder in partial_tables
+          paired_studio_id = pair_lookup[group[:studio_id]]
+          paired_remainder = partial_tables.find { |pt| pt[:studio_id] == paired_studio_id }
+          
+          if paired_remainder && (group[:size] + paired_remainder[:size] <= table_size)
+            # Combine this small studio with the paired studio's remainder
+            # Remove the remainder from partial_tables
+            partial_tables.delete(paired_remainder)
+            
+            # Create a combined table
+            table = { 
+              number: table_number, 
+              people: group[:people] + paired_remainder[:people],
+              studios: [group[:studio_name], paired_remainder[:studio_name]]
+            }
+            tables << table
+            table_number += 1
+            assigned_studios.add(group[:studio_id])
+          else
+            # Can't combine, add to partial tables
+            partial_tables << {
+              studio_id: group[:studio_id],
+              studio_name: group[:studio_name],
+              people: group[:people],
+              size: group[:size],
+              parent_tables: [] # No parent tables for small studios
+            }
+            assigned_studios.add(group[:studio_id])
+          end
+        end
+      end
+      
+      # Fourth pass: optimally pack partial tables
+      # First, group partials by whether they have paired studios
+      paired_partials = []
+      unpaired_partials = []
+      
+      partial_tables.each do |pt|
+        if pair_lookup[pt[:studio_id]]
+          paired_partials << pt
+        else
+          unpaired_partials << pt
+        end
+      end
+      
+      # Process paired partials first
+      while paired_partials.any?
+        current_partial = paired_partials.shift
+        
+        # Check if this partial's pair is also in the partial list
+        paired_studio_id = pair_lookup[current_partial[:studio_id]]
+        paired_partial = paired_partials.find { |pt| pt[:studio_id] == paired_studio_id }
+        
+        if paired_partial && (current_partial[:size] + paired_partial[:size] <= table_size)
+          # Combine the paired partials
+          table = { 
+            number: table_number, 
+            people: current_partial[:people] + paired_partial[:people],
+            studios: [current_partial[:studio_name], paired_partial[:studio_name]],
+            studio_parent_tables: { 
+              current_partial[:studio_name] => current_partial[:parent_tables],
+              paired_partial[:studio_name] => paired_partial[:parent_tables]
+            }
+          }
+          paired_partials.delete(paired_partial)
+          
+          # Fill remaining capacity with other partials if possible
+          remaining_capacity = table_size - current_partial[:size] - paired_partial[:size]
+          if remaining_capacity >= 2
+            # Try unpaired partials first
+            unpaired_partials.dup.each do |other_partial|
+              if other_partial[:size] <= remaining_capacity
+                table[:people].concat(other_partial[:people])
+                table[:studios] << other_partial[:studio_name]
+                table[:studio_parent_tables][other_partial[:studio_name]] = other_partial[:parent_tables]
+                remaining_capacity -= other_partial[:size]
+                unpaired_partials.delete(other_partial)
+                break if remaining_capacity < 2
+              end
+            end
+          end
+          
+          tables << table
+          table_number += 1
+        else
+          # Can't combine with pair, treat as unpaired
+          unpaired_partials << current_partial
+        end
+      end
+      
+      # Now handle remaining unpaired partials with standard bin packing
+      unpaired_partials.sort_by! { |pt| -pt[:size] }
+      
+      while unpaired_partials.any?
+        current_partial = unpaired_partials.shift
+        table = { 
+          number: table_number, 
+          people: current_partial[:people],
+          studios: [current_partial[:studio_name]],
+          studio_parent_tables: { current_partial[:studio_name] => current_partial[:parent_tables] }
+        }
+        remaining_capacity = table_size - current_partial[:size]
+        
+        # Fill with other unpaired partials that fit
+        unpaired_partials.dup.each do |other_partial|
+          if other_partial[:size] <= remaining_capacity
+            table[:people].concat(other_partial[:people])
+            table[:studios] << other_partial[:studio_name]
+            table[:studio_parent_tables][other_partial[:studio_name]] = other_partial[:parent_tables]
+            remaining_capacity -= other_partial[:size]
+            unpaired_partials.delete(other_partial)
+            
+            break if remaining_capacity < 2
+          end
+        end
+        
         tables << table
         table_number += 1
       end
       
+      # Optimization pass: combine small tables if possible
+      optimized_tables = []
+      tables_to_combine = []
+      
+      tables.each do |table_info|
+        # Consider tables that are significantly under capacity for combination
+        # Use 75% as threshold - tables with 25% or more empty seats can be combined
+        if table_info[:people].size <= table_size * 0.75
+          tables_to_combine << table_info
+        else
+          optimized_tables << table_info
+        end
+      end
+      
+      # Try to combine small tables
+      while tables_to_combine.any?
+        current_table = tables_to_combine.shift
+        combined = false
+        
+        tables_to_combine.each_with_index do |other_table, index|
+          if current_table[:people].size + other_table[:people].size <= table_size
+            # Combine these tables
+            current_table[:people].concat(other_table[:people])
+            current_table[:studios].concat(other_table[:studios])
+            current_table[:studios].uniq!
+            
+            # Merge parent tables if any
+            if current_table[:studio_parent_tables] && other_table[:studio_parent_tables]
+              current_table[:studio_parent_tables].merge!(other_table[:studio_parent_tables])
+            elsif other_table[:studio_parent_tables]
+              current_table[:studio_parent_tables] = other_table[:studio_parent_tables]
+            end
+            
+            tables_to_combine.delete_at(index)
+            combined = true
+            break
+          end
+        end
+        
+        # If we combined with another table, try to combine more
+        if combined && current_table[:people].size < table_size
+          tables_to_combine.unshift(current_table)
+        else
+          optimized_tables << current_table
+        end
+      end
+      
+      # Renumber tables sequentially
+      optimized_tables.each_with_index do |table_info, index|
+        table_info[:number] = index + 1
+      end
+      
       # Now create actual table records and assign people
       created_tables = []
-      tables.each do |table_info|
+      table_metadata = {}
+      
+      optimized_tables.each do |table_info|
         table = create_and_assign_table(table_info[:number], table_info[:people])
         created_tables << table
+        
+        # Store metadata about studio parent tables for mixed tables
+        if table_info[:studio_parent_tables]
+          table_metadata[table.id] = table_info[:studio_parent_tables]
+        end
       end
       
       # Assign rows and columns to tables, grouping by studio proximity
-      assign_table_positions(created_tables)
+      assign_table_positions(created_tables, table_metadata)
       
       # Renumber tables sequentially based on their final positions
       renumber_tables_by_position
@@ -429,7 +757,7 @@ class TablesController < ApplicationController
     table
   end
 
-  def assign_table_positions(tables)
+  def assign_table_positions(tables, table_metadata = {})
     # First, identify all studios and their tables (including mixed tables)
     studio_tables = {}
     mixed_tables = []
@@ -443,10 +771,17 @@ class TablesController < ApplicationController
         studio_tables[studio_name] << table
       else
         # Mixed studio table - we'll handle these specially
-        mixed_tables << {
+        mixed_table_info = {
           table: table,
           studios: studios_at_table.map { |studio, people| { name: studio.name, count: people.size } }
         }
+        
+        # Add parent tables metadata if available
+        if table_metadata[table.id]
+          mixed_table_info[:parent_tables] = table_metadata[table.id]
+        end
+        
+        mixed_tables << mixed_table_info
       end
     end
     
@@ -583,6 +918,7 @@ class TablesController < ApplicationController
   def place_mixed_table(mixed_table_info, positions, max_cols, studio_tables)
     table = mixed_table_info[:table]
     studios = mixed_table_info[:studios]
+    parent_tables = mixed_table_info[:parent_tables] || {}
     
     # Find the best position near studios that have people at this table
     best_pos = nil
@@ -599,22 +935,43 @@ class TablesController < ApplicationController
           studio_name = studio_info[:name]
           studio_people_count = studio_info[:count]
           
-          # Find existing tables for this studio (including other mixed tables)
-          existing_studio_tables = find_all_studio_tables(studio_name, positions)
+          # Check if this is a partial table with parent tables
+          studio_parent_table_numbers = parent_tables[studio_name] || []
           
-          if existing_studio_tables.any?
-            # Calculate distance to closest table of this studio
-            min_studio_distance = existing_studio_tables.map do |existing_pos|
-              manhattan_distance(pos, existing_pos)
-            end.min
+          if studio_parent_table_numbers.any?
+            # This is a remainder group - prioritize being near parent tables
+            parent_table_positions = Table.where(number: studio_parent_table_numbers)
+                                         .where.not(row: nil, col: nil)
+                                         .map { |t| { row: t.row, col: t.col } }
             
-            # Use a balanced penalty that considers both people count and fairness
-            # Give more weight to studios with fewer total tables to avoid extreme splits
-            studio_table_count = existing_studio_tables.size
-            fairness_weight = studio_table_count > 1 ? 2.0 : 1.0
+            if parent_table_positions.any?
+              # Calculate distance to closest parent table
+              min_parent_distance = parent_table_positions.map do |parent_pos|
+                manhattan_distance(pos, parent_pos)
+              end.min
+              
+              # Heavy penalty for being far from parent tables
+              penalty = min_parent_distance * studio_people_count * 3.0
+              total_penalty += penalty
+            end
+          else
+            # Regular mixed table logic - find existing tables for this studio
+            existing_studio_tables = find_all_studio_tables(studio_name, positions)
             
-            penalty = min_studio_distance * studio_people_count * fairness_weight
-            total_penalty += penalty
+            if existing_studio_tables.any?
+              # Calculate distance to closest table of this studio
+              min_studio_distance = existing_studio_tables.map do |existing_pos|
+                manhattan_distance(pos, existing_pos)
+              end.min
+              
+              # Use a balanced penalty that considers both people count and fairness
+              # Give more weight to studios with fewer total tables to avoid extreme splits
+              studio_table_count = existing_studio_tables.size
+              fairness_weight = studio_table_count > 1 ? 2.0 : 1.0
+              
+              penalty = min_studio_distance * studio_people_count * fairness_weight
+              total_penalty += penalty
+            end
           end
         end
         
