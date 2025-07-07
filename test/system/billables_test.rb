@@ -29,9 +29,22 @@ class BillablesTest < ApplicationSystemTestCase
     fill_in "Price", with: @billable.price
     fill_in "Name", with: @billable.name
     select @billable.type, from: 'Type'
-    click_on "Update package"
+    click_on "Update package"  # @billable.type is "Student" which maps to @type = 'package'
 
     assert_text "#{@billable.name} was successfully updated"
+  end
+
+  test "should update Option" do
+    option = billables(:two)  # This is type "Option"
+    visit billable_url(option)
+    click_on "Edit this billable", match: :first
+
+    fill_in "Price", with: option.price
+    fill_in "Name", with: option.name
+    # No type selection for options - it's a hidden field
+    click_on "Update option"  # @billable.type is "Option" which maps to @type = 'option'
+
+    assert_text "#{option.name} was successfully updated"
   end
 
   test "should destroy Billable" do

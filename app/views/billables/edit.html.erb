@@ -13,7 +13,7 @@
   <%= render "form", billable: @billable %>
 
 <div class="mx-auto grid grid-cols-2">
-  <button type="submit" class="btn-blue" form="billable-form">Update package</button>
+  <button type="submit" class="btn-blue" form="billable-form">Update <%= @type %></button>
 
   <% if @type == 'package' %>
   <%= link_to "Select people", people_billable_path(@billable), class: 'btn-green' %>
