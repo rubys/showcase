@@ -17,6 +17,8 @@
 
   <% if @type == 'package' %>
   <%= link_to "Select people", people_billable_path(@billable), class: 'btn-green' %>
+  <% elsif @type == 'option' %>
+  <%= link_to "Manage tables", tables_path(option_id: @billable.id), class: 'btn-green' %>
   <% end %>
 
   <%= link_to "Remove #{@type}", billable_path(@billable), class: 'btn-grey',

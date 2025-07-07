@@ -47,6 +47,28 @@ class BillablesTest < ApplicationSystemTestCase
     assert_text "#{option.name} was successfully updated"
   end
 
+  test "should show manage tables link for options" do
+    option = billables(:two)  # This is type "Option"
+    visit billable_url(option)
+    click_on "Edit this billable", match: :first
+
+    assert_link "Manage tables", href: tables_path(option_id: option.id)
+    
+    # Test that clicking the link actually works
+    click_link "Manage tables"
+    assert_current_path tables_path(option_id: option.id)
+    assert_text "Tables for #{option.name}"
+  end
+
+  test "should show select people link for packages" do
+    package = billables(:one)  # This is type "Student" (package)
+    visit billable_url(package)
+    click_on "Edit this billable", match: :first
+
+    assert_link "Select people", href: people_billable_path(package)
+    assert_no_link "Manage tables"
+  end
+
   test "should destroy Billable" do
     visit billable_url(@billable)
     click_on "Destroy this billable", match: :first
