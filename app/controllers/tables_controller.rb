@@ -12,7 +12,13 @@ class TablesController < ApplicationController
     # Add capacity status for each table
     @tables.each do |table|
       table_size = table.size || Event.current&.table_size || 10
-      people_count = table.people.count
+      if table.option_id
+        # For option tables, count people through person_options
+        people_count = table.person_options.count
+      else
+        # For main event tables, count people directly
+        people_count = table.people.count
+      end
       
       table.define_singleton_method(:capacity_status) do
         if people_count < table_size
@@ -88,7 +94,13 @@ class TablesController < ApplicationController
     # Add capacity status for each table
     @tables.each do |table|
       table_size = table.size || Event.current&.table_size || 10
-      people_count = table.people.count
+      if table.option_id
+        # For option tables, count people through person_options
+        people_count = table.person_options.count
+      else
+        # For main event tables, count people directly
+        people_count = table.people.count
+      end
       
       table.define_singleton_method(:capacity_status) do
         if people_count < table_size
@@ -140,7 +152,13 @@ class TablesController < ApplicationController
     # Check if table has capacity for more people
     table_size = @table.size || Event.current&.table_size || 10
     table_size = 10 if table_size.nil? || table_size.zero?
-    current_people_count = @table.people.count
+    if @table.option_id
+      # For option tables, count people through person_options
+      current_people_count = @table.person_options.count
+    else
+      # For main event tables, count people directly
+      current_people_count = @table.people.count
+    end
     
     # Only show studio selection if table isn't at capacity
     if current_people_count < table_size
@@ -229,7 +247,13 @@ class TablesController < ApplicationController
         # Reload studio data for the form in case of errors
         table_size = @table.size || Event.current&.table_size || 10
         table_size = 10 if table_size.nil? || table_size.zero?
-        current_people_count = @table.people.count
+        if @table.option_id
+          # For option tables, count people through person_options
+          current_people_count = @table.person_options.count
+        else
+          # For main event tables, count people directly
+          current_people_count = @table.people.count
+        end
         
         if current_people_count < table_size
           @studios_with_unassigned = Studio.joins(:people)
@@ -795,7 +819,13 @@ class TablesController < ApplicationController
     # Add capacity status for each table (same as studio action)
     @tables.each do |table|
       table_size = table.size || Event.current&.table_size || 10
-      people_count = table.people.count
+      if table.option_id
+        # For option tables, count people through person_options
+        people_count = table.person_options.count
+      else
+        # For main event tables, count people directly
+        people_count = table.people.count
+      end
       
       table.define_singleton_method(:capacity_status) do
         if people_count < table_size

@@ -9,39 +9,75 @@
     <button type="submit" class="btn-blue" form="table-form">Update Table</button>
     <%= button_to "Remove this table", @table, method: :delete, class: "btn-grey",
         data: { turbo_confirm: "Are you sure you want to remove this table? People will be unassigned from it." } %>
-    <%= link_to "Back to tables", tables_path, class: "btn-grey" %>
+    <%= link_to "Back to tables", tables_path(option_id: @table.option_id), class: "btn-grey" %>
   </div>
   
   <div class="mt-8">
     <h2 class="font-bold text-2xl mb-4">People at this table</h2>
-    <% if @table.people.any? %>
-      <div class="bg-gray-50 rounded-lg p-4">
-        <table class="min-w-full">
-          <thead>
-            <tr class="text-left text-sm font-medium text-gray-700">
-              <th class="pb-2">Name</th>
-              <th class="pb-2">Studio</th>
-              <th class="pb-2">Type</th>
-            </tr>
-          </thead>
-          <tbody class="text-sm">
-            <% @table.people.includes(:studio).order('studios.name, people.name').each do |person| %>
-              <tr class="border-t border-gray-200">
-                <td class="py-2">
-                  <%= link_to person.name, person_path(person), class: "text-blue-600 hover:text-blue-800" %>
-                </td>
-                <td class="py-2">
-                  <%= link_to person.studio.name, studio_path(person.studio), class: "text-blue-600 hover:text-blue-800" %>
-                </td>
-                <td class="py-2"><%= person.type %></td>
+    <% if @table.option_id %>
+      <% # For option tables, get people through person_options %>
+      <% person_options = @table.person_options.includes(:person => :studio) %>
+      <% if person_options.any? %>
+        <div class="bg-gray-50 rounded-lg p-4">
+          <table class="min-w-full">
+            <thead>
+              <tr class="text-left text-sm font-medium text-gray-700">
+                <th class="pb-2">Name</th>
+                <th class="pb-2">Studio</th>
+                <th class="pb-2">Type</th>
               </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
-      <p class="mt-2 text-sm text-gray-600">Total: <%= @table.people.count %> <%= 'person'.pluralize(@table.people.count) %></p>
+            </thead>
+            <tbody class="text-sm">
+              <% person_options.sort_by { |po| [po.person.studio.name, po.person.name] }.each do |person_option| %>
+                <% person = person_option.person %>
+                <tr class="border-t border-gray-200">
+                  <td class="py-2">
+                    <%= link_to person.name, person_path(person), class: "text-blue-600 hover:text-blue-800" %>
+                  </td>
+                  <td class="py-2">
+                    <%= link_to person.studio.name, studio_path(person.studio), class: "text-blue-600 hover:text-blue-800" %>
+                  </td>
+                  <td class="py-2"><%= person.type %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <p class="mt-2 text-sm text-gray-600">Total: <%= person_options.count %> <%= 'person'.pluralize(person_options.count) %></p>
+      <% else %>
+        <p class="text-gray-500">No people assigned to this table yet.</p>
+      <% end %>
     <% else %>
-      <p class="text-gray-500">No people assigned to this table yet.</p>
+      <% # For main event tables, use direct people association %>
+      <% if @table.people.any? %>
+        <div class="bg-gray-50 rounded-lg p-4">
+          <table class="min-w-full">
+            <thead>
+              <tr class="text-left text-sm font-medium text-gray-700">
+                <th class="pb-2">Name</th>
+                <th class="pb-2">Studio</th>
+                <th class="pb-2">Type</th>
+              </tr>
+            </thead>
+            <tbody class="text-sm">
+              <% @table.people.includes(:studio).order('studios.name, people.name').each do |person| %>
+                <tr class="border-t border-gray-200">
+                  <td class="py-2">
+                    <%= link_to person.name, person_path(person), class: "text-blue-600 hover:text-blue-800" %>
+                  </td>
+                  <td class="py-2">
+                    <%= link_to person.studio.name, studio_path(person.studio), class: "text-blue-600 hover:text-blue-800" %>
+                  </td>
+                  <td class="py-2"><%= person.type %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <p class="mt-2 text-sm text-gray-600">Total: <%= @table.people.count %> <%= 'person'.pluralize(@table.people.count) %></p>
+      <% else %>
+        <p class="text-gray-500">No people assigned to this table yet.</p>
+      <% end %>
     <% end %>
   </div>
 </div>
