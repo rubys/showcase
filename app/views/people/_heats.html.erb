@@ -55,18 +55,20 @@ body {
       <% if @start %>
       <td class="text-right pr-4"><%= @start[number]&.strftime("%-I:%M") %></td>
       <% end %>
-      <td class="text-center"><%= heat.number.abs %></td>
-      <% unless heat.category == 'Solo' %>
-      <% if heat.ballroom %>
-       - <%= heat.ballroom %>
-      <% elsif ballrooms == 2 %>
-      - <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
-      <% elsif ballrooms == 3 %>
-      <% heats.select! {|heat| heat.ballroom.blank?} %>
-      - <%= heats.index(heat) >= heats.length/2 ? 'B' : 'A' %>
-      <% elsif ballrooms == 4 %>
-      - <%= heat.subject.studio.ballroom || "" %>
-      <% end %>
+      <td class="text-center">
+        <%= heat.number.abs %>
+        <% unless heat.category == 'Solo' %>
+        <% if heat.ballroom %>
+        - <%= heat.ballroom %>
+        <% elsif ballrooms == 2 %>
+        - <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
+        <% elsif ballrooms == 3 %>
+        <% heats.select! {|heat| heat.ballroom.blank?} %>
+        - <%= heats.index(heat) >= heats.length/2 ? 'B' : 'A' %>
+        <% elsif ballrooms == 4 %>
+        - <%= heat.subject.studio.ballroom || "" %>
+        <% end %>
+      </td>
       <% end %>
       <% if heat.entry.lead != person %>
       <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div></td>
