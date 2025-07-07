@@ -12,8 +12,15 @@
       </span>
     <% end %>
     <% if @event.assign_judges? && @show == 'mixed' && @judge && @style != 'emcee' %>
-    <% heats = Heat.joins(:scores).includes(entry: :lead).where(number: @heat.number, scores: {judge_id: @judge.id}).order('people.back') %>
-    <div class="text-2xl"><%= heats.map {|heat| "<a href='##{ dom_id heat }'>#{heat.entry.lead.back}</a>"}.join(' ').html_safe %></div>
+    <% heats = Heat.joins(:scores).includes(entry: :lead).where(number: @heat.number, scores: {judge_id: @judge.id}).to_a
+       unassigned = Heat.where(number: @heat.number).includes(entry: :lead).left_joins(:scores).where(scores: { id: nil }).to_a
+       early = Heat.includes(entry: :lead).joins(:scores).where(scores: { updated_at: ...Event.current.date}).distinct.to_a
+       heats = (heats + early + unassigned).uniq.sort_by {|heat| heat.entry.lead.back}
+    %>
+    <div class="text-2xl"><%= heats.map {|heat|
+      color = unassigned.include?(heat) ? "text-red-400" : (early.include?(heat) ? "text-gray-400" : "text-black")
+      "<a href='##{ dom_id heat }' class='#{color}'>#{heat.entry.lead.back}</a>"
+    }.join(' ').html_safe %></div>
     <% end %>
     <% if @style == 'emcee' and @heat.category != 'Solo' %>
     <div class="font-normal"><%= @subjects.length %> <%= 'couple'.pluralize @subjects.length %> on the floor</div>
