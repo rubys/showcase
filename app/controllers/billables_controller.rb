@@ -68,7 +68,14 @@ class BillablesController < ApplicationController
       if @billable.update(billable_params.except(:options, :packages))
         update_includes
 
-        format.html { redirect_to settings_event_index_path(tab: 'Prices'),
+        # Redirect back to tables page if that's where the request came from
+        redirect_url = if request.referer&.include?('/tables')
+                        request.referer
+                      else
+                        settings_event_index_path(tab: 'Prices')
+                      end
+
+        format.html { redirect_to redirect_url,
           notice: "#{@billable.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @billable }
       else
@@ -210,7 +217,7 @@ class BillablesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def billable_params
-      params.require(:billable).permit(:type, :name, :price, :order, :couples, options: {}, packages: {})
+      params.require(:billable).permit(:type, :name, :price, :order, :couples, :table_size, options: {}, packages: {})
     end
 
     def update_includes
