@@ -327,11 +327,10 @@ class TablesController < ApplicationController
         # For option tables, get people who have registered for this option
         people = Person.joins(:studio, :options)
                        .where(person_options: { option_id: @option.id })
-                       .where.not(studios: { id: 0 })
                        .order('studios.name, people.name')
       else
         # For main event tables, get all people
-        people = Person.joins(:studio).where.not(studios: { id: 0 }).order('studios.name, people.name')
+        people = Person.joins(:studio).order('studios.name, people.name')
       end
       
       # Group people by studio
@@ -344,6 +343,10 @@ class TablesController < ApplicationController
           studio: studio_people.first.studio
         }
       end
+      
+      # Separate studio 0 (Event Staff) from other studios
+      event_staff_group = studio_groups.find { |g| g[:studio_id] == 0 }
+      other_studio_groups = studio_groups.reject { |g| g[:studio_id] == 0 }
       
       # Get all studio pairs
       studio_pairs = StudioPair.includes(:studio1, :studio2).map do |pair|
@@ -362,6 +365,36 @@ class TablesController < ApplicationController
       
       table_number = 1
       tables = []
+      
+      # First, handle studio 0 (Event Staff) separately if present
+      if event_staff_group
+        # Create tables for Event Staff (studio 0) - they never share with other studios
+        if event_staff_group[:size] <= table_size
+          # All Event Staff fit on one table
+          table = { 
+            number: table_number, 
+            people: event_staff_group[:people],
+            studios: [event_staff_group[:studio_name]]
+          }
+          tables << table
+          table_number += 1
+        else
+          # Event Staff need multiple tables
+          event_staff_group[:people].each_slice(table_size) do |people_slice|
+            table = { 
+              number: table_number, 
+              people: people_slice,
+              studios: [event_staff_group[:studio_name]]
+            }
+            tables << table
+            table_number += 1
+          end
+        end
+        assigned_studios.add(0)
+      end
+      
+      # Now process all other studios (not studio 0)
+      studio_groups = other_studio_groups
       
       # First pass: handle paired studios where both fit on one table
       studio_groups.each do |group|
@@ -648,9 +681,13 @@ class TablesController < ApplicationController
       tables_to_combine = []
       
       tables.each do |table_info|
+        # Check if this table has Event Staff (studio 0)
+        has_event_staff = table_info[:people].any? { |person| person.studio_id == 0 }
+        
         # Consider tables that are significantly under capacity for combination
         # Use 75% as threshold - tables with 25% or more empty seats can be combined
-        if table_info[:people].size <= table_size * 0.75
+        # BUT never combine tables that have Event Staff
+        if table_info[:people].size <= table_size * 0.75 && !has_event_staff
           tables_to_combine << table_info
         else
           optimized_tables << table_info
@@ -663,7 +700,12 @@ class TablesController < ApplicationController
         combined = false
         
         tables_to_combine.each_with_index do |other_table, index|
-          if current_table[:people].size + other_table[:people].size <= table_size
+          # Check if either table has Event Staff - if so, don't combine
+          current_has_event_staff = current_table[:people].any? { |person| person.studio_id == 0 }
+          other_has_event_staff = other_table[:people].any? { |person| person.studio_id == 0 }
+          
+          if !current_has_event_staff && !other_has_event_staff && 
+             current_table[:people].size + other_table[:people].size <= table_size
             # Combine these tables
             current_table[:people].concat(other_table[:people])
             current_table[:studios].concat(other_table[:studios])

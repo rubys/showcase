@@ -1,12 +1,51 @@
 <div class="mx-auto md:w-2/3 w-full">
 <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
 
-  <h1 class="font-bold text-4xl">
-    Tables for <%= @studio.name %>
-    <% if @option %>
-      <span class="text-2xl text-gray-600">at <%= @option.name %></span>
-    <% end %>
-  </h1>
+  <div class="flex justify-between items-center mb-4">
+    <h1 class="font-bold text-4xl">
+      Tables for <%= @studio.name %>
+      <% if @option %>
+        <span class="text-2xl text-gray-600">at <%= @option.name %></span>
+      <% end %>
+    </h1>
+    
+    <div class="flex gap-2">
+      <% if @option %>
+        <%= link_to 'Main Tables', studio_tables_path(@studio), class: "btn-grey text-sm" %>
+      <% end %>
+      
+      <% options = Billable.where(type: 'Option').order(:order, :name) %>
+      <% if options.any? %>
+        <div class="relative" data-controller="dropdown">
+          <button type="button" class="btn-grey text-sm flex items-center gap-1" data-action="click->dropdown#toggle click@window->dropdown#hide">
+            <%= @option ? 'Switch Option' : 'View Option Tables' %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          
+          <div class="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg z-50 hidden" data-dropdown-target="menu">
+            <div class="py-1">
+              <% options.each do |option| %>
+                <% 
+                  # Check if this studio has people with this option
+                  has_people = option.people_option_link.joins(:person).where(people: { studio_id: @studio.id }).exists?
+                %>
+                <% if has_people %>
+                  <%= link_to option.name, studio_tables_path(@studio, option_id: option.id), 
+                      class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 #{'bg-gray-100' if @option == option}" %>
+                <% else %>
+                  <span class="block px-4 py-2 text-sm text-gray-400 cursor-not-allowed">
+                    <%= option.name %> (no attendees)
+                  </span>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
 
 <div data-controller="info-box">
 <div class="info-button">&#x24D8;</div>
