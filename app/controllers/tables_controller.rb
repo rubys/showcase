@@ -2,7 +2,7 @@ class TablesController < ApplicationController
   include Printable
   
   before_action :set_table, only: %i[ show edit update destroy ]
-  before_action :set_option, only: %i[ index new create arrange assign studio list move_person reset update_positions renumber ]
+  before_action :set_option, only: %i[ index new create arrange assign studio move_person reset update_positions renumber ]
 
   # GET /tables or /tables.json
   def index
@@ -782,8 +782,26 @@ class TablesController < ApplicationController
   end
 
   def list
-    @tables = Table.includes(people: :studio).where(option_id: @option&.id).order(:number)
     @event = Event.current
+    
+    # Get main event tables (where option_id is nil)
+    @main_tables = Table.includes(people: :studio).where(option_id: nil).order(:number)
+    
+    # Get all options with their tables
+    @options_with_tables = []
+    Billable.where(type: 'Option').order(:order, :name).each do |option|
+      tables = Table.includes(:person_options => {:person => :studio})
+                    .where(option_id: option.id)
+                    .order(:number)
+      
+      # Only include options that have tables
+      if tables.any?
+        @options_with_tables << {
+          option: option,
+          tables: tables
+        }
+      end
+    end
     
     respond_to do |format|
       format.html

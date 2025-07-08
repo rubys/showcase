@@ -5,6 +5,14 @@
       break-inside: avoid;
     }
     
+    .table-section {
+      page-break-before: always;
+    }
+    
+    .table-section:first-child {
+      page-break-before: auto;
+    }
+    
     @media print {
       body {
         font-size: 12pt;
@@ -23,23 +31,17 @@
   </style>
 
   <div class="mb-6 no-print">
-    <h1 class="font-bold text-4xl">
-      Table List
-      <% if @option %>
-        <span class="text-2xl text-gray-600">for <%= @option.name %></span>
-      <% end %>
-    </h1>
+    <h1 class="font-bold text-4xl">Table List</h1>
   </div>
 
-  <div class="print:block">
-    <h1 class="font-bold text-3xl text-center mb-4 hidden print:block">
-      <%= @event&.name || "Table List" %>
-      <% if @option %>
-        - <%= @option.name %>
-      <% end %>
-    </h1>
-    
-    <% @tables.each do |table| %>
+  <% # Main event tables %>
+  <% if @main_tables.any? %>
+    <div class="table-section">
+      <h1 class="font-bold text-3xl text-center mb-4">
+        <%= @event&.name || "Event" %> - Main Tables
+      </h1>
+      
+      <% @main_tables.each do |table| %>
       <div class="table-list-item mb-6 p-4 border rounded-lg print:border print:rounded-none">
         <div class="flex justify-between items-start mb-3">
           <h2 class="font-bold text-2xl">Table <%= table.number %></h2>
@@ -108,5 +110,55 @@
         <% end %>
       </div>
     <% end %>
-  </div>
+    </div>
+  <% end %>
+  
+  <% # Option tables %>
+  <% @options_with_tables.each do |option_data| %>
+    <div class="table-section">
+      <h1 class="font-bold text-3xl text-center mb-4">
+        <%= @event&.name || "Event" %> - <%= option_data[:option].name %>
+      </h1>
+      
+      <% option_data[:tables].each do |table| %>
+        <div class="table-list-item mb-6 p-4 border rounded-lg print:border print:rounded-none">
+          <div class="flex justify-between items-start mb-3">
+            <h2 class="font-bold text-2xl">Table <%= table.number %></h2>
+            <% if table.row && table.col %>
+              <span class="text-gray-600">Position: Row <%= table.row %>, Column <%= table.col %></span>
+            <% end %>
+          </div>
+          
+          <% # Get studios and people for this table %>
+          <% person_options = table.person_options.includes(:person => :studio) %>
+          <% studios = person_options.map { |po| po.person.studio.name }.uniq.sort %>
+          <% if studios.any? %>
+            <div class="mb-3">
+              <span class="font-semibold">Studios:</span> <%= studios.join(', ') %>
+            </div>
+          <% end %>
+          
+          <% if person_options.any? %>
+            <div>
+              <span class="font-semibold">People (<%= person_options.count %>):</span>
+              <ul class="list-disc list-inside mt-2">
+                <% person_options.sort_by { |po| [po.person.studio.name, po.person.name] }.each do |person_option| %>
+                  <% person = person_option.person %>
+                  <li class="ml-4">
+                    <%= person.name %>
+                    <span class="text-gray-600">(<%= person.studio.name %>)</span>
+                    <% if person.type %>
+                      <span class="text-sm text-gray-500"><%= person.type %></span>
+                    <% end %>
+                  </li>
+                <% end %>
+              </ul>
+            </div>
+          <% else %>
+            <div class="text-gray-500 italic">No people assigned to this table</div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
 </div>
