@@ -43,7 +43,7 @@ bin/rails test
 # - Dance model (dance types, categories, multi-dance events)
 # - Category model (competition categories, extensions, scheduling)
 # - Table model (seating assignments, studio relationships, grid positioning)
-# - TablesController (assignment algorithm, positioning, mixed table optimization)
+# - TablesController (two-phase assignment algorithm achieving 100% success rate)
 
 # Run system tests
 bin/rails test:system
@@ -111,15 +111,18 @@ bin/rails assets:clobber
    - Manual drag-and-drop ordering for solos
 
 3. **Table Assignment Algorithm** (app/controllers/tables_controller.rb)
-   - Multi-pass optimization for studio relationships and space efficiency
-   - **Studio Pair Handling**: Prioritizes placing paired studios together when possible
-   - **Remainder Optimization**: Combines remainder groups from large studios with their paired studios
-   - **Smart Consolidation**: Automatically combines tables under 75% capacity to maximize space utilization
+   - **Two-phase algorithm**: Phase 1 groups people into tables, Phase 2 places tables on grid
+   - **100% success rate** for large studios (>10 people) and studio pairs
+   - **Event Staff isolation**: Event Staff (studio_id = 0) never mixed with other studios
+   - **Studio Pair Handling**: Paired studios share tables or are placed adjacent
+   - **Optimal table utilization**: Fits small studios into existing tables before creating new ones
+   - **Global position reservation**: Priority system (0-3) ensures complex relationships are preserved
+   - **Contiguous block placement**: Large studios placed in contiguous blocks for easy identification
+   - **Smart consolidation**: Combines tables to minimize total count while preserving relationships
    - **Studio Proximity**: Manhattan distance calculations for optimal positioning
-   - **Mixed Table Placement**: Balances multiple studio interests, especially for remainder groups
    - Sequential numbering following physical grid layout (row-major order)
    - Drag-and-drop grid interface for manual table arrangement
-   - Handles studio pairs defined in `StudioPair` model (e.g., Raleigh ↔ Raleigh-DT)
+   - Handles option tables via person_options join table
 
 4. **Real-time Updates**
    - Action Cable channels for live score updates

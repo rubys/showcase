@@ -707,6 +707,8 @@ class TablesController < ApplicationController
             next if processed_studios.include?(other_group[:studio_id])
             next if other_group[:studio_id] == group[:studio_id] || other_group[:studio_id] == paired_studio_id
             next if pair_lookup[other_group[:studio_id]] # Skip studios that have pairs (they'll get their own pass)
+            next if other_group[:studio_id] == 0 # Skip Event Staff - they should never be merged
+            next if group[:studio_id] == 0 || paired_studio_id == 0 # Skip if this is an Event Staff table
             
             if other_group[:size] <= remaining_capacity
               shared_table.concat(other_group[:people])
@@ -714,7 +716,7 @@ class TablesController < ApplicationController
               remainder_groups.delete(other_group)
               processed_studios.add(other_group[:studio_id])
               
-              break if remaining_capacity < 2
+              break if remaining_capacity < 1
             end
           end
           
@@ -727,7 +729,35 @@ class TablesController < ApplicationController
       end
     end
     
-    # Second pass: Handle remaining groups with original logic
+    # Second pass: First try to fit remaining studios into existing tables
+    remainder_groups.sort_by! { |g| g[:size] } # Sort by size (smallest first for easier fitting)
+    
+    remainder_groups.dup.each do |group|
+      next if processed_studios.include?(group[:studio_id])
+      
+      # Skip Event Staff - they should never be merged with other studios
+      next if group[:studio_id] == 0
+      
+      # Try to fit this group into an existing table
+      fitted = false
+      people_groups.each do |existing_table|
+        current_size = existing_table.size
+        available_space = table_size - current_size
+        
+        # Don't add to Event Staff tables
+        next if existing_table.any? { |person| person.studio_id == 0 }
+        
+        if group[:size] <= available_space
+          existing_table.concat(group[:people])
+          remainder_groups.delete(group)
+          processed_studios.add(group[:studio_id])
+          fitted = true
+          break
+        end
+      end
+    end
+    
+    # Third pass: Handle any remaining groups that couldn't fit in existing tables
     remainder_groups.sort_by! { |g| -g[:size] }
     
     while remainder_groups.any?
@@ -740,12 +770,15 @@ class TablesController < ApplicationController
       # Fill with other groups that fit
       remainder_groups.dup.each do |other_group|
         if other_group[:size] <= remaining_capacity && !processed_studios.include?(other_group[:studio_id])
+          # Skip Event Staff - they should never be merged with other studios
+          next if other_group[:studio_id] == 0 || current_group[:studio_id] == 0
+          
           current_table.concat(other_group[:people])
           remaining_capacity -= other_group[:size]
           remainder_groups.delete(other_group)
           processed_studios.add(other_group[:studio_id])
           
-          break if remaining_capacity < 2
+          break if remaining_capacity < 1
         end
       end
       
