@@ -408,6 +408,8 @@ class TablesController < ApplicationController
       end
     end
     
+    @nologo = true
+
     respond_to do |format|
       format.html
       format.pdf do
