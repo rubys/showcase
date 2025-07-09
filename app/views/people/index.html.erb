@@ -30,7 +30,7 @@
       <% if @people.any? {|person| person.level_id} %>
       <td class="row-head"><a href="?sort=level">Level</a></td>
       <% end %>
-      <% if @track_ages and @people.any? {|person| person.age_id} %>
+      <% if @track_ages and @people.any? {|person| person.age_id} and @title != 'Professionals'%>
       <td class="row-head"><a href="?sort=age">Age</a></td>
       <% end %>
       <td class="row-head"><a href="?sort=studio">Studio</a></td>
@@ -42,6 +42,10 @@
       <% end %>
       <% unless @multis.empty? %>
       <td class="row-head"><a href="?sort=multis">Multis</a></td>
+      <% end %>
+      <% if @title == 'Professionals' && !@amcouples.empty? %>
+      <td class="row-head"><a href="?sort=amcouples">Am Couples</a></td>
+      <td class="row-head">Totals</td>
       <% end %>
     </tr>
   </thead>
@@ -66,7 +70,7 @@
       <% if @people.any? {|person| person.level_id} %>
       <td class="row"><%= person.level&.name %></td>
       <% end %>
-      <% if @track_ages and @people.any? {|person| person.age_id} %>
+      <% if @track_ages and @people.any? {|person| person.age_id} and @title != 'Professionals' %>
       <td class="row text-center"><%= person.age&.description %></td>
       <% end %>
       <td class="row"><%= link_to person.studio&.name || '', person.studio %></td>
@@ -78,6 +82,10 @@
       <% end %>
       <% unless @multis.empty? %>
       <td class="row text-right"><%= @multis[person.id] %></td>
+      <% end %>
+      <% if @title == 'Professionals' %>
+      <td class="row text-right"><%= @amcouples[person.id] %></td>
+      <td class="row text-right"><%= @heats[person.id].to_i + @solos[person.id].to_i + @multis[person.id].to_i + @amcouples[person.id].to_i %></td>
       <% end %>
     <% if @strike && @option %>
     <td>

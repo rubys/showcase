@@ -255,9 +255,22 @@ class PeopleController < ApplicationController
   end
 
   # GET /people/professionals or /professionals.json
-  def professionals
-    @people = Person.includes(:studio).where(type: 'Professional').order(sort_order)
+  def professionals    
+    if params[:sort] == 'amcouples'
+      @people = Person.joins("INNER JOIN entries ON entries.instructor_id = people.id")
+        .joins("INNER JOIN heats ON heats.entry_id = entries.id")
+        .group("people.id")
+        .order("COUNT(heats.id) DESC")
+
+      pros = Person.includes(:studio).where(type: 'Professional').order(:name)
+      @people += (pros - @people)
+    else
+     @people = Person.includes(:studio).where(type: 'Professional').order(sort_order)
+    end
+    
     @title = 'Professionals'
+
+    @amcouples = Heat.joins(:entry).where.not(entries: {instructor_id: nil }).group('entries.instructor_id').count
 
     index
   end
