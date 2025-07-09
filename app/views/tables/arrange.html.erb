@@ -25,6 +25,39 @@
   </div>
 
   <div id="grid" class="mb-4" style="display: grid; grid-template-columns: repeat(<%= @columns %>, 1fr);  gap: 10px;">
+    <% 
+      # Build a mapping of table_id to studio_ids for quick lookup
+      table_studios = {}
+      @tables.each do |table|
+        if @option
+          # For option tables, get studios through person_options
+          studio_ids = table.person_options.includes(:person).map { |po| po.person.studio_id }.uniq
+        else
+          # For main event tables, get studios directly
+          studio_ids = table.people.pluck(:studio_id).uniq
+        end
+        table_studios[table.id] = studio_ids
+      end
+      
+      # Build a mapping of table_id to related table_ids
+      table_relations = {}
+      @tables.each do |table|
+        related_ids = []
+        my_studios = table_studios[table.id] || []
+        
+        @tables.each do |other_table|
+          next if other_table.id == table.id
+          other_studios = table_studios[other_table.id] || []
+          
+          # Check if tables share any studios
+          if (my_studios & other_studios).any?
+            related_ids << other_table.id
+          end
+        end
+        
+        table_relations[table.id] = related_ids
+      end
+    %>
     <% @tables.each do |table| %>
       <% 
         capacity_class = case table.capacity_status
@@ -35,11 +68,13 @@
         else
           "bg-gray-50 border-gray-300"
         end
+        
+        related_tables = table_relations[table.id] || []
       %>
       <% if table.row and table.col %>
-      <div draggable="true" class="hover:bg-yellow-200 p-2 border rounded <%= capacity_class %>" data-id="<%= table.id %>" style="grid-row:<%= table.row %>; grid-column:<%= table.col %>">
+      <div draggable="true" class="hover:bg-yellow-200 p-2 border rounded <%= capacity_class %>" data-id="<%= table.id %>" data-related-tables="<%= related_tables.join(',') %>" style="grid-row:<%= table.row %>; grid-column:<%= table.col %>">
       <% else %>
-      <div draggable="true" class="hover:bg-yellow-200 p-2 border rounded <%= capacity_class %>" data-id="<%= table.id %>">
+      <div draggable="true" class="hover:bg-yellow-200 p-2 border rounded <%= capacity_class %>" data-id="<%= table.id %>" data-related-tables="<%= related_tables.join(',') %>" >
       <% end %>
         <div class="font-bold">Table <%= table.number %></div>
         <div class="text-sm text-gray-600"><%= table.name %></div>

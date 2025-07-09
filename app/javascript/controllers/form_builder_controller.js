@@ -35,6 +35,35 @@ export default class extends Controller {
         });
 
         child.addEventListener("drop", this.drop);
+        
+        // Add hover effects for related tables
+        child.addEventListener("mouseenter", event => {
+          const relatedTables = event.target.dataset.relatedTables;
+          if (relatedTables) {
+            const relatedIds = relatedTables.split(',').filter(id => id);
+            relatedIds.forEach(id => {
+              const relatedTable = this.grid.querySelector(`[data-id="${id}"]`);
+              if (relatedTable) {
+                // Use the same hover background color as the hovered table
+                relatedTable.classList.add('bg-yellow-200');
+              }
+            });
+          }
+        });
+        
+        child.addEventListener("mouseleave", event => {
+          const relatedTables = event.target.dataset.relatedTables;
+          if (relatedTables) {
+            const relatedIds = relatedTables.split(',').filter(id => id);
+            relatedIds.forEach(id => {
+              const relatedTable = this.grid.querySelector(`[data-id="${id}"]`);
+              if (relatedTable) {
+                // Remove the background color when not hovering
+                relatedTable.classList.remove('bg-yellow-200');
+              }
+            });
+          }
+        });
       }
     }
 
