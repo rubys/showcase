@@ -82,6 +82,27 @@ class ScoresController < ApplicationController
     category = @subjects.first.category
     category = 'Open' if category == 'Closed' and @event.closed_scoring == '='
 
+    @heat = @subjects.first
+
+    if @heat.dance.semi_finals?
+      @style = 'radio'
+
+      @final = @slot > @heat.dance.heat_length || @subjects.length <= 8
+
+      @callbacks = 6 unless @final
+
+      if @final && @slot > @heat.dance.heat_length
+        @ranks = Heat.rank_callbacks(@number, ..@heat.dance.heat_length)
+        ranks = @ranks.map {|entry, rank| [entry.id, rank]}.group_by {|id, rank| rank}
+        called_back = []
+        ranks.each do |rank, entries|
+          break if called_back.length + entries.length > 8
+          called_back.concat(entries.map(&:first))
+        end
+        @subjects.select! {|heat| called_back.include? heat.entry_id}
+      end
+    end
+
     if @subjects.empty?
       @dance = '-'
       @scores = []
@@ -129,7 +150,7 @@ class ScoresController < ApplicationController
     # + - Feedback (Needs Work On / Great Job With)
     # & - Number (1-5) and Feedback
     # S - Solo
-    @heat = @subjects.first
+
     if @heat.category == 'Solo'
       @scoring = 'S'
     elsif @heat.category == 'Multi'
@@ -152,7 +173,7 @@ class ScoresController < ApplicationController
     end
 
     @subjects.sort_by! {|heat| [heat.dance_id, heat.entry.lead.back || 0]}
-    ballrooms = @subjects.first.dance_category&.ballrooms || @event.ballrooms
+    ballrooms = @subjects.first&.dance_category&.ballrooms || @event.ballrooms
     @ballrooms = assign_rooms(ballrooms, @subjects, @number)
 
     @sort = @judge.sort_order || 'back'
@@ -208,7 +229,9 @@ class ScoresController < ApplicationController
 
     index = heats.index {|heat| heat.number == @heat.number}
 
-    if @heat.dance.heat_length and (@slot||0) < @heat.dance.heat_length * (@heat.dance.semi_finals ? 2 : 1)
+    max_slots = (@heat.dance.heat_length || 0)
+    max_slots *= 2 if @heat.dance.semi_finals && (!@final || @slot > @heat.dance.heat_length)
+    if @heat.dance.heat_length and (@slot||0) < max_slots
       @next = judge_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||0)+1, **options)
     else
       @next = index + 1 >= heats.length ? nil : heats[index + 1]
@@ -227,7 +250,9 @@ class ScoresController < ApplicationController
       @prev = index > 0 ? heats[index - 1] : nil
       if @prev
         if @prev.dance.heat_length
-          @prev = judge_heat_slot_path(judge: @judge, heat: @prev.number, slot: @prev.dance.heat_length, **options)
+          max_slots = @prev.dance.heat_length || 0
+          max_slots *= 2 if @prev.dance.semi_finals && (Heat.where(number: @prev.number).count > 8)
+          @prev = judge_heat_slot_path(judge: @judge, heat: @prev.number, slot: max_slots, **options)
         else
           @prev = judge_heat_path(judge: @judge, heat: @prev.number, **options)
         end

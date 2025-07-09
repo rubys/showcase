@@ -16,10 +16,10 @@
     <div class="text-2xl font-normal">
     <% if not @heat.dance.semi_finals %>
     Dance <%= @slot %> of <%= @heat.dance.heat_length %>:
-    <% elsif @slot <= @heat.dance.heat_length %>
+    <% elsif !@final %>
     Semi-final <%= @slot %> of <%= @heat.dance.heat_length %>:
     <% else %>
-    Final <%= @slot - @heat.dance.heat_length %> of <%= @heat.dance.heat_length %>:
+    Final <%= @slot > @heat.dance.heat_length ? @slot - @heat.dance.heat_length : @slot %> of <%= @heat.dance.heat_length %>:
     <% end %>
     <% slots = @heat.dance.multi_children.group_by {|multi| multi.slot} %>
     <% if slots.length > 1 %>

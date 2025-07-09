@@ -6,6 +6,8 @@ const HIGHLIGHT = "bg-yellow-200";
 export default class extends Controller {
   static targets = ["error", "comments", "score", "startButton"];
 
+  callbacks = parseInt(this.element.dataset.callbacks);
+
   keydown = event => {
     let form = ["INPUT", "TEXTAREA"].includes(event.target.nodeName) ||
       ["INPUT", "TEXTAREA"].includes(document.activeElement.nodeName);
@@ -421,7 +423,18 @@ export default class extends Controller {
     for (let button of this.element.querySelectorAll("input[type=radio],input[type=checkbox]")) {
       button.disabled = false;
 
-      button.addEventListener("change", _event => {
+      button.addEventListener("change", event => {
+        // enforce maximum number of callbacks
+        if (
+          this.callbacks && button.type === "checkbox" && button.checked &&
+          this.element.querySelectorAll('input[type="checkbox"]:checked').length > this.callbacks
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          button.checked = false;
+          return;
+        }
+
         this.post({
           heat: parseInt(button.name),
           slot: this.element.dataset.slot && parseInt(this.element.dataset.slot),

@@ -382,6 +382,7 @@ module HeatScheduler
       @@level = @@event.heat_range_level
       @@age = @@event.heat_range_age
       @@max = @@event.max_heat_size || 9999
+      @@skating = Dance.where(semi_finals: true).pluck(:id)
 
       # only combine open/closed dances if the category is the same
       @@combinable = @@category == 0 ? [] :
@@ -479,11 +480,13 @@ module HeatScheduler
         @dcat = dcat
       end
 
-      return if @group.size >= @@max
-      return if @participants.include? heat.lead
-      return if @participants.include? heat.follow
-      return if heat.lead.exclude_id and @participants.include? heat.lead.exclude
-      return if heat.follow.exclude_id and @participants.include? heat.follow.exclude
+      unless @@skating.include? heat.dance_id
+        return if @group.size >= @@max
+        return if @participants.include? heat.lead
+        return if @participants.include? heat.follow
+        return if heat.lead.exclude_id and @participants.include? heat.lead.exclude
+        return if heat.follow.exclude_id and @participants.include? heat.follow.exclude
+      end
 
       formations = heat.solo&.formations&.map(&:person)
       return if formations and @participants.any? {|participant| formations.include? participant}

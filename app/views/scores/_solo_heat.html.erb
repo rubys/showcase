@@ -1,0 +1,95 @@
+    <%
+    if @heat.lead.id == 0
+      dancers = []
+    elsif @column_order == 1 or @heat.follow.type == 'Professional'
+      dancers = [@heat.lead, @heat.follow]
+    else
+      dancers = [@heat.follow, @heat.lead]
+    end
+
+    @heat.solo.formations.each do |formation|
+      dancers << formation.person if formation.on_floor
+    end
+
+    if dancers.first
+      studio = dancers.first.studio.name
+    elsif @heat.entry.instructor
+      studio = @heat.entry.instructor.studio.name
+    else
+      studio = ''
+    end
+
+    if dancers.length == 2
+      dancers = dancers.first.join(dancers.last)
+    elsif dancers.length > 0
+      dancers.map! &:display_name
+      dancers[-1] = "and #{dancers.last}"
+      dancers = dancers.join(', ')
+    end
+  %>
+
+  <div class="mx-auto md:w-2/3 w-full flex flex-col text-xl">
+  <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>
+
+  <div class="mb-4">
+  <div class="float-right"><b>Studio</b>: <%= studio %></div>
+  <div><b >Level</b>: <%= @heat.entry.level_name %></div>
+  </div>
+
+  <div class="mb-4"><span><b>Names</b>:&nbsp;</span><span><%= dancers %></span></div>
+
+  <% if @style == 'emcee' %>
+  <% unless @heat.solo.song.blank? %>
+  <div class="mb-4">
+  <div><b >Song</b>: <%= @heat.solo.song %></div>
+  </div>
+  <% end %>
+  <% unless @heat.solo.artist.blank? %>
+  <div class="mb-4">
+  <div><b >Artist</b>: <%= @heat.solo.artist %></div>
+  </div>
+  <% end %>
+  <% else %>
+  <label><b>Comments:</b></label>
+  <textarea disabled data-score-target="comments" data-heat="<%= @heat.id %>" 
+    class="grow block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full"
+  ><%= @comments %></textarea>
+
+  <div>
+  <div class="float-right mt-4">
+  <% if @event.solo_scoring == '1' %>
+  <b>Score:</b>
+  <input disabled data-score-target="score" value="<%= @results.keys.first %>" type="number" min="0" max="100"
+    class="border-2 border-black invalid:border-red-600 w-40 h-24 text-6xl text-center"/>
+  <% else %>
+  <% results = @results.keys.first.start_with?('{') ? JSON.parse(@results.keys.first) : {} %>
+  <div class="grid grid-cols-4 gap-2">
+  <div>
+  <div class="text-center">Technique</div>
+  <input disabled data-score-target="score" name="technique" value="<%= results["technique"] %>" type="number" min="0" max="25"
+    class="border-2 border-black invalid:border-red-600 w-32 h-24 text-6xl text-center"/>
+  </div>
+  <div>
+  <div class="text-center">Execution</div>
+  <input disabled data-score-target="score" name="execution" value="<%= results["execution"] %>" type="number" min="0" max="25"
+    class="border-2 border-black invalid:border-red-600 w-32 h-24 text-6xl text-center"/>
+  </div>
+  <div>
+  <div class="text-center">Presentation</div>
+  <input disabled data-score-target="score" name="poise" value="<%= results["poise"] %>" type="number" min="0" max="25"
+    class="border-2 border-black invalid:border-red-600 w-32 h-24 text-6xl text-center"/>
+  </div>
+  <div>
+  <div class="text-center">Showmanship</div>
+  <input disabled data-score-target="score" name="showmanship" value="<%= results["showmanship"] %>" type="number" min="0" max="25"
+      class="border-2 border-black invalid:border-red-600 w-32 h-24 text-6xl text-center"/>
+  </div>
+  </div>
+  <% end %>
+  </div>
+  </div>
+  <% end %>
+
+  </div>
+
+</div>

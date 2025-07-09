@@ -1,0 +1,47 @@
+  <div class="grow flex flex-col border-2 border-slate-400">
+  <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>
+  <% @scores.each do |score| %>
+  <% if score == '' %>
+  </div><div class="my-auto h-full max-w-[30%] min-w-[30%] border-2 border-slate-400
+     flex flex-col flex-wrap pl-4" data-score="<%= score %>">
+  <% else %>
+  <div class="flex flex-wrap border-2 h-full pl-4" data-score="<%= score %>">
+  <% end %>
+    <span class="order-2 ml-auto p-2"><%= score %></span>
+
+    <% @results[score]&.each do |subject| %>
+      <% lvl = subject.entry.level.initials %>
+      <div class='grid align-middle w-20 my-[1%] min-h-[12%] sm:min-h-[24%] mx-1 border-2 rounded-lg text-center head-<%=lvl%>' draggable="true" data-heat="<%= subject.id %>" id="<%= dom_id subject %>">
+        <% if @backnums and not subject.entry.lead.back.blank? %>
+        <span class="my-auto">
+        <span class="font-bold text-xl"><%= subject.entry.lead.back %></span>
+        <div class="hidden text-xs sm:block"><%= subject.entry.subject_category(@track_ages).gsub(' ', '') %>-<%= subject.entry.level.initials %></div>
+        </span>
+        <div class="hidden text-sm sm:block base-<%=lvl%>"><br>
+        <% else %>
+        <div class="my-auto">
+        <% end %>
+
+        <% if subject.entry.follow.type == 'Professional' %>
+        <span class="text-l my-auto"><%= subject.entry.lead.back_name %>
+        <%= subject.entry.follow.back_name %></span>
+        <% else %>
+        <span class="text-l my-auto"><%= subject.entry.follow.back_name %>
+        <%= subject.entry.lead.back_name %></span>
+        <% end %>
+        
+        </div>
+        <% unless @backnums and not subject.entry.lead.back.blank? %>
+        <div class="hidden text-sm sm:block base-<%=lvl%>"><br>
+        <% if @combine_open_and_closed and %w(Open Closed).include? subject.category %><%= subject.category %><br><% end %>
+        <%= subject.entry.subject_category(@track_ages) %><br>
+        <%= lvl %></div>
+        <% end %>
+      </div>  
+  <% end %>
+  <% if score != '' %>
+  </div>
+  <% end %>
+  <% end %>
+  </div>
+</div>

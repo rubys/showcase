@@ -1,0 +1,42 @@
+  <div class="grow flex flex-col border-2 border-slate-400 overflow-y-auto">
+  <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>
+  <table class="table-auto border-separate border-spacing-y-1 mx-4">
+  <thead>
+    <tr>
+      <th class="text-left border-b-2 border-black" rowspan="2">Back</th>
+      <th class="text-left border-b-2 border-black" rowspan="2">Subject</th>
+      <th class="text-left border-b-2 border-black" rowspan="2">Partner</th>
+      <th class="text-left border-b-2 border-black" rowspan="2">Category</th>
+      <th class="text-left border-b-2 border-black" rowspan="2">Studio</th>
+    </tr>
+  </thead>
+  
+  <% subjects = @ballrooms.values.flatten %>
+  <% subjects.each do |subject| %>
+    <% subcat = subject.entry.pro ? 'Pro' : "#{subject.entry.subject_category(@track_ages)} - #{subject.entry.level.initials}" %>
+    <% if subject.number > 0 %>
+    <tr class="hover:bg-yellow-200" id="<%= dom_id subject %>">
+    <% else %>
+    <tr class="hover:bg-yellow-200 line-through opacity-50">
+    <% end %>
+      <td class="<% if @sort != 'level' %>py-2 <% end %>text-xl"><%= subject.lead.back %></td>
+      <% if subject.lead.type == 'Student' %>
+      <td><%= subject.follow.display_name %></td>
+      <td><%= subject.lead.display_name %></td>
+      <% else %>
+      <td><%= subject.follow.display_name %></td>
+      <td><%= subject.lead.display_name %></td>
+      <% end %>
+      <td><% if @combine_open_and_closed and %w(Open Closed).include? subject.category %><%= subject.category %> - <% end %><%= subcat %></td>
+      <td><%= subject.subject.studio.name %></td>
+    </tr>
+  <% end %>
+  
+  <% if subjects.empty? %>
+    <tr>
+      <td colspan="5"><p class="m-5">No couples on the floor for this heat.</p></td>
+    </tr>
+  <% end %>
+  </table>
+  </div>
+  </div>
