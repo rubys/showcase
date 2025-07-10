@@ -89,41 +89,11 @@ class ScoresController < ApplicationController
 
       @final = @slot > @heat.dance.heat_length || @subjects.length <= 8
 
-      @callbacks = 6 unless @final
-
-      if @final && @slot > @heat.dance.heat_length
-        # select callbacks for finals
-        ranks = Heat.rank_callbacks(@number, ..@heat.dance.heat_length)
-          .map {|entry, rank| [entry.id, rank]}.group_by {|id, rank| rank}
-        called_back = []
-        ranks.each do |rank, entries|
-          break if called_back.length + entries.length > 8
-          called_back.concat(entries.map(&:first))
-        end
-        @subjects.select! {|heat| called_back.include? heat.entry_id}
-
-        # find scores for finals, or create them in random order if they don't exist
-        scores = Score.joins(:heat)
-          .where(judge: @judge, heats: {number: @number}, slot: @slot)
-
-        remove = scores.select {|score| !@subjects.any? {|heat| heat.entry_id == score.heat.entry_id}}
-        remove.each {|score| score.destroy}
-        scores -= remove
-
-        scores.select! {|score| score.value.to_i <= @subjects.length}
-        pending = @subjects.select {|heat| !scores.any? {|score| score.heat.entry_id == heat.entry_id}}.shuffle
-        ranks = (1..@subjects.length).to_a - scores.map(&:value).map(&:to_i)
-
-        pending.zip(ranks).each do |heat, rank|
-          score = Score.find_or_create_by(judge: @judge, heat: heat, slot: @slot)
-          score.value = rank.to_s
-          score.save
-          scores << score
-        end
-
+      if @final
         # sort subjects by score
-        @subjects = scores.to_a.map {|score| [score.value.to_i, score]}.sort
-          .map {|value, score| score.heat}.uniq
+        @subjects = final_scores.map(&:heat).uniq
+      else
+        @callbacks = 6
       end
     end
 
@@ -344,26 +314,28 @@ class ScoresController < ApplicationController
   end
 
   def update_rank
-    judge = Person.find(params[:judge].to_i)
+    @judge = Person.find(params[:judge].to_i)
     from_heat_id = params[:source].to_i
     to_heat_id = params[:target].to_i
 
     # Get slot from parent container if available
-    slot = nil
+    @slot = nil
     if params[:id] && params[:id].match(/slot-(\d+)/)
-      slot = $1.to_i
+      @slot = $1.to_i
     end
 
     from_heat = Heat.find_by(id: from_heat_id)
     @number = from_heat&.number || 0
 
-    error = nil
-    scores = []
-
     retry_transaction do
-      scores = Score.joins(:heat)
-        .where(judge: judge, heats: {number: @number}, slot: slot)
-        .order(Arel.sql('CAST(scores.value AS INTEGER)'))
+      @subjects = Heat.where(number: @number).includes(
+        dance: [:multi_children],
+        entry: [:age, :level, :lead, :follow]
+      ).to_a
+
+      @heat = @subjects.first
+
+      scores = final_scores
     
       # Find the scores 
       from_score = scores.find { |score| score.heat_id == from_heat_id }
@@ -392,25 +364,15 @@ class ScoresController < ApplicationController
         # Re-sort subjects by score
         @subjects = scores.to_a.map {|score| [score.value.to_i, score]}.sort
           .map {|value, score| score.heat}.uniq
-      else
-        error = "Scores not found"
       end
     end
 
-    if error
-      render json: { error: error }, status: :unprocessable_entity
-    else
-      # Reload heat data and render updated partial
-      @judge = judge
-      @number = from_heat.number
-      @slot = slot
-      
-      @track_ages = Event.first.track_ages
-      
-      render turbo_stream: turbo_stream.replace("rank-heat-container", 
-        partial: "scores/rank_heat", 
-        locals: { judge: @judge, subjects: @subjects })
-    end
+    # Reload heat data and render updated partial      
+    @track_ages = Event.first.track_ages
+    
+    render turbo_stream: turbo_stream.replace("rank-heat-container", 
+      partial: "scores/rank_heat", 
+      locals: { judge: @judge, subjects: @subjects })
   end
 
   def post_feedback
@@ -1034,5 +996,38 @@ class ScoresController < ApplicationController
       Score.joins(heat: {solo: :formations}).
         group(:person_id, :value).
         count(:value).to_a
+    end
+
+    def final_scores
+      # select callbacks for finals
+      ranks = Heat.rank_callbacks(@number, ..@heat.dance.heat_length)
+        .map {|entry, rank| [entry.id, rank]}.group_by {|id, rank| rank}
+      called_back = []
+      ranks.each do |rank, entries|
+        break if called_back.length + entries.length > 8
+        called_back.concat(entries.map(&:first))
+      end
+      @subjects.select! {|heat| called_back.include? heat.entry_id}
+
+      # find scores for finals, or create them in random order if they don't exist
+      scores = Score.joins(:heat)
+        .where(judge: @judge, heats: {number: @number}, slot: @slot)
+
+      remove = scores.select {|score| !@subjects.any? {|heat| heat.entry_id == score.heat.entry_id}}
+      remove.each {|score| score.destroy}
+      scores -= remove
+
+      scores.select! {|score| score.value.to_i <= @subjects.length}
+      pending = @subjects.select {|heat| !scores.any? {|score| score.heat.entry_id == heat.entry_id}}.shuffle
+      ranks = (1..@subjects.length).to_a - scores.map(&:value).map(&:to_i)
+
+      pending.zip(ranks).each do |heat, rank|
+        score = Score.find_or_create_by(judge: @judge, heat: heat, slot: @slot)
+        score.value = rank.to_s
+        score.save
+        scores << score
+      end
+
+      scores.to_a.sort_by {|score| score.value.to_i}
     end
 end
