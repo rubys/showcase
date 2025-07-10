@@ -110,6 +110,7 @@ class ScoresController < ApplicationController
         remove.each {|score| score.destroy}
         scores -= remove
 
+        scores.select! {|score| score.value.to_i <= @subjects.length}
         pending = @subjects.select {|heat| !scores.any? {|score| score.heat.entry_id == heat.entry_id}}.shuffle
         ranks = (1..@subjects.length).to_a - scores.map(&:value).map(&:to_i)
 
@@ -339,6 +340,76 @@ class ScoresController < ApplicationController
       score.destroy
       render json: score
     end
+    end
+  end
+
+  def update_rank
+    judge = Person.find(params[:judge].to_i)
+    from_heat_id = params[:source].to_i
+    to_heat_id = params[:target].to_i
+
+    # Get slot from parent container if available
+    slot = nil
+    if params[:id] && params[:id].match(/slot-(\d+)/)
+      slot = $1.to_i
+    end
+
+    from_heat = Heat.find_by(id: from_heat_id)
+    @number = from_heat&.number || 0
+
+    error = nil
+    scores = []
+
+    retry_transaction do
+      scores = Score.joins(:heat)
+        .where(judge: judge, heats: {number: @number}, slot: slot)
+        .order(Arel.sql('CAST(scores.value AS INTEGER)'))
+    
+      # Find the scores 
+      from_score = scores.find { |score| score.heat_id == from_heat_id }
+      to_score = scores.find { |score| score.heat_id == to_heat_id }
+      
+      if from_score && to_score
+        from_rank = from_score.value.to_i
+        to_rank = to_score.value.to_i
+        
+        # Get scores in the affected range and rotate their ranks
+        if from_rank > to_rank
+          # Moving up (e.g., 5 to 2)
+          affected_scores = scores.select { |s| s.value.to_i >= to_rank && s.value.to_i <= from_rank }
+          new_ranks = affected_scores.map { |s| s.value.to_i }.rotate(1)
+        else
+          # Moving down (e.g., 2 to 5)
+          affected_scores = scores.select { |s| s.value.to_i >= from_rank && s.value.to_i <= to_rank }
+          new_ranks = affected_scores.map { |s| s.value.to_i }.rotate(-1)
+        end
+        
+        # Update all affected scores with their new ranks
+        affected_scores.zip(new_ranks).each do |score, new_rank|
+          score.update!(value: new_rank.to_s)
+        end
+
+        # Re-sort subjects by score
+        @subjects = scores.to_a.map {|score| [score.value.to_i, score]}.sort
+          .map {|value, score| score.heat}.uniq
+      else
+        error = "Scores not found"
+      end
+    end
+
+    if error
+      render json: { error: error }, status: :unprocessable_entity
+    else
+      # Reload heat data and render updated partial
+      @judge = judge
+      @number = from_heat.number
+      @slot = slot
+      
+      @track_ages = Event.first.track_ages
+      
+      render turbo_stream: turbo_stream.replace("rank-heat-container", 
+        partial: "scores/rank_heat", 
+        locals: { judge: @judge, subjects: @subjects })
     end
   end
 

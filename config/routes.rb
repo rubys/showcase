@@ -178,6 +178,7 @@ Rails.application.routes.draw do
     get '/scores/:judge/heat/:heat/:slot', to: 'scores#heat', as: 'judge_heat_slot', heat: /\d+\.?\d*/
     post '/scores/:judge/post', to: 'scores#post', as: 'post_score'
     post '/scores/:judge/sort', to: 'scores#sort', as: 'sort_scores'
+    post '/scores/:judge/update-rank', to: 'scores#update_rank', as: 'update_rank'
     post '/scores/:judge/post-feedback', to: 'scores#post_feedback', as: 'post_feedback'
     resources :scores do
       match 'by-studio', on: :collection, action: :by_studio, via: %i(get post)
