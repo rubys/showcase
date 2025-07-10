@@ -11,8 +11,7 @@
     </tr>
   </thead>
   
-  <% subjects = @ballrooms.values.flatten %>
-  <% subjects.each do |subject| %>
+  <% @subjects.each do |subject| %>
     <% subcat = subject.entry.pro ? 'Pro' : "#{subject.entry.subject_category(@track_ages)} - #{subject.entry.level.initials}" %>
     <% if subject.number > 0 %>
     <tr class="hover:bg-yellow-200" id="<%= dom_id subject %>">
@@ -32,7 +31,7 @@
     </tr>
   <% end %>
   
-  <% if subjects.empty? %>
+  <% if @subjects.empty? %>
     <tr>
       <td colspan="5"><p class="m-5">No couples on the floor for this heat.</p></td>
     </tr>

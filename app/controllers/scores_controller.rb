@@ -92,14 +92,37 @@ class ScoresController < ApplicationController
       @callbacks = 6 unless @final
 
       if @final && @slot > @heat.dance.heat_length
-        @ranks = Heat.rank_callbacks(@number, ..@heat.dance.heat_length)
-        ranks = @ranks.map {|entry, rank| [entry.id, rank]}.group_by {|id, rank| rank}
+        # select callbacks for finals
+        ranks = Heat.rank_callbacks(@number, ..@heat.dance.heat_length)
+          .map {|entry, rank| [entry.id, rank]}.group_by {|id, rank| rank}
         called_back = []
         ranks.each do |rank, entries|
           break if called_back.length + entries.length > 8
           called_back.concat(entries.map(&:first))
         end
         @subjects.select! {|heat| called_back.include? heat.entry_id}
+
+        # find scores for finals, or create them in random order if they don't exist
+        scores = Score.joins(:heat)
+          .where(judge: @judge, heats: {number: @number}, slot: @slot)
+
+        remove = scores.select {|score| !@subjects.any? {|heat| heat.entry_id == score.heat.entry_id}}
+        remove.each {|score| score.destroy}
+        scores -= remove
+
+        pending = @subjects.select {|heat| !scores.any? {|score| score.heat.entry_id == heat.entry_id}}.shuffle
+        ranks = (1..@subjects.length).to_a - scores.map(&:value).map(&:to_i)
+
+        pending.zip(ranks).each do |heat, rank|
+          score = Score.find_or_create_by(judge: @judge, heat: heat, slot: @slot)
+          score.value = rank.to_s
+          score.save
+          scores << score
+        end
+
+        # sort subjects by score
+        @subjects = scores.to_a.map {|score| [score.value.to_i, score]}.sort
+          .map {|value, score| score.heat}.uniq
       end
     end
 
@@ -172,11 +195,11 @@ class ScoresController < ApplicationController
       end
     end
 
-    @subjects.sort_by! {|heat| [heat.dance_id, heat.entry.lead.back || 0]}
+    @subjects.sort_by! {|heat| [heat.dance_id, heat.entry.lead.back || 0]} unless @final
     ballrooms = @subjects.first&.dance_category&.ballrooms || @event.ballrooms
     @ballrooms = assign_rooms(ballrooms, @subjects, @number)
 
-    @sort = @judge.sort_order || 'back'
+    @sort = @judge.sort_order || 'back' unless @final
     @show = @judge.show_assignments || 'first'
     @show = 'mixed' unless @event.assign_judges > 0 and @show != 'mixed' && Person.where(type: 'Judge').count > 1
     if @sort == 'level'
