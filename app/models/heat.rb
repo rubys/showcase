@@ -84,11 +84,11 @@ class Heat < ApplicationRecord
   # Rules 2 through 4 apply to the judges, not to the evaluation of the scores
 
   # Rules 5-8: placement.  Note: optional parameters are for Rule 11 purposes
-  def self.rank_placement(number, majority, entries=nil, examine=nil)
+  def self.rank_placement(number, slots, majority, entries=nil, examine=nil)
     number = number.is_a?(Enumerable) ? number.map(&:to_f) : number.to_f
 
     # extract all scores for the given heat, grouped by entry_id
-    scores = Score.joins(heat: :entry).where(heats: {number: number}, value: 1..).
+    scores = Score.joins(heat: :entry).where(heats: {number: number}, slot: slots, value: 1..).
       group_by { |score| score.heat.entry_id }.map { |entry_id, scores| [entry_id, scores.map {|score| score.value.to_i}] }.to_h
 
     scores.slice!(*entries.map(&:id)) if entries
@@ -164,7 +164,7 @@ class Heat < ApplicationRecord
     rankings
   end
 
-  def self.rank_summaries(places, heats=[], majority=1)
+  def self.rank_summaries(places, heats=[], slots=nil, majority=1)
     # Rule 9: sort by minimum total place marks
     initial_rankings = places.map {|couple, results| [couple, results.values.sum]}.
       group_by {|couple, total| total}.
@@ -190,7 +190,7 @@ class Heat < ApplicationRecord
           # Rule 11
           entries = Entry.joins(:heats, :lead).where(heats: {number: heats}, lead: {back: top}).all.uniq
           examine = (examining - top.length + 1.. examining)
-          placement = rank_placement(heats, majority, entries, examine).
+          placement = rank_placement(heats, slots, majority, entries, examine).
             select { |entry, rank| rank == 1 }
 
           if placement.length == 1

@@ -457,4 +457,217 @@ class DanceTest < ActiveSupport::TestCase
     assert_includes all_around.multi_children.map(&:dance), rumba
     assert_includes all_around.multi_children.map(&:dance), cha_cha
   end
+  
+  # ===== SCRUTINEERING TESTS =====
+  
+  test "scrutineering for multi-dance semi-finals" do
+    # Create a multi-dance event
+    aa_smooth = Dance.create!(
+      name: 'All Around Smooth Scrutineering Test',
+      order: 130,
+      multi_category: @category_multi,
+      heat_length: 2
+    )
+    
+    # Create component dances
+    waltz = dances(:waltz)
+    tango = dances(:tango)
+    
+    # Link them with slot numbers
+    Multi.create!(parent: aa_smooth, dance: waltz, slot: 1)
+    Multi.create!(parent: aa_smooth, dance: tango, slot: 2)
+    
+    # Create judges
+    staff = Studio.find(0)
+    judges = {}
+    %i(a b c d e).each do |name|
+      judges[name] = Person.create!(name: name, type: "Judge", studio: staff)
+    end
+    
+    # Test data matching rule 11 test
+    scores_data = {
+      waltz: {
+        a: {111 => 2, 112 => 6, 113 => 8, 114 => 7, 115 => 1, 116 => 4, 117 => 5, 118 => 3},
+        b: {111 => 5, 112 => 8, 113 => 3, 114 => 4, 115 => 1, 116 => 2, 117 => 7, 118 => 6},
+        c: {111 => 6, 112 => 1, 113 => 2, 114 => 3, 115 => 5, 116 => 4, 117 => 8, 118 => 7},
+        d: {111 => 6, 112 => 5, 113 => 8, 114 => 3, 115 => 2, 116 => 1, 117 => 7, 118 => 4},
+        e: {111 => 4, 112 => 7, 113 => 8, 114 => 2, 115 => 6, 116 => 1, 117 => 3, 118 => 5},
+      },
+      tango: {
+        a: {111 => 3, 112 => 7, 113 => 8, 114 => 6, 115 => 1, 116 => 5, 117 => 2, 118 => 4},
+        b: {111 => 6, 112 => 8, 113 => 5, 114 => 3, 115 => 1, 116 => 2, 117 => 7, 118 => 4},
+        c: {111 => 5, 112 => 3, 113 => 4, 114 => 1, 115 => 2, 116 => 6, 117 => 7, 118 => 8},
+        d: {111 => 5, 112 => 8, 113 => 6, 114 => 3, 115 => 4, 116 => 2, 117 => 7, 118 => 1},
+        e: {111 => 4, 112 => 7, 113 => 8, 114 => 3, 115 => 5, 116 => 2, 117 => 1, 118 => 6},
+      }
+    }
+    
+    # Create entries and heats
+    studio = studios(:one)
+    leaders = {}
+    entries = {}
+    heat_number = 200
+    
+    # Create all entries and heats for the multi-dance
+    scores_data[:waltz].values.first.keys.each do |back_number|
+      leaders[back_number] = Person.create!(
+        name: "Leader #{back_number}",
+        type: "Leader",
+        studio: studio,
+        back: back_number
+      )
+      
+      entry = Entry.create!(
+        lead: leaders[back_number],
+        follow: people(:student_one),
+        instructor: people(:instructor1),
+        age: ages(:one),
+        level: levels(:one)
+      )
+      
+      entries[back_number] = entry
+      
+      # Create heat for this multi-dance
+      heat = Heat.create!(
+        number: heat_number,
+        entry: entry,
+        dance: aa_smooth,
+        category: 'Multi'
+      )
+      
+      # Create scores for waltz (slot 1)
+      scores_data[:waltz].each do |judge_name, placements|
+        Score.create!(
+          heat: heat,
+          judge: judges[judge_name],
+          value: placements[back_number],
+          slot: 1
+        )
+      end
+      
+      # Create scores for tango (slot 2)
+      scores_data[:tango].each do |judge_name, placements|
+        Score.create!(
+          heat: heat,
+          judge: judges[judge_name],
+          value: placements[back_number],
+          slot: 2
+        )
+      end
+    end
+    
+    # Run scrutineering
+    summary, ranks = aa_smooth.scrutineering
+    
+    # Expected summary (individual dance results)
+    expected_summary = {
+      entries[111].id => {"Waltz" => 4, "Tango" => 5},
+      entries[112].id => {"Waltz" => 6, "Tango" => 8},
+      entries[113].id => {"Waltz" => 8, "Tango" => 6},
+      entries[114].id => {"Waltz" => 3, "Tango" => 3},
+      entries[115].id => {"Waltz" => 2, "Tango" => 1},
+      entries[116].id => {"Waltz" => 1, "Tango" => 2},
+      entries[117].id => {"Waltz" => 7, "Tango" => 7},
+      entries[118].id => {"Waltz" => 5, "Tango" => 4}
+    }
+    
+    # Expected final ranks
+    expected_ranks = {
+      entries[111].id => 4,
+      entries[112].id => 6,
+      entries[113].id => 7,
+      entries[114].id => 3,
+      entries[115].id => 1,
+      entries[116].id => 2,
+      entries[117].id => 8,
+      entries[118].id => 5
+    }
+    
+    # Verify the summary
+    assert_equal expected_summary, summary
+    
+    # Verify the final ranks
+    assert_equal expected_ranks, ranks
+  end
+  
+  test "scrutineering with no heats returns empty results" do
+    dance = Dance.create!(
+      name: 'Empty Dance Test',
+      order: 131,
+      multi_category: @category_multi
+    )
+    
+    summary, ranks = dance.scrutineering
+    
+    assert_equal({}, summary)
+    assert_equal({}, ranks)
+  end
+  
+  test "scrutineering filters by heat length when over 8 heats" do
+    # Create a multi-dance with heat_length
+    aa_test = Dance.create!(
+      name: 'AA Test with Heat Length',
+      order: 132,
+      multi_category: @category_multi,
+      heat_length: 3
+    )
+    
+    # Create component dances
+    waltz = dances(:waltz)
+    tango = dances(:tango)
+    
+    # Link them with slot numbers above heat_length
+    Multi.create!(parent: aa_test, dance: waltz, slot: 4)
+    Multi.create!(parent: aa_test, dance: tango, slot: 5)
+    
+    # Create judges
+    staff = Studio.find(0)
+    judges = []
+    3.times do |i|
+      judges << Person.create!(name: "Judge #{i}", type: "Judge", studio: staff)
+    end
+    
+    # Create 10 heats to trigger the filtering logic
+    studio = studios(:one)
+    10.times do |i|
+      leader = Person.create!(
+        name: "Leader Test #{i}",
+        type: "Leader",
+        studio: studio,
+        back: 200 + i
+      )
+      
+      entry = Entry.create!(
+        lead: leader,
+        follow: people(:student_one),
+        instructor: people(:instructor1),
+        age: ages(:one),
+        level: levels(:one)
+      )
+      
+      heat = Heat.create!(
+        number: 300,
+        entry: entry,
+        dance: aa_test,
+        category: 'Multi'
+      )
+      
+      # Create scores only for slots > heat_length
+      judges.each_with_index do |judge, j|
+        Score.create!(heat: heat, judge: judge, value: (i + j) % 6 + 1, slot: 4)
+        Score.create!(heat: heat, judge: judge, value: (i + j + 1) % 6 + 1, slot: 5)
+      end
+    end
+    
+    summary, ranks = aa_test.scrutineering
+    
+    # Should have results for all 10 leaders
+    assert_equal 10, summary.length
+    assert_equal 10, ranks.length
+    
+    # Each leader should have both dances in their summary
+    summary.values.each do |dance_results|
+      assert_equal %w[Waltz Tango].sort, dance_results.keys.sort
+    end
+  end
 end

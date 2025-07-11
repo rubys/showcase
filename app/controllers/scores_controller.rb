@@ -1000,14 +1000,19 @@ class ScoresController < ApplicationController
 
     def final_scores
       # select callbacks for finals
-      ranks = Heat.rank_callbacks(@number, ..@heat.dance.heat_length)
-        .map {|entry, rank| [entry.id, rank]}.group_by {|id, rank| rank}
-      called_back = []
-      ranks.each do |rank, entries|
-        break if called_back.length + entries.length > 8
-        called_back.concat(entries.map(&:first))
+      if @subjects.length <= 8
+        # Skip semi-finals, all couples proceed to finals
+        called_back = @subjects.map(&:entry_id)
+      else
+        ranks = Heat.rank_callbacks(@number, ..@heat.dance.heat_length)
+          .map {|entry, rank| [entry.id, rank]}.group_by {|id, rank| rank}
+        called_back = []
+        ranks.each do |rank, entries|
+          break if called_back.length + entries.length > 8
+          called_back.concat(entries.map(&:first))
+        end
+        @subjects.select! {|heat| called_back.include? heat.entry_id}
       end
-      @subjects.select! {|heat| called_back.include? heat.entry_id}
 
       # find scores for finals, or create them in random order if they don't exist
       scores = Score.joins(:heat)

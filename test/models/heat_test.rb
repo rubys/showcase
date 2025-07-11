@@ -388,7 +388,7 @@ class HeatTest < ActiveSupport::TestCase
 
       assert_equal(
         test_data[:results],
-        Heat.rank_placement(heat_number, places.keys.length/2+1).map {|entry, count| [entry.lead.back, count]}.to_h
+        Heat.rank_placement(heat_number, nil, places.keys.length/2+1).map {|entry, count| [entry.lead.back, count]}.to_h
       )
     end
   end
@@ -560,7 +560,7 @@ class HeatTest < ActiveSupport::TestCase
 
     summary = leaders.values.map {|leader| [leader.back, {}]}.to_h
     %i(waltz tango).each do |dance|
-      Heat.rank_placement(heats[dance], judges.keys.length/2+1).each do |entry, rank|
+      Heat.rank_placement(heats[dance], nil, judges.keys.length/2+1).each do |entry, rank|
         summary[entry.lead.back][dance] = rank
       end
     end
@@ -569,7 +569,7 @@ class HeatTest < ActiveSupport::TestCase
 
     majority = judges.keys.length * heats.values.length / 2 + 1
 
-    ranks = Heat.rank_summaries(summary, heats.values, majority).to_a.sort.to_h
+    ranks = Heat.rank_summaries(summary, heats.values, nil, majority).to_a.sort.to_h
 
     assert_equal final_example[:ranks], ranks
   end
