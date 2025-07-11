@@ -453,6 +453,22 @@ class HeatsControllerTest < ActionDispatch::IntegrationTest
     assert_response 303
     assert_redirected_to person_url(@student)
   end
+  
+  test "delete respects return-to parameter for redirect" do
+    return_url = "/heats#heat_85"
+    delete heat_url(@heat), params: { 'return-to': return_url }
+    
+    assert_response 303
+    assert_redirected_to return_url
+  end
+  
+  test "delete with both return-to and primary uses return-to" do
+    return_url = "/heats#heat_85"
+    delete heat_url(@heat), params: { primary: @student.id, 'return-to': return_url }
+    
+    assert_response 303
+    assert_redirected_to return_url
+  end
 
   # ===== INTEGRATION TESTS =====
   

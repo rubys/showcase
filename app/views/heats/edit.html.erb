@@ -22,13 +22,13 @@
 
   <% if @heat.number < 0 %>
   <%= up_link 'Restore this heat', heat_path(@heat), class: 'btn-grey my-0',
-    method: :delete, params: {primary: params[:primary]} %>
+    method: :delete, params: {primary: params[:primary], 'return-to': params['return_to']}, data: { turbo: false } %>
   <% elsif @heat.number > 0 %>
   <%= up_link 'Scratch this heat', heat_path(@heat), class: 'btn-grey my-0',
-    method: :delete, params: {primary: params[:primary]} %>
+    method: :delete, params: {primary: params[:primary], 'return-to': params['return_to']}, data: { turbo: false } %>
   <% else %>
   <%= up_link 'Remove this heat', heat_path(@heat), class: 'btn-grey my-0',
-    method: :delete, params: {primary: params[:primary]}, data: { turbo_confirm: 'Are you sure?' } %>
+    method: :delete, params: {primary: params[:primary], 'return-to': params['return_to']}, data: { turbo: false, turbo_confirm: 'Are you sure?' } %>
   <% end %>
 
   <% if params['return_to'] %>

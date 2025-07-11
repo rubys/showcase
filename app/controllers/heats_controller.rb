@@ -530,8 +530,8 @@ class HeatsController < ApplicationController
     end
 
     respond_to do |format|
-      format.html { redirect_to params[:primary] ? person_url(params[:primary]) : heats_url,
-        status: 303, notice: notice }
+      redirect_url = params['return-to'] || (params[:primary] ? person_url(params[:primary]) : heats_url)
+      format.html { redirect_to redirect_url, status: 303, notice: notice }
       format.json { head :no_content }
     end
   end
