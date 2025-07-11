@@ -213,8 +213,8 @@ end
         <td colspan="9" class="text-lg">Heat <%= number %>:
           <% unless @combine_open_and_closed and %w(Open Closed).include? heats.first.category %><%= heats.first.category %><% end %>
           <% if heats.first.dance_id == heats.last.dance_id %>
-          <%= heats.first.dance.name %>
-          <% if heats.first.category == 'Solo' and heats.first.solo.combo_dance%>
+          <%= heats.first.display_dance_name %>
+          <% if heats.first.category == 'Solo' and heats.first.solo.combo_dance and !heats.first.child_dance_name %>
           / <%= heats.first.solo.combo_dance.name %>
           <% end %>
           <% else %>
@@ -244,7 +244,7 @@ end
           <% if heat.dance_id != dance %>
            <tr>
              <td>
-             <td colspan="8" class="text-s pt-2"><%= heat.dance.name %></td>
+             <td colspan="8" class="text-s pt-2"><%= heat.display_dance_name %></td>
           </tr>
           <% dance = heat.dance_id %>
          <% end %>
@@ -260,10 +260,10 @@ end
            <td class="pl-4">
            <% else %>
            <td class="pl-4"><%= heat.category %>
-           <% if heat.category == 'Solo' and heat.solo.combo_dance %>
+           <% if heat.category == 'Solo' and heat.solo.combo_dance and !heat.child_dance_name %>
            <td class="pl-4"><%= heat.dance.name %> / <%= heat.solo.combo_dance.name %>
            <% else %>
-           <td class="pl-4"><%= heat.dance.name %>
+           <td class="pl-4"><%= heat.display_dance_name %>
            <% end %>
            <% end %>
            <% unless heat.category == 'Solo' %>

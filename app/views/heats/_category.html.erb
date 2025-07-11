@@ -38,7 +38,13 @@
   </div>
 
   <div class="min-w-full">
+    <% last_number = nil %>
     <% heats.each do |number, ballrooms| %>
+    <% # Skip duplicate heat numbers (for multi-heats) in heats index view only %>
+    <% if controller_name == 'heats' && action_name == 'index' && last_number == number %>
+      <% next %>
+    <% end %>
+    <% last_number = number %>
     <% heats = ballrooms.map(&:last).flatten %>
     <% tally = heats.select {|heat| heat.number > 0}.map {|heat| e=heat.entry; [e.lead_id, e.follow_id]}.flatten.tally %>
     <% dance = heats.first.dance_id == heats.last.dance_id ? heats.first.dance_id : 0 %>

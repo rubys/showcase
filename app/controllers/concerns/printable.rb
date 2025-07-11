@@ -3,7 +3,7 @@ module Printable
     event = Event.last
 
     @heats = Heat.order('abs(number)').includes(
-      dance: [:open_category, :closed_category, :solo_category, :multi_category],
+      dance: [:open_category, :closed_category, :solo_category, :multi_category, {multi_children: :dance}],
       entry: [:age, :level, lead: [:studio], follow: [:studio]],
       solo: [:formations]
     )
@@ -98,8 +98,30 @@ module Printable
           cat = 'Uncategorized'
         end
 
-        @agenda[cat] << [number, assign_rooms(ballrooms, heats,
-          (judge_ballrooms && ballrooms == 2) ? -number : nil)]
+        # Check if this is a multi-heat with children that should be expanded
+        if heats.first.category == 'Multi' && heats.first.dance.multi_children.any?
+          # Create a separate entry for each child dance
+          heats.first.dance.multi_children.sort_by { |child| child.slot || child.id }.each do |child_dance|
+            # Create copies of heats with the child dance name
+            heat_copies = heats.map do |heat|
+              # Create a new Heat instance with the same attributes
+              copy = Heat.new(heat.attributes.except('id'))
+              copy.id = heat.id  # Preserve ID for routing
+              copy.child_dance_name = child_dance.dance.name
+              # Copy associations
+              copy.dance = heat.dance
+              copy.entry = heat.entry
+              copy.solo = heat.solo if heat.solo
+              copy
+            end
+            
+            @agenda[cat] << [number, assign_rooms(ballrooms, heat_copies,
+              (judge_ballrooms && ballrooms == 2) ? -number : nil)]
+          end
+        else
+          @agenda[cat] << [number, assign_rooms(ballrooms, heats,
+            (judge_ballrooms && ballrooms == 2) ? -number : nil)]
+        end
       end
     end
 

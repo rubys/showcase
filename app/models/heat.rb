@@ -7,6 +7,8 @@ class Heat < ApplicationRecord
   has_one :solo, dependent: :destroy
   has_many :recordings, dependent: :destroy
 
+  attr_accessor :child_dance_name
+
   def number
     return @number if @number
     value = super
@@ -236,5 +238,13 @@ class Heat < ApplicationRecord
     end
 
     result.to_h
+  end
+
+  def display_dance_name
+    if child_dance_name
+      "#{dance.name} - #{child_dance_name}"
+    else
+      dance.name
+    end
   end
 end

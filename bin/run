@@ -2,6 +2,7 @@
 
 if [[ $# -lt 2 ]]; then
   echo "Usage: $0 db script"
+  echo "       $0 db -e 'ruby code'"
   exit 1
 fi
 
@@ -22,4 +23,11 @@ if [[ "$1" = "test" ]]; then
 fi
 
 shift
-bin/rails runner $@
+
+# Handle -e option for inline code execution
+if [[ "$1" = "-e" ]]; then
+  shift
+  bin/rails runner "$1"
+else
+  bin/rails runner "$@"
+fi
