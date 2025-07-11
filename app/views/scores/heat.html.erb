@@ -92,13 +92,11 @@ Swiping left and right on mobile devices and tablets also work.</li>
 </div>
 
   <div class="h-full flex flex-row max-h-[85%]"
-    <% if @final %>
-    <% else %>
     data-controller="score" data-drop-action="<%=  post_score_path(judge: @judge) %>" 
     data-start-action="<%= start_heat_event_index_path %>" data-heat="<%= @number %>"
     <% if @callbacks %>data-callbacks="<%= @callbacks %>"<% end %>
     <% if @slot %>data-slot="<%= @slot %>"<% end %>
-    <% end %>>
+    >
 
   <% if @heat.category == 'Solo' %>
     <%= render 'solo_heat' %>
