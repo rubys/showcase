@@ -160,22 +160,29 @@ module Printable
 
         @cat_start[name] = start
 
+        last_number_processed = nil
         heats.each do |number, ballrooms|
           heats = ballrooms.values.flatten
 
           @start[number] ||= start
 
-          if heats.first.dance.heat_length
-            start += heat_length * heats.first.dance.heat_length
-            if heats.first.dance.semi_finals
+          # Only add time for the first occurrence of each heat number
+          # (to avoid double-counting when multi-heats are expanded)
+          if last_number_processed != number
+            if heats.first.dance.heat_length
               start += heat_length * heats.first.dance.heat_length
+              # Only add semi-finals time if there are more than 8 couples
+              if heats.first.dance.semi_finals && heats.length > 8
+                start += heat_length * heats.first.dance.heat_length
+              end
+            elsif heats.any? {|heat| heat.number > 0}
+              if heats.length == 1 and heats.first.category == 'Solo'
+                start += solo_length
+              else
+                start += heat_length
+              end
             end
-          elsif heats.any? {|heat| heat.number > 0}
-            if heats.length == 1 and heats.first.category == 'Solo'
-              start += solo_length
-            else
-              start += heat_length
-            end
+            last_number_processed = number
           end
 
           @finish[number] ||= start
