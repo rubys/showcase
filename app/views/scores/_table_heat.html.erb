@@ -4,8 +4,13 @@
   <thead>
     <tr>
       <th class="text-left border-b-2 border-black" rowspan="2">Back</th>
-      <th class="text-left border-b-2 border-black" rowspan="2">Subject</th>
-      <th class="text-left border-b-2 border-black" rowspan="2">Partner</th>
+      <% if @column_order == 1 %>
+      <th class="text-left border-b-2 border-black" rowspan="2">Lead</th>
+      <th class="text-left border-b-2 border-black" rowspan="2">Follow</th>
+      <% else %>
+      <th class="text-left border-b-2 border-black" rowspan="2">Student</th>
+      <th class="text-left border-b-2 border-black" rowspan="2">Instructor</th>
+      <% end %>
       <th class="text-left border-b-2 border-black" rowspan="2">Category</th>
       <th class="text-left border-b-2 border-black" rowspan="2">Studio</th>
     <% unless @style == 'emcee' or @scores.empty? %>
@@ -62,9 +67,9 @@
       <% else %>
       <td class="<% if @sort != 'level' %>py-2 <% end %>text-xl"><%= subject.lead.back %></td>
       <% end %>
-      <% if subject.lead.type == 'Student' %>
-      <td><%= subject.follow.display_name %></td>
+      <% if @column_order == 1 || subject.lead.type == 'Student' %>
       <td><%= subject.lead.display_name %></td>
+      <td><%= subject.follow.display_name %></td>
       <% else %>
       <td><%= subject.follow.display_name %></td>
       <td><%= subject.lead.display_name %></td>

@@ -21,8 +21,13 @@
         <% else %>
         <th class="row-head">Points
         <% end %>
+        <% if @column_order == 1 %>
         <th class="row-head">Lead
         <th class="row-head">Follow
+        <% else %>
+        <th class="row-head">Student
+        <th class="row-head">Instructor
+        <% end %>
         </tr>
       </thead>
       <% if dance.semi_finals? %>
@@ -31,8 +36,13 @@
         <% results.each do |entry, results| %>
           <tr>
             <td class="row-main text-right"><%= results['rank'] %>
+            <% if @column_order == 1 || entry.lead.type == 'Student' %>
             <td class="row-main"><%= link_to entry.lead.display_name, entry.lead %></td>
             <td class="row-main"><%= link_to entry.follow.display_name, entry.follow %></td>
+            <% else %>
+            <td class="row-main"><%= link_to entry.follow.display_name, entry.follow %></td>
+            <td class="row-main"><%= link_to entry.lead.display_name, entry.lead %></td>
+            <% end %>
           </tr>
         <% end %>
       <% else %>
@@ -42,8 +52,13 @@
           <% next unless results['points'] == top %>
           <tr>
             <td class="row-main text-right"><%= number_with_delimiter results['points'] %>
+            <% if @column_order == 1 || entry.lead.type == 'Student' %>
             <td class="row-main"><%= link_to entry.lead.display_name, entry.lead %></td>
             <td class="row-main"><%= link_to entry.follow.display_name, entry.follow %></td>
+            <% else %>
+            <td class="row-main"><%= link_to entry.follow.display_name, entry.follow %></td>
+            <td class="row-main"><%= link_to entry.lead.display_name, entry.lead %></td>
+            <% end %>
           </tr>
         <% end %>
       <% end %>

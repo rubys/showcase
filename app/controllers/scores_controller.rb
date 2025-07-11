@@ -78,6 +78,7 @@ class ScoresController < ApplicationController
     @slot ||= 1 if @subjects.first&.category == 'Multi' and @slot.nil?
 
     @combine_open_and_closed = @event.heat_range_cat == 1
+    @column_order = @event.column_order
 
     category = @subjects.first.category
     category = 'Open' if category == 'Closed' and @event.closed_scoring == '='
@@ -705,7 +706,9 @@ class ScoresController < ApplicationController
   def multis
     @details = params[:details] == true || params[:details] == "true"
 
-    @multi_scoring = Event.first.multi_scoring
+    event = Event.first
+    @multi_scoring = event.multi_scoring
+    @column_order = event.column_order
     dances = Dance.where.not(multi_category_id: nil).
       includes(multi_children: :dance, heats: [{entry: [:lead, :follow]}, :scores]).
       order(:order)
