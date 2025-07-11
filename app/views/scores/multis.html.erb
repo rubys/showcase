@@ -15,7 +15,7 @@
     <% end %>
 
     <%= turbo_stream_from "live-scores-#{ENV['RAILS_APP_DB']}" %>
-    <%= render partial: "last_update", locals: {action: multis_scores_path, timestamp: @last_score_update} %>
+    <%= render partial: "last_update", locals: {action: @details ? details_multis_scores_path : multis_scores_path, timestamp: @last_score_update} %>
 
     <%= render @details ? "scores/details/multis" : "multis" %>
 

@@ -701,7 +701,7 @@ class ScoresController < ApplicationController
   end
 
   def multis
-    @details = params[:details]
+    @details = params[:details] == true || params[:details] == "true"
 
     @multi_scoring = Event.first.multi_scoring
     dances = Dance.where.not(multi_category_id: nil).
@@ -766,8 +766,9 @@ class ScoresController < ApplicationController
     end
 
     if request.post?
+      partial_name = @details ? 'scores/details/multis' : 'multis'
       render turbo_stream: turbo_stream.replace("multis-scores",
-        render_to_string(partial: 'multis', layout: false)
+        render_to_string(partial: partial_name, layout: false)
       )
     end
   end
