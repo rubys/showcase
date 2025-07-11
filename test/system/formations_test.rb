@@ -21,6 +21,8 @@ class FormationsTest < ApplicationSystemTestCase
 
     within find('caption', text: 'Solos').sibling('tbody') do
       find('td', text: 'Full Silver').hover
+      # Add explicit wait for Edit button to become visible after hover
+      sleep(0.2)
       click_on "Edit"
     end
 
