@@ -19,7 +19,7 @@
 
     <%= render @details ? "scores/details/multis" : "multis" %>
 
-    <%= link_to 'All scores', details_multis_scores_path, class: "ml-2 rounded-lg py-3 px-5 bg-blue-500 text-white inline-block font-medium" %>
+    <%= link_to (@details ? 'Multi scores' : 'All scores'), (@details ? multis_scores_path : details_multis_scores_path), class: "ml-2 rounded-lg py-3 px-5 bg-blue-500 text-white inline-block font-medium" %>
     <%= link_to 'Back to summary', summary_event_index_path, class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
   </div>
 </div>

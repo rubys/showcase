@@ -437,7 +437,7 @@ class ScoresController < ApplicationController
   end
 
   def by_level
-    @details = params[:details]
+    @details = params[:details] == true || params[:details] == "true"
 
     @event = Event.first
     @open_scoring = @event.open_scoring
@@ -513,8 +513,9 @@ class ScoresController < ApplicationController
     end
 
     if request.post?
+      partial_name = @details ? 'scores/details/by_level' : 'by_level'
       render turbo_stream: turbo_stream.replace("scores-by-level",
-        render_to_string(partial: 'by_level', layout: false)
+        render_to_string(partial: partial_name, layout: false)
       )
     end
   end
@@ -619,7 +620,7 @@ class ScoresController < ApplicationController
   end
 
   def by_age
-    @details = params[:details]
+    @details = params[:details] == true || params[:details] == "true"
 
     @event = Event.first
     @open_scoring = @event.open_scoring
@@ -694,8 +695,9 @@ class ScoresController < ApplicationController
     end
 
     if request.post?
+      partial_name = @details ? 'scores/details/by_age' : 'by_age'
       render turbo_stream: turbo_stream.replace("scores-by-age",
-        render_to_string(partial: 'by_age', layout: false)
+        render_to_string(partial: partial_name, layout: false)
       )
     end
   end
