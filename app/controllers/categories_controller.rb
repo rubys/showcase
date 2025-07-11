@@ -475,7 +475,7 @@ class CategoriesController < ApplicationController
     def renumber_extensions
       CatExtension.update_all(start_heat: nil)
 
-      generate_agenda
+      generate_agenda(expand_multi_heats: false)
 
       ActiveRecord::Base.transaction do
         number = 1
@@ -492,7 +492,7 @@ class CategoriesController < ApplicationController
         end
       end
 
-      generate_agenda
+      generate_agenda(expand_multi_heats: false)
 
       CatExtension.all.each do |ext|
         start = @agenda[ext.name]&.first&.first

@@ -1,5 +1,5 @@
 module Printable
-  def generate_agenda
+  def generate_agenda(expand_multi_heats: true)
     event = Event.last
 
     @heats = Heat.order('abs(number)').includes(
@@ -99,7 +99,7 @@ module Printable
         end
 
         # Check if this is a multi-heat with children that should be expanded
-        if heats.first.category == 'Multi' && heats.first.dance.multi_children.any?
+        if expand_multi_heats && heats.first.category == 'Multi' && heats.first.dance.multi_children.any?
           # Create a separate entry for each child dance
           heats.first.dance.multi_children.sort_by { |child| child.slot || child.id }.each do |child_dance|
             # Create copies of heats with the child dance name
@@ -112,6 +112,8 @@ module Printable
               copy.dance = heat.dance
               copy.entry = heat.entry
               copy.solo = heat.solo if heat.solo
+              # Mark as readonly to prevent accidental database operations
+              copy.readonly!
               copy
             end
             
