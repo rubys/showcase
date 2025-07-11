@@ -11,24 +11,41 @@
     <% next if entries.empty? %>
     <% empty = false %>
     <a href="details/multis#<%= dance.name.gsub(/\W+/, '-') %>">
-    <h2 class="font-bold pt-4 text-2xl pb-5"><% if dance.heats.where.not(number: ..0).distinct.pluck(:number).count == 1 %>Heat <%= dance.heats.first.number %>: <% end %><%= dance.name %></h2>
+    <h2 class="font-bold pt-4 text-2xl pb-5"><% if dance.heats.where.not(number: ..0).distinct.pluck(:number).count == 1 %>Heat <%= dance.heats.first.number %>: <% end %><%= dance.name %><% if dance.semi_finals? %> (Scrutineering)<% end %></h2>
     </a>
     <table class="mb-8">
       <thead>
         <tr>
+        <% if dance.semi_finals? %>
+        <th class="row-head">Rank
+        <% else %>
         <th class="row-head">Points
+        <% end %>
         <th class="row-head">Lead
         <th class="row-head">Follow
         </tr>
       </thead>
-      <% results = entries.sort_by {|entry, results| results['points']}.reverse; top = results.first[1]['points'] %>
-      <% results.each do |entry, results| %>
-        <% next unless results['points'] == top %>
-        <tr>
-          <td class="row-main text-right"><%= number_with_delimiter results['points'] %>
-          <td class="row-main"><%= link_to entry.lead.display_name, entry.lead %></td>
-          <td class="row-main"><%= link_to entry.follow.display_name, entry.follow %></td>
-        </tr>
+      <% if dance.semi_finals? %>
+        <% # Sort by rank for scrutineering - show all called back couples %>
+        <% results = entries.sort_by {|entry, results| results['rank'] || 999} %>
+        <% results.each do |entry, results| %>
+          <tr>
+            <td class="row-main text-right"><%= results['rank'] %>
+            <td class="row-main"><%= link_to entry.lead.display_name, entry.lead %></td>
+            <td class="row-main"><%= link_to entry.follow.display_name, entry.follow %></td>
+          </tr>
+        <% end %>
+      <% else %>
+        <% # Sort by points for regular scoring %>
+        <% results = entries.sort_by {|entry, results| results['points']}.reverse; top = results.first[1]['points'] %>
+        <% results.each do |entry, results| %>
+          <% next unless results['points'] == top %>
+          <tr>
+            <td class="row-main text-right"><%= number_with_delimiter results['points'] %>
+            <td class="row-main"><%= link_to entry.lead.display_name, entry.lead %></td>
+            <td class="row-main"><%= link_to entry.follow.display_name, entry.follow %></td>
+          </tr>
+        <% end %>
       <% end %>
     </table>
   <% end %>

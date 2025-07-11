@@ -37,15 +37,25 @@ class Dance < ApplicationRecord
     scores = Score.where(heat: heats)
     slots = scores.distinct.order(:slot).pluck(:slot)
     judges = scores.distinct.order(:judge_id).pluck(:judge_id)
-    dances = multi_children.includes(:dance).map { |m| [m.dance.name, m.slot] }.to_h
     entries = heats.includes(entry: :lead)
     numbers = heats.where.not(number: ..0).distinct.pluck(:number)
 
-    if heats.length > 8 && heat_length
-      slots = slots.select { |slot| slot > heat_length }
-      dances = dances.select { |name, slot| slot > heat_length }
-    elsif heat_length
-      slots = slots.select { |slot| slot <= heat_length }
+    # Use actual score slots to determine dance mappings
+    # For semi-finals, use slots 1 to heat_length for individual dances
+    dance_slots = if heats.length > 8 && heat_length
+      # Finals: use slots > heat_length
+      slots.select { |slot| slot > heat_length }
+    else
+      # Semi-finals or direct finals: use slots 1 to heat_length
+      slots.select { |slot| slot <= (heat_length || Float::INFINITY) }
+    end
+    
+    # Create dance name mapping based on multi_children and actual slots
+    dance_names = {}
+    multi_children.includes(:dance).each_with_index do |child, index|
+      # Map to actual slot if available, otherwise use sequential slots
+      actual_slot = dance_slots[index] || (index + 1)
+      dance_names[actual_slot] = child.dance.name
     end
 
     summary = {}
@@ -53,15 +63,25 @@ class Dance < ApplicationRecord
       summary[heat.entry.lead.back] ||= {}
     end
     
-    dances.each do |dance, slot|
-      Heat.rank_placement(numbers, slot, judges.length/2+1).each do |entry, rank|
-        summary[entry.lead.back][dance] = rank
+    # Get rankings for each dance slot
+    dance_slots.each do |slot|
+      dance_name = dance_names[slot] || "Dance #{slot}"
+      rankings = Heat.rank_placement(numbers, slot, judges.length/2+1)
+      rankings.each do |entry, rank|
+        summary[entry.lead.back][dance_name] = rank
       end
     end
 
-    majority = judges.length * dances.length / 2 + 1
-
-    ranks = Heat.rank_summaries(summary, numbers, slots, majority).to_a.sort.to_h
+    # Filter summary to only include couples who have complete results (were called back to finals)
+    finalists_summary = summary.select { |back, dance_results| !dance_results.empty? }
+    
+    # Only rank the finalists among themselves
+    if finalists_summary.any?
+      majority = judges.length * dance_slots.length / 2 + 1
+      ranks = Heat.rank_summaries(finalists_summary, numbers, dance_slots, majority).to_a.sort.to_h
+    else
+      ranks = {}
+    end
 
     # Convert back numbers to entry IDs for the return value
     entry_by_back = {}
@@ -72,7 +92,8 @@ class Dance < ApplicationRecord
     summary_by_entry_id = {}
     ranks_by_entry_id = {}
     
-    summary.each do |back, dances|
+    # Only include finalists in the results
+    finalists_summary.each do |back, dances|
       summary_by_entry_id[entry_by_back[back]] = dances
     end
     

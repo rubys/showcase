@@ -10,33 +10,65 @@
   <% @scores.each do |dance, entries| %>
     <% next if entries.empty? %>
     <% empty = false %>
-    <h2 class="font-bold pt-4 text-2xl pb-5" id="<%= dance.name.gsub(/\W+/, '-') %>"><% if dance.heats.where.not(number: ..0).distinct.pluck(:number).count == 1 %>Heat <%= dance.heats.first.number %>: <% end %><%= dance.name %></h2>
-    <table class="mb-8">
-      <thead>
-        <tr>
-        <th class="row-head">Points
-        <th class="row-head">Lead
-        <th class="row-head">Follow
-        <% if @multi_scoring != '#' %>
-        <% @score_range.each do |score| %>
-        <th class="row-head bg-slate-200"><%= score %>
+    <h2 class="font-bold pt-4 text-2xl pb-5" id="<%= dance.name.gsub(/\W+/, '-') %>"><% if dance.heats.where.not(number: ..0).distinct.pluck(:number).count == 1 %>Heat <%= dance.heats.first.number %>: <% end %><%= dance.name %><% if dance.semi_finals? %> (Scrutineering)<% end %></h2>
+    
+    <% if dance.semi_finals? %>
+      <!-- Scrutineering Results Table -->
+      <table class="mb-8">
+        <thead>
+          <tr>
+          <th class="row-head">Rank
+          <th class="row-head">Lead
+          <th class="row-head">Follow
+          <% if @scrutineering_results[dance] && @scrutineering_results[dance][:summary].values.first %>
+            <% @scrutineering_results[dance][:summary].values.first.keys.each do |dance_name| %>
+            <th class="row-head bg-slate-200"><%= dance_name %>
+            <% end %>
+          <% end %>
+          </tr>
+        </thead>
+        <% entries.sort_by {|entry, results| results['rank'] || 999}.each do |entry, results| %>
+          <tr>
+            <td class="row-main text-right"><%= results['rank'] %>
+            <td class="row-main"><%= link_to entry.lead.display_name, entry.lead %></td>
+            <td class="row-main"><%= link_to entry.follow.display_name, entry.follow %></td>
+            <% if results['summary'] %>
+              <% results['summary'].each do |dance_name, placement| %>
+              <td class="row text-right px-4 bg-slate-200"><%= placement %></td>
+              <% end %>
+            <% end %>
+          </tr>
         <% end %>
-        <% end %>
-        </tr>
-      </thead>
-      <% entries.sort_by {|entry, results| results['points']}.reverse.each do |entry, results| %>
-        <tr>
-          <td class="row-main text-right"><%= number_with_delimiter results['points'] %>
-          <td class="row-main"><%= link_to entry.lead.display_name, entry.lead %></td>
-          <td class="row-main"><%= link_to entry.follow.display_name, entry.follow %></td>
-          <% if @open_scoring != '#' %>
-          <% results['Multi'].each do |score| %>
-          <td class="row text-right px-4 bg-slate-200"><%= score == 0 ? '' : score %></td>
+      </table>
+    <% else %>
+      <!-- Regular Scoring Table -->
+      <table class="mb-8">
+        <thead>
+          <tr>
+          <th class="row-head">Points
+          <th class="row-head">Lead
+          <th class="row-head">Follow
+          <% if @multi_scoring != '#' %>
+          <% @score_range.each do |score| %>
+          <th class="row-head bg-slate-200"><%= score %>
           <% end %>
           <% end %>
-        </tr>
-      <% end %>
-    </table>
+          </tr>
+        </thead>
+        <% entries.sort_by {|entry, results| results['points']}.reverse.each do |entry, results| %>
+          <tr>
+            <td class="row-main text-right"><%= number_with_delimiter results['points'] %>
+            <td class="row-main"><%= link_to entry.lead.display_name, entry.lead %></td>
+            <td class="row-main"><%= link_to entry.follow.display_name, entry.follow %></td>
+            <% if @multi_scoring != '#' %>
+            <% results['Multi'].each do |score| %>
+            <td class="row text-right px-4 bg-slate-200"><%= score == 0 ? '' : score %></td>
+            <% end %>
+            <% end %>
+          </tr>
+        <% end %>
+      </table>
+    <% end %>
   <% end %>
 
   <% if empty %>
