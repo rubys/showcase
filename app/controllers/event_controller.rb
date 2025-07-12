@@ -521,7 +521,7 @@ class EventController < ApplicationController
 
     @showcases.each do |year, sites|
       sites.each do |token, info|
-        logos.add info[:logo] if info[:logo]
+        logos.add info[:logo] || "arthur-murray-logo.gif"
         if info[:events]
           info[:events].each do |subtoken, subinfo|
             db = "#{year}-#{token}-#{subtoken}"
