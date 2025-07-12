@@ -4,7 +4,7 @@ const HIGHLIGHT = "bg-yellow-200";
 
 // Connects to data-controller="score"
 export default class extends Controller {
-  static targets = ["error", "comments", "score"];
+  static targets = ["error", "comments", "score", "startButton"];
 
   keydown = event => {
     let form = ["INPUT", "TEXTAREA"].includes(event.target.nodeName) ||
@@ -56,18 +56,7 @@ export default class extends Controller {
       }
     } else if (event.key == " " || event.key == "Enter") {
       if (form) return;
-      fetch(this.element.dataset.startAction, {
-        method: "POST",
-        headers: window.inject_region({
-          "X-CSRF-Token": this.token,
-          "Content-Type": "application/json"
-        }),
-        credentials: "same-origin",
-        redirect: "follow",
-        body: JSON.stringify({
-          heat: parseInt(this.element.dataset.heat)
-        })
-      });
+      this.startHeat();
     }
   };
 
@@ -248,6 +237,25 @@ export default class extends Controller {
     } else {
       this.move(this.selected, this.scores[index + 1]);
     }
+  }
+
+  startHeat() {
+    fetch(this.element.dataset.startAction, {
+      method: "POST",
+      headers: window.inject_region({
+        "X-CSRF-Token": this.token,
+        "Content-Type": "application/json"
+      }),
+      credentials: "same-origin",
+      redirect: "follow",
+      body: JSON.stringify({
+        heat: parseInt(this.element.dataset.heat)
+      })
+    }).then(() => {
+      if (this.hasStartButtonTarget) {
+        this.startButtonTarget.style.display = "none";
+      }
+    });
   }
 
   disconnect() {
