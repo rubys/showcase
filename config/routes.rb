@@ -180,6 +180,7 @@ Rails.application.routes.draw do
     post '/scores/:judge/sort', to: 'scores#sort', as: 'sort_scores'
     post '/scores/:judge/update-rank', to: 'scores#update_rank', as: 'update_rank'
     post '/scores/:judge/post-feedback', to: 'scores#post_feedback', as: 'post_feedback'
+    match '/scores/skating/:dance_id', to: 'scores#skating', via: %i(get post), as: 'skating_calculations'
     resources :scores do
       match 'by-studio', on: :collection, action: :by_studio, via: %i(get post)
       match 'by-level', on: :collection, action: :by_level, via: %i(get post)

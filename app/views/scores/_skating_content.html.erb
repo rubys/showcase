@@ -1,0 +1,122 @@
+<div id="skating-content">
+  <!-- Final Results Summary -->
+  <div class="bg-white shadow rounded-lg mb-8">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h3 class="text-lg font-medium text-gray-900">Final Results</h3>
+    </div>
+    <div class="p-6">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Back #</th>
+              <% if column_order == 1 %>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lead</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Follow</th>
+              <% else %>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Instructor</th>
+              <% end %>
+              <% scrutineering_results[:summary].values.first&.keys&.each do |dance_name| %>
+                <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider bg-slate-200">
+                  <%= dance_name %>
+                </th>
+              <% end %>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% scores[dance].sort_by { |entry, results| results['rank'] }.each do |entry, results| %>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <%= results['rank'] %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <%= entry.lead.back %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <%= link_to entry.lead.display_name, entry.lead, class: "text-blue-600 hover:text-blue-800" %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <%= link_to entry.follow.display_name, entry.follow, class: "text-blue-600 hover:text-blue-800" %>
+                </td>
+                <% results['summary'].each do |dance_name, placement| %>
+                  <td class="px-3 py-4 whitespace-nowrap text-sm text-center bg-slate-200">
+                    <%= placement %>
+                  </td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calculation Steps -->
+  <div class="space-y-6">
+    <!-- Setup Information -->
+    <div class="bg-white shadow rounded-lg">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">Setup Information</h3>
+      </div>
+      <div class="p-6">
+        <ul class="space-y-2">
+          <% explanations[:setup].each do |step| %>
+            <li class="text-sm text-gray-700"><%= step %></li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Individual Dance Calculations -->
+    <% explanations[:individual_dances].each do |dance_name, dance_explanations| %>
+      <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-medium text-gray-900">Individual Dance: <%= dance_name %></h3>
+          <p class="text-sm text-gray-600 mt-1">Skating System Rules 5-8: Single Dance Placement</p>
+        </div>
+        <div class="p-6">
+          <div class="space-y-2">
+            <% dance_explanations.each do |step| %>
+              <div class="text-sm text-gray-700 font-mono">
+                <%= simple_format(step, class: "mb-1") %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Multi-Dance Compilation -->
+    <div class="bg-white shadow rounded-lg">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">Multi-Dance Compilation</h3>
+        <p class="text-sm text-gray-600 mt-1">Skating System Rules 9-11: Overall Placement</p>
+      </div>
+      <div class="p-6">
+        <div class="space-y-2">
+          <% explanations[:compilation].each do |step| %>
+            <div class="text-sm text-gray-700 font-mono">
+              <%= simple_format(step, class: "mb-1") %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Final Results Information -->
+    <div class="bg-white shadow rounded-lg">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">Final Results</h3>
+      </div>
+      <div class="p-6">
+        <ul class="space-y-2">
+          <% explanations[:final_results].each do |step| %>
+            <li class="text-sm text-gray-700"><%= step %></li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

@@ -103,7 +103,16 @@ class ScoresController < ApplicationController
     if @heat.dance.semi_finals?
       @style = 'radio'
 
-      @final = @slot > @heat.dance.heat_length || @subjects.length <= 8
+      # Check if we should be in final mode
+      # Only use final mode if:
+      # 1. We're in a finals slot (> heat_length), OR
+      # 2. We have ≤8 couples AND final scores actually exist
+      has_final_scores = @subjects.length <= 8 && 
+                        Score.where(heat: @subjects)
+                             .where('slot > ?', @heat.dance.heat_length)
+                             .where.not(value: '0').exists?
+      
+      @final = @slot > @heat.dance.heat_length || has_final_scores
 
       if @final
         # sort subjects by score
@@ -785,6 +794,61 @@ class ScoresController < ApplicationController
       partial_name = @details ? 'scores/details/multis' : 'multis'
       render turbo_stream: turbo_stream.replace("multis-scores",
         render_to_string(partial: partial_name, layout: false)
+      )
+    end
+  end
+
+  def skating
+    @dance = Dance.find(params[:dance_id])
+    
+    unless @dance.semi_finals?
+      redirect_to scores_multis_path, alert: "This dance does not use skating system calculations."
+      return
+    end
+    
+    # Set up column order for consistent display
+    event = Event.first
+    @column_order = event.column_order
+    @last_score_update = Score.maximum(:updated_at)
+    
+    # Get the detailed calculation steps
+    summary, ranks, @explanations = @dance.scrutineering(with_explanations: true)
+    
+    # Convert to display format matching multis view
+    @scrutineering_results = {
+      summary: summary,
+      ranks: ranks
+    }
+    
+    # Build scores display for consistency with existing templates
+    @scores = {}
+    @scores[@dance] = {}
+    
+    ranks.select { |entry_id, rank| rank && rank > 0 && rank < 999 && summary[entry_id] && !summary[entry_id].empty? }.each do |entry_id, rank|
+      entry = Entry.find(entry_id)
+      @scores[@dance][entry] = {
+        'rank' => rank,
+        'summary' => summary[entry_id] || {}
+      }
+    end
+    
+    # Get dance names for proper display
+    @dance_names = {}
+    @dance.multi_children.includes(:dance).each_with_index do |child, index|
+      @dance_names[child.dance.name] = child.dance.name
+    end
+    
+    # Handle POST requests for live updates
+    if request.post?
+      render turbo_stream: turbo_stream.replace("skating-content",
+        partial: 'scores/skating_content',
+        locals: { 
+          dance: @dance,
+          scores: @scores,
+          scrutineering_results: @scrutineering_results,
+          explanations: @explanations,
+          column_order: @column_order
+        }
       )
     end
   end

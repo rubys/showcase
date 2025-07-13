@@ -86,8 +86,9 @@ class Heat < ApplicationRecord
   # Rules 2 through 4 apply to the judges, not to the evaluation of the scores
 
   # Rules 5-8: placement.  Note: optional parameters are for Rule 11 purposes
-  def self.rank_placement(number, slots, majority, entries=nil, examine=nil)
+  def self.rank_placement(number, slots, majority, entries=nil, examine=nil, with_explanations: false)
     number = number.is_a?(Enumerable) ? number.map(&:to_f) : number.to_f
+    explanations = with_explanations ? [] : nil
 
     # extract all scores for the given heat, grouped by entry_id
     scores = Score.joins(heat: :entry).where(heats: {number: number}, slot: slots, value: 1..).
@@ -99,25 +100,54 @@ class Heat < ApplicationRecord
     entry_map = Entry.includes(:lead, :follow).where(id: scores.keys).index_by(&:id)
     rankings = {}
     rank = 1
+    
+    if explanations
+      explanations << "Starting single dance placement calculation (Rules 5-8)"
+      explanations << "Found #{scores.count} competitors with marks"
+      explanations << "Majority required: #{majority} marks"
+    end
 
     # in each iteration or focused runoff, try to identify the next entry to be ranked
-    runoff = lambda do |entries, examining|
+    runoff = lambda do |entries, examining, focused = false|
+      if explanations && !focused
+        explanations << "\nExamining place #{examining}:"
+      end
+      
       # find all entries that have a majority of scores less than or equal to the current place we are examining
       places = scores.select { |entry_id, scores| entries.include? entry_id }.
         map { |entry_id, scores| [entry_id, scores.count {|score| score <= examining}] }.
         select { |entry_id, count| count >= majority }
+        
+      if explanations
+        if places.empty?
+          explanations << "  - No competitors have a majority (#{majority} marks) at place #{examining}"
+        else
+          places.each do |entry_id, count|
+            entry = entry_map[entry_id]
+            explanations << "  - ##{entry.lead.back}: #{count} marks for place #{examining} or better"
+          end
+        end
+      end
 
       # sort the entries by the number of scores that are less than or equal to the current place
       groups = places.group_by { |entry_id, count| count }.sort_by { |count, entries| count }.
         map { |count, entries| [count, entries.map(&:first)] }.reverse
 
       # Rules 5 (only one entry) and 8 (no entries) fall out naturally and need no special handling
+      
+      if explanations && groups.empty?
+        explanations << "  Rule 8: No action taken - continuing to next place"
+      end
 
       groups.each do |count, entries|
         if entries.length == 1
           # if there is only one entry in this group, we can assign it a rank (Rule 6)
           entry_id = entries.first
-          rankings[entry_map[entry_id]] = rank
+          entry = entry_map[entry_id]
+          if explanations
+            explanations << "  Rule 6: ##{entry.lead.back} has clear majority (#{count} marks) - assigned rank #{rank}"
+          end
+          rankings[entry] = rank
           scores.delete entry_id
           rank += 1
         else
@@ -132,16 +162,29 @@ class Heat < ApplicationRecord
             # if there is only one entry in this group, we can assign it a rank (Rule 7 part 1)
             if entries.length == 1
               entry_id = entries.first
-              rankings[entry_map[entry_id]] = rank
+              entry = entry_map[entry_id]
+              if explanations
+                explanations << "  Rule 7.1: ##{entry.lead.back} has lowest sum (#{score}) - assigned rank #{rank}"
+              end
+              rankings[entry] = rank
               scores.delete entry_id
               rank += 1
             elsif examining < max_score
               # if there are two or more entries in this group, we need to focus only on these entries
               # and examine the next place mark (Rule 7 part 2)
-              runoff.call(entries, examining + 1)
+              if explanations
+                entry_backs = entries.map { |id| "##{entry_map[id].lead.back}" }.join(", ")
+                explanations << "  Rule 7.2: Tie between #{entry_backs} (sum=#{score}) - examining next place"
+              end
+              runoff.call(entries, examining + 1, true)
             else
               # We have a tie, so we need to assign the same rank to all entries in this group
               # (rule 7 part 3)
+              if explanations
+                entry_backs = entries.map { |id| "##{entry_map[id].lead.back}" }.join(", ")
+                tied_rank = rank + (entries.length-1) / 2.0
+                explanations << "  Rule 7.3: Unbreakable tie between #{entry_backs} - all assigned rank #{tied_rank}"
+              end
               entries.each do |entry_id|
                 rankings[entry_map[entry_id]] = rank + (entries.length-1) / 2.0
                 scores.delete entry_id
@@ -163,41 +206,89 @@ class Heat < ApplicationRecord
     end
 
     # return the final rankings
-    rankings
+    if explanations
+      explanations << "\nFinal single dance rankings determined"
+      return [rankings, explanations]
+    else
+      rankings
+    end
   end
 
-  def self.rank_summaries(places, heats=[], slots=nil, majority=1)
+  def self.rank_summaries(places, heats=[], slots=nil, majority=1, with_explanations: false)
+    explanations = with_explanations ? [] : nil
+    
+    if explanations
+      explanations << "Starting multi-dance compilation (Rules 9-11)"
+      explanations << "Processing #{places.count} finalists across #{places.values.first&.count || 0} dances"
+    end
+    
     # Rule 9: sort by minimum total place marks
     initial_rankings = places.map {|couple, results| [couple, results.values.sum]}.
       group_by {|couple, total| total}.
       map {|total, couples| [total, couples.map(&:first)]}.
       sort_by {|total, couples| total}
+      
+    if explanations
+      explanations << "\nRule 9: Initial ranking by sum of placements:"
+      initial_rankings.each do |total, couples|
+        couple_list = couples.map { |c| "##{c}" }.join(", ")
+        explanations << "  Sum #{total}: #{couple_list}"
+      end
+    end
 
     # Rule 10: break ties by the number of place marks
     place = 0
-    runoff = lambda do |couples, examining|
+    runoff = lambda do |couples, examining, tie_level = 0|
+      if explanations && tie_level == 0
+        couple_list = couples.map { |c| "##{c}" }.join(", ")
+        explanations << "\nRule 10: Breaking tie between #{couple_list} at place #{examining}"
+      end
+      
       # find all entries that have a majority of scores less than or equal to the current place we are examining
       counts = couples.map { |couple| [couple, places[couple].values.count {|score| score <= examining}] }.
         group_by { |couple, count| count }.sort_by { |count, entries| count }.
         map { |count, entries| [count, entries.map(&:first)] }.reverse
 
+      if explanations
+        counts.each do |count, group_couples|
+          couple_list = group_couples.map { |c| "##{c}" }.join(", ")
+          explanations << "  #{count} marks at place #{examining} or better: #{couple_list}"
+        end
+      end
+      
       top = counts.first.last
 
       entries =
         if top.length == 1
+          if explanations
+            explanations << "  Winner: ##{top.first} (most marks at place #{examining})"
+          end
           top
         elsif examining < place
-          runoff.call(top, examining + (counts.length == 1 ? 1 : 0))
+          if explanations
+            explanations << "  Continuing tie-break at next place level"
+          end
+          runoff.call(top, examining + (counts.length == 1 ? 1 : 0), tie_level + 1)
         else
           # Rule 11
+          if explanations
+            explanations << "  Rule 11: Head-to-head comparison needed for #{top.map{|c| "##{c}"}.join(", ")}"
+          end
           entries = Entry.joins(:heats, :lead).where(heats: {number: heats}, lead: {back: top}).all.uniq
           examine = (examining - top.length + 1.. examining)
           placement = rank_placement(heats, slots, majority, entries, examine).
             select { |entry, rank| rank == 1 }
 
           if placement.length == 1
-            placement.first.first.lead.back
+            winner_back = placement.first.first.lead.back
+            if explanations
+              explanations << "    Head-to-head winner: ##{winner_back}"
+            end
+            winner_back
           else
+            if explanations
+              explanations << "    Unbreakable tie - all tied at this position"
+            end
             Set.new(top)
           end
         end
@@ -237,7 +328,17 @@ class Heat < ApplicationRecord
       end
     end
 
-    result.to_h
+    final_result = result.to_h
+    
+    if explanations
+      explanations << "\nFinal multi-dance rankings:"
+      final_result.each do |couple, rank|
+        explanations << "  ##{couple}: #{rank}"
+      end
+      return [final_result, explanations]
+    else
+      final_result
+    end
   end
 
   def display_dance_name

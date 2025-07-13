@@ -995,5 +995,209 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, 'Heat 400'
     assert_includes @response.body, 'Heat 401'
   end
+  
+  test "semi-finals with less than 8 couples shows all couples in slot 1" do
+    # Create a multi category for the dance
+    multi_category = Category.create!(
+      name: 'Test Multi Category',
+      order: 999
+    )
+    
+    # Create a scrutineering dance with semi_finals
+    dance = Dance.create!(
+      name: 'Small Semi-Final Waltz', 
+      semi_finals: true, 
+      heat_length: 3,
+      order: 1005,
+      multi_category: multi_category
+    )
+    
+    # Create only 5 couples (less than 8)
+    entries = []
+    heats = []
+    5.times do |i|
+      student = Person.create!(
+        name: "Semi Student #{i}", 
+        type: 'Student', 
+        studio: studios(:one), 
+        level: @level,
+        back: 200 + i
+      )
+      instructor = Person.create!(
+        name: "Semi Instructor #{i}", 
+        type: 'Professional', 
+        studio: studios(:one),
+        back: 300 + i
+      )
+      entry = Entry.create!(lead: instructor, follow: student, age: @age, level: @level)
+      entries << entry
+      heat = Heat.create!(number: 300 + i/10.0, entry: entry, dance: dance, category: 'Multi')
+      heats << heat
+    end
+    
+    # Create scores for all couples in slot 1 (semi-final round)
+    # For fewer than 8 couples, all should get final placement scores
+    heats.each_with_index do |heat, i|
+      # Give each couple scores from both judges with different placements
+      judges = [@judge, people(:Kathryn)]
+      judges.each_with_index do |judge, j|
+        # Give different placement scores (1-5) to create rankings
+        placement = ((i + j) % 5) + 1
+        Score.create!(heat: heat, judge: judge, value: placement.to_s, slot: 1)
+      end
+    end
+    
+    # Get the multis page with details (which shows scrutineering results)
+    get details_multis_scores_path
+    
+    assert_response :success
+    
+    
+    # Check that all 5 couples are shown in the results
+    assert_select "h2", text: /Small Semi-Final Waltz.*Scrutineering/
+    
+    # Should have a table with results for all couples
+    assert_select "table" do
+      # Check for presence of the instructor/lead names (since back numbers aren't displayed in this view)
+      entries.each do |entry|
+        assert_select "a", text: entry.lead.display_name
+      end
+    end
+    
+    # Verify that "No couples on the floor" message is NOT shown
+    assert_select "p", text: /No couples on the floor/, count: 0
+  end
+  
+  test "heat action shows couples for semi-finals with 8 or fewer couples and no final scores" do
+    # Create a multi category for the dance
+    multi_category = Category.create!(
+      name: 'Test Multi Regression Category',
+      order: 998
+    )
+    
+    # Create a scrutineering dance with semi_finals (like Country 2 Dance)
+    dance = Dance.create!(
+      name: 'Test Regression Dance', 
+      semi_finals: true, 
+      heat_length: 2,  # slots 1-2 are semi-finals, 3+ are finals
+      order: 1006,
+      multi_category: multi_category
+    )
+    
+    # Create only 4 couples (≤ 8, like the real scenario)
+    entries = []
+    heats = []
+    4.times do |i|
+      student = Person.create!(
+        name: "Regression Student #{i}", 
+        type: 'Student', 
+        studio: studios(:one), 
+        level: @level,
+        back: 400 + i
+      )
+      instructor = Person.create!(
+        name: "Regression Instructor #{i}", 
+        type: 'Professional', 
+        studio: studios(:one),
+        back: 500 + i
+      )
+      entry = Entry.create!(lead: instructor, follow: student, age: @age, level: @level)
+      entries << entry
+      heat = Heat.create!(number: 999, entry: entry, dance: dance, category: 'Multi')
+      heats << heat
+    end
+    
+    # DO NOT create any scores yet - this simulates the real scenario
+    # where judges haven't started scoring but want to view the heat
+    
+    # Test the heat action for judge viewing heat 999, slot 1 (semi-finals)
+    get judge_heat_slot_path(@judge.id, 999, 1)
+    
+    assert_response :success
+    
+    # Should NOT show "No couples on the floor" message
+    assert_select "p", text: /No couples on the floor/, count: 0
+    
+    # Should show all 4 couples for scoring
+    # In semi-finals mode, couples are shown as radio buttons or in scoring interface
+    entries.each do |entry|
+      # Look for the instructor/lead name in the response (they appear as labels or in the interface)
+      assert_includes @response.body, entry.lead.display_name
+    end
+    
+    # Should be in semi-finals mode (not final mode)
+    # This is indicated by the presence of "Callback" in the page title
+    assert_includes @response.body, 'Callback' # Verify we're in semi-finals mode
+  end
+  
+  test "heat action switches to final mode only when final scores exist for small fields" do
+    # Create the same setup as above
+    multi_category = Category.create!(
+      name: 'Test Final Mode Category',
+      order: 997
+    )
+    
+    dance = Dance.create!(
+      name: 'Test Final Mode Dance', 
+      semi_finals: true, 
+      heat_length: 2,
+      order: 1007,
+      multi_category: multi_category
+    )
+    
+    # Create 4 couples (≤ 8)
+    entries = []
+    heats = []
+    4.times do |i|
+      student = Person.create!(
+        name: "Final Student #{i}", 
+        type: 'Student', 
+        studio: studios(:one), 
+        level: @level,
+        back: 600 + i
+      )
+      instructor = Person.create!(
+        name: "Final Instructor #{i}", 
+        type: 'Professional', 
+        studio: studios(:one),
+        back: 700 + i
+      )
+      entry = Entry.create!(lead: instructor, follow: student, age: @age, level: @level)
+      entries << entry
+      heat = Heat.create!(number: 998, entry: entry, dance: dance, category: 'Multi')
+      heats << heat
+    end
+    
+    # Step 1: With no final scores, slot 1 should show all couples (semi-finals mode)
+    get judge_heat_slot_path(@judge.id, 998, 1)
+    assert_response :success
+    assert_select "p", text: /No couples on the floor/, count: 0
+    
+    # Step 2: Add semi-final scores for all couples to establish callbacks
+    heats.each_with_index do |heat, i|
+      # Give callback marks to first 2 couples (value >= 1)
+      callback_value = i < 2 ? '1' : '0'
+      Score.create!(heat: heat, judge: @judge, value: callback_value, slot: 1)
+    end
+    
+    # Step 3: Add final scores only for the couples who got callbacks
+    heats[0..1].each_with_index do |heat, i|
+      Score.create!(heat: heat, judge: @judge, value: (i + 1).to_s, slot: 3)
+    end
+    
+    # Step 4: Now slot 3 should show only finalists (those with final scores)
+    get judge_heat_slot_path(@judge.id, 998, 3)
+    assert_response :success
+    
+    
+    assert_select "p", text: /No couples on the floor/, count: 0
+    
+    # Should show only the 2 couples with final scores
+    assert_includes @response.body, entries[0].lead.display_name
+    assert_includes @response.body, entries[1].lead.display_name
+    # Should NOT show the couples without final scores
+    assert_not_includes @response.body, entries[2].lead.display_name
+    assert_not_includes @response.body, entries[3].lead.display_name
+  end
 
 end
