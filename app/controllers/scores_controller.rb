@@ -394,10 +394,12 @@ class ScoresController < ApplicationController
 
     # Reload heat data and render updated partial      
     @track_ages = Event.first.track_ages
+    @column_order = Event.first.column_order
+    @combine_open_and_closed = Event.first.heat_range_cat == 1
     
     render turbo_stream: turbo_stream.replace("rank-heat-container", 
       partial: "scores/rank_heat", 
-      locals: { judge: @judge, subjects: @subjects })
+      locals: { judge: @judge, subjects: @subjects, column_order: @column_order, combine_open_and_closed: @combine_open_and_closed })
   end
 
   def post_feedback
