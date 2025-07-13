@@ -299,6 +299,8 @@ export default class extends Controller {
     document.body.addEventListener("touchend", this.touchend);
 
     for (let subject of this.subjects.values()) {
+      if (!subject.dataset.heat) continue; // only for style="cards"; otherwise conflicts with skating finals
+
       subject.addEventListener("dragstart", event => {
         this.select(subject);
         subject.style.opacity = 0.4;
