@@ -14,6 +14,21 @@ class ScoresController < ApplicationController
 
   WEIGHTS = [5, 3, 2, 1]
 
+  # GET /scores/callbacks
+  def callbacks
+    setup_score_view_params
+    
+    # Get scrutineering dances only
+    dances = Dance.where(semi_finals: true).includes(:heats).order(:order)
+    @scores = {}
+    
+    dances.each do |dance|
+      process_dance_for_callbacks(dance)
+    end
+    
+    handle_post_request('callbacks')
+  end
+
   # GET /scores or /scores.json
   def heatlist
     event = Event.first
@@ -438,8 +453,7 @@ class ScoresController < ApplicationController
   end
 
   def by_level
-    @details = params[:details] == true || params[:details] == "true"
-
+    setup_score_view_params
     @event = Event.first
     @open_scoring = @event.open_scoring
     @closed_scoring = @event.closed_scoring
@@ -621,8 +635,7 @@ class ScoresController < ApplicationController
   end
 
   def by_age
-    @details = params[:details] == true || params[:details] == "true"
-
+    setup_score_view_params
     @event = Event.first
     @open_scoring = @event.open_scoring
     @closed_scoring = @event.closed_scoring
@@ -704,11 +717,9 @@ class ScoresController < ApplicationController
   end
 
   def multis
-    @details = params[:details] == true || params[:details] == "true"
-
+    setup_score_view_params
     event = Event.first
     @multi_scoring = event.multi_scoring
-    @column_order = event.column_order
     dances = Dance.where.not(multi_category_id: nil).
       includes(multi_children: :dance, heats: [{entry: [:lead, :follow]}, :scores]).
       order(:order)
@@ -1035,21 +1046,149 @@ class ScoresController < ApplicationController
         count(:value).to_a
     end
 
-    def final_scores
-      # select callbacks for finals
-      if @subjects.length <= 8
-        # Skip semi-finals, all couples proceed to finals
-        called_back = @subjects.map(&:entry_id)
+    # Common setup for score view methods
+    def setup_score_view_params
+      @details = params[:details] == true || params[:details] == "true"
+      event = Event.first
+      @column_order = event.column_order
+      @last_score_update = Score.maximum(:updated_at)
+    end
+
+    # Common POST request handling for score views
+    def handle_post_request(partial_name)
+      if request.post?
+        render turbo_stream: turbo_stream.replace("#{partial_name}-scores",
+          render_to_string(partial: partial_name, layout: false)
+        )
+      end
+    end
+
+    # Process callback data for a single dance
+    def process_dance_for_callbacks(dance)
+      # Check if there are any scores for this dance
+      total_scores = dance.heats.joins(:scores).count
+      
+      return unless total_scores > 0
+      
+      heat_numbers = dance.heats.where(number: 1..).distinct.pluck(:number)
+      
+      heat_numbers.each do |heat_number|
+        process_heat_for_callbacks(dance, heat_number, heat_numbers)
+      end
+    end
+
+    # Process callback data for a single heat within a dance
+    def process_heat_for_callbacks(dance, heat_number, heat_numbers)
+      # Create a unique key for each dance/heat combination
+      dance_heat_key = heat_numbers.length > 1 ? "#{dance.name} - Heat #{heat_number}" : dance.name
+      @scores[dance_heat_key] = { dance: dance, heat_number: heat_number, entries: {} }
+      
+      heats = dance.heats.where(number: heat_number)
+      scores = Score.joins(:heat).where(heat: heats).where.not(value: [nil, '']).includes(:judge, heat: :entry)
+      
+      return unless scores.any?
+      
+      # Group scores by slot to understand semi-finals vs finals
+      scores_by_slot = scores.group_by(&:slot)
+      valid_slots = scores_by_slot.keys.compact
+      final_slot = valid_slots.max
+      semi_final_slots = valid_slots.select { |slot| slot && final_slot && slot < final_slot }
+      
+      return unless semi_final_slots.any?
+      
+      # Get entries that were called back to finals
+      called_back_entries = determine_called_back_entries(heat_number, heats, final_slot, semi_final_slots)
+      
+      # Process callback votes and create entry data
+      process_callback_votes(dance_heat_key, scores_by_slot, semi_final_slots, called_back_entries)
+    end
+
+    # Determine which entries were called back to finals
+    def determine_called_back_entries(heat_number, heats, final_slot, semi_final_slots)
+      called_back_entries = Set.new
+      if final_slot && semi_final_slots.any?
+        called_back_entry_ids = determine_callbacks(heat_number, heats, semi_final_slots)
+        called_back_entries = Set.new(Entry.where(id: called_back_entry_ids))
+      end
+      called_back_entries
+    end
+
+    # Process callback votes for semi-finals and create entry data
+    def process_callback_votes(dance_heat_key, scores_by_slot, semi_final_slots, called_back_entries)
+      entry_callbacks = {}
+      entry_judges = {}
+      
+      semi_final_slots.each do |slot|
+        slot_scores = scores_by_slot[slot]
+        
+        slot_scores.each do |score|
+          entry = score.heat.entry
+          entry_callbacks[entry] ||= 0
+          entry_callbacks[entry] += 1 if score.value.to_i >= 1
+          
+          if score.value.to_i >= 1
+            entry_judges[entry] ||= Set.new
+            entry_judges[entry].add(score.judge)
+          end
+        end
+      end
+      
+      # Create entries in the format expected by multis view
+      entry_callbacks.each do |entry, votes|
+        @scores[dance_heat_key][:entries][entry] = {
+          'callbacks' => votes,
+          'called_back' => called_back_entries.include?(entry),
+          'judges' => entry_judges[entry] || Set.new
+        }
+      end
+    end
+
+    # Shared method to determine which entries were called back to finals
+    def determine_callbacks(heat_number, heats_or_subjects, semi_final_slots)
+      # Convert to array of Heat objects if needed
+      subjects = heats_or_subjects.respond_to?(:includes) ? 
+                   heats_or_subjects.includes(entry: [:lead, :follow]).to_a : 
+                   heats_or_subjects
+      
+      if subjects.length <= 8
+        # For small heats, check if all entries actually made it to finals
+        heat_ids = subjects.map(&:id)
+        final_scores = Score.joins(:heat).where(heat: heat_ids).where.not(slot: semi_final_slots)
+        final_entry_ids = final_scores.map(&:heat).map(&:entry_id).uniq
+        
+        if final_entry_ids.length == subjects.length
+          # All couples proceeded to finals without callback determination
+          subjects.map(&:entry_id)
+        else
+          # Use callback ranking logic even for small heats
+          ranks = Heat.rank_callbacks(heat_number, semi_final_slots)
+            .map {|entry, rank| [entry.id, rank]}.group_by {|id, rank| rank}
+          
+          called_back = []
+          ranks.each do |rank, entries|
+            break if called_back.length + entries.length > 8
+            called_back.concat(entries.map(&:first))
+          end
+          called_back
+        end
       else
-        ranks = Heat.rank_callbacks(@number, ..@heat.dance.heat_length)
+        # Use the callback ranking logic for large heats
+        ranks = Heat.rank_callbacks(heat_number, semi_final_slots)
           .map {|entry, rank| [entry.id, rank]}.group_by {|id, rank| rank}
+        
         called_back = []
         ranks.each do |rank, entries|
           break if called_back.length + entries.length > 8
           called_back.concat(entries.map(&:first))
         end
-        @subjects.select! {|heat| called_back.include? heat.entry_id}
+        called_back
       end
+    end
+
+    def final_scores
+      # select callbacks for finals using shared logic
+      called_back = determine_callbacks(@number, @subjects, ..@heat.dance.heat_length)
+      @subjects.select! {|heat| called_back.include? heat.entry_id}
 
       # find scores for finals, or create them in random order if they don't exist
       scores = Score.joins(:heat)

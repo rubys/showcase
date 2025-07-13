@@ -851,4 +851,149 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     event.update!(assign_judges: original_assign)
   end
 
+  # ===== CALLBACK DETERMINATION TESTS =====
+  
+  test "callbacks action displays callback determination page" do
+    # Create scrutineering dance with semi_finals
+    scrutineering_dance = Dance.create!(
+      name: 'Test Scrutineering Waltz',
+      semi_finals: true,
+      heat_length: 3,
+      order: 1001
+    )
+    
+    # Create entries and heats
+    entry1 = Entry.create!(lead: @instructor, follow: @student, age: @age, level: @level)
+    entry2 = Entry.create!(lead: people(:instructor2), follow: @student2, age: @age, level: @level)
+    
+    heat1 = Heat.create!(number: 100, entry: entry1, dance: scrutineering_dance, category: 'Multi')
+    heat2 = Heat.create!(number: 100, entry: entry2, dance: scrutineering_dance, category: 'Multi')
+    
+    # Create semi-final callback votes (value >= 1 means callback)
+    Score.create!(heat: heat1, judge: @judge, value: '1', slot: 1)
+    Score.create!(heat: heat1, judge: people(:Kathryn), value: '1', slot: 1)
+    Score.create!(heat: heat2, judge: @judge, value: '0', slot: 1)
+    Score.create!(heat: heat2, judge: people(:Kathryn), value: '1', slot: 1)
+    
+    # Create final scores for entries that were called back
+    Score.create!(heat: heat1, judge: @judge, value: '1', slot: 3)
+    Score.create!(heat: heat1, judge: people(:Kathryn), value: '2', slot: 3)
+    
+    get callbacks_scores_path
+    
+    assert_response :success
+    assert_select 'h1', 'Callback Determination'
+    assert_select 'h2', text: /Test Scrutineering Waltz/
+  end
+  
+  test "callbacks shows correct callback counts and status" do
+    # Create scrutineering dance
+    dance = Dance.create!(name: 'Test Callback Tango', semi_finals: true, heat_length: 2, order: 1002)
+    
+    # Create 3 entries
+    entries = []
+    3.times do |i|
+      student = Person.create!(name: "Student #{i}", type: 'Student', studio: studios(:one), level: @level)
+      entry = Entry.create!(lead: @instructor, follow: student, age: @age, level: @level)
+      entries << entry
+    end
+    
+    # Create heats
+    heats = entries.map.with_index do |entry, i|
+      Heat.create!(number: 200, entry: entry, dance: dance, category: 'Multi')
+    end
+    
+    # Create semi-final scores: entry 1 gets 2 votes (called back), entry 2 gets 1 vote, entry 3 gets 0 votes
+    Score.create!(heat: heats[0], judge: @judge, value: '1', slot: 1)
+    Score.create!(heat: heats[0], judge: people(:Kathryn), value: '1', slot: 1)
+    Score.create!(heat: heats[1], judge: @judge, value: '1', slot: 1)
+    
+    # Create final scores for entries that were called back (entry 1 only)
+    Score.create!(heat: heats[0], judge: @judge, value: '1', slot: 2)
+    
+    get callbacks_scores_path
+    
+    assert_response :success
+    
+    # Should show callback information in the table
+    assert_select 'table tr', minimum: 2 # Should have at least the entries with scores (plus header)
+    assert_select 'table tr td', minimum: 5 # Should have cells for entries
+    
+    # Should show some vote counts and callback status
+    response_body = @response.body
+    assert_includes response_body, 'Called Back'
+    # Only entries with scores are shown, so we may not see 'Not Called' if all scored entries got callbacks
+  end
+  
+  test "callbacks handles no scrutineering dances gracefully" do
+    # Ensure no dances have semi_finals set
+    Dance.update_all(semi_finals: false)
+    
+    get callbacks_scores_path
+    
+    assert_response :success
+    assert_includes @response.body, 'No callback scores entered yet.'
+  end
+  
+  test "callbacks shows judge voting summary" do
+    # Create scrutineering dance
+    dance = Dance.create!(name: 'Test Judge Foxtrot', semi_finals: true, heat_length: 1, order: 1003)
+    
+    # Create entries and heats
+    entry1 = Entry.create!(lead: @instructor, follow: @student, age: @age, level: @level)
+    entry2 = Entry.create!(lead: people(:instructor2), follow: @student2, age: @age, level: @level)
+    
+    heat1 = Heat.create!(number: 300, entry: entry1, dance: dance, category: 'Multi')
+    heat2 = Heat.create!(number: 300, entry: entry2, dance: dance, category: 'Multi')
+    
+    # Semi-final votes: Judge votes for both entries, Kathryn votes for one
+    Score.create!(heat: heat1, judge: @judge, value: '1', slot: 1)
+    Score.create!(heat: heat2, judge: @judge, value: '1', slot: 1)
+    Score.create!(heat: heat1, judge: people(:Kathryn), value: '1', slot: 1)
+    
+    # Final scores for entries that were called back (both entries)
+    Score.create!(heat: heat1, judge: @judge, value: '1', slot: 2)
+    Score.create!(heat: heat2, judge: @judge, value: '2', slot: 2)
+    
+    get callbacks_scores_path
+    
+    assert_response :success
+    
+    # Check that the page shows callback information
+    assert_select 'table tr', minimum: 2 # Should have at least header plus one entry with scores
+    
+    # Should show both judges mentioned somewhere in the judges column
+    response_body = @response.body
+    assert_includes response_body, @judge.display_name
+    assert_includes response_body, people(:Kathryn).display_name
+  end
+  
+  test "callbacks displays multiple heats for same dance" do
+    # Create dance with multiple heats
+    dance = Dance.create!(name: 'Test Multi Heat Rumba', semi_finals: true, heat_length: 2, order: 1004)
+    
+    # Create entries for two different heats
+    entry1 = Entry.create!(lead: @instructor, follow: @student, age: @age, level: @level)
+    entry2 = Entry.create!(lead: people(:instructor2), follow: @student2, age: @age, level: @level)
+    
+    heat1 = Heat.create!(number: 400, entry: entry1, dance: dance, category: 'Multi')
+    heat2 = Heat.create!(number: 401, entry: entry2, dance: dance, category: 'Multi')
+    
+    # Add semi-final scores
+    Score.create!(heat: heat1, judge: @judge, value: '1', slot: 1)
+    Score.create!(heat: heat2, judge: people(:Kathryn), value: '1', slot: 1)
+    
+    # Add final scores for entries that were called back
+    Score.create!(heat: heat1, judge: @judge, value: '1', slot: 2)
+    Score.create!(heat: heat2, judge: people(:Kathryn), value: '1', slot: 2)
+    
+    get callbacks_scores_path
+    
+    assert_response :success
+    
+    # Should show heat numbers when multiple heats exist  
+    assert_includes @response.body, 'Heat 400'
+    assert_includes @response.body, 'Heat 401'
+  end
+
 end

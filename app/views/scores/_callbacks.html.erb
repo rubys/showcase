@@ -1,0 +1,69 @@
+<div id="callbacks-scores">
+  <h1 class="font-bold mt-8 text-4xl pb-5 text-center">Callback Determination</h1>
+
+  <% empty = true %>
+
+  <% @scores = @scores.to_a.sort_by do |dance_heat_key, data|
+    data[:heat_number] || 0
+  end %>
+
+  <% @scores.each do |dance_heat_key, data| %>
+    <% entries = data[:entries] %>
+    <% dance = data[:dance] %>
+    <% heat_number = data[:heat_number] %>
+    <% next if entries.empty? %>
+    <% empty = false %>
+    <h2 class="font-bold pt-4 text-2xl pb-5">
+      <%= dance_heat_key %>
+    </h2>
+    
+    <table class="mb-8">
+      <thead>
+        <tr>
+          <th class="row-head">Callbacks</th>
+          <% if @column_order == 1 %>
+            <th class="row-head">Lead</th>
+            <th class="row-head">Follow</th>
+          <% else %>
+            <th class="row-head">Student</th>
+            <th class="row-head">Instructor</th>
+          <% end %>
+          <th class="row-head">Status</th>
+          <th class="row-head">Judges</th>
+        </tr>
+      </thead>
+      <% # Sort by callback count, then by back number %>
+      <% results = entries.sort_by {|entry, results| [-results['callbacks'], entry.lead.back.to_i]} %>
+      <% results.each do |entry, results| %>
+        <tr class="<%= results['called_back'] ? 'bg-green-50' : '' %>">
+          <td class="row-main text-right"><%= results['callbacks'] %></td>
+          <% if @column_order == 1 || entry.lead.type == 'Student' %>
+            <td class="row-main"><%= link_to entry.lead.display_name, entry.lead %></td>
+            <td class="row-main"><%= link_to entry.follow.display_name, entry.follow %></td>
+          <% else %>
+            <td class="row-main"><%= link_to entry.follow.display_name, entry.follow %></td>
+            <td class="row-main"><%= link_to entry.lead.display_name, entry.lead %></td>
+          <% end %>
+          <td class="row-main">
+            <% if results['called_back'] %>
+              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                ✓ Called Back
+              </span>
+            <% else %>
+              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                Not Called
+              </span>
+            <% end %>
+          </td>
+          <td class="row-main text-sm">
+            <%= results['judges'].map(&:display_name).join(', ') %>
+          </td>
+        </tr>
+      <% end %>
+    </table>
+  <% end %>
+
+  <% if empty %>
+    <p class="my-8">No callback scores entered yet.</p>
+  <% end %>
+</div>
