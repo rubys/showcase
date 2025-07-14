@@ -100,25 +100,19 @@ class ScoresController < ApplicationController
 
     @heat = @subjects.first
 
+    slots = @slot
+
     if @heat.dance.semi_finals?
       @style = 'radio'
-
-      # Check if we should be in final mode
-      # Only use final mode if:
-      # 1. We're in a finals slot (> heat_length), OR
-      # 2. We have ≤8 couples AND final scores actually exist
-      has_final_scores = @subjects.length <= 8 && 
-                        Score.where(heat: @subjects)
-                             .where('slot > ?', @heat.dance.heat_length)
-                             .where.not(value: '0').exists?
       
-      @final = @slot > @heat.dance.heat_length || has_final_scores
+      @final = @slot > @heat.dance.heat_length || @subjects.length <= 8
 
       if @final
         # sort subjects by score
         @subjects = final_scores.map(&:heat).uniq
       else
         @callbacks = 6
+        slots = (1..(@heat.dance.heat_length || 1))
       end
     end
 
@@ -147,7 +141,7 @@ class ScoresController < ApplicationController
       end
     end
 
-    scores = Score.where(judge: @judge, heat: @subjects, slot: @slot).all
+    scores = Score.where(judge: @judge, heat: @subjects, slot: slots).all
     student_results = scores.map {|score| [score.heat, score.value]}.
       select {|heat, value| value}.to_h
 
@@ -300,41 +294,47 @@ class ScoresController < ApplicationController
     heat = Heat.find(params[:heat].to_i)
     slot = params[:slot]&.to_i
 
-    retry_transaction do
-    score = Score.find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
-    if ApplicationRecord.readonly?
-      render json: 'database is readonly', status: :service_unavailable
-    elsif params[:comments]
-      if params[:comments].empty?
-        score.comments = nil
-      else
-        score.comments = params[:comments]
-      end
-
-      keep = score.good || score.bad || (!score.comments.blank?) || score.value || Event.first.assign_judges > 0
-      if keep ? score.save : score.delete
-        render json: score.as_json
-      else
-        render json: score.errors, status: :unprocessable_entity
-      end
-    elsif not params[:score].blank? or not score.comments.blank? or Event.first.assign_judges > 0
-      if params[:name]
-        value = score.value&.start_with?('{') ? JSON.parse(score.value) : {}
-        value[params[:name]] = params[:score]
-        score.value = value.to_json
-      else
-        score.value = params[:score]
-      end
-
-      if score.save
-        render json: score.as_json
-      else
-        render json: score.errors, status: :unprocessable_entity
-      end
-    else
-      score.destroy
-      render json: score
+    if heat.dance.semi_finals
+      subject_count = Heat.where(number: heat.number).count
+      final = slot > heat.dance.heat_length || subject_count <= 8
+      slot = 1 unless final
     end
+
+    retry_transaction do
+      score = Score.find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
+      if ApplicationRecord.readonly?
+        render json: 'database is readonly', status: :service_unavailable
+      elsif params[:comments]
+        if params[:comments].empty?
+          score.comments = nil
+        else
+          score.comments = params[:comments]
+        end
+
+        keep = score.good || score.bad || (!score.comments.blank?) || score.value || Event.first.assign_judges > 0
+        if keep ? score.save : score.delete
+          render json: score.as_json
+        else
+          render json: score.errors, status: :unprocessable_entity
+        end
+      elsif not params[:score].blank? or not score.comments.blank? or Event.first.assign_judges > 0
+        if params[:name]
+          value = score.value&.start_with?('{') ? JSON.parse(score.value) : {}
+          value[params[:name]] = params[:score]
+          score.value = value.to_json
+        else
+          score.value = params[:score]
+        end
+
+        if score.save
+          render json: score.as_json
+        else
+          render json: score.errors, status: :unprocessable_entity
+        end
+      else
+        score.destroy
+        render json: score
+      end
     end
   end
 

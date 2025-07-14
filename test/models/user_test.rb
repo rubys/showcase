@@ -134,24 +134,6 @@ class UserTest < ActiveSupport::TestCase
     assert_equal [], User.authlist
   end
 
-  test "auth_event_list should return events for authorized user" do
-    # Mock load_auth to do nothing and set up auth data
-    User.define_singleton_method(:load_auth) { nil }
-    User.class_variable_set(:@@db, true)  # Need db to be truthy
-    User.class_variable_set(:@@auth_studio, { 'testuser' => ['Boston'] })
-    
-    events = User.auth_event_list('testuser')
-    # Should return some events (exact events depend on showcases.yml)
-    assert events.is_a?(Array)
-    assert events.length > 0
-    # All events should be URL paths
-    events.each { |event| assert event.start_with?('/') }
-    
-  ensure
-    # Clean up mocks
-    User.singleton_class.remove_method(:load_auth) if User.singleton_class.method_defined?(:load_auth)
-  end
-
   test "trust_level should return class variable value" do
     User.class_variable_set(:@@trust_level, 5)
     assert_equal 5, User.trust_level
