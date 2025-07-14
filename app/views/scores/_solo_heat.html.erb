@@ -90,13 +90,13 @@
   </div>
   <% end %>
 
-  </div>
-
   <% if @style == 'emcee' && Event.current.current_heat != @number %>
   <div class="text-center mt-2">
     <button data-action="click->score#startHeat" data-score-target="startButton" class="btn-green text-sm">
       Start Heat
     </button>
+  </div>
+
   </div>
   <% end %>
 
