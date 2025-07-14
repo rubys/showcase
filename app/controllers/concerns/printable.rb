@@ -3,9 +3,21 @@ module Printable
     event = Event.last
 
     @heats = Heat.order('abs(number)').includes(
-      dance: [:open_category, :closed_category, :solo_category, :multi_category, {multi_children: :dance}],
-      entry: [:age, :level, lead: [:studio], follow: [:studio]],
-      solo: [:formations]
+      dance: [
+        :open_category, :closed_category, :solo_category, :multi_category,
+        :pro_open_category, :pro_closed_category, :pro_solo_category, :pro_multi_category,
+        { multi_children: :dance },
+        { open_category: :extensions },
+        { closed_category: :extensions },
+        { solo_category: :extensions },
+        { multi_category: :extensions },
+        { pro_open_category: :extensions },
+        { pro_closed_category: :extensions },
+        { pro_solo_category: :extensions },
+        { pro_multi_category: :extensions }
+      ],
+      entry: [:age, :level, { lead: :studio }, { follow: :studio }],
+      solo: [:formations, :combo_dance, :category_override]
     )
 
     @heats = @heats.to_a.group_by {|heat| heat.number.abs}.
@@ -13,7 +25,7 @@ module Printable
         [number, heats.sort_by { |heat| [heat.dance_id, heat.back || 0, heat.entry.lead.type] } ]
       end
 
-    @categories = (Category.all + CatExtension.all).sort_by {|cat| cat.order}.
+    @categories = (Category.includes(:extensions).all + CatExtension.includes(:category).all).sort_by {|cat| cat.order}.
       map {|category| [category.name, category]}.to_h
 
     # copy start time/date to subsequent entries
@@ -65,7 +77,7 @@ module Printable
 
     judge_ballrooms = Judge.where.not(ballroom: 'Both').exists?
 
-    extensions = CatExtension.order(:part).all.reload.group_by(&:category)
+    extensions = CatExtension.includes(:category).order(:part).all.group_by(&:category)
 
     @heats.each do |number, heats|
       if number == 0
