@@ -164,7 +164,7 @@ class Heat < ApplicationRecord
               entry_id = entries.first
               entry = entry_map[entry_id]
               if explanations
-                explanations << "  Rule 7.1: ##{entry.lead.back} has lowest sum (#{score}) - assigned rank #{rank}"
+                explanations << "  Rule 7(a): ##{entry.lead.back} has lowest sum (#{score}) - assigned rank #{rank}"
               end
               rankings[entry] = rank
               scores.delete entry_id
@@ -174,7 +174,7 @@ class Heat < ApplicationRecord
               # and examine the next place mark (Rule 7 part 2)
               if explanations
                 entry_backs = entries.map { |id| "##{entry_map[id].lead.back}" }.join(", ")
-                explanations << "  Rule 7.2: Tie between #{entry_backs} (sum=#{score}) - examining next place"
+                explanations << "  Rule 7(b): Tie between #{entry_backs} (sum=#{score}) - examining next place"
               end
               runoff.call(entries, examining + 1, true)
             else
@@ -183,7 +183,7 @@ class Heat < ApplicationRecord
               if explanations
                 entry_backs = entries.map { |id| "##{entry_map[id].lead.back}" }.join(", ")
                 tied_rank = rank + (entries.length-1) / 2.0
-                explanations << "  Rule 7.3: Unbreakable tie between #{entry_backs} - all assigned rank #{tied_rank}"
+                explanations << "  Rule 7(c): Unbreakable tie between #{entry_backs} - all assigned rank #{tied_rank}"
               end
               entries.each do |entry_id|
                 rankings[entry_map[entry_id]] = rank + (entries.length-1) / 2.0

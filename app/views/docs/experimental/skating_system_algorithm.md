@@ -1,121 +1,148 @@
-# The Skating System Algorithm for DanceSport Scrutineering
+# The Skating System Algorithm for Scrutineering
 
 ## Overview
 
-The Skating System is the worldwide standard scoring method for DanceSport competitions. It consists of 11 rules that determine how adjudicator marks are collected and processed during a competition.
+The Skating System is the worldwide standard scoring method for ballroom dance competitions. It consists of 11 rules that determine how adjudicator marks are collected and processed during a competition.
 
 ## Algorithm Structure
 
-### Part 1: Qualifying Rounds (Rules 1-4)
+<div style="border: 1px solid black; padding: 1em; text-align: center; margin: 0">
+<h4>Part 1: Qualifying Rounds (Rule 1)</h4>
+</div>
 
-#### Rule 1: Voting in Qualifying Rounds
-- **Input**: Number of couples to recall (specified by Chairman)
-- **Process**: Each adjudicator votes for exactly the specified number of couples
-- **Output**: List of recalled couples per adjudicator
+In qualifying rounds, adjudicators select couples to advance to the next round.
 
-#### Recall Calculation Algorithm:
-1. Count total votes received by each couple across all adjudicators
-2. Sort couples by vote count (descending)
-3. Select top N couples as specified by Chairman
-4. If ties exist at the cutoff point, include all tied couples
+#### **Rule 1: Voting in Qualifying Rounds**
+- Each adjudicator votes for exactly the number of couples specified by the Chairman.
+- Votes are tallied across all adjudicators.
+- Couples with the most votes advance.
+- In case of ties at the cutoff point, all tied couples advance.
 
-### Part 2: Final Round Marking (Rules 2-4)
+<div style="border: 1px solid black; padding: 1em; text-align: center; margin: 0">
+<h4>Part 2: Final Round Marking (Rules 2-4)</h4>
+</div>
 
-#### Rule 2: Final Round Placement
-- Each adjudicator must place ALL couples in order of merit in each dance
+These rules govern how adjudicators must mark couples in final rounds.
 
-#### Rule 3: Sequential Placement
-- 1st place → best couple
-- 2nd place → second best couple
-- Continue sequentially for all couples
+#### **Rule 2: Complete Placement**
+- Each adjudicator must place ALL couples in order of merit in each dance.
 
-#### Rule 4: No Ties Allowed
-- Adjudicators cannot tie couples for any position
-- Every couple must have a unique placement from each adjudicator
+#### **Rule 3: Sequential Placement**
+- Placements must be sequential: 1st place for the best couple, 2nd for the next best, etc.
 
-### Part 3: Single Dance Calculations (Rules 5-8)
+#### **Rule 4: No Ties Allowed**
+- Adjudicators cannot tie couples for any position.
+- Every couple must receive a unique placement from each adjudicator.
 
-#### Rule 5: Majority Winner
-**Algorithm**:
-1. Calculate absolute majority needed: (Number of adjudicators ÷ 2) + 1
-2. For position P (starting with 1st):
-   - Count how many adjudicators placed each couple at position P or better
-   - Couple with absolute majority wins position P
-   - Mark couple as placed
-   - Continue to next position
+<div style="border: 1px solid black; padding: 1em; text-align: center; margin: 0">
+<h4>Part 3: Single Dance Calculations (Rules 5-8)</h4>
+</div>
 
-#### Rule 6: Largest Majority
-**When**: Multiple couples have majority for same position
-**Algorithm**:
-1. Compare majority counts for tied couples
-2. Couple with largest majority gets the position
-3. Other couples get subsequent positions
+These rules determine how to calculate final placements for a single dance based on all adjudicators' marks.
 
-#### Rule 7: Breaking Equal Majorities
-**When**: Couples have equal majorities for same position
+#### **Rule 5: Majority Winner**
+- Calculate absolute majority: (Number of adjudicators ÷ 2) + 1
+- For each position (starting with 1st), count how many adjudicators placed each couple at that position or better.
+- If exactly one couple has absolute majority, they win that position.
+- Remove placed couples from further consideration.
+- If multiple couples have majority, proceed to Rule 6.
+- If no couples have majority, proceed to Rule 8.
 
-**Rule 7(a) - Equal Majorities**:
-1. Add together marks that form the majority for each couple
-2. Couple with lowest aggregate gets the position
-3. Continue for remaining tied couples
+#### **Rule 6: Largest Majority**
+- Applied when multiple couples have majority for the same position but with different counts.
+- The couple with the largest majority (most marks at or better than examining position) wins.
+- This couple is removed from further consideration.
+- Continue with remaining couples for subsequent positions.
 
-**Rule 7(b) - Equal Majorities AND Aggregates**:
-1. Include next lower place mark in calculation
-2. Recalculate majorities
-3. If still tied, continue including lower marks until tie breaks
-4. Couple with greater majority wins
+#### **Rule 7: Breaking Equal Majorities**
+- Applied when couples have equal majorities (same count of marks) for the same position.
 
-#### Rule 8: No Majority Found
-**When**: No couple has majority for position under review
-**Algorithm**:
-1. Include next place marks in calculation (e.g., for 1st place, include 1st AND 2nd)
-2. Recalculate majorities
-3. If still no majority, continue including lower marks
-4. Apply Rules 5-7 once majority is found
+**7(a) Sum of Marks:**
+- Sum all marks at or better than the examining position for each tied couple.
+- Couple with the lowest sum wins the better position.
 
-### Part 4: Multi-Dance Events (Rule 9)
+**7(b) Equal Sums:**
+- When sums are also equal, examine the next place mark.
+- Recalculate majorities including the additional place.
+- Apply Rules 5-7 recursively until the tie breaks.
 
-#### Rule 9: Final Summary Compilation
-**Algorithm**:
-1. For each couple:
-   - Sum their placement marks across all dances
-   - Example: 1st + 2nd + 1st + 3rd = 7 points
-2. Sort couples by total (ascending)
-3. Lowest total wins overall
-4. If ties exist, apply Rules 10 and 11
+**7(c) Unbreakable Ties:**
+- When all marks are examined and couples remain tied.
+- Couples share the same fractional placement (e.g., two couples tied for 2nd both receive 2.5).
 
-### Part 5: Tie Breaking in Final Summary (Rules 10-11)
+#### **Rule 8: No Majority Found**
+- Applied when no couple has majority for the position under review.
+- Move to the next examining position (e.g., from 1st to 2nd).
+- Continue incrementing until at least one couple achieves majority.
+- Once majority is found, apply Rules 5-7 as normal.
+- This rule is handled implicitly in the implementation by the examining loop.
 
-#### Rule 10: Breaking Final Summary Ties
-**When**: Couples have same aggregate in final summary
-**Algorithm**:
-1. For tied couples at position P:
-   - Count how many dances each couple placed P or better
-   - Couple with most dances at P or better wins
-2. If still tied after checking all positions:
-   - Sum the place marks in dances where couples achieved P or better
-   - Couple with lowest sum wins
-3. Continue for all tied positions
+<div style="border: 1px solid black; padding: 1em; text-align: center; margin: 0">
+<h4>Part 4: Multi-Dance Events (Rule 9)</h4>
+</div>
 
-#### Rule 11: Ultimate Tie Breaking
-**When**: Couples remain tied after Rule 10
-**Algorithm**:
-1. Compare head-to-head results between tied couples only
-2. Count how many times each couple beat the other(s)
-3. Couple who won most head-to-head comparisons gets better position
-4. If still tied:
-   - Apply same process to next group of tied couples
-   - As last resort, couples may share the same final position
+When an event consists of multiple dances, placements from each dance are combined to determine overall results.
 
-## Implementation Notes
+#### **Rule 9: Final Summary Compilation**
+- Sum each couple's placement marks across all dances (e.g., 1st + 2nd + 1st + 3rd = 7 points).
+- Sort couples by total sum (ascending).
+- Lowest total wins overall.
+- If ties exist, apply Rules 10 and 11.
+
+
+<div style="border: 1px solid black; padding: 1em; text-align: center; margin: 0">
+<h4>Part 5: Tie Breaking in Final Summary (Rules 10-11)</h4>
+</div>
+
+When couples have identical total placements after all dances, the following tie-breaking procedures are applied:
+
+#### **Rule 10: Count of Better Placements**
+- For each tied couple, count the number of dances where they placed at or above each position (starting from 1st).
+- The couple with the most dances at or better than the current position wins the tie.
+- If still tied, increment the position and repeat until the tie is broken.
+- If all positions are examined and couples remain tied, proceed to Rule 11.
+
+#### **Rule 11: Head-to-Head Comparison**
+- Only the tied couples' marks are considered across all dances.
+- The single dance placement algorithm (Rules 5-8) is re-applied to these couples.
+- The couple ranked 1st in this head-to-head wins the tie.
+- If still tied, couples share the same final position, and fractional placements may be assigned.
+
+
+
+<div style="border: 1px solid black; padding: 1em; text-align: center; margin: 0">
+<h4>Implementation Notes</h4>
+</div>
+
+### Key Data Structures:
+- **Scores**: Stored with heat_id, judge_id, slot (dance number), and value (placement)
+- **Rankings**: Hash mapping Entry objects to their final rank
+- **Explanations**: Optional detailed trace of algorithm decisions for debugging
+
+### Algorithm Flow:
+1. **Single Dance Placement** (`Heat.rank_placement`):
+   - Iterates through positions 1 to max, examining each
+   - Uses recursive runoff function for tie-breaking
+   - Returns rankings hash and optional explanations
+
+2. **Multi-Dance Compilation** (`Heat.rank_summaries`):
+   - Sums placements across all dances (Rule 9)
+   - Breaks ties using count of better placements (Rule 10)
+   - Falls back to head-to-head comparison (Rule 11)
 
 ### Special Cases:
-- **Fractional Placements**: When couples tie after all rules, they share positions (e.g., 2.5)
-- **Recalled in Some Dances**: Couple may advance in some dances but not others
-- **Missing Adjudicator**: Recalculate majority based on actual panel size
+- **Fractional Placements**: When couples tie after all rules, rank = base + (count-1)/2.0
+- **Set Return**: Rule 11 may return a Set of backs when ties are unbreakable
+- **Focused Runoff**: Rule 7(b) uses focused=true flag to limit examination to tied couples
+- **Empty Scores**: Algorithm handles cases where no couples have been marked
 
 ## Validation Rules
 1. All couples must be placed by all adjudicators
 2. No duplicate placements allowed from single adjudicator
-3. Majority calculations must use correct formula
-4. All ties must be resolved using appropriate rules in sequence
+3. Majority = (Number of judges ÷ 2) + 1
+4. All ties must be resolved using rules in sequence 5→6→7→8
+
+References:
+
+* [Tabulating DanceSport Competition Marks](https://www.dancepartner.com/articles/dancesport-skating-system.asp)
+* [The Skating System Study Guide](https://dancesport.org.au/accreditation/candidate_info/scrutineering_tutorial.pdf)

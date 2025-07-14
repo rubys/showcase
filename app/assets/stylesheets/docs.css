@@ -39,6 +39,11 @@ body.docs {
   margin-left: 2em;  
 }
 
+.docs h4 {
+  margin-top: 0.5em;
+  font-size: x-large;
+}
+
 .docs ul {
   list-style: revert;
 }
@@ -47,6 +52,12 @@ body.docs {
   margin: revert;
   padding: revert;
 } 
+
+.docs ol {
+  margin: revert;
+  padding: revert;
+  list-style: revert;
+}
 
 .docs a {
   color: revert;

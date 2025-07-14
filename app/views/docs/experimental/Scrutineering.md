@@ -4,7 +4,7 @@ Scrutineering is a feature commonly found in larger competitions where
 students register for multiple heats, are called back, and then are
 ranked in successive semi-final rounds culminating in a final round.
 
-The [rules for rankings are complex](https://www.dancepartner.com/articles/dancesport-skating-system.asp), but computers excel at handling them.
+The [rules for rankings are complex](./skating_system_algorithm.md), but computers excel at handling them.
 Rule 11, for example, can be tedious and error-prone when done by hand, especially under the time pressure of a live competition.
 Having a computer act as the scrutineer can produce instant results.
 
