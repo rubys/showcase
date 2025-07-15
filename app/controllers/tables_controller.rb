@@ -49,11 +49,11 @@ class TablesController < ApplicationController
     # Get unassigned people (students, professionals, guests)
     if @option
       # For option tables, get people who have this option but no table assignment
+      # Include Event Staff (Officials) for option tables since they can attend dinners/lunches
       @unassigned_people = Person.includes(:studio)
                                  .joins(:options)
                                  .where(person_options: { option_id: @option.id, table_id: nil })
-                                 .where(type: ['Student', 'Professional', 'Guest'])
-                                 .where.not(studio_id: 0)  # Exclude Event Staff
+                                 .where(type: ['Student', 'Professional', 'Guest', 'Official'])
                                  .order('studios.name, people.name')
     else
       # For main event tables, get people without any table assignment
@@ -141,10 +141,10 @@ class TablesController < ApplicationController
     # Get studios that have unassigned people
     if @option
       # For option tables, get studios with people who have this option but no table
+      # Include Event Staff for option tables
       @studios_with_unassigned = Studio.joins(:people => :options)
                                        .where(person_options: { option_id: @option.id, table_id: nil })
-                                       .where(people: { type: ['Student', 'Professional', 'Guest'] })
-                                       .where.not(id: 0)  # Exclude Event Staff
+                                       .where(people: { type: ['Student', 'Professional', 'Guest', 'Official'] })
                                        .distinct
                                        .order(:name)
                                        .pluck(:id, :name)
@@ -544,8 +544,9 @@ class TablesController < ApplicationController
     
     if table.option_id
       # Get unassigned people from the studio who have this option
+      # Include Officials (Event Staff) for option tables
       unassigned_people = Person.joins(:options)
-                                .where(studio_id: studio_id, type: ['Student', 'Professional', 'Guest'])
+                                .where(studio_id: studio_id, type: ['Student', 'Professional', 'Guest', 'Official'])
                                 .where(person_options: { option_id: table.option_id, table_id: nil })
                                 .order(:name)
                                 .limit(available_seats)
