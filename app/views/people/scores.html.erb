@@ -1,6 +1,30 @@
 <div class="w-screen">
   <% found = false %>
   <% @score_values = !Score.where.not(value: [nil, ""]).empty? %>
+  
+  <% 
+  # Cache scrutineering results once per request for dances with participating people
+  @scrutineering_cache = {}
+  participating_people = @people.select { |person| 
+    @heats.any? {|heat| [heat.entry.lead, heat.entry.follow].include?(person)} or 
+    @formations.any? {|id, number| id == person.id && number}
+  }
+  
+  if participating_people.any?
+    # Find all scrutineering dances that have participating people
+    scrutineering_dances = @heats.select { |heat|
+      heat.dance.semi_finals && participating_people.any? { |person|
+        [heat.entry.lead, heat.entry.follow].include?(person)
+      }
+    }.map(&:dance).uniq
+    
+    # Calculate scrutineering results once for each relevant dance
+    scrutineering_dances.each do |dance|
+      @scrutineering_cache[dance.id] = dance.scrutineering
+    end
+  end
+  %>
+  
   <% @people.each do |person| %>
     <% next unless @heats.any? {|heat| [heat.entry.lead, heat.entry.follow].include? person} or @formations.any? {|id, number| id == person.id} %>
     <%= render "people/scores", person: person %>

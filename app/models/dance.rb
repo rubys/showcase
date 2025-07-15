@@ -34,10 +34,16 @@ class Dance < ApplicationRecord
   end
 
   def scrutineering(with_explanations: false)
-    scores = Score.where(heat: heats)
-    slots = scores.distinct.order(:slot).pluck(:slot)
-    judges = scores.distinct.order(:judge_id).pluck(:judge_id)
-    entries = heats.includes(entry: :lead)
+    # Optimized eager loading to prevent N+1 queries
+    entries = heats.includes(entry: [:lead, :follow])
+    
+    # Batch load all scores with a single query
+    scores = Score.includes(:heat).where(heat: heats)
+    
+    # Extract unique values more efficiently
+    score_data = scores.pluck(:slot, :judge_id).uniq
+    slots = score_data.map(&:first).uniq.sort
+    judges = score_data.map(&:last).uniq.sort
     numbers = heats.where.not(number: ..0).distinct.pluck(:number)
 
     explanations = with_explanations ? {
@@ -47,17 +53,32 @@ class Dance < ApplicationRecord
       final_results: []
     } : nil
 
+    # Pre-compute entry mappings for better performance
+    entry_by_back = {}
+    back_by_entry = {}
+    unique_entry_ids = Set.new
+    entry_by_id = {}
+    
+    entries.each do |heat|
+      back = heat.entry.lead.back
+      entry_id = heat.entry_id
+      entry_by_back[back] = entry_id
+      back_by_entry[entry_id] = back
+      unique_entry_ids << entry_id
+      entry_by_id[entry_id] ||= heat.entry
+    end
+    
     # Use actual score slots to determine dance mappings
     # For semi-finals, use slots 1 to heat_length for individual dances
     # If there are 8 or fewer couples, they all dance in slot 1 (semi-finals only)
     # If there are more than 8 couples, finalists dance in slots > heat_length
-    unique_entries = entries.map(&:entry_id).uniq.count
-    dance_slots = if unique_entries > 8 && heat_length && slots.any? { |slot| slot > heat_length }
+    unique_entries_count = unique_entry_ids.size
+    dance_slots = if unique_entries_count > 8 && heat_length && slots.any? { |slot| slot > heat_length }
       # Finals: use slots > heat_length (only if final scores exist)
       slots.select { |slot| slot > heat_length }
     else
       # Semi-finals or direct finals: use slots 1 to heat_length
-      slots.select { |slot| slot <= (heat_length || Float::INFINITY) }
+      heat_length ? slots.select { |slot| slot <= heat_length } : slots
     end
     
     if explanations
@@ -67,26 +88,26 @@ class Dance < ApplicationRecord
     end
     
     # Create dance name mapping based on multi_children and actual slots
+    # Pre-load all dance names to avoid N+1
+    dance_children = multi_children.includes(:dance).to_a
     dance_names = {}
-    multi_children.includes(:dance).each_with_index do |child, index|
+    dance_children.each_with_index do |child, index|
       # Map to actual slot if available, otherwise use sequential slots
       actual_slot = dance_slots[index] || (index + 1)
       dance_names[actual_slot] = child.dance.name
     end
 
-    summary = {}
-    entries.each do |heat|
-      summary[heat.entry.lead.back] ||= {}
-    end
+    # Initialize summary for all backs in one pass
+    summary = entry_by_back.keys.to_h { |back| [back, {}] }
     
     # Get rankings for each dance slot
     dance_slots.each do |slot|
       dance_name = dance_names[slot] || "Dance #{slot}"
       if explanations
-        rankings, dance_explanation = Heat.rank_placement(numbers, slot, judges.length/2+1, with_explanations: true)
+        rankings, dance_explanation = Heat.rank_placement(numbers, slot, judges.length/2+1, with_explanations: true, entry_map: entry_by_id)
         explanations[:individual_dances][dance_name] = dance_explanation
       else
-        rankings = Heat.rank_placement(numbers, slot, judges.length/2+1)
+        rankings = Heat.rank_placement(numbers, slot, judges.length/2+1, entry_map: entry_by_id)
       end
       rankings.each do |entry, rank|
         summary[entry.lead.back][dance_name] = rank
@@ -114,22 +135,21 @@ class Dance < ApplicationRecord
       ranks = {}
     end
 
-    # Convert back numbers to entry IDs for the return value
-    entry_by_back = {}
-    entries.each do |heat|
-      entry_by_back[heat.entry.lead.back] = heat.entry_id
-    end
-    
+    # Build final results using pre-computed mappings
     summary_by_entry_id = {}
     ranks_by_entry_id = {}
     
     # Only include finalists in the results
     finalists_summary.each do |back, dances|
-      summary_by_entry_id[entry_by_back[back]] = dances
+      if entry_id = entry_by_back[back]
+        summary_by_entry_id[entry_id] = dances
+      end
     end
     
     ranks.each do |back, rank|
-      ranks_by_entry_id[entry_by_back[back]] = rank
+      if entry_id = entry_by_back[back]
+        ranks_by_entry_id[entry_id] = rank
+      end
     end
 
     if explanations

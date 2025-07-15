@@ -86,7 +86,7 @@ class Heat < ApplicationRecord
   # Rules 2 through 4 apply to the judges, not to the evaluation of the scores
 
   # Rules 5-8: placement.  Note: optional parameters are for Rule 11 purposes
-  def self.rank_placement(number, slots, majority, entries=nil, examine=nil, with_explanations: false)
+  def self.rank_placement(number, slots, majority, entries=nil, examine=nil, with_explanations: false, entry_map: nil)
     number = number.is_a?(Enumerable) ? number.map(&:to_f) : number.to_f
     explanations = with_explanations ? [] : nil
 
@@ -97,7 +97,7 @@ class Heat < ApplicationRecord
     scores.slice!(*entries.map(&:id)) if entries
 
     max_score = examine&.last || scores.values.flatten.max
-    entry_map = Entry.includes(:lead, :follow).where(id: scores.keys).index_by(&:id)
+    entry_map ||= Entry.includes(:lead, :follow).where(id: scores.keys).index_by(&:id)
     rankings = {}
     rank = 1
     

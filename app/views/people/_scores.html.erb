@@ -1,4 +1,5 @@
 <% judge_ids = @judges.map(&:id) %>
+
 <table style="break-before: page; width: 95%">
   <thead>
     <tr>
@@ -188,4 +189,77 @@
 </table>
 
 
+<% end %>
+
+<% 
+# Show scrutineering final rankings if person was in any scrutineering dances
+person_scrutineering_results = []
+
+# Initialize cache if not already done (for individual controller calls)
+@scrutineering_cache ||= {}
+
+# Find scrutineering dances for this person
+person_scrutineering_dances = @heats.select { |heat| 
+  heat.dance.semi_finals && [heat.entry.lead, heat.entry.follow].include?(person) 
+}.map(&:dance).uniq
+
+person_scrutineering_dances.each do |dance|
+  # Calculate scrutineering results if not cached
+  @scrutineering_cache[dance.id] ||= dance.scrutineering
+  
+  summary, ranks = @scrutineering_cache[dance.id]
+  person_entries = @heats.select { |heat| heat.dance == dance && [heat.entry.lead, heat.entry.follow].include?(person) }
+  person_entries.each do |heat|
+    entry_id = heat.entry_id
+    if ranks[entry_id]
+      person_scrutineering_results << {
+        dance: dance,
+        heat: heat,
+        rank: ranks[entry_id],
+        summary: summary[entry_id]
+      }
+    end
+  end
+end
+%>
+
+<% unless person_scrutineering_results.empty? %>
+<div class="break-inside-avoid">
+<h2 class="text-center py-4 font-bold text-xl">Final Rankings (Scrutineering)</h2>
+<table class="table-auto mr-24 border-collapse">
+<thead>
+  <tr>
+    <td class="row-head">Heat</td>
+    <td class="row-head">Dance</td>
+    <td class="row-head">Partner</td>
+    <td class="row-head">Individual Dance Results</td>
+    <td class="row-head">Final Rank</td>
+  </tr>
+</thead>
+<tbody>
+<% person_scrutineering_results.each do |result| %>
+  <tr class="border-y border-3 border-gray-200 m-2">
+    <td class="text-center py-1"><%= result[:heat].number %></td>
+    <td class="px-2"><%= result[:dance].name %></td>
+    <td>
+      <% if result[:heat].entry.lead != person %>
+        <div class="mx-4"><%= link_to result[:heat].entry.lead.display_name, result[:heat].entry.lead %></div>
+      <% end %>
+      <% if result[:heat].entry.follow != person %>
+        <div class="mx-4"><%= link_to result[:heat].entry.follow.display_name, result[:heat].entry.follow %></div>
+      <% end %>
+    </td>
+    <td class="px-2 text-sm">
+      <% if result[:summary] %>
+        <% result[:summary].each do |dance_name, rank| %>
+          <span class="inline-block mr-2"><%= dance_name %>: <%= rank %></span>
+        <% end %>
+      <% end %>
+    </td>
+    <td class="text-center font-bold text-lg"><%= result[:rank] %></td>
+  </tr>
+<% end %>
+</tbody>
+</table>
+</div>
 <% end %>
