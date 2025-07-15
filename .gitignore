@@ -70,3 +70,6 @@ flat-storage
 
 # Ignore SimpleCov coverage reports
 /coverage/
+
+# Ignore CSV files
+*.csv
