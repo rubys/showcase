@@ -7,7 +7,7 @@
 
   <p class="mt-4 text-center"><%= @event.location.to_s.lines.first.chomp %></p>
 
-  <p class="mt-2 text-center"><%= @event.date %></p>
+  <p class="mt-2 text-center"><%= localized_date(@event.date, @locale) %></p>
   
   <a href="<%= @public_url.to_s + '/heats' %>">
   <div class="mx-auto w-1/2 my-12">

@@ -32,7 +32,7 @@
     <%= image_tag showcase_logo, class: "mx-auto w-28" %>
     <div>
     <div class="text-xl"><%= @event.name %></div>
-    <div><%= @event.date %></div>
+    <div><%= localized_date(@event.date, @locale) %></div>
     </div>
     <div class="my-6">
     <div class="text-5xl mb-4"><%= person.display_name %></div>

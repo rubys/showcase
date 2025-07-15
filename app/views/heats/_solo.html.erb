@@ -12,7 +12,7 @@
     <% end %>
   </p>
   
-  <p class="mt-2 text-center" style="font-family: '<%= @font_family %>'"><%= @event.date %></p>
+  <p class="mt-2 text-center" style="font-family: '<%= @font_family %>'"><%= localized_date(@event.date, @locale) %></p>
 
   <span class="mt-8 -ml-12 rotate-shadow">Solo</span>
   <span class="mt-8 -ml-12 rotate">Solo</span>
@@ -84,7 +84,7 @@
     <div class="grid grid-cols-2 gap-5 mb-8">
         <div class="flex">
             <div class="w-[100px] font-normal">Date:</div>
-            <div class="flex-grow border-b border-black pl-4"><%= @event.date %></div>
+            <div class="flex-grow border-b border-black pl-4"><%= localized_date(@event.date, @locale) %></div>
         </div>
         <div class="flex">
             <div class="w-[100px] font-normal">Student:</div>

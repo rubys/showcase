@@ -51,7 +51,7 @@
 
   <p class="mt-4 text-center"><%= @event.location.to_s.lines.first.to_s.chomp %></p>
   <p class="mt-2 text-center" data-controller="date-range" data-date-range-date-value="<%= @event.date %>">
-    <span data-date-range-target="output"><%= @event.date %></span>
+    <span data-date-range-target="output"><%= localized_date(@event.date, @locale) %></span>
   </p>
   <p class="mt-2 text-center"><%= pluralize(@heats, 'heat') %>
   <% if @unscheduled > 0 -%>

@@ -1,6 +1,7 @@
 class ApplicationController < ActionController::Base
   before_action :authenticate_user
   before_action :current_event
+  before_action :set_locale
 
   rescue_from ActiveRecord::ReadOnlyRecord do
     flash[:error] = 'Database is in readonly mode'
@@ -44,6 +45,14 @@ class ApplicationController < ActionController::Base
   private
     def current_event
       Event.current = Event.first
+    end
+
+    def set_locale
+      @locale = if Event.current&.location.respond_to?(:locale)
+        Event.current.location.locale
+      else
+        ENV.fetch("RAILS_LOCALE", "en_US")
+      end
     end
 
     def authenticate_user
