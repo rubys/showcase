@@ -9,8 +9,20 @@
           <ul class="list-disc list-inside">
             <% unseated_data[:people].group_by(&:studio).each do |studio, people| %>
               <li class="ml-4 mb-1">
-                <span class="font-semibold"><%= studio.name %></span>:
-                <%= people.map { |p| "#{p.name} (#{p.type})" }.join(', ') %>
+                <% 
+                  # Determine the correct link based on main event vs option
+                  if key == :main_event
+                    studio_link = studio_tables_path(studio)
+                  else
+                    studio_link = studio_tables_path(studio, option_id: key)
+                  end
+                %>
+                <span class="font-semibold">
+                  <%= link_to studio.name, studio_link, class: "text-blue-600 hover:text-blue-800 underline" %>
+                </span>:
+                <%= people.map { |p| 
+                  link_to(p.name, edit_person_path(p), class: "text-blue-600 hover:text-blue-800 underline") + " (#{p.type})"
+                }.join(', ').html_safe %>
               </li>
             <% end %>
           </ul>
