@@ -32,7 +32,7 @@
                 <% person = person_option.person %>
                 <tr class="border-t border-gray-200">
                   <td class="py-2">
-                    <%= link_to person.name, person_path(person), class: "text-blue-600 hover:text-blue-800" %>
+                    <%= link_to person.name, edit_person_path(person, return_to: edit_table_path(@table, option_id: @table.option_id)), class: "text-blue-600 hover:text-blue-800" %>
                   </td>
                   <td class="py-2">
                     <%= link_to person.studio.name, studio_path(person.studio), class: "text-blue-600 hover:text-blue-800" %>
@@ -63,7 +63,7 @@
               <% @table.people.includes(:studio).order('studios.name, people.name').each do |person| %>
                 <tr class="border-t border-gray-200">
                   <td class="py-2">
-                    <%= link_to person.name, person_path(person), class: "text-blue-600 hover:text-blue-800" %>
+                    <%= link_to person.name, edit_person_path(person, return_to: edit_table_path(@table, option_id: @table.option_id)), class: "text-blue-600 hover:text-blue-800" %>
                   </td>
                   <td class="py-2">
                     <%= link_to person.studio.name, studio_path(person.studio), class: "text-blue-600 hover:text-blue-800" %>

@@ -453,6 +453,7 @@ class PeopleController < ApplicationController
     @entries = @person.lead_entries.count + @person.follow_entries.count
     @locked = Event.first.locked?
     @heats = list_heats
+    @return_to = params[:return_to]
   end
 
   def get_entries
@@ -628,7 +629,10 @@ class PeopleController < ApplicationController
       if @person.update(update)
         update_options
 
-        format.html { redirect_to person_url(@person), notice: "#{@person.display_name} was successfully updated." }
+        format.html { 
+          redirect_url = params[:return_to].presence || person_url(@person)
+          redirect_to redirect_url, notice: "#{@person.display_name} was successfully updated." 
+        }
         format.json { render :show, status: :ok, location: @person }
       else
         edit
@@ -922,7 +926,7 @@ class PeopleController < ApplicationController
       
       # Add table options for Professional, Student, and Guest types
       if %w[Professional Student Guest].include?(@person.type) && Table.exists?
-        @tables = Table.includes(:people).order(:number).map do |table|
+        @tables = Table.where(option: nil).includes(:people).order(:number).map do |table|
           ["Table #{table.number} - #{table.name}", table.id]
         end
       end
@@ -948,6 +952,22 @@ class PeopleController < ApplicationController
 
       @person_options = @person.options.group_by(&:option).
         map {|option, list| [option, list.length]}.to_h
+      
+      # Get person's current option table assignments
+      @person_option_tables = PersonOption.where(person: @person).includes(:table).map do |po|
+        [po.option_id, po.table_id]
+      end.to_h
+      
+      # Get available tables for each option
+      @option_tables = {}
+      @options.each do |option|
+        tables = Table.where(option: option).order(:number)
+        if tables.any?
+          @option_tables[option.id] = tables.map do |table|
+            ["Table #{table.number} - #{table.name}", table.id]
+          end
+        end
+      end
 
       @track_ages = @event.track_ages
       @include_independent_instructors = @event.independent_instructors
@@ -1004,19 +1024,33 @@ class PeopleController < ApplicationController
 
     def update_options
       desired_options = person_params[:options] || {}
+      option_tables = params[:person][:option_tables] || {}
       current_options = @person.options.group_by(&:option_id)
+      
       Billable.where(type: 'Option').each do |option|
         got = current_options[option.id]&.length || 0
         want = desired_options[option.id.to_s].to_i
+        table_id = option_tables[option.id.to_s].presence
 
+        # Create new PersonOption records as needed
         while got < want
-          PersonOption.create! person: @person, option: option
+          PersonOption.create! person: @person, option: option, table_id: table_id
           got += 1
         end
 
+        # Remove excess PersonOption records
         while got > want
           current_options[option.id].pop.destroy
           got -= 1
+        end
+        
+        # Update table assignment for existing PersonOption records
+        if got > 0 && current_options[option.id]
+          current_options[option.id].each do |person_option|
+            if person_option.table_id != table_id
+              person_option.update(table_id: table_id)
+            end
+          end
         end
       end
     end

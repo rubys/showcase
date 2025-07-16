@@ -30,6 +30,10 @@
   <input type="hidden" name="source" value="settings">
   <% end %>
 
+  <% if @return_to %>
+  <input type="hidden" name="return_to" value="<%= @return_to %>">
+  <% end %>
+
   <% if person.id and %w(Student Professional).include? person.type %>
   <div data-controller="info-box">
   <div class="info-button">&#x24D8;</div>

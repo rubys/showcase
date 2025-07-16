@@ -310,7 +310,7 @@ class TablesTest < ApplicationSystemTestCase
     
     # Should show people's information
     Person.where(table_id: table.id).each do |person|
-      assert_selector "a[href='#{person_path(person)}']", text: person.name
+      assert_selector "a[href='#{edit_person_path(person, return_to: edit_table_path(table, option_id: table.option_id))}']", text: person.name
       assert_text person.studio.name
       assert_text person.type
     end

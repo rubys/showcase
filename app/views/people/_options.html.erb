@@ -3,7 +3,7 @@
   <%= label_tag :person_options, 'Options' %>
   <ul class="mb-8">
   <% @options.each do |option| %>
-  <li>
+  <li class="flex items-center gap-2">
     <% field = "person[options][#{option.id}]"
        value = @person_options[option].to_i %>
     <% if @package_options.include? option %>
@@ -14,7 +14,13 @@
     <% else %>
     <input type="text" id="<%= field %>" name="<%= field %>" class="entry-count" value=<%= value %>>
     <% end %>
-    <%= option.name %>
+    <span class="flex-grow"><%= option.name %></span>
+    <% if @option_tables[option.id] %>
+      <%= select_tag "person[option_tables][#{option.id}]", 
+          options_for_select(@option_tables[option.id], @person_option_tables[option.id]), 
+          include_blank: "No table assigned",
+          class: "ml-4 w-64 shadow rounded-md border border-gray-200 outline-none px-3 py-2" %>
+    <% end %>
   </li>
   <% end %>
   </ul>

@@ -283,7 +283,7 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     
     # Check that people are listed
     assigned_people.each do |person|
-      assert_select "a[href=?]", person_path(person), text: person.name
+      assert_select "a[href=?]", edit_person_path(person, return_to: edit_table_path(@table, option_id: @table.option_id)), text: person.name
     end
     
     # Check the total count
