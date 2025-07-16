@@ -1,16 +1,36 @@
 <div <% unless @options.empty? %>class="my-5"<% end %> data-controller="check-number" id="options-select">
 <% unless @options.empty? %>
   <%= label_tag :person_options, 'Options' %>
+  <style>
+    /* Hide table dropdown by default */
+    .option-table-dropdown {
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    
+    /* Show table dropdown when checkbox is checked */
+    .option-checkbox:checked ~ .option-table-dropdown {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    /* For package options (always checked), always show dropdown */
+    .option-checkbox:disabled:checked ~ .option-table-dropdown {
+      opacity: 1;
+      visibility: visible;
+    }
+  </style>
   <ul class="mb-8">
   <% @options.each do |option| %>
   <li class="flex items-center gap-2">
     <% field = "person[options][#{option.id}]"
        value = @person_options[option].to_i %>
     <% if @package_options.include? option %>
-    <%= check_box_tag "person[options][#{option.id}]", '1', true, class: "entry-count h-10 opacity-70", disabled: true %>
+    <%= check_box_tag "person[options][#{option.id}]", '1', true, class: "option-checkbox entry-count h-10 opacity-70", disabled: true %>
     <% elsif value <= 1 %>
     <input name="person[options][<%= option.id %>]" type="hidden" value="0" autocomplete="off">
-    <%= check_box_tag "#{field}", '1', value > 0, class: "entry-count h-10" %>
+    <%= check_box_tag "#{field}", '1', value > 0, class: "option-checkbox entry-count h-10" %>
     <% else %>
     <input type="text" id="<%= field %>" name="<%= field %>" class="entry-count" value=<%= value %>>
     <% end %>
@@ -19,7 +39,7 @@
       <%= select_tag "person[option_tables][#{option.id}]", 
           options_for_select(@option_tables[option.id], @person_option_tables[option.id]), 
           include_blank: "No table assigned",
-          class: "ml-4 w-64 shadow rounded-md border border-gray-200 outline-none px-3 py-2" %>
+          class: "option-table-dropdown ml-4 w-64 shadow rounded-md border border-gray-200 outline-none px-3 py-2" %>
     <% end %>
   </li>
   <% end %>

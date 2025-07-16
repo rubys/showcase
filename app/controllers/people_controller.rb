@@ -958,13 +958,42 @@ class PeopleController < ApplicationController
         [po.option_id, po.table_id]
       end.to_h
       
-      # Get available tables for each option
+      # Get available tables for each option with capacity information
       @option_tables = {}
+      @option_table_capacities = {}
       @options.each do |option|
         tables = Table.where(option: option).order(:number)
         if tables.any?
-          @option_tables[option.id] = tables.map do |table|
-            ["Table #{table.number} - #{table.name}", table.id]
+          @option_tables[option.id] = []
+          @option_table_capacities[option.id] = {}
+          
+          tables.each do |table|
+            # Calculate table capacity info
+            table_size = table.size
+            if table_size.nil? || table_size == 0
+              if option && option.table_size && option.table_size > 0
+                table_size = option.table_size
+              elsif Event.current&.table_size && Event.current.table_size > 0
+                table_size = Event.current.table_size
+              else
+                table_size = 10
+              end
+            end
+            
+            # Count people assigned to this table for this option
+            people_count = table.person_options.count
+            
+            # Calculate capacity status and corresponding Unicode symbol
+            capacity_status, capacity_symbol = if people_count < table_size
+              ['empty_seats', '🟢']
+            elsif people_count == table_size
+              ['at_capacity', '🟡']
+            else
+              ['over_capacity', '🔴']
+            end
+            
+            @option_tables[option.id] << ["#{capacity_symbol} Table #{table.number} - #{table.name} (#{people_count}/#{table_size})", table.id]
+            @option_table_capacities[option.id][table.id] = capacity_status
           end
         end
       end
