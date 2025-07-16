@@ -1,4 +1,24 @@
 <div class="mx-auto print:w-full">
+  <% if @unseated_people.any? %>
+    <div class="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg print:border print:rounded-none">
+      <h2 class="font-bold text-2xl mb-4 text-yellow-800">Unseated People</h2>
+      
+      <% @unseated_people.each do |key, unseated_data| %>
+        <div class="mb-4">
+          <h3 class="font-semibold text-lg mb-2"><%= unseated_data[:name] %></h3>
+          <ul class="list-disc list-inside">
+            <% unseated_data[:people].group_by(&:studio).each do |studio, people| %>
+              <li class="ml-4 mb-1">
+                <span class="font-semibold"><%= studio.name %></span>:
+                <%= people.map { |p| "#{p.name} (#{p.type})" }.join(', ') %>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+  
   <style type="text/css" media="print">
     .table-list-item {
       page-break-inside: avoid;
@@ -14,10 +34,6 @@
     }
     
     @media print {
-      body {
-        font-size: 12pt;
-      }
-      
       .no-print {
         display: none !important;
       }
@@ -71,7 +87,7 @@
                     <%= person.name %>
                     <span class="text-gray-600">(<%= person.studio.name %>)</span>
                     <% if person.type %>
-                      <span class="text-sm text-gray-500"><%= person.type %></span>
+                      <span class="text-gray-500"><%= person.type %></span>
                     <% end %>
                   </li>
                 <% end %>
@@ -98,7 +114,7 @@
                     <%= person.name %>
                     <span class="text-gray-600">(<%= person.studio.name %>)</span>
                     <% if person.type %>
-                      <span class="text-sm text-gray-500"><%= person.type %></span>
+                      <span class="text-gray-500"><%= person.type %></span>
                     <% end %>
                   </li>
                 <% end %>
@@ -148,7 +164,7 @@
                     <%= person.name %>
                     <span class="text-gray-600">(<%= person.studio.name %>)</span>
                     <% if person.type %>
-                      <span class="text-sm text-gray-500"><%= person.type %></span>
+                      <span class="text-gray-500"><%= person.type %></span>
                     <% end %>
                   </li>
                 <% end %>

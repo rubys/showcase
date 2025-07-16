@@ -388,9 +388,48 @@ class TablesController < ApplicationController
 
   def list
     @event = Event.current
+    @font_size = @event.font_size
     
     # Get main event tables (where option_id is nil)
     @main_tables = Table.includes(people: :studio).where(option_id: nil).order(:number)
+    
+    # Find unseated people
+    @unseated_people = {}
+    
+    # Get all distinct option_ids that have tables
+    option_ids_with_tables = Table.distinct.pluck(:option_id)
+    
+    # Process each option that has tables
+    option_ids_with_tables.each do |option_id|
+      if option_id.nil?
+        # For main event (option_id = nil), find people without a table
+        unseated = Person.includes(:studio)
+                         .where(table_id: nil)
+                         .where(type: ['Student', 'Professional', 'Guest'])
+                         .order('studios.name, people.name')
+        
+        if unseated.any?
+          @unseated_people[:main_event] = {
+            name: "Main Event",
+            people: unseated
+          }
+        end
+      else
+        # For specific options, find people who have the option but no table assignment
+        option = Billable.find(option_id)
+        unseated = Person.includes(:studio, :options)
+                         .joins(:options)
+                         .where(person_options: { option_id: option_id, table_id: nil })
+                         .order('studios.name, people.name')
+        
+        if unseated.any?
+          @unseated_people[option_id] = {
+            name: option.name,
+            people: unseated
+          }
+        end
+      end
+    end
     
     # Get all options with their tables
     @options_with_tables = []
