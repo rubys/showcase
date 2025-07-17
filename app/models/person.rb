@@ -19,6 +19,7 @@ class Person < ApplicationRecord
   belongs_to :level, optional: true
   belongs_to :age, optional: true
   belongs_to :exclude, class_name: 'Person', optional: true
+  has_many :excluded_by, class_name: 'Person', foreign_key: :exclude_id, dependent: :nullify
   belongs_to :package, class_name: 'Billable', optional: true
   belongs_to :table, optional: true
 
