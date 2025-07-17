@@ -48,7 +48,7 @@ module ApplicationHelper
 
   def as_pdf(options = {})
     result = options.merge(format: :pdf)
-    result[:pagesize] = ENV['PAGESIZE'] if ENV['PAGESIZE']
+    result[:papersize] = ENV['PAPERSIZE'] if ENV['PAPERSIZE']
     result
   end
 
