@@ -19,7 +19,7 @@ import * as XLSX from 'xlsx'
 // fetch configuration fron environment variables
 const PORT = process.env.PORT || 3000
 const FETCH_TIMEOUT = 30_000
-const FORMAT = (process.env.FORMAT || "letter") as PaperFormat
+const FORMAT = (process.env.PAPERSIZE || "letter") as PaperFormat
 const JAVASCRIPT = (process.env.JAVASCRIPT != "false")
 const TIMEOUT = (parseInt(process.env.TIMEOUT || '15')) * 60 * 1000 // minutes
 const HOSTNAME = process.env.BASE_HOSTNAME || process.env.HOSTNAME ||
@@ -198,10 +198,12 @@ const server = Bun.serve({
         }
       }
 
+      const format = url.searchParams.get('papersize') as PaperFormat || FORMAT;
+
       // convert page to pdf - using preferred format and in full color
       console.log(`${chalk.green.bold('Converting')} ${chalk.black(url.href + ' to PDF')}`)
       const pdf = await page.pdf({
-        format: FORMAT,
+        format: format,
         preferCSSPageSize: true,
         printBackground: true
       })

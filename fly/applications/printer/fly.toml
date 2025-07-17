@@ -14,7 +14,7 @@ swap_size_mb = 2048
   HOSTNAME = "smooth.fly.dev"
   # PORT = 3000
   TIMEOUT = 15
-  FORMAT = "letter"
+  PAPERSIZE = "letter"
 
 [http_service]
   internal_port = 3000
