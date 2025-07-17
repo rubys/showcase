@@ -734,6 +734,55 @@ class TablesController < ApplicationController
     best_option
   end
 
+  def find_closest_position_to_group(placed_positions, positions, max_cols)
+    # Find the available position that is closest to any of the placed positions
+    return find_next_position(positions, max_cols) if placed_positions.empty?
+    
+    # First, try to find adjacent positions (distance = 1)
+    placed_positions.each do |placed_pos|
+      adjacent_candidates = [
+        { row: placed_pos[:row] - 1, col: placed_pos[:col] },     # Above
+        { row: placed_pos[:row] + 1, col: placed_pos[:col] },     # Below
+        { row: placed_pos[:row], col: placed_pos[:col] - 1 },     # Left
+        { row: placed_pos[:row], col: placed_pos[:col] + 1 }      # Right
+      ]
+      
+      adjacent_candidates.each do |pos|
+        # Check if position is valid and available
+        if pos[:row] >= 1 && pos[:row] <= 5 && pos[:col] >= 1 && pos[:col] <= max_cols &&
+           !positions.any? { |p| p[:row] == pos[:row] && p[:col] == pos[:col] }
+          return pos
+        end
+      end
+    end
+    
+    # If no adjacent positions found, find the closest available position
+    best_position = nil
+    best_distance = Float::INFINITY
+    
+    # Check all available positions
+    (1..5).each do |row|
+      (1..max_cols).each do |col|
+        pos = { row: row, col: col }
+        
+        # Skip if position is already occupied
+        next if positions.any? { |p| p[:row] == row && p[:col] == col }
+        
+        # Calculate minimum distance to any placed position from this studio
+        min_distance = placed_positions.map { |placed_pos| 
+          (pos[:row] - placed_pos[:row]).abs + (pos[:col] - placed_pos[:col]).abs 
+        }.min
+        
+        if min_distance < best_distance
+          best_distance = min_distance
+          best_position = pos
+        end
+      end
+    end
+    
+    best_position
+  end
+
   
   def renumber_tables_by_position
     # Get all tables ordered by their position (row first, then column)
