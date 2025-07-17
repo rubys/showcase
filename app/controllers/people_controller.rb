@@ -962,12 +962,13 @@ class PeopleController < ApplicationController
       @option_tables = {}
       @option_table_capacities = {}
       @options.each do |option|
-        tables = Table.where(option: option).order(:number)
+        tables = Table.where(option: option).includes(:person_options => {:person => :studio})
         if tables.any?
           @option_tables[option.id] = []
           @option_table_capacities[option.id] = {}
           
-          tables.each do |table|
+          # Collect table data for sorting
+          table_data = tables.map do |table|
             # Calculate table capacity info
             table_size = table.size
             if table_size.nil? || table_size == 0
@@ -992,8 +993,41 @@ class PeopleController < ApplicationController
               ['over_capacity', '🔴']
             end
             
-            @option_tables[option.id] << ["#{capacity_symbol} Table #{table.number} - #{table.name} (#{people_count}/#{table_size})", table.id]
-            @option_table_capacities[option.id][table.id] = capacity_status
+            # Check if this table has people from the same studio as the current person
+            has_same_studio = table.person_options.joins(:person).exists?(people: { studio_id: @person.studio_id })
+            
+            # Assign sort priority for capacity status (lower number = higher priority)
+            capacity_priority = case capacity_status
+            when 'empty_seats' then 1
+            when 'at_capacity' then 2
+            when 'over_capacity' then 3
+            end
+            
+            {
+              table: table,
+              table_size: table_size,
+              people_count: people_count,
+              capacity_status: capacity_status,
+              capacity_symbol: capacity_symbol,
+              has_same_studio: has_same_studio,
+              capacity_priority: capacity_priority
+            }
+          end
+          
+          # Sort tables by: 1) Same studio (true first), 2) Capacity priority, 3) Table number
+          sorted_table_data = table_data.sort_by do |data|
+            [
+              data[:has_same_studio] ? 0 : 1,  # Same studio tables first (0 sorts before 1)
+              data[:capacity_priority],         # Empty seats, then at capacity, then over capacity
+              data[:table].number               # Table number ascending
+            ]
+          end
+          
+          # Build the final arrays using sorted data
+          sorted_table_data.each do |data|
+            table = data[:table]
+            @option_tables[option.id] << ["#{data[:capacity_symbol]} Table #{table.number} - #{table.name} (#{data[:people_count]}/#{data[:table_size]})", table.id]
+            @option_table_capacities[option.id][table.id] = data[:capacity_status]
           end
         end
       end
