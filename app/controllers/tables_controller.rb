@@ -911,6 +911,109 @@ class TablesController < ApplicationController
             
             assigned_studios.add(group[:studio_id])
             assigned_studios.add(paired_studio_id)
+          else
+            # Handle paired studios that exceed table size - treat as coordinated group
+            # Example: Studio1(10) + Studio2(10) = 20 people, or Studio1(10) + Studio2(4) = 14 people
+            # Each studio gets its own table(s), but they should be placed adjacent
+            
+            # Process the first studio
+            if group[:size] <= table_size
+              people_groups << {
+                people: group[:people],
+                studio_id: group[:studio_id],
+                studio_name: group[:studio_name],
+                split_group: nil,
+                paired_with: paired_studio_id,
+                coordination_group: "pair_#{[group[:studio_id], paired_studio_id].sort.join('_')}"
+              }
+            else
+              # First studio needs multiple tables
+              full_table_count = group[:size] / table_size
+              remainder_size = group[:size] % table_size
+              split_index = 0
+              total_tables_needed = (group[:size] / table_size.to_f).ceil
+              
+              group[:people].first(full_table_count * table_size).each_slice(table_size) do |people_slice|
+                people_groups << {
+                  people: people_slice,
+                  studio_id: group[:studio_id],
+                  studio_name: group[:studio_name],
+                  split_group: "studio_#{group[:studio_id]}_#{split_index}",
+                  split_total: total_tables_needed,
+                  split_index: split_index,
+                  paired_with: paired_studio_id,
+                  coordination_group: "pair_#{[group[:studio_id], paired_studio_id].sort.join('_')}"
+                }
+                split_index += 1
+              end
+              
+              # Handle remainder if any
+              if remainder_size > 0
+                remainder_groups << {
+                  studio_id: group[:studio_id],
+                  people: group[:people].last(remainder_size),
+                  size: remainder_size,
+                  studio_name: group[:studio_name],
+                  split_group: "studio_#{group[:studio_id]}_#{split_index}",
+                  split_total: total_tables_needed,
+                  split_index: split_index,
+                  is_remainder: true,
+                  paired_with: paired_studio_id,
+                  coordination_group: "pair_#{[group[:studio_id], paired_studio_id].sort.join('_')}"
+                }
+              end
+            end
+            
+            # Process the second studio
+            if paired_group[:size] <= table_size
+              people_groups << {
+                people: paired_group[:people],
+                studio_id: paired_group[:studio_id],
+                studio_name: paired_group[:studio_name],
+                split_group: nil,
+                paired_with: group[:studio_id],
+                coordination_group: "pair_#{[group[:studio_id], paired_studio_id].sort.join('_')}"
+              }
+            else
+              # Second studio needs multiple tables
+              full_table_count = paired_group[:size] / table_size
+              remainder_size = paired_group[:size] % table_size
+              split_index = 0
+              total_tables_needed = (paired_group[:size] / table_size.to_f).ceil
+              
+              paired_group[:people].first(full_table_count * table_size).each_slice(table_size) do |people_slice|
+                people_groups << {
+                  people: people_slice,
+                  studio_id: paired_group[:studio_id],
+                  studio_name: paired_group[:studio_name],
+                  split_group: "studio_#{paired_group[:studio_id]}_#{split_index}",
+                  split_total: total_tables_needed,
+                  split_index: split_index,
+                  paired_with: group[:studio_id],
+                  coordination_group: "pair_#{[group[:studio_id], paired_studio_id].sort.join('_')}"
+                }
+                split_index += 1
+              end
+              
+              # Handle remainder if any
+              if remainder_size > 0
+                remainder_groups << {
+                  studio_id: paired_group[:studio_id],
+                  people: paired_group[:people].last(remainder_size),
+                  size: remainder_size,
+                  studio_name: paired_group[:studio_name],
+                  split_group: "studio_#{paired_group[:studio_id]}_#{split_index}",
+                  split_total: total_tables_needed,
+                  split_index: split_index,
+                  is_remainder: true,
+                  paired_with: group[:studio_id],
+                  coordination_group: "pair_#{[group[:studio_id], paired_studio_id].sort.join('_')}"
+                }
+              end
+            end
+            
+            assigned_studios.add(group[:studio_id])
+            assigned_studios.add(paired_studio_id)
           end
         end
       end
@@ -1131,7 +1234,12 @@ class TablesController < ApplicationController
       place_multi_table_group(group_plan, positions, max_cols, created_tables)
     end
     
-    # Step 4: Place single tables in remaining positions
+    # Step 4: Place studio pair coordination groups (paired studios that need adjacent placement)
+    placement_plan[:pair_coordination_groups].each do |group_plan|
+      place_pair_coordination_group(group_plan, positions, max_cols, created_tables)
+    end
+    
+    # Step 5: Place single tables in remaining positions
     placement_plan[:single_tables].each do |group|
       place_single_table(group, positions, max_cols, created_tables)
     end
@@ -1201,6 +1309,28 @@ class TablesController < ApplicationController
     unprocessed_shared_groups = shared_groups - processed_shared_groups
     remaining_groups.concat(unprocessed_shared_groups)
     
+    # Handle studio pair coordination groups (tables that need adjacent placement due to studio pairing)
+    pair_coordination_groups = []
+    coordination_groups = remaining_groups.group_by { |group| group[:coordination_group] }
+    
+    coordination_groups.each do |coordination_key, groups|
+      next if coordination_key.nil? || !coordination_key.start_with?('pair_')
+      
+      if groups.size > 1
+        # This is a studio pair that needs coordinated placement
+        pair_coordination_groups << {
+          type: :studio_pair_coordination,
+          coordination_key: coordination_key,
+          tables: groups,
+          total_tables: groups.size,
+          studios: groups.map { |g| g[:studio_name] }.uniq
+        }
+        
+        # Remove these groups from remaining
+        remaining_groups -= groups
+      end
+    end
+    
     # Handle remaining explicit split studios (from Phase 1)
     explicit_multi_table_groups = []
     split_studio_groups = {}
@@ -1233,6 +1363,7 @@ class TablesController < ApplicationController
     {
       coordinated_groups: coordinated_groups,
       explicit_multi_table_groups: explicit_multi_table_groups,
+      pair_coordination_groups: pair_coordination_groups,
       single_tables: remaining_groups
     }
   end
@@ -1359,836 +1490,70 @@ class TablesController < ApplicationController
       created_tables << table
     end
   end
-  
-  def find_optimal_center_position_for_conflict(max_cols, used_positions = Set.new)
-    # Find a good center position for high-conflict multi-tables
-    # Prefer positions with maximum adjacent slots available and not already used
+
+  def place_pair_coordination_group(group_plan, positions, max_cols, created_tables)
+    # Place paired studios' tables adjacent to each other
+    # This handles cases like Studio1(10) + Studio2(10) where they need separate but adjacent tables
     
-    center_candidates = []
+    tables = group_plan[:tables]
+    required_spots = tables.size
     
-    # Check positions in the center area (avoid edges)
-    (2..3).each do |row|
-      (3..6).each do |col|
-        next if used_positions.include?("#{row},#{col}")
-        
-        # Count available adjacent positions (not used)
-        adjacent_positions = [
-          { row: row - 1, col: col },
-          { row: row + 1, col: col },
-          { row: row, col: col - 1 },
-          { row: row, col: col + 1 }
-        ].select { |pos| pos[:row] >= 1 && pos[:col] >= 1 && pos[:col] <= max_cols }
-        
-        available_adjacent = adjacent_positions.count do |pos|
-          !used_positions.include?("#{pos[:row]},#{pos[:col]}")
-        end
-        
-        center_candidates << { row: row, col: col, available_adjacent: available_adjacent }
-      end
-    end
+    # Find the best contiguous block for this studio pair
+    best_position = find_contiguous_block_for_studio(required_spots, positions, max_cols)
     
-    # Return position with most available adjacent slots
-    best_candidate = center_candidates.max_by { |pos| pos[:available_adjacent] }
-    best_candidate ? { row: best_candidate[:row], col: best_candidate[:col] } : nil
-  end
-  
-  def find_available_block_position(table_count, max_cols, used_positions)
-    # Find a contiguous block of positions for a studio's tables
-    # Try to place them in a 2x2 or 2x1 pattern for adjacency
-    
-    # For 2 tables, try horizontal pairs first, then vertical
-    if table_count == 2
-      # Try horizontal pairs (side by side)
-      (1..4).each do |row|
-        (1..max_cols-1).each do |col|
-          pos1 = "#{row},#{col}"
-          pos2 = "#{row},#{col+1}"
-          
-          unless used_positions.include?(pos1) || used_positions.include?(pos2)
-            return { row: row, col: col }
-          end
-        end
-      end
-      
-      # Try vertical pairs (one above the other)
-      (1..3).each do |row|
-        (1..max_cols).each do |col|
-          pos1 = "#{row},#{col}"
-          pos2 = "#{row+1},#{col}"
-          
-          unless used_positions.include?(pos1) || used_positions.include?(pos2)
-            return { row: row, col: col }
-          end
-        end
-      end
-    end
-    
-    # For 3+ tables, try 2x2 blocks
-    if table_count >= 3
-      (1..3).each do |row|
-        (1..max_cols-1).each do |col|
-          block_positions = [
-            "#{row},#{col}", "#{row},#{col+1}",
-            "#{row+1},#{col}", "#{row+1},#{col+1}"
-          ]
-          
-          if block_positions.none? { |pos| used_positions.include?(pos) }
-            return { row: row, col: col }
-          end
-        end
-      end
-    end
-    
-    # Fallback: just find any available position
-    (1..4).each do |row|
-      (1..max_cols).each do |col|
-        unless used_positions.include?("#{row},#{col}")
-          return { row: row, col: col }
-        end
-      end
-    end
-    
-    nil
-  end
-  
-  def find_optimal_pair_position_shared(table_count, max_cols, used_positions)
-    # Find position for studio pairs that should share tables
-    # Priority: good central locations that can accommodate the pair
-    
-    (1..4).each do |row|
-      (2..6).each do |col|
-        if table_count == 1
-          unless used_positions.include?("#{row},#{col}")
-            return { row: row, col: col }
+    if best_position
+      # Place tables in the contiguous block
+      tables.each_with_index do |table_group, idx|
+        # Calculate position within the block
+        if required_spots == 2
+          if best_position[:layout] == :horizontal
+            pos = { row: best_position[:row], col: best_position[:col] + idx }
+          else # vertical
+            pos = { row: best_position[:row] + idx, col: best_position[:col] }
           end
         else
-          # Two tables - try adjacent positions
-          positions_needed = ["#{row},#{col}", "#{row},#{col+1}"]
-          if col+1 <= max_cols && positions_needed.none? { |pos| used_positions.include?(pos) }
-            return { row: row, col: col }
-          end
+          # For 3+ tables, use 2x2 block layout
+          pos = { 
+            row: best_position[:row] + (idx / 2), 
+            col: best_position[:col] + (idx % 2) 
+          }
         end
-      end
-    end
-    
-    nil
-  end
-  
-  def find_optimal_pair_position_adjacent(table_count, max_cols, used_positions)
-    # Find position for studio pairs that need adjacent tables
-    # Similar to block positioning but prioritize adjacency
-    
-    find_available_block_position(table_count, max_cols, used_positions)
-  end
-  
-  def calculate_pair_position(pair_start, table_index, total_tables, shared_table)
-    if shared_table || total_tables == 1
-      # All tables in same position (shared) or single table
-      pair_start
-    else
-      # Adjacent positioning
-      case total_tables
-      when 2
-        if table_index == 0
-          pair_start
-        else
-          { row: pair_start[:row], col: pair_start[:col] + 1 }
-        end
-      else
-        # More complex positioning for larger pairs
-        row_offset = table_index / 2
-        col_offset = table_index % 2
-        { row: pair_start[:row] + row_offset, col: pair_start[:col] + col_offset }
-      end
-    end
-  end
-  
-  def find_available_block_in_area(table_count, row_range, col_range, used_positions)
-    # Find a contiguous block within a specific grid area
-    
-    # For 2 tables, try horizontal and vertical pairs within the area
-    if table_count == 2
-      # Try horizontal pairs (side by side)
-      row_range.each do |row|
-        col_range.each do |col|
-          next if col == col_range.last  # Can't place horizontally if at right edge
-          
-          pos1 = "#{row},#{col}"
-          pos2 = "#{row},#{col+1}"
-          
-          if !used_positions.include?(pos1) && !used_positions.include?(pos2) &&
-             col_range.include?(col+1)  # Make sure second position is in range
-            return { row: row, col: col }
-          end
-        end
-      end
-      
-      # Try vertical pairs (one above the other)
-      row_range.each do |row|
-        next if row == row_range.last  # Can't place vertically if at bottom edge
         
-        col_range.each do |col|
-          pos1 = "#{row},#{col}"
-          pos2 = "#{row+1},#{col}"
-          
-          if !used_positions.include?(pos1) && !used_positions.include?(pos2) &&
-             row_range.include?(row+1)  # Make sure second position is in range
-            return { row: row, col: col }
-          end
-        end
-      end
-    end
-    
-    # For 3+ tables, try 2x2 blocks within the area
-    if table_count >= 3
-      row_range.each do |row|
-        next if row == row_range.last  # Need space for row+1
-        
-        col_range.each do |col|
-          next if col == col_range.last  # Need space for col+1
-          
-          block_positions = [
-            "#{row},#{col}", "#{row},#{col+1}",
-            "#{row+1},#{col}", "#{row+1},#{col+1}"
-          ]
-          
-          if block_positions.none? { |pos| used_positions.include?(pos) } &&
-             row_range.include?(row+1) && col_range.include?(col+1)
-            return { row: row, col: col }
-          end
-        end
-      end
-    end
-    
-    # Fallback: find any single position in the area
-    row_range.each do |row|
-      col_range.each do |col|
-        unless used_positions.include?("#{row},#{col}")
-          return { row: row, col: col }
-        end
-      end
-    end
-    
-    nil
-  end
-  
-  def calculate_block_position(block_start, table_index, total_tables)
-    # Calculate position for a table within a reserved block
-    case total_tables
-    when 2
-      # For 2 tables, place horizontally first, then vertically
-      if table_index == 0
-        { row: block_start[:row], col: block_start[:col] }
-      else
-        # Try horizontal first
-        { row: block_start[:row], col: block_start[:col] + 1 }
-      end
-    when 3, 4
-      # For 3-4 tables, use 2x2 block pattern
-      row_offset = table_index / 2
-      col_offset = table_index % 2
-      { row: block_start[:row] + row_offset, col: block_start[:col] + col_offset }
-    else
-      # Fallback for more tables
-      row_offset = table_index / 2
-      col_offset = table_index % 2
-      { row: block_start[:row] + row_offset, col: block_start[:col] + col_offset }
-    end
-  end
-  
-  def group_by_studio_relationships(analyzed_groups)
-    # Group related tables together
-    studio_sets = []
-    processed_indices = Set.new
-    
-    # 1. Event Staff (highest priority)
-    event_staff_groups = analyzed_groups.select { |g| g[:is_event_staff] }
-    if event_staff_groups.any?
-      studio_sets << {
-        type: :event_staff,
-        priority: 100,
-        groups: event_staff_groups
-      }
-      event_staff_groups.each { |g| processed_indices.add(g[:index]) }
-    end
-    
-    # 2. Large studios (group all tables from same studio)
-    large_studios = ['Columbia', 'Bucharest', 'Lincolnshire', 'NY-Broadway', 'Waco', 'Greenwich']
-    large_studios.each do |studio_name|
-      studio_groups = analyzed_groups.select do |g|
-        !processed_indices.include?(g[:index]) && 
-        (g[:studios].include?(studio_name) || g[:primary_studio] == studio_name)
-      end
-      
-      if studio_groups.any?
-        # Sort: multi-tables first, then pure tables
-        studio_groups.sort_by! { |g| [g[:is_multi] ? 0 : 1, -g[:priority]] }
-        
-        studio_sets << {
-          type: :large_studio,
-          studio_name: studio_name,
-          priority: 70,
-          groups: studio_groups
-        }
-        studio_groups.each { |g| processed_indices.add(g[:index]) }
-      end
-    end
-    
-    # 3. Remaining groups (small studios)
-    remaining_groups = analyzed_groups.reject { |g| processed_indices.include?(g[:index]) }
-    if remaining_groups.any?
-      studio_sets << {
-        type: :remaining,
-        priority: 10,
-        groups: remaining_groups
-      }
-    end
-    
-    # Sort studio sets by priority
-    studio_sets.sort_by { |set| -set[:priority] }
-  end
-  
-  def place_studio_set(studio_set, positions, max_cols, created_tables, reserved_positions)
-    if studio_set[:type] == :event_staff
-      # Place Event Staff in a compact block
-      place_event_staff_set(studio_set[:groups], positions, max_cols, created_tables, reserved_positions)
-    elsif studio_set[:type] == :large_studio
-      # Place large studio tables adjacent to each other
-      place_large_studio_set(studio_set, positions, max_cols, created_tables, reserved_positions)
-    else
-      # Place remaining groups individually
-      place_remaining_groups_set(studio_set[:groups], positions, max_cols, created_tables, reserved_positions)
-    end
-  end
-  
-  def place_event_staff_set(event_staff_groups, positions, max_cols, created_tables, reserved_positions)
-    event_staff_groups.each_with_index do |group_info, index|
-      table = create_and_assign_table(created_tables.size + 1, group_info[:people])
-      pos = find_event_staff_position(positions, max_cols, index)
-      
-      if pos
+        table = create_and_assign_table(created_tables.size + 1, table_group[:people])
         positions << pos
         table.update!(row: pos[:row], col: pos[:col])
+        created_tables << table
       end
+    else
+      # Fallback: place tables as close together as possible
+      placed_positions = []
       
-      created_tables << table
-    end
-  end
-  
-  def place_large_studio_set(studio_set, positions, max_cols, created_tables, reserved_positions)
-    groups = studio_set[:groups]
-    
-    # Check if any groups have reserved positions
-    groups.each do |group|
-      reservation = find_reservation_for_group(group, reserved_positions)
-      
-      if reservation
-        # This group has a reserved position - use it
-        table = create_and_assign_table(created_tables.size + 1, group[:people])
-        pos = reservation[:position]
+      tables.each_with_index do |table_group, idx|
+        table = create_and_assign_table(created_tables.size + 1, table_group[:people])
         
-        if pos && !position_occupied?(pos, positions)
+        if idx == 0
+          # First table - just find any available position
+          pos = find_next_position(positions, max_cols)
+        else
+          # Subsequent tables - find position closest to previously placed tables from this pair
+          pos = find_closest_position_to_group(placed_positions, positions, max_cols)
+        end
+        
+        if pos
           positions << pos
+          placed_positions << pos
           table.update!(row: pos[:row], col: pos[:col])
           created_tables << table
-          
-          # Mark this reservation as used
-          mark_reservation_used(reservation, reserved_positions)
-        else
-          # Fallback if reserved position is somehow occupied
-          fallback_placement_for_group(group, positions, max_cols, created_tables, reserved_positions)
         end
-      else
-        # No reservation - use normal placement logic
-        fallback_placement_for_group(group, positions, max_cols, created_tables, reserved_positions)
       end
     end
-  end
-  
-  def find_reservation_for_group(group, reserved_positions)
-    # Find a reservation that matches this group
-    reserved_positions.find do |reservation|
-      next if reservation[:used]
-      
-      case reservation[:purpose]
-      when :studio_pair
-        # Check if this is one of the groups in the studio pair
-        reservation[:group][:index] == group[:index]
-      when :multi_table_conflict
-        # Check if this is the multi-table for this reservation
-        reservation[:multi_group][:index] == group[:index]
-      when :conflict_pure_table
-        # Check if this is one of the pure tables for this reservation
-        reservation[:pure_group][:index] == group[:index]
-      when :large_studio_split
-        # Check if this is one of the groups for this studio
-        reservation[:group][:index] == group[:index]
-      else
-        false
-      end
-    end
-  end
-  
-  def mark_reservation_used(reservation, reserved_positions)
-    reservation[:used] = true
   end
   
   def position_occupied?(pos, positions)
     positions.any? { |p| p[:row] == pos[:row] && p[:col] == pos[:col] }
   end
   
-  def fallback_placement_for_group(group, positions, max_cols, created_tables, reserved_positions)
-    # Original placement logic for groups without reservations
-    table = create_and_assign_table(created_tables.size + 1, group[:people])
-    
-    if group[:is_multi] && group[:has_large_studios]
-      pos = find_center_position(positions, max_cols, reserved_positions)
-    else
-      pos = find_next_position(positions, max_cols, reserved_positions)
-    end
-    
-    if pos
-      positions << pos
-      table.update!(row: pos[:row], col: pos[:col])
-    end
-    
-    created_tables << table
-  end
   
-  
-  def place_remaining_groups_set(remaining_groups, positions, max_cols, created_tables, reserved_positions)
-    remaining_groups.each do |group_info|
-      table = create_and_assign_table(created_tables.size + 1, group_info[:people])
-      pos = find_next_position(positions, max_cols, reserved_positions)
-      
-      if pos
-        positions << pos
-        table.update!(row: pos[:row], col: pos[:col])
-      end
-      
-      created_tables << table
-    end
-  end
-  
-  def calculate_group_priority(studios, large_studios)
-    # Higher priority = placed first
-    if studios == ['Event Staff']
-      100  # Highest priority
-    elsif studios.size > 1 && studios.any? { |s| large_studios.include?(s) }
-      80   # High-priority multi-tables
-    elsif studios.size == 1 && large_studios.include?(studios.first)
-      70   # Large studio pure tables
-    elsif studios.size > 1
-      30   # Low-priority multi-tables
-    else
-      10   # Small studio pure tables
-    end
-  end
-  
-  def find_event_staff_position(positions, max_cols, event_staff_table_index)
-    # Place Event Staff tables in a compact block starting at (4, 1)
-    base_row = 4
-    base_col = 1
-    
-    # Try positions in order: (4,1), (4,2), (4,3)..., then (5,1), (5,2)...
-    attempt = 0
-    loop do
-      row = base_row + (attempt / max_cols)
-      col = base_col + (attempt % max_cols)
-      
-      pos = { row: row, col: col }
-      
-      # Check if this position is available
-      unless positions.any? { |p| p[:row] == row && p[:col] == col }
-        return pos
-      end
-      
-      attempt += 1
-      
-      # Safety check
-      break if attempt > 50
-    end
-    
-    # Fallback
-    find_next_position(positions, max_cols)
-  end
-  
-  
-  def find_center_position(positions, max_cols, reserved_positions = [])
-    # Find center positions first (maximize adjacency options)
-    # Priority order: center positions with 4 adjacent spots, then 3, then 2
-    
-    # Start from center and work outward
-    center_row = 3
-    center_col = max_cols / 2
-    
-    # Try positions in order of adjacency value (4 adjacent spots first)
-    center_positions = [
-      # 4 adjacent spots (interior positions)
-      [2, 3], [2, 4], [2, 5], [2, 6],
-      [3, 3], [3, 4], [3, 5], [3, 6],
-      [4, 3], [4, 4], [4, 5], [4, 6],
-      # 3 adjacent spots (edge but not corner)
-      [2, 2], [2, 7], [3, 2], [3, 7], [4, 2], [4, 7],
-      [1, 3], [1, 4], [1, 5], [1, 6],
-      # 2 adjacent spots (corners)
-      [1, 1], [1, 8]
-    ]
-    
-    center_positions.each do |row, col|
-      next if row < 1 || col < 1 || col > max_cols
-      
-      # Check if position is occupied OR reserved for someone else
-      unless position_occupied?({row: row, col: col}, positions) || position_reserved_for_others?({row: row, col: col}, reserved_positions)
-        return { row: row, col: col }
-      end
-    end
-    
-    # Fall back to sequential search if no center positions available
-    find_next_position(positions, max_cols, reserved_positions)
-  end
-  
-  def optimize_placement_for_adjacency(created_tables, analyzed_groups, max_cols)
-    # Post-placement optimization to improve adjacency for both studio pairs and multi-table studios
-    # This is particularly important for cases like Friday Lunch where Columbia could move
-    # to help both Silver Spring pairing and NY-Broadway adjacency
-    
-    
-    # Build a map of current table positions and their contents
-    table_positions = {}
-    position_to_table = {}
-    
-    created_tables.each do |table|
-      next unless table.row && table.col
-      pos_key = "#{table.row},#{table.col}"
-      position_to_table[pos_key] = table
-      
-      # Get studio info for this table
-      studios = if table.option_id
-                  table.person_options.includes(:person => :studio).map { |po| po.person.studio.name }.uniq.sort
-                else
-                  table.people.includes(:studio).map { |p| p.studio.name }.uniq.sort
-                end
-      
-      table_positions[table.id] = {
-        table: table,
-        studios: studios,
-        is_single_studio: studios.size == 1,
-        primary_studio: studios.first,
-        row: table.row,
-        col: table.col
-      }
-    end
-    
-    # Find multi-table studios that need adjacency
-    studio_tables = {}
-    table_positions.each do |table_id, info|
-      if info[:is_single_studio]
-        studio_name = info[:primary_studio]
-        studio_tables[studio_name] ||= []
-        studio_tables[studio_name] << info
-      end
-    end
-    
-    # Find studios with multiple tables that aren't adjacent
-    non_adjacent_studios = []
-    studio_tables.each do |studio_name, tables|
-      next if tables.size < 2
-      
-      # Check if all tables are adjacent
-      all_adjacent = true
-      tables.combination(2).each do |t1, t2|
-        distance = (t1[:row] - t2[:row]).abs + (t1[:col] - t2[:col]).abs
-        if distance > 1
-          all_adjacent = false
-          break
-        end
-      end
-      
-      unless all_adjacent
-        non_adjacent_studios << {
-          studio: studio_name,
-          tables: tables,
-          table_count: tables.size
-        }
-      end
-    end
-    
-    # Find studio pairs that aren't adjacent or sharing tables
-    studio_pairs = StudioPair.includes(:studio1, :studio2)
-    non_adjacent_pairs = []
-    
-    studio_pairs.each do |pair|
-      studio1_tables = studio_tables[pair.studio1.name] || []
-      studio2_tables = studio_tables[pair.studio2.name] || []
-      
-      next if studio1_tables.empty? || studio2_tables.empty?
-      
-      # Check if they share any tables
-      shared = false
-      table_positions.each do |_, info|
-        if info[:studios].include?(pair.studio1.name) && info[:studios].include?(pair.studio2.name)
-          shared = true
-          break
-        end
-      end
-      
-      next if shared
-      
-      # Check minimum distance between their tables
-      min_distance = Float::INFINITY
-      studio1_tables.each do |t1|
-        studio2_tables.each do |t2|
-          distance = (t1[:row] - t2[:row]).abs + (t1[:col] - t2[:col]).abs
-          min_distance = [min_distance, distance].min
-        end
-      end
-      
-      if min_distance > 1
-        non_adjacent_pairs << {
-          studio1: pair.studio1.name,
-          studio2: pair.studio2.name,
-          studio1_tables: studio1_tables,
-          studio2_tables: studio2_tables,
-          min_distance: min_distance
-        }
-      end
-    end
-    
-    # Try to fix adjacency issues by swapping single-table studios
-    # Priority: Fix multi-table adjacency first, then studio pairs
-    non_adjacent_studios.sort_by! { |s| -s[:table_count] } # Larger studios first
-    
-    non_adjacent_studios.each do |studio_info|
-      # For each non-adjacent multi-table studio, try to find better positions
-      tables = studio_info[:tables]
-      
-      # Find a contiguous block that could fit all tables
-      best_block = find_best_contiguous_block(tables.size, position_to_table, max_cols)
-      
-      next unless best_block
-      
-      # Check if we can swap with single-table studios currently in those positions
-      can_swap = true
-      tables_to_swap = []
-      
-      best_block.each do |pos_key|
-        current_table = position_to_table[pos_key]
-        if current_table
-          info = table_positions[current_table.id]
-          # Only swap with single-studio, single-table studios (not Event Staff)
-          if info[:is_single_studio] && info[:primary_studio] != 'Event Staff'
-            studio_table_count = studio_tables[info[:primary_studio]].size
-            if studio_table_count == 1
-              tables_to_swap << current_table
-            else
-              can_swap = false
-              break
-            end
-          else
-            can_swap = false
-            break
-          end
-        end
-      end
-      
-      if can_swap && tables_to_swap.size > 0
-        # Perform the swap
-        perform_table_position_swap(tables, tables_to_swap, best_block, position_to_table, table_positions)
-        
-        # Update studio_tables for future iterations
-        studio_tables[studio_info[:studio]] = []
-        table_positions.each do |_, info|
-          if info[:is_single_studio] && info[:primary_studio] == studio_info[:studio]
-            studio_tables[studio_info[:studio]] << info
-          end
-        end
-      end
-    end
-    
-    # Now try to fix studio pairs by moving single-table studios
-    non_adjacent_pairs.each do |pair_info|
-      # Skip if either studio has multiple tables (handled above)
-      next if pair_info[:studio1_tables].size > 1 || pair_info[:studio2_tables].size > 1
-      
-      # Both are single tables - try to move one next to the other
-      table1 = pair_info[:studio1_tables].first
-      table2 = pair_info[:studio2_tables].first
-      
-      # Find adjacent positions to table1
-      adjacent_positions = [
-        { row: table1[:row] - 1, col: table1[:col] },
-        { row: table1[:row] + 1, col: table1[:col] },
-        { row: table1[:row], col: table1[:col] - 1 },
-        { row: table1[:row], col: table1[:col] + 1 }
-      ].select { |pos| pos[:row] >= 1 && pos[:row] <= 5 && pos[:col] >= 1 && pos[:col] <= max_cols }
-      
-      # Try to move table2 to an adjacent position
-      adjacent_positions.each do |new_pos|
-        pos_key = "#{new_pos[:row]},#{new_pos[:col]}"
-        current_occupant = position_to_table[pos_key]
-        
-        if current_occupant.nil?
-          # Empty position - just move table2 here
-          table2[:table].update!(row: new_pos[:row], col: new_pos[:col])
-          old_pos_key = "#{table2[:row]},#{table2[:col]}"
-          position_to_table.delete(old_pos_key)
-          position_to_table[pos_key] = table2[:table]
-          table2[:row] = new_pos[:row]
-          table2[:col] = new_pos[:col]
-          break
-        elsif current_occupant != table2[:table]
-          # Check if we can swap
-          occupant_info = table_positions[current_occupant.id]
-          if occupant_info[:is_single_studio] && 
-             occupant_info[:primary_studio] != 'Event Staff' &&
-             studio_tables[occupant_info[:primary_studio]].size == 1
-            # Perform swap
-            perform_simple_table_swap(table2[:table], current_occupant, table_positions, position_to_table)
-            break
-          end
-        end
-      end
-    end
-  end
-  
-  def find_best_contiguous_block(table_count, position_to_table, max_cols)
-    # Find the best contiguous block of positions for the given number of tables
-    best_block = nil
-    best_score = Float::INFINITY
-    
-    # Try different block configurations
-    if table_count == 2
-      # Try horizontal pairs
-      (1..5).each do |row|
-        (1..max_cols-1).each do |col|
-          block = ["#{row},#{col}", "#{row},#{col+1}"]
-          score = calculate_block_disruption_score(block, position_to_table)
-          if score < best_score
-            best_score = score
-            best_block = block
-          end
-        end
-      end
-      
-      # Try vertical pairs
-      (1..4).each do |row|
-        (1..max_cols).each do |col|
-          block = ["#{row},#{col}", "#{row+1},#{col}"]
-          score = calculate_block_disruption_score(block, position_to_table)
-          if score < best_score
-            best_score = score
-            best_block = block
-          end
-        end
-      end
-    elsif table_count == 3
-      # Try L-shapes and lines
-      (1..4).each do |row|
-        (1..max_cols-1).each do |col|
-          # Horizontal L
-          block = ["#{row},#{col}", "#{row},#{col+1}", "#{row+1},#{col}"]
-          score = calculate_block_disruption_score(block, position_to_table)
-          if score < best_score
-            best_score = score
-            best_block = block
-          end
-        end
-      end
-    end
-    
-    best_block
-  end
-  
-  def calculate_block_disruption_score(block, position_to_table)
-    # Lower score = less disruption
-    # Prefer blocks that are empty or contain only single-table studios
-    score = 0
-    
-    block.each do |pos_key|
-      if position_to_table[pos_key]
-        score += 10  # Occupied position
-      else
-        score += 1   # Empty position (slight preference for occupied to minimize gaps)
-      end
-    end
-    
-    score
-  end
-  
-  def perform_table_position_swap(moving_tables, displaced_tables, new_positions, position_to_table, table_positions)
-    # Save old positions of moving tables
-    old_positions = moving_tables.map { |t| "#{t[:row]},#{t[:col]}" }
-    
-    # Move displaced tables to old positions of moving tables
-    displaced_tables.each_with_index do |table, i|
-      if i < old_positions.size
-        old_pos = old_positions[i]
-        row, col = old_pos.split(',').map(&:to_i)
-        
-        # Update position maps
-        current_pos = "#{table.row},#{table.col}"
-        position_to_table.delete(current_pos)
-        position_to_table[old_pos] = table
-        
-        # Update table
-        table.update!(row: row, col: col)
-        
-        # Update table_positions
-        if table_positions[table.id]
-          table_positions[table.id][:row] = row
-          table_positions[table.id][:col] = col
-        end
-      end
-    end
-    
-    # Move moving tables to new positions
-    moving_tables.each_with_index do |table_info, i|
-      if i < new_positions.size
-        new_pos = new_positions[i]
-        row, col = new_pos.split(',').map(&:to_i)
-        
-        # Update position maps
-        old_pos = "#{table_info[:row]},#{table_info[:col]}"
-        position_to_table.delete(old_pos)
-        position_to_table[new_pos] = table_info[:table]
-        
-        # Update table
-        table_info[:table].update!(row: row, col: col)
-        
-        # Update table_positions
-        table_info[:row] = row
-        table_info[:col] = col
-      end
-    end
-  end
-  
-  def perform_simple_table_swap(table1, table2, table_positions, position_to_table)
-    # Swap positions of two tables
-    t1_row, t1_col = table1.row, table1.col
-    t2_row, t2_col = table2.row, table2.col
-    
-    t1_pos = "#{t1_row},#{t1_col}"
-    t2_pos = "#{t2_row},#{t2_col}"
-    
-    # Update position map
-    position_to_table[t1_pos] = table2
-    position_to_table[t2_pos] = table1
-    
-    # Update tables
-    table1.update!(row: t2_row, col: t2_col)
-    table2.update!(row: t1_row, col: t1_col)
-    
-    # Update table_positions
-    if table_positions[table1.id]
-      table_positions[table1.id][:row] = t2_row
-      table_positions[table1.id][:col] = t2_col
-    end
-    if table_positions[table2.id]
-      table_positions[table2.id][:row] = t1_row
-      table_positions[table2.id][:col] = t1_col
-    end
-  end
   
   def find_next_position(positions, max_cols, reserved_positions = [])
     # Find the next available position in the grid
