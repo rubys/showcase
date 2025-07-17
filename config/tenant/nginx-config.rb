@@ -27,6 +27,13 @@ SHOWCASE_CONF = "#{NGINX_CONF}/showcase.conf"
 @storage = ENV['RAILS_STORAGE'] || File.join(@git_path, 'storage')
 
 showcases = YAML.load_file("#{__dir__}/showcases.yml")
+maps = "#{__dir__}/map.yml"
+
+pagesize = "letter"
+if File.exist?(maps) && ENV['REGION']
+  map = YAML.load_file(maps).dig('regions', ENV['REGION'], 'map') rescue "us"
+  pagesize = "a4" unless (map || "us") == "us"
+end
 
 restart = ARGV.include?('--restart')
 
@@ -363,6 +370,7 @@ server {
 <% end -%>
   passenger_env_var RAILS_APP_REDIS showcase_production;
 <% if ENV['FLY_REGION'] -%>
+  passenger_env_var PAGESIZE <%= pagesize %>;
 
   # Password reset
   location <%= ROOT %>/password {

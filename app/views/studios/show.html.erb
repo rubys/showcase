@@ -31,10 +31,10 @@
     <% if @studio.id != 0 %>
     <%= link_to 'Solos', solos_studio_path(@studio), class: "btn-blue" %>
     <%= up_link 'Add formation', new_formation_path(studio: @studio), class: "btn-blue" %>
-    <%= link_to 'Heat sheets', heats_studio_path(@studio, format: :pdf), class: "btn-pale-orange" %>
-    <%= link_to 'Studio Invoice', invoice_studio_path(@studio, format: :pdf), class: "btn-pale-orange" %>
-    <%= link_to 'Student Invoices', student_invoices_studio_path(@studio, format: :pdf), class: "btn-pale-orange" %>
-    <%= link_to 'Scores', scores_studio_path(@studio, format: :pdf), class: "btn-pale-orange" %>
+    <%= link_to 'Heat sheets', heats_studio_path(@studio, as_pdf), class: "btn-pale-orange" %>
+    <%= link_to 'Studio Invoice', invoice_studio_path(@studio, as_pdf), class: "btn-pale-orange" %>
+    <%= link_to 'Student Invoices', student_invoices_studio_path(@studio, as_pdf), class: "btn-pale-orange" %>
+    <%= link_to 'Scores', scores_studio_path(@studio, as_pdf), class: "btn-pale-orange" %>
     <% end %>
   </div>
 </div>

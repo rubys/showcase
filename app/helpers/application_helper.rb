@@ -46,6 +46,12 @@ module ApplicationHelper
     "/#{EventController.logo}"
   end
 
+  def as_pdf(options = {})
+    result = options.merge(format: :pdf)
+    result[:pagesize] = ENV['PAGESIZE'] if ENV['PAGESIZE']
+    result
+  end
+
   def localized_date(date_string, locale = nil)
     return date_string unless date_string.present?
     

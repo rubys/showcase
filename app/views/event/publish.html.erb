@@ -51,25 +51,25 @@
   <h2 class="font-bold text-2xl my-8">Print</h1>
 
   <ul class="ml-8">
-  <li class=""><%= link_to "Invoices", invoices_studios_path(format: :pdf), class: "btn-pale-orange w-60" %>
-  <li class=""><%= link_to "Master Heat Book", book_heats_path(format: :pdf), class: "btn-pale-orange w-60" %>
-  <li class=""><%= link_to "Judge Heat Book", book_heats_path(type: 'judge', format: :pdf), class: "btn-pale-orange w-60" %>
-  <li class=""><%= link_to "Emcee Heat Book", book_heats_path(type: 'emcee', format: :pdf), class: "btn-pale-orange w-60" %>
-  <li class=""><%= link_to "DJ Dance list", djlist_heats_path(format: :pdf), class: "btn-pale-orange w-60" %>
-  <li class=""><%= link_to "Individual Heat Sheets", heats_people_path(format: :pdf), class: "btn-pale-orange w-60" %>
+  <li class=""><%= link_to "Invoices", invoices_studios_path(as_pdf), class: "btn-pale-orange w-60" %>
+  <li class=""><%= link_to "Master Heat Book", book_heats_path(as_pdf), class: "btn-pale-orange w-60" %>
+  <li class=""><%= link_to "Judge Heat Book", book_heats_path(as_pdf(type: 'judge')), class: "btn-pale-orange w-60" %>
+  <li class=""><%= link_to "Emcee Heat Book", book_heats_path(as_pdf(type: 'emcee')), class: "btn-pale-orange w-60" %>
+  <li class=""><%= link_to "DJ Dance list", djlist_heats_path(as_pdf), class: "btn-pale-orange w-60" %>
+  <li class=""><%= link_to "Individual Heat Sheets", heats_people_path(as_pdf), class: "btn-pale-orange w-60" %>
 
   <% if @event.backnums %>
-  <li class=""><%= link_to "Back Numbers", back_numbers_people_path(format: :pdf), class: "btn-pale-orange w-60" %>
+  <li class=""><%= link_to "Back Numbers", back_numbers_people_path(as_pdf), class: "btn-pale-orange w-60" %>
   <% else %>
   <li class=""><a role="link" aria-disabled="true" class="btn-pale-orange w-60 btn-disabled">Back Numbers</a>
   <% end %>
 
-  <li class=""><%= link_to "Labels", labels_people_path(format: :pdf), class: "btn-pale-orange w-60" %>
+  <li class=""><%= link_to "Labels", labels_people_path(as_pdf), class: "btn-pale-orange w-60" %>
   <% if Table.any? %>
-  <li class=""><%= link_to "Table List", list_tables_path(format: :pdf), class: "btn-pale-orange w-60" %>
+  <li class=""><%= link_to "Table List", list_tables_path(as_pdf), class: "btn-pale-orange w-60" %>
   <% end %>
-  <li class=""><%= link_to "Student Scores", scores_people_path(format: :pdf), class: "btn-pale-orange w-60" %>
-  <li class=""><%= link_to "Staff", staff_people_path(format: :pdf), class: "btn-pale-orange w-60" %>
+  <li class=""><%= link_to "Student Scores", scores_people_path(as_pdf), class: "btn-pale-orange w-60" %>
+  <li class=""><%= link_to "Staff", staff_people_path(as_pdf), class: "btn-pale-orange w-60" %>
   <li class=""><%= link_to "Certificates", people_certificates_path, class: "btn-blue w-60" %>
   </ul>
 

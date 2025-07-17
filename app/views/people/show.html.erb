@@ -385,7 +385,7 @@ when most dances for an individual are with one instructor but one or two are ch
     <div class="mt-4 flex">
     <%= button_to 'Assign judges', assign_judges_person_path(@person), disabled: @disable_judge_assignments, class: "btn-blue#{@disable_judge_assignments ? ' disabled opacity-50 cursor-not-allowed' : ''}" %>
     <%= button_to 'Reset assignments', reset_assignments_person_path(@person), disabled: @disable_judge_assignments, class: "btn-pale-blue#{@disable_judge_assignments ? ' disabled opacity-50 cursor-not-allowed' : ''}" %>
-    <%= link_to 'Heat Book', book_heats_path(type: 'judge', format: :pdf, judge: @person.id), class: "btn-pale-orange" %>
+    <%= link_to 'Heat Book', book_heats_path(as_pdf(type: 'judge', judge: @person.id)), class: "btn-pale-orange" %>
     </div>
     <% end %>
     <div class="mt-4 mx-auto">
@@ -406,7 +406,7 @@ when most dances for an individual are with one instructor but one or two are ch
 
     <% if @person.type == 'DJ' || (@person.type == 'Emcee' && Person.where(type: 'DJ').count == 0) %>
     <%= link_to 'Solos', djlist_solos_path, class: "btn-purple" %>
-    <%= link_to 'Dance list', djlist_heats_path(format: :pdf), class: "btn-blue" %>
+    <%= link_to 'Dance list', djlist_heats_path(as_pdf), class: "btn-blue" %>
     <% end %>
     </div>
     <% end %>
@@ -437,20 +437,20 @@ when most dances for an individual are with one instructor but one or two are ch
 
       <% if %w(Student Professional).include? @person.type %>
       <% unless @heats.empty? and @solos.empty? %>
-      <%= link_to 'Heat sheet', heats_person_path(@person, format: :pdf), class: "btn-pale-orange" %>
+      <%= link_to 'Heat sheet', heats_person_path(@person, as_pdf), class: "btn-pale-orange" %>
       <% end %>
       <% if @person.invoice_to_id == nil %>
       <% if @person.type == 'Student' %>
-      <%= link_to 'Invoice', invoice_person_path(@person, format: :pdf), class: "btn-pale-orange" %>
+      <%= link_to 'Invoice', invoice_person_path(@person, as_pdf), class: "btn-pale-orange" %>
       <% if @event.judge_recordings %>
       <%= link_to 'Recordings', student_recordings_path(RecordingsController.encode_student_token(@person.id)), class: "btn-purple" %>
       <% end %>
       <% else %>
-      <%= link_to 'Invoice', instructor_invoice_person_path(@person, format: :pdf), class: "btn-pale-orange" %>
+      <%= link_to 'Invoice', instructor_invoice_person_path(@person, as_pdf), class: "btn-pale-orange" %>
       <% end %>
       <% end %>
       <% unless @scores.empty? %>
-      <%= link_to 'Scores', scores_person_path(@person, format: :pdf), class: "btn-pale-orange" %>
+      <%= link_to 'Scores', scores_person_path(@person, as_pdf), class: "btn-pale-orange" %>
       <% end %>
       <% end %>
     </div>
