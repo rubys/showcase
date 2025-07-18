@@ -1010,181 +1010,78 @@ class TablesController < ApplicationController
       studio_groups.reject! { |g| g[:studio_id] == 0 }
     end
     
-    # 2. Handle studio pairs
+    # 2. Handle studio pairs as connected components (associative grouping)
     studio_pairs = StudioPair.includes(:studio1, :studio2).map do |pair|
       [pair.studio1.id, pair.studio2.id]
     end
     
-    pair_lookup = {}
-    studio_pairs.each do |id1, id2|
-      pair_lookup[id1] = id2
-      pair_lookup[id2] = id1
+    # Build connected components for associative pairing
+    studio_components = build_connected_components(studio_pairs)
+    
+    # Create a lookup from studio_id to its component group
+    studio_to_component = {}
+    studio_components.each_with_index do |component, index|
+      component.each do |studio_id|
+        studio_to_component[studio_id] = index
+      end
     end
     
     assigned_studios = Set.new
     remainder_groups = []  # Initialize early for studio pair overflow handling
     
-    # Handle paired studios with enhanced logic for near-full tables
-    studio_groups.each do |group|
-      next if assigned_studios.include?(group[:studio_id])
+    # Handle paired studios using connected components for associative grouping
+    studio_components.each do |component|
+      # Skip if any studio in this component is already assigned
+      next if component.any? { |studio_id| assigned_studios.include?(studio_id) }
       
-      paired_studio_id = pair_lookup[group[:studio_id]]
-      if paired_studio_id
-        paired_group = studio_groups.find { |g| g[:studio_id] == paired_studio_id }
+      # Get all studio groups in this component
+      component_groups = component.map { |studio_id| 
+        studio_groups.find { |g| g[:studio_id] == studio_id } 
+      }.compact
+      
+      # Skip if no groups found for this component
+      next if component_groups.empty?
+      
+      # Combine all people from the component
+      all_people = component_groups.flat_map { |g| g[:people] }
+      combined_size = all_people.size
+      component_studio_names = component_groups.map { |g| g[:studio_name] }
+      
+      if combined_size <= table_size
+        # All studios in component fit in one table
+        people_groups << {
+          people: all_people,
+          studio_id: component_groups.first[:studio_id], # Use first studio as primary
+          studio_name: component_studio_names.join(' & '),
+          is_paired: true,
+          paired_studios: component,
+          split_group: nil
+        }
         
-        if paired_group && !assigned_studios.include?(paired_studio_id)
-          combined_size = group[:size] + paired_group[:size]
-          
-          if combined_size <= table_size
-            # Both studios fit on one table
-            people_groups << {
-              people: group[:people] + paired_group[:people],
-              studio_id: group[:studio_id],
-              studio_name: "#{group[:studio_name]} & #{paired_group[:studio_name]}",
-              is_paired: true,
-              paired_studios: [group[:studio_id], paired_studio_id],
-              split_group: nil
-            }
-            assigned_studios.add(group[:studio_id])
-            assigned_studios.add(paired_studio_id)
-          elsif (group[:size] == table_size && paired_group[:size] <= 3) ||
-                (paired_group[:size] == table_size && group[:size] <= 3)
-            # Special case: One studio exactly fills a table, but paired studio is small
-            # Better to combine them and let larger studio split if needed
-            # Example: Columbia (12) + Silver Spring (2) = 14, fits in table of 12 with 2 overflow
-            all_people = group[:people] + paired_group[:people]
-            
-            # First table gets full capacity
-            people_groups << {
-              people: all_people.first(table_size),
-              studio_id: group[:studio_id],
-              studio_name: "#{group[:studio_name]} & #{paired_group[:studio_name]}",
-              is_paired: true,
-              paired_studios: [group[:studio_id], paired_studio_id],
-              split_group: "paired_#{group[:studio_id]}_0",
-              split_total: (combined_size / table_size.to_f).ceil
-            }
-            
-            # Remainder goes to overflow handling
-            if combined_size > table_size
-              overflow = all_people.drop(table_size)
-              remainder_groups << {
-                studio_id: group[:size] > paired_group[:size] ? group[:studio_id] : paired_group[:studio_id],
-                people: overflow,
-                size: overflow.size,
-                studio_name: group[:size] > paired_group[:size] ? group[:studio_name] : paired_group[:studio_name]
-              }
-            end
-            
-            assigned_studios.add(group[:studio_id])
-            assigned_studios.add(paired_studio_id)
-          else
-            # Handle paired studios that exceed table size - treat as coordinated group
-            # Example: Studio1(10) + Studio2(10) = 20 people, or Studio1(10) + Studio2(4) = 14 people
-            # Each studio gets its own table(s), but they should be placed adjacent
-            
-            # Process the first studio
-            if group[:size] <= table_size
-              people_groups << {
-                people: group[:people],
-                studio_id: group[:studio_id],
-                studio_name: group[:studio_name],
-                split_group: nil,
-                paired_with: paired_studio_id,
-                coordination_group: "pair_#{[group[:studio_id], paired_studio_id].sort.join('_')}"
-              }
-            else
-              # First studio needs multiple tables
-              full_table_count = group[:size] / table_size
-              remainder_size = group[:size] % table_size
-              split_index = 0
-              total_tables_needed = (group[:size] / table_size.to_f).ceil
-              
-              group[:people].first(full_table_count * table_size).each_slice(table_size) do |people_slice|
-                people_groups << {
-                  people: people_slice,
-                  studio_id: group[:studio_id],
-                  studio_name: group[:studio_name],
-                  split_group: "studio_#{group[:studio_id]}_#{split_index}",
-                  split_total: total_tables_needed,
-                  split_index: split_index,
-                  paired_with: paired_studio_id,
-                  coordination_group: "pair_#{[group[:studio_id], paired_studio_id].sort.join('_')}"
-                }
-                split_index += 1
-              end
-              
-              # Handle remainder if any
-              if remainder_size > 0
-                remainder_groups << {
-                  studio_id: group[:studio_id],
-                  people: group[:people].last(remainder_size),
-                  size: remainder_size,
-                  studio_name: group[:studio_name],
-                  split_group: "studio_#{group[:studio_id]}_#{split_index}",
-                  split_total: total_tables_needed,
-                  split_index: split_index,
-                  is_remainder: true,
-                  paired_with: paired_studio_id,
-                  coordination_group: "pair_#{[group[:studio_id], paired_studio_id].sort.join('_')}"
-                }
-              end
-            end
-            
-            # Process the second studio
-            if paired_group[:size] <= table_size
-              people_groups << {
-                people: paired_group[:people],
-                studio_id: paired_group[:studio_id],
-                studio_name: paired_group[:studio_name],
-                split_group: nil,
-                paired_with: group[:studio_id],
-                coordination_group: "pair_#{[group[:studio_id], paired_studio_id].sort.join('_')}"
-              }
-            else
-              # Second studio needs multiple tables
-              full_table_count = paired_group[:size] / table_size
-              remainder_size = paired_group[:size] % table_size
-              split_index = 0
-              total_tables_needed = (paired_group[:size] / table_size.to_f).ceil
-              
-              paired_group[:people].first(full_table_count * table_size).each_slice(table_size) do |people_slice|
-                people_groups << {
-                  people: people_slice,
-                  studio_id: paired_group[:studio_id],
-                  studio_name: paired_group[:studio_name],
-                  split_group: "studio_#{paired_group[:studio_id]}_#{split_index}",
-                  split_total: total_tables_needed,
-                  split_index: split_index,
-                  paired_with: group[:studio_id],
-                  coordination_group: "pair_#{[group[:studio_id], paired_studio_id].sort.join('_')}"
-                }
-                split_index += 1
-              end
-              
-              # Handle remainder if any
-              if remainder_size > 0
-                remainder_groups << {
-                  studio_id: paired_group[:studio_id],
-                  people: paired_group[:people].last(remainder_size),
-                  size: remainder_size,
-                  studio_name: paired_group[:studio_name],
-                  split_group: "studio_#{paired_group[:studio_id]}_#{split_index}",
-                  split_total: total_tables_needed,
-                  split_index: split_index,
-                  is_remainder: true,
-                  paired_with: group[:studio_id],
-                  coordination_group: "pair_#{[group[:studio_id], paired_studio_id].sort.join('_')}"
-                }
-              end
-            end
-            
-            assigned_studios.add(group[:studio_id])
-            assigned_studios.add(paired_studio_id)
-          end
+        # Mark all studios in component as assigned
+        component.each { |studio_id| assigned_studios.add(studio_id) }
+        
+      else
+        # Component needs multiple tables - split them appropriately
+        all_people.each_slice(table_size).with_index do |people_slice, index|
+          people_groups << {
+            people: people_slice,
+            studio_id: component_groups.first[:studio_id],
+            studio_name: component_studio_names.join(' & '),
+            is_paired: true,
+            paired_studios: component,
+            split_group: "component_#{component.sort.join('_')}_#{index}",
+            coordination_group: "component_#{component.sort.join('_')}"
+          }
         end
+        
+        # Mark all studios in component as assigned
+        component.each { |studio_id| assigned_studios.add(studio_id) }
       end
     end
+    
+    # Continue with individual studio processing for non-paired studios
+    # (The old paired studio logic has been replaced with connected components above)
     
     # 3. Handle large studios (need multiple tables)
     unassigned_groups = studio_groups.reject { |g| assigned_studios.include?(g[:studio_id]) }
@@ -1234,147 +1131,146 @@ class TablesController < ApplicationController
       assigned_studios.add(group[:studio_id])
     end
     
-    # 4. Optimize remainder packing with studio pair preference
-    # First pass: Handle studio pairs with absolute priority
-    processed_studios = Set.new
+    # 4. Handle remainder groups (overflow from large studios)
+    # Simple approach - just create tables for remainders
     
-    remainder_groups.dup.each do |group|
-      next if processed_studios.include?(group[:studio_id])
-      
-      paired_studio_id = pair_lookup[group[:studio_id]]
-      if paired_studio_id
-        paired_remainder = remainder_groups.find { |g| g[:studio_id] == paired_studio_id && !processed_studios.include?(g[:studio_id]) }
-        
-        if paired_remainder && (group[:size] + paired_remainder[:size]) <= table_size
-          # Create shared table for studio pair
-          shared_table = group[:people] + paired_remainder[:people]
-          remaining_capacity = table_size - shared_table.size
-          
-          # Fill remaining capacity with other non-paired studios
-          remainder_groups.dup.each do |other_group|
-            next if processed_studios.include?(other_group[:studio_id])
-            next if other_group[:studio_id] == group[:studio_id] || other_group[:studio_id] == paired_studio_id
-            next if pair_lookup[other_group[:studio_id]] # Skip studios that have pairs (they'll get their own pass)
-            next if other_group[:studio_id] == 0 # Skip Event Staff - they should never be merged
-            next if group[:studio_id] == 0 || paired_studio_id == 0 # Skip if this is an Event Staff table
-            
-            if other_group[:size] <= remaining_capacity
-              shared_table.concat(other_group[:people])
-              remaining_capacity -= other_group[:size]
-              remainder_groups.delete(other_group)
-              processed_studios.add(other_group[:studio_id])
-              
-              break if remaining_capacity < 1
-            end
-          end
-          
-          people_groups << {
-            people: shared_table,
-            studio_id: group[:studio_id],
-            studio_name: "#{group[:studio_name]} & #{paired_remainder[:studio_name]}",
-            is_paired: true,
-            paired_studios: [group[:studio_id], paired_studio_id],
-            split_group: group[:split_group] || paired_remainder[:split_group]
-          }
-          remainder_groups.delete(group)
-          remainder_groups.delete(paired_remainder)
-          processed_studios.add(group[:studio_id])
-          processed_studios.add(paired_studio_id)
-        end
-      end
-    end
-    
-    # Second pass: First try to fit remaining studios into existing tables
-    remainder_groups.sort_by! { |g| g[:size] } # Sort by size (smallest first for easier fitting)
-    
-    remainder_groups.dup.each do |group|
-      next if processed_studios.include?(group[:studio_id])
-      
-      # Skip Event Staff - they should never be merged with other studios
-      next if group[:studio_id] == 0
-      
-      # Try to fit this group into an existing table
-      fitted = false
-      
-      # First, try to fit with tables from the same studio (if this is a remainder)
-      if group[:is_remainder] && group[:split_group]
-        people_groups.each_with_index do |existing_group, idx|
-          next unless existing_group[:split_group]
-          # Check if this is part of the same split studio
-          if existing_group[:split_group].start_with?("studio_#{group[:studio_id]}_")
-            current_size = existing_group[:people].size
-            available_space = table_size - current_size
-            
-            if group[:size] <= available_space
-              existing_group[:people].concat(group[:people])
-              remainder_groups.delete(group)
-              processed_studios.add(group[:studio_id])
-              fitted = true
-              break
-            end
-          end
-        end
-      end
-      
-      # If not fitted yet, try any compatible table FROM THE SAME STUDIO
-      unless fitted
-        people_groups.each do |existing_group|
-          current_size = existing_group[:people].size
-          available_space = table_size - current_size
-          
-          # Don't add to Event Staff tables
-          next if existing_group[:studio_id] == 0
-          
-          # ONLY fit with tables from the same studio - never mix studios
-          next if existing_group[:studio_id] != group[:studio_id]
-          
-          if group[:size] <= available_space
-            existing_group[:people].concat(group[:people])
-            remainder_groups.delete(group)
-            processed_studios.add(group[:studio_id])
-            fitted = true
-            break
-          end
-        end
-      end
-    end
-    
-    # Third pass: Handle any remaining groups that couldn't fit in existing tables
-    remainder_groups.sort_by! { |g| -g[:size] }
-    
-    while remainder_groups.any?
-      current_group = remainder_groups.shift
-      next if processed_studios.include?(current_group[:studio_id])
-      
-      current_table = current_group[:people].dup
-      remaining_capacity = table_size - current_group[:size]
-      
-      # Fill with other groups that fit
-      remainder_groups.dup.each do |other_group|
-        if other_group[:size] <= remaining_capacity && !processed_studios.include?(other_group[:studio_id])
-          # Skip Event Staff - they should never be merged with other studios
-          next if other_group[:studio_id] == 0 || current_group[:studio_id] == 0
-          
-          current_table.concat(other_group[:people])
-          remaining_capacity -= other_group[:size]
-          remainder_groups.delete(other_group)
-          processed_studios.add(other_group[:studio_id])
-          
-          break if remaining_capacity < 1
-        end
-      end
-      
+    # Handle any remaining groups by creating new tables
+    remainder_groups.each do |group|
       people_groups << {
-        people: current_table,
-        studio_id: current_group[:studio_id],
-        studio_name: current_group[:studio_name],
-        split_group: current_group[:split_group],
-        is_mixed: remainder_groups.any? { |g| current_table.include?(g[:people].first) rescue false }
+        people: group[:people],
+        studio_id: group[:studio_id],
+        studio_name: group[:studio_name],
+        split_group: group[:split_group],
+        is_remainder: true
       }
-      processed_studios.add(current_group[:studio_id])
     end
+    
+    # Consolidate small tables to minimize table count
+    people_groups = consolidate_small_tables(people_groups, table_size)
     
     people_groups
+  end
+  
+  def consolidate_small_tables(people_groups, table_size)
+    # Consolidate small tables to minimize table count
+    # Be more aggressive about consolidating very small tables
+    
+    # Find small tables that can be consolidated
+    small_tables = []
+    remaining_tables = []
+    
+    people_groups.each do |group|
+      group_size = group[:people].size
+      
+      # Consolidate very small tables (1-4 people) aggressively
+      if group_size <= 4 && 
+         group[:studio_id] != 0  # Don't consolidate Event Staff
+        
+        small_tables << group
+      else
+        remaining_tables << group
+      end
+    end
+    
+    # Sort small tables by size (smallest first for better packing)
+    small_tables.sort_by! { |group| group[:people].size }
+    
+    # Consolidate small tables
+    consolidated_tables = []
+    current_table = []
+    current_studios = []
+    
+    small_tables.each do |group|
+      # Check if this group can fit in the current consolidated table
+      if current_table.size + group[:people].size <= table_size
+        # Add to current table
+        current_table += group[:people]
+        current_studios << group[:studio_name]
+      else
+        # Start a new consolidated table
+        if current_table.any?
+          consolidated_tables << {
+            people: current_table,
+            studio_id: nil,  # Mixed studios
+            studio_name: current_studios.join(' & '),
+            split_group: nil,
+            is_mixed: true
+          }
+        end
+        
+        # Start new table with current group
+        current_table = group[:people].dup
+        current_studios = [group[:studio_name]]
+      end
+    end
+    
+    # Add the last consolidated table if any
+    if current_table.any?
+      consolidated_tables << {
+        people: current_table,
+        studio_id: nil,  # Mixed studios
+        studio_name: current_studios.join(' & '),
+        split_group: nil,
+        is_mixed: true
+      }
+    end
+    
+    # Return the consolidated result
+    result = remaining_tables + consolidated_tables
+    
+    # Log the consolidation if any occurred
+    if consolidated_tables.any?
+      original_count = people_groups.count
+      new_count = result.count
+      Rails.logger.info "Consolidated #{small_tables.count} small tables into #{consolidated_tables.count} tables, reducing total from #{original_count} to #{new_count}"
+    end
+    
+    result
+  end
+  
+  def build_connected_components(studio_pairs)
+    # Build connected components from studio pairs using Union-Find algorithm
+    # This handles associative grouping: if A-B and B-C, then A-B-C are all connected
+    
+    # Create adjacency list
+    graph = Hash.new { |h, k| h[k] = [] }
+    all_studios = Set.new
+    
+    studio_pairs.each do |studio1_id, studio2_id|
+      graph[studio1_id] << studio2_id
+      graph[studio2_id] << studio1_id
+      all_studios.add(studio1_id)
+      all_studios.add(studio2_id)
+    end
+    
+    # Find connected components using DFS
+    visited = Set.new
+    components = []
+    
+    all_studios.each do |studio_id|
+      next if visited.include?(studio_id)
+      
+      # Start a new component
+      component = []
+      stack = [studio_id]
+      
+      while !stack.empty?
+        current = stack.pop
+        next if visited.include?(current)
+        
+        visited.add(current)
+        component << current
+        
+        # Add all neighbors to stack
+        graph[current].each do |neighbor|
+          stack << neighbor unless visited.include?(neighbor)
+        end
+      end
+      
+      components << component.sort if component.any?
+    end
+    
+    components
   end
   
   def place_groups_on_grid(people_groups)
