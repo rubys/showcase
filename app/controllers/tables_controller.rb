@@ -1488,13 +1488,10 @@ class TablesController < ApplicationController
     end
     
     other_small_groups.each do |small_group|
-      # Absolutely protect paired studios from consolidation to preserve adjacency
+      # Allow paired studios to be consolidated, but only with unpaired studios
+      # This preserves adjacency while still allowing efficient table usage
       studio_id = small_group[:studio_id]
-      if paired_studio_ids.include?(studio_id)
-        # Keep paired studios as separate tables to maintain adjacency with their partners
-        large_tables << small_group
-        next
-      end
+      is_paired_studio = paired_studio_ids.include?(studio_id)
       
       fitted = false
       small_group_studio_ids = (small_group[:studio_ids] || [small_group[:studio_id]])
@@ -1531,25 +1528,37 @@ class TablesController < ApplicationController
       unless fitted
         large_tables.each do |large_group|
           available_space = table_size - large_group[:people].size
+          next if small_group[:people].size > available_space
           
-          if small_group[:people].size <= available_space
-            # Fit the small group into this large table
-            large_group[:people] += small_group[:people]
-            
-            # Update the studio name and studio_ids to reflect the mix
-            if large_group[:studio_name] && !large_group[:studio_name].include?(small_group[:studio_name])
-              large_group[:studio_name] = "#{large_group[:studio_name]} & #{small_group[:studio_name]}"
-              large_group[:is_mixed] = true
-            end
-            
-            # Update studio_ids to include all represented studios
-            large_group[:studio_ids] = (large_group[:studio_ids] || [large_group[:studio_id]]) + 
-                                     (small_group[:studio_ids] || [small_group[:studio_id]])
-            large_group[:studio_ids].uniq!
-            
-            fitted = true
-            break
+          # If this is a paired studio, ensure target table only contains unpaired studios
+          if is_paired_studio
+            large_group_studio_ids = (large_group[:studio_ids] || [large_group[:studio_id]])
+            target_has_paired_studios = large_group_studio_ids.any? { |id| paired_studio_ids.include?(id) }
+            next if target_has_paired_studios  # Skip tables with other paired studios
           end
+          
+          # Fit the small group into this large table
+          large_group[:people] += small_group[:people]
+          
+          # Update the studio name and studio_ids to reflect the mix
+          if large_group[:studio_name] && !large_group[:studio_name].include?(small_group[:studio_name])
+            large_group[:studio_name] = "#{large_group[:studio_name]} & #{small_group[:studio_name]}"
+            large_group[:is_mixed] = true
+          end
+          
+          # Update studio_ids to include all represented studios
+          large_group[:studio_ids] = (large_group[:studio_ids] || [large_group[:studio_id]]) + 
+                                   (small_group[:studio_ids] || [small_group[:studio_id]])
+          large_group[:studio_ids].uniq!
+          
+          # Preserve coordination group and adjacency requirements from paired studios
+          if is_paired_studio && small_group[:coordination_group]
+            large_group[:coordination_group] = small_group[:coordination_group]
+            large_group[:needs_adjacency] = true
+          end
+          
+          fitted = true
+          break
         end
       end
       
