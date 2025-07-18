@@ -8,8 +8,8 @@ class TablesController < ApplicationController
 
   # GET /tables or /tables.json
   def index
-    @tables = Table.includes(people: :studio).where(option_id: @option&.id)
-    @columns = Table.maximum(:col) || 8
+    @tables = Table.includes(people: :studio).where(option_id: @option&.id).order(:row, :col)
+    @columns = (Table.maximum(:col) || 7) + 1
     
     # Add capacity status for each table
     @tables.each do |table|
@@ -612,25 +612,28 @@ class TablesController < ApplicationController
         studio_name = table_data.first[:studio_name]
         table_numbers = table_data.map { |td| td[:table].number }.sort
         
-        # Check if table numbers are contiguous
-        unless contiguous_numbers?(table_numbers)
+        # Check if table numbers are contiguous OR if table positions are contiguous
+        tables_with_positions = table_data.map { |td| td[:table] }.select { |t| t.row && t.col }
+        
+        is_non_contiguous = false
+        
+        # Check table number contiguity
+        if !contiguous_numbers?(table_numbers)
+          is_non_contiguous = true
+        end
+        
+        # Also check position contiguity if we have position data
+        if tables_with_positions.length > 1 && !contiguous?(tables_with_positions)
+          is_non_contiguous = true
+        end
+        
+        # Create single issue if non-contiguous
+        if is_non_contiguous
           issues << {
             type: :non_contiguous_studio,
             option: option_name,
             studio: studio_name,
             tables: table_numbers
-          }
-        end
-        
-        # Check if table positions are contiguous (adjacent)
-        tables_with_positions = table_data.map { |td| td[:table] }.select { |t| t.row && t.col }
-        if tables_with_positions.length > 1 && !contiguous?(tables_with_positions)
-          positions = tables_with_positions.map { |t| "#{t.number}(#{t.row},#{t.col})" }
-          issues << {
-            type: :non_contiguous_studio,
-            option: option_name,
-            studio: studio_name,
-            tables: positions
           }
         end
       end
@@ -1148,6 +1151,9 @@ class TablesController < ApplicationController
     # Consolidate small tables to minimize table count
     people_groups = consolidate_small_tables(people_groups, table_size)
     
+    # Post-processing: eliminate ANY remaining small tables (1-3 people)
+    people_groups = eliminate_remaining_small_tables(people_groups, table_size)
+    
     people_groups
   end
   
@@ -1162,9 +1168,11 @@ class TablesController < ApplicationController
     people_groups.each do |group|
       group_size = group[:people].size
       
-      # Consolidate very small tables (1-4 people) aggressively
-      if group_size <= 4 && 
+      # Consolidate very small tables (1-3 people) ALWAYS
+      # Tables with 4+ people are okay to keep
+      if group_size <= 3 && 
          group[:studio_id] != 0  # Don't consolidate Event Staff
+         # Always consolidate 1-3 person tables regardless of pairing/coordination
         
         small_tables << group
       else
@@ -1175,7 +1183,8 @@ class TablesController < ApplicationController
     # Sort small tables by size (smallest first for better packing)
     small_tables.sort_by! { |group| group[:people].size }
     
-    # Consolidate small tables
+    # Smart consolidation: only consolidate truly independent small studios
+    # Preserve studio integrity for paired/connected studios
     consolidated_tables = []
     current_table = []
     current_studios = []
@@ -1191,10 +1200,10 @@ class TablesController < ApplicationController
         if current_table.any?
           consolidated_tables << {
             people: current_table,
-            studio_id: nil,  # Mixed studios
+            studio_id: current_studios.size == 1 ? current_table.first.studio_id : nil,
             studio_name: current_studios.join(' & '),
             split_group: nil,
-            is_mixed: true
+            is_mixed: current_studios.size > 1
           }
         end
         
@@ -1208,10 +1217,10 @@ class TablesController < ApplicationController
     if current_table.any?
       consolidated_tables << {
         people: current_table,
-        studio_id: nil,  # Mixed studios
+        studio_id: current_studios.size == 1 ? current_table.first.studio_id : nil,
         studio_name: current_studios.join(' & '),
         split_group: nil,
-        is_mixed: true
+        is_mixed: current_studios.size > 1
       }
     end
     
@@ -1226,6 +1235,53 @@ class TablesController < ApplicationController
     end
     
     result
+  end
+  
+  def eliminate_remaining_small_tables(people_groups, table_size)
+    # Final pass: eliminate any remaining small tables (1-3 people)
+    # by fitting them into existing tables with available capacity
+    
+    small_tables = []
+    large_tables = []
+    
+    people_groups.each do |group|
+      if group[:people].size <= 3
+        small_tables << group
+      else
+        large_tables << group
+      end
+    end
+    
+    # Try to fit small tables into large tables with available space
+    small_tables.each do |small_group|
+      fitted = false
+      
+      # Find a large table with enough space
+      large_tables.each do |large_group|
+        available_space = table_size - large_group[:people].size
+        
+        if small_group[:people].size <= available_space
+          # Fit the small group into this large table
+          large_group[:people] += small_group[:people]
+          
+          # Update the studio name to reflect the mix
+          if large_group[:studio_name] && !large_group[:studio_name].include?(small_group[:studio_name])
+            large_group[:studio_name] = "#{large_group[:studio_name]} & #{small_group[:studio_name]}"
+            large_group[:is_mixed] = true
+          end
+          
+          fitted = true
+          break
+        end
+      end
+      
+      # If we couldn't fit it, keep it as a separate table (shouldn't happen with proper space)
+      unless fitted
+        large_tables << small_group
+      end
+    end
+    
+    large_tables
   end
   
   def build_connected_components(studio_pairs)
@@ -1275,35 +1331,49 @@ class TablesController < ApplicationController
   
   def place_groups_on_grid(people_groups)
     # Phase 2: Place groups on grid (where tables go)
-    # Clean, plan-based approach:
-    # 1. Identify studios that need multiple adjacent tables
-    # 2. Place those multi-table groups first
-    # 3. Fill in the remaining single tables
+    # Simplified approach that handles connected components properly
     
     positions = []
     max_cols = 8
     created_tables = []
     
-    # Step 1: Build the placement plan
-    placement_plan = build_table_placement_plan(people_groups)
+    # Step 1: Group tables by coordination groups and studio splits
+    # For coordination groups, remove the index suffix to group split tables together
+    coordination_groups = people_groups.group_by do |group|
+      coord_group = group[:coordination_group]
+      if coord_group && coord_group.split('_').length > 4 && coord_group.start_with?('component_')
+        # Remove the index suffix (e.g., "component_18_35_54_0" -> "component_18_35_54")
+        coord_group.split('_')[0..-2].join('_')
+      else
+        coord_group
+      end
+    end
+    split_groups = people_groups.group_by { |group| group[:split_group]&.split('_')&.first(2)&.join('_') }
     
-    # Step 2: Place coordinated groups first (shared table clusters)
-    placement_plan[:coordinated_groups].each do |group_plan|
-      place_coordinated_group(group_plan, positions, max_cols, created_tables)
+    # Step 2: Place connected components first (highest priority)
+    coordination_groups.each do |coordination_key, groups|
+      next if coordination_key.nil?
+      
+      # Place all tables in this coordination group together
+      place_connected_component(groups, positions, max_cols, created_tables)
     end
     
-    # Step 3: Place explicit multi-table groups (from Phase 1 splits)
-    placement_plan[:explicit_multi_table_groups].each do |group_plan|
-      place_multi_table_group(group_plan, positions, max_cols, created_tables)
+    # Step 3: Place multi-table studios (studios with split groups)
+    split_groups.each do |split_key, groups|
+      next if split_key.nil? || split_key.empty?
+      next if groups.any? { |g| g[:coordination_group] } # Skip if already placed
+      
+      # Place all tables for this studio together
+      place_multi_table_studio(groups, positions, max_cols, created_tables)
     end
     
-    # Step 4: Place studio pair coordination groups (paired studios that need adjacent placement)
-    placement_plan[:pair_coordination_groups].each do |group_plan|
-      place_pair_coordination_group(group_plan, positions, max_cols, created_tables)
+    # Step 4: Place remaining single tables
+    remaining_groups = people_groups.reject do |group|
+      group[:coordination_group] || 
+      (group[:split_group] && !group[:split_group].empty?)
     end
     
-    # Step 5: Place single tables in remaining positions
-    placement_plan[:single_tables].each do |group|
+    remaining_groups.each do |group|
       place_single_table(group, positions, max_cols, created_tables)
     end
     
@@ -1311,6 +1381,124 @@ class TablesController < ApplicationController
     renumber_tables_by_position
     
     created_tables
+  end
+  
+  def place_connected_component(groups, positions, max_cols, created_tables)
+    # Place all tables in a connected component together as a contiguous block
+    return if groups.empty?
+    
+    # Find the best position for this component
+    component_size = groups.size
+    best_position = find_best_contiguous_position(component_size, positions, max_cols)
+    
+    # Place all tables in the component at adjacent positions
+    groups.each_with_index do |group, index|
+      row, col = best_position[index]
+      table = create_table_at_position(group, row, col)
+      created_tables << table
+      positions << [row, col]
+    end
+  end
+  
+  def place_multi_table_studio(groups, positions, max_cols, created_tables)
+    # Place all tables for a studio together as a contiguous block
+    return if groups.empty?
+    
+    # Sort groups by split index if available
+    sorted_groups = groups.sort_by do |group|
+      if group[:split_group] && group[:split_group].include?('_')
+        group[:split_group].split('_').last.to_i
+      else
+        0
+      end
+    end
+    
+    # Find the best position for this studio's tables
+    studio_size = sorted_groups.size
+    best_position = find_best_contiguous_position(studio_size, positions, max_cols)
+    
+    # Place all tables for this studio at adjacent positions
+    sorted_groups.each_with_index do |group, index|
+      row, col = best_position[index]
+      table = create_table_at_position(group, row, col)
+      created_tables << table
+      positions << [row, col]
+    end
+  end
+  
+  def find_best_contiguous_position(size, positions, max_cols)
+    # Find the best contiguous block of positions for the given size
+    occupied = positions.to_set
+    
+    # Try to find a horizontal block first
+    (0..Float::INFINITY).each do |row|
+      (0..max_cols - size).each do |start_col|
+        block_positions = (0...size).map { |i| [row, start_col + i] }
+        
+        if block_positions.none? { |pos| occupied.include?(pos) }
+          return block_positions
+        end
+      end
+    end
+    
+    # Fallback: return individual positions (shouldn't happen with proper grid)
+    positions_array = []
+    row = 0
+    col = 0
+    
+    size.times do
+      while occupied.include?([row, col])
+        col += 1
+        if col >= max_cols
+          col = 0
+          row += 1
+        end
+      end
+      positions_array << [row, col]
+      col += 1
+      if col >= max_cols
+        col = 0
+        row += 1
+      end
+    end
+    
+    positions_array
+  end
+  
+  def create_table_at_position(group, row, col)
+    # Create a table at the specified grid position
+    if @option
+      # Use a temporary unique number (row * 1000 + col) to avoid conflicts
+      temp_number = row * 1000 + col + 1
+      table = Table.create!(
+        option_id: @option.id,
+        number: temp_number, # Will be renumbered later
+        row: row,
+        col: col
+      )
+      
+      # Assign people to the table through person_options
+      group[:people].each do |person|
+        person_option = PersonOption.find_by(person: person, option: @option)
+        person_option&.update!(table: table)
+      end
+    else
+      # Main event table
+      # Use a temporary unique number (row * 1000 + col) to avoid conflicts
+      temp_number = row * 1000 + col + 1
+      table = Table.create!(
+        number: temp_number, # Will be renumbered later
+        row: row,
+        col: col
+      )
+      
+      # Assign people directly to the table
+      group[:people].each do |person|
+        person.update!(table: table)
+      end
+    end
+    
+    table
   end
   
   def build_table_placement_plan(people_groups)
@@ -1544,14 +1732,24 @@ class TablesController < ApplicationController
   
   def place_single_table(group, positions, max_cols, created_tables)
     # Place a single table at the next available position
-    table = create_and_assign_table(created_tables.size + 1, group[:people])
-    pos = find_next_position(positions, max_cols)
+    occupied = positions.to_set
     
-    if pos
-      positions << pos
-      table.update!(row: pos[:row], col: pos[:col])
-      created_tables << table
+    # Find next available position
+    row = 0
+    col = 0
+    
+    while occupied.include?([row, col])
+      col += 1
+      if col >= max_cols
+        col = 0
+        row += 1
+      end
     end
+    
+    # Create table at this position
+    table = create_table_at_position(group, row, col)
+    created_tables << table
+    positions << [row, col]
   end
 
   def place_pair_coordination_group(group_plan, positions, max_cols, created_tables)

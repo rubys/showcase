@@ -72,7 +72,7 @@
         related_tables = table_relations[table.id] || []
       %>
       <% if table.row and table.col %>
-      <div draggable="true" class="hover:bg-yellow-200 p-2 border rounded <%= capacity_class %>" data-id="<%= table.id %>" data-related-tables="<%= related_tables.join(',') %>" style="grid-row:<%= table.row %>; grid-column:<%= table.col %>">
+      <div draggable="true" class="hover:bg-yellow-200 p-2 border rounded <%= capacity_class %>" data-id="<%= table.id %>" data-related-tables="<%= related_tables.join(',') %>" style="grid-row:<%= table.row + 1 %>; grid-column:<%= table.col + 1 %>">
       <% else %>
       <div draggable="true" class="hover:bg-yellow-200 p-2 border rounded <%= capacity_class %>" data-id="<%= table.id %>" data-related-tables="<%= related_tables.join(',') %>" >
       <% end %>
