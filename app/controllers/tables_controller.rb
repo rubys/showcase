@@ -1651,10 +1651,14 @@ class TablesController < ApplicationController
       group[:original_coordination_group] = group[:coordination_group] if group[:coordination_group]
       group[:original_split_group] = group[:split_group] if group[:split_group]
       
-      # Assign mixed table coordination group
-      group[:coordination_group] = coord_key
-      group[:split_group] = nil
-      Rails.logger.info "Assigned mixed table coordination: Group #{group_index} -> #{coord_key}"
+      # Only assign mixed table coordination group if there isn't already a coordination group from pairing
+      if group[:coordination_group].nil?
+        group[:coordination_group] = coord_key
+        group[:split_group] = nil
+        Rails.logger.info "Assigned mixed table coordination: Group #{group_index} -> #{coord_key}"
+      else
+        Rails.logger.info "Preserving existing coordination group: Group #{group_index} -> #{group[:coordination_group]}"
+      end
     end
     
     # Then, assign individual studio coordination groups (only for non-mixed tables)
@@ -1670,6 +1674,9 @@ class TablesController < ApplicationController
         
         # Skip if this group already has a mixed table coordination group
         next if mixed_tables[group_index]
+        
+        # Skip if this group already has a coordination group from pairing logic
+        next if ref[:group][:coordination_group]
         
         # Preserve original grouping information
         ref[:group][:original_coordination_group] = ref[:group][:coordination_group] if ref[:group][:coordination_group]
@@ -1780,6 +1787,8 @@ class TablesController < ApplicationController
     
     # Check if this is a mixed table coordination group
     coordination_key = groups.first[:coordination_group]
+    
+    
     if coordination_key&.start_with?('mixed_table_')
       # For mixed table coordination groups, reorder groups to place each studio's tables adjacent
       place_mixed_table_coordination_group(groups, positions, max_cols, created_tables)
@@ -1788,12 +1797,14 @@ class TablesController < ApplicationController
       component_size = groups.size
       best_position = find_best_contiguous_position(component_size, positions, max_cols)
       
+      
       # Place all tables in the component at adjacent positions
       groups.each_with_index do |group, index|
         row, col = best_position[index]
         table = create_table_at_position(group, row, col)
         created_tables << table
         positions << [row, col]
+        
       end
     end
   end
