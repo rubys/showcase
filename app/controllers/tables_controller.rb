@@ -1268,7 +1268,7 @@ class TablesController < ApplicationController
         has_pairing = pairs.exists?
       end
       
-      if group_size <= 4 && 
+      if group_size <= table_size / 2 && 
          group[:studio_id] != 0 &&  # Don't consolidate Event Staff
          !group[:coordination_group] &&  # Don't consolidate connected components
          !group[:is_paired] &&  # Don't consolidate paired studios
