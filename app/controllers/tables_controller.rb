@@ -1168,11 +1168,11 @@ class TablesController < ApplicationController
     people_groups.each do |group|
       group_size = group[:people].size
       
-      # Consolidate very small tables (1-3 people) ALWAYS
-      # Tables with 4+ people are okay to keep
-      if group_size <= 3 && 
-         group[:studio_id] != 0  # Don't consolidate Event Staff
-         # Always consolidate 1-3 person tables regardless of pairing/coordination
+      # Consolidate small tables (1-4 people) but protect connected components
+      if group_size <= 4 && 
+         group[:studio_id] != 0 &&  # Don't consolidate Event Staff
+         !group[:coordination_group] &&  # Don't consolidate connected components
+         !group[:is_paired]  # Don't consolidate paired studios
         
         small_tables << group
       else
