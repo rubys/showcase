@@ -1566,20 +1566,87 @@ class TablesController < ApplicationController
     
     # Step 1.6: Fix coordination groups for studios that appear in multiple groups
     # This handles cases where consolidation created mixed tables without proper grouping
+    
+    # First, identify all mixed tables (tables with multiple studios needing coordination)
+    mixed_tables = {}
     multi_table_studios.each do |studio_id, group_refs|
-      # For any studio that appears in multiple groups, create a unified coordination group
-      # This is simpler and more reliable than trying to detect all the different cases
-      if group_refs.length > 1
-        coord_key = "multi_studio_#{studio_id}"
+      next unless group_refs.length > 1
+      
+      group_refs.each do |ref|
+        group = ref[:group]
+        group_index = ref[:index]
         
+        # Check if this group has multiple studios that need coordination
+        studios_in_group = group[:studio_ids] || [group[:studio_id]]
+        studios_needing_coord = studios_in_group.select { |sid| multi_table_studios.key?(sid) }
+        
+        if studios_needing_coord.length > 1
+          # This is a mixed table with multiple studios needing coordination
+          coord_key = "mixed_table_#{studios_needing_coord.sort.join('_')}"
+          mixed_tables[group_index] = coord_key
+          Rails.logger.info "Mixed table detected: Group #{group_index} (#{studios_needing_coord.join(', ')}) -> #{coord_key}"
+        end
+      end
+    end
+    
+    # Apply coordination groups
+    # First, assign mixed table coordination groups to avoid overwriting
+    mixed_tables.each do |group_index, coord_key|
+      group = people_groups[group_index]
+      next unless group
+      
+      # Preserve original grouping information
+      group[:original_coordination_group] = group[:coordination_group] if group[:coordination_group]
+      group[:original_split_group] = group[:split_group] if group[:split_group]
+      
+      # Assign mixed table coordination group
+      group[:coordination_group] = coord_key
+      group[:split_group] = nil
+      Rails.logger.info "Assigned mixed table coordination: Group #{group_index} -> #{coord_key}"
+    end
+    
+    # Then, assign individual studio coordination groups (only for non-mixed tables)
+    multi_table_studios.each do |studio_id, group_refs|
+      next unless group_refs.length > 1
+      
+      # Create a unified coordination group for all groups of this studio
+      coord_key = "multi_studio_#{studio_id}"
+      
+      group_refs.each do |ref|
+        group = ref[:group]
+        group_index = ref[:index]
+        
+        # Skip if this group already has a mixed table coordination group
+        next if mixed_tables[group_index]
+        
+        # Preserve original grouping information
+        ref[:group][:original_coordination_group] = ref[:group][:coordination_group] if ref[:group][:coordination_group]
+        ref[:group][:original_split_group] = ref[:group][:split_group] if ref[:group][:split_group]
+        
+        # Use studio-specific coordination group
+        ref[:group][:coordination_group] = coord_key
+        ref[:group][:split_group] = nil
+        Rails.logger.info "Assigned studio coordination: Group #{group_index} -> #{coord_key}"
+      end
+      
+      # Check if this studio appears in any mixed tables
+      mixed_coord_key = nil
+      mixed_tables.each do |group_index, coord_key|
+        group = people_groups[group_index]
+        next unless group
+        
+        studio_ids = group[:studio_ids] || [group[:studio_id]]
+        if studio_ids.include?(studio_id)
+          mixed_coord_key = coord_key
+          break
+        end
+      end
+      
+      # If this studio appears in a mixed table, use the mixed table coordination group for all its groups
+      if mixed_coord_key
         group_refs.each do |ref|
-          # Preserve original grouping information
-          ref[:group][:original_coordination_group] = ref[:group][:coordination_group] if ref[:group][:coordination_group]
-          ref[:group][:original_split_group] = ref[:group][:split_group] if ref[:group][:split_group]
-          
-          # Override with unified coordination group
-          ref[:group][:coordination_group] = coord_key
-          ref[:group][:split_group] = nil
+          ref[:group][:coordination_group] = mixed_coord_key
+          Rails.logger.info "Updated studio coordination to match mixed table: Group #{ref[:index]} -> #{mixed_coord_key}"
         end
       end
     end
@@ -1659,12 +1726,102 @@ class TablesController < ApplicationController
     # Place all tables in a connected component together as a contiguous block
     return if groups.empty?
     
+    # Check if this is a mixed table coordination group
+    coordination_key = groups.first[:coordination_group]
+    if coordination_key&.start_with?('mixed_table_')
+      # For mixed table coordination groups, reorder groups to place each studio's tables adjacent
+      place_mixed_table_coordination_group(groups, positions, max_cols, created_tables)
+    else
+      # For regular coordination groups, place in order
+      component_size = groups.size
+      best_position = find_best_contiguous_position(component_size, positions, max_cols)
+      
+      # Place all tables in the component at adjacent positions
+      groups.each_with_index do |group, index|
+        row, col = best_position[index]
+        table = create_table_at_position(group, row, col)
+        created_tables << table
+        positions << [row, col]
+      end
+    end
+  end
+  
+  def place_mixed_table_coordination_group(groups, positions, max_cols, created_tables)
+    # For mixed table coordination groups, the goal is to place each studio's tables
+    # (both pure and mixed) adjacent to each other for contiguity.
+    #
+    # Example: Hornsby has 1 pure table + 1 mixed table
+    # We want: [Pure Hornsby, Mixed table with Hornsby, ...]
+    # Not: [Pure Hornsby, ..., Mixed table with Hornsby] (distance 4)
+    
+    # Separate pure studio tables from mixed tables
+    pure_studio_groups = []
+    mixed_groups = []
+    
+    groups.each do |group|
+      studio_ids = group[:studio_ids] || [group[:studio_id]]
+      if studio_ids.length == 1
+        pure_studio_groups << group
+      else
+        mixed_groups << group
+      end
+    end
+    
+    # Group pure studio tables by studio
+    studio_groups = {}
+    pure_studio_groups.each do |group|
+      studio_id = group[:studio_id]
+      studio_groups[studio_id] ||= []
+      studio_groups[studio_id] << group
+    end
+    
+    # Create ordered groups: place each studio's pure tables, then immediately place 
+    # the mixed table (since it contains people from all studios)
+    ordered_groups = []
+    
+    # Strategy: Place studios in order, but place the mixed table after the first studio
+    # This ensures the mixed table is adjacent to at least one studio's pure tables
+    studio_ids = studio_groups.keys.sort
+    
+    if studio_ids.any?
+      # Place first studio's tables
+      first_studio_id = studio_ids.first
+      studio_group_list = studio_groups[first_studio_id]
+      sorted_studio_groups = studio_group_list.sort_by do |group|
+        if group[:split_group] && group[:split_group].include?('_')
+          group[:split_group].split('_').last.to_i
+        else
+          0
+        end
+      end
+      ordered_groups.concat(sorted_studio_groups)
+      
+      # Place mixed table immediately after first studio
+      ordered_groups.concat(mixed_groups)
+      
+      # Place remaining studios' tables
+      studio_ids[1..-1].each do |studio_id|
+        studio_group_list = studio_groups[studio_id]
+        sorted_studio_groups = studio_group_list.sort_by do |group|
+          if group[:split_group] && group[:split_group].include?('_')
+            group[:split_group].split('_').last.to_i
+          else
+            0
+          end
+        end
+        ordered_groups.concat(sorted_studio_groups)
+      end
+    else
+      # No pure studio tables, just place mixed tables
+      ordered_groups.concat(mixed_groups)
+    end
+    
     # Find the best position for this component
-    component_size = groups.size
+    component_size = ordered_groups.size
     best_position = find_best_contiguous_position(component_size, positions, max_cols)
     
-    # Place all tables in the component at adjacent positions
-    groups.each_with_index do |group, index|
+    # Place all tables in the reordered sequence
+    ordered_groups.each_with_index do |group, index|
       row, col = best_position[index]
       table = create_table_at_position(group, row, col)
       created_tables << table

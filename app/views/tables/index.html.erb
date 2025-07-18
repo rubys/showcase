@@ -50,7 +50,7 @@
         end
       %>
       <% if table.row and table.col %>
-        <%= link_to edit_table_path(table, option_id: @option&.id), class: "p-2 border rounded #{capacity_class} hover:bg-blue-100 cursor-pointer block text-decoration-none", style: "grid-row:#{table.row}; grid-column:#{table.col}" do %>
+        <%= link_to edit_table_path(table, option_id: @option&.id), class: "p-2 border rounded #{capacity_class} hover:bg-blue-100 cursor-pointer block text-decoration-none", style: "grid-row:#{table.row + 1}; grid-column:#{table.col + 1}" do %>
           <div class="font-bold text-gray-900">Table <%= table.number %></div>
           <div class="text-sm text-gray-600"><%= table.name %></div>
           <div class="text-xs text-gray-500"><%= table.people_count %>/<%= table.table_size %></div>
