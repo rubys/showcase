@@ -1747,12 +1747,155 @@ class TablesController < ApplicationController
   end
   
   def place_mixed_table_coordination_group(groups, positions, max_cols, created_tables)
-    # For mixed table coordination groups, the goal is to place each studio's tables
-    # (both pure and mixed) adjacent to each other for contiguity.
-    #
-    # Example: Hornsby has 1 pure table + 1 mixed table
-    # We want: [Pure Hornsby, Mixed table with Hornsby, ...]
-    # Not: [Pure Hornsby, ..., Mixed table with Hornsby] (distance 4)
+    # For mixed table coordination groups, use a "hub and spoke" approach:
+    # Place the mixed table at the center, with pure studio tables adjacent to it
+    # This ensures all studios have distance 1 to their mixed table for optimal contiguity
+    
+    # Separate pure studio tables from mixed tables
+    pure_studio_groups = []
+    mixed_groups = []
+    
+    groups.each do |group|
+      studio_ids = group[:studio_ids] || [group[:studio_id]]
+      if studio_ids.length == 1
+        pure_studio_groups << group
+      else
+        mixed_groups << group
+      end
+    end
+    
+    # For hub-and-spoke placement, we need to place the mixed table first,
+    # then place pure studio tables in adjacent positions
+    if mixed_groups.any?
+      # Find a position for the mixed table (hub) that has enough adjacent spots
+      mixed_table_group = mixed_groups.first
+      hub_position = find_hub_position_with_adjacent_spots(positions, max_cols, pure_studio_groups.size)
+      
+      if hub_position
+        # Place the mixed table at the hub position
+        table = create_table_at_position(mixed_table_group, hub_position[:row], hub_position[:col])
+        created_tables << table
+        positions << [hub_position[:row], hub_position[:col]]
+        
+        # Place pure studio tables in adjacent positions around the hub
+        adjacent_positions = [
+          { row: hub_position[:row] - 1, col: hub_position[:col] },     # Above
+          { row: hub_position[:row], col: hub_position[:col] - 1 },     # Left
+          { row: hub_position[:row], col: hub_position[:col] + 1 },     # Right
+          { row: hub_position[:row] + 1, col: hub_position[:col] }      # Below
+        ]
+        
+        # Filter valid positions and sort pure studio groups for consistent placement
+        valid_adjacent_positions = adjacent_positions.select do |pos|
+          pos[:row] >= 0 && pos[:row] < 10 && pos[:col] >= 0 && pos[:col] < max_cols &&
+          !positions.any? { |p| p[0] == pos[:row] && p[1] == pos[:col] }
+        end
+        
+        # Group pure studio tables by studio and sort for consistent ordering
+        studio_groups = {}
+        pure_studio_groups.each do |group|
+          studio_id = group[:studio_id]
+          studio_groups[studio_id] ||= []
+          studio_groups[studio_id] << group
+        end
+        
+        # Create ordered list of pure studio groups
+        ordered_pure_groups = []
+        studio_groups.keys.sort.each do |studio_id|
+          studio_group_list = studio_groups[studio_id]
+          sorted_studio_groups = studio_group_list.sort_by do |group|
+            if group[:split_group] && group[:split_group].include?('_')
+              group[:split_group].split('_').last.to_i
+            else
+              0
+            end
+          end
+          ordered_pure_groups.concat(sorted_studio_groups)
+        end
+        
+        # Place pure studio tables in adjacent positions
+        ordered_pure_groups.each_with_index do |group, index|
+          if index < valid_adjacent_positions.size
+            pos = valid_adjacent_positions[index]
+            table = create_table_at_position(group, pos[:row], pos[:col])
+            created_tables << table
+            positions << [pos[:row], pos[:col]]
+          else
+            # If we run out of adjacent positions, place in next available spot
+            next_pos = find_next_available_position(positions, max_cols)
+            table = create_table_at_position(group, next_pos[:row], next_pos[:col])
+            created_tables << table
+            positions << [next_pos[:row], next_pos[:col]]
+          end
+        end
+      else
+        # Fallback to linear placement if hub position not found
+        place_linear_mixed_table_coordination_group(groups, positions, max_cols, created_tables)
+      end
+    else
+      # No mixed tables, just place pure studio tables
+      pure_studio_groups.each do |group|
+        next_pos = find_next_available_position(positions, max_cols)
+        table = create_table_at_position(group, next_pos[:row], next_pos[:col])
+        created_tables << table
+        positions << [next_pos[:row], next_pos[:col]]
+      end
+    end
+  end
+  
+  def find_hub_position_with_adjacent_spots(positions, max_cols, needed_adjacent_spots)
+    # Find a position that has enough adjacent spots for the pure studio tables
+    # We need at least needed_adjacent_spots adjacent positions
+    
+    occupied = positions.to_set
+    
+    # Try each position in the grid
+    (0..5).each do |row|
+      (0...max_cols).each do |col|
+        next if occupied.include?([row, col])
+        
+        # Check how many adjacent spots are available
+        adjacent_positions = [
+          [row - 1, col],     # Above
+          [row, col - 1],     # Left
+          [row, col + 1],     # Right
+          [row + 1, col]      # Below
+        ]
+        
+        available_adjacent = adjacent_positions.select do |adj_row, adj_col|
+          adj_row >= 0 && adj_row < 10 && adj_col >= 0 && adj_col < max_cols &&
+          !occupied.include?([adj_row, adj_col])
+        end
+        
+        if available_adjacent.size >= needed_adjacent_spots
+          return { row: row, col: col }
+        end
+      end
+    end
+    
+    # If no position with enough adjacent spots, return nil
+    nil
+  end
+  
+  def find_next_available_position(positions, max_cols)
+    # Find the next available position in the grid
+    occupied = positions.to_set
+    
+    (0..5).each do |row|
+      (0...max_cols).each do |col|
+        unless occupied.include?([row, col])
+          return { row: row, col: col }
+        end
+      end
+    end
+    
+    # Fallback - should not happen in normal scenarios
+    { row: 0, col: 0 }
+  end
+  
+  def place_linear_mixed_table_coordination_group(groups, positions, max_cols, created_tables)
+    # Fallback to the previous linear placement strategy
+    # This is the original implementation for when hub placement fails
     
     # Separate pure studio tables from mixed tables
     pure_studio_groups = []
