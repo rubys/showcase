@@ -612,19 +612,22 @@ class TablesController < ApplicationController
         studio_name = table_data.first[:studio_name]
         table_numbers = table_data.map { |td| td[:table].number }.sort
         
-        # Check if table numbers are contiguous OR if table positions are contiguous
+        # Check if this studio's tables are properly contiguous
+        # This includes both direct adjacency and hub-and-spoke patterns
         tables_with_positions = table_data.map { |td| td[:table] }.select { |t| t.row && t.col }
         
         is_non_contiguous = false
         
-        # Check table number contiguity
-        if !contiguous_numbers?(table_numbers)
-          is_non_contiguous = true
-        end
-        
-        # Also check position contiguity if we have position data
-        if tables_with_positions.length > 1 && !contiguous?(tables_with_positions)
-          is_non_contiguous = true
+        if tables_with_positions.length > 1
+          # Check if tables are contiguous using enhanced logic
+          if !studio_tables_contiguous?(studio_id, tables_with_positions, tables)
+            is_non_contiguous = true
+          end
+        elsif tables_with_positions.length == 0
+          # No position data available, fall back to table number contiguity
+          if !contiguous_numbers?(table_numbers)
+            is_non_contiguous = true
+          end
         end
         
         # Create single issue if non-contiguous
@@ -731,6 +734,55 @@ class TablesController < ApplicationController
     
     # All positions should be visited if they form a connected group
     visited.size == positions.size
+  end
+
+  def studio_tables_contiguous?(studio_id, tables_with_positions, all_tables)
+    return true if tables_with_positions.length <= 1
+    
+    # First check if tables are directly contiguous
+    if contiguous?(tables_with_positions)
+      return true
+    end
+    
+    # If not directly contiguous, check for hub-and-spoke pattern
+    # Look for mixed tables that might connect this studio's tables
+    mixed_tables = find_mixed_tables_for_studio(studio_id, all_tables)
+    
+    return false if mixed_tables.empty?
+    
+    # Check if all studio tables are adjacent to at least one mixed table
+    mixed_table_positions = mixed_tables.map { |t| [t.row, t.col] }
+    
+    tables_with_positions.all? do |studio_table|
+      # Check if this studio table is adjacent to any mixed table
+      mixed_table_positions.any? do |mixed_pos|
+        distance = (studio_table.row - mixed_pos[0]).abs + (studio_table.col - mixed_pos[1]).abs
+        distance == 1
+      end
+    end
+  end
+
+  def find_mixed_tables_for_studio(studio_id, all_tables)
+    mixed_tables = []
+    
+    all_tables.each do |table|
+      # Get all people at this table
+      people = if table.option_id
+        table.person_options.includes(:person => :studio).map(&:person)
+      else
+        table.people.includes(:studio)
+      end
+      
+      # Group by studio
+      studios_at_table = people.group_by(&:studio_id).keys.reject { |id| id == 0 } # Exclude Event Staff
+      
+      # If this table has our studio AND other studios, it's a mixed table
+      if studios_at_table.include?(studio_id) && studios_at_table.length > 1
+        mixed_tables << table
+      end
+    end
+    
+    mixed_tables
   end
 
   def fill_table_with_studio_people(table, studio_id)
@@ -1090,8 +1142,8 @@ class TablesController < ApplicationController
           next if studio1_id >= studio2_id # Avoid duplicates and self-pairing
           
           # Get all groups for both studios
-          studio1_groups = people_groups.select { |g| g[:studio_id] == studio1_id && !g[:is_paired] }
-          studio2_groups = people_groups.select { |g| g[:studio_id] == studio2_id && !g[:is_paired] }
+          studio1_groups = people_groups.select { |g| g[:studio_id] == studio1_id && !g[:is_paired] && !g[:remove] }
+          studio2_groups = people_groups.select { |g| g[:studio_id] == studio2_id && !g[:is_paired] && !g[:remove] }
           
           # Try all combinations to find a fit
           studio1_groups.each do |group1|
