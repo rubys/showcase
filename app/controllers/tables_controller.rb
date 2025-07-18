@@ -1261,11 +1261,19 @@ class TablesController < ApplicationController
       group_size = group[:people].size
       
       # Consolidate small tables (1-4 people) but protect paired studios
+      # Check if this studio has pairing relationships
+      has_pairing = false
+      if group[:studio_id]
+        pairs = StudioPair.where('studio1_id = ? OR studio2_id = ?', group[:studio_id], group[:studio_id])
+        has_pairing = pairs.exists?
+      end
+      
       if group_size <= 4 && 
          group[:studio_id] != 0 &&  # Don't consolidate Event Staff
          !group[:coordination_group] &&  # Don't consolidate connected components
          !group[:is_paired] &&  # Don't consolidate paired studios
-         !group[:needs_adjacency]  # Don't consolidate studios that need adjacency
+         !group[:needs_adjacency] &&  # Don't consolidate studios that need adjacency
+         !has_pairing  # Don't consolidate studios with pairing relationships
         
         small_tables << group
       else
@@ -1468,7 +1476,26 @@ class TablesController < ApplicationController
     end
     
     # For other small groups, use normal consolidation
+    # Sort small groups to prioritize unpaired studios for consolidation
+    paired_studio_ids = get_all_paired_studio_ids()
+    
+    other_small_groups.sort_by! do |group|
+      studio_id = group[:studio_id]
+      # Priority order:
+      # 0 = no pairing (consolidate first)
+      # 1 = has pairing (consolidate last)
+      paired_studio_ids.include?(studio_id) ? 1 : 0
+    end
+    
     other_small_groups.each do |small_group|
+      # Absolutely protect paired studios from consolidation to preserve adjacency
+      studio_id = small_group[:studio_id]
+      if paired_studio_ids.include?(studio_id)
+        # Keep paired studios as separate tables to maintain adjacency with their partners
+        large_tables << small_group
+        next
+      end
+      
       fitted = false
       small_group_studio_ids = (small_group[:studio_ids] || [small_group[:studio_id]])
       
@@ -1533,6 +1560,28 @@ class TablesController < ApplicationController
     end
     
     large_tables
+  end
+  
+  def get_all_paired_studio_ids
+    # Get all studio IDs that have pairing relationships
+    paired_ids = Set.new
+    StudioPair.includes(:studio1, :studio2).each do |pair|
+      paired_ids.add(pair.studio1_id)
+      paired_ids.add(pair.studio2_id)
+    end
+    paired_ids
+  end
+  
+  def should_skip_consolidation_for_paired_studio?(small_group, other_small_groups, paired_studio_ids)
+    # Check if this studio has pairing relationships
+    small_studio_id = small_group[:studio_id]
+    return false unless paired_studio_ids.include?(small_studio_id)
+    
+    # Check if there are unpaired studios left to process
+    current_index = other_small_groups.index(small_group)
+    other_small_groups.drop(current_index + 1).any? do |remaining_group|
+      !paired_studio_ids.include?(remaining_group[:studio_id])
+    end
   end
   
   def build_connected_components(studio_pairs)

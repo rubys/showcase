@@ -130,10 +130,10 @@ class TablesTest < ApplicationSystemTestCase
     assert_selector "#grid[style*='display: grid']"
     assert_selector "#grid[style*='grid-template-columns']"
     
-    # Tables with row/col should have grid positioning
+    # Tables with row/col should have grid positioning (CSS uses row+1, col+1)
     if @table.row && @table.col
-      assert_selector "a[style*='grid-row:#{@table.row}']"
-      assert_selector "a[style*='grid-column:#{@table.col}']"
+      assert_selector "a[style*='grid-row:#{@table.row + 1}']"
+      assert_selector "a[style*='grid-column:#{@table.col + 1}']"
     end
   end
 
