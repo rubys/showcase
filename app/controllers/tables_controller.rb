@@ -994,6 +994,7 @@ class TablesController < ApplicationController
           people: event_staff_group[:people],
           studio_id: 0,
           studio_name: 'Event Staff',
+          studio_ids: [0],
           split_group: nil
         }
       else
@@ -1004,6 +1005,7 @@ class TablesController < ApplicationController
             people: people_slice,
             studio_id: 0,
             studio_name: 'Event Staff',
+            studio_ids: [0],
             split_group: "event_staff_#{split_index}",
             split_total: (event_staff_group[:size] / table_size.to_f).ceil
           }
@@ -1056,6 +1058,7 @@ class TablesController < ApplicationController
           people: all_people,
           studio_id: component_groups.first[:studio_id], # Use first studio as primary
           studio_name: component_studio_names.join(' & '),
+          studio_ids: component,
           is_paired: true,
           paired_studios: component,
           split_group: nil
@@ -1071,6 +1074,7 @@ class TablesController < ApplicationController
             people: people_slice,
             studio_id: component_groups.first[:studio_id],
             studio_name: component_studio_names.join(' & '),
+            studio_ids: component,
             is_paired: true,
             paired_studios: component,
             split_group: "component_#{component.sort.join('_')}_#{index}",
@@ -1109,6 +1113,7 @@ class TablesController < ApplicationController
             people: people_slice,
             studio_id: group[:studio_id],
             studio_name: group[:studio_name],
+            studio_ids: [group[:studio_id]],
             split_group: "studio_#{group[:studio_id]}_#{split_index}",
             split_total: total_tables_needed,
             split_index: split_index
@@ -1123,6 +1128,7 @@ class TablesController < ApplicationController
             people: group[:people].last(remainder_size),
             size: remainder_size,
             studio_name: group[:studio_name],
+            studio_ids: [group[:studio_id]],
             split_group: "studio_#{group[:studio_id]}_#{split_index}",
             split_total: total_tables_needed,
             split_index: split_index,
@@ -1143,6 +1149,7 @@ class TablesController < ApplicationController
         people: group[:people],
         studio_id: group[:studio_id],
         studio_name: group[:studio_name],
+        studio_ids: group[:studio_ids] || [group[:studio_id]],
         split_group: group[:split_group],
         is_remainder: true
       }
@@ -1188,6 +1195,7 @@ class TablesController < ApplicationController
     consolidated_tables = []
     current_table = []
     current_studios = []
+    current_studio_ids = []
     
     small_tables.each do |group|
       # Check if this group can fit in the current consolidated table
@@ -1195,6 +1203,7 @@ class TablesController < ApplicationController
         # Add to current table
         current_table += group[:people]
         current_studios << group[:studio_name]
+        current_studio_ids += (group[:studio_ids] || [group[:studio_id]])
       else
         # Start a new consolidated table
         if current_table.any?
@@ -1202,6 +1211,7 @@ class TablesController < ApplicationController
             people: current_table,
             studio_id: current_studios.size == 1 ? current_table.first.studio_id : nil,
             studio_name: current_studios.join(' & '),
+            studio_ids: current_studio_ids.uniq,
             split_group: nil,
             is_mixed: current_studios.size > 1
           }
@@ -1210,6 +1220,7 @@ class TablesController < ApplicationController
         # Start new table with current group
         current_table = group[:people].dup
         current_studios = [group[:studio_name]]
+        current_studio_ids = (group[:studio_ids] || [group[:studio_id]]).dup
       end
     end
     
@@ -1219,6 +1230,7 @@ class TablesController < ApplicationController
         people: current_table,
         studio_id: current_studios.size == 1 ? current_table.first.studio_id : nil,
         studio_name: current_studios.join(' & '),
+        studio_ids: current_studio_ids.uniq,
         split_group: nil,
         is_mixed: current_studios.size > 1
       }
@@ -1253,25 +1265,62 @@ class TablesController < ApplicationController
     end
     
     # Try to fit small tables into large tables with available space
+    # PREFER tables that already contain people from the same studio
     small_tables.each do |small_group|
       fitted = false
+      small_group_studio_ids = (small_group[:studio_ids] || [small_group[:studio_id]])
       
-      # Find a large table with enough space
+      # First pass: try to fit into tables that already contain people from this studio
       large_tables.each do |large_group|
         available_space = table_size - large_group[:people].size
+        next if small_group[:people].size > available_space
         
-        if small_group[:people].size <= available_space
+        large_group_studio_ids = (large_group[:studio_ids] || [large_group[:studio_id]])
+        
+        # Check if this large table already has people from this studio
+        if (small_group_studio_ids & large_group_studio_ids).any?
           # Fit the small group into this large table
           large_group[:people] += small_group[:people]
           
-          # Update the studio name to reflect the mix
+          # Update the studio name and studio_ids to reflect the mix
           if large_group[:studio_name] && !large_group[:studio_name].include?(small_group[:studio_name])
             large_group[:studio_name] = "#{large_group[:studio_name]} & #{small_group[:studio_name]}"
             large_group[:is_mixed] = true
           end
           
+          # Update studio_ids to include all represented studios
+          large_group[:studio_ids] = (large_group[:studio_ids] || [large_group[:studio_id]]) + 
+                                   (small_group[:studio_ids] || [small_group[:studio_id]])
+          large_group[:studio_ids].uniq!
+          
           fitted = true
           break
+        end
+      end
+      
+      # Second pass: if we couldn't fit into same-studio table, try any available table
+      unless fitted
+        large_tables.each do |large_group|
+          available_space = table_size - large_group[:people].size
+          
+          if small_group[:people].size <= available_space
+            # Fit the small group into this large table
+            large_group[:people] += small_group[:people]
+            
+            # Update the studio name and studio_ids to reflect the mix
+            if large_group[:studio_name] && !large_group[:studio_name].include?(small_group[:studio_name])
+              large_group[:studio_name] = "#{large_group[:studio_name]} & #{small_group[:studio_name]}"
+              large_group[:is_mixed] = true
+            end
+            
+            # Update studio_ids to include all represented studios
+            large_group[:studio_ids] = (large_group[:studio_ids] || [large_group[:studio_id]]) + 
+                                     (small_group[:studio_ids] || [small_group[:studio_id]])
+            large_group[:studio_ids].uniq!
+            
+            fitted = true
+            break
+          end
         end
       end
       
@@ -1350,6 +1399,72 @@ class TablesController < ApplicationController
     end
     split_groups = people_groups.group_by { |group| group[:split_group]&.split('_')&.first(2)&.join('_') }
     
+    
+    # Step 1.5: Build a lookup of which groups each studio appears in
+    studio_to_groups = Hash.new { |h, k| h[k] = [] }
+    people_groups.each_with_index do |group, index|
+      studio_ids = group[:studio_ids] || [group[:studio_id]]
+      studio_ids.each do |studio_id|
+        studio_to_groups[studio_id] << { group: group, index: index }
+      end
+    end
+    
+    # Debug: log studios that appear in multiple groups
+    multi_table_studios = studio_to_groups.select { |studio_id, group_refs| 
+      studio_id && studio_id != 0 && group_refs.length > 1 
+    }
+    
+    # Step 1.6: Fix coordination groups for studios that appear in multiple groups
+    # This handles cases where consolidation created mixed tables without proper grouping
+    multi_table_studios.each do |studio_id, group_refs|
+      # Check if this studio has groups with different or missing coordination/split groups
+      has_split = group_refs.any? { |ref| ref[:group][:split_group] }
+      has_no_split = group_refs.any? { |ref| !ref[:group][:split_group] && !ref[:group][:coordination_group] }
+      has_different_coordination = group_refs.map { |ref| ref[:group][:coordination_group] }.uniq.compact.length > 1
+      
+      if has_split && has_no_split
+        # This studio has some groups with split_group and some without
+        # Create a new coordination group for ALL groups containing this studio
+        coord_key = "multi_studio_#{studio_id}"
+        
+        group_refs.each do |ref|
+          # Override any existing coordination/split group to ensure they're placed together
+          ref[:group][:coordination_group] = coord_key
+          ref[:group][:original_split_group] = ref[:group][:split_group] if ref[:group][:split_group]
+          ref[:group][:split_group] = nil
+        end
+      elsif has_different_coordination
+        # This studio appears in groups with different coordination groups
+        # Merge them into one coordination group
+        coord_key = "multi_studio_#{studio_id}"
+        
+        group_refs.each do |ref|
+          ref[:group][:original_coordination_group] = ref[:group][:coordination_group] if ref[:group][:coordination_group]
+          ref[:group][:coordination_group] = coord_key
+          ref[:group][:split_group] = nil
+        end
+      elsif group_refs.length > 1 && !has_split && group_refs.all? { |ref| !ref[:group][:coordination_group] }
+        # Multiple groups for this studio with no coordination/split groups
+        # Create a coordination group to ensure they're placed together
+        coord_key = "multi_studio_#{studio_id}"
+        
+        group_refs.each do |ref|
+          ref[:group][:coordination_group] = coord_key
+        end
+      end
+    end
+    
+    # Re-group after fixing coordination groups
+    coordination_groups = people_groups.group_by do |group|
+      coord_group = group[:coordination_group]
+      if coord_group && coord_group.split('_').length > 4 && coord_group.start_with?('component_')
+        # Remove the index suffix (e.g., "component_18_35_54_0" -> "component_18_35_54")
+        coord_group.split('_')[0..-2].join('_')
+      else
+        coord_group
+      end
+    end
+    
     # Step 2: Place connected components first (highest priority)
     coordination_groups.each do |coordination_key, groups|
       next if coordination_key.nil?
@@ -1367,11 +1482,38 @@ class TablesController < ApplicationController
       place_multi_table_studio(groups, positions, max_cols, created_tables)
     end
     
-    # Step 4: Place remaining single tables
-    remaining_groups = people_groups.reject do |group|
-      group[:coordination_group] || 
-      (group[:split_group] && !group[:split_group].empty?)
+    # Step 3.5: Place multi-table studios that haven't been placed yet
+    # This handles studios that were split during consolidation
+    placed_group_indices = Set.new
+    
+    multi_table_studios.each do |studio_id, group_refs|
+      next if studio_id == 0 # Skip Event Staff
+      
+      # Extract the groups for this studio
+      studio_groups = group_refs.map { |ref| ref[:group] }
+      
+      # Skip if any of these groups have already been placed
+      if group_refs.any? { |ref| 
+        group = ref[:group]
+        group[:coordination_group] || group[:split_group] ||
+        placed_group_indices.include?(ref[:index])
+      }
+        next
+      end
+      
+      # This studio has multiple tables that need to be placed together
+      place_multi_table_studio(studio_groups, positions, max_cols, created_tables)
+      
+      # Mark these groups as placed
+      group_refs.each { |ref| placed_group_indices.add(ref[:index]) }
     end
+    
+    # Step 4: Place remaining single tables
+    remaining_groups = people_groups.each_with_index.reject do |group, index|
+      group[:coordination_group] || 
+      (group[:split_group] && !group[:split_group].empty?) ||
+      placed_group_indices.include?(index)
+    end.map { |group, index| group }
     
     remaining_groups.each do |group|
       place_single_table(group, positions, max_cols, created_tables)
