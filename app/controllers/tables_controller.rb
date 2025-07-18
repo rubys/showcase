@@ -447,6 +447,9 @@ class TablesController < ApplicationController
       end
     end
     
+    # Analyze table assignments for issues
+    @table_issues = analyze_table_contiguousness
+    
     @nologo = true
 
     respond_to do |format|
@@ -562,6 +565,170 @@ class TablesController < ApplicationController
   end
 
   private
+
+  def analyze_table_contiguousness
+    issues = []
+    
+    # Get all billable options that have tables
+    option_ids_with_tables = Table.distinct.pluck(:option_id)
+    
+    option_ids_with_tables.each do |option_id|
+      option = option_id ? Billable.find(option_id) : nil
+      option_name = option ? option.name : "Main Event"
+      
+      # Get all tables for this option
+      tables = Table.where(option_id: option_id).includes(:people, :person_options)
+      
+      # Group tables by studio for analysis
+      studio_tables = {}
+      
+      tables.each do |table|
+        # Get people for this table based on context
+        people = if option_id
+          # For option tables, get people through person_options
+          table.person_options.includes(:person => :studio).map(&:person)
+        else
+          # For main event tables, get people directly
+          table.people.includes(:studio)
+        end
+        
+        # Group people by studio
+        people.group_by(&:studio_id).each do |studio_id, studio_people|
+          next if studio_id == 0 # Skip Event Staff
+          
+          studio_tables[studio_id] ||= []
+          studio_tables[studio_id] << {
+            table: table,
+            people_count: studio_people.count,
+            studio_name: studio_people.first.studio.name
+          }
+        end
+      end
+      
+      # Check for studios with multiple tables
+      studio_tables.each do |studio_id, table_data|
+        next if table_data.length <= 1
+        
+        studio_name = table_data.first[:studio_name]
+        table_numbers = table_data.map { |td| td[:table].number }.sort
+        
+        # Check if table numbers are contiguous
+        unless contiguous_numbers?(table_numbers)
+          issues << {
+            type: :non_contiguous_studio,
+            option: option_name,
+            studio: studio_name,
+            tables: table_numbers
+          }
+        end
+        
+        # Check if table positions are contiguous (adjacent)
+        tables_with_positions = table_data.map { |td| td[:table] }.select { |t| t.row && t.col }
+        if tables_with_positions.length > 1 && !contiguous?(tables_with_positions)
+          positions = tables_with_positions.map { |t| "#{t.number}(#{t.row},#{t.col})" }
+          issues << {
+            type: :non_contiguous_studio,
+            option: option_name,
+            studio: studio_name,
+            tables: positions
+          }
+        end
+      end
+      
+      # Check studio pairs for adjacency
+      StudioPair.includes(:studio1, :studio2).each do |pair|
+        studio1_tables = studio_tables[pair.studio1.id] || []
+        studio2_tables = studio_tables[pair.studio2.id] || []
+        
+        next if studio1_tables.empty? || studio2_tables.empty?
+        
+        # Check if any table from studio1 is adjacent to any table from studio2
+        adjacent_found = false
+        min_distance = Float::INFINITY
+        
+        studio1_tables.each do |s1_data|
+          studio2_tables.each do |s2_data|
+            table1 = s1_data[:table]
+            table2 = s2_data[:table]
+            
+            if table1.row && table1.col && table2.row && table2.col
+              # Calculate Manhattan distance
+              distance = (table1.row - table2.row).abs + (table1.col - table2.col).abs
+              min_distance = [min_distance, distance].min
+              if distance <= 1
+                adjacent_found = true
+                break
+              end
+            end
+          end
+          break if adjacent_found
+        end
+        
+        unless adjacent_found
+          issues << {
+            type: :non_adjacent_pair,
+            option: option_name,
+            studio1: pair.studio1.name,
+            studio2: pair.studio2.name,
+            distance: min_distance == Float::INFINITY ? "N/A" : min_distance
+          }
+        end
+      end
+    end
+    
+    issues
+  end
+
+  def contiguous_numbers?(numbers)
+    return true if numbers.length <= 1
+    
+    numbers.each_cons(2).all? { |a, b| b == a + 1 }
+  end
+
+  def contiguous?(tables_with_positions)
+    return true if tables_with_positions.length <= 1
+    
+    if tables_with_positions.length == 2
+      # For 2 tables, check if they're adjacent (Manhattan distance = 1)
+      table1, table2 = tables_with_positions
+      distance = (table1.row - table2.row).abs + (table1.col - table2.col).abs
+      return distance == 1
+    else
+      # For 3+ tables, check if they form a connected group
+      return positions_form_connected_group(tables_with_positions)
+    end
+  end
+
+  def positions_form_connected_group(tables_with_positions)
+    positions = tables_with_positions.map { |t| [t.row, t.col] }.to_set
+    
+    # Start with the first position
+    visited = Set.new
+    to_visit = [positions.first]
+    
+    while !to_visit.empty?
+      current = to_visit.pop
+      next if visited.include?(current)
+      
+      visited.add(current)
+      
+      # Check all 4 adjacent positions
+      row, col = current
+      adjacent_positions = [
+        [row - 1, col], [row + 1, col],
+        [row, col - 1], [row, col + 1]
+      ]
+      
+      adjacent_positions.each do |adj_pos|
+        if positions.include?(adj_pos) && !visited.include?(adj_pos)
+          to_visit << adj_pos
+        end
+      end
+    end
+    
+    # All positions should be visited if they form a connected group
+    visited.size == positions.size
+  end
 
   def fill_table_with_studio_people(table, studio_id)
     # Determine table size
