@@ -195,7 +195,7 @@ tbody::after {
           / <%= heats.first.solo.combo_dance.name %>
           <% end %>
           <% if @start %>
-          <span class="text-base" style="opacity: 50%">- <%= @start[number]&.strftime("%-I:%M %P") %></span>
+          <span class="text-base" style="opacity: 50%">- <%= localized_time(@start[number], @locale) %></span>
           <% end %>
         </td>
       </tr>

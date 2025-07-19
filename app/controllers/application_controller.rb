@@ -50,6 +50,15 @@ class ApplicationController < ActionController::Base
     def set_locale
       @locale = if Event.current&.location.respond_to?(:locale)
         Event.current.location.locale
+      elsif Rails.env.development? && ENV['RAILS_APP_DB'] =~ /^(\d+)-(\w+)-/
+        begin
+          year = $1.to_i
+          site = $2
+          showcases = YAML.load_file('config/tenant/showcases.yml')
+          showcases.dig(year, site, :locale) || ENV.fetch("RAILS_LOCALE", "en_US")
+        rescue => e
+          ENV.fetch("RAILS_LOCALE", "en_US")
+        end
       else
         ENV.fetch("RAILS_LOCALE", "en_US")
       end

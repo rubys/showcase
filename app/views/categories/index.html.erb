@@ -74,8 +74,8 @@ another heat is still possible, even when the agenda is locked.</li>
         <% unless @oneday %>
         <td class="row"><%= Date::DAYNAMES[@cat_start[cat.name]&.wday || 7] %></td>
         <% end %>
-        <td class="row"><%= @cat_start[cat.name]&.strftime("%I:%M %P") %></td>
-        <td class="row"><%= @cat_finish[cat.name]&.strftime("%I:%M %P") %></td>
+        <td class="row"><%= localized_time(@cat_start[cat.name], @locale) %></td>
+        <td class="row"><%= localized_time(@cat_finish[cat.name], @locale) %></td>
         <% elsif not cat&.day.blank? and not @oneday %>
         <td class="row"><%= cat.day %></td>
         <% end %>

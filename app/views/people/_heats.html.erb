@@ -53,7 +53,7 @@ body {
     <% ballrooms = heat.dance_category&.ballrooms || @ballrooms %>
     <tr class="text-sm<% if heat.number < 0%> line-through<% end %>">
       <% if @start %>
-      <td class="text-right pr-4"><%= @start[number]&.strftime("%-I:%M") %></td>
+      <td class="text-right pr-4"><%= localized_time(@start[number], @locale)&.gsub(/ [ap]m$/, '') %></td>
       <% end %>
       <td class="text-center">
         <%= heat.number.abs %>
@@ -145,7 +145,7 @@ body {
     <% ballrooms = heat.dance_category&.ballrooms || @ballrooms %>
     <tr class="text-sm<% if heat.number < 0%> line-through<% end %>">
       <% if @start %>
-      <td class="text-right pr-4"><%= @start[number]&.strftime("%-I:%M") %></td>
+      <td class="text-right pr-4"><%= localized_time(@start[number], @locale)&.gsub(/ [ap]m$/, '') %></td>
       <% end %>
       <td class="text-center"><%= heat.number.abs %></td>
       <% if heat.ballroom %>

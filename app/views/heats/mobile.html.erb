@@ -35,7 +35,7 @@
       / <%= heats.first.solo.combo_dance.name %>
       <% end %>
       <% if @start %>
-      <span class="text-base text-slate-600">- <%= @start[number]&.strftime("%-I:%M %P") %></span>
+      <span class="text-base text-slate-600">- <%= localized_time(@start[number], @locale) %></span>
       <% end %>
     </td>
   </tr>

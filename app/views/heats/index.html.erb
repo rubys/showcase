@@ -80,8 +80,8 @@ a scheduled heat time will be added to each heat.</li>
         <% unless @oneday %>
         <td class="row"><%= cat == 'Unscheduled' ? '' : Date::DAYNAMES[@cat_start[cat]&.wday || 7] %>
         <% end %>
-        <td class="row"><%= cat == 'Unscheduled' ? '' : @cat_start[cat]&.strftime("%I:%M %P") %>
-        <td class="row"><%= cat == 'Unscheduled' ? '' : @cat_finish[cat]&.strftime("%I:%M %P") %>
+        <td class="row"><%= cat == 'Unscheduled' ? '' : localized_time(@cat_start[cat], @locale) %>
+        <td class="row"><%= cat == 'Unscheduled' ? '' : localized_time(@cat_finish[cat], @locale) %>
         <% elsif not @categories[cat]&.day.blank? and not @oneday %>
         <td class="row"><%= @categories[cat].day %></td>
         <% end %>

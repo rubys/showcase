@@ -233,14 +233,12 @@ class Locale
     return nil unless time
     
     case locale
-    when 'de-DE'
-      time.strftime("%H:%M")  # 24-hour format common in Germany
-    when 'ja-JP'
-      time.strftime("%H:%M")  # 24-hour format common in Japan
-    when 'fr-CA', 'fr-FR'
-      time.strftime("%H:%M")  # 24-hour format common in France
-    else # Default to 12-hour format for English locales
-      time.strftime("%-I:%M %P")
+    when 'en-US', 'en-CA', 'en-GB', 'en-AU'
+      time.strftime("%-I:%M %P")  # 12-hour format for English locales
+    when 'fr-CA'
+      time.strftime("%-I:%M %P")  # French Canada uses 12-hour format
+    else # 24-hour format for most other locales
+      time.strftime("%H:%M")  # 24-hour format for de-DE, fr-FR, es-ES, it-IT, pl-PL, uk-UA, ja-JP
     end
   end
 end
