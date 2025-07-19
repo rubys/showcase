@@ -1,5 +1,7 @@
 # Centralized locale service providing configuration, formatting, and localization
-# This ensures consistency across all locale-related functionality in the application
+# This ensures consistency across all locale-related functionality in the application,
+# both in server-side rendering and client-side JavaScript which makes use of
+# Intl.DateTimeFormat in the date-range stimulus controller.
 class Locale
   # Define all supported locales with their display names
   # Rails format uses underscores (en_US), browser format uses dashes (en-US)
