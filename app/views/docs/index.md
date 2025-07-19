@@ -56,7 +56,7 @@ Some of these features may be partially available on an experimental basis. If y
 * [Feedback](./experimental/Feedback) - customize judge feedback options
 * [Internationalization](./experimental/I18n) - languages, dates, times, and currency
 * [Scrutineering](./experimental/Scrutineering) - multi-heats with callbacks and rankings
-* [Tables](./experimental/Tables) - optimal seating assignments with studio proximity optimization
+* [Tables](./experimental/Tables) - seating assignments for events and/or meals
 * [Voice](./experimental/Voice) - capturing Judge comments using voice input
 
 ## Operations

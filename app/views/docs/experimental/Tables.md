@@ -1,21 +1,32 @@
-# Tables - Optimal Seating Assignments
+# Tables - Seating Assignments
 
-The Tables feature enables you to arrange seating for your event.
+The Tables feature helps you arrange seating for your event.
 
-Start by going to the Studios page and clicking the Tables button. From there, set the default table size. If some tables are a different size, you can set a different size for those tables.
+Start by going to the **Studios** page and clicking the **Tables** button. Set the default table size; if some tables are a different size, you can adjust those individually. To create different arrangements for meals, go to **Settings**, click the **Prices** tab, and create an option for the meal. When editing an option, click **Manage tables**. You can have multiple meals with different seating arrangements. Only participants who select that option will be seated accordingly.
 
-Try the button to automatically assign people to tables. It tries to seat studios together, along with their paired studios. If you don't like the results, click Reset to remove all tables and start over.
+Use the **Assign People to Tables** button to seat people at tables. It prioritizes seating studios together, along with their paired studios. The process follows this prioritized list:
 
-You can also add tables individually and select a studio to seat people from. If you have unfilled seats, you can click on the table and add another studio.
+* People from the same studio are placed at the same table when possible, then at adjacent tables if there is overflow.
+* People from paired studios are placed at the same table when possible, then at adjacent tables if needed.
+* Tables that aren't full are combined when possible, including small studios and overflow from large studios.
+* Tables that need to be adjacent are placed into a grid. This can be complex with multiple studio pairs or when overflow from large studios is combined.
+* Remaining tables fill in any gaps.
+* Event staff are seated together and not combined with any other studio.
 
-The Arrange Tables feature enables you to drag tables to match the room layout.
+This approach prioritizes seating people together over filling every seat. For example, if you have three studios with five people each and a table size of eight, you could seat everyone at two tables, but at least one studio would be split. The rules above avoid this by allocating three tables. This situation is rare, but more likely with a table size of eight than ten.
 
-Renumber will assign new numbers left to right, then top to bottom. If you would like a different numbering, you can go back to the Tables page, click on a table, and change its number.
+If you don't like the results, click **Reset** to remove all tables and start over.
 
-Once done, return to the Studios page to see table assignments. If a studio has multiple tables, you can click on the tables column on this page to see those tables, and from there you can drag and drop people to move them to a different table.
+You can also add tables individually and select a studio to seat people from. If there are unfilled seats, click on the table and add another studio.
 
-If you edit a person, you can see and change the table the person is seated at, or change it so that the person is not assigned to any table.
+The **Arrange Tables** feature lets you drag tables to match the room layout.
 
-On the publish page, you will see a button where you can get a list of table assignements that you can print.
+**Renumber** assigns new numbers left to right, then top to bottom. For a different numbering, return to the Tables page, click on a table, and change its number.
+
+Once done, return to the Studios page to see table assignments. If a studio has multiple tables, click the tables column to view those tables, and drag and drop people to move them to a different table.
+
+When editing a person, you can see and change their table assignment, or remove them from any table.
+
+On the publish page, you will see a button to get a printable list of table assignments. If there are any issues (for example, people without seats or studios not seated together), a list of issues will be included in the report.
 
 *This feature is experimental. Please report any issues or suggestions for improvement.*

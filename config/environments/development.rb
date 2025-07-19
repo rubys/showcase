@@ -75,6 +75,8 @@ Rails.application.configure do
   config.hosts << "rubix.local"
   config.hosts << "rubix.intertwingly.net"
 
+  config.hotwire.spark.html_extensions += %w[ md ]
+
   if ENV['RAILS_RELATIVE_URL_ROOT']
     config.force_ssl = false
   end
