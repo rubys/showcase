@@ -21,11 +21,11 @@
     <% end %>
 
     <% if @return_to %>
-    <%= link_to "Back to table", @return_to, class: "btn-green my-0" %>
+    <%= link_to "Back to Table", @return_to, class: "btn-green my-0" %>
     <% elsif @person.studio %>
-    <%= link_to "Back to studio", @person.studio, class: "btn-green my-0" %>
+    <%= link_to "Back to Studio", @person.studio, class: "btn-green my-0" %>
     <% else %>
-    <%= link_to "Back to event staff", studio_path(0), class: "btn-green my-0" %>
+    <%= link_to "Back to Event Staff", studio_path(0), class: "btn-green my-0" %>
     <% end %>
   </div>
 </div>

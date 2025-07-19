@@ -63,7 +63,7 @@ class UsersTest < ApplicationSystemTestCase
     assert_checked_field "Two"
     assert_checked_field "Three"
 
-    click_on "Back to users"
+    click_on "Back to Users"
   end
 
   test "should destroy User" do

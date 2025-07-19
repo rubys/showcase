@@ -1,15 +1,15 @@
-<% content_for :title, "Editing table" %>
+<% content_for :title, "Editing Table" %>
 
 <div class="mx-auto md:w-2/3 w-full">
-  <h1 class="font-bold text-4xl">Editing table</h1>
+  <h1 class="font-bold text-4xl">Editing Table</h1>
 
   <%= render "form", table: @table %>
 
   <div class="mx-auto flex">
     <button type="submit" class="btn-blue" form="table-form">Update Table</button>
-    <%= button_to "Remove this table", @table, method: :delete, class: "btn-grey",
+    <%= button_to "Remove This Table", @table, method: :delete, class: "btn-grey",
         data: { turbo_confirm: "Are you sure you want to remove this table? People will be unassigned from it." } %>
-    <%= link_to "Back to tables", tables_path(option_id: @table.option_id), class: "btn-grey" %>
+    <%= link_to "Back to Tables", tables_path(option_id: @table.option_id), class: "btn-grey" %>
   </div>
   
   <div class="mt-8">

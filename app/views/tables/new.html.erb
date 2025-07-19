@@ -1,12 +1,12 @@
-<% content_for :title, "New table" %>
+<% content_for :title, "New Table" %>
 
 <div class="md:w-2/3 w-full">
-  <h1 class="font-bold text-4xl">New table</h1>
+  <h1 class="font-bold text-4xl">New Table</h1>
 
   <%= render "form", table: @table %>
 
   <div class="mx-auto flex">
     <button type="submit" class="btn-blue" form="table-form">Create Table</button>
-    <%= link_to "Back to tables", tables_path, class: "btn-grey" %>
+    <%= link_to "Back to Tables", tables_path, class: "btn-grey" %>
   </div>
 </div>

@@ -17,7 +17,7 @@ class TablesTest < ApplicationSystemTestCase
 
   test "should create table" do
     visit tables_url
-    click_on "New table"
+    click_on "New Table"
 
     fill_in "Number", with: 99
     fill_in "Size", with: 10
@@ -30,7 +30,7 @@ class TablesTest < ApplicationSystemTestCase
 
   test "should update Table" do
     visit table_url(@table)
-    click_on "Edit this table", match: :first
+    click_on "Edit This Table", match: :first
 
     fill_in "Number", with: @table.number
     fill_in "Size", with: 12
@@ -41,7 +41,7 @@ class TablesTest < ApplicationSystemTestCase
 
   test "should destroy Table" do
     visit table_url(@table)
-    click_on "Destroy this table", match: :first
+    click_on "Destroy This Table", match: :first
 
     assert_text "Table was successfully destroyed"
   end
@@ -51,7 +51,7 @@ class TablesTest < ApplicationSystemTestCase
     Table.create!(number: 5, row: 2, col: 1, size: 8)
     
     visit tables_url
-    click_on "New table"
+    click_on "New Table"
     
     # The number field should be auto-populated with 6 (max + 1)
     number_field = find_field("Number")
@@ -107,7 +107,7 @@ class TablesTest < ApplicationSystemTestCase
     click_on "Table #{@table.number}"
     
     # Should be on the edit page now
-    assert_selector "h1", text: "Editing table"
+    assert_selector "h1", text: "Editing Table"
     assert_selector "input[name='table[number]']"
     assert_selector "input[name='table[size]']"
   end
@@ -238,7 +238,7 @@ class TablesTest < ApplicationSystemTestCase
     # Should have action buttons first - find the specific one with the links
     action_buttons = find("div.flex.gap-3", text: "Arrange Tables")
     assert action_buttons.has_link?("Arrange Tables")
-    assert action_buttons.has_link?("New table")
+    assert action_buttons.has_link?("New Table")
     
     # Should have table size form after action buttons
     table_size_form = find("div.mt-6.p-4.bg-gray-50.rounded-lg")
@@ -364,7 +364,7 @@ class TablesTest < ApplicationSystemTestCase
     first_button = button_container.first("a, button")
     
     # Verify it's the New table button
-    assert_equal "New table", first_button.text
+    assert_equal "New Table", first_button.text
   end
 
   test "should show studio tables page" do

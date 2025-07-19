@@ -8,6 +8,6 @@
     <%= link_to "Songs", dance_songlist_path(@dance), class: "btn-green" %>
     <%= up_link 'Remove this dance', dance_path(@dance), class: 'btn-grey',
       method: :delete, disabled: @locked, form: { data: { turbo_confirm: 'Are you sure?' }} %>  
-    <%= link_to "Back to dances", dances_path, class: "btn-grey" %>
+    <%= link_to "Back to Dances", dances_path, class: "btn-grey" %>
   </div>
 </div>

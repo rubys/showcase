@@ -217,7 +217,7 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
     table = tables(:one)
     get edit_person_url(@person, return_to: edit_table_path(table))
     assert_response :success
-    assert_select "a[href=?]", edit_table_path(table), text: "Back to table"
+    assert_select "a[href=?]", edit_table_path(table), text: "Back to Table"
   end
 
   test "should redirect to return_to URL after update" do

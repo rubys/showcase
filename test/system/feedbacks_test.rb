@@ -17,7 +17,7 @@ class FeedbacksTest < ApplicationSystemTestCase
 
     assert_selector "input[value='P']"
     assert_selector "span", text: "Poise"
-    click_on "Back to settings"
+    click_on "Back to Settings"
   end
 
   test "should update Feedback" do
