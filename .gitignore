@@ -73,3 +73,6 @@ flat-storage
 
 # Ignore CSV files
 *.csv
+
+# Ignore Ruby scripts in root directory
+*.rb
