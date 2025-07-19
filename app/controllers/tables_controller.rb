@@ -2019,47 +2019,9 @@ class TablesController < ApplicationController
   end
 
   
-  def position_occupied?(pos, positions)
-    positions.any? { |p| p[:row] == pos[:row] && p[:col] == pos[:col] }
-  end
   
   
   
-  def find_next_position(positions, max_cols, reserved_positions = [])
-    # Find the next available position in the grid
-    row = 1
-    col = 1
-    
-    loop do
-      # Check if this position is available AND not reserved for someone else
-      pos = { row: row, col: col }
-      unless position_occupied?(pos, positions) || position_reserved_for_others?(pos, reserved_positions)
-        return pos
-      end
-      
-      # Move to next position
-      col += 1
-      if col > max_cols
-        col = 1
-        row += 1
-      end
-      
-      # Safety check to prevent infinite loop
-      break if row > 20
-    end
-    
-    nil
-  end
-  
-  def position_reserved_for_others?(pos, reserved_positions)
-    # Check if this position is reserved for someone else (not available for general use)
-    reserved_positions.any? do |reservation|
-      next if reservation[:used]
-      
-      res_pos = reservation[:position]
-      res_pos[:row] == pos[:row] && res_pos[:col] == pos[:col]
-    end
-  end
 
 
   # Use callbacks to share common setup or constraints between actions.
