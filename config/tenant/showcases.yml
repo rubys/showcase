@@ -429,6 +429,8 @@
         :name: Beach Ball
       extravaganza:
         :name: Extravaganza
+      medal-ball:
+        :name: Medal Ball
   sugarland:
     :name: Sugar Land
     :region: dfw
