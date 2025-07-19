@@ -9,9 +9,10 @@
   <ul class="info-box">
   <li>Event description is used in <a href="../../docs/tasks/Publishing" class="text-blue-800 underline">printed materials</a> and  <a href="../../docs/tasks/Counter" class="text-blue-800 underline">counter</a>.</li>
   <%
-    date = Chronic.parse('next saturday').to_date+7
-    date+=7 if date.month != (date+1).month
-    date = date.strftime("%B %d, %Y").sub(/\d+,/) {|d| "#{d.to_i}-#{d.to_i+1},"}
+    start_date = Chronic.parse('next saturday').to_date+7
+    start_date+=7 if start_date.month != (start_date+1).month
+    end_date = start_date + 1
+    date = localized_date("#{start_date} - #{end_date}", @locale)
   %>
   <li>Events that span multiple days should be entered as a range, e.g. "<%= date %>".</li>
   <li>Use the tabs across the top of this page to get to other settings.

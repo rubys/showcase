@@ -134,8 +134,8 @@ end
         <td class="row"><%= @start && Date::DAYNAMES[@cat_start[cat]&.wday || 7] %></td>
         <% end %>
         <td class="row text-right" data-start="<%= @cat_start[cat].iso8601 %>" data-finish="<%= @cat_finish[cat].iso8601 %>">
-          <%= @start && @cat_start[cat]&.strftime("%l:%M %P") %> -
-          <%= @finish && @cat_finish[cat]&.strftime("%l:%M %P") %>
+          <%= @start && localized_time(@cat_start[cat], @locale) %> -
+          <%= @finish && localized_time(@cat_finish[cat], @locale) %>
         </td>
         <% elsif not @categories[cat]&.day.blank? and not @oneday %>
         <td class="row"><%= @categories[cat].day %></td>
@@ -221,7 +221,7 @@ end
           <%= cat %>
           <% end %>
           <% if @start %>
-          <span class="text-base" style="opacity: 50%">- <%= @start[number]&.strftime("%-I:%M %P") %></span>
+          <span class="text-base" style="opacity: 50%">- <%= localized_time(@start[number], @locale) %></span>
           <% end %>
           <% if (@type == 'judge' || @type=='emcee') and heats.first.category != 'Solo' %>
           <span class="text-base">(<%= pluralize(ballrooms.values.flatten.length, 'entry') %>)</span>

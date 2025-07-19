@@ -226,4 +226,21 @@ class Locale
       end
     end
   end
+
+  # Format time according to locale conventions
+  # Note: expects browser format (dash) as used by ApplicationHelper
+  def self.format_time(time, locale)
+    return nil unless time
+    
+    case locale
+    when 'de-DE'
+      time.strftime("%H:%M")  # 24-hour format common in Germany
+    when 'ja-JP'
+      time.strftime("%H:%M")  # 24-hour format common in Japan
+    when 'fr-CA', 'fr-FR'
+      time.strftime("%H:%M")  # 24-hour format common in France
+    else # Default to 12-hour format for English locales
+      time.strftime("%-I:%M %P")
+    end
+  end
 end

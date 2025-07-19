@@ -84,5 +84,15 @@ module ApplicationHelper
     end
   end
 
+  def localized_time(time, locale = nil)
+    return nil unless time
+    
+    # Use provided locale or fall back to session/env locale
+    locale ||= @locale || ENV.fetch("RAILS_LOCALE", "en_US")
+    # Convert to browser format using centralized config
+    locale = Locale.to_browser_format(locale)
+    
+    Locale.format_time(time, locale)
+  end
 
 end
