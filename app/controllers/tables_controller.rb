@@ -1042,18 +1042,55 @@ class TablesController < ApplicationController
     people_groups.reject! { |group| group[:remove] }
     
     # Mark groups for studios that need adjacent placement
+    # Track coordination groups to merge overlapping pairs into connected components
+    coordination_group_registry = {}
+    
     pairs_needing_adjacency.each do |studio1_id, studio2_id|
       # Find groups for these studios and mark them for adjacent placement
       studio1_groups = people_groups.select { |group| group[:studio_id] == studio1_id }
       studio2_groups = people_groups.select { |group| group[:studio_id] == studio2_id }
       
       if studio1_groups.any? && studio2_groups.any?
-        # Create coordination group for adjacent placement
-        coord_key = "adjacent_pair_#{[studio1_id, studio2_id].sort.join('_')}"
+        # Check if either studio already has a coordination group
+        existing_coord_groups = (studio1_groups + studio2_groups).map { |g| g[:coordination_group] }.compact.uniq
         
-        (studio1_groups + studio2_groups).each do |group|
-          group[:coordination_group] = coord_key
-          group[:needs_adjacency] = true
+        if existing_coord_groups.any?
+          # Merge into existing coordination group
+          target_coord_key = existing_coord_groups.first
+          
+          # If multiple existing groups, merge them all
+          if existing_coord_groups.length > 1
+            # Create a merged coordination group that includes all studios
+            all_studio_ids = existing_coord_groups.flat_map do |coord_key|
+              coord_key.gsub(/^(adjacent_pair_|component_)/, '').split('_').map(&:to_i)
+            end
+            all_studio_ids += [studio1_id, studio2_id]
+            all_studio_ids = all_studio_ids.uniq.sort
+            
+            target_coord_key = "component_#{all_studio_ids.join('_')}"
+            
+            # Update all groups that had any of the existing coordination groups
+            people_groups.each do |group|
+              if existing_coord_groups.include?(group[:coordination_group])
+                group[:coordination_group] = target_coord_key
+                group[:needs_adjacency] = true
+              end
+            end
+          end
+          
+          # Assign the target coordination group to the current pair
+          (studio1_groups + studio2_groups).each do |group|
+            group[:coordination_group] = target_coord_key
+            group[:needs_adjacency] = true
+          end
+        else
+          # No existing coordination groups, create new one
+          coord_key = "adjacent_pair_#{[studio1_id, studio2_id].sort.join('_')}"
+          
+          (studio1_groups + studio2_groups).each do |group|
+            group[:coordination_group] = coord_key
+            group[:needs_adjacency] = true
+          end
         end
       end
     end
