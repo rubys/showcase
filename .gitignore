@@ -76,3 +76,8 @@ flat-storage
 
 # Ignore Ruby scripts in root directory only
 /*.rb
+
+# Ignore vim swap files
+*.swp
+*.swo
+*~
