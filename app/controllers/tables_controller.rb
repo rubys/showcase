@@ -594,13 +594,12 @@ class TablesController < ApplicationController
         
         # Group people by studio
         people.group_by(&:studio_id).each do |studio_id, studio_people|
-          next if studio_id == 0 # Skip Event Staff
           
           studio_tables[studio_id] ||= []
           studio_tables[studio_id] << {
             table: table,
             people_count: studio_people.count,
-            studio_name: studio_people.first.studio.name
+            studio_name: studio_people.first.studio&.name || "Event Staff"
           }
         end
       end
@@ -1351,7 +1350,10 @@ class TablesController < ApplicationController
     large_tables = []
     
     people_groups.each do |group|
-      if group[:people].size <= 3
+      # Never consolidate Event Staff (studio_id == 0) with other studios
+      if group[:studio_id] == 0
+        large_tables << group  # Keep Event Staff tables separate
+      elsif group[:people].size <= 3
         small_tables << group
       else
         large_tables << group
@@ -1361,6 +1363,9 @@ class TablesController < ApplicationController
     # Try to fit small tables into large tables with available space
     # PREFER tables that already contain people from the same studio
     small_tables.each do |small_group|
+      # Never consolidate Event Staff with other studios
+      next if small_group[:studio_id] == 0
+      
       fitted = false
       small_group_studio_ids = (small_group[:studio_ids] || [small_group[:studio_id]])
       
@@ -1370,6 +1375,11 @@ class TablesController < ApplicationController
         next if small_group[:people].size > available_space
         
         large_group_studio_ids = (large_group[:studio_ids] || [large_group[:studio_id]])
+        
+        # Never mix Event Staff with other studios
+        if large_group_studio_ids.include?(0) || small_group[:studio_id] == 0
+          next  # Skip Event Staff tables and don't put Event Staff in other tables
+        end
         
         # Check if this large table already has people from this studio
         if (small_group_studio_ids & large_group_studio_ids).any?
@@ -1396,6 +1406,12 @@ class TablesController < ApplicationController
       unless fitted
         large_tables.each do |large_group|
           available_space = table_size - large_group[:people].size
+          
+          # Never mix Event Staff with other studios
+          large_group_studio_ids = (large_group[:studio_ids] || [large_group[:studio_id]])
+          if large_group_studio_ids.include?(0) || small_group[:studio_id] == 0
+            next  # Skip Event Staff tables and don't put Event Staff in other tables
+          end
           
           if small_group[:people].size <= available_space
             # Fit the small group into this large table
@@ -1435,7 +1451,10 @@ class TablesController < ApplicationController
     large_tables = []
     
     people_groups.each do |group|
-      if group[:people].size <= 3
+      # Never consolidate Event Staff (studio_id == 0) with other studios
+      if group[:studio_id] == 0
+        large_tables << group  # Keep Event Staff tables separate
+      elsif group[:people].size <= 3
         small_tables << group
       else
         large_tables << group
@@ -1488,6 +1507,9 @@ class TablesController < ApplicationController
     end
     
     other_small_groups.each do |small_group|
+      # Never consolidate Event Staff with other studios
+      next if small_group[:studio_id] == 0
+      
       # Allow paired studios to be consolidated, but only with unpaired studios
       # This preserves adjacency while still allowing efficient table usage
       studio_id = small_group[:studio_id]
@@ -1502,6 +1524,11 @@ class TablesController < ApplicationController
         next if small_group[:people].size > available_space
         
         large_group_studio_ids = (large_group[:studio_ids] || [large_group[:studio_id]])
+        
+        # Never mix Event Staff with other studios
+        if large_group_studio_ids.include?(0) || small_group[:studio_id] == 0
+          next  # Skip Event Staff tables and don't put Event Staff in other tables
+        end
         
         # Check if this large table already has people from this studio
         if (small_group_studio_ids & large_group_studio_ids).any?
@@ -1529,6 +1556,12 @@ class TablesController < ApplicationController
         large_tables.each do |large_group|
           available_space = table_size - large_group[:people].size
           next if small_group[:people].size > available_space
+          
+          # Never mix Event Staff with other studios
+          large_group_studio_ids = (large_group[:studio_ids] || [large_group[:studio_id]])
+          if large_group_studio_ids.include?(0) || small_group[:studio_id] == 0
+            next  # Skip Event Staff tables and don't put Event Staff in other tables
+          end
           
           # If this is a paired studio, ensure target table only contains unpaired studios
           if is_paired_studio
