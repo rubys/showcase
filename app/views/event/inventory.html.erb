@@ -12,19 +12,44 @@
 <tr>
 </thead>
 <tbody>
-<% @events.each do |event| %>
-<% if event[:entries].to_i == 0 && !event[:date].start_with?(Date.today.year.to_s) %>
-<tr class="bg-gray-200">
-<% else %>
-<tr>
-<% end %>
-  <% year, city, token = event[:db].split('-', 3) %>
-  <td><%= link_to event[:studio], studio_events_path(city) %>
-  <td><%= link_to event[:name], "#{@scope}/#{year}/#{city}/#{token}/".squeeze('/') %>
-  <td><%= event[:date] %>
-  <td align="right"><%= event[:people] %>
-  <td align="right"><%= event[:heats] %>
-  <td align="right"><%= event[:entries] %>
+<% 
+  # Only show separator when sorting by date (default sort or no sort parameter)
+  show_separator = params[:sort].blank?
+  separator_shown = false
+  today = Date.today
+%>
+<% @events.each_with_index do |event, index| %>
+  <%
+    # Check if this is the boundary between future and past events (when sorting by date)
+    if show_separator && !separator_shown
+      begin
+        event_date = Date.parse(event[:date])
+        # If this event is in the past and the next event is in the future, or if this is the last future event
+        if event_date < today
+          separator_shown = true
+          %>
+          <tr>
+            <td colspan="6" class="border-t border-gray-400 p-0"></td>
+          </tr>
+          <%
+        end
+      rescue Date::Error
+        # Handle invalid dates gracefully
+      end
+    end
+  %>
+  <% if event[:entries].to_i == 0 && !event[:date].start_with?(Date.today.year.to_s) %>
+  <tr class="bg-gray-200">
+  <% else %>
+  <tr>
+  <% end %>
+    <% year, city, token = event[:db].split('-', 3) %>
+    <td><%= link_to event[:studio], studio_events_path(city) %>
+    <td><%= link_to event[:name], "#{@scope}/#{year}/#{city}/#{token}/".squeeze('/') %>
+    <td><%= event[:date] %>
+    <td align="right"><%= event[:people] %>
+    <td align="right"><%= event[:heats] %>
+    <td align="right"><%= event[:entries] %>
 <% end %>
 </tbody>
 </table>
