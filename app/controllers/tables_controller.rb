@@ -1245,6 +1245,9 @@ class TablesController < ApplicationController
     # BUT avoid breaking studio contiguity for remainder groups
     people_groups = eliminate_remaining_small_tables_with_contiguity(people_groups, table_size)
     
+    # Final step: Ensure multi-table studios have proper coordination groups for contiguity
+    people_groups = ensure_multi_table_studio_contiguity(people_groups)
+    
     people_groups
   end
   
@@ -1602,6 +1605,55 @@ class TablesController < ApplicationController
     end
     
     large_tables
+  end
+  
+  def ensure_multi_table_studio_contiguity(people_groups)
+    # Ensure that studios with multiple tables get proper coordination groups
+    # This fixes issues where mixed tables interfere with studio contiguity
+    
+    # Group tables by studio (including mixed tables)
+    studio_groups = {}
+    
+    people_groups.each_with_index do |group, index|
+      # Get all studios represented in this table
+      studios_in_group = group[:people].map(&:studio_id).uniq
+      
+      studios_in_group.each do |studio_id|
+        studio_groups[studio_id] ||= []
+        studio_groups[studio_id] << { group: group, index: index }
+      end
+    end
+    
+    # Find studios that have multiple tables and need contiguity coordination
+    multi_table_studios = studio_groups.select { |studio_id, groups| groups.count > 1 }
+    
+    multi_table_studios.each do |studio_id, group_refs|
+      # Skip Event Staff (studio_id = 0) as they have their own logic
+      next if studio_id == 0
+      
+      # Get studio name for coordination group
+      studio_name = group_refs.first[:group][:people].find { |p| p.studio_id == studio_id }.studio.name
+      coordination_key = "multi_table_#{studio_name.downcase.gsub(/[^a-z0-9]/, '_')}"
+      
+      # Check if any of these groups already has a coordination group from pairing
+      existing_coord_groups = group_refs.map { |ref| ref[:group][:coordination_group] }.compact.uniq
+      
+      if existing_coord_groups.any?
+        # Use the existing coordination group from pairing logic
+        final_coord_group = existing_coord_groups.first
+      else
+        # Create new coordination group for this multi-table studio
+        final_coord_group = coordination_key
+      end
+      
+      # Apply the coordination group to ALL tables for this studio
+      group_refs.each do |ref|
+        ref[:group][:coordination_group] = final_coord_group
+        Rails.logger.info "Multi-table contiguity: Studio #{studio_name} table #{ref[:index]} -> #{final_coord_group}"
+      end
+    end
+    
+    people_groups
   end
   
   def get_all_paired_studio_ids
