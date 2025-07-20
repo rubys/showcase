@@ -25,7 +25,15 @@ Rails.application.routes.draw do
       get "/studios/:studio", to: 'event#showcases', as: 'studio_events'
 
       get "logs", to: 'event#logs'
+
+      if Rails.env.development?
+         get "/:year/:city/:event", to: 'event#select', year: /\d+/
+      end
     else
+      if Rails.env.development?
+         get "/:year/:city/:event", to: 'event#root'
+      end
+
       root 'event#root'
     end
 

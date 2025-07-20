@@ -280,6 +280,8 @@ class EventController < ApplicationController
   end
 
   def index
+    return select if params[:db]
+
     @people = Person.includes(:level, :age, :studio, :lead_entries, :follow_entries)
       .order(:name)
     @judges = Person.where(type: 'Judge').order(:name)
@@ -470,6 +472,9 @@ class EventController < ApplicationController
   end
 
   def showcases
+    return select if params[:year]
+    return redirect_to root_path(db: params[:db]) if params[:db]
+
     @inventory = JSON.parse(File.read('tmp/inventory.json')) rescue []
     @showcases = YAML.load_file('config/tenant/showcases.yml')
     logos = Set.new
@@ -1106,7 +1111,14 @@ class EventController < ApplicationController
   end
 
   def select
-    if request.post?
+    if params[:year] && params[:db].blank?
+      return redirect_to root_path(
+        db: "#{params[:year]}-#{params[:city]}-#{params[:event]}",
+        year: params[:year],
+      )
+    end
+
+    if params[:db]
       FileUtils.rm "tmp/pids/server.pid", force: true
       FileUtils.touch "tmp/reload.txt"
 
@@ -1130,7 +1142,7 @@ class EventController < ApplicationController
       @dbs = Dir["db/2*.sqlite3"].
         sort_by {|name| File.mtime(name)}[-20..].
         map {|name| File.basename(name, '.sqlite3')}.
-        reverse
+        reverse + ["index"]
 
       @dates = (0..19).map {|i| (Date.today-i).iso8601}
     end
