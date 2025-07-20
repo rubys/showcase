@@ -16,13 +16,7 @@ class TablesController < ApplicationController
       # Get table size: individual table > option > event > default (10)
       table_size = table.size
       if table_size.nil? || table_size == 0
-        if @option && @option.table_size && @option.table_size > 0
-          table_size = @option.table_size
-        elsif Event.current&.table_size && Event.current.table_size > 0
-          table_size = Event.current.table_size
-        else
-          table_size = 10
-        end
+        table_size = @option&.computed_table_size || Event.current&.table_size || 10
       end
       if table.option_id
         # For option tables, count people through person_options
@@ -108,13 +102,7 @@ class TablesController < ApplicationController
       # Get table size: individual table > option > event > default (10)
       table_size = table.size
       if table_size.nil? || table_size == 0
-        if @option && @option.table_size && @option.table_size > 0
-          table_size = @option.table_size
-        elsif Event.current&.table_size && Event.current.table_size > 0
-          table_size = Event.current.table_size
-        else
-          table_size = 10
-        end
+        table_size = @option&.computed_table_size || Event.current&.table_size || 10
       end
       if table.option_id
         # For option tables, count people through person_options
@@ -172,8 +160,7 @@ class TablesController < ApplicationController
   # GET /tables/1/edit
   def edit
     # Check if table has capacity for more people
-    table_size = @table.size || Event.current&.table_size || 10
-    table_size = 10 if table_size.nil? || table_size.zero?
+    table_size = @table.computed_table_size
     if @table.option_id
       # For option tables, count people through person_options
       current_people_count = @table.person_options.count
@@ -340,15 +327,8 @@ class TablesController < ApplicationController
         Table.where(option_id: nil).destroy_all
       end
       
-      # Get table size: option > event > default (10)
-      event = Event.first
-      if @option && @option.table_size && @option.table_size > 0
-        table_size = @option.table_size
-      elsif event && event.table_size && event.table_size > 0
-        table_size = event.table_size
-      else
-        table_size = 10
-      end
+      # Get table size using computed method
+      table_size = @option&.computed_table_size || Event.current&.table_size || 10
       
       # Get people based on context
       if @option
@@ -537,7 +517,7 @@ class TablesController < ApplicationController
     
     # Add capacity status for each table (same as studio action)
     @tables.each do |table|
-      table_size = table.size || Event.current&.table_size || 10
+      table_size = table.computed_table_size
       if table.option_id
         # For option tables, count people through person_options
         people_count = table.person_options.count
@@ -796,8 +776,11 @@ class TablesController < ApplicationController
 
   def fill_table_with_studio_people(table, studio_id)
     # Determine table size
-    table_size = table.size || Event.current&.table_size || 10
-    table_size = 10 if table_size.nil? || table_size.zero?
+    table_size = table.size
+    if table_size.nil? || table_size.zero?
+      option = Billable.find_by(id: table.option_id) if table.option_id
+      table_size = option&.computed_table_size || Event.current&.table_size || 10
+    end
     
     # Calculate available seats
     if table.option_id

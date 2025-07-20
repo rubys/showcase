@@ -78,9 +78,8 @@
 
   <div class="mt-6 p-4 bg-gray-50 rounded-lg">
     <% if @option %>
-      <% event = Event.first %>
-      <% fallback_table_size = (event.table_size.nil? || event.table_size == 0) ? 10 : event.table_size %>
-      <% default_table_size = @option.respond_to?(:table_size) && @option.table_size.present? ? @option.table_size : fallback_table_size %>
+      <% computed_table_size = @option.computed_table_size %>
+      <% default_table_size = @option.table_size.present? ? @option.table_size : computed_table_size %>
       <%= form_with(model: @option, url: billable_path(@option), class: "contents", data: {controller: 'auto-submit'}) do |form| %>
         <div class="flex items-center gap-3">
           <%= form.label :table_size, "Table Size for #{@option.name}:", class: "text-sm font-medium text-gray-700" %>
@@ -89,14 +88,14 @@
               min: 1, 
               class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 w-20 text-sm" %>
           <span class="text-sm text-gray-500">people per table</span>
-          <% if @option.respond_to?(:table_size) && @option.table_size.blank? %>
-            <span class="text-xs text-gray-400">(using event default: <%= fallback_table_size %>)</span>
+          <% if @option.table_size.blank? %>
+            <span class="text-xs text-gray-400">(using computed default: <%= computed_table_size %>)</span>
           <% end %>
         </div>
       <% end %>
     <% else %>
       <% event = Event.first %>
-      <% default_table_size = (event.table_size.nil? || event.table_size == 0) ? 10 : event.table_size %>
+      <% default_table_size = (event&.table_size && event.table_size > 0) ? event.table_size : 10 %>
       <%= form_with(model: event, url: event_path(event), class: "contents", data: {controller: 'auto-submit'}) do |form| %>
         <div class="flex items-center gap-3">
           <%= form.label :table_size, "Default Table Size:", class: "text-sm font-medium text-gray-700" %>

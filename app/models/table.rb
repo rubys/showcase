@@ -21,4 +21,11 @@ class Table < ApplicationRecord
       people.joins(:studio).pluck('studios.name').uniq.sort.join(', ')
     end
   end
+
+  # Computed table size using priority: table.size > option.table_size > event.table_size > 10
+  def computed_table_size
+    return size if size && size > 0
+    return option.computed_table_size if option_id && option&.computed_table_size
+    Event.current&.table_size || 10
+  end
 end

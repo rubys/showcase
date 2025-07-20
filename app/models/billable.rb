@@ -35,4 +35,12 @@ class Billable < ApplicationRecord
       Person.where(type: type).and(Person.where.not(package: self))
     end
   end
+
+  # Computed table size using priority: self.table_size > Event.current.table_size > 10
+  def computed_table_size
+    return table_size if table_size && table_size > 0
+    return Event.current.table_size if Event.current&.table_size && Event.current.table_size > 0
+    10
+  end
+
 end

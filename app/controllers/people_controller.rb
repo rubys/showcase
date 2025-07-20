@@ -970,16 +970,7 @@ class PeopleController < ApplicationController
           # Collect table data for sorting
           table_data = tables.map do |table|
             # Calculate table capacity info
-            table_size = table.size
-            if table_size.nil? || table_size == 0
-              if option && option.table_size && option.table_size > 0
-                table_size = option.table_size
-              elsif Event.current&.table_size && Event.current.table_size > 0
-                table_size = Event.current.table_size
-              else
-                table_size = 10
-              end
-            end
+            table_size = table.computed_table_size
             
             # Count people assigned to this table for this option
             people_count = table.person_options.count

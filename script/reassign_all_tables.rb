@@ -94,15 +94,8 @@ options.each do |option|
               Table.where(option_id: nil).destroy_all
             end
             
-            # Get table size: option > event > default (10)
-            event = Event.first
-            if @option && @option.table_size && @option.table_size > 0
-              table_size = @option.table_size
-            elsif event && event.table_size && event.table_size > 0
-              table_size = event.table_size
-            else
-              table_size = 10
-            end
+            # Get table size using computed method
+            table_size = @option&.computed_table_size || Event.current&.table_size || 10
             
             # Get people based on context
             if @option
