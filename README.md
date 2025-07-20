@@ -66,10 +66,18 @@ This is pretty much a standard
 application using import maps for JavaScript and
 [TailwindCSS](https://tailwindcss.com/) for CSS. 
 
-Models are provided for people (judges, emcees, instructors, students, and
-guests), packages, options, ages, levels, studios, dances, categories, events,
-heats, solos, formations, multi-heats, and scores, as well as a special
-singleton table for event information and settings.
+Models are split into two categories:
+
+**Base models** support ballroom dance event management: ages, billables 
+(packages and options), categories (with extensions), dances, entries, events, 
+feedbacks, formations, heats, levels, multi-dances, people (judges, instructors, 
+students, guests, emcees, and DJs using single-table inheritance), recordings, 
+scores, solos, songs, studios (with studio pairs), and tables for seating 
+assignments.
+
+**Admin models** support system administration and multi-tenancy: locales 
+(internationalization), locations (venues), regions (deployment infrastructure), 
+showcases (individual events), and users (authentication/authorization).
 
 The heat scheduler can be found in
 [app/controllers/concerns/heat_scheduler.rb](./app/controllers/concerns/heat_scheduler.rb).
