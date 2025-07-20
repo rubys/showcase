@@ -91,7 +91,11 @@ See:
 <a href="https://github.com/rubys/showcase/issues">issues</a>.
 </p>
 
+<% if ENV.fetch("RAILS_APP_DB", '') == 'index' && Rails.env.development? %>
+<%= link_to 'Index', index_path, class: 'btn-blue' %>
+<% else %>
 <%= link_to 'Index', root_path, class: 'btn-blue' %>
+<% end %>
 <% if User.index_auth? @authuser %>
 <% if  Rails.env.development? %>
 <%= link_to 'Admin', admin_path, class: 'btn-orange' %>

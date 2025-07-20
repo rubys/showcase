@@ -10,8 +10,6 @@ Rails.application.routes.draw do
     get "/docs/*page", to: "docs#page"
 
     if ENV.fetch("RAILS_APP_DB", '') == 'index'
-      root 'event#showcases'
-
       get "/:year/:city", to: 'event#showcases', year: /\d+/
       get "/:year/:city/", to: 'event#showcases', year: /\d+/
 
@@ -28,6 +26,10 @@ Rails.application.routes.draw do
 
       if Rails.env.development?
          get "/:year/:city/:event", to: 'event#select', year: /\d+/
+         get "/index", to: 'event#showcases', as: 'index'
+         root "event#regions"
+      else
+        root 'event#showcases'
       end
     else
       if Rails.env.development?

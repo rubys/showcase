@@ -40,7 +40,7 @@ class EventController < ApplicationController
       @djs, @emcees = @emcees, []
     end
 
-    @event = Event.last
+    @event = Event.last || Event.create(name: 'Untitled Event', date: Time.now.strftime('%Y-%m-%d'), location: 'Unknown Location')
 
     @heats = Heat.where.not(number: ..0).distinct.count(:number)
     @unscheduled = Heat.where(number: 0).count
@@ -472,9 +472,6 @@ class EventController < ApplicationController
   end
 
   def showcases
-    return select if params[:year]
-    return redirect_to root_path(db: params[:db]) if params[:db]
-
     @inventory = JSON.parse(File.read('tmp/inventory.json')) rescue []
     @showcases = YAML.load_file('config/tenant/showcases.yml')
     logos = Set.new
@@ -663,6 +660,9 @@ class EventController < ApplicationController
   end
 
   def regions
+    return select if params[:year]
+    return redirect_to root_path(db: params[:db]) if params[:db]
+
     showcases = YAML.load_file('config/tenant/showcases.yml')
     @map = YAML.load_file('config/tenant/map.yml')
 
