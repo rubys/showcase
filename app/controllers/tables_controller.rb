@@ -105,7 +105,17 @@ class TablesController < ApplicationController
     
     # Add capacity status for each table
     @tables.each do |table|
-      table_size = table.size || Event.current&.table_size || 10
+      # Get table size: individual table > option > event > default (10)
+      table_size = table.size
+      if table_size.nil? || table_size == 0
+        if @option && @option.table_size && @option.table_size > 0
+          table_size = @option.table_size
+        elsif Event.current&.table_size && Event.current.table_size > 0
+          table_size = Event.current.table_size
+        else
+          table_size = 10
+        end
+      end
       if table.option_id
         # For option tables, count people through person_options
         people_count = table.person_options.count
