@@ -1,6 +1,6 @@
 module EntryForm
   def form_init(id = nil, entry = nil)
-    event = Event.first
+    event = Event.current
     @person ||= Person.find(id) if id
     @person ||= Person.nobody if @studio
 

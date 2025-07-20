@@ -10,11 +10,11 @@ class CategoriesController < ApplicationController
     generate_agenda
     @agenda = @agenda.to_h
     @categories = (Category.all + CatExtension.all).sort_by {|cat| cat.order}
-    @locked = Event.last.locked?
+    @locked = Event.current.locked?
     @settings = params[:settings]
 
     if @settings
-      @event = Event.first
+      @event = Event.current
       @ages = Age.all.size
       @levels = Level.all.order(:id).map {|level| [level.name, level.id]}
     end
@@ -145,7 +145,7 @@ class CategoriesController < ApplicationController
       redirect_to heats_url(anchor: anchor),
         notice: "Category #{@category.name} #{@category.locked ? '' : 'un'}locked."
     else
-      event = Event.first
+      event = Event.current
       event.update(locked: !event.locked)
       Heat.where('prev_number != number').update_all 'prev_number = number' if event.locked
       redirect_to params[:return_to] || categories_url,
@@ -286,7 +286,7 @@ class CategoriesController < ApplicationController
         end
       end
 
-      event = Event.first
+      event = Event.current
       @pro_option = event.pro_heats
       @include_open = event.include_open || Heat.where(category: 'Open').size > 0
       @include_closed = event.include_closed || Heat.where(category: 'Closed').size > 0
@@ -302,7 +302,7 @@ class CategoriesController < ApplicationController
         ['Multi', :multi_category, :pro_multi_category]
       ]
 
-      if Event.first.agenda_based_entries?
+      if Event.current.agenda_based_entries?
         if @category.routines?
           categories.each do |cat, normal, pro|
             # Delete all dances that are not longer in the category

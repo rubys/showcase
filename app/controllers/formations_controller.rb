@@ -51,7 +51,7 @@ class FormationsController < ApplicationController
 
     @partner = @solo.heat.entry.partner(@person).id
 
-    if Event.first.agenda_based_entries?
+    if Event.current.agenda_based_entries?
       dances = Dance.where(order: 0...).order(:name)
 
       @categories = dance_categories(@solo.heat.dance, true)
@@ -85,7 +85,7 @@ class FormationsController < ApplicationController
 
     @on_floor = @solo.formations.all? {|formation| formation.on_floor}
     @heat = params[:heat]
-    @locked = Event.last.locked?
+    @locked = Event.current.locked?
   end
 
   # POST /formations or /formations.json

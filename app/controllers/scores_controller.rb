@@ -31,7 +31,7 @@ class ScoresController < ApplicationController
 
   # GET /scores or /scores.json
   def heatlist
-    event = Event.first
+    event = Event.current
     @judge = Person.find(params[:judge].to_i)
     @style = params[:style]
     @sort = @judge.sort_order
@@ -43,7 +43,7 @@ class ScoresController < ApplicationController
       entry: %i[lead follow],
       solo: %i[category_override]
     )
-    @combine_open_and_closed = Event.last.heat_range_cat == 1
+    @combine_open_and_closed = Event.current.heat_range_cat == 1
 
     @agenda = @heats.group_by(&:dance_category).
       sort_by {|category, heats| [category&.order || 0, heats.map(&:number).min]}
@@ -78,7 +78,7 @@ class ScoresController < ApplicationController
 
   # GET /scores/:judge/heat/:heat
   def heat
-    @event = Event.first
+    @event = Event.current
     @judge = Person.find(params[:judge].to_i)
     @number = params[:heat].to_f
     @number = @number.to_i if @number == @number.to_i
@@ -311,13 +311,13 @@ class ScoresController < ApplicationController
           score.comments = params[:comments]
         end
 
-        keep = score.good || score.bad || (!score.comments.blank?) || score.value || Event.first.assign_judges > 0
+        keep = score.good || score.bad || (!score.comments.blank?) || score.value || Event.current.assign_judges > 0
         if keep ? score.save : score.delete
           render json: score.as_json
         else
           render json: score.errors, status: :unprocessable_entity
         end
-      elsif not params[:score].blank? or not score.comments.blank? or Event.first.assign_judges > 0
+      elsif not params[:score].blank? or not score.comments.blank? or Event.current.assign_judges > 0
         if params[:name]
           value = score.value&.start_with?('{') ? JSON.parse(score.value) : {}
           value[params[:name]] = params[:score]
@@ -393,9 +393,9 @@ class ScoresController < ApplicationController
     end
 
     # Reload heat data and render updated partial      
-    @track_ages = Event.first.track_ages
-    @column_order = Event.first.column_order
-    @combine_open_and_closed = Event.first.heat_range_cat == 1
+    @track_ages = Event.current.track_ages
+    @column_order = Event.current.column_order
+    @combine_open_and_closed = Event.current.heat_range_cat == 1
     
     render turbo_stream: turbo_stream.replace("rank-heat-container", 
       partial: "scores/rank_heat", 
@@ -447,7 +447,7 @@ class ScoresController < ApplicationController
         return
       end
 
-      keep = score.good || score.bad || (!score.comments.blank?) || score.value || Event.first.assign_judges > 0
+      keep = score.good || score.bad || (!score.comments.blank?) || score.value || Event.current.assign_judges > 0
 
       if keep ? score.save : score.delete
         render json: score.as_json
@@ -465,7 +465,7 @@ class ScoresController < ApplicationController
 
   def by_level
     setup_score_view_params
-    @event = Event.first
+    @event = Event.current
     @open_scoring = @event.open_scoring
     @closed_scoring = @event.closed_scoring
     levels = Level.order(:id).all
@@ -547,7 +547,7 @@ class ScoresController < ApplicationController
   end
 
   def by_studio
-    @event = Event.first
+    @event = Event.current
     @open_scoring = @event.open_scoring
     @closed_scoring = @event.closed_scoring
     levels = Level.order(:id).all
@@ -647,7 +647,7 @@ class ScoresController < ApplicationController
 
   def by_age
     setup_score_view_params
-    @event = Event.first
+    @event = Event.current
     @open_scoring = @event.open_scoring
     @closed_scoring = @event.closed_scoring
     ages = Age.order(:id).all
@@ -729,7 +729,7 @@ class ScoresController < ApplicationController
 
   def multis
     setup_score_view_params
-    event = Event.first
+    event = Event.current
     @multi_scoring = event.multi_scoring
     dances = Dance.where.not(multi_category_id: nil).
       includes(multi_children: :dance, heats: [{entry: [:lead, :follow]}, :scores]).
@@ -809,7 +809,7 @@ class ScoresController < ApplicationController
     end
     
     # Set up column order for consistent display
-    event = Event.first
+    event = Event.current
     @column_order = event.column_order
     @last_score_update = Score.maximum(:updated_at)
     
@@ -898,7 +898,7 @@ class ScoresController < ApplicationController
   end
 
   def instructor
-    @event = Event.first
+    @event = Event.current
     @open_scoring = @event.open_scoring
     @scores = {}
 
@@ -1051,7 +1051,7 @@ class ScoresController < ApplicationController
     end
 
     def student_results
-      event = Event.first
+      event = Event.current
       strict = event.strict_scoring
 
       if not strict
@@ -1115,7 +1115,7 @@ class ScoresController < ApplicationController
     # Common setup for score view methods
     def setup_score_view_params
       @details = params[:details] == true || params[:details] == "true"
-      event = Event.first
+      event = Event.current
       @column_order = event.column_order
       @last_score_update = Score.maximum(:updated_at)
     end

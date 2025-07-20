@@ -31,7 +31,7 @@ class StudiosController < ApplicationController
     index
     generate_invoice @studios, @student
 
-    @event ||= Event.first
+    @event ||= Event.current
     @font_size = @event.font_size
 
     respond_to do |format|
@@ -65,7 +65,7 @@ class StudiosController < ApplicationController
     @people = Person.where(type: ['Student', 'Professional'], studio: @studio).order(:name)
     heat_sheets
 
-    @event ||= Event.first
+    @event ||= Event.current
     @track_ages = @event.track_ages
     @font_size = @event.font_size
     @ballrooms = @event.ballrooms
@@ -89,7 +89,7 @@ class StudiosController < ApplicationController
     @people = @studio.people
     score_sheets
 
-    @event ||= Event.first
+    @event ||= Event.current
     @font_size = @event.font_size
 
     solos = Solo.includes(heat: {entry: [:lead, :follow]}).where(follow: {studio_id: @studio}).
@@ -112,7 +112,7 @@ class StudiosController < ApplicationController
   def invoice
     generate_invoice([@studio])
 
-    @event ||= Event.first
+    @event ||= Event.current
     @font_size = @event.font_size
 
     respond_to do |format|
@@ -128,7 +128,7 @@ class StudiosController < ApplicationController
     @registration = @studio.student_registration_cost
     generate_invoice([@studio], true)
 
-    @event ||= Event.first
+    @event ||= Event.current
     font_size = @event.font_size
 
     @heat_cost = @studio.student_heat_cost || @studio.heat_cost || @event.heat_cost || 0
@@ -148,7 +148,7 @@ class StudiosController < ApplicationController
   end
 
   def send_invoice
-    @event = Event.last
+    @event = Event.current
 
     if request.post?
       begin
@@ -193,7 +193,7 @@ class StudiosController < ApplicationController
     @cost_override = !!(@studio.heat_cost || @studio.solo_cost || @studio.multi_cost)
     @student_cost_override = !!(@studio.student_heat_cost || @studio.student_solo_cost || @studio.student_multi_cost)
 
-    event = Event.last
+    event = Event.current
     @studio.heat_cost ||= event.heat_cost
     @studio.solo_cost ||= event.solo_cost
     @studio.multi_cost ||= event.multi_cost
@@ -218,7 +218,7 @@ class StudiosController < ApplicationController
     new
 
     @avail.select! {|studio| studio != @studio.name and not @pairs.any? {|pair| pair.name == studio}}
-    @locked = Event.last.locked?
+    @locked = Event.current.locked?
   end
 
   # POST /studios or /studios.json

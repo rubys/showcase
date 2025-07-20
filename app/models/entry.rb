@@ -126,7 +126,7 @@ private
     elsif instructors > 1
       if instructor_id
         errors.add :instructor_id, 'Entry already has an instructor'
-      elsif not Event.first.pro_heats
+      elsif not Event.current.pro_heats
         errors.add :lead_id, 'All entries must include a student'
       end
     elsif instructor_id and instructor.type != 'Professional'

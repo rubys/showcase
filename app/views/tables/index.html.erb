@@ -94,7 +94,7 @@
         </div>
       <% end %>
     <% else %>
-      <% event = Event.first %>
+      <% event = Event.current %>
       <% default_table_size = (event&.table_size && event.table_size > 0) ? event.table_size : 10 %>
       <%= form_with(model: event, url: event_path(event), class: "contents", data: {controller: 'auto-submit'}) do |form| %>
         <div class="flex items-center gap-3">

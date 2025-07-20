@@ -123,6 +123,7 @@ class HeatSchedulerTest < ActiveSupport::TestCase
   
   test "schedule_heats respects max heat size" do
     @event.update!(max_heat_size: 2)
+    Event.current = @event
     
     # Create 3 entries with different instructors to avoid instructor conflicts
     entries = []
@@ -292,6 +293,7 @@ class HeatSchedulerTest < ActiveSupport::TestCase
   test "schedule_heats handles pro heats separately" do
     # Enable pro heats for the event
     @event.update!(pro_heats: true)
+    Event.current = @event
     
     # Create pro entry (two professionals)
     entry = Entry.create!(

@@ -6,7 +6,7 @@ class FeedbacksController < ApplicationController
     @feedbacks = Feedback.all.to_a
 
     if @feedbacks.empty?
-      if Event.first.open_scoring == '+'
+      if Event.current.open_scoring == '+'
         @feedbacks << Feedback.new(order: 1, value: 'Dance & Frame', abbr: 'DF')
         @feedbacks << Feedback.new(order: 2, value: 'Timing', abbr: 'T')
         @feedbacks << Feedback.new(order: 3, value: 'Lead/Follow', abbr: 'LF')

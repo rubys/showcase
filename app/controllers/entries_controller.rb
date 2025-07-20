@@ -7,7 +7,7 @@ class EntriesController < ApplicationController
 
   # GET /entries or /entries.json
   def index
-    @track_ages = Event.first.track_ages
+    @track_ages = Event.current.track_ages
 
     where = {}
 
@@ -74,7 +74,7 @@ class EntriesController < ApplicationController
 
     tally_entry
 
-    event = Event.first
+    event = Event.current
     if !event.include_open && event.include_closed
       @entries['Open'].each do |dance, heats|
         @entries['Closed'][dance] ||= []
@@ -115,7 +115,7 @@ class EntriesController < ApplicationController
 
     respond_to do |format|
       if @entry.save
-        if Event.first.package_required
+        if Event.current.package_required
           @entry.lead.default_package!
           @entry.follow.default_package!
         end
@@ -135,7 +135,7 @@ class EntriesController < ApplicationController
     entry = params[:entry]
     replace = find_or_create_entry(entry)
 
-    event = Event.first
+    event = Event.current
     if event.include_open && !event.include_closed
       params[:entry][:entries]['Closed'] ||= {}
       params[:entry][:entries]['Open'].each {|dance, count| params[:entry][:entries]['Closed'][dance] = 0}
@@ -275,7 +275,7 @@ class EntriesController < ApplicationController
     end
 
     def agenda_init
-      event = Event.first
+      event = Event.current
 
       dances = Dance.order(:order).where(heat_length: nil)
       multis = Dance.order(:order).where.not(heat_length: nil)
@@ -368,7 +368,7 @@ class EntriesController < ApplicationController
       return unless entry[:entries]
       tally_entry
 
-      dance_limit = Event.first.dance_limit
+      dance_limit = Event.current.dance_limit
       dance_override = Dance.where.not(limit: nil).any?
 
       if dance_limit

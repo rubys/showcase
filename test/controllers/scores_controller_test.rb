@@ -785,7 +785,7 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "student_results respects strict scoring settings" do
-    event = Event.first
+    event = Event.current
     original_strict = event.strict_scoring
     
     # Test with strict scoring enabled
@@ -832,7 +832,7 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "post handles score persistence with assign_judges setting" do
-    event = Event.first
+    event = Event.current
     original_assign = event.assign_judges
     
     # Test with assign_judges > 0 (should keep empty scores)

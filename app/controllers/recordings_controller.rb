@@ -6,7 +6,7 @@ class RecordingsController < ApplicationController
 
   # GET /recordings/:judge/heat/:heat
   def heat
-    @event = Event.first
+    @event = Event.current
     @judge = Person.find(params[:judge].to_i)
     @number = params[:heat].to_f
     @number = @number.to_i if @number == @number.to_i

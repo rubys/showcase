@@ -19,7 +19,7 @@ class EventControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should update settings" do
-    @event = Event.last
+    @event = Event.current
     patch event_url(@event), params: { event: {
       name: @event.name,
       location: @event.location,
@@ -34,7 +34,7 @@ class EventControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should redirect to tables when updating table_size" do
-    @event = Event.last
+    @event = Event.current
     patch event_url(@event), params: { event: { table_size: 8 } }
     assert_redirected_to tables_path
     assert_equal "Default table size updated.", flash[:notice]
@@ -45,7 +45,7 @@ class EventControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "update should combine start_date and end_date into date field" do
-    @event = Event.last
+    @event = Event.current
     patch event_url(@event), params: { event: {
       name: "Test Event",
       start_date: "2024-01-15",
@@ -58,7 +58,7 @@ class EventControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "update should use start_date as date when end_date is same" do
-    @event = Event.last
+    @event = Event.current
     patch event_url(@event), params: { event: {
       name: "Test Event",
       start_date: "2024-01-15",
@@ -70,7 +70,7 @@ class EventControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "update should use start_date as date when end_date is empty" do
-    @event = Event.last
+    @event = Event.current
     patch event_url(@event), params: { event: {
       name: "Test Event",
       start_date: "2024-01-15",
@@ -82,7 +82,7 @@ class EventControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "update should set dance_limit to nil when zero" do
-    @event = Event.last
+    @event = Event.current
     patch event_url(@event), params: { event: {
       name: "Test Event",
       dance_limit: 0
@@ -93,7 +93,7 @@ class EventControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "update should transform open scoring values from numeric to letter grades" do
-    @event = Event.last
+    @event = Event.current
     @event.update!(open_scoring: "1")
     
     # Create a score with numeric value
@@ -113,7 +113,7 @@ class EventControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "update should transform open scoring values from letter grades to numeric" do
-    @event = Event.last
+    @event = Event.current
     @event.update!(open_scoring: "GH")
     
     # Create a score with letter value
@@ -133,7 +133,7 @@ class EventControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "update should redirect to specified tab" do
-    @event = Event.last
+    @event = Event.current
     patch event_url(@event), params: { 
       event: { name: "Test Event" },
       tab: "Costs"
@@ -143,7 +143,7 @@ class EventControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "update should handle invalid event parameters" do
-    @event = Event.last
+    @event = Event.current
     original_name = @event.name
     
     patch event_url(@event), params: { event: {

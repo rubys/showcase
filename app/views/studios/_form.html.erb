@@ -34,7 +34,7 @@
     <%= form.text_field :name, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
-  <% if Event.first.ballrooms == 4 %>
+  <% if Event.current.ballrooms == 4 %>
   <div class="my-5">
     <%= form.label :ballroom, 'Ballroom' %>
     <%= form.select :ballroom, %w(A B), {include_blank: true},

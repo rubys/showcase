@@ -171,7 +171,7 @@ class TablesTest < ApplicationSystemTestCase
 
   test "should display default table size value of 10 when table_size is nil" do
     # Set table_size to nil
-    Event.first.update(table_size: nil)
+    Event.current.update(table_size: nil)
     
     visit tables_url
     
@@ -182,7 +182,7 @@ class TablesTest < ApplicationSystemTestCase
 
   test "should display default table size value of 10 when table_size is 0" do
     # Set table_size to 0
-    Event.first.update(table_size: 0)
+    Event.current.update(table_size: 0)
     
     visit tables_url
     
@@ -193,7 +193,7 @@ class TablesTest < ApplicationSystemTestCase
 
   test "should display actual table size value when set" do
     # Set table_size to a specific value
-    Event.first.update(table_size: 8)
+    Event.current.update(table_size: 8)
     
     visit tables_url
     

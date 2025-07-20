@@ -433,7 +433,7 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     Table.destroy_all
     
     # Set table size to 10 (default)
-    Event.first.update!(table_size: 10)
+    Event.current.update!(table_size: 10)
     
     # Count total people from non-Event Staff studios
     total_people = Person.joins(:studio).where.not(studios: { id: 0 }).count
@@ -465,7 +465,7 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     Table.destroy_all
     
     # Set a smaller table size to test filling behavior with existing people
-    Event.first.update!(table_size: 2)
+    Event.current.update!(table_size: 2)
     
     # Count existing people (should be at least 3 from Adelaide)
     total_people = Person.joins(:studio).where.not(studios: { id: 0 }).count
@@ -518,7 +518,7 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     
     total_people = studios_data.sum { |s| s[:people_count] }
     table_size = 10
-    Event.first.update!(table_size: table_size)
+    Event.current.update!(table_size: table_size)
     
     # The tiny studios (4+2+1+1+2 = 10 people) should combine into 1 table
     # instead of creating 5 separate partial tables
@@ -544,7 +544,7 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     Table.destroy_all
     
     # Set up scenario with many people and studios
-    Event.first.update!(table_size: 10)
+    Event.current.update!(table_size: 10)
     
     # Test with our existing people from many studios
     total_people = Person.joins(:studio).where.not(studios: { id: 0 }).count

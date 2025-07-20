@@ -5,7 +5,7 @@ class BillablesController < ApplicationController
   def index
     @packages = Billable.where.not(type: 'Order').order(:order).group_by(&:type)
     @options = Billable.where(type: 'Option').order(:order)
-    @event = Event.last
+    @event = Event.current
   end
 
   # GET /billables/1 or /billables/1.json
@@ -191,7 +191,7 @@ class BillablesController < ApplicationController
   def add_age_costs
     used = AgeCost.pluck(:age_id)
     age_id = Age.where.not(id: used).first.id
-    event = Event.last
+    event = Event.current
     AgeCost.create! age_id: age_id, heat_cost: event.heat_cost, solo_cost: event.solo_cost, multi_cost: event.multi_cost
 
     redirect_to settings_event_index_path(tab: 'Prices', anchor: 'age-costs')

@@ -41,7 +41,7 @@ class Category < ApplicationRecord
   end
 
   def delete_owned_dances
-    return unless routines? and Event.first.agenda_based_entries?
+    return unless routines? and Event.current.agenda_based_entries?
     open_dances.where(order: ...0).delete_all
     closed_dances.where(order: ...0).delete_all
     solo_dances.where(order: ...0).delete_all

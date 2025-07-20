@@ -24,7 +24,7 @@ class SolosController < ApplicationController
 
     @solos = @solos.sort_by {|cat, heats| sort_order[cat&.name || ''] || 0}
 
-    @track_ages = Event.last.track_ages
+    @track_ages = Event.current.track_ages
   end
 
   def djlist
@@ -47,7 +47,7 @@ class SolosController < ApplicationController
       @overrides = Category.where(routines: true).map {|category| [category.name, category.id]}
     end
 
-    if Event.first.agenda_based_entries?
+    if Event.current.agenda_based_entries?
       category = (@person.type == 'Professional') ? :pro_solo_category : :solo_category
       @dances = Dance.where(order: 0...).where.not(category => nil).order(:name).all.map {|dance| [dance.name, dance.id]}
     else
@@ -61,7 +61,7 @@ class SolosController < ApplicationController
 
   # GET /solos/1/edit
   def edit
-    event = Event.last
+    event = Event.current
     form_init(params[:primary], @solo.heat.entry)
 
     @partner = @solo.heat.entry.partner(@person).id
@@ -96,7 +96,7 @@ class SolosController < ApplicationController
     end
 
     @heat = params[:heat]
-    @locked = Event.last.locked?
+    @locked = Event.current.locked?
   end
 
   # POST /solos or /solos.json
@@ -438,7 +438,7 @@ class SolosController < ApplicationController
   def critiques
     index
     @judges = Person.where(type: 'Judge').all
-    @event = Event.first
+    @event = Event.current
     @layout = 'mx-0'
     @nologo = true
     @font_size = @event.font_size

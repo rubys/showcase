@@ -22,10 +22,12 @@ class SolosTest < ApplicationSystemTestCase
     visit person_url(people(:Kathryn))
 
     within find('caption', text: 'Solos').sibling('tbody') do
-      find('td', text: 'Assoc. Silver').hover
-      # Add explicit wait for Edit button to become visible after hover
-      sleep(0.2)
-      click_on "Edit"
+      row = find('td', text: 'Assoc. Silver').ancestor('tr')
+      row.hover
+      sleep 0.3  # Allow hover effect to take effect
+      within row do
+        find('button', text: 'Edit', visible: true).click
+      end
     end
 
     fill_in "Song", with: "Por Una Cabeza"
@@ -39,8 +41,12 @@ class SolosTest < ApplicationSystemTestCase
     visit person_url(people(:Kathryn))
 
     within find('caption', text: 'Solos').sibling('tbody') do
-      find('td', text: 'Assoc. Silver').hover
-      click_on "Edit"
+      row = find('td', text: 'Assoc. Silver').ancestor('tr')
+      row.hover
+      sleep 0.3  # Allow hover effect to take effect
+      within row do
+        find('button', text: 'Edit', visible: true).click
+      end
     end
 
     click_on "Scratch this solo"

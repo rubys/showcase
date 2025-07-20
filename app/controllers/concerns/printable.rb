@@ -1,6 +1,6 @@
 module Printable
   def generate_agenda(expand_multi_heats: true)
-    event = Event.last
+    event = Event.current
 
     @heats = Heat.order('abs(number)').includes(
       dance: [
@@ -50,10 +50,10 @@ module Printable
     end
 
     start = nil
-    heat_length = Event.last.heat_length
-    solo_length = Event.last.solo_length || heat_length
-    if not Event.last.date.blank? and heat_length and @categories.values.any? {|category| not category.time.blank?}
-      start = Event.parse_date(Event.last.date, guess: false)&.begin || Time.now
+    heat_length = Event.current.heat_length
+    solo_length = Event.current.solo_length || heat_length
+    if not Event.current.date.blank? and heat_length and @categories.values.any? {|category| not category.time.blank?}
+      start = Event.parse_date(Event.current.date, guess: false)&.begin || Time.now
 
       if not @categories.empty? and not @categories.values.first.day.blank?
         start = Chronic.parse(@categories.values.first.day, guess: false)&.begin || start
@@ -266,7 +266,7 @@ module Printable
 
     studios ||= Studio.all.order(:name).preload(:studio1_pairs, :studio2_pairs, people: {options: :option, package: {package_includes: :option}})
 
-    @event = Event.last
+    @event = Event.current
     @track_ages = @event.track_ages
     @column_order = @event.column_order
 
@@ -500,7 +500,7 @@ module Printable
 
     @layout = 'mx-0 px-5'
     @nologo = true
-    @event = Event.last
+    @event = Event.current
   end
 
   def score_sheets
@@ -510,7 +510,7 @@ module Printable
     @formations = Formation.joins(solo: :heat).where(on_floor: true).pluck(:person_id, :number)
     @layout = 'mx-0 px-5'
     @nologo = true
-    @event = Event.last
+    @event = Event.current
     @track_ages = @event.track_ages
   end
 

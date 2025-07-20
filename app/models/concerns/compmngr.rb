@@ -13,7 +13,7 @@ module Compmngr
   }
 
   def import_from_compmngr(spreadsheet)
-    event = self.is_a?(Event) ? self : Event.first
+    event = self.is_a?(Event) ? self : Event.current
 
     event.update!(include_closed: false, pro_heats: true)
 

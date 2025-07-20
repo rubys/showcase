@@ -30,8 +30,12 @@ class EntriesTest < ApplicationSystemTestCase
     visit person_url(people(:Kathryn))
 
     within find('caption', text: 'Entries').sibling('tbody') do
-      find('td', text: 'Assoc. Silver').hover
-      click_on "Edit"
+      row = find('td', text: 'Assoc. Silver').ancestor('tr')
+      row.hover
+      sleep 0.3  # Allow hover effect to take effect
+      within row do
+        find('button', text: 'Edit', visible: true).click
+      end
     end
 
     within page.find('h2', text: 'CLOSED CATEGORY').sibling('div') do
@@ -49,8 +53,12 @@ class EntriesTest < ApplicationSystemTestCase
     visit person_url(people(:Kathryn))
 
     within find('caption', text: 'Entries').sibling('tbody') do
-      find('td', text: 'Full Silver').hover
-      click_on "Edit"
+      row = find('td', text: 'Full Silver').ancestor('tr')
+      row.hover
+      sleep 0.3  # Allow hover effect to take effect
+      within row do
+        find('button', text: 'Edit', visible: true).click
+      end
     end
 
     within page.find('h2', text: 'CLOSED CATEGORY').sibling('div') do
@@ -71,10 +79,12 @@ class EntriesTest < ApplicationSystemTestCase
     visit person_url(people(:Kathryn))
 
     within find('caption', text: 'Entries').sibling('tbody') do
-      find('td', text: 'Full Silver').hover
-      # Add explicit wait for Edit button to become visible after hover
-      sleep(0.2)
-      click_on "Edit"
+      row = find('td', text: 'Full Silver').ancestor('tr')
+      row.hover
+      sleep 0.3  # Allow hover effect to take effect
+      within row do
+        find('button', text: 'Edit', visible: true).click
+      end
     end
 
     within page.find('h2', text: 'OPEN CATEGORY').sibling('div') do
@@ -91,8 +101,12 @@ class EntriesTest < ApplicationSystemTestCase
     visit person_url(people(:Kathryn))
 
     within find('caption', text: 'Entries').sibling('tbody') do
-      find('td', text: 'Full Silver').hover
-      click_on "Edit"
+      row = find('td', text: 'Full Silver').ancestor('tr')
+      row.hover
+      sleep 0.3  # Allow hover effect to take effect
+      within row do
+        find('button', text: 'Edit', visible: true).click
+      end
     end
 
     click_on "Scratch this entry", match: :first

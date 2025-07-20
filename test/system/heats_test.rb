@@ -12,8 +12,12 @@ class HeatsTest < ApplicationSystemTestCase
 
   test "should update Heat" do
     visit person_url(people(:Kathryn))
-    page.all('td', text: 'Open').last.hover
-    click_on "Edit"
+    row = page.all('td', text: 'Open').last.ancestor('tr')
+    row.hover
+    sleep 0.3  # Allow hover effect to take effect
+    within row do
+      find('button', text: 'Edit', visible: true).click
+    end
 
     select "Full Gold", from: "heat_level"
     click_on "Update Heat"
@@ -24,8 +28,12 @@ class HeatsTest < ApplicationSystemTestCase
 
   test "should scratch Heat" do
     visit person_url(people(:Kathryn))
-    page.find('td', text: 'Closed').hover
-    click_on "Edit"
+    row = page.find('td', text: 'Closed').ancestor('tr')
+    row.hover
+    sleep 0.3  # Allow hover effect to take effect
+    within row do
+      find('button', text: 'Edit', visible: true).click
+    end
 
     click_on "Scratch this heat"
     

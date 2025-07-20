@@ -11,7 +11,7 @@ class PeopleController < ApplicationController
     trust_level: 50
 
   def heats
-    event = Event.last
+    event = Event.current
     @ballrooms = event.ballrooms
     @track_ages = event.track_ages
     @font_size = event.font_size
@@ -26,7 +26,7 @@ class PeopleController < ApplicationController
   end
 
   def individual_heats
-    event = Event.last
+    event = Event.current
     @ballrooms = event.ballrooms
     @track_ages = event.track_ages
     @font_size = event.font_size
@@ -71,7 +71,7 @@ class PeopleController < ApplicationController
     @instructor = @person
     generate_invoice([@studio], false, @person)
 
-    @event ||= Event.first
+    @event ||= Event.current
     @font_size = @event.font_size
 
     respond_to do |format|
@@ -92,7 +92,7 @@ class PeopleController < ApplicationController
     @solo_cost = @studio.student_solo_cost || @studio.solo_cost || @event.solo_cost || 0
     @multi_cost = @studio.student_multi_cost || @studio.multi_cost || @event.multi_cost || 0
 
-    @event ||= Event.first
+    @event ||= Event.current
     @font_size = @event.font_size
 
     respond_to do |format|
@@ -207,7 +207,7 @@ class PeopleController < ApplicationController
       @people = @people.to_a.sort_by! {|person| @multis[person.id] || 0}
     end
 
-    @track_ages = Event.first.track_ages
+    @track_ages = Event.current.track_ages
 
     render :index
   end
@@ -278,7 +278,7 @@ class PeopleController < ApplicationController
   def staff
     @professionals = Person.includes(:studio).where(type: 'Professional').order(sort_order)
     @staff = Studio.find(0)
-    @font_size = Event.first.font_size
+    @font_size = Event.current.font_size
 
     respond_to do |format|
       format.html { render }
@@ -305,12 +305,12 @@ class PeopleController < ApplicationController
         [lead, follow, entries.sum {|entry| entry.heats.count}]
       end.
       sort_by {|(lead, follow), count| level = lead.level_id}
-    @track_ages = Event.first.track_ages
+    @track_ages = Event.current.track_ages
   end
 
   # GET /people/labels
   def labels
-    @event = Event.first
+    @event = Event.current
     @people = Person.where.not(studio_id: nil).includes(:studio).order('studios.name', 'people.name COLLATE NOCASE').to_a
     staff = @people.select {|person| person.studio_id == 0}
     @people -= staff
@@ -327,7 +327,7 @@ class PeopleController < ApplicationController
 
   # GET /people/back-numbers
   def back_numbers
-    @event = Event.first
+    @event = Event.current
     @people = Person.where.not(back: nil).order(:back).to_a
 
     respond_to do |format|
@@ -377,7 +377,7 @@ class PeopleController < ApplicationController
     @entries = partners
     @partners = partners.keys
 
-    @routines = Category.where(routines: true).any? && !Event.first.agenda_based_entries?
+    @routines = Category.where(routines: true).any? && !Event.current.agenda_based_entries?
 
     @heats = Heat.joins(:entry).
       includes(:dance, entry: [:lead, :follow]).
@@ -404,7 +404,7 @@ class PeopleController < ApplicationController
       @dancing_judge = Person.where(name: @person.name, type: "Professional").pluck(:id).first
     end
 
-    @event = Event.first
+    @event = Event.current
     @track_ages = @event.track_ages
 
     @score_bgcolor = []
@@ -451,7 +451,7 @@ class PeopleController < ApplicationController
     selections
 
     @entries = @person.lead_entries.count + @person.follow_entries.count
-    @locked = Event.first.locked?
+    @locked = Event.current.locked?
     @heats = list_heats
     @return_to = params[:return_to]
   end
@@ -754,7 +754,7 @@ class PeopleController < ApplicationController
 
       unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).pluck(:id)
 
-      @event = Event.last
+      @event = Event.current
 
       if Category.where.not(ballrooms: nil).any?
         generate_agenda unless @agenda
@@ -822,7 +822,7 @@ class PeopleController < ApplicationController
   def destroy
     studio = @person.studio
 
-    if not Event.first.locked?
+    if not Event.current.locked?
       @person.destroy
 
       notice = "#{@person.display_name} was successfully removed."
@@ -901,7 +901,7 @@ class PeopleController < ApplicationController
     end
 
     def selections
-      @event = Event.last
+      @event = Event.current
 
       @studios = Studio.all.map{|studio| [studio.name, studio.id]}.to_h
       @types ||= %w[Student Guest Professional Judge DJ Emcee Official Organizer]
@@ -1026,14 +1026,14 @@ class PeopleController < ApplicationController
       @track_ages = @event.track_ages
       @include_independent_instructors = @event.independent_instructors
 
-      if Event.first.date.blank?
+      if Event.current.date.blank?
         @date_range = []
-      elsif Event.first.date =~ /(\d{4})-(\d{2})-(\d{2}) - (\d{4})-(\d{2})-(\d{2})/
+      elsif Event.current.date =~ /(\d{4})-(\d{2})-(\d{2}) - (\d{4})-(\d{2})-(\d{2})/
         start = Date.new($1.to_i, $2.to_i, $3.to_i)
         finish = Date.new($4.to_i, $5.to_i, $6.to_i)
         @date_range = (start..finish).map {|date| date.strftime('%Y-%m-%d')}
       else
-        @date_range = [Event.parse_date(Event.first.date).strftime('%Y-%m-%d')]
+        @date_range = [Event.parse_date(Event.current.date).strftime('%Y-%m-%d')]
       end
 
       if @person.available =~ /([<>])(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/

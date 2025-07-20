@@ -41,7 +41,7 @@ class DancesController < ApplicationController
   def edit
     form_init
 
-    @locked = Event.first.locked?
+    @locked = Event.current.locked?
   end
 
   # POST /dances or /dances.json
@@ -173,7 +173,7 @@ class DancesController < ApplicationController
 
   private
     def form_init
-      @event = Event.first
+      @event = Event.current
 
       @categories = Category.order(:order).pluck(:name, :id)
 

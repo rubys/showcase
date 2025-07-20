@@ -40,7 +40,7 @@ class EventController < ApplicationController
       @djs, @emcees = @emcees, []
     end
 
-    @event = Event.last || Event.create(name: 'Untitled Event', date: Time.now.strftime('%Y-%m-%d'), location: 'Unknown Location')
+    @event = Event.current || Event.create(name: 'Untitled Event', date: Time.now.strftime('%Y-%m-%d'), location: 'Unknown Location')
 
     @heats = Heat.where.not(number: ..0).distinct.count(:number)
     @unscheduled = Heat.where(number: 0).count
@@ -83,7 +83,7 @@ class EventController < ApplicationController
     @djs    = Person.where(type: 'DJ').order(:name)
     @emcees = Person.where(type: 'Emcee').order(:name)
 
-    @event ||= Event.last
+    @event ||= Event.current
 
     @combine_open_and_closed = @event.heat_range_cat == 1
 
@@ -127,7 +127,7 @@ class EventController < ApplicationController
   end
 
   def counter
-    @event = Event.last
+    @event = Event.current
     @layout = 'mx-0 overflow-hidden'
   end
 
@@ -159,9 +159,9 @@ class EventController < ApplicationController
     end
 
     @multi = Dance.where.not(multi_category: nil).count
-    @pro_heats = Event.last.pro_heats
+    @pro_heats = Event.current.pro_heats
 
-    @track_ages = Event.last.track_ages
+    @track_ages = Event.current.track_ages
   end
 
   def upload
@@ -177,7 +177,7 @@ class EventController < ApplicationController
   end
 
   def update
-    @event = Event.last
+    @event = Event.current
     old_open_scoring = @event.open_scoring
     old_multi_scoring = @event.multi_scoring
 
@@ -276,7 +276,7 @@ class EventController < ApplicationController
       settings(status: :unprocessable_entity)
     end
 
-    Event.current = Event.first
+    Event.current = Event.current
   end
 
   def index
@@ -331,7 +331,7 @@ class EventController < ApplicationController
 
     sheet = []
 
-    if Event.first.column_order == 1
+    if Event.current.column_order == 1
       headers = [
         'Number',
         'Student',
@@ -405,7 +405,7 @@ class EventController < ApplicationController
       sheet = []
       assignments = judge.scores.pluck(:heat_id, :value).to_h
 
-      if Event.first.column_order == 1
+      if Event.current.column_order == 1
         headers = [
           'Heat',
           'Back #',
@@ -790,7 +790,7 @@ class EventController < ApplicationController
   end
 
   def publish
-    @event = Event.first
+    @event = Event.current
     @public_url = URI.join(request.original_url, '../public')
     @fonts = FONTS
 
@@ -807,7 +807,7 @@ class EventController < ApplicationController
   end
 
   def start_heat
-    event = Event.last
+    event = Event.current
     event.current_heat = params[:heat]
     event.save
     event.broadcast_replace_later_to "current-heat-#{ENV['RAILS_APP_DB']}",
@@ -940,7 +940,7 @@ class EventController < ApplicationController
         event.delete 'current_heat'
         event.delete 'locked'
         event.delete 'payment_due'
-        Event.first.update(event)
+        Event.current.update(event)
 
         Feedback.transaction do
           Feedback.destroy_all
@@ -1067,7 +1067,7 @@ class EventController < ApplicationController
 
   def qrcode
     @public_url = URI.join(request.original_url, '../public')
-    @event = Event.first
+    @event = Event.current
   end
 
   def self.logo

@@ -2,7 +2,7 @@ module HeatScheduler
   include Printable
 
   def schedule_heats
-    event = Event.last
+    event = Event.current
 
     Group.set_knobs
 
@@ -167,7 +167,7 @@ module HeatScheduler
     end
 
     limited_availability = Person.where.not(available: nil).all
-    if limited_availability.any? && Event.first.heat_order == "R"
+    if limited_availability.any? && Event.current.heat_order == "R"
       exchange_heats(limited_availability)
       @heats = Heat.eager_load(
         :solo,
@@ -288,7 +288,7 @@ module HeatScheduler
     end
 
     cats.each do |cat, groups|
-      if Event.last.intermix
+      if Event.current.intermix
         dances = groups.group_by {|group| [group.dcat, true_order[group.dance.order]]}
         candidates = []
 
@@ -377,7 +377,7 @@ module HeatScheduler
 
   class Group
     def self.set_knobs
-      @@event = Event.last
+      @@event = Event.current
       @@category = @@event.heat_range_cat
       @@level = @@event.heat_range_level
       @@age = @@event.heat_range_age

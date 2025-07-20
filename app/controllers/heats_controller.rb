@@ -21,7 +21,7 @@ class HeatsController < ApplicationController
       map {|size, entries| [size, entries.map(&:first)]}.
       sort
 
-    event = Event.last
+    event = Event.current
     @backnums = event.backnums
     @ballrooms = event.ballrooms
     @track_ages = event.track_ages
@@ -78,7 +78,7 @@ class HeatsController < ApplicationController
 
   def mobile
     index
-    @event = Event.last
+    @event = Event.current
     @layout = 'mx-0'
     @nologo = true
     @search = params[:q] || params[:search]
@@ -94,9 +94,9 @@ class HeatsController < ApplicationController
 
     @layout = ''
     @nologo = true
-    @font_size = Event.first.font_size
+    @font_size = Event.current.font_size
 
-    @combine_open_and_closed = Event.last.heat_range_cat == 1
+    @combine_open_and_closed = Event.current.heat_range_cat == 1
 
     respond_to do |format|
       format.html
@@ -109,8 +109,8 @@ class HeatsController < ApplicationController
   # GET /heats/book or /heats/book.json
   def book
     @type = params[:type]
-    @event = Event.last
-    @ballrooms = Event.last.ballrooms
+    @event = Event.current
+    @ballrooms = Event.current.ballrooms
     index
     @font_family = @event.font_family
     @font_size = @event.font_size
@@ -270,7 +270,7 @@ class HeatsController < ApplicationController
           generate_agenda
           catname = cat&.name || 'Uncategorized'
           heats = @agenda[catname]
-          @locked = Event.last.locked?
+          @locked = Event.current.locked?
           @renumber = !@locked && renumber_needed
           @undoable = !@locked && undoable
 
@@ -309,7 +309,7 @@ class HeatsController < ApplicationController
         generate_agenda
         catname = cat&.name || 'Uncategorized'
         heats = @agenda[catname]
-        @locked = Event.last.locked?
+        @locked = Event.current.locked?
         @renumber = !@locked && renumber_needed
         @undoable = !@locked && undoable
 
@@ -358,7 +358,7 @@ class HeatsController < ApplicationController
         cat = source.dance_category
         generate_agenda
         heats = @agenda[cat.name]
-        @locked = Event.last.locked?
+        @locked = Event.current.locked?
 
         @renumber = !@locked && renumber_needed
         @undoable = !@locked && undoable
@@ -393,9 +393,9 @@ class HeatsController < ApplicationController
     @level = @heat.entry.level_id
     @instructor = @heat.entry.instructor_id
     @ballroom = Event.exists?(ballrooms: 2..) || Category.exists?(ballrooms: 2..)
-    @locked = Event.last.locked
+    @locked = Event.current.locked
 
-    if Event.first.agenda_based_entries?
+    if Event.current.agenda_based_entries?
       dances = Dance.where(order: 0...).order(:name)
 
       if !dances.include?(@heat.dance) || !@heat.dance.freestyle_category
@@ -417,7 +417,7 @@ class HeatsController < ApplicationController
       end
     end
 
-    if Event.first.assign_judges?
+    if Event.current.assign_judges?
       scores = @heat.scores.where(value: nil, good: nil, bad: nil)
 
       if scores.length == 1
@@ -454,7 +454,7 @@ class HeatsController < ApplicationController
     @heat.entry = replace
     @heat.number = 0
 
-    if Event.first.agenda_based_entries? and params[:heat][:number].to_i != 0
+    if Event.current.agenda_based_entries? and params[:heat][:number].to_i != 0
       heat = Heat.find_by(number: params[:heat][:number].to_i)
       category = heat&.dance_category
       if category&.routines == true
@@ -466,7 +466,7 @@ class HeatsController < ApplicationController
 
     if @heat.dance_id != params[:heat][:dance_id].to_i or @heat.category != params[:heat][:category]
       params[:heat].delete(:number)
-      dance_limit = Event.last.dance_limit
+      dance_limit = Event.current.dance_limit
       if dance_limit
         @heat.dance_id = params[:heat][:dance_id].to_i
         @heat.category = params[:heat][:category]
@@ -538,7 +538,7 @@ class HeatsController < ApplicationController
 
   # attempt to schedule unscheduled heats when locked
   def schedule_unscheduled
-    event = Event.first
+    event = Event.current
     unscheduled = Heat.includes(:entry).where(number: 0)
 
     # find people with time restrictions
@@ -633,7 +633,7 @@ class HeatsController < ApplicationController
 
     # Find heats that are not assigned to a judge, and assign them
     def assign_unassigned_to_judges
-      return unless Event.last.assign_judges?
+      return unless Event.current.assign_judges?
       return unless Score.where(value: nil, good: nil, bad: nil, comments: nil).any?
 
       # find heats that have not been assigned to a judge
