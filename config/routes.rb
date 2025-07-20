@@ -26,11 +26,12 @@ Rails.application.routes.draw do
 
       if Rails.env.development?
          get "/:year/:city/:event", to: 'event#select', year: /\d+/
-         get "/index", to: 'event#showcases', as: 'index'
          root "event#regions"
       else
         root 'event#showcases'
       end
+
+      get "/index", to: 'event#showcases', as: 'index'
     else
       if Rails.env.development?
          get "/:year/:city/:event", to: 'event#root'
