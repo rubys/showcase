@@ -16,7 +16,7 @@
   <div class="flex justify-center gap-4">
     <%= form.submit value: 'Open', class: "btn-blue" %>
     <button data-submit-target="submit" type="button"
-      class="btn-purple">Scopy</button>
+      class="btn-purple disabled:opacity-50 disabled:cursor-not-allowed">Scopy</button>
     <% if ENV.fetch("RAILS_APP_DB", '') == 'index' %>
     <%= link_to 'Admin', admin_path, class: "btn-green" %>
     <% else %>
