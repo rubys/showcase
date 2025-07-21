@@ -20,7 +20,11 @@
     <% if ENV.fetch("RAILS_APP_DB", '') == 'index' %>
     <%= link_to 'Admin', admin_path, class: "btn-green" %>
     <% else %>
-    <%= link_to 'Index', index_path, class: "btn-green" %>
+      <% if Rails.env.development? %>
+        <button type="submit" name="db" value="index" class="btn-green">Index</button>
+      <% else %>
+        <%= link_to 'Index', index_path, class: "btn-green" %>
+      <% end %>
     <% end %>
   </div>
 <% end %>

@@ -521,6 +521,15 @@ class EventController < ApplicationController
     @showcases.select! {|year, sites| !sites.empty?}
     raise ActiveRecord::RecordNotFound if @showcases.empty?
 
+    if Rails.env.development? && @showcases.values.length == 1 && @showcases.values.first.values.length == 1
+      # Only auto-redirect if this is NOT a studio page with multiple events
+      city_info = @showcases.values.first.values.first
+      if !@studio || !city_info[:events] || city_info[:events].length == 1
+        params[:db] = "#{@showcases.keys.first}-#{@showcases.values.first.keys.first}"
+        return select
+      end
+    end
+
     @showcases.each do |year, sites|
       sites.each do |token, info|
         logos.add info[:logo] || "arthur-murray-logo.gif"
