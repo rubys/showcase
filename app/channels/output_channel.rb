@@ -6,6 +6,9 @@ class OutputChannel < ApplicationCable::Channel
   COMMANDS = {
     apply: ->(params) {
       [RbConfig.ruby, "bin/apply-changes.rb"]
+    },
+    scopy: ->(params) {
+      ["scopy"]
     }
   }
 

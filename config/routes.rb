@@ -42,6 +42,7 @@ Rails.application.routes.draw do
         end
       end
 
+      get "/index", to: 'event#index', as: 'index', defaults: { db: 'index' }
       root 'event#root'
     end
 

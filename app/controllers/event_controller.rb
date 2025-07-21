@@ -1144,6 +1144,8 @@ class EventController < ApplicationController
       FileUtils.rm "tmp/reload.txt"
       redirect_to root_path
     else
+      @stream = OutputChannel.register(:scopy)
+      
       @dbs = Dir["db/2*.sqlite3"].
         sort_by {|name| File.mtime(name)}[-20..].
         map {|name| File.basename(name, '.sqlite3')}.

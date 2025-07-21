@@ -1,4 +1,4 @@
-<div class="mx-auto">
+<div class="mx-auto" data-controller="submit">
 
 <h1 class="font-bold text-4xl my-6 text-center">Select event</h1>
 
@@ -13,9 +13,22 @@
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
-  <div class="flex justify-center">
-    <%= form.submit value: 'Open', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+  <div class="flex justify-center gap-4">
+    <%= form.submit value: 'Open', class: "btn-blue" %>
+    <button data-submit-target="submit" type="button"
+      class="btn-purple">Scopy</button>
+    <% if ENV.fetch("RAILS_APP_DB", '') == 'index' %>
+    <%= link_to 'Admin', admin_path, class: "btn-green" %>
+    <% else %>
+    <%= link_to 'Index', index_path, class: "btn-green" %>
+    <% end %>
   </div>
 <% end %>
+
+<div class="hidden p-4 bg-black rounded-xl">
+<div data-submit-target="output" data-stream="<%= @stream %>"
+  class="w-full mx-auto overflow-y-auto h-auto font-mono text-sm max-h-[25rem] min-h-[25rem]">
+</div>
+</div>
 
 </div>

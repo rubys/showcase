@@ -29,6 +29,7 @@
     path = regions_path
     path = path[1..] if request.local?
     link = URI::join("#{Showcase.url}/", path).to_s
+    link = root_path if Rails.env.development?
   %>
   <p class="text-center mt-2"><%= link_to pluralize(@cities, 'City'), link %> -
   <%= link_to pluralize(@events, 'Event'), inventory_path %></p>
