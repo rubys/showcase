@@ -220,9 +220,6 @@ Rails.application.routes.draw do
       post 'drop', on: :collection
       post 'sort_level', on: :collection
       post 'sort_gap', on: :collection
-      get 'critiques0', on: :collection
-      get 'critiques1', on: :collection
-      get 'critiques2', on: :collection
     end
 
     resources :songs do

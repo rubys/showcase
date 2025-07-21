@@ -176,49 +176,6 @@ class SolosControllerTest < ActionDispatch::IntegrationTest
     assert_match /Solo was successfully removed/, flash[:notice]
   end
 
-  # ===== CRITIQUE AND REPORTING TESTS =====
-  
-  test "critiques0 displays first critique format" do
-    get critiques0_solos_url
-    
-    assert_response :success
-    assert_select 'body'
-  end
-  
-  test "critiques0 generates PDF format" do
-    get critiques0_solos_url(format: 'pdf')
-    
-    assert_response :success
-    assert_equal 'application/pdf', response.content_type
-  end
-  
-  test "critiques1 displays second critique format" do
-    get critiques1_solos_url
-    
-    assert_response :success
-    assert_select 'body'
-  end
-  
-  test "critiques1 generates PDF format" do
-    get critiques1_solos_url(format: 'pdf')
-    
-    assert_response :success
-    assert_equal 'application/pdf', response.content_type
-  end
-  
-  test "critiques2 displays third critique format" do
-    get critiques2_solos_url
-    
-    assert_response :success
-    assert_select 'body'
-  end
-  
-  test "critiques2 generates PDF format" do
-    get critiques2_solos_url(format: 'pdf')
-    
-    assert_response :success
-    assert_equal 'application/pdf', response.content_type
-  end
 
   # ===== FORMATION MANAGEMENT TESTS =====
   

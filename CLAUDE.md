@@ -196,7 +196,6 @@ ruby bin/validate_html
 
 ### Progress Status
 **High Priority Files (10+ issues) - COMPLETED:**
-- ✅ app/views/solos/critique0.html.erb (24→0 issues)
 - ✅ app/views/admin/apply.html.erb (20→0 issues)
 - ✅ app/views/scores/heat.html.erb (19→0 issues)
 - ✅ app/views/scores/_by_studio.html.erb (18→0 issues)
@@ -206,10 +205,6 @@ ruby bin/validate_html
 - ✅ app/views/studios/_invoice.html.erb (12→0 issues)
 - ✅ app/views/heats/index.html.erb (12→0 issues)
 - ✅ app/views/people/couples.html.erb (11→0 issues)
-
-**Files to Skip (Word HTML complexity):**
-- ⏭️ app/views/solos/critique1.html.erb (Microsoft Word generated)
-- ⏭️ app/views/solos/critique2.html.erb (Microsoft Word generated)
 
 **Common Issues Fixed:**
 1. Unclosed `<li>` tags in info boxes
