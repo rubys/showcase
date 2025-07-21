@@ -521,11 +521,6 @@ class EventController < ApplicationController
     @showcases.select! {|year, sites| !sites.empty?}
     raise ActiveRecord::RecordNotFound if @showcases.empty?
 
-    if @showcases.values.length == 1 && @showcases.values.first.values.length == 1
-      params[:db] = "#{@showcases.keys.first}-#{@showcases.values.first.keys.first}"
-      return select
-    end
-
     @showcases.each do |year, sites|
       sites.each do |token, info|
         logos.add info[:logo] || "arthur-murray-logo.gif"

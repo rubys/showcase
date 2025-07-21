@@ -9,24 +9,6 @@ namespace :prerender do
     ENV['DATABASE_URL'] = nil
     Rake::Task['environment'].invoke
   end
-
-  task :clobber do
-    # remove the public docs, regions, and studios directories
-    ['docs', 'regions', 'studios'].each do |dir|
-      path = File.join(Rails.application.root, 'public', dir)
-      if Dir.exist?(path)
-      puts "Removing #{path}"
-      FileUtils.rm_rf(path)
-      end
-    end
-
-    # remove the public/showcase.js file
-    showcase_js = File.join(Rails.application.root, 'public', 'showcase.js')
-    if File.exist?(showcase_js)
-      puts "Removing #{showcase_js}"
-      FileUtils.rm showcase_js
-    end
-  end
 end
 
 # Usage: rake prerender

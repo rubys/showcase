@@ -34,12 +34,7 @@ Rails.application.routes.draw do
       get "/index", to: 'event#showcases', as: 'index'
     else
       if Rails.env.development?
-        db = ENV.fetch("RAILS_APP_DB", "")
-        if db =~ /^(\d+)-(\w+)$/
-          get "/#{$1}/#{$2}", to: 'event#root'
-        elsif db =~ /(\d+)-(\w+)-([-\w]+)$/
-          get "/#{$1}/#{$2}/#{$3}", to: 'event#root'
-        end
+         get "/:year/:city/:event", to: 'event#root'
       end
 
       get "/index", to: 'event#index', as: 'index', defaults: { db: 'index' }
