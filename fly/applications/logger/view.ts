@@ -38,6 +38,8 @@ export function format(match: RegExpMatchArray) {
   if (!status.match(/^20[06]|101|30[2347]/)) {
     if (status === "499" || status == "426") {
       status = `<a href="request/${request_id}" style="background-color: gold">${status}</a>`
+    } else if (status === "204") {
+      status = `<a href="request/${request_id}" style="background-color: lightgreen">${status}</a>`
     } else {
       status = `<a href="request/${request_id}" style="background-color: orange">${status}</a>`
     }
