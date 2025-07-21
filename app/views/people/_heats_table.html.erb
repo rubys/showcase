@@ -1,0 +1,71 @@
+<table>
+  <caption class="text-left font-bold pt-8 text-3xl pb-5" id="heats">Heats</caption>
+
+  <thead>
+    <tr>
+      <td class="row-head">Heat</td>
+      <td class="row-head">Type</td>
+      <td class="row-head">Dance</td>
+      <% if person.role != 'Leader' %>
+      <td class="row-head">Lead</td>
+      <% end %>
+      <% if person.role != 'Follower' %>
+      <td class="row-head">Follow</td>
+      <% end %>
+      <td class="row-head">Level</td>
+      <td class="row-head">Category</td>
+    </tr>
+  </thead>
+  <tbody>
+    <% heats.each do |heat| %>
+    <% if heat.number < 0 %>
+    <tr class="group line-through opacity-50">
+    <% else %>
+    <tr class="group">
+    <% end %>
+      <td class="row"><%= link_to heat.number.abs, heats_path(anchor: "heat-#{heat.number}")  %></td>
+      <td class="row"><%= heat.category %></td>
+      <% if heat.category == 'Solo' and heat.solo.combo_dance %>
+      <td class="row"><%= heat.dance.name %> / <%= heat.solo.combo_dance.name %></td>
+      <% else %>
+      <td class="row"><%= heat.dance.name %></td>
+      <% end %>
+      <% if person.role != 'Leader' %>
+      <td class="row"><%= link_to heat.entry.lead.display_name, heat.entry.lead if heat.entry.lead_id != 0 %>
+      <% if heat.solo and not heat.solo.formations.empty? %>
+      <% heat.solo.formations.each_with_index do |formation, index| %>
+      <% if index % 2 == 0 or person.role == 'Both' %>
+      <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
+      <% end %>
+      <% end %>
+      <% end %>
+      </td>
+      <% end %>
+      <% if person.role != 'Follower' %>
+      <td class="row"><%= link_to heat.entry.follow.display_name, heat.entry.follow if heat.entry.follow_id != 0 %>
+      <% if heat.solo and not heat.solo.formations.empty? %>
+      <% heat.solo.formations.each_with_index do |formation, index| %>
+      <% if index % 2 == 1 or person.role == 'Both' %>
+      <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
+      <% end %>
+      <% end %>
+      <% end %>
+      </td>
+      <% end %>
+      <td class="row"><%= heat.entry.level_name %></td>
+      <td class="row text-center"><%= heat.entry.subject_category(track_ages) %></td>
+      <td>
+      <% if heat.category == 'Solo' %>
+      <form method="get" action="<%= heat.solo.formations.empty? ? edit_solo_path(heat.solo) : edit_formation_path(heat.solo) %>">
+      <input type="hidden" name="heat" value="<%= heat.number.abs %>">
+      <% else %>
+      <form method="get" action="<%= edit_heat_path(heat) %>">
+      <% end %>
+      <input type="hidden" name="primary" value="<%= person.id %>">
+      <button type="submit" class='group-hover:inline hidden px-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium'>Edit</button>
+      </form>
+      </td>
+    </tr>
+    <% end %>
+  </tbody>
+</table>

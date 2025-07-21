@@ -1,0 +1,54 @@
+<% if person.type == 'Judge' %>
+<% assign_judges = event.assign_judges > 0 && Person.where(type: 'Judge').count > 1 %>
+<% if assign_judges %>
+<div class="mt-4" data-controller="assign-judges" data-present-url=<%= toggle_present_person_path %>>
+  <span class="mx-4">On floor?</span>
+  <input type='checkbox' name="active" <% if disable_judge_assignments %> disabled<% end %><% if person.present? %>checked <% end %>class="w-6 h-6 mr-3<% if disable_judge_assignments %> disabled opacity-50 cursor-not-allowed<% end %>">
+
+  <% if event.ballrooms > 1 || Category.maximum(:ballrooms).to_i > 1 %>
+  Ballroom: <%= select_tag "ballroom", options_for_select(%w[Both A B], person.judge&.ballroom || 'Both'),
+    disabled: disable_judge_assignments,
+    data: {ballroom_url: ballroom_person_path},
+    class: "text-center pr-10 shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 ml-2 w-22#{disable_judge_assignments ? ' disabled opacity-50 cursor-not-allowed' : ''}" %>
+  <% end %>
+
+  Solos: <%= select_tag "review_solos", options_for_select(%w[All Even Odd None], person.judge&.review_solos || 'Both'),
+    data: {review_solos_url: review_solos_person_path},
+    class: "text-center pr-10 shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 ml-2 w-22" %>
+<% if dancing_judge %>
+<div class="mt-4 mx-4">
+  <label for="dancing_judge">Dancing judge</label>
+  <%= check_box_tag "dancing_judge", dancing_judge, !!person.exclude_id, class: "h-6 w-6 ml-3",
+    data: {url: person_path(person)} %>
+</div>
+<% end %>
+</div>
+<% end %>
+<% sort = person.judge&.sort || 'back'%>
+<div class="mt-4 mx-auto">
+<% if event.judge_recordings %>
+  <%= link_to "Record comments", judge_heatlist_path(judge: person, style: 'recordings'), class: "btn-purple" %>
+<% end %>
+<% if %w(# & +).include?(event.open_scoring) || event.closed_scoring == '#' || event.judge_comments %>
+<%= link_to 'Score heats', judge_heatlist_path(judge: person), class: "btn-purple" %>
+<% else %>
+<%= link_to 'Score heats - cards', judge_heatlist_path(judge: person, style: 'cards'), class: "btn-purple" %>
+<%= link_to 'Score heats - radio', judge_heatlist_path(judge: person), class: "btn-purple" %>
+<% end %>
+</div>
+<% if assign_judges %>
+<div class="mt-4 flex">
+<%= button_to 'Assign judges', assign_judges_person_path(person), disabled: disable_judge_assignments, class: "btn-blue#{disable_judge_assignments ? ' disabled opacity-50 cursor-not-allowed' : ''}" %>
+<%= button_to 'Reset assignments', reset_assignments_person_path(person), disabled: disable_judge_assignments, class: "btn-pale-blue#{disable_judge_assignments ? ' disabled opacity-50 cursor-not-allowed' : ''}" %>
+<%= link_to 'Heat Book', book_heats_path(as_pdf(type: 'judge', judge: person.id)), class: "btn-pale-orange" %>
+</div>
+<% end %>
+<div class="mt-4 mx-auto">
+<%= link_to 'Scores by level', by_level_scores_path , class: "btn-pale-green" %>
+<%= link_to 'Scores by age', by_age_scores_path , class: "btn-pale-green" %>
+<% if multi > 0 %>
+<%= link_to 'Multi Scores', multis_scores_path , class: "btn-pale-green" %>
+<% end %>
+<%= link_to 'Instructor Scores', instructor_scores_path , class: "btn-pale-blue" %>
+</div>
+<% end %>

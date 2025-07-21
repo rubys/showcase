@@ -1,0 +1,42 @@
+<table>
+  <caption class="text-left font-bold pt-8 text-3xl pb-5">Dances</caption>
+
+  <thead>
+  <td></td>
+  <% partners.each do |partner| %>
+    <td class="row-head-main">
+      <%= link_to partner.first_name, partner %>
+    </td>
+  <% end %>
+  <% if partners.length > 1 %>
+    <td class="row-head-main text-gray-400">Total</td>
+  <% end %>
+  </thead>
+
+  <tbody>
+  <% dances.each do |dance, partner_counts| %>
+  <tr>
+    <td><%= dance.name %></td>
+    <% partners.each do |partner| %>
+      <td class="row text-center"><%= partner_counts[partner] %></td>
+    <% end %>
+    <% if partners.length > 1 %>
+    <td class="row text-center"><%= partner_counts.values.sum %></td>
+    <% end %>
+  </tr>
+  <% end %>
+  <tr>
+    <th class="border-t-2 border-gray-200 row text-center font-bold">total</th>
+    <% partners.each do |partner| %>
+      <td class="border-t-2 border-gray-200 row text-center">
+        <%= entries[partner].map {|entry| entry.active_heats.size}.sum %>
+      </td>
+    <% end %>
+    <% if partners.length > 1 %>
+    <td class="border-t-2 border-gray-200 row text-center">
+      <%= entries.values.flatten.map {|entry| entry.active_heats.size}.sum %>
+    </td>
+    <% end %>
+  </tr>
+  </tbody>
+</table>

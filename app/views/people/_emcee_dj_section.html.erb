@@ -1,0 +1,12 @@
+<% if %w(Emcee DJ).include?(person.type) %>
+<div class="mt-4 mx-auto">
+<% if person.type == 'Emcee' || (person.type == 'DJ' && Person.where(type: 'Emcee').count == 0) %>
+<%= link_to 'Heats', judge_heatlist_path(judge: person, style: 'emcee', sort: 'back'), class: "btn-purple" %>
+<% end %>
+
+<% if person.type == 'DJ' || (person.type == 'Emcee' && Person.where(type: 'DJ').count == 0) %>
+<%= link_to 'Solos', djlist_solos_path, class: "btn-purple" %>
+<%= link_to 'Dance list', djlist_heats_path(as_pdf), class: "btn-blue" %>
+<% end %>
+</div>
+<% end %>

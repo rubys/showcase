@@ -1,0 +1,12 @@
+<% if %w(Student Professional).include? person.type %>
+  <% unless heats.empty? && solos.empty? %>
+    <%= render 'people/entries_table', entries: entries, solos: solos, person: person, 
+               event: event, track_ages: track_ages %>
+
+    <%= render 'people/solos_table', solos: solos, person: person, track_ages: track_ages %>
+
+    <%= render 'people/dances_table', dances: dances, partners: partners, entries: entries %>
+
+    <%= render 'people/heats_table', heats: heats, person: person, track_ages: track_ages %>
+  <% end %>
+<% end %>

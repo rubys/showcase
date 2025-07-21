@@ -1,0 +1,43 @@
+<div class="mx-auto mt-4 grid grid-cols-3">
+  <% if person.type == 'Student' %>
+  <% unless heats.empty? and solos.empty? %>
+  <%= up_link 'Add heats', new_entry_path(primary: person), class: "btn-blue" %>
+  <%= up_link 'Add solo', new_solo_path(primary: person), class: "btn-blue" %>
+  <%= up_link 'Add formation', new_formation_path(primary: person), class: "btn-blue" %>
+  <% if routines %>
+  <%= up_link 'Add routine', new_solo_path(primary: person, routine: true), class: "btn-blue" %>
+  <% end %>
+  <% end %>
+  <% end %>
+
+  <%= up_link 'Edit this person', edit_person_path(person), class: "btn-blue" %>
+
+  <% if person.studio %>
+  <%= link_to 'Back to Studio', person.studio, class: "btn-green" %>
+  <% else %>
+  <%= link_to 'Back to Settings', settings_event_index_path(tab: 'Staff'), class: "btn-green" %>
+  <% end %>
+
+  <% unless scores.empty? %>
+  <div></div>
+  <% end %>
+
+  <% if %w(Student Professional).include? person.type %>
+  <% unless heats.empty? and solos.empty? %>
+  <%= link_to 'Heat sheet', heats_person_path(person, as_pdf), class: "btn-pale-orange" %>
+  <% end %>
+  <% if person.invoice_to_id == nil %>
+  <% if person.type == 'Student' %>
+  <%= link_to 'Invoice', invoice_person_path(person, as_pdf), class: "btn-pale-orange" %>
+  <% if event.judge_recordings %>
+  <%= link_to 'Recordings', student_recordings_path(RecordingsController.encode_student_token(person.id)), class: "btn-purple" %>
+  <% end %>
+  <% else %>
+  <%= link_to 'Invoice', instructor_invoice_person_path(person, as_pdf), class: "btn-pale-orange" %>
+  <% end %>
+  <% end %>
+  <% unless scores.empty? %>
+  <%= link_to 'Scores', scores_person_path(person, as_pdf), class: "btn-pale-orange" %>
+  <% end %>
+  <% end %>
+</div>

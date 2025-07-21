@@ -1,0 +1,61 @@
+<table>
+  <caption class="text-left font-bold pt-8 text-3xl pb-5">Entries</caption>
+
+  <% instructor = entries.any? {|partner, entry_list| entry_list.any? {|entry| entry.instructor}} %>
+
+  <thead>
+    <th>heats</th>
+    <% if solos.length > 0 %>
+    <th>solos</th>
+    <% end %>
+    <th>partner</th>
+    <% if instructor %>
+    <th>instructor</th>
+    <% end %>
+    <th>level</th>
+    <% if track_ages %>
+    <th>age</th>
+    <% end %>
+  </thead>
+
+  <tbody>
+    <% entries.each do |partner, entry_list| %>
+      <% entry_list.each do |entry| %>
+        <% active_heats = entry.active_heats %>
+        <% if active_heats.length == 0 %>
+        <tr class="group line-through opacity-50">
+        <% elsif event.strict_scoring && (entry.level_id != person.level_id || (event.track_ages && entry.age_id != person.age_id)) %>
+        <tr class="group bg-gray-200" title="Excluded due to strict scoring">
+        <% else %>
+        <tr class="group">
+        <% end %>
+          <td class="row text-right"><%= (active_heats - solos).length %>
+          <% if solos.length > 0 %>
+          <td class="row text-right"><%= (active_heats & solos).length %>
+          <% end %>
+          <td class="row"><%= link_to partner.display_name, partner %>
+          <% if instructor %>
+          <td class="row"><%= link_to_if entry.instructor_id, entry.instructor&.display_name, entry.instructor %></td>
+          <% end %>
+          <td class="row"><%= entry.level_name %></td>
+          <% if track_ages %>
+          <td class="row"><%= entry.age_category %></td>
+          <% end %>
+          <td>
+          <form method="get" action="<%= edit_entry_path(entry) %>">
+          <input type="hidden" name="primary" value="<%= person.id %>">
+          <button type="submit" class='group-hover:inline hidden px-2 rounded-lg py-1 px-2 text-white bg-blue-600 font-medium'>Edit</button>
+          </form>
+          </td>
+        </tr>
+      <% end %>
+    <% end %>
+    <tr>
+      <td class="border-t-2 border-gray-200 row text-right"><%= entries.values.flatten.map {|entry| (entry.active_heats - solos).length}.sum %></td>
+      <% if solos.length > 0 %>
+      <td class="border-t-2 border-gray-200 row text-right"><%= solos.length %></td>
+      <% end %>
+      <th colspan="5" class="border-t-2 border-gray-200 row text-center font-bold">total</th>
+    </tr>
+  </tbody>
+</table>
