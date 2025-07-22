@@ -42,19 +42,35 @@ class OutputChannel < ApplicationCable::Channel
 
 private
   def self.registry
-    YAML.load_file(REGISTRY) rescue {}
+    YAML.load_file(REGISTRY) || {}
+  rescue
+    {}
   end
 
   BLOCK_SIZE = 4096
 
   def self.register(command)
-    token = SecureRandom.base64(15)
+    # Generate a unique token with timestamp to avoid collisions
+    token = "#{Time.now.to_f.to_s.tr('.', '')}_#{SecureRandom.base64(12)}"
 
-    registry = self.registry.to_a
-    registry.pop while registry.length > 12
-    registry = registry.to_h
-
+    registry = self.registry
+    
+    # Ensure token is unique (very unlikely but just in case)
+    while registry.key?(token)
+      token = "#{Time.now.to_f.to_s.tr('.', '')}_#{SecureRandom.base64(12)}"
+    end
+    
+    # Add the new token first
     registry[token] = command
+    
+    # Then clean up old entries, keeping the most recent 20 (increased further)
+    # This ensures we don't accidentally remove recently created tokens
+    if registry.length > 20
+      # Sort by timestamp (embedded in token) and keep the most recent
+      sorted_entries = registry.to_a.sort_by { |k, v| k.split('_').first.to_f }.last(20)
+      registry = sorted_entries.to_h
+    end
+    
     IO.write REGISTRY, YAML.dump(registry)
 
     token
