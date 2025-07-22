@@ -125,19 +125,27 @@ class ScoresController < ApplicationController
       else
         @dance = "#{@subjects.first.category} #{@subjects.first.dance_category.name}"
       end
-      if category == 'Open' and @event.open_scoring == 'G'
-        @scores = SCORES['Closed'].dup
-      elsif category == 'Open' and %w(+ &).include? @event.open_scoring
-        @scores = []
-      elsif category == 'Multi' and @event.multi_scoring == 'G'
-        @scores = SCORES['Closed'].dup
+      # Determine scoring type for this heat
+      scoring_type = case category
+      when 'Open'
+        @event.open_scoring
+      when 'Closed'
+        @event.closed_scoring == '=' ? @event.open_scoring : @event.closed_scoring
+      when 'Multi'
+        @event.multi_scoring
       else
-        @scores = SCORES[category].dup
+        '1' # default
       end
+
+      # Set scores based on scoring type
+      @scores = get_scores_for_type(scoring_type)
 
       if @combine_open_and_closed and %w(Open Closed).include? category
         @dance.sub! /^\w+ /, ''
-        @scores = SCORES['Closed'].dup if category == 'Open'
+        # Use the closed scoring setting when combining open/closed
+        if category == 'Open'
+          @scores = get_scores_for_type(@event.closed_scoring)
+        end
       end
     end
 
@@ -468,6 +476,8 @@ class ScoresController < ApplicationController
     @event = Event.current
     @open_scoring = @event.open_scoring
     @closed_scoring = @event.closed_scoring
+    @open_scores = get_scores_for_type(@open_scoring)
+    @closed_scores = get_scores_for_type(@closed_scoring == '=' ? @open_scoring : @closed_scoring)
     levels = Level.order(:id).all
 
     @last_score_update = Score.maximum(:updated_at)
@@ -497,21 +507,21 @@ class ScoresController < ApplicationController
         end
 
         @scores[group][level][students] ||= {
-          'Open' => %w(& +).include?(@open_scoring) ? [0]*5 : SCORES['Open'].map {0},
-          'Closed' => SCORES['Closed'].map {0},
+          'Open' => %w(& +).include?(@open_scoring) ? [0]*5 : get_scores_for_type(@open_scoring).map {0},
+          'Closed' => get_scores_for_type(@closed_scoring == '=' ? @open_scoring : @closed_scoring).map {0},
           'points' => 0
         }
 
         if @open_scoring == '#' || @closed_scoring == '#'
           @scores[group][level][students]['points'] += score.to_i
         else
-          value = SCORES['Closed'].index score
+          value = @closed_scores.index score
 
           if value
-            category = 'Open'
+            category = 'Closed'
           else
-            category = %w(G @).include?(@open_scoring) ? 'Open' : 'Closed'
-            value = SCORES['Open'].index score
+            category = 'Open'
+            value = @open_scores.index score
           end
 
           if not value and @open_scoring == '&' and score =~ /^\d+$/
@@ -550,6 +560,8 @@ class ScoresController < ApplicationController
     @event = Event.current
     @open_scoring = @event.open_scoring
     @closed_scoring = @event.closed_scoring
+    @open_scores = get_scores_for_type(@open_scoring)
+    @closed_scores = get_scores_for_type(@closed_scoring == '=' ? @open_scoring : @closed_scoring)
     levels = Level.order(:id).all
     total = Struct.new(:name).new('Total')
 
@@ -572,15 +584,15 @@ class ScoresController < ApplicationController
           studio = student.studio.name
 
           @scores[level][studio] ||= {
-            'Open' => %w(& +).include?(@open_scoring) ? [0]*5 : SCORES['Open'].map {0},
-            'Closed' => SCORES['Closed'].map {0},
+            'Open' => %w(& +).include?(@open_scoring) ? [0]*5 : @open_scores.map {0},
+            'Closed' => @closed_scores.map {0},
             'points' => 0,
             'count' => 0
           }
 
           @scores[total][studio] ||= {
-            'Open' => %w(& +).include?(@open_scoring) ? [0]*5 : SCORES['Open'].map {0},
-            'Closed' => SCORES['Closed'].map {0},
+            'Open' => %w(& +).include?(@open_scoring) ? [0]*5 : @open_scores.map {0},
+            'Closed' => @closed_scores.map {0},
             'points' => 0,
             'count' => 0
           }
@@ -594,12 +606,12 @@ class ScoresController < ApplicationController
             points = count * score.to_i
             category = 'Closed'
           else
-            value = SCORES['Closed'].index score
+            value = @closed_scores.index score
             if value
-              category = %w(G @).include?(@open_scoring) ? 'Open' : 'Closed'
+              category = 'Closed'
             else
               category = 'Open'
-              value = SCORES['Open'].index score
+              value = @open_scores.index score
             end
 
             if not value and @open_scoring == '&' and score =~ /^\d+$/
@@ -650,6 +662,8 @@ class ScoresController < ApplicationController
     @event = Event.current
     @open_scoring = @event.open_scoring
     @closed_scoring = @event.closed_scoring
+    @open_scores = get_scores_for_type(@open_scoring)
+    @closed_scores = get_scores_for_type(@closed_scoring == '=' ? @open_scoring : @closed_scoring)
     ages = Age.order(:id).all
 
     template1 = ->() {
@@ -679,20 +693,20 @@ class ScoresController < ApplicationController
         age ||= ages.first.last
 
         @scores[group][age][students] ||= {
-          'Open' => %w(& +).include?(@open_scoring) ? [0]*5 : SCORES['Open'].map {0},
-          'Closed' => SCORES['Closed'].map {0},
+          'Open' => %w(& +).include?(@open_scoring) ? [0]*5 : @open_scores.map {0},
+          'Closed' => @closed_scores.map {0},
           'points' => 0
         }
 
         if @open_scoring == '#' || @closed_scoring == '#'
           @scores[group][age][students]['points'] += score.to_i
         else
-          value = SCORES['Closed'].index score
+          value = @closed_scores.index score
           if value
             category = 'Closed'
           else
             category = 'Open'
-            value = SCORES['Open'].index score
+            value = @open_scores.index score
           end
 
           if not value and @open_scoring == '&' and score =~ /^\d+$/
@@ -735,8 +749,7 @@ class ScoresController < ApplicationController
       includes(multi_children: :dance, heats: [{entry: [:lead, :follow]}, :scores]).
       order(:order)
 
-    @score_range = SCORES['Multi']
-    @score_range = SCORES['Closed'] if @multi_scoring == 'G'
+    @score_range = get_scores_for_type(@multi_scoring)
 
     @scores = {}
     @scrutineering_results = {}
@@ -856,6 +869,7 @@ class ScoresController < ApplicationController
   end
 
   def pros
+    @event = Event.current
     scores = Score.joins(heat: {entry: [:lead, :follow]}).where(lead: {type: 'Professional'}, follow: {type: 'Professional'})
     hscores = scores.group_by {|score| score.heat.number}
     dances = hscores.values.map(&:first).map {|score| [score.heat.number, score.heat.dance.name]}.to_h
@@ -867,7 +881,19 @@ class ScoresController < ApplicationController
       names = dances
     end
 
-    @score_range = SCORES[scores.first&.heat&.category || 'Open']
+    # Determine scoring type based on heat category
+    heat_category = scores.first&.heat&.category || 'Open'
+    scoring_type = case heat_category
+    when 'Open'
+      @event.open_scoring
+    when 'Closed'
+      @event.closed_scoring == '=' ? @event.open_scoring : @event.closed_scoring
+    when 'Multi'
+      @event.multi_scoring
+    else
+      '1'
+    end
+    @score_range = get_scores_for_type(scoring_type)
 
     @scores = {}
     hscores.each do |number, scores|
@@ -900,6 +926,9 @@ class ScoresController < ApplicationController
   def instructor
     @event = Event.current
     @open_scoring = @event.open_scoring
+    @closed_scoring = @event.closed_scoring
+    @open_scores = get_scores_for_type(@open_scoring)
+    @closed_scores = get_scores_for_type(@closed_scoring == '=' ? @open_scoring : @closed_scoring)
     @scores = {}
 
     people = Person.where(type: 'Professional').
@@ -909,20 +938,20 @@ class ScoresController < ApplicationController
       person = people[instructor]
 
       @scores[person] ||= {
-        'Open' => @open_scoring == '&' ? [0]*5 : SCORES['Open'].map {0},
-        'Closed' => SCORES['Closed'].map {0},
+        'Open' => @open_scoring == '&' ? [0]*5 : @open_scores.map {0},
+        'Closed' => @closed_scores.map {0},
         'points' => 0
       }
 
       if @open_scoring == '#'
         @scores[person]['points'] += score.to_i
       else
-        value = SCORES['Closed'].index score
+        value = @closed_scores.index score
         if value
           category = 'Closed'
         else
           category = 'Open'
-          value = SCORES['Open'].index score
+          value = @open_scores.index score
         end
 
         if not value and @open_scoring == '&' and score =~ /^\d+$/
@@ -1048,6 +1077,21 @@ class ScoresController < ApplicationController
     # Only allow a list of trusted parameters through.
     def score_params
       params.require(:score).permit(:judge_id, :heat_id, :value)
+    end
+    
+    def get_scores_for_type(scoring_type)
+      case scoring_type
+      when '1'
+        %w(1 2 3 F)
+      when 'G'
+        %w(B S G GH).reverse
+      when '#'
+        [] # Number scoring doesn't use predefined scores
+      when '+', '&', '@'
+        [] # Feedback scoring doesn't use predefined scores
+      else
+        %w(1 2 3 F) # default
+      end
     end
 
     def student_results

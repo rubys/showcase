@@ -10,3 +10,4 @@ one:
   intermix: true
   track_ages: true
   open_scoring: G
+  closed_scoring: G

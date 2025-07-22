@@ -178,6 +178,12 @@ bin/rails assets:clobber
 - Fixtures for test data (test/fixtures/*)
 - No separate linting or code style tools configured
 
+### Known Testing Issues
+- **Intermittent System Test Failures**: There is a known timing issue where system tests may intermittently fail to find an "Edit" button after hovering over a line (particularly in formations_test.rb). This is a race condition in the Capybara/Selenium interaction. When this occurs, rerun the individual failing test to verify it passes:
+  ```bash
+  bin/rails test test/system/formations_test.rb:38  # or the specific failing test line
+  ```
+
 ## HTML Template Validation Project
 
 ### Overview

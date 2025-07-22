@@ -26,7 +26,7 @@
           <th class="row-head">Name
           <% if @open_scoring != '#' %>
           <% if !%w(# =).include?(@event.closed_scoring) or %w(G @).include?(@open_scoring) %>
-          <% ScoresController::SCORES['Closed'].each do |score| %>
+          <% @closed_scores.each do |score| %>
           <th class="row-head bg-slate-200"><%= score %>
           <% end %>
           <% end %>
@@ -35,7 +35,7 @@
           <th class="row-head"><%= score %>
           <% end %>
           <% elsif !%w(+ G @).include? @open_scoring %>
-          <% ScoresController::SCORES['Open'].each do |score| %>
+          <% @open_scores.each do |score| %>
           <th class="row-head"><%= score %>
           <% end %>
           <% end %>
