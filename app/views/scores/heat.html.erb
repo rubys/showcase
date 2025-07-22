@@ -12,84 +12,84 @@
       </span>
     <% end %>
     <% if @event.assign_judges? && @show == 'mixed' && @judge && @style != 'emcee' %>
-    <% heats = Heat.joins(:scores).includes(entry: :lead).where(number: @heat.number, scores: {judge_id: @judge.id}).to_a
-       unassigned = Heat.where(number: @heat.number).includes(entry: :lead).left_joins(:scores).where(scores: { id: nil }).to_a
-       early = Heat.includes(entry: :lead).joins(:scores).where(scores: { updated_at: ...Event.current.date}).distinct.to_a
-       heats = (heats + early + unassigned).uniq.sort_by {|heat| heat.entry.lead.back}
-    %>
-    <div class="text-2xl"><%= heats.map {|heat|
-      color = unassigned.include?(heat) ? "text-red-400" : (early.include?(heat) ? "text-gray-400" : "text-black")
-      "<a href='##{ dom_id heat }' class='#{color}'>#{heat.entry.lead.back}</a>"
-    }.join(' ').html_safe %></div>
+      <% heats = Heat.joins(:scores).includes(entry: :lead).where(number: @heat.number, scores: {judge_id: @judge.id}).to_a
+         unassigned = Heat.where(number: @heat.number).includes(entry: :lead).left_joins(:scores).where(scores: { id: nil }).to_a
+         early = Heat.includes(entry: :lead).joins(:scores).where(scores: { updated_at: ...Event.current.date}).distinct.to_a
+         heats = (heats + early + unassigned).uniq.sort_by {|heat| heat.entry.lead.back}
+      %>
+      <div class="text-2xl"><%= heats.map {|heat|
+        color = unassigned.include?(heat) ? "text-red-400" : (early.include?(heat) ? "text-gray-400" : "text-black")
+        "<a href='##{ dom_id heat }' class='#{color}'>#{heat.entry.lead.back}</a>"
+      }.join(' ').html_safe %></div>
     <% end %>
     <% if @style == 'emcee' and @heat.category != 'Solo' %>
-    <div class="font-normal"><%= @subjects.length %> <%= 'couple'.pluralize @subjects.length %> on the floor</div>
-    <% if @song %>
-    <audio controls preload="auto" style="display: inline">
-      <source src=<%= @song.song_file.url %> type=<%= @song.song_file.content_type %>>
-    </audio>
-    <div class="font-normal text-sm"><%= @song.title %><% unless @song.artist.blank? %>- <%= @song.artist %><% end %></div>
-    <% end %>
+      <div class="font-normal"><%= @subjects.length %> <%= 'couple'.pluralize @subjects.length %> on the floor</div>
+      <% if @song %>
+        <audio controls preload="auto" style="display: inline">
+          <source src=<%= @song.song_file.url %> type=<%= @song.song_file.content_type %>>
+        </audio>
+        <div class="font-normal text-sm"><%= @song.title %><% unless @song.artist.blank? %>- <%= @song.artist %><% end %></div>
+      <% end %>
     <% end %>
 
     <% if @heat.dance.heat_length %>
-    <div class="text-2xl font-normal">
-    <% if not @heat.dance.semi_finals %>
-    Dance <%= @slot %> of <%= @heat.dance.heat_length %>:
-    <% elsif !@final %>
-    Semi-final <%= @slot %> of <%= @heat.dance.heat_length %>:
-    <% else %>
-    Final <%= @slot > @heat.dance.heat_length ? @slot - @heat.dance.heat_length : @slot %> of <%= @heat.dance.heat_length %>:
-    <% end %>
-    <% slots = @heat.dance.multi_children.group_by {|multi| multi.slot} %>
-    <% if slots.length > 1 %>
-    <%= slots[@slot].sort_by {|multi| multi.dance.order}.map {|multi| multi.dance.name}.join(' / ') %>
-    <% elsif slots.values.last&.length == @heat.dance.heat_length %>
-    <%= slots.values.last.sort_by {|multi| multi.dance.order}[(@slot - 1) % @heat.dance.heat_length].dance.name %>
-    <% elsif slots.values.last %>
-    <%= slots.values.last.sort_by {|multi| multi.dance.order}.map {|multi| multi.dance.name}.join(' / ') %>
-    <% end %>
-    <% if @callbacks %>
-    <span>(Callback <%= @callbacks %>)</span>
-    <% end %>
-    </div>
+      <div class="text-2xl font-normal">
+        <% if not @heat.dance.semi_finals %>
+          Dance <%= @slot %> of <%= @heat.dance.heat_length %>:
+        <% elsif !@final %>
+          Semi-final <%= @slot %> of <%= @heat.dance.heat_length %>:
+        <% else %>
+          Final <%= @slot > @heat.dance.heat_length ? @slot - @heat.dance.heat_length : @slot %> of <%= @heat.dance.heat_length %>:
+        <% end %>
+        <% slots = @heat.dance.multi_children.group_by {|multi| multi.slot} %>
+        <% if slots.length > 1 %>
+          <%= slots[@slot].sort_by {|multi| multi.dance.order}.map {|multi| multi.dance.name}.join(' / ') %>
+        <% elsif slots.values.last&.length == @heat.dance.heat_length %>
+          <%= slots.values.last.sort_by {|multi| multi.dance.order}[(@slot - 1) % @heat.dance.heat_length].dance.name %>
+        <% elsif slots.values.last %>
+          <%= slots.values.last.sort_by {|multi| multi.dance.order}.map {|multi| multi.dance.name}.join(' / ') %>
+        <% end %>
+        <% if @callbacks %>
+          <span>(Callback <%= @callbacks %>)</span>
+        <% end %>
+      </div>
     <% end %>
   </h1>
 
 
-<div data-controller="info-box">
-<div class="info-button top-2">&#x24D8;</div>
-<ul class="info-box">
-<% if @heat.category == 'Solo' %>
-<li>Tab to or click on comments or score to edit.  Press escape or click elsewhere to save.</li>
-<% else %>
-<% if @style != 'radio' %>
-<li>Scoring can be done multiple ways:
-<ul class="list-disc ml-4">
-<li>Drag and drop: Drag an entry box to the desired score.</li>
-<li>Point and click: Clicking on a entry back and then clicking on score.  Clicking on the back number again unselects it.</li>
-<li>Keyboard: tab to the desired entry back, then move it up and down using the keyboard.  Clicking on escape unselects the back.</li>
-</ul>
-</li>
-<li>Dragging an entry back to the unlabelled box at the right returns the participant to the unscored state.</li>
-<% elsif @event.open_scoring == '#' %>
-<li>Enter scores in the right most column.  Tab to move to the next entry.</li>
-<% elsif @event.open_scoring == '+' %>
-<li>Buttons on the left are used to indicated areas where the couple did well and will show up as <span class="good mx-0"><span class="open-fb selected px-2 mx-0">green</span></span> when selected.</li>
-<li>Buttons on the right are used to indicate areas where the couple need improvement and will show up as <span class="bad mx-0"><span class="open-fb selected px-2 mx-0">red</span></span> when selected.</li>
-<% else %>
-<li>Click on the <em>radio</em> buttons on the right to score a couple.  The last column, with a dash (<code>-</code>),
-means the couple hasn't been scored / didn't participate.</li>
-<% end %>
-<% end %>
-<li>Clicking on the arrows at the bottom corners will advance you to the next or previous heats.
-Left and right arrows on the keyboard may also be used<% if @heat.category == 'Solo' %>
-when not editing comments or score<% elsif @event.open_scoring == '#' %>
-when not entering scores<% end %>.
-Swiping left and right on mobile devices and tablets also work.</li>
-<li>Clicking on the heat information at the top center of the page will return you to the heat list where you can quickly scroll and select a different heat.</li>
-</ul>
-</div>
+  <div data-controller="info-box">
+    <div class="info-button top-2">&#x24D8;</div>
+    <ul class="info-box">
+      <% if @heat.category == 'Solo' %>
+        <li>Tab to or click on comments or score to edit.  Press escape or click elsewhere to save.</li>
+      <% else %>
+        <% if @style != 'radio' %>
+          <li>Scoring can be done multiple ways:
+            <ul class="list-disc ml-4">
+              <li>Drag and drop: Drag an entry box to the desired score.</li>
+              <li>Point and click: Clicking on a entry back and then clicking on score.  Clicking on the back number again unselects it.</li>
+              <li>Keyboard: tab to the desired entry back, then move it up and down using the keyboard.  Clicking on escape unselects the back.</li>
+            </ul>
+          </li>
+          <li>Dragging an entry back to the unlabelled box at the right returns the participant to the unscored state.</li>
+        <% elsif @event.open_scoring == '#' %>
+          <li>Enter scores in the right most column.  Tab to move to the next entry.</li>
+        <% elsif @event.open_scoring == '+' %>
+          <li>Buttons on the left are used to indicated areas where the couple did well and will show up as <span class="good mx-0"><span class="open-fb selected px-2 mx-0">green</span></span> when selected.</li>
+          <li>Buttons on the right are used to indicate areas where the couple need improvement and will show up as <span class="bad mx-0"><span class="open-fb selected px-2 mx-0">red</span></span> when selected.</li>
+        <% else %>
+          <li>Click on the <em>radio</em> buttons on the right to score a couple.  The last column, with a dash (<code>-</code>),
+            means the couple hasn't been scored / didn't participate.</li>
+        <% end %>
+      <% end %>
+      <li>Clicking on the arrows at the bottom corners will advance you to the next or previous heats.
+        Left and right arrows on the keyboard may also be used<% if @heat.category == 'Solo' %>
+        when not editing comments or score<% elsif @event.open_scoring == '#' %>
+        when not entering scores<% end %>.
+        Swiping left and right on mobile devices and tablets also work.</li>
+      <li>Clicking on the heat information at the top center of the page will return you to the heat list where you can quickly scroll and select a different heat.</li>
+    </ul>
+  </div>
 
   <div class="h-full flex flex-row max-h-[85%]"
     data-controller="score" data-drop-action="<%=  post_score_path(judge: @judge) %>" 
@@ -98,15 +98,16 @@ Swiping left and right on mobile devices and tablets also work.</li>
     <% if @slot %>data-slot="<%= @slot %>"<% end %>
     >
 
-  <% if @heat.category == 'Solo' %>
-    <%= render 'solo_heat' %>
-  <% elsif @final %>
-    <%= render 'rank_heat' %>
-  <% elsif @style != 'cards' || @style == 'emcee' || @scores.empty? %>
-    <%= render 'table_heat' %>
-  <% else %>
-    <%= render 'cards_heat' %>
-  <% end %>
+    <% if @heat.category == 'Solo' %>
+      <%= render 'solo_heat' %>
+    <% elsif @final %>
+      <%= render 'rank_heat' %>
+    <% elsif @style != 'cards' || @style == 'emcee' || @scores.empty? %>
+      <%= render 'table_heat' %>
+    <% else %>
+      <%= render 'cards_heat' %>
+    <% end %>
+  </div>
 
   <div class="flex flex-row w-full">
     <div class="align-middle">
@@ -134,6 +135,5 @@ Swiping left and right on mobile devices and tablets also work.</li>
       <% if @next %>
       <%= link_to '>>', @next, class: 'text-2xl lg:text-4xl', rel: 'next' %>
       <% end %>
+    </div>
   </div>
-  </div>
-</div>

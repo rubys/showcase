@@ -28,12 +28,13 @@
     end
   %>
 
-  <div class="mx-auto md:w-2/3 w-full flex flex-col text-xl">
+  <div class="grow mx-auto md:w-2/3 w-full flex flex-col text-xl">
   <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>
 
   <div class="mb-4">
   <div class="float-right"><b>Studio</b>: <%= studio %></div>
   <div><b >Level</b>: <%= @heat.entry.level_name %></div>
+  <div class="clear-both"></div>
   </div>
 
   <div class="mb-4"><span><b>Names</b>:&nbsp;</span><span><%= dancers %></span></div>
@@ -87,6 +88,7 @@
   </div>
   <% end %>
   </div>
+  <div class="clear-both"></div>
   </div>
   <% end %>
 
@@ -95,8 +97,6 @@
     <button data-action="click->score#startHeat" data-score-target="startButton" class="btn-green text-sm">
       Start Heat
     </button>
-  </div>
-
   </div>
   <% end %>
 
