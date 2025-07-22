@@ -9,6 +9,15 @@ class OutputChannel < ApplicationCable::Channel
     },
     scopy: ->(params) {
       ["scopy"]
+    },
+    hetzner: ->(params) {
+      ["showcase", "-h"]
+    },
+    flyio: ->(params) {
+      ["showcase", "-f"]
+    },
+    vscode: ->(params) {
+      ["showcase", "-e"]
     }
   }
 

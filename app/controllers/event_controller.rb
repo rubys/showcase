@@ -1148,7 +1148,10 @@ class EventController < ApplicationController
       FileUtils.rm "tmp/reload.txt"
       redirect_to root_path
     else
-      @stream = OutputChannel.register(:scopy)
+      @scopy_stream = OutputChannel.register(:scopy)
+      @hetzner_stream = OutputChannel.register(:hetzner)
+      @flyio_stream = OutputChannel.register(:flyio)
+      @vscode_stream = OutputChannel.register(:vscode)
       
       @dbs = Dir["db/2*.sqlite3"].
         sort_by {|name| File.mtime(name)}[-20..].
