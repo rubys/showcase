@@ -159,6 +159,16 @@ class EventControllerTest < ActionDispatch::IntegrationTest
     get publish_event_index_path
     assert_response :success
   end
+  
+  test "should show Tables by Studio button when tables exist" do
+    # Create a table to trigger the Table buttons section
+    Table.create!(number: 999, size: 10)
+    
+    get publish_event_index_path
+    assert_response :success
+    assert_select "a", text: "Table List"
+    assert_select "a", text: "Tables by Studio"
+  end
 
   test "start_heat should update current heat and broadcast" do
     heat = heats(:one)

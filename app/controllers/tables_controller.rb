@@ -496,6 +496,83 @@ class TablesController < ApplicationController
       end
     end
   end
+  
+  def by_studio
+    @event = Event.current
+    @font_size = @event.font_size
+    @nologo = true
+    
+    # Data structure: {option => {studio => [tables]}}
+    @options_studios_tables = {}
+    
+    # Process main event tables first
+    main_tables = Table.includes(people: :studio).where(option_id: nil).order(:number)
+    if main_tables.any?
+      studios_tables = {}
+      
+      main_tables.each do |table|
+        table.people.group_by(&:studio).each do |studio, people|
+          studios_tables[studio] ||= []
+          studios_tables[studio] << {
+            table: table,
+            people: people
+          }
+        end
+      end
+      
+      # Sort by studio name and remove duplicates
+      sorted_studios_tables = {}
+      studios_tables.keys.sort_by(&:name).each do |studio|
+        sorted_studios_tables[studio] = studios_tables[studio].uniq { |st| st[:table].id }
+      end
+      
+      @options_studios_tables["Main Event"] = sorted_studios_tables if sorted_studios_tables.any?
+    end
+    
+    # Process option tables
+    Billable.where(type: 'Option').order(:order, :name).each do |option|
+      option_tables = Table.includes(:person_options => {:person => :studio})
+                           .where(option_id: option.id)
+                           .order(:number)
+      
+      next unless option_tables.any?
+      
+      studios_tables = {}
+      
+      option_tables.each do |table|
+        # Group people at this table by studio
+        people_by_studio = {}
+        table.person_options.each do |po|
+          studio = po.person.studio
+          people_by_studio[studio] ||= []
+          people_by_studio[studio] << po.person
+        end
+        
+        people_by_studio.each do |studio, people|
+          studios_tables[studio] ||= []
+          studios_tables[studio] << {
+            table: table,
+            people: people
+          }
+        end
+      end
+      
+      # Sort by studio name and remove duplicates
+      sorted_studios_tables = {}
+      studios_tables.keys.sort_by(&:name).each do |studio|
+        sorted_studios_tables[studio] = studios_tables[studio].uniq { |st| st[:table].id }
+      end
+      
+      @options_studios_tables[option.name] = sorted_studios_tables if sorted_studios_tables.any?
+    end
+
+    respond_to do |format|
+      format.html
+      format.pdf do
+        render_as_pdf basename: "tables-by-studio"
+      end
+    end
+  end
 
   def reset
     if @option

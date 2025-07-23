@@ -67,6 +67,7 @@
   <li class=""><%= link_to "Labels", labels_people_path(as_pdf), class: "btn-pale-orange w-60" %>
   <% if Table.any? %>
   <li class=""><%= link_to "Table List", list_tables_path(as_pdf), class: "btn-pale-orange w-60" %>
+  <li class=""><%= link_to "Tables by Studio", by_studio_tables_path(as_pdf), class: "btn-pale-orange w-60" %>
   <% end %>
   <li class=""><%= link_to "Student Scores", scores_people_path(as_pdf), class: "btn-pale-orange w-60" %>
   <li class=""><%= link_to "Staff", staff_people_path(as_pdf), class: "btn-pale-orange w-60" %>

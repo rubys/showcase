@@ -1058,4 +1058,33 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     # The new form sets number to max + 1, so it should be checked
     assert_select "input[name='table[create_additional_tables]'][checked]"
   end
+  
+  test "should show tables by studio report" do
+    # Create some tables with people from different studios
+    studio1 = studios(:one)
+    studio2 = studios(:two)
+    level = levels(:FS)
+    age = ages(:A)
+    
+    table1 = Table.create!(number: 100, size: 10)
+    table2 = Table.create!(number: 101, size: 10)
+    
+    # Create people at tables
+    person1 = Person.create!(name: "Person 1", studio: studio1, type: "Student", level: level, age: age, table: table1)
+    person2 = Person.create!(name: "Person 2", studio: studio1, type: "Student", level: level, age: age, table: table2)
+    person3 = Person.create!(name: "Person 3", studio: studio2, type: "Student", level: level, age: age, table: table1)
+    
+    get by_studio_tables_url
+    assert_response :success
+    assert_select "h1", text: "Tables by Studio"
+    assert_select "h1", text: /Main Event/
+    assert_select "h2", text: studio1.name
+    assert_select "h2", text: studio2.name
+  end
+  
+  test "should generate PDF for tables by studio report" do
+    get by_studio_tables_url(format: :pdf)
+    assert_response :success
+    assert_equal 'application/pdf', response.content_type
+  end
 end
