@@ -144,6 +144,9 @@
         :name: Spring Freestyles
       fall-freestyles:
         :name: Fall Freestyles
+  dallas:
+    :name: Dallas
+    :region: dfw
   dayton:
     :name: Dayton
     :region: ord
