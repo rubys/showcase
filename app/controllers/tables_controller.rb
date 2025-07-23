@@ -169,32 +169,58 @@ class TablesController < ApplicationController
       current_people_count = @table.people.count
     end
     
-    # Only show studio selection if table isn't at capacity
-    if current_people_count < table_size
+    # Get studios with unassigned people
+    if @table.option_id
+      # For option tables, get studios with people who have this option but no table
+      @studios_with_unassigned = Studio.joins(:people => :options)
+                                       .where(person_options: { option_id: @table.option_id, table_id: nil })
+                                       .where(people: { type: ['Student', 'Professional', 'Guest', 'Official'] })
+                                       .distinct
+                                       .order(:name)
+                                       .pluck(:id, :name)
+    else
+      # For main event tables, get studios with unassigned people
       @studios_with_unassigned = Studio.joins(:people)
                                        .where(people: { table_id: nil, type: ['Student', 'Professional', 'Guest'] })
                                        .where.not(id: 0)  # Exclude Event Staff
                                        .distinct
                                        .order(:name)
                                        .pluck(:id, :name)
+    end
+    
+    # Set available seats if table has capacity
+    if current_people_count < table_size
       @available_seats = table_size - current_people_count
     end
   end
 
   # POST /tables or /tables.json
   def create
-    @table = Table.new(table_params.except(:studio_id))
+    @table = Table.new(table_params.except(:studio_id, :create_additional_tables))
     @table.option_id = @option&.id
 
     respond_to do |format|
       if @table.save
+        created_tables = [@table]
+        
         # Auto-fill table with people from selected studio if provided
         if params[:table][:studio_id].present?
           studio_id = params[:table][:studio_id].to_i
-          fill_table_with_studio_people(@table, studio_id)
+          
+          if params[:table][:create_additional_tables] == '1'
+            # Create multiple tables if needed
+            created_tables = create_tables_for_studio_with_pairs(@table, studio_id)
+          else
+            # Just fill the current table
+            fill_table_with_studio_people(@table, studio_id)
+          end
         end
         
-        format.html { redirect_to tables_path(option_id: @option&.id), notice: "Table was successfully created." }
+        if created_tables.size > 1
+          format.html { redirect_to tables_path(option_id: @option&.id), notice: "#{created_tables.size} tables were successfully created." }
+        else
+          format.html { redirect_to tables_path(option_id: @option&.id), notice: "Table was successfully created." }
+        end
         format.json { render :show, status: :created, location: @table }
       else
         # Reload studio data for the form in case of errors
@@ -229,28 +255,49 @@ class TablesController < ApplicationController
           other_table.update!(number: old_number)
           
           # Update the current table to the new number
-          if @table.update(table_params.except(:studio_id))
+          if @table.update(table_params.except(:studio_id, :create_additional_tables))
             # Auto-fill table with people from selected studio if provided
             if params[:table][:studio_id].present?
               studio_id = params[:table][:studio_id].to_i
-              fill_table_with_studio_people(@table, studio_id)
+              
+              if params[:table][:create_additional_tables] == '1'
+                # Create multiple tables if needed
+                created_tables = create_tables_for_studio_with_pairs(@table, studio_id)
+                notice_msg = "Table was successfully updated. Swapped numbers with Table #{old_number}."
+                notice_msg += " #{created_tables.size - 1} additional tables were created." if created_tables.size > 1
+              else
+                fill_table_with_studio_people(@table, studio_id)
+                notice_msg = "Table was successfully updated. Swapped numbers with Table #{old_number}."
+              end
+            else
+              notice_msg = "Table was successfully updated. Swapped numbers with Table #{old_number}."
             end
             
-            format.html { redirect_to tables_path(option_id: @table.option_id), notice: "Table was successfully updated. Swapped numbers with Table #{old_number}." }
+            format.html { redirect_to tables_path(option_id: @table.option_id), notice: notice_msg }
             format.json { render :show, status: :ok, location: @table }
           else
             format.html { render :edit, status: :unprocessable_entity }
             format.json { render json: @table.errors, status: :unprocessable_entity }
           end
         end
-      elsif @table.update(table_params.except(:studio_id))
+      elsif @table.update(table_params.except(:studio_id, :create_additional_tables))
         # Auto-fill table with people from selected studio if provided
         if params[:table][:studio_id].present?
           studio_id = params[:table][:studio_id].to_i
-          fill_table_with_studio_people(@table, studio_id)
+          
+          if params[:table][:create_additional_tables] == '1'
+            # Create multiple tables if needed
+            created_tables = create_tables_for_studio_with_pairs(@table, studio_id)
+            notice_msg = created_tables.size > 1 ? "Table was successfully updated. #{created_tables.size - 1} additional tables were created." : "Table was successfully updated."
+          else
+            fill_table_with_studio_people(@table, studio_id)
+            notice_msg = "Table was successfully updated."
+          end
+        else
+          notice_msg = "Table was successfully updated."
         end
         
-        format.html { redirect_to tables_path(option_id: @table.option_id), notice: "Table was successfully updated." }
+        format.html { redirect_to tables_path(option_id: @table.option_id), notice: notice_msg }
         format.json { render :show, status: :ok, location: @table }
       else
         # Reload studio data for the form in case of errors
@@ -819,6 +866,109 @@ class TablesController < ApplicationController
         person.update!(table_id: table.id)
       end
     end
+  end
+  
+  def create_tables_for_studio_with_pairs(first_table, studio_id)
+    created_tables = [first_table]
+    
+    # Determine table size
+    table_size = first_table.size
+    if table_size.nil? || table_size.zero?
+      option = Billable.find_by(id: first_table.option_id) if first_table.option_id
+      table_size = option&.computed_table_size || Event.current&.table_size || 10
+    end
+    
+    # Get current people count at the first table
+    if first_table.option_id
+      # For option tables, count people assigned via person_options
+      current_people_count = PersonOption.where(table_id: first_table.id).count
+    else
+      # For main event tables, count people assigned directly
+      current_people_count = first_table.people.count
+    end
+    
+    # Get all people from the studio and paired studios
+    studio_ids = [studio_id]
+    
+    # Find paired studios
+    paired_studios = StudioPair.where('studio1_id = ? OR studio2_id = ?', studio_id, studio_id)
+    paired_studios.each do |pair|
+      studio_ids << (pair.studio1_id == studio_id ? pair.studio2_id : pair.studio1_id)
+    end
+    
+    # Get all unassigned people from these studios
+    if first_table.option_id
+      # For option tables
+      all_people = Person.joins(:options)
+                         .where(studio_id: studio_ids, type: ['Student', 'Professional', 'Guest', 'Official'])
+                         .where(person_options: { option_id: first_table.option_id, table_id: nil })
+                         .order('studio_id, name')
+    else
+      # For main event tables
+      all_people = Person.where(studio_id: studio_ids, table_id: nil, type: ['Student', 'Professional', 'Guest'])
+                         .order('studio_id, name')
+    end
+    
+    # Group people by studio to maintain studio cohesion
+    people_by_studio = all_people.group_by(&:studio_id)
+    
+    # Fill the first table with its remaining capacity
+    current_table = first_table
+    seats_filled = current_people_count # Start with existing people count
+    
+    # Process the main studio first
+    if people_by_studio[studio_id]
+      people_by_studio[studio_id].each do |person|
+        if seats_filled >= table_size
+          # Create a new table
+          next_number = (Table.where(option_id: first_table.option_id).maximum(:number) || 0) + 1
+          current_table = Table.create!(
+            number: next_number,
+            option_id: first_table.option_id,
+            size: first_table.size
+          )
+          created_tables << current_table
+          seats_filled = 0
+        end
+        
+        # Assign person to current table
+        if first_table.option_id
+          PersonOption.where(person_id: person.id, option_id: first_table.option_id).update_all(table_id: current_table.id)
+        else
+          person.update!(table_id: current_table.id)
+        end
+        seats_filled += 1
+      end
+    end
+    
+    # Then process paired studios
+    people_by_studio.each do |studio_id_in_group, people|
+      next if studio_id_in_group == studio_id # Skip main studio as it's already processed
+      
+      people.each do |person|
+        if seats_filled >= table_size
+          # Create a new table
+          next_number = (Table.where(option_id: first_table.option_id).maximum(:number) || 0) + 1
+          current_table = Table.create!(
+            number: next_number,
+            option_id: first_table.option_id,
+            size: first_table.size
+          )
+          created_tables << current_table
+          seats_filled = 0
+        end
+        
+        # Assign person to current table
+        if first_table.option_id
+          PersonOption.where(person_id: person.id, option_id: first_table.option_id).update_all(table_id: current_table.id)
+        else
+          person.update!(table_id: current_table.id)
+        end
+        seats_filled += 1
+      end
+    end
+    
+    created_tables
   end
 
 
@@ -2069,6 +2219,6 @@ class TablesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def table_params
-      params.expect(table: [ :number, :row, :col, :size, :studio_id, :option_id ])
+      params.expect(table: [ :number, :row, :col, :size, :studio_id, :option_id, :create_additional_tables ])
     end
 end

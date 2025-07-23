@@ -36,9 +36,28 @@
       <% else %>
         <%= form.label :studio_id, "Fill table with people from studio (optional)" %>
         <%= form.select :studio_id, options_for_select([["Select a studio...", ""]] + @studios_with_unassigned.map { |id, name| [name, id] }), {}, 
-            { class: "block shadow rounded-md border border-gray-400 outline-none px-3 py-2 mt-2 w-full focus:outline-blue-600" } %>
+            { class: "block shadow rounded-md border border-gray-400 outline-none px-3 py-2 mt-2 w-full focus:outline-blue-600", id: "studio_select" } %>
         <p class="text-sm text-gray-500 mt-1">If selected, the table will be automatically filled with unassigned people from this studio.</p>
       <% end %>
+    </div>
+    
+    <div class="my-5">
+      <% 
+        # Default to checked if this table has the highest number
+        is_highest_number = false
+        max_number = Table.where(option_id: table.option_id).maximum(:number) || 0
+        
+        if table.new_record?
+          # For new tables, check if the assigned number is higher than current max
+          is_highest_number = table.number > max_number
+        else
+          # For existing tables, check if this table has the highest number
+          is_highest_number = table.number >= max_number
+        end
+      %>
+      <%= form.check_box :create_additional_tables, checked: is_highest_number, class: "mr-2" %>
+      <%= form.label :create_additional_tables, "Create additional tables if needed", class: "inline" %>
+      <p class="text-sm text-gray-500 mt-1">When checked, additional tables will be created if the studio has more people than can fit at one table. Studio pairs will also be included.</p>
     </div>
   <% end %>
 

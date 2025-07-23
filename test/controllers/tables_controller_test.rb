@@ -183,7 +183,7 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", text: /up to 3 unassigned people/
   end
 
-  test "should not show studio select on edit page when table is at capacity" do
+  test "should show studio select on edit page even when table is at capacity" do
     # Create a table at capacity
     table = Table.create!(number: 997, size: 2)
     studio = studios(:one)
@@ -194,9 +194,14 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     person1 = Person.create!(name: "Seated Person 1", studio: studio, type: "Student", level: level, age: age, table: table)
     person2 = Person.create!(name: "Seated Person 2", studio: studio, type: "Student", level: level, age: age, table: table)
     
+    # Create an unassigned person
+    unassigned = Person.create!(name: "Unassigned Person", studio: studio, type: "Student", level: level, age: age)
+    
     get edit_table_url(table)
     assert_response :success
-    assert_select "select[name='table[studio_id]']", count: 0
+    assert_select "select[name='table[studio_id]']"
+    assert_select "label", text: "Fill table with people from studio (optional)"
+    assert_select "input[name='table[create_additional_tables]']"
   end
 
   test "should update table and add people from studio" do
@@ -906,5 +911,151 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     assert_raises(ActiveRecord::RecordNotFound) do
       get tables_url(option_id: package.id)
     end
+  end
+  
+  test "should create additional tables when checkbox is checked" do
+    # Clear all table assignments and delete existing people from studio
+    Person.where(studio_id: studios(:one).id).destroy_all
+    
+    studio = studios(:one)
+    level = levels(:FS)
+    age = ages(:A)
+    
+    # Create exactly 15 people for the studio (more than one table can hold)
+    15.times do |i|
+      Person.create!(name: "Test Person #{i}", studio: studio, type: "Student", level: level, age: age)
+    end
+    
+    # Count initial tables
+    initial_table_count = Table.count
+    
+    post tables_url, params: { table: { number: 20, size: 10, studio_id: studio.id, create_additional_tables: '1' } }
+    
+    assert_redirected_to tables_url
+    assert_match /2 tables were successfully created/, flash[:notice]
+    
+    # Verify 2 tables were created
+    assert_equal initial_table_count + 2, Table.count
+    
+    # Verify all 15 people are assigned to tables
+    assert_equal 0, Person.where(studio_id: studio.id, table_id: nil).count
+  end
+  
+  test "should not create additional tables when checkbox is unchecked" do
+    # Clear all table assignments and delete existing people from studio one
+    Person.where(studio_id: studios(:one).id).destroy_all
+    
+    studio = studios(:one)
+    level = levels(:FS)
+    age = ages(:A)
+    
+    # Create exactly 15 people for the studio
+    15.times do |i|
+      Person.create!(name: "Test Person #{i}", studio: studio, type: "Student", level: level, age: age)
+    end
+    
+    assert_difference("Table.count", 1) do
+      post tables_url, params: { table: { number: 21, size: 10, studio_id: studio.id, create_additional_tables: '0' } }
+    end
+    
+    assert_redirected_to tables_url
+    assert_match /Table was successfully created/, flash[:notice]
+    
+    # Verify only 10 people are assigned (15 total - 10 assigned = 5 unassigned)
+    assert_equal 5, Person.where(studio_id: studio.id, table_id: nil).count
+  end
+  
+  test "should include studio pairs when creating additional tables" do
+    # Clear all table assignments and people
+    Person.where(studio_id: [studios(:one).id, studios(:two).id]).destroy_all
+    
+    studio1 = studios(:one)
+    studio2 = studios(:two)
+    level = levels(:FS)
+    age = ages(:A)
+    
+    # Create a studio pair
+    StudioPair.create!(studio1: studio1, studio2: studio2)
+    
+    # Create people for both studios
+    8.times do |i|
+      Person.create!(name: "Studio1 Person #{i}", studio: studio1, type: "Student", level: level, age: age)
+    end
+    6.times do |i|
+      Person.create!(name: "Studio2 Person #{i}", studio: studio2, type: "Student", level: level, age: age)
+    end
+    
+    initial_table_count = Table.count
+    
+    post tables_url, params: { table: { number: 22, size: 10, studio_id: studio1.id, create_additional_tables: '1' } }
+    
+    # Verify 2 tables were created (14 people total, 10 in first table, 4 in second)
+    assert_equal initial_table_count + 2, Table.count
+    
+    # Verify all people from both studios are assigned
+    assert_equal 0, Person.where(studio_id: [studio1.id, studio2.id], table_id: nil).count
+  end
+  
+  test "should respect existing table capacity when creating additional tables" do
+    # Clear existing people from studio
+    Person.where(studio_id: studios(:one).id).destroy_all
+    
+    studio = studios(:one)
+    level = levels(:FS)
+    age = ages(:A)
+    
+    # Create a table with some existing people
+    table = Table.create!(number: 23, size: 10)
+    3.times do |i|
+      Person.create!(name: "Existing Person #{i}", studio: studio, type: "Student", level: level, age: age, table: table)
+    end
+    
+    # Create 12 more unassigned people (total 15, but table already has 3)
+    12.times do |i|
+      Person.create!(name: "New Person #{i}", studio: studio, type: "Student", level: level, age: age)
+    end
+    
+    initial_table_count = Table.count
+    
+    patch table_url(table), params: { table: { number: table.number, studio_id: studio.id, create_additional_tables: '1' } }
+    
+    # Should create 1 additional table (3 existing + 7 = 10 in first table, 5 in new table)
+    assert_equal initial_table_count + 1, Table.count
+    assert_match /1 additional tables were created/, flash[:notice]
+    
+    # Verify first table has 10 people and all are assigned
+    table.reload
+    assert_equal 10, table.people.count
+    assert_equal 0, Person.where(studio_id: studio.id, table_id: nil).count
+  end
+  
+  test "checkbox defaults to checked for highest numbered table" do
+    # Create tables with specific numbers
+    Table.create!(number: 1001, size: 10)
+    Table.create!(number: 1002, size: 10)
+    highest_table = Table.create!(number: 1003, size: 10)
+    
+    # Edit the highest numbered table
+    get edit_table_url(highest_table)
+    assert_response :success
+    assert_select "input[name='table[create_additional_tables]'][checked]"
+    
+    # Edit a non-highest table
+    get edit_table_url(Table.find_by(number: 1002))
+    assert_response :success
+    assert_select "input[name='table[create_additional_tables]']"
+    assert_select "input[name='table[create_additional_tables]'][checked]", count: 0
+  end
+  
+  test "checkbox defaults to checked for new table with highest number" do
+    # Create existing tables
+    Table.create!(number: 2001, size: 10)
+    Table.create!(number: 2002, size: 10)
+    
+    # New table form should have checkbox checked if number is highest
+    get new_table_url
+    assert_response :success
+    # The new form sets number to max + 1, so it should be checked
+    assert_select "input[name='table[create_additional_tables]'][checked]"
   end
 end

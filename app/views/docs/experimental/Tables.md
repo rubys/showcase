@@ -2,9 +2,16 @@
 
 The Tables feature helps you arrange seating for your event.
 
-Start by going to the **Studios** page and clicking the **Tables** button. Set the default table size; if some tables are a different size, you can adjust those individually. To create different arrangements for meals, go to **Settings**, click the **Prices** tab, and create an option for the meal. When editing an option, click **Manage tables**. You can have multiple meals with different seating arrangements. Only participants who select options with tables will be seated.
+Overview:
 
-Use the **Assign People to Tables** button to seat people at tables. It prioritizes seating studios together, along with their paired studios. The process follows this prioritized list:
+  * enter people and studios, and pair studios as desired
+  * If you want separate tables for meals, go into **Settings**, select the **Prices** tab, and create options for each meal. For the purposes of arranging tables, prices are not important.
+  * Use the **Assign People to Tables** button to seat people at tables for the overall event and/or for each meal, being sure to set the table size and number of columns
+  * Arrange the tables as needed
+  * From the main page you can click on **Studios**, then find a studio that is larger than the table size, click on the studio then **Tables**, and review and adjust the tables for this studio for each meal.
+  * If there are last minute changes, add or remove a person. When you add a person, you can select their tables. Unfortunately, their table may be full.  
+
+The **Assign People to Tables** button follows this prioritized list:
 
 * People from the same studio are placed at the same table when possible, then at adjacent tables if there is overflow.
 * People from paired studios are placed at the same table when possible, then at adjacent tables if needed.
