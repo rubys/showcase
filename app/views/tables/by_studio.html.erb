@@ -13,6 +13,35 @@
       page-break-before: auto;
     }
     
+    .summary-section {
+      page-break-after: always;
+    }
+    
+    .table-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    
+    .table-grid-item {
+      border: 1px solid #ccc;
+      break-inside: avoid;
+    }
+    
+    .table-banner {
+      background-color: #f3f4f6;
+      font-weight: bold;
+      padding: 0.5rem;
+      text-align: center;
+      border-bottom: 1px solid #ccc;
+    }
+    
+    .table-studios {
+      padding: 0.5rem;
+      font-size: 0.9em;
+    }
+    
     @media print {
       .no-print {
         display: none !important;
@@ -23,6 +52,12 @@
         border: 1px solid #ccc;
         padding: 1em;
       }
+      
+      .table-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+      }
     }
   </style>
 
@@ -32,9 +67,45 @@
 
   <% @options_studios_tables.each do |option_name, studios_tables| %>
     <div class="option-section">
-      <h1 class="font-bold text-3xl text-center mb-4">
+      <h1 class="font-bold text-3xl text-center mb-6">
         <%= @event&.name || "Event" %> - <%= option_name %>
       </h1>
+      
+      <% 
+        # Build table summary data for this option
+        table_summary = {}
+        studios_tables.each do |studio, table_info|
+          table_info.each do |info|
+            table_number = info[:table].number
+            table_summary[table_number] ||= []
+            table_summary[table_number] << studio.name
+          end
+        end
+        # Sort tables by number and studios alphabetically
+        table_summary.each { |number, studios| studios.sort! }
+        sorted_tables = table_summary.sort_by { |number, studios| number }
+      %>
+      
+      <div class="summary-section">
+        <div class="table-grid grid grid-cols-4 gap-4">
+          <% sorted_tables.each do |table_number, studios| %>
+            <div class="table-grid-item border rounded">
+              <div class="table-banner bg-gray-100 font-bold p-2 text-center border-b">
+                Table <%= table_number %>
+              </div>
+              <div class="table-studios p-2 text-sm">
+                <% if studios.any? %>
+                  <% studios.each do |studio_name| %>
+                    <div class="mb-1"><%= studio_name %></div>
+                  <% end %>
+                <% else %>
+                  <div class="text-gray-500 italic">No studios</div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
       
       <% studios_tables.each do |studio, table_info| %>
         <div class="studio-section mb-6 p-4 border rounded-lg print:border print:rounded-none">

@@ -1080,6 +1080,8 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", text: /Main Event/
     assert_select "h2", text: studio1.name
     assert_select "h2", text: studio2.name
+    assert_select ".table-banner", text: "Table 100"
+    assert_select ".table-banner", text: "Table 101"
   end
   
   test "should generate PDF for tables by studio report" do
