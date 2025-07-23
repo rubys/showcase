@@ -419,6 +419,8 @@
         :name: Medal Ball
       extravaganza:
         :name: Extravaganza
+      medal-ball-august:
+        :name: Medal Ball August
   stockton:
     :name: Stockton
     :region: sjc
