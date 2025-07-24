@@ -1363,15 +1363,61 @@ class TablesController < ApplicationController
     
     # 4. Ultra-aggressive pack algorithm to minimize table count
     # Fill tables to maximum capacity first, only respecting no-singles rule
+    # Consider paired studios as single units (Cary + Merrillville together)
     
-    # Group studios by size to handle strategically
-    studio_groups = remaining_people.group_by(&:studio_id).map do |studio_id, people|
-      { studio_id: studio_id, people: people, size: people.size }
-    end.sort_by { |g| -g[:size] }  # Largest studios first
+    # Get studio pairs for grouping
+    studio_pairs = StudioPair.includes(:studio1, :studio2).map do |pair|
+      [pair.studio1.id, pair.studio2.id]
+    end
+    studio_components = build_connected_components(studio_pairs)
     
-    # Separate single-person studios (can go anywhere) from multi-person studios
-    single_person_studios = studio_groups.select { |g| g[:size] == 1 }
-    multi_person_studios = studio_groups.select { |g| g[:size] > 1 }
+    # Group studios by their connected components (paired studios together)
+    studio_groups_by_id = remaining_people.group_by(&:studio_id)
+    
+    # Create component groups that include all paired studios
+    component_groups = []
+    processed_studios = Set.new
+    
+    studio_components.each do |component|
+      component_people = []
+      component_studio_ids = []
+      
+      component.each do |studio_id|
+        if studio_groups_by_id[studio_id] && !processed_studios.include?(studio_id)
+          component_people += studio_groups_by_id[studio_id]
+          component_studio_ids << studio_id
+          processed_studios.add(studio_id)
+        end
+      end
+      
+      if component_people.any?
+        component_groups << {
+          studio_ids: component_studio_ids,
+          people: component_people,
+          size: component_people.size,
+          is_paired: component_studio_ids.size > 1
+        }
+      end
+    end
+    
+    # Add unpaired studios
+    studio_groups_by_id.each do |studio_id, people|
+      next if processed_studios.include?(studio_id)
+      
+      component_groups << {
+        studio_ids: [studio_id],
+        people: people,
+        size: people.size,
+        is_paired: false
+      }
+    end
+    
+    # Sort by size (largest first) for better packing
+    component_groups.sort_by! { |g| -g[:size] }
+    
+    # Separate single-person components from multi-person components
+    single_person_components = component_groups.select { |g| g[:size] == 1 }
+    multi_person_components = component_groups.select { |g| g[:size] > 1 }
     
     # Pool of available people
     available_people = remaining_people.dup
@@ -1385,80 +1431,107 @@ class TablesController < ApplicationController
         
         found_fit = false
         
-        # Try to fit multi-person studios, avoiding splits that leave 1 person alone
+        # Try to fit multi-person components, avoiding splits that leave 1 person alone
+        # For paired studios (like Cary + Merrillville), consider them as one unit
         
-        # First pass: try studios that won't leave 1 person alone
-        suitable_studios = []
-        fallback_studios = []
+        # First pass: try components that won't leave 1 person alone
+        suitable_components = []
+        fallback_components = []
         
-        multi_person_studios.each do |studio_group|
-          remaining_in_studio = studio_group[:people] & available_people
-          next if remaining_in_studio.empty?
+        multi_person_components.each do |component_group|
+          remaining_in_component = component_group[:people] & available_people
+          next if remaining_in_component.empty?
           
-          # Calculate what we could take and what would be left
+          # Calculate what we could take, considering individual studios within the component
+          # For paired studios, we need to ensure no individual studio is left with 1 person
           people_to_take = 0
           would_leave_alone = false
           
-          if remaining_in_studio.size <= space_left
-            # Take everyone remaining from this studio - no one left alone
-            people_to_take = remaining_in_studio.size
-          elsif remaining_in_studio.size >= 4 && space_left >= 2
-            # Large studio: take what fits, ensuring we leave at least 2
-            if remaining_in_studio.size - space_left >= 2
-              people_to_take = space_left
-            elsif space_left >= remaining_in_studio.size - 1
-              # Special case: if we can fit all but 1, take all but 2 instead
-              people_to_take = remaining_in_studio.size - 2
+          if remaining_in_component.size <= space_left
+            # Take everyone remaining from this component - no one left alone
+            people_to_take = remaining_in_component.size
+          else
+            # For components that need to be split, we need to be more careful
+            # Group remaining people by studio to apply no-singles rule per studio
+            remaining_by_studio = remaining_in_component.group_by(&:studio_id)
+            
+            # Try to build a valid selection that doesn't violate no-singles for any studio
+            potential_selection = []
+            temp_space = space_left
+            
+            remaining_by_studio.each do |studio_id, studio_people|
+              studio_total_size = component_group[:people].select { |p| p.studio_id == studio_id }.size
+              remaining_in_studio = studio_people.size
+              
+              studio_people_to_take = 0
+              
+              if remaining_in_studio <= temp_space
+                # Take all remaining from this studio
+                studio_people_to_take = remaining_in_studio
+              elsif remaining_in_studio >= 4 && temp_space >= 2
+                # Large studio: take what fits, ensuring we leave at least 2
+                if remaining_in_studio - temp_space >= 2
+                  studio_people_to_take = temp_space
+                elsif temp_space >= remaining_in_studio - 1
+                  # If we can fit all but 1, take all but 2 instead
+                  studio_people_to_take = remaining_in_studio - 2
+                end
+              elsif remaining_in_studio == 3 && temp_space >= 2
+                # For 3-person studios, avoid leaving 1 alone
+                if temp_space == 2
+                  # This would leave 1 person alone - mark as fallback
+                  studio_people_to_take = 2
+                  would_leave_alone = true
+                end
+              elsif remaining_in_studio == 2 && temp_space >= 2
+                # Take both from 2-person studio
+                studio_people_to_take = 2
+              end
+              
+              if studio_people_to_take > 0
+                potential_selection += studio_people.first(studio_people_to_take)
+                temp_space -= studio_people_to_take
+                break if temp_space == 0
+              end
             end
-          elsif remaining_in_studio.size == 3 && space_left >= 2
-            # For 3-person groups, only take 2 if we have exactly 2 spaces (leaves 1)
-            if space_left == 2
-              people_to_take = 2
-              would_leave_alone = true  # This would leave 1 person alone
-            end
-          elsif remaining_in_studio.size == 2 && space_left >= 2
-            # Take both from 2-person group
-            people_to_take = 2
+            
+            people_to_take = potential_selection.size
           end
           
           if people_to_take > 0
-            if would_leave_alone
-              fallback_studios << { studio: studio_group, people_to_take: people_to_take, remaining: remaining_in_studio }
+            selection = if remaining_in_component.size <= space_left
+              remaining_in_component.first(people_to_take)
             else
-              suitable_studios << { studio: studio_group, people_to_take: people_to_take, remaining: remaining_in_studio }
+              potential_selection
+            end
+            
+            if would_leave_alone
+              fallback_components << { component: component_group, people_to_take: people_to_take, selection: selection }
+            else
+              suitable_components << { component: component_group, people_to_take: people_to_take, selection: selection }
             end
           end
         end
         
-        # Try suitable studios first (those that don't leave anyone alone)
-        if suitable_studios.any?
-          chosen = suitable_studios.first
-          taken = chosen[:remaining].first(chosen[:people_to_take])
+        # Try suitable components first (those that don't leave anyone alone)
+        if suitable_components.any?
+          chosen = suitable_components.first
+          taken = chosen[:selection]
           people_for_table += taken
           available_people -= taken
           found_fit = true
-        elsif fallback_studios.any?
-          # Only use fallback studios if no suitable ones available
-          # But prefer taking 2 people minimum to avoid leaving 1 alone
-          chosen = fallback_studios.first
-          
-          # Special handling: if we're about to leave 1 person alone, 
-          # and we have space for 2, take 2 instead of whatever was calculated
-          if chosen[:remaining].size == 3 && space_left >= 2
-            people_to_take = [2, space_left].min  # Take at least 2, up to space available
-          else
-            people_to_take = chosen[:people_to_take]
-          end
-          
-          taken = chosen[:remaining].first(people_to_take)
+        elsif fallback_components.any?
+          # Only use fallback components if no suitable ones available
+          chosen = fallback_components.first
+          taken = chosen[:selection]
           people_for_table += taken
           available_people -= taken
           found_fit = true
         end
         
-        # If no multi-person studio fit, use single-person studios
-        if !found_fit && space_left > 0 && single_person_studios.any?
-          single_people = single_person_studios.flat_map { |g| g[:people] } & available_people
+        # If no multi-person component fit, use single-person components
+        if !found_fit && space_left > 0 && single_person_components.any?
+          single_people = single_person_components.flat_map { |g| g[:people] } & available_people
           if single_people.any?
             people_to_take = [space_left, single_people.size].min
             taken = single_people.first(people_to_take)
