@@ -1361,30 +1361,103 @@ class TablesController < ApplicationController
     
     # 2. Pack tables by filling them sequentially to capacity
     
-    # 3. Simple approach: just slice remaining people into table_size chunks
-    # This ensures we never exceed table_size and everyone gets assigned
-    remaining_people.each_slice(table_size) do |people_slice|
-      # Get studio info for this slice
-      studio_ids = people_slice.map(&:studio_id).uniq
-      studio_names = people_slice.map { |p| p.studio.name }.uniq
+    # 4. Ultra-aggressive pack algorithm to minimize table count
+    # Fill tables to maximum capacity first, only respecting no-singles rule
+    
+    # Group studios by size to handle strategically
+    studio_groups = remaining_people.group_by(&:studio_id).map do |studio_id, people|
+      { studio_id: studio_id, people: people, size: people.size }
+    end.sort_by { |g| -g[:size] }  # Largest studios first
+    
+    # Separate single-person studios (can go anywhere) from multi-person studios
+    single_person_studios = studio_groups.select { |g| g[:size] == 1 }
+    multi_person_studios = studio_groups.select { |g| g[:size] > 1 }
+    
+    # Pool of available people
+    available_people = remaining_people.dup
+    
+    while available_people.any?
+      people_for_table = []
       
-      # For pack mode, create tables directly to bypass complex grid placement
-      table = Table.create!(
-        option_id: @option&.id,
-        number: table_index + 1,
-        size: table_size
-      )
-      
-      # Assign people to table
-      people_slice.each do |person|
-        if @option
-          PersonOption.where(person: person, option: @option).update(table_id: table.id)
-        else
-          person.update(table_id: table.id)
+      # Fill table to maximum capacity
+      while people_for_table.size < table_size && available_people.any?
+        space_left = table_size - people_for_table.size
+        
+        found_fit = false
+        
+        # Try to fit multi-person studios first (largest first for better packing)
+        multi_person_studios.each do |studio_group|
+          remaining_in_studio = studio_group[:people] & available_people
+          next if remaining_in_studio.empty?
+          
+          # Can we take some people from this studio?
+          people_to_take = 0
+          
+          if remaining_in_studio.size <= space_left
+            # Take everyone remaining from this studio
+            people_to_take = remaining_in_studio.size
+          elsif remaining_in_studio.size >= 4 && space_left >= 2
+            # Large studio: take what fits, ensuring we leave at least 2
+            if remaining_in_studio.size - space_left >= 2
+              people_to_take = space_left
+            elsif space_left >= remaining_in_studio.size - 1
+              # Special case: if we can fit all but 1, take all but 2 instead
+              people_to_take = remaining_in_studio.size - 2
+            end
+          elsif remaining_in_studio.size == 3 && space_left >= 2
+            # For 3-person groups, take 2 and leave 1 only if we have exactly 2 spaces
+            people_to_take = 2 if space_left == 2
+          elsif remaining_in_studio.size == 2 && space_left >= 2
+            # Take both from 2-person group
+            people_to_take = 2
+          end
+          
+          if people_to_take > 0
+            taken = remaining_in_studio.first(people_to_take)
+            people_for_table += taken
+            available_people -= taken
+            found_fit = true
+            break
+          end
         end
+        
+        # If no multi-person studio fit, use single-person studios
+        if !found_fit && space_left > 0 && single_person_studios.any?
+          single_people = single_person_studios.flat_map { |g| g[:people] } & available_people
+          if single_people.any?
+            people_to_take = [space_left, single_people.size].min
+            taken = single_people.first(people_to_take)
+            people_for_table += taken
+            available_people -= taken
+            found_fit = true
+          end
+        end
+        
+        # If we still couldn't fit anyone, we're done with this table
+        break unless found_fit
       end
       
-      table_index += 1
+      # Create table if we have people
+      if people_for_table.any?
+        table = Table.create!(
+          option_id: @option&.id,
+          number: table_index + 1,
+          size: table_size
+        )
+        
+        people_for_table.each do |person|
+          if @option
+            PersonOption.where(person: person, option: @option).update(table_id: table.id)
+          else
+            person.update(table_id: table.id)
+          end
+        end
+        
+        table_index += 1
+      else
+        # Emergency exit: if we can't place anyone, something is wrong
+        break
+      end
     end
     
     # Return empty array since we created tables directly
