@@ -98,7 +98,7 @@
     <% if @slot %>data-slot="<%= @slot %>"<% end %>
     >
 
-    <div class="flex-1 flex flex-row">
+    <div class="flex-1 flex flex-row overflow-hidden">
       <% if @heat.category == 'Solo' %>
         <%= render 'solo_heat' %>
       <% elsif @final %>
