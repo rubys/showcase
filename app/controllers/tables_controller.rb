@@ -1514,7 +1514,21 @@ class TablesController < ApplicationController
         end
         
         # Try suitable components first (those that don't leave anyone alone)
+        # Prioritize components that don't leave exactly 1 empty seat (hard to fill)
         if suitable_components.any?
+          # Sort suitable components to avoid leaving single empty seats
+          suitable_components.sort_by! do |comp|
+            remaining_space_after = space_left - comp[:people_to_take]
+            case remaining_space_after
+            when 0
+              0  # Perfect fit - highest priority
+            when 1
+              2  # Leaves 1 empty seat - lowest priority (hard to fill)
+            else
+              1  # Leaves 2+ seats - medium priority (can fit pairs/singles)
+            end
+          end
+          
           chosen = suitable_components.first
           taken = chosen[:selection]
           people_for_table += taken
