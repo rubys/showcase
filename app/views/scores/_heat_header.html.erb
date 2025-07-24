@@ -1,0 +1,36 @@
+  <h1 class="grow font-bold text-4xl pt-1 pb-3 text-center mx-8">
+    <%= link_to judge_heatlist_path(judge: @judge, anchor: dom_id(@heat), style: @style), rel: 'up' do %>
+      <span>Heat <%= @number %>:<br class="block sm:hidden"> <%= @dance %>
+      <% if @heat.solo&.combo_dance_id %>
+      / <%= @heat.solo.combo_dance.name %>
+      <% end %>
+      </span>
+    <% end %>
+    <% if @event.assign_judges? && @show == 'mixed' && @judge && @style != 'emcee' %>
+      <% heats = Heat.joins(:scores).includes(entry: :lead).where(number: @heat.number, scores: {judge_id: @judge.id}).to_a
+         unassigned = Heat.where(number: @heat.number).includes(entry: :lead).left_joins(:scores).where(scores: { id: nil }).to_a
+         early = Heat.includes(entry: :lead).joins(:scores).where(scores: { updated_at: ...Event.current.date}).distinct.to_a
+         heats = (heats + early + unassigned).uniq.sort_by {|heat| heat.entry.lead.back}
+      %>
+      <div class="text-2xl"><%= judge_backs_display(heats, unassigned, early) %></div>
+    <% end %>
+    <% if @style == 'emcee' and @heat.category != 'Solo' %>
+      <div class="font-normal"><%= @subjects.length %> <%= 'couple'.pluralize @subjects.length %> on the floor</div>
+      <% if @song %>
+        <audio controls preload="auto" style="display: inline">
+          <source src=<%= @song.song_file.url %> type=<%= @song.song_file.content_type %>>
+        </audio>
+        <div class="font-normal text-sm"><%= @song.title %><% unless @song.artist.blank? %>- <%= @song.artist %><% end %></div>
+      <% end %>
+    <% end %>
+
+    <% if @heat.dance.heat_length %>
+      <div class="text-2xl font-normal">
+        <%= heat_dance_slot_display(@heat, @slot, @final) %>
+        <%= heat_multi_dance_names(@heat, @slot) %>
+        <% if @callbacks %>
+          <span>(Callback <%= @callbacks %>)</span>
+        <% end %>
+      </div>
+    <% end %>
+  </h1>

@@ -1,0 +1,28 @@
+    <div class="flex flex-row w-full flex-shrink-0">
+      <div class="align-middle">
+        <% if @prev %>
+        <%= link_to '<<', @prev, class: 'text-2xl lg:text-4xl', rel: 'prev' %>
+        <% end %>
+      </div>
+
+      <% if @assign_judges %>
+        <h1 class="font-bold text-2xl pt-1 pb-3 flex-1 text-center" data-controller="assign-judges", data-present-url=<%= toggle_present_person_path(@judge) %>>
+        <input type='checkbox' name="active" <% if @judge.present %>checked <% end %>class="w-6 h-6 mr-3">
+      <% else %>
+        <h1 class="font-bold text-2xl pt-1 pb-3 flex-1 text-center">
+      <% end %>
+        <%= link_to @judge.display_name, person_path(@judge) %>
+        <%= link_to root_path do %>
+          <%= image_tag showcase_logo, class: "absolute right-4 top-4 h-8" %>
+        <% end %>
+        <% if false and @assign_judges %>
+        <button class='btn btn-blue py-1 text-sm'>assign</button>
+        <% end %>
+      </h1>
+
+      <div class="align-middle">
+        <% if @next %>
+        <%= link_to '>>', @next, class: 'text-2xl lg:text-4xl', rel: 'next' %>
+        <% end %>
+      </div>
+    </div>
