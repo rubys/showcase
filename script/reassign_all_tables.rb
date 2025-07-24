@@ -12,14 +12,20 @@
 # 4. Runs analysis to verify all assignments are correct
 # 5. Reports any remaining issues with detailed breakdown
 #
-# Usage: bin/run [database] script/reassign_all_tables.rb
+# Usage: bin/run [database] script/reassign_all_tables.rb [--pack]
 # Examples:
 #   bin/run db/2025-torino-april.sqlite3 script/reassign_all_tables.rb
+#   bin/run db/2025-torino-april.sqlite3 script/reassign_all_tables.rb --pack
 #   bin/run test script/reassign_all_tables.rb
-#   bin/run demo script/reassign_all_tables.rb
+#   bin/run demo script/reassign_all_tables.rb --pack
 
 puts "TABLE REASSIGNMENT SCRIPT"
 puts "=" * 50
+
+# Check for pack option
+pack_tables = ARGV.include?('--pack')
+puts "Pack tables: #{pack_tables ? 'ENABLED' : 'DISABLED'}"
+puts
 
 # Get all billable options (meal options)
 options = Billable.where(type: 'Option').order(:order)
@@ -70,9 +76,10 @@ options.each do |option|
     begin
       # Create a controller instance and call the actual assign method
       class TestController < TablesController
-        def initialize(option)
+        def initialize(option, pack_tables = false)
           super()
           @option = option
+          @pack_tables = pack_tables
         end
         
         def call_assign
@@ -110,7 +117,11 @@ options.each do |option|
             
             # TWO-PHASE ALGORITHM
             # Phase 1: Group people into tables (who sits together)
-            people_groups = group_people_into_tables(people, table_size)
+            if @pack_tables
+              people_groups = group_people_into_packed_tables(people, table_size)
+            else
+              people_groups = group_people_into_tables(people, table_size)
+            end
             
             # Phase 2: Place groups on grid (where tables go)
             created_tables = place_groups_on_grid(people_groups)
@@ -123,7 +134,7 @@ options.each do |option|
         end
       end
       
-      controller = TestController.new(option)
+      controller = TestController.new(option, pack_tables)
       tables_created = controller.call_assign
       
       # Verify results

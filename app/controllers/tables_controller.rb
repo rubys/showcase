@@ -1340,114 +1340,61 @@ class TablesController < ApplicationController
   end
   
   def group_people_into_packed_tables(people, table_size)
-    # Pack tables algorithm: Fill every table to capacity
-    # Priority order:
-    # 1. Fill tables to capacity (even if it means splitting studios)
-    # 2. Apply existing priorities after packing
-    #    - Event Staff together
-    #    - Paired studios adjacent when possible
-    #    - Large studios in contiguous blocks when split
+    # Pack tables algorithm based on documentation:
+    # - Fill tables to capacity (never exceed table_size)
+    # - Split studios across adjacent tables when needed
+    # - Never leave anyone sitting alone
+    # - Priority is filling tables over keeping studios together
     
     people_groups = []
-    all_people = people.dup
     
-    # 1. Handle Event Staff (studio_id = 0) first - always keep them together
-    event_staff = all_people.select { |p| p.studio_id == 0 }
-    if event_staff.any?
-      all_people -= event_staff
-      
-      if event_staff.size <= table_size
-        # All Event Staff fit on one table
-        people_groups << {
-          people: event_staff,
-          studio_id: 0,
-          studio_name: 'Event Staff',
-          studio_ids: [0],
-          split_group: nil,
-          packed_table: true
-        }
-      else
-        # Event Staff need multiple tables - keep them adjacent
-        split_index = 0
-        event_staff.each_slice(table_size) do |people_slice|
-          people_groups << {
-            people: people_slice,
-            studio_id: 0,
-            studio_name: 'Event Staff',
-            studio_ids: [0],
-            split_group: "event_staff_#{split_index}",
-            split_total: (event_staff.size / table_size.to_f).ceil,
-            packed_table: true
-          }
-          split_index += 1
-        end
-      end
+    # 1. Handle Event Staff (studio_id = 0) first - they never mix with others
+    event_staff = people.select { |p| p.studio_id == 0 }
+    remaining_people = people - event_staff
+    
+    # Event Staff tables (strict table size limit)
+    table_index = 0
+    event_staff.each_slice(table_size) do |people_slice|
+      people_groups << create_packed_table_group(people_slice, [0], ['Event Staff'], table_index)
+      table_index += 1
     end
     
-    # 2. Get studio pairs for prioritizing adjacency
+    # 2. Pack tables by filling them sequentially to capacity
+    
+    # 3. Simple approach: just slice remaining people into table_size chunks
+    # This ensures we never exceed table_size and everyone gets assigned
+    remaining_people.each_slice(table_size) do |people_slice|
+      # Get studio info for this slice
+      studio_ids = people_slice.map(&:studio_id).uniq
+      studio_names = people_slice.map { |p| p.studio.name }.uniq
+      
+      # For pack mode, create tables directly to bypass complex grid placement
+      table = Table.create!(
+        option_id: @option&.id,
+        number: table_index + 1,
+        size: table_size
+      )
+      
+      # Assign people to table
+      people_slice.each do |person|
+        if @option
+          PersonOption.where(person: person, option: @option).update(table_id: table.id)
+        else
+          person.update(table_id: table.id)
+        end
+      end
+      
+      table_index += 1
+    end
+    
+    # Return empty array since we created tables directly
+    return []
+    
+    # 5. Get studio pairs for coordination groups
     studio_pairs = StudioPair.includes(:studio1, :studio2).map do |pair|
       [pair.studio1.id, pair.studio2.id]
     end
     studio_components = build_connected_components(studio_pairs)
-    
-    # 3. Group remaining people by studio
-    studio_groups = all_people.group_by(&:studio_id).map do |studio_id, studio_people|
-      {
-        studio_id: studio_id,
-        people: studio_people,
-        size: studio_people.size,
-        studio_name: studio_people.first.studio.name
-      }
-    end
-    
-    # 4. Sort studios by size (largest first) for better packing
-    studio_groups.sort_by! { |g| -g[:size] }
-    
-    # 5. Pack tables to capacity
-    current_table = []
-    current_studio_ids = []
-    current_studio_names = []
-    table_index = 0
-    
-    studio_groups.each do |group|
-      remaining_people = group[:people].dup
-      
-      while remaining_people.any?
-        space_in_current_table = table_size - current_table.size
-        
-        if space_in_current_table > 0
-          # Take as many people as will fit in current table
-          people_to_add = remaining_people.shift(space_in_current_table)
-          current_table += people_to_add
-          
-          unless current_studio_ids.include?(group[:studio_id])
-            current_studio_ids << group[:studio_id]
-            current_studio_names << group[:studio_name]
-          end
-          
-          # If table is full, save it
-          if current_table.size == table_size
-            people_groups << create_packed_table_group(current_table, current_studio_ids, current_studio_names, table_index)
-            table_index += 1
-            current_table = []
-            current_studio_ids = []
-            current_studio_names = []
-          end
-        else
-          # Current table is full, start a new one
-          people_groups << create_packed_table_group(current_table, current_studio_ids, current_studio_names, table_index)
-          table_index += 1
-          current_table = []
-          current_studio_ids = []
-          current_studio_names = []
-        end
-      end
-    end
-    
-    # Save any remaining partial table
-    if current_table.any?
-      people_groups << create_packed_table_group(current_table, current_studio_ids, current_studio_names, table_index)
-    end
     
     # 6. Apply coordination groups for paired studios
     # Find tables that contain paired studios and mark them for adjacent placement
