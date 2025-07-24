@@ -91,49 +91,51 @@
     </ul>
   </div>
 
-  <div class="h-full flex flex-row max-h-[85%]"
+  <div class="h-full flex flex-col max-h-[85%]"
     data-controller="score" data-drop-action="<%=  post_score_path(judge: @judge) %>" 
     data-start-action="<%= start_heat_event_index_path %>" data-heat="<%= @number %>"
     <% if @callbacks %>data-callbacks="<%= @callbacks %>"<% end %>
     <% if @slot %>data-slot="<%= @slot %>"<% end %>
     >
 
-    <% if @heat.category == 'Solo' %>
-      <%= render 'solo_heat' %>
-    <% elsif @final %>
-      <%= render 'rank_heat' %>
-    <% elsif @style != 'cards' || @style == 'emcee' || @scores.empty? %>
-      <%= render 'table_heat' %>
-    <% else %>
-      <%= render 'cards_heat' %>
-    <% end %>
-  </div>
-
-  <div class="flex flex-row w-full">
-    <div class="align-middle">
-      <% if @prev %>
-      <%= link_to '<<', @prev, class: 'text-2xl lg:text-4xl', rel: 'prev' %>
+    <div class="flex-1 flex flex-row">
+      <% if @heat.category == 'Solo' %>
+        <%= render 'solo_heat' %>
+      <% elsif @final %>
+        <%= render 'rank_heat' %>
+      <% elsif @style != 'cards' || @style == 'emcee' || @scores.empty? %>
+        <%= render 'table_heat' %>
+      <% else %>
+        <%= render 'cards_heat' %>
       <% end %>
     </div>
 
-    <% if @assign_judges %>
-      <h1 class="font-bold text-2xl pt-1 pb-3 flex-1 text-center" data-controller="assign-judges", data-present-url=<%= toggle_present_person_path(@judge) %>>
-      <input type='checkbox' name="active" <% if @judge.present %>checked <% end %>class="w-6 h-6 mr-3">
-    <% else %>
-      <h1 class="font-bold text-2xl pt-1 pb-3 flex-1 text-center">
-    <% end %>
-      <%= link_to @judge.display_name, person_path(@judge) %>
-      <%= link_to root_path do %>
-        <%= image_tag showcase_logo, class: "absolute right-4 top-4 h-8" %>
-      <% end %>
-      <% if false and @assign_judges %>
-      <button class='btn btn-blue py-1 text-sm'>assign</button>
-      <% end %>
-    </h1>
+    <div class="flex flex-row w-full flex-shrink-0">
+      <div class="align-middle">
+        <% if @prev %>
+        <%= link_to '<<', @prev, class: 'text-2xl lg:text-4xl', rel: 'prev' %>
+        <% end %>
+      </div>
 
-    <div class="align-middle">
-      <% if @next %>
-      <%= link_to '>>', @next, class: 'text-2xl lg:text-4xl', rel: 'next' %>
+      <% if @assign_judges %>
+        <h1 class="font-bold text-2xl pt-1 pb-3 flex-1 text-center" data-controller="assign-judges", data-present-url=<%= toggle_present_person_path(@judge) %>>
+        <input type='checkbox' name="active" <% if @judge.present %>checked <% end %>class="w-6 h-6 mr-3">
+      <% else %>
+        <h1 class="font-bold text-2xl pt-1 pb-3 flex-1 text-center">
       <% end %>
+        <%= link_to @judge.display_name, person_path(@judge) %>
+        <%= link_to root_path do %>
+          <%= image_tag showcase_logo, class: "absolute right-4 top-4 h-8" %>
+        <% end %>
+        <% if false and @assign_judges %>
+        <button class='btn btn-blue py-1 text-sm'>assign</button>
+        <% end %>
+      </h1>
+
+      <div class="align-middle">
+        <% if @next %>
+        <%= link_to '>>', @next, class: 'text-2xl lg:text-4xl', rel: 'next' %>
+        <% end %>
+      </div>
     </div>
   </div>
