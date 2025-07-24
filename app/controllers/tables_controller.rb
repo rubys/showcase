@@ -1385,16 +1385,22 @@ class TablesController < ApplicationController
         
         found_fit = false
         
-        # Try to fit multi-person studios first (largest first for better packing)
+        # Try to fit multi-person studios, avoiding splits that leave 1 person alone
+        
+        # First pass: try studios that won't leave 1 person alone
+        suitable_studios = []
+        fallback_studios = []
+        
         multi_person_studios.each do |studio_group|
           remaining_in_studio = studio_group[:people] & available_people
           next if remaining_in_studio.empty?
           
-          # Can we take some people from this studio?
+          # Calculate what we could take and what would be left
           people_to_take = 0
+          would_leave_alone = false
           
           if remaining_in_studio.size <= space_left
-            # Take everyone remaining from this studio
+            # Take everyone remaining from this studio - no one left alone
             people_to_take = remaining_in_studio.size
           elsif remaining_in_studio.size >= 4 && space_left >= 2
             # Large studio: take what fits, ensuring we leave at least 2
@@ -1405,20 +1411,49 @@ class TablesController < ApplicationController
               people_to_take = remaining_in_studio.size - 2
             end
           elsif remaining_in_studio.size == 3 && space_left >= 2
-            # For 3-person groups, take 2 and leave 1 only if we have exactly 2 spaces
-            people_to_take = 2 if space_left == 2
+            # For 3-person groups, only take 2 if we have exactly 2 spaces (leaves 1)
+            if space_left == 2
+              people_to_take = 2
+              would_leave_alone = true  # This would leave 1 person alone
+            end
           elsif remaining_in_studio.size == 2 && space_left >= 2
             # Take both from 2-person group
             people_to_take = 2
           end
           
           if people_to_take > 0
-            taken = remaining_in_studio.first(people_to_take)
-            people_for_table += taken
-            available_people -= taken
-            found_fit = true
-            break
+            if would_leave_alone
+              fallback_studios << { studio: studio_group, people_to_take: people_to_take, remaining: remaining_in_studio }
+            else
+              suitable_studios << { studio: studio_group, people_to_take: people_to_take, remaining: remaining_in_studio }
+            end
           end
+        end
+        
+        # Try suitable studios first (those that don't leave anyone alone)
+        if suitable_studios.any?
+          chosen = suitable_studios.first
+          taken = chosen[:remaining].first(chosen[:people_to_take])
+          people_for_table += taken
+          available_people -= taken
+          found_fit = true
+        elsif fallback_studios.any?
+          # Only use fallback studios if no suitable ones available
+          # But prefer taking 2 people minimum to avoid leaving 1 alone
+          chosen = fallback_studios.first
+          
+          # Special handling: if we're about to leave 1 person alone, 
+          # and we have space for 2, take 2 instead of whatever was calculated
+          if chosen[:remaining].size == 3 && space_left >= 2
+            people_to_take = [2, space_left].min  # Take at least 2, up to space available
+          else
+            people_to_take = chosen[:people_to_take]
+          end
+          
+          taken = chosen[:remaining].first(people_to_take)
+          people_for_table += taken
+          available_people -= taken
+          found_fit = true
         end
         
         # If no multi-person studio fit, use single-person studios
