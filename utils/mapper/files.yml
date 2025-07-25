@@ -7,7 +7,7 @@ maps:
     map_svg: ../../app/views/event/_usmap.html.erb
     projection: us
     min_lat: 21
-    max_lat: 50
+    max_lat: 54
     min_lon: -160
     max_lon: -66
   - shapefile_url: https://naciscdn.org/naturalearth/10m/cultural/ne_10m_admin_0_countries.zip
