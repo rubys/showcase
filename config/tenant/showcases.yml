@@ -150,9 +150,9 @@
   dayton:
     :name: Dayton
     :region: ord
-  edmundston:
-    :name: Edmundston
-    :region: bos
+  edmonton:
+    :name: Edmonton
+    :region: sea
   everett:
     :name: Everett
     :region: sea
