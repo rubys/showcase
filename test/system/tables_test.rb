@@ -236,8 +236,8 @@ class TablesTest < ApplicationSystemTestCase
   test "should position table size form below action buttons" do
     visit tables_url
     
-    # Should have action buttons first - look for the container with links and buttons
-    action_buttons = find("div.flex.gap-3", match: :first)
+    # Should have action buttons first - look for the centered grid container with links and buttons
+    action_buttons = find("div.flex.justify-center div.grid.grid-cols-2")
     assert action_buttons.has_link?("Arrange Tables")
     assert action_buttons.has_link?("New Table")
     
@@ -246,23 +246,23 @@ class TablesTest < ApplicationSystemTestCase
     assert table_size_form.has_selector?("form[data-controller='auto-submit']")
     
     # Verify order by checking that form comes after buttons in DOM
-    buttons_position = page.evaluate_script("document.querySelector('div.flex.gap-3').getBoundingClientRect().bottom")
+    buttons_position = page.evaluate_script("document.querySelector('div.flex.justify-center div.grid.grid-cols-2').getBoundingClientRect().bottom")
     form_position = page.evaluate_script("document.querySelector('div.mt-6.p-4.bg-gray-50.rounded-lg').getBoundingClientRect().top")
     
     assert form_position > buttons_position, "Table size form should be positioned below action buttons"
   end
 
-  test "should show assign people to tables button" do
+  test "should show assign studios to tables button" do
     visit tables_url
     
     # Should have the assign button
-    assert_selector "button", text: "Assign People to Tables"
+    assert_selector "button", text: "Assign Studios to Tables"
     
     # Should be a form button with POST method
     assert_selector "form[method='post'][action='#{assign_tables_path}']"
     
     # Should have confirmation dialog
-    button = find("button", text: "Assign People to Tables")
+    button = find("button", text: "Assign Studios to Tables")
     assert button["data-turbo-confirm"].present?
     assert_includes button["data-turbo-confirm"], "delete all existing tables"
   end
@@ -278,7 +278,7 @@ class TablesTest < ApplicationSystemTestCase
     visit tables_url  # Refresh to see empty state
     
     # Click the assign button (no confirmation needed when no tables exist)
-    click_button "Assign People to Tables"
+    click_button "Assign Studios to Tables"
     
     # Should be redirected back to tables index
     assert_selector "h1", text: "Tables"
@@ -345,10 +345,11 @@ class TablesTest < ApplicationSystemTestCase
     assert_no_selector "input[value='Reset']"
   end
 
-  test "buttons should be centered on index and arrange pages" do
-    # Check index page - buttons are centered via parent container
+  test "buttons should be in centered grid layout on index and centered on arrange pages" do
+    # Check index page - buttons are in a centered 2-column grid
     visit tables_url
-    assert_selector "div.flex.flex-col.items-center.gap-3 > div.flex.gap-3"
+    assert_selector "div.flex.justify-center"
+    assert_selector "div.grid.grid-cols-2.gap-3.max-w-lg"
     
     # Check arrange page - has different structure with direct justify-center
     visit arrange_tables_url
@@ -358,8 +359,8 @@ class TablesTest < ApplicationSystemTestCase
   test "new table button should be first on index page" do
     visit tables_url
     
-    # Find the button container (the one inside the centered container)
-    button_container = find("div.flex.flex-col.items-center.gap-3 > div.flex.gap-3")
+    # Find the centered grid button container
+    button_container = find("div.flex.justify-center div.grid.grid-cols-2")
     
     # Get the first link/button in the container
     first_button = button_container.first("a, button")

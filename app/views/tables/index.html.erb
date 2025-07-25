@@ -65,20 +65,20 @@
     <% end %>
   </div>
 
-  <div class="flex flex-col items-center gap-3">
-    <div class="flex gap-3">
-      <%= link_to 'New Table', new_table_path(option_id: @option&.id), class: "btn-green" %>
-      <%= link_to 'Arrange Tables', arrange_tables_path(option_id: @option&.id), class: "btn-purple" %>
-      <%= form_with url: assign_tables_path(option_id: @option&.id), method: :post, local: true, class: "inline" do |f| %>
-        <%= f.button 'Assign People to Tables', type: 'submit', class: "btn-blue", 
+  <div class="flex justify-center">
+    <div class="grid grid-cols-2 gap-3 max-w-lg">
+      <%= link_to 'New Table', new_table_path(option_id: @option&.id), class: "btn-green w-full text-center" %>
+      <%= link_to 'Arrange Tables', arrange_tables_path(option_id: @option&.id), class: "btn-purple w-full text-center" %>
+      <%= form_with url: assign_tables_path(option_id: @option&.id), method: :post, local: true, class: "w-full" do |f| %>
+        <%= f.button 'Assign Studios to Tables', type: 'submit', class: "btn-blue w-full", 
             data: @tables.any? ? { turbo_confirm: "This will delete all existing tables and reassign people. Are you sure?" } : {} %>
       <% end %>
-      <%= form_with url: pack_tables_path(option_id: @option&.id), method: :post, local: true, class: "inline" do |f| %>
-        <%= f.button 'Pack People in Tables', type: 'submit', class: "btn-blue", 
+      <%= form_with url: pack_tables_path(option_id: @option&.id), method: :post, local: true, class: "w-full" do |f| %>
+        <%= f.button 'Pack People in Tables', type: 'submit', class: "btn-blue w-full", 
             data: @tables.any? ? { turbo_confirm: "This will delete all existing tables and reassign people. Are you sure?" } : {} %>
       <% end %>
       <% if @tables.any? %>
-        <%= button_to 'Reset Tables', reset_tables_path(option_id: @option&.id), method: :delete, class: "btn-grey", 
+        <%= button_to 'Reset Tables', reset_tables_path(option_id: @option&.id), method: :delete, class: "btn-grey w-full col-span-2", 
             data: { turbo_confirm: "This will delete all tables. Are you sure?" } %>
       <% end %>
     </div>
