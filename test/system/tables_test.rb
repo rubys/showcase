@@ -222,11 +222,12 @@ class TablesTest < ApplicationSystemTestCase
   test "should have flexbox layout for form elements" do
     visit tables_url
     
-    # Should have flex container
-    assert_selector "div.flex.items-center.gap-3"
+    # Should have flex container for table size form in the settings section
+    settings_section = find("div.mt-6.p-4.bg-gray-50.rounded-lg")
+    assert settings_section.has_selector?("div.flex.items-center.gap-3")
     
     # Should contain label, input, and helper text in flex layout
-    flex_container = find("div.flex.items-center.gap-3")
+    flex_container = settings_section.find("div.flex.items-center.gap-3")
     assert flex_container.has_selector?("label")
     assert flex_container.has_selector?("input")
     assert flex_container.has_selector?("span.text-sm.text-gray-500")
@@ -235,8 +236,8 @@ class TablesTest < ApplicationSystemTestCase
   test "should position table size form below action buttons" do
     visit tables_url
     
-    # Should have action buttons first - find the specific one with the links
-    action_buttons = find("div.flex.gap-3", text: "Arrange Tables")
+    # Should have action buttons first - look for the container with links and buttons
+    action_buttons = find("div.flex.gap-3", match: :first)
     assert action_buttons.has_link?("Arrange Tables")
     assert action_buttons.has_link?("New Table")
     
@@ -345,11 +346,11 @@ class TablesTest < ApplicationSystemTestCase
   end
 
   test "buttons should be centered on index and arrange pages" do
-    # Check index page
+    # Check index page - buttons are centered via parent container
     visit tables_url
-    assert_selector "div.flex.gap-3.justify-center"
+    assert_selector "div.flex.flex-col.items-center.gap-3 > div.flex.gap-3"
     
-    # Check arrange page
+    # Check arrange page - has different structure with direct justify-center
     visit arrange_tables_url
     assert_selector "div.flex.gap-3.justify-center"
   end
@@ -357,8 +358,8 @@ class TablesTest < ApplicationSystemTestCase
   test "new table button should be first on index page" do
     visit tables_url
     
-    # Find the button container
-    button_container = find("div.flex.gap-3.justify-center")
+    # Find the button container (the one inside the centered container)
+    button_container = find("div.flex.flex-col.items-center.gap-3 > div.flex.gap-3")
     
     # Get the first link/button in the container
     first_button = button_container.first("a, button")

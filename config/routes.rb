@@ -183,6 +183,7 @@ Rails.application.routes.draw do
       get 'arrange', on: :collection
       post 'update-positions', on: :collection, as: 'update_positions'
       post 'assign', on: :collection
+      post 'pack', on: :collection
       patch 'renumber', on: :collection
       get 'studio/:id', on: :collection, action: :studio, as: 'studio'
       get 'list', on: :collection

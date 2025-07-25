@@ -69,21 +69,18 @@
     <div class="flex gap-3">
       <%= link_to 'New Table', new_table_path(option_id: @option&.id), class: "btn-green" %>
       <%= link_to 'Arrange Tables', arrange_tables_path(option_id: @option&.id), class: "btn-purple" %>
-      <%= form_with url: assign_tables_path(option_id: @option&.id), method: :post, local: true, class: "inline-flex items-center gap-2" do |f| %>
+      <%= form_with url: assign_tables_path(option_id: @option&.id), method: :post, local: true, class: "inline" do |f| %>
         <%= f.button 'Assign People to Tables', type: 'submit', class: "btn-blue", 
             data: @tables.any? ? { turbo_confirm: "This will delete all existing tables and reassign people. Are you sure?" } : {} %>
-        <label class="inline-flex items-center">
-          <%= f.check_box :pack_tables, class: "rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50" %>
-          <span class="ml-2 text-sm text-gray-700">Pack tables</span>
-        </label>
+      <% end %>
+      <%= form_with url: pack_tables_path(option_id: @option&.id), method: :post, local: true, class: "inline" do |f| %>
+        <%= f.button 'Pack People in Tables', type: 'submit', class: "btn-blue", 
+            data: @tables.any? ? { turbo_confirm: "This will delete all existing tables and reassign people. Are you sure?" } : {} %>
       <% end %>
       <% if @tables.any? %>
         <%= button_to 'Reset Tables', reset_tables_path(option_id: @option&.id), method: :delete, class: "btn-grey", 
             data: { turbo_confirm: "This will delete all tables. Are you sure?" } %>
       <% end %>
-    </div>
-    <div class="text-xs text-gray-500 text-center max-w-xl">
-      <em>Pack tables: Fill every table to capacity even if it means splitting studios across multiple tables</em>
     </div>
   </div>
 
