@@ -396,6 +396,9 @@
         :name: Team Match
       nouveau-duo:
         :name: Nouveau Duo
+  rogers:
+    :name: Rogers
+    :region: dfw
   salem:
     :name: Salem
     :region: sea
