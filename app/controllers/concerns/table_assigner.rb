@@ -55,9 +55,15 @@ module TableAssigner
     # Get all tables ordered by their position (row first, then column)
     tables_by_position = Table.where(option_id: @option&.id).order(:row, :col)
     
-    # First, temporarily set all numbers to negative values to avoid conflicts
+    return if tables_by_position.empty?
+    
+    # Use a unique negative base to avoid conflicts with other operations
+    timestamp = Time.current.to_i
+    negative_base = -(timestamp * 1000)
+    
+    # First, temporarily set all numbers to unique negative values to avoid conflicts
     tables_by_position.each_with_index do |table, index|
-      table.update!(number: -(index + 1))
+      table.update!(number: negative_base - index)
     end
     
     # Then set them to their final positive values
@@ -759,8 +765,13 @@ module TableAssigner
   end
 
   def create_table_at_position(group, row, col)
-    # Use a temporary negative number to avoid conflicts
-    temp_number = -(Table.count + rand(1000) + 1)
+    # Generate a truly unique temporary negative number
+    # Use timestamp in microseconds + random component + option_id to ensure uniqueness
+    timestamp_micro = (Time.current.to_f * 1_000_000).to_i
+    random_component = rand(1000)
+    option_component = (@option&.id || 0) * 1000
+    temp_number = -(timestamp_micro + random_component + option_component)
+    
     table = Table.create!(
       number: temp_number,  # Will be renumbered later
       row: row,
