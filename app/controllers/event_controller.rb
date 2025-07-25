@@ -647,7 +647,7 @@ class EventController < ApplicationController
         event[:date] ||= event["date"]
       end
 
-      event[:name] ||= dbquery(event[:db], 'events', 'name').first.values.first
+      event[:name] ||= dbquery(event[:db], 'events', 'name').first&.values&.first || 'Showcase'
 
       event[:people] = dbquery(event[:db], 'people', 'count(id)').first&.values&.first || 0
       event[:entries] = dbquery(event[:db], 'heats', 'count(id)', 'number > 0').first&.values&.first || 0
