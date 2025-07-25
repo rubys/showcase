@@ -6,8 +6,37 @@ import shapefile from 'shapefile'
 import * as d3 from "d3-geo"
 import * as yaml from "yaml"
 
+// Custom Albers USA projection that includes Edmonton
+const createExtendedUSProjection = () => {
+  const albersUsa = d3.geoAlbersUsa();
+  const albers = d3.geoAlbers()
+    .parallels([29.5, 45.5])
+    .rotate([96, 0])
+    .center([-0.6, 38.7])
+    .scale(1070);
+  
+  return (coordinates) => {
+    // Try standard Albers USA first
+    const result = albersUsa(coordinates);
+    if (result) return result;
+    
+    // For points outside standard projection (like Edmonton), use custom Albers
+    const [lon, lat] = coordinates;
+    if (lat > 49 && lat < 55 && lon > -120 && lon < -110) {
+      // Custom projection for Alberta region
+      const customResult = albers(coordinates);
+      if (customResult) {
+        // Adjust to fit with the US map
+        return [customResult[0] - 50, customResult[1] + 40];
+      }
+    }
+    
+    return null;
+  };
+};
+
 const PROJECTIONS = {
-  us: d3.geoAlbersUsa(),
+  us: createExtendedUSProjection(),
   eu: d3.geoConicConformal().rotate([-20, 0]).center([0, 52])
     .parallels([35.0, 65.0]).scale(1000),
   au: d3.geoConicConformal().rotate([-132, 0]).center([13, -25])
