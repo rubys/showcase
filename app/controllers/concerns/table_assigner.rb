@@ -31,62 +31,22 @@ module TableAssigner
         people = Person.joins(:studio).order('studios.name, people.name')
       end
       
-      # TWO-PHASE ALGORITHM (or direct sequential for pack)
+      # TWO-PHASE ALGORITHM for both regular and pack modes
       if pack
-        # For pack mode: create tables sequentially as we pack
+        # Pack mode: Aggressive grouping algorithm for who sits together
         people_groups = group_people_into_packed_tables(people, table_size)
-        
-        # Create tables with sequential numbering and serpentine grid positions
-        created_tables = []
-        max_cols = 8  # Standard grid width
-        
-        people_groups.each_with_index do |group, index|
-          # Calculate serpentine grid position
-          row = index / max_cols
-          col = if row.even?
-            index % max_cols  # Left to right on even rows
-          else
-            max_cols - 1 - (index % max_cols)  # Right to left on odd rows
-          end
-          
-          table = Table.create!(
-            number: index + 1,
-            row: row,
-            col: col,
-            option_id: @option&.id
-          )
-          
-          # Assign people to this table
-          if @option
-            group[:people].each do |person|
-              person_option = PersonOption.find_by(person_id: person.id, option_id: @option.id)
-              person_option&.update!(table_id: table.id)
-            end
-          else
-            group[:people].each do |person|
-              person.update!(table_id: table.id)
-            end
-          end
-          
-          created_tables << table
-        end
       else
-        # Regular mode: use two-phase algorithm with grid placement
-        # Phase 1: Group people into tables (who sits together)
+        # Regular mode: Relationship-preserving grouping algorithm
         people_groups = group_people_into_tables(people, table_size)
-        
-        # Phase 2: Place groups on grid (where tables go)
-        created_tables = place_groups_on_grid(people_groups)
-        
-        # Renumber tables sequentially based on their final positions
-        renumber_tables_by_position
       end
       
-      # Store created tables count for potential use
-      @created_tables = created_tables
+      # Phase 2: Use smart grid placement algorithm for both modes
+      # This handles spatial arrangement, star patterns, adjacency optimization
+      created_tables = place_groups_on_grid(people_groups)
+      
+      # Return created tables for controller to use
+      created_tables
     end
-    
-    redirect_to tables_path(option_id: @option&.id), notice: "Tables have been assigned successfully."
   end
 
   private
@@ -823,12 +783,25 @@ module TableAssigner
     studio_ids = people.map(&:studio_id).uniq.sort
     studio_names = people.map { |p| p.studio.name }.uniq.sort
     
+    # Create coordination group that follows the same pattern as regular algorithm
+    # For multi-studio tables, use a generic mixed group
+    # For single-studio tables, use studio_X_Y pattern to enable contiguity
+    coordination_group = if studio_ids.size == 1
+      # Single studio - use pattern that grid placement can group: studio_ID_sequence
+      studio_id = studio_ids.first
+      existing_tables_for_studio = people_groups.count { |g| g[:studio_ids] == [studio_id] }
+      "studio_#{studio_id}_#{existing_tables_for_studio}"
+    else
+      # Multi-studio mixed table - use generic packed group
+      "packed_mixed_#{table_index}"
+    end
+    
     people_groups << {
       people: people,
       studio_ids: studio_ids,
       studio_names: studio_names,
       size: people.size,
-      coordination_group: "packed_table_#{table_index}"
+      coordination_group: coordination_group
     }
   end
 
@@ -1014,9 +987,17 @@ module TableAssigner
     # For coordination groups, remove the index suffix to group split tables together
     coordination_groups = people_groups.group_by do |group|
       coord_group = group[:coordination_group]
-      if coord_group && coord_group.split('_').length > 4 && coord_group.start_with?('component_')
-        # Remove the index suffix (e.g., "component_18_35_54_0" -> "component_18_35_54")
-        coord_group.split('_')[0..-2].join('_')
+      if coord_group
+        parts = coord_group.split('_')
+        if parts.length > 4 && coord_group.start_with?('component_')
+          # Remove the index suffix (e.g., "component_18_35_54_0" -> "component_18_35_54")
+          parts[0..-2].join('_')
+        elsif parts.length >= 3 && coord_group.start_with?('studio_') && parts.last =~ /^\d+$/
+          # Remove the index suffix for studio groups (e.g., "studio_66_0" -> "studio_66")
+          parts[0..-2].join('_')
+        else
+          coord_group
+        end
       else
         coord_group
       end
@@ -1261,15 +1242,13 @@ module TableAssigner
   end
 
   def create_table_at_position(group, row, col)
-    # Generate a truly unique temporary negative number
-    # Use timestamp in microseconds + random component + option_id to ensure uniqueness
-    timestamp_micro = (Time.current.to_f * 1_000_000).to_i
-    random_component = rand(1000)
-    option_component = (@option&.id || 0) * 1000
-    temp_number = -(timestamp_micro + random_component + option_component)
+    # Calculate final table number based on grid position
+    # Use row-major order: table number = (row * max_cols) + col + 1
+    max_cols = 8  # Standard grid width
+    final_number = (row * max_cols) + col + 1
     
     table = Table.create!(
-      number: temp_number,  # Will be renumbered later
+      number: final_number,
       row: row,
       col: col,
       option_id: @option&.id

@@ -364,11 +364,13 @@ class TablesController < ApplicationController
   end
 
   def assign
-    assign_tables(pack: false)
+    created_tables = assign_tables(pack: false)
+    redirect_to tables_path(option_id: @option&.id), notice: "Tables have been assigned successfully."
   end
 
   def pack
-    assign_tables(pack: true)
+    created_tables = assign_tables(pack: true)
+    redirect_to tables_path(option_id: @option&.id), notice: "Tables have been packed successfully."
   end
 
   def renumber
