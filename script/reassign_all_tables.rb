@@ -72,70 +72,77 @@ options.each do |option|
     
     puts "  → Created #{created_count} new PersonOptions" if created_count > 0
     
-    # Run table assignment using the actual controller method
+    # Run table assignment using the concern methods directly
     begin
-      # Create a controller instance and call the actual assign method
-      class TestController < TablesController
-        def initialize(option, pack_tables = false)
-          super()
+      # Create a simple class that includes the TableAssigner concern
+      class SimpleAssigner
+        include TableAssigner
+        attr_accessor :option
+        
+        def initialize(option)
           @option = option
-          @pack_tables = pack_tables
         end
         
-        def call_assign
-          # Call the actual assign method from the controller
-          assign_internal
-        end
-        
-        private
-        
-        def assign_internal
+        def assign_with_pack(pack)
           Table.transaction do
-            # Remove all existing tables for this option context
-            if @option
-              # For option tables, also clear table_id from person_options
-              PersonOption.where(option_id: @option.id).update_all(table_id: nil)
-              Table.where(option_id: @option.id).destroy_all
-            else
-              # For main event, clear people's table_id (dependent: :nullify will handle this)
-              Table.where(option_id: nil).destroy_all
-            end
+            # Clear existing assignments
+            PersonOption.where(option_id: @option.id).update_all(table_id: nil)
+            Table.where(option_id: @option.id).destroy_all
             
-            # Get table size using computed method
-            table_size = @option&.computed_table_size || Event.current&.table_size || 10
+            # Get table size
+            table_size = @option.computed_table_size || Event.current&.table_size || 10
             
-            # Get people based on context
-            if @option
-              # For option tables, get people who have registered for this option
-              people = Person.joins(:studio, :options)
-                             .where(person_options: { option_id: @option.id })
-                             .order('studios.name, people.name')
-            else
-              # For main event tables, get all people
-              people = Person.joins(:studio).order('studios.name, people.name')
-            end
+            # Get people for this option
+            people = Person.joins(:studio, :options)
+                          .where(person_options: { option_id: @option.id })
+                          .order('studios.name, people.name')
             
-            # TWO-PHASE ALGORITHM
-            # Phase 1: Group people into tables (who sits together)
-            if @pack_tables
+            if pack
+              # Pack mode: create tables sequentially with serpentine grid
               people_groups = group_people_into_packed_tables(people, table_size)
+              
+              # Create tables with sequential numbering and serpentine grid positions
+              created_tables = []
+              max_cols = 8  # Standard grid width
+              
+              people_groups.each_with_index do |group, index|
+                # Calculate serpentine grid position
+                row = index / max_cols
+                col = if row.even?
+                  index % max_cols  # Left to right on even rows
+                else
+                  max_cols - 1 - (index % max_cols)  # Right to left on odd rows
+                end
+                
+                table = Table.create!(
+                  number: index + 1,
+                  row: row,
+                  col: col,
+                  option_id: @option.id
+                )
+                
+                # Assign people to this table
+                group[:people].each do |person|
+                  person_option = PersonOption.find_by(person_id: person.id, option_id: @option.id)
+                  person_option&.update!(table_id: table.id)
+                end
+                
+                created_tables << table
+              end
+              created_tables.count
             else
+              # Regular mode: use two-phase algorithm
               people_groups = group_people_into_tables(people, table_size)
+              created_tables = place_groups_on_grid(people_groups)
+              renumber_tables_by_position
+              created_tables.count
             end
-            
-            # Phase 2: Place groups on grid (where tables go)
-            created_tables = place_groups_on_grid(people_groups)
-            
-            # Renumber tables sequentially based on their final positions
-            renumber_tables_by_position
-            
-            created_tables.count
           end
         end
       end
       
-      controller = TestController.new(option, pack_tables)
-      tables_created = controller.call_assign
+      assigner = SimpleAssigner.new(option)
+      tables_created = assigner.assign_with_pack(pack_tables)
       
       # Verify results
       final_tables = Table.where(option_id: option.id).count
