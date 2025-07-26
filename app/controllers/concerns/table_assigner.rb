@@ -807,51 +807,129 @@ module TableAssigner
 
 
   def consolidate_small_tables(people_groups, table_size)
-    # Consolidate small tables while preserving relationships
-    # This is a more conservative consolidation that respects coordination groups
+    # Consolidate small tables when possible to match documentation:
+    # "Tables that aren't full are combined when possible"
+    # This implements aggressive consolidation across all groups
     
-    consolidated = []
-    groups_by_coordination = people_groups.group_by { |g| g[:coordination_group]&.split('_')&.first(2)&.join('_') }
+    # Separate Event Staff tables (never combine with others)
+    event_staff_tables = people_groups.select { |g| g[:studio_ids].include?(0) }
+    other_tables = people_groups.reject { |g| g[:studio_ids].include?(0) }
     
-    groups_by_coordination.each do |coord_prefix, groups|
-      if coord_prefix.nil? || groups.size == 1
-        # Single tables or no coordination group - add as-is
-        consolidated.concat(groups)
-      else
-        # Multiple tables in same coordination group - try to consolidate small ones
-        large_tables = groups.select { |g| g[:size] > table_size / 2 }
-        small_tables = groups.select { |g| g[:size] <= table_size / 2 }
+    # Sort by size (largest first) for better packing
+    other_tables.sort_by! { |g| -g[:size] }
+    
+    consolidated = event_staff_tables.dup
+    
+    # Find all small tables that could be combined
+    small_tables = other_tables.select { |g| g[:size] < table_size }
+    large_tables = other_tables.select { |g| g[:size] >= table_size }
+    
+    # Add large tables as-is
+    consolidated.concat(large_tables)
+    
+    # Aggressively combine small tables using a greedy approach
+    while small_tables.any?
+      current_table = small_tables.shift
+      
+      # Try to find the best combination to fill remaining seats
+      remaining_seats = table_size - current_table[:size]
+      
+      if remaining_seats > 0
+        # Look for combination of tables that would fill or nearly fill the table
+        best_combination = find_best_table_combination(small_tables, remaining_seats)
         
-        # Add large tables as-is
-        consolidated.concat(large_tables)
-        
-        # Try to combine small tables
-        while small_tables.size >= 2
-          table1 = small_tables.shift
-          table2 = small_tables.find { |t| table1[:size] + t[:size] <= table_size }
+        if best_combination.any?
+          # Combine all tables in the best combination
+          best_combination.each { |table| small_tables.delete(table) }
           
-          if table2
-            small_tables.delete(table2)
-            # Combine the tables
-            consolidated << {
-              people: table1[:people] + table2[:people],
-              studio_ids: (table1[:studio_ids] + table2[:studio_ids]).uniq.sort,
-              studio_names: (table1[:studio_names] + table2[:studio_names]).uniq.sort,
-              size: table1[:size] + table2[:size],
-              coordination_group: table1[:coordination_group]
-            }
-          else
-            # Can't combine this table with any other
-            consolidated << table1
-          end
+          combined_people = current_table[:people] + best_combination.flat_map { |t| t[:people] }
+          combined_studio_ids = ([current_table] + best_combination).flat_map { |t| t[:studio_ids] }.uniq.sort
+          combined_studio_names = ([current_table] + best_combination).flat_map { |t| t[:studio_names] }.uniq.sort
+          
+          consolidated << {
+            people: combined_people,
+            studio_ids: combined_studio_ids,
+            studio_names: combined_studio_names,
+            size: combined_people.size,
+            coordination_group: "consolidated_#{combined_studio_ids.join('_')}"
+          }
+        else
+          # No good combination found, add as-is
+          consolidated << current_table
         end
-        
-        # Add any remaining small tables
-        consolidated.concat(small_tables)
+      else
+        # Table is already full
+        consolidated << current_table
       end
     end
     
     consolidated
+  end
+  
+  def find_best_table_combination(available_tables, remaining_seats)
+    return [] if available_tables.empty? || remaining_seats <= 0
+    
+    # Sort by size for more efficient searching
+    sorted_tables = available_tables.sort_by { |t| t[:size] }
+    
+    # Use a more efficient greedy approach
+    best_combination = []
+    best_waste = remaining_seats + 1
+    
+    # Try single table first (most common case)
+    single_fit = sorted_tables.find { |t| t[:size] <= remaining_seats }
+    if single_fit
+      waste = remaining_seats - single_fit[:size]
+      if waste < best_waste
+        best_combination = [single_fit]
+        best_waste = waste
+      end
+    end
+    
+    # If we have a perfect single fit, use it
+    return best_combination if best_waste == 0
+    
+    # Try pairs (limit to reasonable combinations)
+    sorted_tables.combination(2).each do |combo|
+      total_size = combo.sum { |t| t[:size] }
+      
+      if total_size <= remaining_seats
+        waste = remaining_seats - total_size
+        if waste < best_waste
+          best_combination = combo
+          best_waste = waste
+        end
+      end
+      
+      # Stop if we found a perfect fit
+      break if best_waste == 0
+    end
+    
+    # Only try larger combinations if we haven't found a good fit and there aren't too many tables
+    if best_waste > 2 && sorted_tables.size <= 8
+      (3..4).each do |combo_size|
+        break if combo_size > sorted_tables.size
+        
+        sorted_tables.combination(combo_size).each do |combo|
+          total_size = combo.sum { |t| t[:size] }
+          
+          if total_size <= remaining_seats
+            waste = remaining_seats - total_size
+            if waste < best_waste
+              best_combination = combo
+              best_waste = waste
+            end
+          end
+          
+          # Stop if we found a perfect fit
+          break if best_waste == 0
+        end
+        
+        break if best_waste == 0
+      end
+    end
+    
+    best_combination
   end
 
   def eliminate_remaining_small_tables_with_contiguity(people_groups, table_size)
