@@ -189,6 +189,7 @@ Rails.application.routes.draw do
       get 'studio/:id', on: :collection, action: :studio, as: 'studio'
       get 'list', on: :collection
       get 'by_studio', on: :collection
+      get 'qrcode', on: :collection
       post 'move-person', on: :collection, action: :move_person, as: 'move_person'
       delete 'reset', on: :collection
     end

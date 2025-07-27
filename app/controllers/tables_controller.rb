@@ -488,6 +488,19 @@ class TablesController < ApplicationController
     end
   end
   
+  def qrcode
+    @event = Event.current
+    
+    if params[:option_id].present?
+      @option = Billable.find(params[:option_id])
+      @public_url = URI.join(request.original_url, "../../public/tables?option_id=#{@option.id}")
+      @description = "Scan QRCode to see #{@option.name} tables"
+    else
+      @public_url = URI.join(request.original_url, "../../public/tables")
+      @description = "Scan QRCode to see tables"
+    end
+  end
+  
   def by_studio
     @event = Event.current
     @font_size = @event.font_size

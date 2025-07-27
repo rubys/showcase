@@ -9,7 +9,15 @@
       <% end %>
     </h1>
     
-    <div class="flex gap-2">
+    <div class="flex gap-2 items-center">
+      <% if @tables.any? %>
+        <% qrcode_path = @option ? qrcode_tables_path(option_id: @option.id) : qrcode_tables_path %>
+        <a href="<%= qrcode_path %>" class="block w-16 h-16" title="QR Code for this table list">
+          <% public_url = @option ? "#{request.base_url}/public/tables?option_id=#{@option.id}" : "#{request.base_url}/public/tables" %>
+          <%= RQRCode::QRCode.new(public_url).as_svg(viewbox: true, module_size: 2).html_safe %>
+        </a>
+      <% end %>
+      
       <% if @option %>
         <%= link_to 'Main Tables', tables_path, class: "btn-grey text-sm" %>
       <% end %>
@@ -78,8 +86,10 @@
             data: @tables.any? ? { turbo_confirm: "This will delete all existing tables and reassign people. Are you sure?" } : {} %>
       <% end %>
       <% if @tables.any? %>
-        <%= button_to 'Reset Tables', reset_tables_path(option_id: @option&.id), method: :delete, class: "btn-grey w-full col-span-2", 
+        <%= button_to 'Reset Tables', reset_tables_path(option_id: @option&.id), method: :delete, class: "btn-grey w-full", 
             data: { turbo_confirm: "This will delete all tables. Are you sure?" } %>
+        <% public_url = @option ? public_tables_path(option_id: @option.id) : public_tables_path %>
+        <%= link_to 'Web View', public_url, class: "btn-green w-full text-center" %>
       <% end %>
     </div>
   </div>

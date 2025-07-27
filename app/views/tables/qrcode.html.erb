@@ -1,0 +1,23 @@
+<div>
+  <h1 class="font-bold text-center text-4xl"><%= @event.name %></h1>
+
+  <% if @event.theme %>
+  <p class="mt-2 text-2xl text-center"><%= @event.theme %></p>
+  <% end %>
+
+  <% if @option %>
+  <p class="mt-4 text-2xl text-center font-semibold"><%= @option.name %></p>
+  <% end %>
+
+  <p class="mt-4 text-center"><%= @event.location.to_s.lines.first.chomp %></p>
+
+  <p class="mt-2 text-center"><%= localized_date(@event.date, @locale) %></p>
+  
+  <a href="<%= @public_url.to_s %>">
+  <div class="mx-auto w-1/2 my-12">
+  <%= RQRCode::QRCode.new(@public_url.to_s).as_svg(viewbox: true).html_safe %>
+  </div>
+  </a>
+
+  <div class="text-center"><%= @description %></div>
+</div>
