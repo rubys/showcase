@@ -1089,4 +1089,214 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal 'application/pdf', response.content_type
   end
+  
+  # ===== PACKAGE OPTION TESTS =====
+  
+  test "should show unassigned people with options from packages" do
+    # Create a package with an option included
+    package = Billable.create!(type: 'Package', name: "Test Package #{rand(1000)}", price: 100.0)
+    option = Billable.create!(type: 'Option', name: "Test Option #{rand(1000)}", price: 25.0)
+    PackageInclude.create!(package: package, option: option)
+    
+    # Create a person with this package
+    studio = studios(:one)
+    person = Person.create!(name: 'Package, Person', type: 'Student', studio: studio, package: package, level: levels(:FS), age: ages(:A))
+    
+    # View option tables - should show person as unassigned
+    get tables_url(option_id: option.id)
+    assert_response :success
+    
+    # Should show the person as unassigned
+    assert_select "div.bg-yellow-50"
+    assert_select "li", text: /Package, Person/
+  end
+  
+  test "should move person with package option to table" do
+    # Create a package with an option included
+    package = Billable.create!(type: 'Package', name: "Test Package #{rand(1000)}", price: 100.0)
+    option = Billable.create!(type: 'Option', name: "Test Option #{rand(1000)}", price: 25.0)
+    PackageInclude.create!(package: package, option: option)
+    
+    # Create a person with this package
+    studio = studios(:one)
+    person = Person.create!(name: 'Package, Person', type: 'Student', studio: studio, package: package, level: levels(:FS), age: ages(:A))
+    
+    # Create a table for this option
+    table = Table.create!(number: 99, option: option, size: 10)
+    
+    # Move person to table
+    post move_person_tables_url(option_id: option.id), params: { 
+      source: "person-#{person.id}", 
+      target: "table-#{table.id}" 
+    }
+    
+    # Should respond with turbo stream
+    assert_response :success
+    
+    # Verify PersonOption record was created
+    person_option = PersonOption.find_by(person: person, option: option)
+    assert_not_nil person_option
+    assert_equal table, person_option.table
+    
+    # Verify response contains success message
+    assert_match /moved to Table #{table.number}/, response.body
+  end
+  
+  test "should unseat person with package option and cleanup record" do
+    # Create a package with an option included
+    package = Billable.create!(type: 'Package', name: "Test Package #{rand(1000)}", price: 100.0)
+    option = Billable.create!(type: 'Option', name: "Test Option #{rand(1000)}", price: 25.0)
+    PackageInclude.create!(package: package, option: option)
+    
+    # Create a person with this package
+    studio = studios(:one)
+    person = Person.create!(name: 'Package, Person', type: 'Student', studio: studio, package: package, level: levels(:FS), age: ages(:A))
+    
+    # Create table and seat person
+    table = Table.create!(number: 99, option: option, size: 10)
+    person_option = PersonOption.create!(person: person, option: option, table: table)
+    
+    # Create an unassigned person to use as target for unseating
+    unassigned_person = Person.create!(name: 'Unassigned, Person', type: 'Student', studio: studio, level: levels(:FS), age: ages(:A))
+    
+    # Unseat person by moving to unassigned person (who has no table)
+    assert_difference 'PersonOption.count', -1 do
+      post move_person_tables_url(option_id: option.id), params: { 
+        source: "person-#{person.id}", 
+        target: "person-#{unassigned_person.id}" # Target has no table assignment
+      }
+    end
+    
+    # PersonOption record should be deleted since they only had it through package
+    assert_nil PersonOption.find_by(person: person, option: option)
+  end
+  
+  test "should keep person option record when unseating direct selection" do
+    # Create an option without package
+    option = Billable.create!(type: 'Option', name: "Test Option #{rand(1000)}", price: 25.0)
+    
+    # Create a person without package (direct selection)
+    studio = studios(:one)
+    person = Person.create!(name: 'Direct, Person', type: 'Student', studio: studio, level: levels(:FS), age: ages(:A))
+    
+    # Create table and seat person with direct selection
+    table = Table.create!(number: 99, option: option, size: 10)
+    person_option = PersonOption.create!(person: person, option: option, table: table)
+    
+    # Create an unassigned person to use as target for unseating
+    unassigned_person = Person.create!(name: 'Unassigned, Person', type: 'Student', studio: studio, level: levels(:FS), age: ages(:A))
+    
+    # Unseat person by moving to unassigned person (who has no table)
+    assert_no_difference 'PersonOption.count' do
+      post move_person_tables_url(option_id: option.id), params: { 
+        source: "person-#{person.id}", 
+        target: "person-#{unassigned_person.id}" # Target has no table assignment
+      }
+    end
+    
+    # PersonOption record should remain but table_id cleared
+    person_option.reload
+    assert_nil person_option.table_id
+  end
+  
+  test "should reset option tables and cleanup package option records" do
+    # Create a package with an option included
+    package = Billable.create!(type: 'Package', name: "Test Package #{rand(1000)}", price: 100.0)
+    option = Billable.create!(type: 'Option', name: "Test Option #{rand(1000)}", price: 25.0)
+    PackageInclude.create!(package: package, option: option)
+    
+    # Create people with package and direct selection
+    studio = studios(:one)
+    package_person = Person.create!(name: 'Package, Person', type: 'Student', studio: studio, package: package, level: levels(:FS), age: ages(:A))
+    direct_person = Person.create!(name: 'Direct, Person', type: 'Student', studio: studio, level: levels(:FS), age: ages(:A))
+    
+    # Create table and seat both people
+    table = Table.create!(number: 99, option: option, size: 10)
+    package_option = PersonOption.create!(person: package_person, option: option, table: table)
+    direct_option = PersonOption.create!(person: direct_person, option: option, table: table)
+    
+    # Reset option tables
+    assert_difference 'PersonOption.count', -1 do # Only package option should be deleted
+      delete reset_tables_url(option_id: option.id)
+    end
+    
+    assert_redirected_to tables_url(option_id: option.id)
+    
+    # Package person's option should be deleted
+    assert_nil PersonOption.find_by(person: package_person, option: option)
+    
+    # Direct person's option should remain but table cleared
+    direct_option.reload
+    assert_nil direct_option.table_id
+    
+    # Table should be deleted
+    assert_not Table.exists?(table.id)
+  end
+  
+  test "should assign tables for people with package options" do
+    # Create a package with an option included
+    package = Billable.create!(type: 'Package', name: "Test Package #{rand(1000)}", price: 100.0)
+    option = Billable.create!(type: 'Option', name: "Test Option #{rand(1000)}", price: 25.0)
+    PackageInclude.create!(package: package, option: option)
+    
+    # Create people with this package
+    studio = studios(:one)
+    person1 = Person.create!(name: 'Package Person 1', type: 'Student', studio: studio, package: package, level: levels(:FS), age: ages(:A))
+    person2 = Person.create!(name: 'Package Person 2', type: 'Student', studio: studio, package: package, level: levels(:FS), age: ages(:A))
+    
+    # Run assign for option tables
+    post assign_tables_url(option_id: option.id)
+    assert_redirected_to tables_url(option_id: option.id)
+    
+    # Verify tables were created for the option
+    option_tables = Table.where(option_id: option.id)
+    assert_not_empty option_tables
+    
+    # Verify PersonOption records were created and assigned to tables
+    person1_option = PersonOption.find_by(person: person1, option: option)
+    person2_option = PersonOption.find_by(person: person2, option: option)
+    
+    assert_not_nil person1_option
+    assert_not_nil person2_option
+    assert_not_nil person1_option.table_id
+    assert_not_nil person2_option.table_id
+  end
+  
+  test "should create table with studio that has package options" do
+    # Create a package with an option included
+    package = Billable.create!(type: 'Package', name: "Test Package #{rand(1000)}", price: 100.0)
+    option = Billable.create!(type: 'Option', name: "Test Option #{rand(1000)}", price: 25.0)
+    PackageInclude.create!(package: package, option: option)
+    
+    # Create people with this package
+    studio = studios(:one)
+    Person.where(studio_id: studio.id).destroy_all # Clear existing people
+    person1 = Person.create!(name: 'Package Person 1', type: 'Student', studio: studio, package: package, level: levels(:FS), age: ages(:A))
+    person2 = Person.create!(name: 'Package Person 2', type: 'Student', studio: studio, package: package, level: levels(:FS), age: ages(:A))
+    
+    # Create table with studio selection
+    assert_difference("Table.count") do
+      post tables_url(option_id: option.id), params: { 
+        table: { 
+          number: 99, 
+          size: 10, 
+          studio_id: studio.id 
+        } 
+      }
+    end
+    
+    table = Table.last
+    assert_equal option, table.option
+    
+    # Verify PersonOption records were created and people assigned
+    person1_option = PersonOption.find_by(person: person1, option: option)
+    person2_option = PersonOption.find_by(person: person2, option: option)
+    
+    assert_not_nil person1_option
+    assert_not_nil person2_option
+    assert_equal table, person1_option.table
+    assert_equal table, person2_option.table
+    
+    assert_redirected_to tables_url(option_id: option.id)
+  end
 end

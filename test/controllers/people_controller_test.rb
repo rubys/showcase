@@ -239,4 +239,74 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to edit_table_url(table)
     assert_equal flash[:notice], 'Arthur Murray was successfully updated.'
   end
+  
+  test "package view should show people with package-included options and seat them at table" do
+    # Create a package with an option included
+    package = Billable.create!(type: 'Package', name: "Test Package #{rand(1000)}", price: 100.0)
+    option = Billable.create!(type: 'Option', name: "Test Option #{rand(1000)}", price: 25.0)
+    PackageInclude.create!(package: package, option: option)
+    
+    # Create a person with this package
+    studio = studios(:one)
+    person = Person.create!(name: 'Package, Person', type: 'Student', studio: studio, package: package, level: levels(:FS), age: ages(:A))
+    
+    # Create table and seat person at table (create PersonOption record)
+    table = Table.create!(number: 99, option: option, size: 10)
+    PersonOption.create!(person: person, option: option, table: table)
+    
+    # View the option's package page
+    get people_package_url(option.id)
+    assert_response :success
+    
+    # Person should appear in the list
+    assert_select "a", text: /Package, Person/
+    
+    # Person should NOT be in the strikethrough list (they have a PersonOption record from being seated)
+    assert_select "td.line-through a", text: /Package, Person/, count: 0
+  end
+  
+  test "package view should not strike through people seated at tables" do
+    # Create an option
+    option = Billable.create!(type: 'Option', name: "Test Option #{rand(1000)}", price: 25.0)
+    
+    # Create a person without package (direct selection)
+    studio = studios(:one)
+    person = Person.create!(name: 'Direct, Person', type: 'Student', studio: studio, level: levels(:FS), age: ages(:A))
+    
+    # Create table and seat person
+    table = Table.create!(number: 99, option: option, size: 10)
+    PersonOption.create!(person: person, option: option, table: table)
+    
+    # View the option's package page
+    get people_package_url(option.id)
+    assert_response :success
+    
+    # Person should appear in the list
+    assert_select "a", text: /Direct, Person/
+    
+    # Person should NOT be in the strikethrough list (they have a PersonOption record)
+    assert_select "td.line-through a", text: /Direct, Person/, count: 0
+  end
+  
+  test "package view should strike through people with package access but no PersonOption record" do
+    # Create an option and package that includes it
+    option = Billable.create!(type: 'Option', name: "Test Option #{rand(1000)}", price: 25.0)
+    package = Billable.create!(type: 'Package', name: "Test Package #{rand(1000)}", price: 100.0)
+    PackageInclude.create!(package: package, option: option)
+    
+    # Create a person with the package (so they have access to the option)
+    studio = studios(:one) 
+    person = Person.create!(name: 'Package, Person', type: 'Student', studio: studio, package: package, level: levels(:FS), age: ages(:A))
+    
+    # View the option's package page
+    get people_package_url(option.id)
+    assert_response :success
+    
+    # Person should appear in the list since they have access through package
+    assert_select "a", text: /Package, Person/
+    
+    # Person should be struck through since they don't have a PersonOption record (not seated at table)
+    # The line-through class is on the td element, not the a element
+    assert_select "td.line-through a", text: /Package, Person/
+  end
 end

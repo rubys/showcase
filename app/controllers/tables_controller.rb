@@ -47,8 +47,7 @@ class TablesController < ApplicationController
       # For option tables, get people who have this option but no table assignment
       # Include Event Staff (Officials) for option tables since they can attend dinners/lunches
       @unassigned_people = Person.includes(:studio)
-                                 .joins(:options)
-                                 .where(person_options: { option_id: @option.id, table_id: nil })
+                                 .with_option_unassigned(@option.id)
                                  .where(type: ['Student', 'Professional', 'Guest', 'Official'])
                                  .order('studios.name, people.name')
     else
@@ -142,8 +141,8 @@ class TablesController < ApplicationController
     if @option
       # For option tables, get studios with people who have this option but no table
       # Include Event Staff for option tables
-      @studios_with_unassigned = Studio.joins(:people => :options)
-                                       .where(person_options: { option_id: @option.id, table_id: nil })
+      @studios_with_unassigned = Studio.joins(:people)
+                                       .merge(Person.with_option_unassigned(@option.id))
                                        .where(people: { type: ['Student', 'Professional', 'Guest', 'Official'] })
                                        .distinct
                                        .order(:name)
@@ -174,8 +173,8 @@ class TablesController < ApplicationController
     # Get studios with unassigned people
     if @table.option_id
       # For option tables, get studios with people who have this option but no table
-      @studios_with_unassigned = Studio.joins(:people => :options)
-                                       .where(person_options: { option_id: @table.option_id, table_id: nil })
+      @studios_with_unassigned = Studio.joins(:people)
+                                       .merge(Person.with_option_unassigned(@table.option_id))
                                        .where(people: { type: ['Student', 'Professional', 'Guest', 'Official'] })
                                        .distinct
                                        .order(:name)
@@ -425,9 +424,8 @@ class TablesController < ApplicationController
       else
         # For specific options, find people who have the option but no table assignment
         option = Billable.find(option_id)
-        unseated = Person.includes(:studio, :options)
-                         .joins(:options)
-                         .where(person_options: { option_id: option_id, table_id: nil })
+        unseated = Person.includes(:studio)
+                         .with_option_unassigned(option_id)
                          .order('studios.name, people.name')
         
         if unseated.any?
@@ -580,8 +578,11 @@ class TablesController < ApplicationController
 
   def reset
     if @option
-      # For option tables, also clear table assignments in person_options
-      PersonOption.where(option_id: @option.id).update_all(table_id: nil)
+      # For option tables, clean up PersonOption records
+      PersonOption.where(option_id: @option.id).find_each do |person_option|
+        PersonOption.cleanup_if_only_from_package(person_option)
+      end
+      
       Table.where(option_id: @option.id).destroy_all
     else
       Table.where(option_id: nil).destroy_all
@@ -619,7 +620,19 @@ class TablesController < ApplicationController
     # Update the person's table assignment
     if @option
       # For option tables, update the person_options record
-      PersonOption.where(person_id: person.id, option_id: @option.id).update_all(table_id: table&.id)
+      person_option = PersonOption.find_by(person_id: person.id, option_id: @option.id)
+      
+      if table
+        # Seating at a table - create record if needed
+        person_option ||= PersonOption.find_or_create_for_table_assignment(
+          person_id: person.id, 
+          option_id: @option.id
+        )
+        person_option.update!(table_id: table.id)
+      elsif person_option && person_option.table_id
+        # Unseating from a table - cleanup if only from package
+        PersonOption.cleanup_if_only_from_package(person_option)
+      end
     else
       # For main event tables, update the person's table_id
       person.update!(table_id: table&.id)
@@ -671,13 +684,22 @@ class TablesController < ApplicationController
     # Return a Turbo Stream response to update both notice and tables
     respond_to do |format|
       format.turbo_stream do
+        message = if table
+          "#{person.name} moved to Table #{table.number}"
+        else
+          "#{person.name} was unseated"
+        end
         render turbo_stream: [
-          turbo_stream.replace("notice", "<p class=\"py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block\" id=\"notice\">#{person.name} moved to Table #{table.number}</p>"),
+          turbo_stream.replace("notice", "<p class=\"py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block\" id=\"notice\">#{message}</p>"),
           turbo_stream.replace("studio-tables", partial: "studio_tables")
         ]
       end
       format.html do
-        render plain: "#{person.name} moved to Table #{table.number}"
+        if table
+          render plain: "#{person.name} moved to Table #{table.number}"
+        else
+          render plain: "#{person.name} was unseated"
+        end
       end
     end
   end
@@ -926,15 +948,19 @@ class TablesController < ApplicationController
     if table.option_id
       # Get unassigned people from the studio who have this option
       # Include Officials (Event Staff) for option tables
-      unassigned_people = Person.joins(:options)
+      unassigned_people = Person.with_option_unassigned(table.option_id)
                                 .where(studio_id: studio_id, type: ['Student', 'Professional', 'Guest', 'Official'])
-                                .where(person_options: { option_id: table.option_id, table_id: nil })
                                 .order(:name)
                                 .limit(available_seats)
       
       # Assign them to the table via person_options
       unassigned_people.each do |person|
-        PersonOption.where(person_id: person.id, option_id: table.option_id).update_all(table_id: table.id)
+        # Find or create person_option record (in case they have option through package only)
+        person_option = PersonOption.find_or_create_for_table_assignment(
+          person_id: person.id,
+          option_id: table.option_id
+        )
+        person_option.update!(table_id: table.id)
       end
     else
       # Get unassigned people from the studio for main event
@@ -980,9 +1006,8 @@ class TablesController < ApplicationController
     # Get all unassigned people from these studios
     if first_table.option_id
       # For option tables
-      all_people = Person.joins(:options)
+      all_people = Person.with_option_unassigned(first_table.option_id)
                          .where(studio_id: studio_ids, type: ['Student', 'Professional', 'Guest', 'Official'])
-                         .where(person_options: { option_id: first_table.option_id, table_id: nil })
                          .order('studio_id, name')
     else
       # For main event tables
@@ -1014,7 +1039,12 @@ class TablesController < ApplicationController
         
         # Assign person to current table
         if first_table.option_id
-          PersonOption.where(person_id: person.id, option_id: first_table.option_id).update_all(table_id: current_table.id)
+          # Find or create person_option record (in case they have option through package only)
+          person_option = PersonOption.find_or_create_for_table_assignment(
+            person_id: person.id,
+            option_id: first_table.option_id
+          )
+          person_option.update!(table_id: current_table.id)
         else
           person.update!(table_id: current_table.id)
         end
@@ -1041,7 +1071,12 @@ class TablesController < ApplicationController
         
         # Assign person to current table
         if first_table.option_id
-          PersonOption.where(person_id: person.id, option_id: first_table.option_id).update_all(table_id: current_table.id)
+          # Find or create person_option record (in case they have option through package only)
+          person_option = PersonOption.find_or_create_for_table_assignment(
+            person_id: person.id,
+            option_id: first_table.option_id
+          )
+          person_option.update!(table_id: current_table.id)
         else
           person.update!(table_id: current_table.id)
         end

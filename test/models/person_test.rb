@@ -403,7 +403,7 @@ class PersonTest < ActiveSupport::TestCase
   
   test "active? returns true for guest with package" do
     # Create a guest billable package
-    guest_package = Billable.create!(name: 'Guest Package', type: 'Guest', price: 50, order: 1)
+    guest_package = Billable.create!(name: "Guest Package #{rand(1000)}", type: 'Guest', price: 50, order: 1)
     
     person = Person.create!(
       name: 'Guest, Jane',
@@ -430,7 +430,7 @@ class PersonTest < ActiveSupport::TestCase
   
   test "active? returns false for guest without package when packages exist" do
     # Create a guest billable package
-    Billable.create!(name: 'Guest Package', type: 'Guest', price: 50, order: 1)
+    Billable.create!(name: "Guest Package #{rand(1000)}", type: 'Guest', price: 50, order: 1)
     
     person = Person.create!(
       name: 'Guest, Jane',
@@ -474,7 +474,7 @@ class PersonTest < ActiveSupport::TestCase
   # ===== PACKAGE AND BILLING TESTS =====
   
   test "default_package sets student package" do
-    student_package = Billable.create!(name: 'Student Package', type: 'Student', price: 100, order: 1)
+    student_package = Billable.create!(name: "Student Package #{rand(1000)}", type: 'Student', price: 100, order: 1)
     @studio.update!(default_student_package: student_package)
     
     person = Person.create!(
@@ -489,7 +489,7 @@ class PersonTest < ActiveSupport::TestCase
   end
   
   test "default_package sets professional package" do
-    pro_package = Billable.create!(name: 'Pro Package', type: 'Professional', price: 200, order: 1)
+    pro_package = Billable.create!(name: "Pro Package #{rand(1000)}", type: 'Professional', price: 200, order: 1)
     @studio.update!(default_professional_package: pro_package)
     
     person = Person.create!(
@@ -506,8 +506,8 @@ class PersonTest < ActiveSupport::TestCase
     # Clear any existing Student packages to ensure clean test
     Billable.where(type: 'Student').destroy_all
     
-    package1 = Billable.create!(name: 'Package 1', type: 'Student', price: 100, order: 2)
-    package2 = Billable.create!(name: 'Package 2', type: 'Student', price: 150, order: 1)
+    package1 = Billable.create!(name: "Package 1 #{rand(1000)}", type: 'Student', price: 100, order: 2)
+    package2 = Billable.create!(name: "Package 2 #{rand(1000)}", type: 'Student', price: 150, order: 1)
     
     person = Person.create!(
       name: 'Student, New',
@@ -521,7 +521,7 @@ class PersonTest < ActiveSupport::TestCase
   end
   
   test "default_package! saves changes" do
-    student_package = Billable.create!(name: 'Student Package', type: 'Student', price: 100, order: 1)
+    student_package = Billable.create!(name: "Student Package #{rand(1000)}", type: 'Student', price: 100, order: 1)
     @studio.update!(default_student_package: student_package)
     
     person = Person.create!(
@@ -640,5 +640,183 @@ class PersonTest < ActiveSupport::TestCase
     nobody = Person.nobody
     
     assert_equal existing.id, nobody.id
+  end
+  
+  # ===== PACKAGE CHANGE TESTS =====
+  
+  test "changing package removes orphaned option records" do
+    # Create two packages with different options
+    package1 = Billable.create!(type: 'Package', name: "Package 1 #{rand(1000)}", price: 100.0)
+    option1 = Billable.create!(type: 'Option', name: "Option 1 #{rand(1000)}", price: 25.0)
+    PackageInclude.create!(package: package1, option: option1)
+    
+    package2 = Billable.create!(type: 'Package', name: "Package 2 #{rand(1000)}", price: 100.0)
+    option2 = Billable.create!(type: 'Option', name: "Option 2 #{rand(1000)}", price: 25.0)
+    PackageInclude.create!(package: package2, option: option2)
+    
+    # Create person with package1
+    person = Person.create!(
+      name: 'Test, Person',
+      type: 'Student',
+      studio: @studio,
+      level: @level,
+      package: package1
+    )
+    
+    # Simulate person being seated at a table for option1
+    PersonOption.create!(person: person, option: option1)
+    
+    # Change to package2
+    assert_difference 'PersonOption.count', -1 do
+      person.update!(package: package2)
+    end
+    
+    # Option1 PersonOption should be removed
+    assert_nil PersonOption.find_by(person: person, option: option1)
+  end
+  
+  test "changing package keeps option records for seated people" do
+    # Create packages and options
+    package1 = Billable.create!(type: 'Package', name: "Package 1 #{rand(1000)}", price: 100.0)
+    option1 = Billable.create!(type: 'Option', name: "Option 1 #{rand(1000)}", price: 25.0)
+    PackageInclude.create!(package: package1, option: option1)
+    
+    package2 = Billable.create!(type: 'Package', name: "Package 2 #{rand(1000)}", price: 100.0)
+    
+    # Create person with package1
+    person = Person.create!(
+      name: 'Test, Person',
+      type: 'Student',
+      studio: @studio,
+      level: @level,
+      package: package1
+    )
+    
+    # Create table and seat person
+    table = Table.create!(number: 99, option: option1)
+    person_option = PersonOption.create!(person: person, option: option1, table: table)
+    
+    # Change to package2 - should keep PersonOption since they're seated
+    assert_no_difference 'PersonOption.count' do
+      person.update!(package: package2)
+    end
+    
+    # PersonOption should still exist with table assignment
+    person_option.reload
+    assert_equal table, person_option.table
+  end
+  
+  test "removing package removes orphaned option records" do
+    # Create package with option
+    package = Billable.create!(type: 'Package', name: "Package #{rand(1000)}", price: 100.0)
+    option = Billable.create!(type: 'Option', name: "Option #{rand(1000)}", price: 25.0)
+    PackageInclude.create!(package: package, option: option)
+    
+    # Create person with package
+    person = Person.create!(
+      name: 'Test, Person',
+      type: 'Student',
+      studio: @studio,
+      level: @level,
+      package: package
+    )
+    
+    # Simulate person being assigned to option
+    PersonOption.create!(person: person, option: option)
+    
+    # Remove package
+    assert_difference 'PersonOption.count', -1 do
+      person.update!(package: nil)
+    end
+  end
+  
+  test "changing package keeps shared options" do
+    # Create packages with shared option
+    shared_option = Billable.create!(type: 'Option', name: "Shared Option #{rand(1000)}", price: 25.0)
+    
+    package1 = Billable.create!(type: 'Package', name: "Package 1 #{rand(1000)}", price: 100.0)
+    PackageInclude.create!(package: package1, option: shared_option)
+    
+    package2 = Billable.create!(type: 'Package', name: "Package 2 #{rand(1000)}", price: 100.0)
+    PackageInclude.create!(package: package2, option: shared_option)
+    
+    # Create person with package1
+    person = Person.create!(
+      name: 'Test, Person',
+      type: 'Student',
+      studio: @studio,
+      level: @level,
+      package: package1
+    )
+    
+    # Create PersonOption for shared option
+    PersonOption.create!(person: person, option: shared_option)
+    
+    # Change to package2 - should keep PersonOption since option is in both packages
+    assert_no_difference 'PersonOption.count' do
+      person.update!(package: package2)
+    end
+  end
+  
+  test "with_option scope finds people with direct option selection" do
+    option = Billable.create!(type: 'Option', name: "Test Option #{rand(1000)}", price: 25.0)
+    
+    person = Person.create!(
+      name: 'Test, Person',
+      type: 'Student',
+      studio: @studio,
+      level: @level
+    )
+    
+    # Initially not found
+    assert_not_includes Person.with_option(option.id), person
+    
+    # Create direct selection
+    PersonOption.create!(person: person, option: option)
+    
+    # Now found
+    assert_includes Person.with_option(option.id), person
+  end
+  
+  test "with_option scope finds people with option through package" do
+    # Create package with option
+    package = Billable.create!(type: 'Package', name: "Package #{rand(1000)}", price: 100.0)
+    option = Billable.create!(type: 'Option', name: "Option #{rand(1000)}", price: 25.0)
+    PackageInclude.create!(package: package, option: option)
+    
+    person = Person.create!(
+      name: 'Test, Person',
+      type: 'Student',
+      studio: @studio,
+      level: @level,
+      package: package
+    )
+    
+    # Should find person through package
+    assert_includes Person.with_option(option.id), person
+  end
+  
+  test "with_option_unassigned scope finds people without table assignment" do
+    option = Billable.create!(type: 'Option', name: "Test Option #{rand(1000)}", price: 25.0)
+    
+    person = Person.create!(
+      name: 'Test, Person',
+      type: 'Student',
+      studio: @studio,
+      level: @level
+    )
+    
+    # Create direct selection without table
+    PersonOption.create!(person: person, option: option)
+    
+    # Should be found as unassigned
+    assert_includes Person.with_option_unassigned(option.id), person
+    
+    # Assign to table
+    table = Table.create!(number: 99, option: option)
+    PersonOption.where(person: person, option: option).update_all(table_id: table.id)
+    
+    # Should not be found as unassigned
+    assert_not_includes Person.with_option_unassigned(option.id), person
   end
 end

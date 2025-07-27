@@ -23,8 +23,8 @@ module TableAssigner
       # Get people based on context
       if @option
         # For option tables, get people who have registered for this option
-        people = Person.joins(:studio, :options)
-                       .where(person_options: { option_id: @option.id })
+        people = Person.joins(:studio)
+                       .with_option(@option.id)
                        .order('studios.name, people.name')
       else
         # For main event tables, get all people
@@ -1336,8 +1336,12 @@ module TableAssigner
     if @option
       # For option tables, update person_options
       group[:people].each do |person|
-        person_option = PersonOption.find_by(person_id: person.id, option_id: @option.id)
-        person_option&.update!(table_id: table.id)
+        # Find or create person_option record (in case they have option through package only)
+        person_option = PersonOption.find_or_create_for_table_assignment(
+          person_id: person.id,
+          option_id: @option.id
+        )
+        person_option.update!(table_id: table.id)
       end
     else
       # For main event tables, update people directly

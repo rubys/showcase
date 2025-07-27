@@ -91,7 +91,7 @@ class TableTest < ActiveSupport::TestCase
     
     # Should be able to create table with same number for different option
     # Create another option for testing (e.g., dinner tables vs. main event tables)
-    dinner_option = Billable.create!(type: 'Option', name: 'Dinner', price: 25.0)
+    dinner_option = Billable.create!(type: 'Option', name: "Dinner #{rand(1000)}", price: 25.0)
     table2 = Table.new(number: table1.number, row: 2, col: 2, option: dinner_option)
     assert table2.valid?
     
@@ -108,7 +108,7 @@ class TableTest < ActiveSupport::TestCase
     
     # Should be able to create table with same position for different option
     # Create another option for testing (e.g., dinner tables vs. main event tables)
-    dinner_option = Billable.create!(type: 'Option', name: 'Dinner', price: 25.0)
+    dinner_option = Billable.create!(type: 'Option', name: "Dinner #{rand(1000)}", price: 25.0)
     table2 = Table.new(number: 99, row: table1.row, col: table1.col, option: dinner_option)
     assert table2.valid?
     
@@ -140,5 +140,92 @@ class TableTest < ActiveSupport::TestCase
     table.update!(option: option)
     
     assert_equal "Empty", table.name
+  end
+  
+  test "destroying table should cleanup person_options from package includes" do
+    # Create a package with an option included
+    package = Billable.create!(type: 'Package', name: "Test Package #{rand(1000)}", price: 100.0)
+    option = Billable.create!(type: 'Option', name: "Test Option #{rand(1000)}", price: 25.0)
+    PackageInclude.create!(package: package, option: option)
+    
+    # Create a table for this option
+    table = Table.create!(number: 99, option: option)
+    
+    # Create a person with this package
+    studio = studios(:one)
+    person = Person.create!(name: 'Test, Person', type: 'Student', studio: studio, package: package, level: levels(:FS), age: ages(:A))
+    
+    # Create a PersonOption record (as if they were seated at a table)
+    person_option = PersonOption.create!(person: person, option: option, table: table)
+    
+    # Destroying the table should also destroy the PersonOption record
+    assert_difference 'PersonOption.count', -1 do
+      table.destroy!
+    end
+  end
+  
+  test "destroying table should keep person_options for direct selections" do
+    # Create an option without package
+    option = Billable.create!(type: 'Option', name: "Lunch #{rand(1000)}", price: 25.0)
+    
+    # Create a table for this option
+    table = Table.create!(number: 99, option: option)
+    
+    # Create a person without package (direct selection)
+    studio = studios(:one)
+    person = Person.create!(name: 'Test, Person', type: 'Student', studio: studio, level: levels(:FS), age: ages(:A))
+    
+    # Create a PersonOption record with table assignment
+    person_option = PersonOption.create!(person: person, option: option, table: table)
+    
+    # Destroying the table should keep the PersonOption but clear table_id
+    assert_no_difference 'PersonOption.count' do
+      table.destroy!
+    end
+    
+    person_option.reload
+    assert_nil person_option.table_id
+  end
+  
+  test "destroying main event table should nullify people associations" do
+    # Create a main event table (no option)
+    table = Table.create!(number: 99)
+    
+    # Assign people to this table
+    person = people(:Arthur)
+    person.update!(table: table)
+    
+    # Destroying the table should nullify the person's table_id
+    table.destroy!
+    
+    person.reload
+    assert_nil person.table_id
+  end
+  
+  test "computed_table_size prioritizes table size over option and event sizes" do
+    table = Table.new(number: 99, size: 12)
+    assert_equal 12, table.computed_table_size
+  end
+  
+  test "computed_table_size uses option size when table size is nil" do
+    option = Billable.create!(type: 'Option', name: "Lunch #{rand(1000)}", price: 25.0, table_size: 8)
+    table = Table.new(number: 99, option: option, size: nil)
+    assert_equal 8, table.computed_table_size
+  end
+  
+  test "computed_table_size uses event size when table and option sizes are nil" do
+    event = Event.current
+    event.update!(table_size: 10)
+    
+    table = Table.new(number: 99, size: nil)
+    assert_equal 10, table.computed_table_size
+  end
+  
+  test "computed_table_size defaults to 10 when all sizes are nil" do
+    event = Event.current
+    event.update!(table_size: nil)
+    
+    table = Table.new(number: 99, size: nil)
+    assert_equal 10, table.computed_table_size
   end
 end

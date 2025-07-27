@@ -14,6 +14,8 @@ class Person < ApplicationRecord
   validates :name, format: { without: / and /, message: 'only one name per person' }
 
   validates :level, presence: true, if: -> {type == 'Student'}
+  
+  before_save :cleanup_orphaned_options, if: :package_id_changed?
 
   belongs_to :studio, optional: false
   belongs_to :level, optional: true
@@ -39,6 +41,35 @@ class Person < ApplicationRecord
     dependent: :destroy
 
   has_many :scores, dependent: :destroy, foreign_key: :judge_id
+
+  # Get people who have access to an option (either directly selected or through package includes)
+  scope :with_option, ->(option_id) {
+    left_joins(:options)
+      .left_joins(package: { package_includes: :option })
+      .where(
+        "person_options.option_id = :option_id OR package_includes.option_id = :option_id",
+        option_id: option_id
+      )
+      .distinct
+  }
+
+  # Get people who have access to an option but no table assignment for it
+  scope :with_option_unassigned, ->(option_id) {
+    # Use raw SQL to handle the complex join logic for finding people with the option
+    # but without a table assignment
+    joins(<<-SQL)
+      LEFT JOIN person_options ON person_options.person_id = people.id 
+        AND person_options.option_id = #{option_id.to_i}
+      LEFT JOIN billables AS packages ON packages.id = people.package_id
+      LEFT JOIN package_includes ON package_includes.package_id = packages.id
+        AND package_includes.option_id = #{option_id.to_i}
+    SQL
+    .where(<<-SQL)
+      (person_options.option_id = #{option_id.to_i} OR package_includes.option_id = #{option_id.to_i})
+      AND (person_options.table_id IS NULL OR person_options.id IS NULL)
+    SQL
+    .distinct
+  }
 
   def self.display_name(name)
     name && name.split(/,\s*/).rotate.join(' ')
@@ -154,5 +185,33 @@ class Person < ApplicationRecord
     end
 
     person
+  end
+  
+  private
+  
+  def cleanup_orphaned_options
+    return unless package_id_was.present? # Only if person had a package before
+    
+    old_package = Billable.find_by(id: package_id_was)
+    return unless old_package
+    
+    # Get options that were included in the old package
+    old_package_option_ids = old_package.package_includes.pluck(:option_id)
+    
+    # Get options that are included in the new package (if any)
+    new_package_option_ids = package&.package_includes&.pluck(:option_id) || []
+    
+    # Options that were in old package but not in new package
+    removed_option_ids = old_package_option_ids - new_package_option_ids
+    
+    # Clean up PersonOption records for removed options
+    removed_option_ids.each do |option_id|
+      person_option = options.find_by(option_id: option_id)
+      if person_option && person_option.table_id.nil?
+        # Only cleanup if not seated at a table (to avoid disrupting current seating)
+        PersonOption.cleanup_if_only_from_package(person_option)
+      end
+      # If seated, we'll leave it for now but it will be cleaned up when unseated
+    end
   end
 end

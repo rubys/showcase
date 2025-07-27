@@ -341,15 +341,25 @@ class PeopleController < ApplicationController
   def package
     package_id = params[:package_id].to_i
     package = Billable.find(package_id)
-    @people = package.people.includes(:studio).order(:name)
-    @title = "#{package.type} - #{package.name}"
-
+    
     if package.type == 'Option'
+      # For options, show all people who have access to this option (through packages or direct selection)
+      @people = Person.with_option(package_id).includes(:studio).order(:name)
       @packages = package.option_included_by.map(&:package).sort_by {|package| [package.type, package.order]}
-
       @option = package
-      @strike = @people.reject {|person| person.selected_options.map(&:id).include? package_id}
+      
+      # Strike through people who don't have the option selected AND aren't seated at a table for it
+      @strike = @people.reject do |person| 
+        person_option = PersonOption.find_by(person_id: person.id, option_id: package_id)
+        # Include if they have a PersonOption record (selected or seated at table)
+        person_option.present?
+      end
+    else
+      # For packages, show people who have this package
+      @people = package.people.includes(:studio).order(:name)
     end
+    
+    @title = "#{package.type} - #{package.name}"
 
     index
   end
