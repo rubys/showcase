@@ -25,33 +25,35 @@ export default class extends Controller {
     let visibleTables = []
     
     this.tables.forEach(tbody => {
-      const rows = tbody.querySelectorAll('tr')
-      let hasMatch = false
+      // Find the thead that immediately precedes this tbody
+      let thead = tbody.previousElementSibling
+      while (thead && thead.nodeName !== 'THEAD') {
+        thead = thead.previousElementSibling
+      }
       
+      const rows = tbody.querySelectorAll('tr')
+      let visibleRows = []
+      
+      // Filter rows based on search term
       rows.forEach(row => {
         const text = row.textContent.toLowerCase()
-        if (text.includes(searchTerm)) {
+        if (searchTerm === '' || text.includes(searchTerm)) {
           row.style.display = ''
-          hasMatch = true
+          visibleRows.push(row)
         } else {
           row.style.display = 'none'
         }
       })
       
-      // Show/hide the entire table section based on matches
-      const table = tbody.closest('table')
-      const header = table.previousElementSibling
-      
-      if (hasMatch) {
-        table.style.display = ''
-        if (header && header.classList.contains('bg-slate-100')) {
-          header.style.display = ''
+      // Show/hide header based on visible rows
+      if (visibleRows.length > 0) {
+        if (thead) {
+          thead.style.display = 'table-header-group'
         }
         visibleTables.push(tbody)
       } else {
-        table.style.display = 'none'
-        if (header && header.classList.contains('bg-slate-100')) {
-          header.style.display = 'none'
+        if (thead) {
+          thead.style.display = 'none'
         }
       }
     })
@@ -92,23 +94,13 @@ export default class extends Controller {
     // Hide all tables first
     this.tables.forEach(tbody => {
       const table = tbody.closest('table')
-      const header = table.previousElementSibling
-      
       table.style.display = 'none'
-      if (header && header.classList.contains('bg-slate-100')) {
-        header.style.display = 'none'
-      }
     })
     
     // Show only tables for current page
     visibleTables.slice(startIndex, endIndex).forEach(tbody => {
       const table = tbody.closest('table')
-      const header = table.previousElementSibling
-      
       table.style.display = ''
-      if (header && header.classList.contains('bg-slate-100')) {
-        header.style.display = ''
-      }
     })
     
     // Update navigation
