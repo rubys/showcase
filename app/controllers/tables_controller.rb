@@ -493,10 +493,10 @@ class TablesController < ApplicationController
     
     if params[:option_id].present?
       @option = Billable.find(params[:option_id])
-      @public_url = URI.join(request.original_url, "../../public/tables?option_id=#{@option.id}")
+      @public_url = public_tables_url(option_id: @option.id)
       @description = "Scan QRCode to see #{@option.name} tables"
     else
-      @public_url = URI.join(request.original_url, "../../public/tables")
+      @public_url = public_tables_url
       @description = "Scan QRCode to see tables"
     end
   end
