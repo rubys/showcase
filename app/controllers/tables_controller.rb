@@ -1061,8 +1061,9 @@ class TablesController < ApplicationController
     end
     
     def set_option
-      if params[:option_id].present?
-        @option = Billable.find(params[:option_id])
+      option_id = params[:option_id] || params.dig(:table, :option_id)
+      if option_id.present?
+        @option = Billable.find(option_id)
         # Ensure it's actually an option, not a package
         raise ActiveRecord::RecordNotFound unless @option.type == 'Option'
       end
