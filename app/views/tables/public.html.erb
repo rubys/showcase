@@ -1,0 +1,74 @@
+<div class='h-screen flex flex-col w-full' data-controller="table-search">
+
+<div class='flex flex-col'>
+  <div class='bg-orange-300 text-center text-3xl'>
+    <%= @event.name %> - <%= @option ? @option.name : 'Tables' %>
+  </div>
+
+  <div class='text-center my-2'>
+    Search:
+    <input class='border' data-table-search-target="input" value="<%= @search %>">
+  </div>
+</div>
+
+<div class="flex flex-1 w-screen overflow-y-auto">
+<div class="w-full">
+  <% if @tables.any? %>
+  <table class="w-full table-auto">
+    <% @tables.each do |table| %>
+    <thead>
+    <tr class="bg-slate-200">
+      <td colspan="2" class='px-4 py-2 font-bold text-xl'>
+        <span class='text-sky-500'>Table <%= table.number %></span>
+        <% if @option %>
+          <% studios = table.person_options.includes(:person => :studio).map { |po| po.person.studio.name }.uniq.sort %>
+        <% else %>
+          <% studios = table.people.joins(:studio).pluck('studios.name').uniq.sort %>
+        <% end %>
+        <% if studios.any? %>
+        <span class="text-base text-slate-600">- <%= studios.join(', ') %></span>
+        <% end %>
+      </td>
+    </tr>
+    </thead>
+    <tbody>
+    <% if @option %>
+      <% table.person_options.includes(:person => :studio).sort_by { |po| [po.person.studio.name, po.person.name] }.each do |person_option| %>
+      <% person = person_option.person %>
+      <tr>
+        <td class="px-2 border-x" data-index><%= person.name %></td>
+        <td class='px-2 text-center'><%= person.studio.name %></td>
+      </tr>
+      <% end %>
+      <% if table.person_options.empty? %>
+      <tr>
+        <td colspan="2" class="px-2 text-gray-500 italic">No people assigned</td>
+      </tr>
+      <% end %>
+    <% else %>
+      <% table.people.includes(:studio).order('studios.name', :name).each do |person| %>
+      <tr>
+        <td class="px-2 border-x" data-index><%= person.name %></td>
+        <td class='px-2 text-center'><%= person.studio.name %></td>
+      </tr>
+      <% end %>
+      <% if table.people.empty? %>
+      <tr>
+        <td colspan="2" class="px-2 text-gray-500 italic">No people assigned</td>
+      </tr>
+      <% end %>
+    <% end %>
+    </tbody>
+    <% end %>
+  </table>
+  <% end %>
+
+</div>
+</div>
+
+<ul class='flex mx-auto' data-table-search-target="nav">
+<li><div class="border p-2" rel="prev">Previous</div></li>
+<li class="mx-4"><div class="border p-2">1</div></li>
+<li><div class="border p-2" rel="next">Next</div></li>
+</ul>
+</div>

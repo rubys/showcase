@@ -4,6 +4,7 @@ class TablesController < ApplicationController
   include Printable
   include TableAssigner
   
+  skip_before_action :authenticate_user, only: %i[ public ]
   before_action :set_table, only: %i[ show edit update destroy ]
   before_action :set_option, only: %i[ index new create arrange assign pack studio move_person reset update_positions renumber ]
 
@@ -464,6 +465,26 @@ class TablesController < ApplicationController
       format.pdf do
         render_as_pdf basename: "table-list"
       end
+    end
+  end
+  
+  def public
+    @event = Event.current
+    @layout = 'mx-0'
+    @nologo = true
+    @search = params[:q] || params[:search]
+    
+    if params[:option_id].present?
+      # Show tables for a specific option
+      @option = Billable.find(params[:option_id])
+      @tables = Table.includes(:person_options => {:person => :studio})
+                     .where(option_id: @option.id)
+                     .order(:number)
+      @options_with_tables = []
+    else
+      # Show main event tables only (no option specified)
+      @tables = Table.includes(people: :studio).where(option_id: nil).order(:number)
+      @options_with_tables = []
     end
   end
   
