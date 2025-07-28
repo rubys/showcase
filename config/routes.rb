@@ -61,6 +61,7 @@ Rails.application.routes.draw do
 
     get '/env', to: 'event#env'
     get '/console', to: 'event#console' if Rails.env.development?
+    get '/web_console', to: 'event#web_console' if Rails.env.development?
     match '/select', to: 'event#select', via: %i(get post)
     get '/auth', to: 'event#auth'
     get '/instructions', to: 'event#instructions'

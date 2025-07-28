@@ -26,6 +26,9 @@
         <%= link_to 'Index', index_path, class: "btn-green" %>
       <% end %>
     <% end %>
+    <% if Rails.env.development? %>
+      <%= link_to 'Console', web_console_path, class: "btn-purple" %>
+    <% end %>
   </div>
 
   <div class="flex justify-center gap-4 mt-4">

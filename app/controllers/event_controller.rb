@@ -1119,6 +1119,10 @@ class EventController < ApplicationController
     end
   end
 
+  def web_console
+    @event = Event.current
+  end
+
   def select
     if params[:year] && params[:db].blank?
       return redirect_to root_path(
