@@ -18,6 +18,10 @@ class OutputChannel < ApplicationCable::Channel
     },
     vscode: ->(params) {
       ["showcase", "-e"]
+    },
+    db_browser: ->(params) {
+      db_path = Rails.root.join("db", ENV['RAILS_APP_DB'] + ".sqlite3").to_s
+      ["open", "-a", "/Applications/DB Browser for SQLite.app", db_path]
     }
   }
 

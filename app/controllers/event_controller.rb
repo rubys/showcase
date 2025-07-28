@@ -1156,6 +1156,7 @@ class EventController < ApplicationController
       @hetzner_stream = OutputChannel.register(:hetzner)
       @flyio_stream = OutputChannel.register(:flyio)
       @vscode_stream = OutputChannel.register(:vscode)
+      @db_browser_stream = OutputChannel.register(:db_browser)
       
       @dbs = Dir["db/2*.sqlite3"].
         sort_by {|name| File.mtime(name)}[-20..].
