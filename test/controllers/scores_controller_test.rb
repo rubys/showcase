@@ -1094,5 +1094,234 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     # Verify that "No couples on the floor" message is NOT shown
     assert_select "p", text: /No couples on the floor/, count: 0
   end
+
+  # ===== JUDGE HEAT INTERFACE SCRUTINEERING TESTS =====
+  # These tests specifically target the judge heat scoring interface
+  # for semi-finals dances, addressing gaps that allowed the bug where
+  # heats with ≤8 couples showed "No couples on the floor"
+
+  test "judge heat interface shows all couples for semi-finals dance with 4 couples (no scores yet)" do
+    # Create multi category
+    multi_category = Category.create!(
+      name: 'Test Semi-Finals Category',
+      order: 1000
+    )
+    
+    # Create scrutineering dance with semi_finals enabled
+    dance = Dance.create!(
+      name: 'Test Semi-Finals Waltz',
+      semi_finals: true,
+      heat_length: 4,
+      order: 2000,
+      multi_category: multi_category
+    )
+    
+    # Create exactly 4 couples (≤8, so should skip semi-finals per documentation)
+    entries = []
+    heats = []
+    4.times do |i|
+      student = Person.create!(
+        name: "Semi Student #{i}",
+        type: 'Student',
+        studio: studios(:one),
+        level: @level,
+        back: 400 + i
+      )
+      instructor = Person.create!(
+        name: "Semi Instructor #{i}",
+        type: 'Professional',
+        studio: studios(:one),
+        back: 500 + i
+      )
+      entry = Entry.create!(lead: instructor, follow: student, age: @age, level: @level)
+      entries << entry
+      heat = Heat.create!(number: 91, entry: entry, dance: dance, category: 'Multi')
+      heats << heat
+    end
+    
+    # Visit heat as judge - NO SCORES EXIST YET
+    # This is the exact scenario that was broken
+    get judge_heat_path(@judge, 91, slot: 1)
+    
+    assert_response :success
+    
+    # Should show all 4 couples (no "No couples on the floor" message)
+    assert_select "p", text: /No couples on the floor/, count: 0
+    assert_select "table" do
+      # Should have 4 rows for couples (with hover:bg-yellow-200 class)
+      assert_select "tr.hover\\:bg-yellow-200", count: 4
+      
+      # Check that all couples are displayed by their back numbers
+      entries.each do |entry|
+        assert_select "td", text: entry.lead.back.to_s
+      end
+    end
+    
+    # Should be in final mode since ≤8 couples
+    # This means should show ranking interface, not callback checkboxes
+    assert_select "input[type='checkbox']", count: 0
+  end
   
+  test "judge heat interface shows all couples for semi-finals dance with 8 couples (no scores yet)" do
+    # Create multi category  
+    multi_category = Category.create!(
+      name: 'Test 8-Couple Category',
+      order: 1001
+    )
+    
+    # Create scrutineering dance
+    dance = Dance.create!(
+      name: 'Test 8-Couple Waltz',
+      semi_finals: true,
+      heat_length: 4,
+      order: 2001,
+      multi_category: multi_category
+    )
+    
+    # Create exactly 8 couples (boundary case - should still skip semi-finals)
+    entries = []
+    heats = []
+    8.times do |i|
+      student = Person.create!(
+        name: "Eight Student #{i}",
+        type: 'Student', 
+        studio: studios(:one),
+        level: @level,
+        back: 600 + i
+      )
+      instructor = Person.create!(
+        name: "Eight Instructor #{i}",
+        type: 'Professional',
+        studio: studios(:one), 
+        back: 700 + i
+      )
+      entry = Entry.create!(lead: instructor, follow: student, age: @age, level: @level)
+      entries << entry
+      heat = Heat.create!(number: 92, entry: entry, dance: dance, category: 'Multi')
+      heats << heat
+    end
+    
+    # Visit heat as judge - NO SCORES EXIST YET
+    get judge_heat_path(@judge, 92, slot: 1)
+    
+    assert_response :success
+    
+    # Should show all 8 couples
+    assert_select "p", text: /No couples on the floor/, count: 0
+    assert_select "tr.hover\\:bg-yellow-200", count: 8
+    
+    # Should be in final mode (ranking, not callbacks)
+    assert_select "input[type='checkbox']", count: 0
+  end
+  
+  test "judge heat interface requires callbacks for semi-finals dance with 9 couples" do
+    # Create multi category
+    multi_category = Category.create!(
+      name: 'Test Large Semi-Finals Category', 
+      order: 1002
+    )
+    
+    # Create scrutineering dance
+    dance = Dance.create!(
+      name: 'Test Large Semi-Finals Waltz',
+      semi_finals: true,
+      heat_length: 4,
+      order: 2002,
+      multi_category: multi_category
+    )
+    
+    # Create 9 couples (>8, so should require semi-finals)
+    entries = []
+    heats = []
+    9.times do |i|
+      student = Person.create!(
+        name: "Large Student #{i}",
+        type: 'Student',
+        studio: studios(:one),
+        level: @level, 
+        back: 800 + i
+      )
+      instructor = Person.create!(
+        name: "Large Instructor #{i}",
+        type: 'Professional',
+        studio: studios(:one),
+        back: 900 + i
+      )
+      entry = Entry.create!(lead: instructor, follow: student, age: @age, level: @level)
+      entries << entry
+      heat = Heat.create!(number: 93, entry: entry, dance: dance, category: 'Multi')
+      heats << heat
+    end
+    
+    # Visit heat as judge for semi-final slot - NO SCORES EXIST YET
+    get judge_heat_path(@judge, 93, slot: 1)  # Semi-final slot
+    
+    assert_response :success
+    
+    # Should show all 9 couples for callback selection
+    assert_select "p", text: /No couples on the floor/, count: 0
+    assert_select "tr.hover\\:bg-yellow-200", count: 9
+    
+    # Should be in semi-final mode (checkboxes for callbacks, not ranking)
+    assert_select "input[type='checkbox']", count: 9
+  end
+  
+  test "judge heat interface handles final slot for large heat after callbacks" do
+    # Create multi category
+    multi_category = Category.create!(
+      name: 'Test Callback Finals Category',
+      order: 1003
+    )
+    
+    # Create scrutineering dance
+    dance = Dance.create!(
+      name: 'Test Callback Finals Waltz', 
+      semi_finals: true,
+      heat_length: 2,  # 2 semi-final slots, slot 3+ would be finals
+      order: 2003,
+      multi_category: multi_category
+    )
+    
+    # Create 10 couples
+    entries = []
+    heats = []
+    10.times do |i|
+      student = Person.create!(
+        name: "Finals Student #{i}",
+        type: 'Student',
+        studio: studios(:one),
+        level: @level,
+        back: 1000 + i
+      )
+      instructor = Person.create!(
+        name: "Finals Instructor #{i}",
+        type: 'Professional', 
+        studio: studios(:one),
+        back: 1100 + i
+      )
+      entry = Entry.create!(lead: instructor, follow: student, age: @age, level: @level)
+      entries << entry
+      heat = Heat.create!(number: 94, entry: entry, dance: dance, category: 'Multi')
+      heats << heat
+    end
+    
+    # Create some semi-final scores to establish callbacks (first 6 couples)
+    heats[0, 6].each_with_index do |heat, i|
+      Score.create!(heat: heat, judge: @judge, value: '1', slot: 1)
+      Score.create!(heat: heat, judge: @judge, value: '1', slot: 2)
+    end
+    
+    # Visit final slot (slot 3, which is > heat_length of 2)
+    get judge_heat_path(@judge, 94, slot: 3)
+    
+    assert_response :success
+    
+    # Should show only the called-back couples (6)
+    assert_select "p", text: /No couples on the floor/, count: 0
+    assert_select "tr.hover\\:bg-yellow-200", count: 6
+    
+    # Should be in final mode (ranking, not checkboxes) 
+    assert_select "input[type='checkbox']", count: 0
+  end
+
 end
