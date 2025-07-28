@@ -1263,26 +1263,9 @@ class ScoresController < ApplicationController
                    heats_or_subjects
       
       if subjects.length <= 8
-        # For small heats, check if all entries actually made it to finals
-        heat_ids = subjects.map(&:id)
-        final_scores = Score.joins(:heat).where(heat: heat_ids).where.not(slot: semi_final_slots)
-        final_entry_ids = final_scores.map(&:heat).map(&:entry_id).uniq
-        
-        if final_entry_ids.length == subjects.length
-          # All couples proceeded to finals without callback determination
-          subjects.map(&:entry_id)
-        else
-          # Use callback ranking logic even for small heats
-          ranks = Heat.rank_callbacks(heat_number, semi_final_slots)
-            .map {|entry, rank| [entry.id, rank]}.group_by {|id, rank| rank}
-          
-          called_back = []
-          ranks.each do |rank, entries|
-            break if called_back.length + entries.length > 8
-            called_back.concat(entries.map(&:first))
-          end
-          called_back
-        end
+        # For heats with 8 or fewer couples, no semi-final round is required
+        # All couples proceed directly to finals
+        subjects.map(&:entry_id)
       else
         # Use the callback ranking logic for large heats
         ranks = Heat.rank_callbacks(heat_number, semi_final_slots)
