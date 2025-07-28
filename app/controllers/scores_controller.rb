@@ -326,11 +326,13 @@ class ScoresController < ApplicationController
           render json: score.errors, status: :unprocessable_entity
         end
       elsif not params[:score].blank? or not score.comments.blank? or Event.current.assign_judges > 0
-        if params[:name]
+        if params[:name] && heat.category == 'Solo' && Event.current.solo_scoring == '4'
+          # Solo heats with 4-part scoring use JSON to store multiple named scores
           value = score.value&.start_with?('{') ? JSON.parse(score.value) : {}
           value[params[:name]] = params[:score]
           score.value = value.to_json
         else
+          # All other scoring types (including solo with single score) store plain values
           score.value = params[:score]
         end
 

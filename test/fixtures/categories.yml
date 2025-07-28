@@ -29,3 +29,9 @@ five:
   order: 3
   day: Saturday
   time: 4 p.m.
+
+solo:
+  name: Solos
+  order: 6
+  day: Saturday
+  time: 5 p.m.

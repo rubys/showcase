@@ -727,24 +727,51 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     ApplicationRecord.class_variable_set(:@@readonly_showcase, false)
   end
 
-  test "post handles JSON value parsing and updates" do
-    # Create initial JSON value
-    initial_json = { placement: 1, callback: true }.to_json
-    @score.update!(value: initial_json)
+  test "post handles JSON value parsing and updates for 4-part solo scoring" do
+    # Create a solo heat with 4-part scoring
+    solo_dance = Dance.create!(
+      name: 'Solo Waltz',
+      order: 999,
+      solo_category: categories(:solo)
+    )
     
-    # Update specific key in JSON
+    # Create heat first, then solo
+    solo_heat = Heat.create!(
+      number: 100,
+      dance: solo_dance,
+      entry: @entry,
+      category: 'Solo'
+    )
+    
+    # Create solo that belongs to the heat
+    solo = Solo.create!(
+      heat: solo_heat,
+      order: 100
+    )
+    
+    # Set event to use 4-part solo scoring
+    @event.update!(solo_scoring: '4')
+    
+    # Create score with initial technique value
+    score = Score.create!(
+      heat: solo_heat,
+      judge: @judge,
+      value: '{"technique":"20"}'
+    )
+    
+    # Update with execution score
     post post_score_path(@judge), params: {
-      heat: @test_heat.id,
-      score: '2',
-      name: 'placement'
+      heat: solo_heat.id,
+      score: '23',
+      name: 'execution'
     }, xhr: true
     
     assert_response :success
-    @score.reload
+    score.reload
     
-    parsed_value = JSON.parse(@score.value)
-    assert_equal '2', parsed_value['placement']
-    assert_equal true, parsed_value['callback']
+    parsed_value = JSON.parse(score.value)
+    assert_equal '20', parsed_value['technique']
+    assert_equal '23', parsed_value['execution']
   end
 
   test "post handles score deletion conditions correctly" do

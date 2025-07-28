@@ -94,7 +94,8 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
         "Closed American Rhythm",
         "All Arounds",
         "Open American Smooth",
-        "Open American Rhythm"
+        "Open American Rhythm",
+        "Solos"
       ], links.map(&:text)
     end
 
@@ -113,7 +114,8 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
         "All Arounds",
         "Open American Smooth",
         "Open American Rhythm",
-        "Closed American Smooth"
+        "Closed American Smooth",
+        "Solos"
       ], links.map(&:text)
     end
 
