@@ -582,12 +582,22 @@ class TablesController < ApplicationController
       PersonOption.where(option_id: @option.id).find_each do |person_option|
         PersonOption.cleanup_if_only_from_package(person_option)
       end
-      
-      Table.where(option_id: @option.id).destroy_all
-    else
-      Table.where(option_id: nil).destroy_all
     end
-    redirect_to tables_path(option_id: @option&.id), notice: "All tables have been deleted."
+    
+    # Check if there are any locked tables
+    locked_tables_exist = if @option
+      Table.where(option_id: @option.id, locked: true).exists?
+    else
+      Table.where(option_id: nil, locked: true).exists?
+    end
+    
+    # Remove only unlocked tables
+    remove_unlocked_tables(@option&.id)
+    
+    # Set appropriate notice message
+    notice_message = locked_tables_exist ? "All unlocked tables have been deleted." : "All tables have been deleted."
+    
+    redirect_to tables_path(option_id: @option&.id), notice: notice_message
   end
 
   def move_person
@@ -1106,6 +1116,6 @@ class TablesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def table_params
-      params.expect(table: [ :number, :row, :col, :size, :studio_id, :option_id, :create_additional_tables ])
+      params.expect(table: [ :number, :row, :col, :size, :studio_id, :option_id, :create_additional_tables, :locked ])
     end
 end

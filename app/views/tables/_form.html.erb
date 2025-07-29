@@ -61,4 +61,10 @@
     </div>
   <% end %>
 
+  <div class="my-5">
+    <%= form.check_box :locked, class: "mr-2" %>
+    <%= form.label :locked, "Lock table", class: "inline" %>
+    <p class="text-sm text-gray-500 mt-1">When checked, this table cannot be modified or deleted.</p>
+  </div>
+
 <% end %>

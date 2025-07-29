@@ -93,6 +93,21 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     assert_nil person.table_id
   end
 
+  test "should show different message when locked tables exist" do
+    # Create a locked table
+    locked_table = Table.create!(number: 100, locked: true, option_id: nil)
+    
+    assert_difference("Table.count", -Table.where(locked: false).count) do
+      delete reset_tables_url
+    end
+    
+    assert_redirected_to tables_url
+    assert_equal "All unlocked tables have been deleted.", flash[:notice]
+    
+    # Verify locked table still exists
+    assert Table.exists?(locked_table.id)
+  end
+
   test "should get arrange" do
     get arrange_tables_url
     assert_response :success

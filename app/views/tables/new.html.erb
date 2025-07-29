@@ -3,6 +3,17 @@
 <div class="md:w-2/3 w-full">
   <h1 class="font-bold text-4xl">New Table</h1>
 
+  <div data-controller="info-box">
+    <div class="info-button">&#x24D8;</div>
+    <ul class="info-box">
+      <li>Enter a table number and size (number of seats). The table will be placed on the grid automatically.</li>
+      <li>Select a studio to automatically fill the table with unassigned people from that studio.</li>
+      <li>Check <strong>Lock table</strong> to prevent this table from being removed or reassigned when using Reset or table assignment buttons.</li>
+      <li>Enable <strong>Create additional tables if needed</strong> to automatically create multiple tables for large studios and their paired studios.</li>
+      <li>After creation, you can edit the table to add people from multiple studios or adjust assignments.</li>
+    </ul>
+  </div>
+
   <%= render "form", table: @table %>
 
   <div class="mx-auto flex">

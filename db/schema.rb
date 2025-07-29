@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_08_212812) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_29_111732) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -435,6 +435,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_08_212812) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "option_id"
+    t.boolean "locked", default: false
     t.index ["option_id"], name: "index_tables_on_option_id"
     t.index ["row", "col", "option_id"], name: "index_tables_on_row_and_col_and_option_id", unique: true
   end

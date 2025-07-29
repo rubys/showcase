@@ -5,30 +5,45 @@ module TableAssigner
     # Any class-level configuration can go here
   end
 
+  def remove_unlocked_tables(option_id = nil)
+    Table.transaction do
+      # Remove only unlocked tables for this option context
+      if option_id
+        # For option tables, also clear table_id from person_options for unlocked tables
+        unlocked_table_ids = Table.where(option_id: option_id, locked: false).pluck(:id)
+        PersonOption.where(option_id: option_id, table_id: unlocked_table_ids).update_all(table_id: nil)
+        Table.where(option_id: option_id, locked: false).destroy_all
+      else
+        # For main event, clear people's table_id for unlocked tables (dependent: :nullify will handle this)
+        Table.where(option_id: nil, locked: false).destroy_all
+      end
+    end
+  end
+
   def assign_tables(pack:)
     Table.transaction do
-      # Remove all existing tables for this option context
-      if @option
-        # For option tables, also clear table_id from person_options
-        PersonOption.where(option_id: @option.id).update_all(table_id: nil)
-        Table.where(option_id: @option.id).destroy_all
-      else
-        # For main event, clear people's table_id (dependent: :nullify will handle this)
-        Table.where(option_id: nil).destroy_all
-      end
+      # Remove unlocked tables for this option context
+      remove_unlocked_tables(@option&.id)
       
       # Get table size using computed method
       table_size = @option&.computed_table_size || Event.current&.table_size || 10
       
-      # Get people based on context
+      # Get people based on context, excluding those already at locked tables
       if @option
         # For option tables, get people who have registered for this option
+        # Exclude people already assigned to locked tables
         people = Person.joins(:studio)
                        .with_option(@option.id)
+                       .joins("LEFT JOIN person_options po_locked ON people.id = po_locked.person_id AND po_locked.option_id = #{@option.id}")
+                       .joins("LEFT JOIN tables t_locked ON po_locked.table_id = t_locked.id AND t_locked.locked = true")
+                       .where("t_locked.id IS NULL")
                        .order('studios.name, people.name')
       else
-        # For main event tables, get all people
-        people = Person.joins(:studio).order('studios.name, people.name')
+        # For main event tables, get all people except those at locked tables
+        people = Person.joins(:studio)
+                       .joins("LEFT JOIN tables t_locked ON people.table_id = t_locked.id AND t_locked.locked = true")
+                       .where("t_locked.id IS NULL")
+                       .order('studios.name, people.name')
       end
       
       # TWO-PHASE ALGORITHM for both regular and pack modes
@@ -52,10 +67,14 @@ module TableAssigner
   private
 
   def renumber_tables_by_position
-    # Get all tables ordered by their position (row first, then column)
-    tables_by_position = Table.where(option_id: @option&.id).order(:row, :col)
+    # Get all unlocked tables ordered by their position (row first, then column)
+    # Skip locked tables to preserve their numbers
+    tables_by_position = Table.where(option_id: @option&.id, locked: false).order(:row, :col)
     
     return if tables_by_position.empty?
+    
+    # Get existing numbers from locked tables to avoid conflicts
+    locked_numbers = Table.where(option_id: @option&.id, locked: true).pluck(:number)
     
     # Use a unique negative base to avoid conflicts with other operations
     timestamp = Time.current.to_i
@@ -66,9 +85,15 @@ module TableAssigner
       table.update!(number: negative_base - index)
     end
     
-    # Then set them to their final positive values
-    tables_by_position.each_with_index do |table, index|
-      table.update!(number: index + 1)
+    # Then set them to their final positive values, skipping locked table numbers
+    current_number = 1
+    tables_by_position.each do |table|
+      # Find next available number that isn't used by a locked table
+      while locked_numbers.include?(current_number)
+        current_number += 1
+      end
+      table.update!(number: current_number)
+      current_number += 1
     end
   end
   
@@ -1057,9 +1082,16 @@ module TableAssigner
     # Phase 2: Place groups on grid (where tables go)
     # Simplified approach that handles connected components properly
     
+    # Initialize positions with existing locked tables
     positions = []
     max_cols = 8
     created_tables = []
+    
+    # Get existing locked tables and mark their positions as occupied
+    existing_locked_tables = Table.where(option_id: @option&.id, locked: true)
+    existing_locked_tables.each do |table|
+      positions << [table.row, table.col] if table.row && table.col
+    end
     
     # Step 1: Group tables by coordination groups and studio splits
     # For coordination groups, remove the index suffix to group split tables together
@@ -1320,10 +1352,20 @@ module TableAssigner
   end
 
   def create_table_at_position(group, row, col)
-    # Calculate final table number based on grid position
-    # Use row-major order: table number = (row * max_cols) + col + 1
+    # Calculate table number avoiding conflicts with existing locked tables
     max_cols = 8  # Standard grid width
-    final_number = (row * max_cols) + col + 1
+    
+    # Get all existing table numbers for this option context
+    existing_numbers = Table.where(option_id: @option&.id).pluck(:number)
+    
+    # Calculate position-based number as a starting point
+    position_based_number = (row * max_cols) + col + 1
+    
+    # Find the next available number starting from position-based number
+    final_number = position_based_number
+    while existing_numbers.include?(final_number)
+      final_number += 1
+    end
     
     table = Table.create!(
       number: final_number,

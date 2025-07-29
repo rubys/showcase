@@ -44,17 +44,34 @@ The pack algorithm typically creates fewer tables than regular assignment (close
 - Use **Pack Assignment** when maximizing table efficiency and minimizing total tables is more important
 - Both algorithms maintain studio pair relationships and use intelligent grid placement for optimal spatial arrangement
 
-If you don't like the results from either algorithm, click **Reset** to remove all tables and try the other approach or start over.
+If you don't like the results from either algorithm, click **Reset** to remove all tables and try the other approach or start over. Note that the Reset button only removes unlocked tables, preserving any tables you've marked as locked (see Locking Tables below).
 
 You can also add tables individually and select a studio to seat people from. If there are unfilled seats, click on the table and add another studio. There is a "Create additional tables if needed" checkbox that you can use to create a packed set of tables with the studio you select and all of its paired studios. For maximum density, you can edit the final table and add more studios, or click **New Table** to create a new group.
 
 The **Arrange Tables** feature lets you drag tables to match the room layout or organize tables differently. As you hover over a table, all connected tables will be highlighted.
 
-**Renumber** assigns new numbers left to right, then top to bottom. For a different numbering, return to the Tables page, click on a table, and change its number.
+**Renumber** assigns new numbers left to right, then top to bottom. Locked tables keep their existing numbers, and new numbers are assigned around them. For a different numbering, return to the Tables page, click on a table, and change its number.
 
 Once done, return to the Studios page to see table assignments. If a studio has multiple tables, click the tables column to view those tables, and drag and drop people to move them to a different table.
 
 When editing a person, you can see and change their table assignment or remove them from any table.
+
+## Locking Tables
+
+You can lock individual tables to preserve specific seating arrangements. Locked tables:
+
+- Are not removed when using the **Reset** button
+- Keep their table numbers during renumbering operations  
+- Retain their position on the grid during automatic table assignments
+- Keep their assigned people - those people won't be moved to other tables
+
+To lock a table, edit the table and check the "Lock table" checkbox. This is useful when:
+- You have VIP tables with specific seating requirements
+- Certain tables need to remain in specific positions
+- You want to preserve manual arrangements while reassigning other tables
+- You need to maintain accessibility requirements for specific guests
+
+Both assignment algorithms (Regular and Pack) respect locked tables and work around them when placing new tables.
 
 On the publish page, you will see a button to get a printable list of table assignments, and a page that shows tables by studio. If there are any issues (for example, people without seats or studios not seated together), a list of issues will be included in the table list report.
 
