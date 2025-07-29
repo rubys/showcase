@@ -1,25 +1,6 @@
 <div class="w-full mx-12">
 
-<div class="mx-auto flex text-sm font-medium text-center text-gray-500 dark:text-gray-400 dark:border-gray-700 mb-6">
-  <ul class="flex flex-wrap -mb-px mx-auto text-center">
-    <li class="me-2">
-      <%= link_to "Inventory", inventory_path(request.query_parameters), 
-          class: "inline-block p-4 #{action_name == 'inventory' ? 'text-blue-600 border-b-2 border-blue-600' : 'border-gray-200'} rounded-t-lg #{action_name == 'inventory' ? 'active' : 'hover:border-b-2 hover:text-gray-600 hover:border-gray-300'}" %>
-    </li>
-    <li class="me-2">
-      <%= link_to "Options", inventory_options_path(request.query_parameters), 
-          class: "inline-block p-4 #{action_name == 'inventory_options' ? 'text-blue-600 border-b-2 border-blue-600' : 'border-gray-200'} rounded-t-lg #{action_name == 'inventory_options' ? 'active' : 'hover:border-b-2 hover:text-gray-600 hover:border-gray-300'}" %>
-    </li>
-    <li class="me-2">
-      <%= link_to "Judging", inventory_judging_path(request.query_parameters), 
-          class: "inline-block p-4 #{action_name == 'inventory_judging' ? 'text-blue-600 border-b-2 border-blue-600' : 'border-gray-200'} rounded-t-lg #{action_name == 'inventory_judging' ? 'active' : 'hover:border-b-2 hover:text-gray-600 hover:border-gray-300'}" %>
-    </li>
-    <li class="me-2">
-      <%= link_to "Heats", inventory_heats_path(request.query_parameters), 
-          class: "inline-block p-4 #{action_name == 'inventory_heats' ? 'text-blue-600 border-b-2 border-blue-600' : 'border-gray-200'} rounded-t-lg #{action_name == 'inventory_heats' ? 'active' : 'hover:border-b-2 hover:text-gray-600 hover:border-gray-300'}" %>
-    </li>
-  </ul>
-</div>
+<%= render 'inventory_nav' %>
 
 <h1 class="font-bold text-4xl mb-6">Event Options Summary</h1>
 
@@ -34,7 +15,7 @@
           <span class="text-gray-500 w-12 text-right mr-4"><%= data[:count] %></span>
           <% if data[:count] > 0 %>
             <%= link_to data[:label], inventory_path(column_order: value), 
-                class: "text-blue-600 hover:underline" %>
+                class: "text-blue-600 hover:underline", data: { turbo: false } %>
           <% else %>
             <span class="text-gray-600"><%= data[:label] %></span>
           <% end %>
@@ -52,7 +33,7 @@
           <span class="text-gray-500 w-12 text-right mr-4"><%= data[:count] %></span>
           <% if data[:count] > 0 %>
             <%= link_to data[:label], inventory_path(ballrooms: value), 
-                class: "text-blue-600 hover:underline" %>
+                class: "text-blue-600 hover:underline", data: { turbo: false } %>
           <% else %>
             <span class="text-gray-600"><%= data[:label] %></span>
           <% end %>
@@ -71,7 +52,7 @@
           <span class="text-gray-500 w-12 text-right mr-4"><%= data[:count] %></span>
           <% if data[:count] > 0 %>
             <%= link_to data[:label], inventory_path(pro_am: value), 
-                class: "text-blue-600 hover:underline" %>
+                class: "text-blue-600 hover:underline", data: { turbo: false } %>
           <% else %>
             <span class="text-gray-600"><%= data[:label] %></span>
           <% end %>
@@ -89,7 +70,7 @@
           <span class="text-gray-500 w-12 text-right mr-4"><%= data[:count] %></span>
           <% if data[:count] > 0 %>
             <%= link_to data[:label], inventory_path(heat_order: value), 
-                class: "text-blue-600 hover:underline" %>
+                class: "text-blue-600 hover:underline", data: { turbo: false } %>
           <% else %>
             <span class="text-gray-600"><%= data[:label] %></span>
           <% end %>
@@ -120,7 +101,7 @@
             <span class="text-gray-500 w-12 text-right mr-4"><%= data[:count] %></span>
             <% if data[:count] > 0 %>
               <%= link_to data[:label], inventory_path(option_name => value), 
-                  class: "text-blue-600 hover:underline" %>
+                  class: "text-blue-600 hover:underline", data: { turbo: false } %>
             <% else %>
               <span class="text-gray-600"><%= data[:label] %></span>
             <% end %>

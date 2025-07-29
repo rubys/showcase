@@ -709,12 +709,54 @@ class EventController < ApplicationController
 
     File.write('tmp/inventory.json', JSON.pretty_generate(@events))
 
-    # Filter events based on Event attributes passed as parameters
+    # Filter events based on Event attributes and table row counts passed as parameters
     params.each do |param_name, param_value|
-      if Event.attribute_names.include?(param_name) && param_value.present?
+      next unless param_value.present?
+      
+      if Event.attribute_names.include?(param_name)
+        # Handle Event attribute filtering
         @events.select! do |event|
           event_data = event[:event] || {}
           event_data[param_name].to_s == param_value.to_s
+        end
+      else
+        # Handle table-based filtering with comparison operators
+        # Supports: table_name>5, table_name>=10, table_name<3, table_name<=0, table_name=0
+        table_name = param_name
+        filter_value = param_value
+        
+        # Parse comparison operator and value
+        if filter_value =~ /^(>=|<=|>|<|=)(\d+)$/
+          operator = $1
+          threshold = $2.to_i
+          
+          @events.select! do |event|
+            rows_data = event[:rows] || {}
+            actual_count = rows_data[table_name] || 0
+            
+            case operator
+            when '>'
+              actual_count > threshold
+            when '>='
+              actual_count >= threshold
+            when '<'
+              actual_count < threshold
+            when '<='
+              actual_count <= threshold
+            when '='
+              actual_count == threshold
+            else
+              false
+            end
+          end
+        elsif filter_value =~ /^\d+$/
+          # Handle plain number as equality check
+          threshold = filter_value.to_i
+          @events.select! do |event|
+            rows_data = event[:rows] || {}
+            actual_count = rows_data[table_name] || 0
+            actual_count == threshold
+          end
         end
       end
     end
@@ -996,6 +1038,59 @@ class EventController < ApplicationController
           @option_counts[:heat_range_cat][cat_int][:count] += 1
         end
       end
+    end
+    
+    set_scope
+  end
+
+  def inventory_tables
+    # Load all events from tmp/inventory.json
+    @events = JSON.parse(File.read('tmp/inventory.json')) rescue []
+    
+    # Define the tables we want to track
+    @tracked_tables = %w[
+      active_storage_blobs
+      billables
+      feedbacks
+      age_costs
+      cat_extensions
+      formations
+      multis
+      package_includes
+      scores
+      songs
+      studio_pairs
+      recordings
+      tables
+    ]
+    
+    # Count events that have data in each table
+    @table_counts = {}
+    
+    @tracked_tables.each do |table_name|
+      @table_counts[table_name] = {
+        count: 0,
+        events: []
+      }
+      
+      @events.each do |event|
+        rows_data = event['rows'] || {}
+        table_count = rows_data[table_name] || 0
+        
+        if table_count > 0
+          @table_counts[table_name][:count] += 1
+          @table_counts[table_name][:events] << {
+            db: event['db'],
+            studio: event['studio'],
+            name: event['name'],
+            date: event['date'],
+            count: table_count
+          }
+        end
+      end
+      
+      # Sort events by count descending
+      @table_counts[table_name][:events].sort_by! { |e| -e[:count] }
     end
     
     set_scope
