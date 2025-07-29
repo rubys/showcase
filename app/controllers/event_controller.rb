@@ -647,45 +647,63 @@ class EventController < ApplicationController
         event[:date] ||= event["date"]
       end
 
-      event[:name] ||= dbquery(event[:db], 'events', 'name').first&.values&.first || 'Showcase'
-      event[:heats] = dbquery(event[:db], 'heats', 'count(distinct number)', 'number > 0').first&.values&.first || 0
-      
-      # Get table names and row counts in a single query
-      event[:rows] = {}
+      # Get event data, heat count, table info, and row counts in optimized queries
       begin
-        tables = dbquery(event[:db], "sqlite_master", "name", "type='table' AND name NOT LIKE 'sqlite_%'")
-        if tables.any?
-          counts_query = tables.map do |t|
-            table_name = t['name']
+        # Single query to get both event name and full event data
+        event_row = dbquery(event[:db], 'events').first
+        event[:event] = event_row || {}
+        event[:name] ||= event_row&.fetch('name', nil) || 'Showcase'
+        
+        # Single query to get heat count and table row counts via direct SQLite command
+        dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
+        
+        # Build a comprehensive query that gets both heat count and all table row counts
+        tables_query = "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+        tables_csv = `sqlite3 --csv --header #{dbpath}/#{event[:db]}.sqlite3 "#{tables_query}"`
+        
+        if !tables_csv.empty?
+          table_names = CSV.parse(tables_csv, headers: true).map { |row| row['name'] }
+          
+          # Build counts query for all tables plus heat count
+          counts_parts = table_names.map do |table_name|
             if table_name == 'entries'
-              # For entries, count rows where number > 0 (assuming entries are heats with number > 0)
+              # For entries, count heats where number > 0
               "SELECT 'entries' as table_name, COUNT(*) as count FROM heats WHERE number > 0"
+            elsif table_name == 'heats'
+              # For heats, get both total count and distinct number count
+              "SELECT 'heats' as table_name, COUNT(*) as count FROM heats UNION ALL SELECT 'heat_numbers' as table_name, COUNT(DISTINCT number) as count FROM heats WHERE number > 0"
             else
               "SELECT '#{table_name}' as table_name, COUNT(*) as count FROM [#{table_name}]"
             end
-          end.join(' UNION ALL ')
+          end
           
-          dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
-          csv = `sqlite3 --csv --header #{dbpath}/#{event[:db]}.sqlite3 "#{counts_query}"`
+          counts_query = counts_parts.join(' UNION ALL ')
+          counts_csv = `sqlite3 --csv --header #{dbpath}/#{event[:db]}.sqlite3 "#{counts_query}"`
           
-          unless csv.empty?
-            CSV.parse(csv, headers: true).each do |row|
-              event[:rows][row['table_name']] = row['count'].to_i
+          event[:rows] = {}
+          unless counts_csv.empty?
+            CSV.parse(counts_csv, headers: true).each do |row|
+              if row['table_name'] == 'heat_numbers'
+                event[:heats] = row['count'].to_i
+              else
+                event[:rows][row['table_name']] = row['count'].to_i
+              end
             end
           end
+          
+          # Fallback for heat count if not set
+          event[:heats] ||= 0
+        else
+          event[:rows] = {}
+          event[:heats] = 0
         end
+        
       rescue => e
-        # If there's an error getting table info, set empty hash
-        event[:rows] = {}
-      end
-      
-      # Get the first row from events table as JSON
-      begin
-        event_row = dbquery(event[:db], 'events').first
-        event[:event] = event_row || {}
-      rescue => e
-        # If there's an error getting event data, set empty hash
+        # If there's an error, set defaults
         event[:event] = {}
+        event[:name] ||= 'Showcase'
+        event[:rows] = {}
+        event[:heats] = 0
       end
     end
 
