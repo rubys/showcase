@@ -48,6 +48,8 @@ Rails.application.routes.draw do
 
     if ENV.fetch("RAILS_APP_DB", '') == 'index' or Rails.env.test?
       get "/inventory", to: 'event#inventory'
+      get "/inventory/options", to: 'event#inventory_options', as: 'inventory_options'
+      get "/inventory/judging", to: 'event#inventory_judging', as: 'inventory_judging'
       match "/upload" => "event#upload", via: [:get, :post]
 
       get 'admin/', to: "admin#index"

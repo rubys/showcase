@@ -713,6 +713,157 @@ class EventController < ApplicationController
     set_scope
   end
 
+  def inventory_options
+    
+    # Load all events from tmp/inventory.json
+    @events = JSON.parse(File.read('tmp/inventory.json')) rescue []
+    
+    
+    # Group options by their values
+    @option_counts = {}
+    
+    # Column order options
+    @option_counts[:column_order] = {
+      1 => { label: 'Lead, Follow', count: 0 },
+      2 => { label: 'Student, Instructor (Lead, Follow for Amateur Couples)', count: 0 }
+    }
+    
+    # Ballroom options
+    @option_counts[:ballrooms] = {
+      1 => { label: 'One ballroom', count: 0 },
+      2 => { label: 'Two ballrooms: A: Amateur follower with instructor, B: Amateur leader (includes amateur couples)', count: 0 },
+      3 => { label: 'Attempt to evenly split couples between ballrooms', count: 0 },
+      4 => { label: 'Assign ballrooms by studio', count: 0 }
+    }
+    
+    
+    # Pro/Am options
+    @option_counts[:pro_am] = {
+      'G' => { label: 'L=Lady, G=Gentleman', count: 0 },
+      'L' => { label: 'F=Follower, L=Leader', count: 0 }
+    }
+    
+    # Heat order options
+    @option_counts[:heat_order] = {
+      'L' => { label: 'Newcomer to Advanced', count: 0 },
+      'R' => { label: 'Random', count: 0 }
+    }
+    
+    # Boolean options (only those on the Options settings page)
+    boolean_options = [:intermix, :backnums, :track_ages, :include_open, :include_closed,
+                      :pro_heats, :agenda_based_entries, :independent_instructors, :strict_scoring]
+    
+    boolean_options.each do |option|
+      @option_counts[option] = {
+        true => { label: 'Yes', count: 0 },
+        false => { label: 'No', count: 0 }
+      }
+    end
+    
+    # Count events for each option
+    @events.each do |event|
+      event_data = event['event'] || {}
+      
+      @option_counts.each do |option_name, values|
+        # Access with string key since JSON doesn't symbolize
+        value = event_data[option_name.to_s]
+        next if value.nil? || value == ""
+        
+        # Convert string numbers to integers for numeric options
+        value = value.to_i if [:column_order, :ballrooms].include?(option_name)
+        # Convert strings to booleans for boolean options ("0" = false, "1" = true)
+        if boolean_options.include?(option_name)
+          value = value.to_s == "1" || value.to_s.downcase == "true"
+        end
+        # Keep string values for pro_am and heat_order
+        value = value.to_s if [:pro_am, :heat_order].include?(option_name)
+        
+        if values[value]
+          values[value][:count] += 1
+        end
+      end
+    end
+    
+    set_scope
+  end
+
+  def inventory_judging
+    
+    # Load all events from tmp/inventory.json
+    @events = JSON.parse(File.read('tmp/inventory.json')) rescue []
+    
+    # Group judging options by their values
+    @option_counts = {}
+    
+    # Open scoring options
+    @option_counts[:open_scoring] = {
+      '1' => { label: '1/2/3/F', count: 0 },
+      'G' => { label: 'GH/G/S/B', count: 0 },
+      '#' => { label: 'Number (85, 95, ...)', count: 0 },
+      '+' => { label: 'Feedback (Needs Work On / Great Job With)', count: 0 },
+      '&' => { label: 'Number (1-5) and Feedback', count: 0 },
+      '@' => { label: 'GH/G/S/B and Feedback', count: 0 },
+      '0' => { label: 'None', count: 0 }
+    }
+    
+    # Closed scoring options
+    @option_counts[:closed_scoring] = {
+      '1' => { label: '1/2/3/F', count: 0 },
+      'G' => { label: 'GH/G/S/B', count: 0 },
+      '#' => { label: 'Number (85, 95, ...)', count: 0 },
+      '=' => { label: 'Same as Open', count: 0 }
+    }
+    
+    # Multi scoring options
+    @option_counts[:multi_scoring] = {
+      1 => { label: '1/2/3/F', count: 0 },
+      'G' => { label: 'GH/G/S/B', count: 0 },
+      '#' => { label: 'Number (85, 95, ...)', count: 0 }
+    }
+    
+    # Solo scoring options
+    @option_counts[:solo_scoring] = {
+      1 => { label: 'One number (0-100)', count: 0 },
+      4 => { label: 'Technique, Execution, Poise, Showmanship (each 0-25)', count: 0 }
+    }
+    
+    # Boolean judging options
+    boolean_options = [:judge_comments, :judge_recordings, :assign_judges]
+    
+    boolean_options.each do |option|
+      @option_counts[option] = {
+        true => { label: 'Yes', count: 0 },
+        false => { label: 'No', count: 0 }
+      }
+    end
+    
+    # Count events for each option
+    @events.each do |event|
+      event_data = event['event'] || {}
+      
+      @option_counts.each do |option_name, values|
+        # Access with string key since JSON doesn't symbolize
+        value = event_data[option_name.to_s]
+        next if value.nil? || value == ""
+        
+        # Convert string numbers to integers for numeric options
+        value = value.to_i if [:solo_scoring].include?(option_name)
+        # Keep string values for multi_scoring and scoring options
+        value = value.to_s if [:multi_scoring, :open_scoring, :closed_scoring].include?(option_name)
+        # Convert strings to booleans for boolean options ("0" = false, "1" = true)
+        if boolean_options.include?(option_name)
+          value = value.to_s == "1" || value.to_s.downcase == "true"
+        end
+        
+        if values[value]
+          values[value][:count] += 1
+        end
+      end
+    end
+    
+    set_scope
+  end
+
   def regions
     return select if params[:year]
     return redirect_to root_path(db: params[:db]) if params[:db]
