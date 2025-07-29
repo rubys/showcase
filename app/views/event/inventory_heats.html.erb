@@ -21,18 +21,19 @@
   </ul>
 </div>
 
-<h1 class="font-bold text-4xl mb-6">Judging Options Summary</h1>
+<h1 class="font-bold text-4xl mb-6">Heat Options Summary</h1>
 
 <div class="space-y-8">
-  <% # Open scoring %>
+  <% # Max heat size %>
+  <% if @option_counts[:max_heat_size].any? %>
   <div class="bg-white rounded-lg shadow p-6">
-    <h2 class="font-bold text-2xl mb-4">Open Scoring</h2>
+    <h2 class="font-bold text-2xl mb-4">Max heat size</h2>
     <ul class="space-y-2">
-      <% @option_counts[:open_scoring].each do |value, data| %>
+      <% @option_counts[:max_heat_size].each do |value, data| %>
         <li class="flex items-center">
           <span class="text-gray-500 w-12 text-right mr-4"><%= data[:count] %></span>
           <% if data[:count] > 0 %>
-            <%= link_to data[:label], inventory_path(open_scoring: value), 
+            <%= link_to data[:label], inventory_path(max_heat_size: value), 
                 class: "text-blue-600 hover:underline" %>
           <% else %>
             <span class="text-gray-600"><%= data[:label] %></span>
@@ -41,86 +42,65 @@
       <% end %>
     </ul>
   </div>
-
-  <% # Closed scoring %>
-  <div class="bg-white rounded-lg shadow p-6">
-    <h2 class="font-bold text-2xl mb-4">Closed Scoring</h2>
-    <ul class="space-y-2">
-      <% @option_counts[:closed_scoring].each do |value, data| %>
-        <li class="flex items-center">
-          <span class="text-gray-500 w-12 text-right mr-4"><%= data[:count] %></span>
-          <% if data[:count] > 0 %>
-            <%= link_to data[:label], inventory_path(closed_scoring: value), 
-                class: "text-blue-600 hover:underline" %>
-          <% else %>
-            <span class="text-gray-600"><%= data[:label] %></span>
-          <% end %>
-        </li>
-      <% end %>
-    </ul>
-  </div>
-
-  <% # Multi scoring %>
-  <div class="bg-white rounded-lg shadow p-6">
-    <h2 class="font-bold text-2xl mb-4">Multi Scoring</h2>
-    <ul class="space-y-2">
-      <% @option_counts[:multi_scoring].each do |value, data| %>
-        <li class="flex items-center">
-          <span class="text-gray-500 w-12 text-right mr-4"><%= data[:count] %></span>
-          <% if data[:count] > 0 %>
-            <%= link_to data[:label], inventory_path(multi_scoring: value), 
-                class: "text-blue-600 hover:underline" %>
-          <% else %>
-            <span class="text-gray-600"><%= data[:label] %></span>
-          <% end %>
-        </li>
-      <% end %>
-    </ul>
-  </div>
-
-  <% # Solo scoring %>
-  <div class="bg-white rounded-lg shadow p-6">
-    <h2 class="font-bold text-2xl mb-4">Solo Scoring</h2>
-    <ul class="space-y-2">
-      <% @option_counts[:solo_scoring].each do |value, data| %>
-        <li class="flex items-center">
-          <span class="text-gray-500 w-12 text-right mr-4"><%= data[:count] %></span>
-          <% if data[:count] > 0 %>
-            <%= link_to data[:label], inventory_path(solo_scoring: value), 
-                class: "text-blue-600 hover:underline" %>
-          <% else %>
-            <span class="text-gray-600"><%= data[:label] %></span>
-          <% end %>
-        </li>
-      <% end %>
-    </ul>
-  </div>
-
-  <% # Boolean judging options %>
-  <% option_labels = {
-    judge_comments: 'Enable judge comments?',
-    judge_recordings: 'Enable judge recordings? - Experimental',
-    assign_judges: 'Assign judges couples to evaluate?'
-  } %>
-  
-  <% option_labels.each do |option_name, label| %>
-    <div class="bg-white rounded-lg shadow p-6">
-      <h2 class="font-bold text-2xl mb-4"><%= label %></h2>
-      <ul class="space-y-2">
-        <% @option_counts[option_name].each do |value, data| %>
-          <li class="flex items-center">
-            <span class="text-gray-500 w-12 text-right mr-4"><%= data[:count] %></span>
-            <% if data[:count] > 0 %>
-              <%= link_to data[:label], inventory_path(option_name => value), 
-                  class: "text-blue-600 hover:underline" %>
-            <% else %>
-              <span class="text-gray-600"><%= data[:label] %></span>
-            <% end %>
-          </li>
-        <% end %>
-      </ul>
-    </div>
   <% end %>
+
+  <% # Heat range level %>
+  <% if @option_counts[:heat_range_level].any? %>
+  <div class="bg-white rounded-lg shadow p-6">
+    <h2 class="font-bold text-2xl mb-4">Level separation</h2>
+    <ul class="space-y-2">
+      <% @option_counts[:heat_range_level].each do |value, data| %>
+        <li class="flex items-center">
+          <span class="text-gray-500 w-12 text-right mr-4"><%= data[:count] %></span>
+          <% if data[:count] > 0 %>
+            <%= link_to data[:label], inventory_path(heat_range_level: value), 
+                class: "text-blue-600 hover:underline" %>
+          <% else %>
+            <span class="text-gray-600"><%= data[:label] %></span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+  <% end %>
+
+  <% # Heat range age %>
+  <% if @option_counts[:heat_range_age].any? %>
+  <div class="bg-white rounded-lg shadow p-6">
+    <h2 class="font-bold text-2xl mb-4">Age separation</h2>
+    <ul class="space-y-2">
+      <% @option_counts[:heat_range_age].each do |value, data| %>
+        <li class="flex items-center">
+          <span class="text-gray-500 w-12 text-right mr-4"><%= data[:count] %></span>
+          <% if data[:count] > 0 %>
+            <%= link_to data[:label], inventory_path(heat_range_age: value), 
+                class: "text-blue-600 hover:underline" %>
+          <% else %>
+            <span class="text-gray-600"><%= data[:label] %></span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+  <% end %>
+
+  <% # Heat range category (open/closed) %>
+  <div class="bg-white rounded-lg shadow p-6">
+    <h2 class="font-bold text-2xl mb-4">Open/Closed separation</h2>
+    <ul class="space-y-2">
+      <% @option_counts[:heat_range_cat].each do |value, data| %>
+        <li class="flex items-center">
+          <span class="text-gray-500 w-12 text-right mr-4"><%= data[:count] %></span>
+          <% if data[:count] > 0 %>
+            <%= link_to data[:label], inventory_path(heat_range_cat: value), 
+                class: "text-blue-600 hover:underline" %>
+          <% else %>
+            <span class="text-gray-600"><%= data[:label] %></span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
 
 </div>
 

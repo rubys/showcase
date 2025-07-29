@@ -882,6 +882,125 @@ class EventController < ApplicationController
     set_scope
   end
 
+  def inventory_heats
+    # Load all events from tmp/inventory.json
+    @events = JSON.parse(File.read('tmp/inventory.json')) rescue []
+    
+    # Group heat options by their values
+    @option_counts = {}
+    
+    # Max heat size - group by common sizes
+    @option_counts[:max_heat_size] = {}
+    
+    # Heat range level - need to convert numeric values to meaningful labels
+    @option_counts[:heat_range_level] = {}
+    
+    # Heat range age - need to convert numeric values to meaningful labels  
+    @option_counts[:heat_range_age] = {}
+    
+    # Heat range category (open/closed) - 0 = separate, 1 = combined
+    @option_counts[:heat_range_cat] = {
+      0 => { label: 'Open and Closed ranges may differ', count: 0 },
+      1 => { label: 'Combine Open and Closed', count: 0 }
+    }
+    
+    # First pass: collect all unique values to build proper labels
+    max_heat_sizes = Set.new
+    heat_range_levels = Set.new
+    heat_range_ages = Set.new
+    
+    @events.each do |event|
+      event_data = event['event'] || {}
+      
+      # Collect max heat sizes
+      size = event_data['max_heat_size']
+      max_heat_sizes.add(size.to_i) if size && size != ""
+      
+      # Collect heat range levels
+      level = event_data['heat_range_level']
+      heat_range_levels.add(level.to_i) if level && level != ""
+      
+      # Collect heat range ages
+      age = event_data['heat_range_age']
+      heat_range_ages.add(age.to_i) if age && age != ""
+    end
+    
+    # Build max heat size options
+    max_heat_sizes.sort.each do |size|
+      @option_counts[:max_heat_size][size] = { 
+        label: size == 0 ? 'No limit' : "#{size} dancers per heat", 
+        count: 0 
+      }
+    end
+    
+    # Build heat range level options - these are slider positions (0 = strictest, higher = more permissive)
+    heat_range_levels.sort.each do |level|
+      label = case level
+              when 0 then 'Strictest level separation'
+              when 1 then 'Allow one level difference'  
+              when 2 then 'Allow two level difference'
+              when 3 then 'Allow three level difference'
+              else "Allow up to #{level} level difference"
+              end
+      @option_counts[:heat_range_level][level] = { label: label, count: 0 }
+    end
+    
+    # Build heat range age options - these are slider positions (0 = strictest, higher = more permissive)
+    heat_range_ages.sort.each do |age|
+      label = case age
+              when 0 then 'Strictest age separation'
+              when 1 then 'Allow one age category difference'
+              when 2 then 'Allow two age category difference'  
+              when 3 then 'Allow three age category difference'
+              else "Allow up to #{age} age category difference"
+              end
+      @option_counts[:heat_range_age][age] = { label: label, count: 0 }
+    end
+    
+    # Count events for each option
+    @events.each do |event|
+      event_data = event['event'] || {}
+      
+      # Count max heat size
+      size = event_data['max_heat_size']
+      if size && size != ""
+        size_int = size.to_i
+        if @option_counts[:max_heat_size][size_int]
+          @option_counts[:max_heat_size][size_int][:count] += 1
+        end
+      end
+      
+      # Count heat range level
+      level = event_data['heat_range_level']
+      if level && level != ""
+        level_int = level.to_i
+        if @option_counts[:heat_range_level][level_int]
+          @option_counts[:heat_range_level][level_int][:count] += 1
+        end
+      end
+      
+      # Count heat range age
+      age = event_data['heat_range_age']
+      if age && age != ""
+        age_int = age.to_i
+        if @option_counts[:heat_range_age][age_int]
+          @option_counts[:heat_range_age][age_int][:count] += 1
+        end
+      end
+      
+      # Count heat range category
+      cat = event_data['heat_range_cat']
+      if cat && cat != ""
+        cat_int = cat.to_i
+        if @option_counts[:heat_range_cat][cat_int]
+          @option_counts[:heat_range_cat][cat_int][:count] += 1
+        end
+      end
+    end
+    
+    set_scope
+  end
+
   def regions
     return select if params[:year]
     return redirect_to root_path(db: params[:db]) if params[:db]

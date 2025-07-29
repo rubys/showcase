@@ -50,6 +50,7 @@ Rails.application.routes.draw do
       get "/inventory", to: 'event#inventory'
       get "/inventory/options", to: 'event#inventory_options', as: 'inventory_options'
       get "/inventory/judging", to: 'event#inventory_judging', as: 'inventory_judging'
+      get "/inventory/heats", to: 'event#inventory_heats', as: 'inventory_heats'
       match "/upload" => "event#upload", via: [:get, :post]
 
       get 'admin/', to: "admin#index"
