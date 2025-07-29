@@ -755,8 +755,8 @@ class EventController < ApplicationController
     
     boolean_options.each do |option|
       @option_counts[option] = {
-        true => { label: 'Yes', count: 0 },
-        false => { label: 'No', count: 0 }
+        '1' => { label: 'Yes', count: 0 },
+        '0' => { label: 'No', count: 0 }
       }
     end
     
@@ -771,9 +771,9 @@ class EventController < ApplicationController
         
         # Convert string numbers to integers for numeric options
         value = value.to_i if [:column_order, :ballrooms].include?(option_name)
-        # Convert strings to booleans for boolean options ("0" = false, "1" = true)
+        # Keep string values for boolean options ("0" or "1")
         if boolean_options.include?(option_name)
-          value = value.to_s == "1" || value.to_s.downcase == "true"
+          value = value.to_s
         end
         # Keep string values for pro_am and heat_order
         value = value.to_s if [:pro_am, :heat_order].include?(option_name)
@@ -832,8 +832,8 @@ class EventController < ApplicationController
     
     boolean_options.each do |option|
       @option_counts[option] = {
-        true => { label: 'Yes', count: 0 },
-        false => { label: 'No', count: 0 }
+        '1' => { label: 'Yes', count: 0 },
+        '0' => { label: 'No', count: 0 }
       }
     end
     
@@ -850,9 +850,9 @@ class EventController < ApplicationController
         value = value.to_i if [:solo_scoring].include?(option_name)
         # Keep string values for multi_scoring and scoring options
         value = value.to_s if [:multi_scoring, :open_scoring, :closed_scoring].include?(option_name)
-        # Convert strings to booleans for boolean options ("0" = false, "1" = true)
+        # Keep string values for boolean options ("0" or "1")
         if boolean_options.include?(option_name)
-          value = value.to_s == "1" || value.to_s.downcase == "true"
+          value = value.to_s
         end
         
         if values[value]
