@@ -249,6 +249,8 @@
         :name: La La Land Metal Ball
       district-showcase:
         :name: District Showcase
+      theatre-extravaganza:
+        :name: Theatre Extravaganza
   marlton:
     :name: Marlton
     :region: ewr
