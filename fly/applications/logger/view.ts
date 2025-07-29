@@ -47,9 +47,9 @@ export function format(match: RegExpMatchArray) {
     status = `<a href="request/${request_id}">${status}</a>`
   }
 
-  let path = match[6]
+  let [path, query] = match[6].split('?', 2)
   if (path.startsWith("showcase/")) path = path.slice(9)
-  let link = `<a href="${HOST}/${path}">${path}</a>`
+  let link = query ? `<a href="${HOST}/${path}?${query}" title="${query}">${path}</a>` : `<a href="${HOST}/${path}">${path}</a>`
   let ip = match[2].split(',')[0]
 
   let regionColor = request_region && request_region[1] === match[1] ? 'green' : 'maroon'
