@@ -628,13 +628,13 @@ class EventController < ApplicationController
        mtime = File.mtime(File.join('db', "#{event[:db]}.sqlite3")).to_i rescue nil
 
        cache = @inventory.find {|e| e['db'] == event[:db]}
-       if cache and cache['mtime'] == mtime and !cache['heats'].blank?
+       if cache and cache['mtime'] == mtime and cache['rows'] and cache['event'] and !cache['heats'].blank?
          event[:mtime] = cache['mtime']
          event[:date] = cache['date']
          event[:name] = cache['name']
-         event[:people] = cache['people']
-         event[:entries] = cache['entries']
          event[:heats] = cache['heats']
+         event[:rows] = cache['rows']
+         event[:event] = cache['event']
          next
        end
 
@@ -648,10 +648,45 @@ class EventController < ApplicationController
       end
 
       event[:name] ||= dbquery(event[:db], 'events', 'name').first&.values&.first || 'Showcase'
-
-      event[:people] = dbquery(event[:db], 'people', 'count(id)').first&.values&.first || 0
-      event[:entries] = dbquery(event[:db], 'heats', 'count(id)', 'number > 0').first&.values&.first || 0
       event[:heats] = dbquery(event[:db], 'heats', 'count(distinct number)', 'number > 0').first&.values&.first || 0
+      
+      # Get table names and row counts in a single query
+      event[:rows] = {}
+      begin
+        tables = dbquery(event[:db], "sqlite_master", "name", "type='table' AND name NOT LIKE 'sqlite_%'")
+        if tables.any?
+          counts_query = tables.map do |t|
+            table_name = t['name']
+            if table_name == 'entries'
+              # For entries, count rows where number > 0 (assuming entries are heats with number > 0)
+              "SELECT 'entries' as table_name, COUNT(*) as count FROM heats WHERE number > 0"
+            else
+              "SELECT '#{table_name}' as table_name, COUNT(*) as count FROM [#{table_name}]"
+            end
+          end.join(' UNION ALL ')
+          
+          dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
+          csv = `sqlite3 --csv --header #{dbpath}/#{event[:db]}.sqlite3 "#{counts_query}"`
+          
+          unless csv.empty?
+            CSV.parse(csv, headers: true).each do |row|
+              event[:rows][row['table_name']] = row['count'].to_i
+            end
+          end
+        end
+      rescue => e
+        # If there's an error getting table info, set empty hash
+        event[:rows] = {}
+      end
+      
+      # Get the first row from events table as JSON
+      begin
+        event_row = dbquery(event[:db], 'events').first
+        event[:event] = event_row || {}
+      rescue => e
+        # If there's an error getting event data, set empty hash
+        event[:event] = {}
+      end
     end
 
     File.write('tmp/inventory.json', JSON.pretty_generate(@events))
@@ -662,8 +697,8 @@ class EventController < ApplicationController
     @events.reverse!
 
     @events.sort_by! {|event| -event[:heats].to_i} if params[:sort] == 'heats'
-    @events.sort_by! {|event| -event[:people].to_i} if params[:sort] == 'people'
-    @events.sort_by! {|event| -event[:entries].to_i} if params[:sort] == 'entries'
+    @events.sort_by! {|event| -(event[:rows]['people'] || 0)} if params[:sort] == 'people'
+    @events.sort_by! {|event| -(event[:rows]['entries'] || 0)} if params[:sort] == 'entries'
 
     set_scope
   end

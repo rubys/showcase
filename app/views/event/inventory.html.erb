@@ -38,7 +38,7 @@
       end
     end
   %>
-  <% if event[:entries].to_i == 0 && !event[:date].start_with?(Date.today.year.to_s) %>
+  <% if (event[:rows]['entries'] || 0) == 0 && !event[:date].start_with?(Date.today.year.to_s) %>
   <tr class="bg-gray-200">
   <% else %>
   <tr>
@@ -47,9 +47,9 @@
     <td><%= link_to event[:studio], studio_events_path(city) %>
     <td><%= link_to event[:name], "#{@scope}/#{year}/#{city}/#{token}/".squeeze('/') %>
     <td><%= event[:date] %>
-    <td align="right"><%= event[:people] %>
+    <td align="right"><%= event[:rows]['people'] || 0 %>
     <td align="right"><%= event[:heats] %>
-    <td align="right"><%= event[:entries] %>
+    <td align="right"><%= event[:rows]['entries'] || 0 %>
 <% end %>
 </tbody>
 </table>
