@@ -5,10 +5,10 @@
 <tr>
 <th align="left">Studio
 <th align="left">Event
-<th align="left"><%= link_to "Date",  inventory_path %>
-<th align="right"><%= link_to "People",  inventory_path(sort: 'people') %>
-<th align="right"><%= link_to "Heats",  inventory_path(sort: 'heats') %>
-<th align="right"><%= link_to "Entries", inventory_path(sort: 'entries') %>
+<th align="left"><%= link_to "Date",  inventory_path(request.query_parameters.except('sort')) %>
+<th align="right"><%= link_to "People",  inventory_path(request.query_parameters.merge(sort: 'people')) %>
+<th align="right"><%= link_to "Heats",  inventory_path(request.query_parameters.merge(sort: 'heats')) %>
+<th align="right"><%= link_to "Entries", inventory_path(request.query_parameters.merge(sort: 'entries')) %>
 <tr>
 </thead>
 <tbody>

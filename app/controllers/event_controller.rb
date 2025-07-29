@@ -691,6 +691,16 @@ class EventController < ApplicationController
 
     File.write('tmp/inventory.json', JSON.pretty_generate(@events))
 
+    # Filter events based on Event attributes passed as parameters
+    params.each do |param_name, param_value|
+      if Event.attribute_names.include?(param_name) && param_value.present?
+        @events.select! do |event|
+          event_data = event[:event] || {}
+          event_data[param_name].to_s == param_value.to_s
+        end
+      end
+    end
+
     @events.sort_by! {|event| event[:studio]}
     @events.reverse!
     @events.sort_by! {|event| event[:date]}
