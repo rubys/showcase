@@ -144,7 +144,7 @@
             <div>
               <span class="font-semibold">People (<%= table.people.count %>):</span>
               <ul class="list-disc list-inside mt-2">
-                <% table.people.includes(:studio).order('studios.name', :name).each do |person| %>
+                <% table.people.joins(:studio).order('studios.name', :name).each do |person| %>
                   <li class="ml-4">
                     <%= person.name %>
                     <span class="text-gray-600">(<%= person.studio.name %>)</span>

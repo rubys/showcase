@@ -439,7 +439,9 @@ class TablesController < ApplicationController
     
     # Get all options with their tables
     @options_with_tables = []
-    Billable.where(type: 'Option').order(:order, :name).each do |option|
+    # Get option IDs that have tables to avoid loading options without tables
+    option_ids_with_tables = option_ids_with_tables.compact  # Remove nil (main event)
+    Billable.where(type: 'Option', id: option_ids_with_tables).order(:order, :name).each do |option|
       tables = Table.includes(:person_options => {:person => :studio})
                     .where(option_id: option.id)
                     .order(:number)
@@ -727,7 +729,7 @@ class TablesController < ApplicationController
       option_name = option ? option.name : "Main Event"
       
       # Get all tables for this option
-      tables = Table.where(option_id: option_id).includes(:people, :person_options)
+      tables = Table.where(option_id: option_id).includes(:people => :studio, :person_options => {:person => :studio})
       
       # Group tables by studio for analysis
       studio_tables = {}
@@ -736,10 +738,10 @@ class TablesController < ApplicationController
         # Get people for this table based on context
         people = if option_id
           # For option tables, get people through person_options
-          table.person_options.includes(:person => :studio).map(&:person)
+          table.person_options.map(&:person)
         else
           # For main event tables, get people directly
-          table.people.includes(:studio)
+          table.people
         end
         
         # Group people by studio
