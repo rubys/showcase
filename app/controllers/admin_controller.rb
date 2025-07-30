@@ -205,18 +205,12 @@ class AdminController < ApplicationController
          event[:heats] = cache['heats']
          event[:rows] = cache['rows']
          event[:event] = cache['event']
-          event[:functions] = cache['functions']
+         event[:functions] = cache['functions']
          next
        end
 
        event[:mtime] = mtime
-
-      if event["date"].blank?
-        event[:date] = event[:year].to_s
-      else
-        event[:date] = Event.parse_date(event["date"], now: Time.local(event[:year], 1, 1)).to_date.iso8601
-        event[:date] ||= event["date"]
-      end
+       event[:date] = event[:year].to_s
 
       # Get event data, heat count, table info, and row counts in optimized queries
       begin
@@ -224,6 +218,10 @@ class AdminController < ApplicationController
         event_row = dbquery(event[:db], 'events').first
         event[:event] = event_row || {}
         event[:name] ||= event_row&.fetch('name', nil) || 'Showcase'
+
+        if !event_row["date"].blank?
+          event[:date] = Event.parse_date(event_row["date"], now: Time.local(event[:year], 1, 1)).to_date.iso8601
+        end
         
         # Single query to get heat count and table row counts via direct SQLite command
         dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }

@@ -1,21 +1,22 @@
 module DbQuery
+  require 'sqlite3'
+
   def dbquery(db, table, fields=nil, where=nil)
-    if fields
-      fields = Array(fields).map(&:inspect).join(', ') unless fields.is_a? String
+    dbpath = ENV.fetch('RAILS_DB_VOLUME', 'db')
+    dbfile = "#{dbpath}/#{db}.sqlite3"
+    dbconn = SQLite3::Database.new(dbfile)
+    dbconn.results_as_hash = true
+
+    fields_str = if fields
+      Array(fields).map { |f| "`#{f}`" }.join(', ')
     else
-      fields = '*'
+      '*'
     end
 
-    query = "select #{fields} from #{table}"
-    query += " where #{where}" if where
+    query = "SELECT #{fields_str} FROM #{table}"
+    query += " WHERE #{where}" if where
 
-    dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
-    csv = `sqlite3 --csv --header #{dbpath}/#{db}.sqlite3 "#{query}"`
-
-    if csv.empty?
-      []
-    else
-      CSV.parse(csv, headers: true).map(&:to_h)
-    end
+    results = dbconn.execute(query)
+    results.map { |row| row.transform_keys(&:to_s) }
   end
 end
