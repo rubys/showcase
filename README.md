@@ -68,25 +68,27 @@ application using import maps for JavaScript and
 
 Models are split into two categories:
 
-**Base models** support ballroom dance event management: ages, billables 
-(packages and options), categories (with extensions), dances, entries, events, 
-feedbacks, formations, heats, levels, multi-dances, people (judges, instructors, 
-students, guests, emcees, and DJs using single-table inheritance), recordings, 
-scores, solos, songs, studios (with studio pairs), and tables for seating 
-assignments.
+**Base models** support ballroom dance event management: ages (with costs), 
+billables (packages and options), categories (with extensions), dances, entries, 
+events, feedbacks, formations, heats, judges, levels, multi-dances, package 
+includes, people (students, instructors, guests, etc.), person options, 
+recordings, scores, solos, songs, studios (with studio pairs), and tables.
 
-**Admin models** support system administration and multi-tenancy: locales 
-(internationalization), locations (venues), regions (deployment infrastructure), 
-showcases (individual events), and users (authentication/authorization).
+**Admin models** support system administration and multi-tenancy: locales, 
+locations, regions, showcases, and users.
 
-The heat scheduler can be found in
-[app/controllers/concerns/heat_scheduler.rb](./app/controllers/concerns/heat_scheduler.rb).
-It collects heats by agenda category, schedules them in two passes (first pass
-minimizes the number of heats, the second pass balances heats size), interleaves
-dances of different types within an agenda category, then appends solos.
+The heat scheduler in
+[app/controllers/concerns/heat_scheduler.rb](./app/controllers/concerns/heat_scheduler.rb)
+uses a two-pass algorithm: first minimizing heat count, then balancing heat 
+sizes. It interleaves different dance types within agenda categories and 
+appends manually-ordered solos.
 
-Order of solos within an agenda category is controlled entirely manually via
-drag and drop.
+The table assignment system in
+[app/controllers/concerns/table_assigner.rb](./app/controllers/concerns/table_assigner.rb)
+offers two algorithms: **Regular Assignment** prioritizes keeping studios 
+together, while **Pack Assignment** maximizes table utilization. Both support 
+locked tables for special requirements and achieve near 100% success rate 
+using intelligent grid placement for complex seating scenarios.
 
 The initial configuration had a 8 year old i3
 Linux box running Apache httpd handing SSL and reverse proxying the application
