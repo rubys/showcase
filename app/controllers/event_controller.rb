@@ -530,13 +530,15 @@ class EventController < ApplicationController
       end
     end
 
+    dbpath = ENV.fetch('RAILS_DB_VOLUME') { Rails.root.join('db').to_s }
+
     @showcases.each do |year, sites|
       sites.each do |token, info|
         logos.add info[:logo] || "arthur-murray-logo.gif"
         if info[:events]
           info[:events].each do |subtoken, subinfo|
             db = "#{year}-#{token}-#{subtoken}"
-            mtime = File.mtime(File.join('db', "#{db}.sqlite3")).to_i rescue nil
+            mtime = File.mtime(File.join(dbpath, "#{db}.sqlite3")).to_i rescue nil
             cache = @inventory.find {|e| e['db'] == db}
             if cache and cache['mtime'] == mtime
               subinfo['date'] = cache['date'] unless cache['date'] =~ /^\d{4}$/
