@@ -47,11 +47,11 @@ Rails.application.routes.draw do
     end
 
     if ENV.fetch("RAILS_APP_DB", '') == 'index' or Rails.env.test?
-      get "/inventory", to: 'event#inventory'
-      get "/inventory/options", to: 'event#inventory_options', as: 'inventory_options'
-      get "/inventory/judging", to: 'event#inventory_judging', as: 'inventory_judging'
-      get "/inventory/heats", to: 'event#inventory_heats', as: 'inventory_heats'
-      get "/inventory/tables", to: 'event#inventory_tables', as: 'inventory_tables'
+      get "/inventory", to: 'admin#inventory'
+      get "/inventory/options", to: 'admin#inventory_options', as: 'inventory_options'
+      get "/inventory/judging", to: 'admin#inventory_judging', as: 'inventory_judging'
+      get "/inventory/heats", to: 'admin#inventory_heats', as: 'inventory_heats'
+      get "/inventory/tables", to: 'admin#inventory_tables', as: 'inventory_tables'
       match "/upload" => "event#upload", via: [:get, :post]
 
       get 'admin/', to: "admin#index"
