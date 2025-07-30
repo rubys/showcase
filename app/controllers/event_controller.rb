@@ -1179,4 +1179,9 @@ class EventController < ApplicationController
 
 private
 
+  def set_scope
+    @scope = ENV.fetch("RAILS_APP_SCOPE", '')
+    @scope = '/' + @scope unless @scope.empty?
+    @scope = ENV['RAILS_RELATIVE_URL_ROOT'] + '/' + @scope if ENV['RAILS_RELATIVE_URL_ROOT']
+  end
 end

@@ -4,6 +4,15 @@ class AdminController < ApplicationController
 
   before_action :admin_home
 
+  # Registry of functions that return boolean values based on SQL queries
+  FUNCTIONS = {
+    'scrutineering' => {
+      name: 'Scrutineering',
+      description: 'Events using scrutineering (semi-finals)',
+      query: "SELECT EXISTS(SELECT 1 FROM dances WHERE semi_finals = 1) as result"
+    }
+  }.freeze
+
   def index
     if ENV['FLY_REGION']
       redirect_to 'https://rubix.intertwingly.net/showcase/admin',
@@ -196,6 +205,7 @@ class AdminController < ApplicationController
          event[:heats] = cache['heats']
          event[:rows] = cache['rows']
          event[:event] = cache['event']
+          event[:functions] = cache['functions']
          next
        end
 
@@ -259,16 +269,38 @@ class AdminController < ApplicationController
           event[:heats] = 0
         end
         
+        # Extract function information
+        event[:functions] = {}
+        FUNCTIONS.each do |function_key, function_def|
+          begin
+            result = `sqlite3 #{dbpath}/#{event[:db]}.sqlite3 "#{function_def[:query]}"`
+            # Parse the result - SQLite returns 1 for true, 0 for false
+            event[:functions][function_key] = result.strip == '1'
+          rescue => func_error
+            # If there's an error (e.g., table doesn't exist), assume false
+            event[:functions][function_key] = false
+          end
+        end
+        
       rescue => e
         # If there's an error, set defaults
         event[:event] = {}
         event[:name] ||= 'Showcase'
         event[:rows] = {}
         event[:heats] = 0
+        event[:functions] = {}
+        FUNCTIONS.keys.each { |key| event[:functions][key] = false }
       end
     end
 
+    # Write complete data to cache BEFORE filtering
     File.write('tmp/inventory.json', JSON.pretty_generate(@events))
+
+    # Create a copy for filtering (don't modify the original @events)
+    filtered_events = @events.dup
+
+    # Get list of database tables for filtering
+    tables = ActiveRecord::Base.connection.tables
 
     # Filter events based on Event attributes and table row counts passed as parameters
     params.each do |param_name, param_value|
@@ -276,11 +308,20 @@ class AdminController < ApplicationController
       
       if Event.attribute_names.include?(param_name)
         # Handle Event attribute filtering
-        @events.select! do |event|
+        filtered_events.select! do |event|
           event_data = event[:event] || {}
           event_data[param_name].to_s == param_value.to_s
         end
-      else
+      elsif FUNCTIONS.keys.include?(param_name)
+        # Handle function-based filtering
+        # Supports: function_name=true, function_name=false
+        expected_value = param_value.downcase == 'true'
+        filtered_events.select! do |event|
+          functions_data = event[:functions] || {}
+          actual_value = functions_data[param_name] || false
+          actual_value == expected_value
+        end
+      elsif tables.include?(param_name)
         # Handle table-based filtering with comparison operators
         # Supports: table_name>5, table_name>=10, table_name<3, table_name<=0, table_name=0
         table_name = param_name
@@ -291,7 +332,7 @@ class AdminController < ApplicationController
           operator = $1
           threshold = $2.to_i
           
-          @events.select! do |event|
+          filtered_events.select! do |event|
             rows_data = event[:rows] || {}
             actual_count = rows_data[table_name] || 0
             
@@ -313,7 +354,7 @@ class AdminController < ApplicationController
         elsif filter_value =~ /^\d+$/
           # Handle plain number as equality check
           threshold = filter_value.to_i
-          @events.select! do |event|
+          filtered_events.select! do |event|
             rows_data = event[:rows] || {}
             actual_count = rows_data[table_name] || 0
             actual_count == threshold
@@ -321,6 +362,9 @@ class AdminController < ApplicationController
         end
       end
     end
+
+    # Use filtered events for display
+    @events = filtered_events
 
     @events.sort_by! {|event| event[:studio]}
     @events.reverse!
@@ -623,7 +667,7 @@ class AdminController < ApplicationController
       studio_pairs
       recordings
       tables
-    ]
+    ].sort
     
     # Count events that have data in each table
     @table_counts = {}
@@ -652,6 +696,42 @@ class AdminController < ApplicationController
       
       # Sort events by count descending
       @table_counts[table_name][:events].sort_by! { |e| -e[:count] }
+    end
+    
+    set_scope
+  end
+
+  def inventory_functions
+    # Load all events from tmp/inventory.json
+    @events = JSON.parse(File.read('tmp/inventory.json')) rescue []
+    
+    # Count events that have each function enabled
+    @function_counts = {}
+    
+    FUNCTIONS.keys.sort.each do |function_key|
+      function_def = FUNCTIONS[function_key]
+      @function_counts[function_key] = {
+        name: function_def[:name],
+        count: 0,
+        events: []
+      }
+      
+      @events.each do |event|
+        functions_data = event['functions'] || {}
+        
+        if functions_data[function_key] == true
+          @function_counts[function_key][:count] += 1
+          @function_counts[function_key][:events] << {
+            db: event['db'],
+            studio: event['studio'],
+            name: event['name'],
+            date: event['date']
+          }
+        end
+      end
+      
+      # Sort events by date descending
+      @function_counts[function_key][:events].sort_by! { |e| e[:date] }.reverse!
     end
     
     set_scope

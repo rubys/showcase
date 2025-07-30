@@ -1,0 +1,23 @@
+<div class="w-full mx-12">
+
+<%= render 'inventory_nav' %>
+
+<h1 class="font-bold text-4xl mb-6">Function Usage Summary</h1>
+
+<div class="bg-white rounded-lg shadow p-6">
+  <ul class="space-y-2">
+    <% @function_counts.each do |function_key, function_data| %>
+      <li class="flex items-center">
+        <span class="text-gray-500 w-12 text-right mr-4"><%= function_data[:count] %></span>
+        <% if function_data[:count] > 0 %>
+          <%= link_to function_data[:name], inventory_path(function_key => 'true'), 
+              class: "text-blue-600 hover:underline", data: { turbo: false } %>
+        <% else %>
+          <span class="text-gray-600"><%= function_data[:name] %></span>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+</div>
+
+</div>
