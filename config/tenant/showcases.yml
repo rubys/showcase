@@ -189,6 +189,8 @@
         :name: Spring
       music-city:
         :name: Music City
+      newsome-twosome:
+        :name: Newsome Twosome
   harrisburg:
     :name: Harrisburg
     :region: iad
