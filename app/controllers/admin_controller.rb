@@ -10,6 +10,16 @@ class AdminController < ApplicationController
       name: 'Scrutineering',
       description: 'Events using scrutineering (semi-finals)',
       query: "SELECT EXISTS(SELECT 1 FROM dances WHERE semi_finals = 1) as result"
+    },
+    'options' => {
+      name: 'Options',
+      description: 'Events with option packages',
+      query: "SELECT EXISTS(SELECT 1 FROM billables WHERE type = 'Option') as result"
+    },
+    'routines' => {
+      name: 'Routines',
+      description: 'Events with routine categories',
+      query: "SELECT EXISTS(SELECT 1 FROM categories WHERE routines = 1) as result"
     }
   }.freeze
 
@@ -223,16 +233,11 @@ class AdminController < ApplicationController
           event[:date] = Event.parse_date(event_row["date"], now: Time.local(event[:year], 1, 1)).to_date.iso8601
         end
         
-        # Single query to get heat count and table row counts via direct SQLite command
-        dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
-        
-        # Build a comprehensive query that gets both heat count and all table row counts
+        # Get table names using dbquery
         tables_query = "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
-        tables_csv = `sqlite3 --csv --header #{dbpath}/#{event[:db]}.sqlite3 "#{tables_query}"`
+        table_names = dbquery_raw(event[:db], tables_query).map { |row| row['name'] }
         
-        if !tables_csv.empty?
-          table_names = CSV.parse(tables_csv, headers: true).map { |row| row['name'] }
-          
+        if !table_names.empty?
           # Build counts query for all tables plus heat count
           counts_parts = table_names.map do |table_name|
             if table_name == 'entries'
@@ -247,16 +252,14 @@ class AdminController < ApplicationController
           end
           
           counts_query = counts_parts.join(' UNION ALL ')
-          counts_csv = `sqlite3 --csv --header #{dbpath}/#{event[:db]}.sqlite3 "#{counts_query}"`
+          counts_results = dbquery_raw(event[:db], counts_query)
           
           event[:rows] = {}
-          unless counts_csv.empty?
-            CSV.parse(counts_csv, headers: true).each do |row|
-              if row['table_name'] == 'heat_numbers'
-                event[:heats] = row['count'].to_i
-              else
-                event[:rows][row['table_name']] = row['count'].to_i
-              end
+          counts_results.each do |row|
+            if row['table_name'] == 'heat_numbers'
+              event[:heats] = row['count'].to_i
+            else
+              event[:rows][row['table_name']] = row['count'].to_i
             end
           end
           
@@ -267,16 +270,33 @@ class AdminController < ApplicationController
           event[:heats] = 0
         end
         
-        # Extract function information
+        # Extract function information using a single UNION ALL query
         event[:functions] = {}
-        FUNCTIONS.each do |function_key, function_def|
+        
+        if FUNCTIONS.any?
+          # Build a single query for all functions
+          function_queries = FUNCTIONS.map do |function_key, function_def|
+            "SELECT '#{function_key}' as function_name, (#{function_def[:query]}) as result"
+          end
+          
+          combined_query = function_queries.join(' UNION ALL ')
+          
           begin
-            result = `sqlite3 #{dbpath}/#{event[:db]}.sqlite3 "#{function_def[:query]}"`
-            # Parse the result - SQLite returns 1 for true, 0 for false
-            event[:functions][function_key] = result.strip == '1'
-          rescue => func_error
-            # If there's an error (e.g., table doesn't exist), assume false
-            event[:functions][function_key] = false
+            results = dbquery_raw(event[:db], combined_query)
+            
+            # Process results
+            results.each do |row|
+              function_key = row['function_name']
+              event[:functions][function_key] = row['result'] == 1
+            end
+            
+            # Set any missing functions to false
+            FUNCTIONS.keys.each do |key|
+              event[:functions][key] ||= false
+            end
+          rescue => e
+            # If the combined query fails, set all functions to false
+            FUNCTIONS.keys.each { |key| event[:functions][key] = false }
           end
         end
         
@@ -385,6 +405,9 @@ class AdminController < ApplicationController
     # Group options by their values
     @option_counts = {}
     
+    # Dance limit options
+    @option_counts[:dance_limit] = {}
+    
     # Column order options
     @option_counts[:column_order] = {
       1 => { label: 'Lead, Follow', count: 0 },
@@ -423,6 +446,23 @@ class AdminController < ApplicationController
       }
     end
     
+    # Collect all unique dance_limit values
+    dance_limits = Set.new
+    
+    @events.each do |event|
+      event_data = event['event'] || {}
+      limit = event_data['dance_limit']
+      dance_limits.add(limit.to_i) if limit && limit != ""
+    end
+    
+    # Create dance_limit options
+    dance_limits.sort.each do |limit|
+      @option_counts[:dance_limit][limit] = { 
+        label: limit.to_s, 
+        count: 0 
+      }
+    end
+    
     # Count events for each option
     @events.each do |event|
       event_data = event['event'] || {}
@@ -433,7 +473,7 @@ class AdminController < ApplicationController
         next if value.nil? || value == ""
         
         # Convert string numbers to integers for numeric options
-        value = value.to_i if [:column_order, :ballrooms].include?(option_name)
+        value = value.to_i if [:column_order, :ballrooms, :dance_limit].include?(option_name)
         # Keep string values for boolean options ("0" or "1")
         if boolean_options.include?(option_name)
           value = value.to_s

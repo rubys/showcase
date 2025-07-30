@@ -18,5 +18,19 @@ module DbQuery
 
     results = dbconn.execute(query)
     results.map { |row| row.transform_keys(&:to_s) }
+  ensure
+    dbconn&.close
+  end
+
+  def dbquery_raw(db, sql)
+    dbpath = ENV.fetch('RAILS_DB_VOLUME', 'db')
+    dbfile = "#{dbpath}/#{db}.sqlite3"
+    dbconn = SQLite3::Database.new(dbfile)
+    dbconn.results_as_hash = true
+
+    results = dbconn.execute(sql)
+    results.map { |row| row.transform_keys(&:to_s) }
+  ensure
+    dbconn&.close
   end
 end

@@ -80,7 +80,7 @@
   </div>
 
   <% # Boolean options (only those on the Options settings page) %>
-  <% option_labels = {
+  <% option_labels_before_dance_limit = {
     intermix: 'Intermix dances within category?',
     backnums: 'Use back numbers?',
     track_ages: 'Track student ages?',
@@ -88,11 +88,10 @@
     include_closed: 'Include closed freestyles?',
     pro_heats: 'Include pro heats?',
     agenda_based_entries: 'Match entry forms to agenda?',
-    independent_instructors: 'Include independent instructors?',
-    strict_scoring: 'Strictly enforce levels and age scoring?'
+    independent_instructors: 'Include independent instructors?'
   } %>
   
-  <% option_labels.each do |option_name, label| %>
+  <% option_labels_before_dance_limit.each do |option_name, label| %>
     <div class="bg-white rounded-lg shadow p-6">
       <h2 class="font-bold text-2xl mb-4"><%= label %></h2>
       <ul class="space-y-2">
@@ -110,6 +109,44 @@
       </ul>
     </div>
   <% end %>
+
+  <% # Dance limit (appears right before strict_scoring in settings) %>
+  <% if @option_counts[:dance_limit].any? %>
+  <div class="bg-white rounded-lg shadow p-6">
+    <h2 class="font-bold text-2xl mb-4">Limit # of entries per dance per category</h2>
+    <ul class="space-y-2">
+      <% @option_counts[:dance_limit].each do |value, data| %>
+        <li class="flex items-center">
+          <span class="text-gray-500 w-12 text-right mr-4"><%= data[:count] %></span>
+          <% if data[:count] > 0 %>
+            <%= link_to data[:label], inventory_path(dance_limit: value), 
+                class: "text-blue-600 hover:underline", data: { turbo: false } %>
+          <% else %>
+            <span class="text-gray-600"><%= data[:label] %></span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+  <% end %>
+
+  <% # Strict scoring (last option in settings) %>
+  <div class="bg-white rounded-lg shadow p-6">
+    <h2 class="font-bold text-2xl mb-4">Strictly enforce levels and age scoring?</h2>
+    <ul class="space-y-2">
+      <% @option_counts[:strict_scoring].each do |value, data| %>
+        <li class="flex items-center">
+          <span class="text-gray-500 w-12 text-right mr-4"><%= data[:count] %></span>
+          <% if data[:count] > 0 %>
+            <%= link_to data[:label], inventory_path(strict_scoring: value), 
+                class: "text-blue-600 hover:underline", data: { turbo: false } %>
+          <% else %>
+            <span class="text-gray-600"><%= data[:label] %></span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
 </div>
 
 </div>
