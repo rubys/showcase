@@ -1,6 +1,7 @@
 class AdminController < ApplicationController
   include Configurator
   include DbQuery
+  include ShowcaseInventory
 
   before_action :admin_home
 
@@ -180,139 +181,8 @@ class AdminController < ApplicationController
   end
 
   def inventory
-    @inventory = JSON.parse(File.read('tmp/inventory.json')) rescue []
-    @showcases = YAML.load_file('config/tenant/showcases.yml')
-
-    @events = []
-
-    @showcases.each do |year, sites|
-      sites.each do |token, info|
-        if info[:events]
-          info[:events].each do |subtoken, subinfo|
-            subinfo[:db] = "#{year}-#{token}-#{subtoken}"
-            subinfo[:studio] = info[:name]
-            subinfo[:year] = year
-            @events << subinfo
-          end
-        else
-          info[:db] = "#{year}-#{token}"
-          info[:studio] = info[:name]
-          info[:name] = nil
-          info[:year] = year
-          @events << info
-        end
-      end
-    end
-
-    @events.each do |event|
-       mtime = File.mtime(File.join('db', "#{event[:db]}.sqlite3")).to_i rescue nil
-
-       cache = @inventory.find {|e| e['db'] == event[:db]}
-       if cache and cache['mtime'] == mtime and cache['rows'] and cache['event'] and !cache['heats'].blank?
-         event[:mtime] = cache['mtime']
-         event[:date] = cache['date']
-         event[:name] = cache['name']
-         event[:heats] = cache['heats']
-         event[:rows] = cache['rows']
-         event[:event] = cache['event']
-         event[:functions] = cache['functions']
-         next
-       end
-
-       event[:mtime] = mtime
-       event[:date] = event[:year].to_s
-
-      # Get event data, heat count, table info, and row counts in optimized queries
-      begin
-        # Single query to get both event name and full event data
-        event_row = dbquery(event[:db], 'events').first
-        event[:event] = event_row || {}
-        event[:name] ||= event_row&.fetch('name', nil) || 'Showcase'
-
-        if !event_row["date"].blank?
-          event[:date] = Event.parse_date(event_row["date"], now: Time.local(event[:year], 1, 1)).to_date.iso8601
-        end
-        
-        # Get table names using dbquery
-        tables_query = "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
-        table_names = dbquery_raw(event[:db], tables_query).map { |row| row['name'] }
-        
-        if !table_names.empty?
-          # Build counts query for all tables plus heat count
-          counts_parts = table_names.map do |table_name|
-            if table_name == 'entries'
-              # For entries, count heats where number > 0
-              "SELECT 'entries' as table_name, COUNT(*) as count FROM heats WHERE number > 0"
-            elsif table_name == 'heats'
-              # For heats, get both total count and distinct number count
-              "SELECT 'heats' as table_name, COUNT(*) as count FROM heats UNION ALL SELECT 'heat_numbers' as table_name, COUNT(DISTINCT number) as count FROM heats WHERE number > 0"
-            else
-              "SELECT '#{table_name}' as table_name, COUNT(*) as count FROM [#{table_name}]"
-            end
-          end
-          
-          counts_query = counts_parts.join(' UNION ALL ')
-          counts_results = dbquery_raw(event[:db], counts_query)
-          
-          event[:rows] = {}
-          counts_results.each do |row|
-            if row['table_name'] == 'heat_numbers'
-              event[:heats] = row['count'].to_i
-            else
-              event[:rows][row['table_name']] = row['count'].to_i
-            end
-          end
-          
-          # Fallback for heat count if not set
-          event[:heats] ||= 0
-        else
-          event[:rows] = {}
-          event[:heats] = 0
-        end
-        
-        # Extract function information using a single UNION ALL query
-        event[:functions] = {}
-        
-        if FUNCTIONS.any?
-          # Build a single query for all functions
-          function_queries = FUNCTIONS.map do |function_key, function_def|
-            "SELECT '#{function_key}' as function_name, (#{function_def[:query]}) as result"
-          end
-          
-          combined_query = function_queries.join(' UNION ALL ')
-          
-          begin
-            results = dbquery_raw(event[:db], combined_query)
-            
-            # Process results
-            results.each do |row|
-              function_key = row['function_name']
-              event[:functions][function_key] = row['result'] == 1
-            end
-            
-            # Set any missing functions to false
-            FUNCTIONS.keys.each do |key|
-              event[:functions][key] ||= false
-            end
-          rescue => e
-            # If the combined query fails, set all functions to false
-            FUNCTIONS.keys.each { |key| event[:functions][key] = false }
-          end
-        end
-        
-      rescue => e
-        # If there's an error, set defaults
-        event[:event] = {}
-        event[:name] ||= 'Showcase'
-        event[:rows] = {}
-        event[:heats] = 0
-        event[:functions] = {}
-        FUNCTIONS.keys.each { |key| event[:functions][key] = false }
-      end
-    end
-
-    # Write complete data to cache BEFORE filtering
-    File.write('tmp/inventory.json', JSON.pretty_generate(@events))
+    # Build full inventory for all showcases
+    @events = build_inventory(full_inventory: true)
 
     # Create a copy for filtering (don't modify the original @events)
     filtered_events = @events.dup
@@ -399,7 +269,7 @@ class AdminController < ApplicationController
   def inventory_options
     
     # Load all events from tmp/inventory.json
-    @events = JSON.parse(File.read('tmp/inventory.json')) rescue []
+    @events = load_inventory_data
     
     
     # Group options by their values
@@ -493,7 +363,7 @@ class AdminController < ApplicationController
   def inventory_judging
     
     # Load all events from tmp/inventory.json
-    @events = JSON.parse(File.read('tmp/inventory.json')) rescue []
+    @events = load_inventory_data
     
     # Group judging options by their values
     @option_counts = {}
@@ -569,7 +439,7 @@ class AdminController < ApplicationController
 
   def inventory_heats
     # Load all events from tmp/inventory.json
-    @events = JSON.parse(File.read('tmp/inventory.json')) rescue []
+    @events = load_inventory_data
     
     # Group heat options by their values
     @option_counts = {}
@@ -688,7 +558,7 @@ class AdminController < ApplicationController
 
   def inventory_tables
     # Load all events from tmp/inventory.json
-    @events = JSON.parse(File.read('tmp/inventory.json')) rescue []
+    @events = load_inventory_data
     
     # Define the tables we want to track
     @tracked_tables = %w[
@@ -741,7 +611,7 @@ class AdminController < ApplicationController
 
   def inventory_functions
     # Load all events from tmp/inventory.json
-    @events = JSON.parse(File.read('tmp/inventory.json')) rescue []
+    @events = load_inventory_data
     
     # Count events that have each function enabled
     @function_counts = {}
@@ -776,12 +646,6 @@ class AdminController < ApplicationController
   end
 
 private
-
-  def set_scope
-    @scope = ENV.fetch("RAILS_APP_SCOPE", '')
-    @scope = '/' + @scope unless @scope.empty?
-    @scope = ENV['RAILS_RELATIVE_URL_ROOT'] + '/' + @scope if ENV['RAILS_RELATIVE_URL_ROOT']
-  end
 
   def parse_showcases(file)
     showcases = []

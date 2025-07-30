@@ -8,6 +8,7 @@ class EventController < ApplicationController
   include DbQuery
   include HeatScheduler
   include ActiveStorage::SetCurrent
+  include ShowcaseInventory
 
   skip_before_action :authenticate_user, only: %i[ counter showcases regions console upload ]
   skip_before_action :verify_authenticity_token, only: :console
@@ -472,6 +473,7 @@ class EventController < ApplicationController
   end
 
   def showcases
+    # Load base data
     @inventory = JSON.parse(File.read('tmp/inventory.json')) rescue []
     @showcases = YAML.load_file('config/tenant/showcases.yml')
     logos = Set.new
@@ -530,48 +532,17 @@ class EventController < ApplicationController
       end
     end
 
-    dbpath = ENV.fetch('RAILS_DB_VOLUME') { Rails.root.join('db').to_s }
+    # Build minimal inventory for filtered showcases
+    build_inventory(full_inventory: false, showcases: @showcases)
 
+    # Collect logos from showcases
     @showcases.each do |year, sites|
       sites.each do |token, info|
         logos.add info[:logo] || "arthur-murray-logo.gif"
-        if info[:events]
-          info[:events].each do |subtoken, subinfo|
-            db = "#{year}-#{token}-#{subtoken}"
-            mtime = File.mtime(File.join(dbpath, "#{db}.sqlite3")).to_i rescue nil
-            cache = @inventory.find {|e| e['db'] == db}
-            if cache and cache['mtime'] == mtime
-              subinfo['date'] = cache['date'] unless cache['date'] =~ /^\d{4}$/
-            else
-              begin
-                subinfo.merge! dbquery(db, 'events', 'date').first
-                @inventory.delete cache if cache
-                @inventory << {'db' => db, 'mtime' => mtime, 'date' => subinfo['date']}
-              rescue
-              end
-            end
-          end
-        else
-          db = "#{year}-#{token}"
-          mtime = File.mtime(File.join('db', "#{db}.sqlite3")).to_i rescue nil
-          cache = @inventory.find {|e| e['db'] == db}
-          if cache and cache['mtime'] == mtime
-            info['date'] = cache['date'] unless cache['date'] =~ /^\d{4}$/
-          else
-            begin
-              info.merge! dbquery(db, 'events', 'date').first
-              @inventory.delete cache if cache
-              @inventory << {'db' => db, 'mtime' => mtime, 'date' => subinfo['date']}
-            rescue
-            end
-          end
-        end
       end
-
-      set_scope
     end
 
-    File.write('tmp/inventory.json', JSON.pretty_generate(@inventory))
+    set_scope
 
     if logos.size == 1
       EventController.logo = logos.first
