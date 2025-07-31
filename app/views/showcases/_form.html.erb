@@ -1,4 +1,4 @@
-<%= form_with(model: showcase, class: "contents", id: 'showcase-form', data: {controller: 'geocode name-to-token'}) do |form| %>
+<%= form_with(model: showcase, class: "contents", id: 'showcase-form', data: {controller: 'name-to-token'}) do |form| %>
   <% if showcase.errors.any? %>
     <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
       <h2><%= pluralize(showcase.errors.count, "error") %> prohibited this showcase from being saved:</h2>

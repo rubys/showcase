@@ -43,9 +43,9 @@ class ShowcasesController < ApplicationController
     end
 
     unless Rails.env.test?
-      @people = dbquery(@db, 'people', 'count(id)').first&.values&.first || 0
-      @entries = dbquery(@db, 'heats', 'count(id)', 'number > 0').first&.values&.first || 0
-      @heats = dbquery(@db, 'heats', 'count(distinct number)', 'number > 0').first&.values&.first || 0
+      @people = dbquery_raw(@db, 'SELECT count(id) FROM people').first&.values&.first || 0
+      @entries = dbquery_raw(@db, 'SELECT count(id) FROM heats WHERE number > 0').first&.values&.first || 0
+      @heats = dbquery_raw(@db, 'SELECT count(distinct number) FROM heats WHERE number > 0').first&.values&.first || 0
     end
   end
 
