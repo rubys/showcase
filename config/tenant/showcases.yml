@@ -187,10 +187,10 @@
     :events:
       spring:
         :name: Spring
-      music-city:
-        :name: Music City
       newsome-twosome:
         :name: Newsome Twosome
+      music-city:
+        :name: Music City
   harrisburg:
     :name: Harrisburg
     :region: iad
@@ -647,8 +647,6 @@
     :events:
       spring:
         :name: Spring
-      music-city:
-        :name: Music City
       revival:
         :name: Revival
   harrisburg:
