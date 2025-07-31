@@ -46,7 +46,8 @@ module ShowcaseInventory
   end
 
   def process_event_inventory(event, full_inventory: true)
-    mtime = File.mtime(File.join('db', "#{event[:db]}.sqlite3")).to_i rescue nil
+    dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
+    mtime = File.mtime(File.join(dbpath, "#{event[:db]}.sqlite3")).to_i rescue nil
     cache = @inventory.find { |e| e['db'] == event[:db] }
     
     if full_inventory
@@ -57,7 +58,7 @@ module ShowcaseInventory
       build_full_inventory_data(event, mtime)
     else
       # EventController logic - minimal cache
-      if cache&.fetch('mtime') == mtime
+      if cache && cache['mtime'] == mtime
         return apply_minimal_cache(event, cache)
       end
       build_minimal_inventory_data(event, mtime)
@@ -182,6 +183,7 @@ module ShowcaseInventory
   end
 
   def apply_minimal_cache(event, cache)
+    return unless cache
     event[:info]['date'] = cache['date'] unless cache['date'] =~ /^\d{4}$/
   end
 

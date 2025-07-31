@@ -33,4 +33,18 @@
     <%= form.select :location_id, @locations, {},
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
+
+  <div data-controller="date-range">
+    <div class="my-5">
+      <%= form.label :start_date, 'Start Date' %>
+      <%= form.date_field :start_date, value: showcase.start_date,
+        class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+    </div>
+    <div class="my-5">
+      <% end_date = showcase.end_date %>
+      <%= form.label :end_date, 'End Date' %>
+      <%= form.date_field :end_date, value: end_date.blank? || (showcase.start_date && end_date < showcase.start_date) ? showcase.start_date : end_date,
+        class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+    </div>
+  </div>
 <% end %>

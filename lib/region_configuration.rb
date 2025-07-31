@@ -273,9 +273,15 @@ module RegionConfiguration
           entry[:logo] = location.logo
         end
 
-        if location_events.length > 1
-          entry[:events] = location_events.reverse
-            .map { |event| [event.key, { name: event.name }] }.to_h
+        if location_events.length == 1
+          showcase = location_events.first
+          entry[:date] = showcase.date if showcase.date.present?
+        elsif location_events.length > 1
+          entry[:events] = location_events.reverse.map do |event|
+            event_data = { name: event.name }
+            event_data[:date] = event.date if event.date.present?
+            [event.key, event_data]
+          end.to_h
         end
 
         [location_key, entry]
