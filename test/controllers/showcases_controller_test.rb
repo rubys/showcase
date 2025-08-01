@@ -54,4 +54,19 @@ class ShowcasesControllerTest < ActionDispatch::IntegrationTest
     get studio_request_url(location_key: @showcase.location.key)
     assert_response :success
   end
+
+  test "should handle edit when database doesn't exist" do
+    # Create a showcase that won't have a corresponding database
+    showcase = Showcase.create!(
+      name: "Nonexistent DB Test",
+      key: "nonexistent-test",
+      year: 9999,
+      location: @showcase.location
+    )
+    
+    get edit_showcase_url(showcase)
+    assert_response :success
+    # Just verify the page loads without error when database doesn't exist
+    assert_select "h2", text: "Statistics:"
+  end
 end

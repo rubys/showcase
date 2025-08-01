@@ -45,9 +45,16 @@ class ShowcasesController < ApplicationController
     end
 
     unless Rails.env.test?
-      @people = dbquery_raw(@db, 'SELECT count(id) FROM people').first&.values&.first || 0
-      @entries = dbquery_raw(@db, 'SELECT count(id) FROM heats WHERE number > 0').first&.values&.first || 0
-      @heats = dbquery_raw(@db, 'SELECT count(distinct number) FROM heats WHERE number > 0').first&.values&.first || 0
+      begin
+        @people = dbquery_raw(@db, 'SELECT count(id) FROM people').first&.values&.first || 0
+        @entries = dbquery_raw(@db, 'SELECT count(id) FROM heats WHERE number > 0').first&.values&.first || 0
+        @heats = dbquery_raw(@db, 'SELECT count(distinct number) FROM heats WHERE number > 0').first&.values&.first || 0
+      rescue SQLite3::SQLException, Errno::ENOENT
+        # Database doesn't exist yet - this is expected for requested but not yet created showcases
+        @people = 0
+        @entries = 0
+        @heats = 0
+      end
     end
   end
 
