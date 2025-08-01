@@ -21,7 +21,7 @@ class ShowcasesControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to events_location_path(@showcase.location)
-    assert_equal flash[:notice], 'MyString2 was successfully created.'
+    assert_equal 'MyString2 was successfully requested.', flash[:notice]
   end
 
   test "should show showcase" do
@@ -37,7 +37,7 @@ class ShowcasesControllerTest < ActionDispatch::IntegrationTest
   test "should update showcase" do
     patch showcase_url(@showcase), params: { showcase: { key: @showcase.key, name: @showcase.name, location_id: @showcase.location_id, year: @showcase.year } }
     assert_redirected_to events_location_path(@showcase.location)
-    assert_equal flash[:notice], 'MyString was successfully updated.'
+    assert_equal 'MyString was successfully updated.', flash[:notice]
   end
 
   test "should destroy showcase" do
@@ -47,6 +47,11 @@ class ShowcasesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response 303
     assert_redirected_to events_location_path(@showcase.location)
-    assert_equal flash[:notice], 'MyString was successfully destroyed.'
+    assert_equal 'MyString was successfully destroyed.', flash[:notice]
+  end
+
+  test "should get new_request" do
+    get studio_request_url(location_key: @showcase.location.key)
+    assert_response :success
   end
 end

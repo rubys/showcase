@@ -5,6 +5,8 @@ class ShowcasesController < ApplicationController
   before_action :set_showcase, only: %i[ show edit update destroy ]
   before_action :admin_home
 
+  permit_site_owners :new_request, :create
+
   # GET /showcases or /showcases.json
   def index
     @showcases = Showcase.all
@@ -49,9 +51,33 @@ class ShowcasesController < ApplicationController
     end
   end
 
+  # GET /studios/:location_key/request
+  def new_request
+    location = Location.find_by(key: params[:location_key])
+    
+    if location.nil?
+      redirect_to root_path, alert: "Location not found"
+      return
+    end
+    
+    @showcase = Showcase.new
+    @showcase.location_id = location.id
+    @showcase.name = 'Showcase'
+    @showcase.key = 'showcase'
+    
+    @locations = [[location.name, location.id]]
+    @location_key = params[:location_key]
+  end
+
   # POST /showcases or /showcases.json
   def create
     @showcase = Showcase.new(showcase_params)
+
+    # Infer year from start_date if year is not provided
+    if @showcase.year.blank? && params[:showcase][:start_date].present?
+      # Parse the date from params
+      @showcase.year = Date.parse(params[:showcase][:start_date]).year
+    end
 
     @showcase.order = (Showcase.maximum(:order) || 0) + 1
 
@@ -59,8 +85,15 @@ class ShowcasesController < ApplicationController
       if @showcase.save
         generate_showcases
 
-        format.html { redirect_to events_location_url(@showcase.location),
-          notice: "#{@showcase.name} was successfully created." }
+        # Redirect based on user type
+        if User.index_auth?(@authuser)
+          format.html { redirect_to events_location_url(@showcase.location),
+            notice: "#{@showcase.name} was successfully created." }
+        else
+          # Use the same redirect for now, can be customized later
+          format.html { redirect_to events_location_url(@showcase.location),
+            notice: "#{@showcase.name} was successfully requested." }
+        end
         format.json { render :show, status: :created, location: @showcase }
       else
         new

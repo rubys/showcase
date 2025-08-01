@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 // Connects to data-controller="date-range"
 export default class extends Controller {
-  static targets = ["output"]
+  static targets = ["output", "startDate", "endDate"]
   static values = { date: String, year: String }
 
   connect() {
@@ -10,14 +10,17 @@ export default class extends Controller {
       this.outputTarget.textContent = this.formatDate(this.dateValue.split(' - '))
     }
 
-    const startDate = this.element.querySelector('#event_start_date')
-    if (startDate) {
-      const endDate = this.element.querySelector('#event_end_date')
-      startDate.addEventListener('change', () => {
-        if (startDate.value > endDate.value) endDate.value = startDate.value
+    // Set up date synchronization using targets
+    if (this.hasStartDateTarget && this.hasEndDateTarget) {
+      this.startDateTarget.addEventListener('change', () => {
+        if (this.startDateTarget.value > this.endDateTarget.value) {
+          this.endDateTarget.value = this.startDateTarget.value
+        }
       })
-      endDate.addEventListener('change', () => {
-        if (endDate.value < startDate.value) startDate.value = endDate.value
+      this.endDateTarget.addEventListener('change', () => {
+        if (this.endDateTarget.value < this.startDateTarget.value) {
+          this.startDateTarget.value = this.endDateTarget.value
+        }
       })
     }
 

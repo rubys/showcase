@@ -1,0 +1,47 @@
+<div class="mx-auto md:w-2/3 w-full">
+  <h1 class="font-bold text-4xl">Request new showcase</h1>
+
+  <%= form_with(model: @showcase, url: showcases_path, class: "contents", id: 'showcase-form', data: {controller: 'name-to-token'}) do |form| %>
+    <% if @showcase.errors.any? %>
+      <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
+        <h2><%= pluralize(@showcase.errors.count, "error") %> prohibited this showcase from being saved:</h2>
+
+        <ul>
+          <% @showcase.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="my-5">
+      <%= form.label :name %>
+      <%= form.text_field :name, data: {"name-to-token-target" => "name"},
+        class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+    </div>
+
+    <%= form.hidden_field :key, data: {"name-to-token-target" => "token"} %>
+    <%= form.hidden_field :location_id %>
+
+    <div data-controller="date-range">
+      <div class="my-5">
+        <%= form.label :start_date, 'Start Date' %>
+        <%= form.date_field :start_date, value: @showcase.start_date, required: true,
+          data: { "date-range-target": "startDate" },
+          class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+      </div>
+      <div class="my-5">
+        <% end_date = @showcase.end_date %>
+        <%= form.label :end_date, 'End Date' %>
+        <%= form.date_field :end_date, value: end_date.blank? || (@showcase.start_date && end_date < @showcase.start_date) ? @showcase.start_date : end_date,
+          data: { "date-range-target": "endDate" },
+          class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="mx-auto flex">
+    <input type="submit" class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" form="showcase-form" value="Request Showcase">
+    <%= link_to "Back to studio", "/studios/#{@location_key}", class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  </div>
+</div>
