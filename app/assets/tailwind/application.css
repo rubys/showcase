@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /*
 
@@ -131,4 +129,3 @@
    bg-blue-400
   }
 }
-@import 'actiontext.css';
