@@ -473,6 +473,8 @@ class EventController < ApplicationController
   end
 
   def showcases
+    flash[:notice] ||= "Request submitted, check your email for updates." if params[:submitted]
+
     # Load base data
     @inventory = JSON.parse(File.read('tmp/inventory.json')) rescue []
     @showcases = YAML.load_file('config/tenant/showcases.yml')
