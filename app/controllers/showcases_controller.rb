@@ -115,7 +115,7 @@ class ShowcasesController < ApplicationController
         generate_showcases
 
         # Send email confirmation unless user is index authorized
-        unless User.index_auth?(@authuser)
+        unless Rails.env.test? || User.index_auth?(@authuser)
           send_showcase_request_email(@showcase)
         end
 
@@ -222,7 +222,7 @@ class ShowcasesController < ApplicationController
       
       mail = Mail.new do
         from 'Sam Ruby <rubys@intertwingly.net>'
-        to requester_email if requester_email
+        to "#{requester_name} <#{requester_email}>" if requester_email
         bcc 'Sam Ruby <rubys@intertwingly.net>'
         subject "Showcase Request: #{showcase.location.name} #{showcase.year} - #{showcase.name}"
       end
