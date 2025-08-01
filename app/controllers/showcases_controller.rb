@@ -5,6 +5,7 @@ class ShowcasesController < ApplicationController
   include DbQuery
 
   before_action :set_showcase, only: %i[ show edit update destroy ]
+  before_action :set_studio_for_auth, only: %i[ new_request ]
   before_action :admin_home
 
   permit_site_owners :new_request, :create
@@ -77,21 +78,14 @@ class ShowcasesController < ApplicationController
       return
     end
     
-    location = Location.find_by(key: params[:location_key])
-    
-    if location.nil?
-      render file: "#{Rails.root}/public/404.html", status: :not_found, layout: false
-      return
-    end
-    
     @showcase = Showcase.new
-    @showcase.location_id = location.id
-    unless Showcase.where(location_id: location.id, year: Time.now.year).exists?
+    @showcase.location_id = @location.id
+    unless Showcase.where(location_id: @location.id, year: Time.now.year).exists?
       @showcase.name = 'Showcase'
       @showcase.key = 'showcase'
     end
     
-    @locations = [[location.name, location.id]]
+    @locations = [[@location.name, @location.id]]
     @location_key = params[:location_key]
     
     # Set return_to URL from params or default to studios page
@@ -208,6 +202,18 @@ class ShowcasesController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_showcase
       @showcase = Showcase.find(params[:id])
+    end
+
+    def set_studio_for_auth
+      @location = Location.find_by(key: params[:location_key])
+      
+      if @location.nil?
+        render file: "#{Rails.root}/public/404.html", status: :not_found, layout: false
+        return
+      end
+      
+      # Set @studio for authentication - create a struct with the location name
+      @studio = Struct.new(:name).new(@location.name)
     end
 
     # Only allow a list of trusted parameters through.
