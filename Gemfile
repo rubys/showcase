@@ -2,7 +2,7 @@ source "https://rubygems.org"
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 8.0.1"
+gem "rails", "~> 8.0.2"
 
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
 gem "sprockets-rails"
@@ -85,8 +85,8 @@ end
 
 gem "dockerfile-rails"
 
-gem "sentry-ruby", "~> 5.10"
-gem "sentry-rails", "~> 5.10"
+gem "sentry-ruby", "~> 5.26"
+gem "sentry-rails", "~> 5.26"
 
 gem "fast_excel", "~> 0.5.0"
 gem "rqrcode", "~> 2.1"

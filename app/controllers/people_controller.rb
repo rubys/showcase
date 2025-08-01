@@ -120,7 +120,7 @@ class PeopleController < ApplicationController
       unless params[:template].content_type == 'application/pdf'
         flash[:alert] = "template must be a PDF file."
         @studios = [['-- all studios --', nil]] + Studio.order(:name).pluck(:name, :id)
-        render :certificates, status: :unprocessable_entity
+        render :certificates, status: :unprocessable_content
         return
       end
 
@@ -610,8 +610,8 @@ class PeopleController < ApplicationController
       else
         params[:studio] = @person.studio_id
         new
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @person.errors, status: :unprocessable_entity }
+        format.html { render :new, status: :unprocessable_content }
+        format.json { render json: @person.errors, status: :unprocessable_content }
       end
     end
   end
@@ -646,8 +646,8 @@ class PeopleController < ApplicationController
         format.json { render :show, status: :ok, location: @person }
       else
         edit
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @person.errors, status: :unprocessable_entity }
+        format.html { render :edit, status: :unprocessable_content }
+        format.json { render json: @person.errors, status: :unprocessable_content }
       end
     end
   end
@@ -666,7 +666,7 @@ class PeopleController < ApplicationController
       if judge.update({present: !judge.present})
         format.json { render json: { present: @person.present? } }
       else
-        format.json { render json: { present: @person.present? }, status: :unprocessable_entity }
+        format.json { render json: { present: @person.present? }, status: :unprocessable_content }
       end
     end
   end
@@ -677,7 +677,7 @@ class PeopleController < ApplicationController
       if judge.update({ballroom: params[:ballroom] || 'Both'})
         format.json { render json: { ballroom: judge.ballroom } }
       else
-        format.json { render json: { ballroom: judge.ballroom }, status: :unprocessable_entity }
+        format.json { render json: { ballroom: judge.ballroom }, status: :unprocessable_content }
       end
     end
   end
@@ -688,7 +688,7 @@ class PeopleController < ApplicationController
       if judge.update({review_solos: params[:review_solos] || 'Both'})
         format.json { render json: { review_solos: judge.review_solos } }
       else
-        format.json { render json: { review_solos: judge.review_solos }, status: :unprocessable_entity }
+        format.json { render json: { review_solos: judge.review_solos }, status: :unprocessable_content }
       end
     end
   end

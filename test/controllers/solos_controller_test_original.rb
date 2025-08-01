@@ -749,7 +749,7 @@ class SolosControllerTest < ActionDispatch::IntegrationTest
       }
     end
 
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
   end
   
   test "handles invalid solo update gracefully" do
@@ -766,7 +766,7 @@ class SolosControllerTest < ActionDispatch::IntegrationTest
       } 
     }
 
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     
     @test_solo.reload
     assert_equal original_song, @test_solo.song  # Should not change
@@ -941,7 +941,7 @@ class SolosControllerTest < ActionDispatch::IntegrationTest
       },
       as: :json
 
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     assert_equal 'application/json; charset=utf-8', response.content_type
   end
 end

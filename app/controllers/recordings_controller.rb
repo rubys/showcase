@@ -164,8 +164,8 @@ class RecordingsController < ApplicationController
         format.html { redirect_to @recording, notice: "Recording was successfully created." }
         format.json { render :show, status: :created, location: @recording }
       else
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @recording.errors, status: :unprocessable_entity }
+        format.html { render :new, status: :unprocessable_content }
+        format.json { render json: @recording.errors, status: :unprocessable_content }
       end
     end
   end
@@ -177,8 +177,8 @@ class RecordingsController < ApplicationController
         format.html { redirect_to @recording, notice: "Recording was successfully updated." }
         format.json { render :show, status: :ok, location: @recording }
       else
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @recording.errors, status: :unprocessable_entity }
+        format.html { render :edit, status: :unprocessable_content }
+        format.json { render json: @recording.errors, status: :unprocessable_content }
       end
     end
   end
@@ -212,7 +212,7 @@ class RecordingsController < ApplicationController
       if recording.save
         render json: { status: 'success', message: 'Recording uploaded successfully', url: url_for(recording.audio) }
       else
-        render json: { status: 'error', message: recording.errors.full_messages.join(', ') }, status: :unprocessable_entity
+        render json: { status: 'error', message: recording.errors.full_messages.join(', ') }, status: :unprocessable_content
       end
     else
       render json: { status: 'error', message: 'Missing audio data' }, status: :bad_request

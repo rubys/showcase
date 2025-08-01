@@ -51,8 +51,8 @@ class UsersController < ApplicationController
         format.html { redirect_to users_url, notice: "#{@user.userid} was successfully created." }
         format.json { render :show, status: :created, location: @user }
       else
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @user.errors, status: :unprocessable_entity }
+        format.html { render :new, status: :unprocessable_content }
+        format.json { render json: @user.errors, status: :unprocessable_content }
       end
     end
   end
@@ -83,8 +83,8 @@ class UsersController < ApplicationController
           format.json { render :show, status: :ok, location: @user }
         end
       else
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @user.errors, status: :unprocessable_entity }
+        format.html { render :edit, status: :unprocessable_content }
+        format.json { render json: @user.errors, status: :unprocessable_content }
       end
     end
   end
@@ -193,7 +193,7 @@ class UsersController < ApplicationController
       # point, but will be blocked by the authenticity token later in the processing.
       update
     else
-      render file: 'public/422.html', status: :unprocessable_entity, layout: false
+      render file: 'public/422.html', status: :unprocessable_content, layout: false
     end
   end
 

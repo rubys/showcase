@@ -171,9 +171,9 @@ class StudiosController < ApplicationController
         Rails.logger.error "Backtrace:  \n #{exception.backtrace.join("\n")}"
 
         respond_to do |format|
-          format.html { redirect_to studio_url(@studio), status: :unprocessable_entity,
+          format.html { redirect_to studio_url(@studio), status: :unprocessable_content,
             notice: "Error Occurred: #{exception}." }
-          format.json { render status: :unprocessable_entity,
+          format.json { render status: :unprocessable_content,
             json: {exception: exception.to_s, message: exception.message, backtrace: exception.backtrace } }
         end
       end
@@ -234,8 +234,8 @@ class StudiosController < ApplicationController
         format.json { render :show, status: :created, location: @studio }
       else
         new
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @studio.errors, status: :unprocessable_entity }
+        format.html { render :new, status: :unprocessable_content }
+        format.json { render json: @studio.errors, status: :unprocessable_content }
       end
     end
   end
@@ -251,8 +251,8 @@ class StudiosController < ApplicationController
         format.json { render :show, status: :ok, location: @studio }
       else
         edit
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @studio.errors, status: :unprocessable_entity }
+        format.html { render :edit, status: :unprocessable_content }
+        format.json { render json: @studio.errors, status: :unprocessable_content }
       end
     end
   end

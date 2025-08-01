@@ -141,8 +141,8 @@ class SolosController < ApplicationController
         format.json { render :show, status: :created, location: @solo }
       else
         new
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @solo.errors, status: :unprocessable_entity }
+        format.html { render :new, status: :unprocessable_content }
+        format.json { render json: @solo.errors, status: :unprocessable_content }
       end
     end
   end
@@ -204,8 +204,8 @@ class SolosController < ApplicationController
         format.json { render :show, status: :ok, location: @solo }
       else
         edit
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @solo.errors, status: :unprocessable_entity }
+        format.html { render :edit, status: :unprocessable_content }
+        format.json { render json: @solo.errors, status: :unprocessable_content }
       end
     end
 

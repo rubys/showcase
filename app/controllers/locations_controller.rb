@@ -164,7 +164,7 @@ class LocationsController < ApplicationController
       if not @user.save
         @showcase = Showcase.new(showcase_params)
         logger.info @showcase.inspect
-        first_event(:unprocessable_entity)
+        first_event(:unprocessable_content)
         return
       end
 
@@ -182,7 +182,7 @@ class LocationsController < ApplicationController
           if not @showcase.save
             @user.destroy!
             @location.destroy!
-            first_event(:unprocessable_entity)
+            first_event(:unprocessable_content)
             return
           end
         end
@@ -202,11 +202,11 @@ class LocationsController < ApplicationController
       elsif params[:user]
         @user.destroy!
         @showcase = Showcase.new(showcase_params)
-        format.html { first_event(:unprocessable_entity) }
+        format.html { first_event(:unprocessable_content) }
       else
         new
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @location.errors, status: :unprocessable_entity }
+        format.html { render :new, status: :unprocessable_content }
+        format.json { render json: @location.errors, status: :unprocessable_content }
       end
     end
   end
@@ -228,8 +228,8 @@ class LocationsController < ApplicationController
         format.json { render :show, status: :ok, location: @location }
       else
         edit
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @location.errors, status: :unprocessable_entity }
+        format.html { render :edit, status: :unprocessable_content }
+        format.json { render json: @location.errors, status: :unprocessable_content }
       end
     end
   end
