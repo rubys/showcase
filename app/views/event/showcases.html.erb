@@ -18,7 +18,14 @@
   <% if @region %>
   <h1 class="mt-8 text-center font-bold text-4xl mb-8"><span class="text-blue-600"><%= @region %></span> Region</h1>
   <% elsif @studio %>
-  <h1 class="mt-8 text-center font-bold text-4xl mb-8"><span class="text-blue-600"><%= @studio %></span> Events</h1>
+  <div class="flex w-full items-center mt-8 mb-8">
+    <div class="flex-auto">
+      <h1 class="text-center font-bold text-4xl"><span class="text-blue-600"><%= @studio %></span> Events</h1>
+    </div>
+    <div class="flex-none">
+      <%= link_to 'New Event', studio_request_path(@studio), class: 'btn-green' %>
+    </div>
+  </div>
   <% else %>
   <% if Rails.env.development? %>
   <a href="<%= select_path %>" class="absolute right-36 text-5xl rotate-45 text-purple-600 border-2 p-2 border-purple-600 rounded-xl">Dev</a>
@@ -102,6 +109,7 @@ can click on it to see helpful hints.</li>
 <% if ENV['FLY_REGION'] || Rails.env.development? %>
 <%= link_to 'Regions', regions_path, class: 'btn-pale-blue' %>
 <% end %>
+
 
 <% if @region %>
 <%= link_to 'Status', region_status_path(@region), class: 'btn-orange' %>

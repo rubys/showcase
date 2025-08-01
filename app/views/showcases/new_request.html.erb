@@ -1,6 +1,15 @@
 <div class="mx-auto md:w-2/3 w-full">
   <h1 class="font-bold text-4xl">Request new showcase</h1>
 
+  <div data-controller="info-box">
+    <div class="info-button">&#x24D8;</div>
+    <ul class="info-box">
+      <li>Requests can only be made by studio owners.</li>
+      <li>Requests generally will be processed on the same day.</li>
+      <li>Contact Sam Ruby directly if you have special requirements.</li>
+    </ul>
+  </div>
+
   <%= form_with(model: @showcase, url: showcases_path, class: "contents", id: 'showcase-form', data: {controller: 'name-to-token'}) do |form| %>
     <% if @showcase.errors.any? %>
       <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
@@ -16,12 +25,13 @@
 
     <div class="my-5">
       <%= form.label :name %>
-      <%= form.text_field :name, data: {"name-to-token-target" => "name"},
+      <%= form.text_field :name, data: {"name-to-token-target" => "name"}, required: true,
         class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
     </div>
 
     <%= form.hidden_field :key, data: {"name-to-token-target" => "token"} %>
     <%= form.hidden_field :location_id %>
+    <%= hidden_field_tag :return_to, @return_to %>
 
     <div data-controller="date-range">
       <div class="my-5">
