@@ -273,7 +273,7 @@ module RegionConfiguration
           entry[:logo] = location.logo
         end
 
-        if location_events.length == 1
+        if location_events.length == 1 && location_events.first.key == 'showcase'
           showcase = location_events.first
           entry[:date] = showcase.date if showcase.date.present?
         elsif location_events.length > 1

@@ -60,20 +60,40 @@ class ShowcasesController < ApplicationController
 
   # GET /studios/:location_key/request
   def new_request
+    if ENV['FLY_REGION']
+      # Build the return URL for the studios page
+      return_url = url_for(controller: 'event', action: 'showcases', only_path: false).sub('/showcase/events/', '/studios/') + params[:location_key]
+      
+      # Build the rubix URL preserving the current path and query parameters
+      rubix_url = "https://rubix.intertwingly.net#{request.path}"
+      
+      # Add query parameters including return_to
+      query_params = request.query_parameters.merge(return_to: return_url)
+      rubix_url += "?#{query_params.to_query}" unless query_params.empty?
+      
+      redirect_to rubix_url, allow_other_host: true
+      return
+    end
+    
     location = Location.find_by(key: params[:location_key])
     
     if location.nil?
-      redirect_to root_path, alert: "Location not found"
+      render file: "#{Rails.root}/public/404.html", status: :not_found, layout: false
       return
     end
     
     @showcase = Showcase.new
     @showcase.location_id = location.id
-    @showcase.name = 'Showcase'
-    @showcase.key = 'showcase'
+    unless Showcase.where(location_id: location.id, year: Time.now.year).exists?
+      @showcase.name = 'Showcase'
+      @showcase.key = 'showcase'
+    end
     
     @locations = [[location.name, location.id]]
     @location_key = params[:location_key]
+    
+    # Set return_to URL from params or default to studios page
+    @return_to = params[:return_to] || "/studios/#{params[:location_key]}"
   end
 
   # POST /showcases or /showcases.json
@@ -92,18 +112,21 @@ class ShowcasesController < ApplicationController
       if @showcase.save
         generate_showcases
 
-        # Redirect based on user type
-        if User.index_auth?(@authuser)
+        # Redirect based on user type and return_to parameter
+        if params[:return_to].present?
+          format.html { redirect_to params[:return_to], 
+            notice: "#{@showcase.name} was successfully #{User.index_auth?(@authuser) ? 'created' : 'requested'}." }
+        elsif User.index_auth?(@authuser)
           format.html { redirect_to events_location_url(@showcase.location),
             notice: "#{@showcase.name} was successfully created." }
         else
-          # Use the same redirect for now, can be customized later
           format.html { redirect_to events_location_url(@showcase.location),
             notice: "#{@showcase.name} was successfully requested." }
         end
         format.json { render :show, status: :created, location: @showcase }
       else
         new
+        @return_to = params[:return_to]
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @showcase.errors, status: :unprocessable_entity }
       end
