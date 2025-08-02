@@ -515,6 +515,8 @@ class EventController < ApplicationController
       @locale = Location.where(key: @studio).first&.locale
     end
 
+    @city = params[:city] || @studio
+
     @region = params[:region]
     if @region
       @showcases.each do |year, sites|
@@ -528,7 +530,7 @@ class EventController < ApplicationController
     if Rails.env.development? && @showcases.values.length == 1 && @showcases.values.first.values.length == 1
       # Only auto-redirect if this is NOT a studio page with multiple events
       city_info = @showcases.values.first.values.first
-      if !@studio || !city_info[:events] || city_info[:events].length == 1
+      if !@city || !city_info[:events] || city_info[:events].length == 1
         params[:db] = "#{@showcases.keys.first}-#{@showcases.values.first.keys.first}"
         return select
       end

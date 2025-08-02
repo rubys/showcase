@@ -17,13 +17,13 @@
 
   <% if @region %>
   <h1 class="mt-8 text-center font-bold text-4xl mb-8"><span class="text-blue-600"><%= @region %></span> Region</h1>
-  <% elsif @studio %>
+  <% elsif @city %>
   <div class="flex w-full items-center mt-8 mb-8">
     <div class="flex-auto">
-      <h1 class="text-center font-bold text-4xl"><span class="text-blue-600"><%= @studio %></span> Events</h1>
+      <h1 class="text-center font-bold text-4xl"><span class="text-blue-600"><%= @city %></span> Events</h1>
     </div>
     <div class="flex-none">
-      <%= link_to 'New Event', studio_request_path(@studio), class: 'btn-green' %>
+      <%= link_to 'New Event', studio_request_path(@city), class: 'btn-green' %>
     </div>
   </div>
   <% else %>
