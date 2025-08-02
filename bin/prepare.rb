@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 
-require 'uri'
-require 'json'
+require 'sqlite3'
 
 migrations = Dir["db/migrate/2*"].map {|name| name[/\d+/]}
 
@@ -13,7 +12,10 @@ ARGV.each do |database|
     if file.flock(File::LOCK_EX)
       if File.exist?(database) and File.size(database) > 0
         begin
-          applied = JSON.parse(`sqlite3 #{database} "select version from schema_migrations" --json`).map(&:values).flatten
+          db = SQLite3::Database.new(database)
+          applied = db.execute("SELECT version FROM schema_migrations").flatten
+        ensure
+          db.close if db
         rescue
         end
       end
