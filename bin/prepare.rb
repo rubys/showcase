@@ -14,9 +14,9 @@ ARGV.each do |database|
         begin
           db = SQLite3::Database.new(database)
           applied = db.execute("SELECT version FROM schema_migrations").flatten
+        rescue
         ensure
           db.close if db
-        rescue
         end
       end
 
