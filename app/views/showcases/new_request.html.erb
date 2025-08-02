@@ -24,13 +24,18 @@
     <% end %>
 
     <div class="my-5">
+      <%= form.label :location_id, 'Studio' %>
+      <%= form.select :location_id, [[@location.name, @location.id]], {}, 
+        {disabled: true, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full bg-gray-100"} %>
+    </div>
+
+    <div class="my-5">
       <%= form.label :name %>
       <%= form.text_field :name, data: {"name-to-token-target" => "name"}, required: true,
         class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
     </div>
 
     <%= form.hidden_field :key, data: {"name-to-token-target" => "token"} %>
-    <%= form.hidden_field :location_id %>
     <%= hidden_field_tag :return_to, @return_to %>
 
     <div data-controller="date-range">

@@ -5,7 +5,7 @@ class ShowcasesController < ApplicationController
   include DbQuery
 
   before_action :set_showcase, only: %i[ show edit update destroy ]
-  before_action :set_studio_for_auth, only: %i[ new_request ]
+  before_action :set_studio_for_auth, only: %i[ new_request create ]
   before_action :admin_home
 
   permit_site_owners :new_request, :create
@@ -205,7 +205,13 @@ class ShowcasesController < ApplicationController
     end
 
     def set_studio_for_auth
-      @location = Location.find_by(key: params[:location_key])
+      # For new_request action, location comes from URL param
+      if params[:location_key]
+        @location = Location.find_by(key: params[:location_key])
+      # For create action, location comes from form data
+      elsif params[:showcase] && params[:showcase][:location_id]
+        @location = Location.find_by(id: params[:showcase][:location_id])
+      end
       
       if @location.nil?
         render file: "#{Rails.root}/public/404.html", status: :not_found, layout: false
