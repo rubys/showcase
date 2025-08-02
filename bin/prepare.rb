@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
+require "bundler/setup"
 require 'sqlite3'
 
 migrations = Dir["db/migrate/2*"].map {|name| name[/\d+/]}
@@ -29,6 +30,9 @@ ARGV.each do |database|
         # not sure why this is needed...
         count = `sqlite3 #{database} "select count(*) from events"`.to_i
         system 'bin/rails db:seed' if count == 0
+
+        # avoid throttling
+        sleep 1 if ENV['FLY_REGION']
       end
 
       file.flock(File::LOCK_UN)
