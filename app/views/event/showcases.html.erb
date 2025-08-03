@@ -43,11 +43,13 @@
   <li>When you see an &#x24D8; in the top left corner of the page, you
 can click on it to see helpful hints.</li>
   <li>Click on it again to dismiss the hints.</li>
-  <% unless @showcases.empty? %>
+  <% if @showcases.empty? %>
+  <li>At the bottom of the page is a link to the documentation.</li>
+  <% else %>
   <li>Click an event below to get started.</li>
   <% end %>
   <% if @city %>
-  <li>Event owners can click on New Event to request a new event at this studio.</li>
+  <li>Studio owners can click on the New Event button to request a new event be created.</li>
   <% end %>
   </ul>
 </div>
@@ -58,6 +60,14 @@ can click on it to see helpful hints.</li>
   <% if @prev %><a rel="prev" href="<%= @prev %>"></a><% end %>
   <% if @next %><a rel="next" href="<%= @next %>"></a><% end %>
 </span>
+
+<% if @showcases.empty? %>
+  <p class="mt-4">There are no showcases defined for this location.
+  <% if @city %>
+  If you are the owner of this studio you can click on the New Event button above to request an event be created.</li>
+  <% end %>
+  </p>
+<% end %>
 
 <% @showcases.each do |year, sites| %>
   <a href="<%= "#{@scope}/#{year}".squeeze('/') %>/">
