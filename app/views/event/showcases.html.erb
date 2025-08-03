@@ -43,7 +43,12 @@
   <li>When you see an &#x24D8; in the top left corner of the page, you
 can click on it to see helpful hints.</li>
   <li>Click on it again to dismiss the hints.</li>
-  <li>Click a city below to get started.</li>
+  <% unless @showcases.empty? %>
+  <li>Click an event below to get started.</li>
+  <% end %>
+  <% if @city %>
+  <li>Event owners can click on New Event to request a new event at this studio.</li>
+  <% end %>
   </ul>
 </div>
 

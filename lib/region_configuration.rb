@@ -233,8 +233,10 @@ module RegionConfiguration
 
     studios_data = Location.order(:key).map do |location|
       [location.key, {
+        'name' => location.name,
         'lat' => location.latitude,
-        'lon' => location.longitude
+        'lon' => location.longitude,
+        'region' => select_region_for_location(location, available_regions),
       }]
     end.to_h
 

@@ -525,7 +525,12 @@ class EventController < ApplicationController
     end
 
     @showcases.select! {|year, sites| !sites.empty?}
-    raise ActiveRecord::RecordNotFound if @showcases.empty?
+    if @showcases.empty?
+      @map = YAML.load_file('config/tenant/map.yml')
+      unless @map['studios'] && @map['studios'][@city]
+        raise ActiveRecord::RecordNotFound
+      end
+    end
 
     if Rails.env.development? && @showcases.values.length == 1 && @showcases.values.first.values.length == 1
       # Only auto-redirect if this is NOT a studio page with multiple events
@@ -558,6 +563,9 @@ class EventController < ApplicationController
     if params[:studio] || params[:city]
       if params[:year]
         @up = studio_events_path(params[:studio] || params[:city])
+      elsif @map && @map['studios'] && @map['studios'][@city]
+        region = @map['studios'][@city]['region']
+        @up = region_path(region)
       else
         region = @showcases.values.first.values.first[:region]
         @up = region_path(region)
@@ -596,6 +604,10 @@ class EventController < ApplicationController
         @regions[region] ||= []
         @regions[region] << defn[:name]
       end
+    end
+
+    @map['studios'].each do |key, studio|
+      @cities[studio['name']] = key if studio['name']
     end
 
     @regions.each {|region, cities| cities.sort!.uniq!}
