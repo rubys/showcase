@@ -8,12 +8,12 @@ module DbQuery
     dbconn.results_as_hash = true
 
     fields_str = if fields
-      Array(fields).map { |f| "`#{f}`" }.join(', ')
+      Array(fields).map { |f| "\"#{f}\"" }.join(', ')
     else
       '*'
     end
 
-    query = "SELECT #{fields_str} FROM #{table}"
+    query = "SELECT #{fields_str} FROM \"#{table}\""
     query += " WHERE #{where}" if where
 
     results = dbconn.execute(query)
