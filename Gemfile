@@ -89,7 +89,7 @@ gem "sentry-ruby", "~> 5.26"
 gem "sentry-rails", "~> 5.26"
 
 gem "fast_excel", "~> 0.5.0"
-gem "rqrcode", "~> 2.1"
+gem "rqrcode", "~> 3.1"
 gem "chronic", "~> 0.10.2"
 gem "combine_pdf", "~> 1.0"
 gem "kramdown", "~> 2.4"
