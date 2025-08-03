@@ -63,8 +63,8 @@ class DancesController < ApplicationController
         format.json { render :show, status: :created, location: @dance }
       else
         new
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @dance.errors, status: :unprocessable_entity }
+        format.html { render :new, status: :unprocessable_content }
+        format.json { render json: @dance.errors, status: :unprocessable_content }
       end
     end
   end
@@ -77,8 +77,8 @@ class DancesController < ApplicationController
         format.json { render :show, status: :ok, location: @dance }
       else
         edit
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @dance.errors, status: :unprocessable_entity }
+        format.html { render :edit, status: :unprocessable_content }
+        format.json { render json: @dance.errors, status: :unprocessable_content }
       end
     end
   end

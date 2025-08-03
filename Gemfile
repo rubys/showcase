@@ -2,7 +2,7 @@ source "https://rubygems.org"
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 8.0.1"
+gem "rails", "~> 8.0.2"
 
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
 gem "sprockets-rails"
@@ -23,7 +23,7 @@ gem "turbo-rails"
 gem "stimulus-rails"
 
 # Use Tailwind CSS [https://github.com/rails/tailwindcss-rails]
-gem "tailwindcss-rails", "~> 3.3.0"
+gem "tailwindcss-rails", "~> 4.3.0"
 
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
@@ -85,8 +85,8 @@ end
 
 gem "dockerfile-rails"
 
-gem "sentry-ruby", "~> 5.10"
-gem "sentry-rails", "~> 5.10"
+gem "sentry-ruby", "~> 5.26"
+gem "sentry-rails", "~> 5.26"
 
 gem "fast_excel", "~> 0.5.0"
 gem "rqrcode", "~> 2.1"

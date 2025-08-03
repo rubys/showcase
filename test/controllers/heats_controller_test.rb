@@ -408,7 +408,7 @@ class HeatsControllerTest < ActionDispatch::IntegrationTest
       }
     end
     
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
   end
   
   test "handles heat update with validation errors" do

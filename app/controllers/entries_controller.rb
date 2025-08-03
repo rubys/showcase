@@ -109,7 +109,7 @@ class EntriesController < ApplicationController
         entries = @entries
         new
         @entries = entries
-        return render :edit, status: :unprocessable_entity
+        return render :edit, status: :unprocessable_content
       end
     end
 
@@ -124,8 +124,8 @@ class EntriesController < ApplicationController
         format.json { render :show, status: :created, location: @entry }
       else
         new
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @entry.errors, status: :unprocessable_entity }
+        format.html { render :new, status: :unprocessable_content }
+        format.json { render json: @entry.errors, status: :unprocessable_content }
       end
     end
   end
@@ -155,7 +155,7 @@ class EntriesController < ApplicationController
         entries = @entries
         edit
         @entries = entries
-        return render :edit, status: :unprocessable_entity
+        return render :edit, status: :unprocessable_content
       end
     end
 
@@ -198,8 +198,8 @@ class EntriesController < ApplicationController
         format.json { render :show, status: :ok, location: @entry }
       else
         edit
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @entry.errors, status: :unprocessable_entity }
+        format.html { render :edit, status: :unprocessable_content }
+        format.json { render json: @entry.errors, status: :unprocessable_content }
       end
     end
   end

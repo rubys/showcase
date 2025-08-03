@@ -232,8 +232,8 @@ class TablesController < ApplicationController
                                          .order(:name)
                                          .pluck(:id, :name)
         
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @table.errors, status: :unprocessable_entity }
+        format.html { render :new, status: :unprocessable_content }
+        format.json { render json: @table.errors, status: :unprocessable_content }
       end
     end
   end
@@ -277,8 +277,8 @@ class TablesController < ApplicationController
             format.html { redirect_to tables_path(option_id: @table.option_id), notice: notice_msg }
             format.json { render :show, status: :ok, location: @table }
           else
-            format.html { render :edit, status: :unprocessable_entity }
-            format.json { render json: @table.errors, status: :unprocessable_entity }
+            format.html { render :edit, status: :unprocessable_content }
+            format.json { render json: @table.errors, status: :unprocessable_content }
           end
         end
       elsif @table.update(table_params.except(:studio_id, :create_additional_tables))
@@ -322,8 +322,8 @@ class TablesController < ApplicationController
           @available_seats = table_size - current_people_count
         end
         
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @table.errors, status: :unprocessable_entity }
+        format.html { render :edit, status: :unprocessable_content }
+        format.json { render json: @table.errors, status: :unprocessable_content }
       end
     end
   end

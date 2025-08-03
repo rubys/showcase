@@ -274,7 +274,7 @@ class EventController < ApplicationController
 
       redirect_to dest, notice: notice
     else
-      settings(status: :unprocessable_entity)
+      settings(status: :unprocessable_content)
     end
 
     Event.current = Event.current

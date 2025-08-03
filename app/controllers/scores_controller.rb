@@ -323,7 +323,7 @@ class ScoresController < ApplicationController
         if keep ? score.save : score.delete
           render json: score.as_json
         else
-          render json: score.errors, status: :unprocessable_entity
+          render json: score.errors, status: :unprocessable_content
         end
       elsif not params[:score].blank? or not score.comments.blank? or Event.current.assign_judges > 0
         if params[:name] && heat.category == 'Solo' && Event.current.solo_scoring == '4'
@@ -339,7 +339,7 @@ class ScoresController < ApplicationController
         if score.save
           render json: score.as_json
         else
-          render json: score.errors, status: :unprocessable_entity
+          render json: score.errors, status: :unprocessable_content
         end
       else
         score.destroy
@@ -462,7 +462,7 @@ class ScoresController < ApplicationController
       if keep ? score.save : score.delete
         render json: score.as_json
       else
-        render json: score.errors, status: :unprocessable_entity
+        render json: score.errors, status: :unprocessable_content
       end
     end
     end
@@ -1011,8 +1011,8 @@ class ScoresController < ApplicationController
         format.json { render :show, status: :created, location: @score }
       else
         new
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @score.errors, status: :unprocessable_entity }
+        format.html { render :new, status: :unprocessable_content }
+        format.json { render json: @score.errors, status: :unprocessable_content }
       end
     end
   end
@@ -1025,8 +1025,8 @@ class ScoresController < ApplicationController
         format.json { render :show, status: :ok, location: @score }
       else
         edit
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @score.errors, status: :unprocessable_entity }
+        format.html { render :edit, status: :unprocessable_content }
+        format.json { render json: @score.errors, status: :unprocessable_content }
       end
     end
   end
