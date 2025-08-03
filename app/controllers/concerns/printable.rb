@@ -466,7 +466,7 @@ module Printable
         dances: @dances,
 
         entries: Entry.where(id: entries.map(&:id)).
-          order(:levei_id, :age_id).
+          order(:level_id, :age_id).
           includes(lead: [:studio], follow: [:studio], heats: [:dance]).group_by {|entry|
             entry.follow.type == "Student" ? [entry.follow, entry.lead] : [entry.lead, entry.follow]
           }.sort_by {|key, value| key}

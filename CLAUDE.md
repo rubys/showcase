@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Rails Configuration
+
+The application runs on Rails 8.0.2 but uses Rails 7.0 configuration defaults (`config.load_defaults 7.0`). This is intentional to avoid breaking changes related to SQL reserved word quoting. Rails 8.0 requires explicit quoting of column names that are SQL reserved words (like 'order' and 'name'), which would require extensive codebase changes.
+
+Future work should consider renaming these columns to non-reserved words.
+
 ## Project Overview
 
 This is a Rails 8 application for managing ballroom dance showcase events. It handles event scheduling, heat management, scoring, and participant tracking across multiple locations and competitions.
