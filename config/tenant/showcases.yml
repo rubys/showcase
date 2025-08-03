@@ -6,8 +6,10 @@
     :events:
       freestyle:
         :name: Freestyle
+        :date: '2025-06-20'
       showcase:
         :name: Showcase
+        :date: '2025-09-27'
       medal-ball:
         :name: Medal Ball
   adelaide:
@@ -17,20 +19,26 @@
     :events:
       adelaide-combined:
         :name: Adelaide Combined
+        :date: 2025-06-14 - 2025-06-15
       adelaide-local:
         :name: Adelaide Local
+        :date: 2025-11-15 - 2025-11-15
       northside:
         :name: Northside
+        :date: 23/11/2025
       inner-west:
         :name: Inner West
+        :date: '2025-12-13'
       inner-west-special:
         :name: Inner West Special
+        :date: 2025-08-30 - 2025-08-31
   annapolis:
     :name: Annapolis
     :region: iad
     :events:
       medal-ball:
         :name: Medal Ball
+        :date: '2025-05-10'
       chesapeake-classic:
         :name: Chesapeake Classic
       movie-madness:
@@ -44,40 +52,54 @@
     :events:
       april:
         :name: April
+        :date: '2025'
       may:
         :name: May
+        :date: '2025'
       june:
         :name: June
+        :date: '2025'
       july:
         :name: July
+        :date: '2025'
       august:
         :name: August
+        :date: '2025'
       september:
         :name: September
+        :date: '2025'
       october:
         :name: October
+        :date: '2025'
       november:
         :name: November
+        :date: '2025'
       december:
         :name: December
+        :date: '2025'
   bellevue:
     :name: Bellevue
     :region: sea
     :events:
       hawaii:
         :name: Hawaii
+        :date: January 10th, 2025
       winter:
         :name: Winter
+        :date: 2025-03-07 - 2025-03-08
       summer-medal-ball:
         :name: Summer Medal Ball
+        :date: '2025-06-08'
       summer-showcase:
         :name: Summer Showcase
+        :date: 2025-08-15 - 2025-08-17
   boston:
     :name: Boston
     :region: bos
     :events:
       april:
         :name: April
+        :date: 2025-04-05 - 2025-04-06
       mini-comp:
         :name: Mini Comp
       october:
@@ -88,30 +110,39 @@
     :events:
       paint-the-town-red:
         :name: Paint the Town Red
+        :date: '2025-06-08'
       toys-to-life:
         :name: Toys to Life
+        :date: '2025'
   charlotte:
     :name: Charlotte
     :region: atl
+    :date: 2025-07-11 - 2025-07-13
   chicago:
     :name: Chicago
     :region: ord
+    :date: '2025'
   clearwater:
     :name: Clearwater
     :region: mia
     :events:
       valentines-opener:
         :name: Valentine’s Opener
+        :date: 2/21/25
       portland-opener:
         :name: Portland Opener
+        :date: '2025-04-11'
       beach-ball:
         :name: Beach Ball
+        :date: '2025-06-13'
       unique-opener:
         :name: Unique Opener
+        :date: '2025-05-09'
       national-dance-day:
         :name: National Dance Day
       glass-slipper-gala:
         :name: Glass Slipper Gala
+        :date: 2025-08-06 - 2025-08-09
       flamingo-opener:
         :name: Flamingo Opener
       fright-fest:
@@ -121,6 +152,7 @@
   columbia:
     :name: Columbia
     :region: iad
+    :date: '2025-04-27'
   coquitlam:
     :name: Coquitlam
     :region: sea
@@ -128,34 +160,43 @@
     :events:
       ballroom-blitz:
         :name: Ballroom Blitz
+        :date: '2025-02-08'
       showcase:
         :name: Showcase
+        :date: '2025-03-29'
       showcase-2:
         :name: Showcase 2
+        :date: '2025-03-29'
       spotlight-ball:
         :name: Spotlight Ball
+        :date: '2025-08-22'
       medal-ball:
         :name: Medal Ball
+        :date: '2025-10-18'
   cranford:
     :name: Cranford
     :region: ewr
     :events:
       spring-freestyles:
         :name: Spring Freestyles
+        :date: '2025-03-29'
       fall-freestyles:
         :name: Fall Freestyles
+        :date: '2025'
   dallas:
     :name: Dallas
     :region: dfw
   dayton:
     :name: Dayton
     :region: ord
+    :date: '2025-07-12'
   edmonton:
     :name: Edmonton
     :region: sea
   everett:
     :name: Everett
     :region: sea
+    :date: '2025-05-09'
   firenze:
     :name: Firenze
     :region: ams
@@ -163,40 +204,54 @@
     :events:
       june:
         :name: June
+        :date: '2025'
       july:
         :name: July
+        :date: '2025'
       august:
         :name: August
+        :date: '2025'
       september:
         :name: September
+        :date: '2025'
       october:
         :name: October
+        :date: '2025'
       november:
         :name: November
+        :date: '2025'
       december:
         :name: December
+        :date: '2025'
   folsom:
     :name: Folsom
     :region: sjc
+    :date: 3/15/25
   glenview:
     :name: Glenview
     :region: ord
+    :date: '2025'
   greenhills:
     :name: Nashville-Green Hills
     :region: atl
     :events:
       spring:
         :name: Spring
+        :date: '2025-05-17'
       newsome-twosome:
         :name: Newsome Twosome
+        :date: '2025-08-15'
       music-city:
         :name: Music City
+        :date: '2025-08-15'
   harrisburg:
     :name: Harrisburg
     :region: iad
+    :date: 2025-03-07 - 2025-03-08
   honolulu:
     :name: Honolulu
     :region: sjc
+    :date: '2025-06-21'
   kennesaw:
     :name: Kennesaw
     :region: atl
@@ -207,50 +262,65 @@
     :events:
       medal-ball:
         :name: Medal Ball
+        :date: '2025-05-04'
       yokohama-showcase:
         :name: Yokohama Showcase
+        :date: '2025-07-06'
       fall-showcase:
         :name: Fall Showcase
+        :date: '2025'
   kyiv:
     :name: Kyiv
     :region: ams
     :locale: uk-UA
+    :date: '2025'
   lakeview:
     :name: Lakeview
     :region: ord
     :events:
       medal-ball-graduation-night-may:
         :name: Medal Ball Graduation Night - May
+        :date: '2025'
       summer-showcase-rounds:
         :name: Summer Showcase Rounds
+        :date: '2025'
       summer-showcase:
         :name: Summer Showcase
+        :date: '2025'
       showcase-rounds:
         :name: Showcase Rounds
+        :date: '2025'
       medal-ball-graduation-night-nov:
         :name: Medal Ball Graduation Night - Nov
+        :date: '2025'
   laval:
     :name: Laval
     :region: bos
     :locale: fr-CA
+    :date: '2025-04-05'
   livermore:
     :name: Livermore
     :region: sjc
     :events:
       pep-rally:
         :name: Pep Rally
+        :date: Sunday, January 11, 2025
       the-music-of-prince:
         :name: The Music of Prince
+        :date: '2025-02-16'
       james-bond:
         :name: James Bond
+        :date: '2025-03-30'
       extravaganza:
         :name: Extravaganza
       bbq-pep-rally:
         :name: BBQ Pep Rally
+        :date: '2025-07-13'
       la-la-land:
         :name: La La Land Metal Ball
       district-showcase:
         :name: District Showcase
+        :date: 2025-09-19 - 2025-09-20
       theatre-extravaganza:
         :name: Theatre Extravaganza
   marlton:
@@ -259,28 +329,37 @@
     :events:
       freestyle:
         :name: Freestyle
+        :date: '2025'
       medal-ball:
         :name: Medal Ball
+        :date: '2025-06-21'
   mdballroom:
     :name: Memorial DanceSport Ballroom
     :region: dfw
     :logo: mdballroom.webp
+    :date: '2025-03-01'
   merrillville:
     :name: Merrillville
     :region: ord
     :events:
       team-match:
         :name: Team Match
+        :date: '2025-03-07'
       arthur-murray-prom:
         :name: Arthur Murray Prom
+        :date: '2025'
       graduation-night:
         :name: Graduation Night
+        :date: '2025'
       club-arthur-murray:
         :name: Club Arthur Murray
+        :date: '2025'
       harvest-moon:
         :name: Harvest Moon
+        :date: '2025'
       winter-wonderland:
         :name: Winter Wonderland
+        :date: '2025'
   miami:
     :name: Miami
     :region: mia
@@ -293,6 +372,7 @@
         :name: June
       july:
         :name: July
+        :date: '2025-07-17'
       august:
         :name: August
       september:
@@ -310,41 +390,57 @@
     :events:
       april:
         :name: April
+        :date: '2025'
       may:
         :name: May
+        :date: '2025'
       june:
         :name: June
+        :date: '2025'
       july:
         :name: July
+        :date: '2025'
       august:
         :name: August
+        :date: '2025'
       september:
         :name: September
+        :date: '2025'
       october:
         :name: October
+        :date: '2025'
       november:
         :name: November
+        :date: '2025'
       december:
         :name: December
+        :date: '2025'
   millbrae:
     :name: Millbrae
     :region: sjc
+    :date: '2025-06-22'
   montgomery:
     :name: Montgomery
     :region: ord
     :events:
       cddc:
         :name: CDDC
+        :date: '2025-03-16'
       grand-rapids:
         :name: Grand Rapids
+        :date: '2025-05-04'
       fall-cddc:
         :name: Fall CDDC
+        :date: '2025'
       swing-sway:
         :name: Swing & Sway
+        :date: '2025'
       royal-oak:
         :name: Royal Oak
+        :date: '2025-06-08'
       lincolnshire:
         :name: Lincolnshire
+        :date: '2025'
   montreal:
     :name: Montreal
     :region: bos
@@ -352,8 +448,10 @@
     :events:
       certification-exams:
         :name: Certification Exams
+        :date: '2025-05-29'
       graduation-ball:
         :name: Graduation Ball
+        :date: '2025-06-07'
   monza:
     :name: Monza
     :region: ams
@@ -361,46 +459,61 @@
     :events:
       april:
         :name: April
+        :date: '2025-07-03'
       may:
         :name: May
+        :date: '2025-07-10'
       june:
         :name: June
+        :date: '2025-06-07'
       july:
         :name: July
+        :date: '2025-07-05'
       august:
         :name: August
+        :date: '2025'
       september:
         :name: September
+        :date: '2025'
       october:
         :name: October
+        :date: '2025'
       november:
         :name: November
+        :date: '2025'
       december:
         :name: December
+        :date: '2025'
   princeton:
     :name: Princeton
     :region: ewr
+    :date: '2025-05-03'
   raleigh:
     :name: Raleigh
     :region: iad
     :events:
       disney:
         :name: Disney
+        :date: January 31, 2025
       team-match:
         :name: Team Match
+        :date: '2025-04-25'
       shimmer-shine:
         :name: Shimmer & Shine
   reno:
     :name: Reno
     :region: sjc
+    :date: '2025-08-10'
   richmond:
     :name: Richmond
     :region: atl
     :events:
       medal-ball:
         :name: Medal Ball
+        :date: '2025-04-19'
       team-match:
         :name: Team Match
+        :date: '2025-08-09'
       nouveau-duo:
         :name: Nouveau Duo
   rogers:
@@ -412,6 +525,7 @@
     :events:
       spring:
         :name: Spring
+        :date: '2025-03-30'
       fall:
         :name: Fall
   sanjose:
@@ -428,12 +542,16 @@
     :events:
       winter-wonderland:
         :name: Winter Wonderland
+        :date: '2025-01-18'
       medal-ball:
         :name: Medal Ball
+        :date: '2025-02-13'
       extravaganza:
         :name: Extravaganza
+        :date: '2025-05-22'
       medal-ball-august:
         :name: Medal Ball August
+        :date: '2025-08-14'
   stockton:
     :name: Stockton
     :region: sjc
@@ -444,8 +562,10 @@
         :name: Beach Ball
       extravaganza:
         :name: Extravaganza
+        :date: '2025-05-14'
       medal-ball:
         :name: Medal Ball
+        :date: '2025-08-06'
   sugarland:
     :name: Sugar Land
     :region: dfw
@@ -454,6 +574,7 @@
         :name: Jingle Ball
       summer:
         :name: Summer
+        :date: '2025-07-26'
   sydney:
     :name: Sydney
     :region: syd
@@ -461,8 +582,10 @@
     :events:
       rhythm:
         :name: Rhythm
+        :date: '2025-03-22'
       winter:
         :name: Winter
+        :date: '2025-06-21'
   torino:
     :name: Torino
     :region: ams
@@ -470,32 +593,44 @@
     :events:
       april:
         :name: April
+        :date: '2025-07-24'
       may:
         :name: May
+        :date: '2025-07-24'
       june:
         :name: June
+        :date: '2025'
       july:
         :name: July
+        :date: '2025'
       august:
         :name: August
+        :date: '2025'
       september:
         :name: September
+        :date: '2025'
       october:
         :name: October
+        :date: '2025'
       november:
         :name: November
+        :date: '2025'
       december:
         :name: December
+        :date: '2025'
   vabeach:
     :name: Virginia Beach
     :region: iad
     :events:
       medal-ball:
         :name: Medal Ball
+        :date: '2025-03-14'
       beach-bash:
         :name: Beach Bash
+        :date: '2025-06-28'
       freestyles:
         :name: Freestyles
+        :date: 2025-10-10 - 2025-10-11
   vegas:
     :name: Las Vegas
     :region: sjc
@@ -506,22 +641,31 @@
     :events:
       april:
         :name: April
+        :date: '2025-04-05'
       may:
         :name: May
+        :date: '2025'
       june:
         :name: June
+        :date: '2025'
       july:
         :name: July
+        :date: '2025'
       august:
         :name: August
+        :date: '2025'
       september:
         :name: September
+        :date: '2025'
       october:
         :name: October
+        :date: '2025'
       november:
         :name: November
+        :date: '2025'
       december:
         :name: December
+        :date: '2025'
   warsaw:
     :name: Warsaw
     :region: ams
@@ -529,11 +673,14 @@
     :events:
       wroclaw:
         :name: Wroclaw
+        :date: '2025-05-25'
       warsaw:
         :name: Warsaw
+        :date: '2025-06-22'
   woodlands:
     :name: Woodlands
     :region: dfw
+    :date: '2025-03-08'
 2024:
   adelaide:
     :name: Adelaide
@@ -542,12 +689,16 @@
     :events:
       starry-night:
         :name: Starry Night
+        :date: '2025-03-08'
       rewind:
         :name: Rewind
+        :date: 15 & 16 June 2024
       northside:
         :name: Northside
+        :date: 17 November 2024
       adalaide:
         :name: Adalaide
+        :date: 23 November 2024
   alexandria:
     :name: Alexandria
     :region: iad
@@ -557,13 +708,17 @@
     :events:
       medalball:
         :name: Metal Ball
+        :date: May 18, 2024
       chesapeakeclassic:
         :name: Chesapeake Classic
+        :date: September 6-7, 2024
       gratitudegala:
         :name: Gratitude Gala
+        :date: November 17, 2024
   austin:
     :name: Austin
     :region: dfw
+    :date: Saturday, January 27, 2024
   bellevue:
     :name: Bellevue
     :region: sea
@@ -572,89 +727,115 @@
         :name: June Medal Ball
       august-showcase:
         :name: August Showcase
+        :date: 'August 16 and 17 2024 '
       october-mini-comp:
         :name: October Mini Comp
+        :date: October 6th, 2024
       spotlight-ball:
         :name: Spotlight ball
       december-medal-ball:
         :name: December Medal Ball
+        :date: December 8th, 2024
   boston:
     :name: Boston
     :region: bos
+    :date: Sunday, October 13
   carmel:
     :name: Carmel
     :region: ord
     :events:
       spring-showcase:
         :name: Spring Showcase
+        :date: '2024-11-10'
       back-to-the-80s:
         :name: Back to the 80’s
+        :date: '2024-11-10'
   cary:
     :name: Cary
     :region: iad
+    :date: April 12, 2024
   charlotte:
     :name: Charlotte
     :region: atl
+    :date: June 22, 2024
   chicago:
     :name: Chicago
     :region: ord
+    :date: '2024'
   clearwater:
     :name: Clearwater
     :region: mia
     :events:
       texas-opener:
         :name: Texas Opener
+        :date: 2/2/24
       birthday-bash:
         :name: Birthday Bash
+        :date: 4/5/24
       glass-slipper:
         :name: Glass Slipper Gala
+        :date: June 14 and 15, 2024
       northstar-opener:
         :name: Northstar Opener
+        :date: Friday, August 9
       flamingo-opener:
         :name: Flamingo Opener
+        :date: 9/13/24
       fright-fest:
         :name: Fright Fest
+        :date: 11/22/24
       snowball:
         :name: Snowball
+        :date: 12/14/24
   cranford:
     :name: Cranford
     :region: ewr
     :events:
       spring-freestyles:
         :name: Spring Freestyles
+        :date: '2024-04-20'
       fall-freestyles:
         :name: Fall Freestyles
+        :date: '2024-10-26'
   dayton:
     :name: Dayton
     :region: ord
+    :date: '2025-05-17'
   durham:
     :name: Durham
     :region: iad
   everett:
     :name: Everett
     :region: sea
+    :date: Friday, May 9
   glenview:
     :name: Glenview
     :region: ord
     :events:
       chicagoland-feb:
         :name: Chicagoland Feb
+        :date: '2024'
       chicagoland-sept:
         :name: Chicagoland Sept
+        :date: '2024'
   greenhills:
     :name: Nashville-Green Hills
     :region: atl
     :events:
       spring:
         :name: Spring
+        :date: April 27, 2024
       revival:
         :name: Revival
+        :date: Thursday, Dec 19, 2024
   harrisburg:
     :name: Harrisburg
     :region: iad
+    :date: March 8-9, 2024
   kennesaw:
     :name: Kennesaw
     :region: atl
+    :date: Saturday  November 9th, 2024
   kyiv:
     :name: Kyiv
     :region: ams
@@ -662,51 +843,67 @@
     :events:
       july:
         :name: July
+        :date: '2024'
       freestyle-showcase:
         :name: Freestyle Showcase
+        :date: '2024-12-08'
   lakeview:
     :name: Lakeview
     :region: ord
     :events:
       showcase-rounds:
         :name: Showcase Rounds
+        :date: '2024'
       graduation-nights:
         :name: Graduation Nights
+        :date: '2024'
       in-studio:
         :name: In Studio
+        :date: '2024-06-15'
       showcase-rounds-september:
         :name: Showcase Rounds - September
+        :date: '2024'
       graduation-nights-2:
         :name: Graduation Nights 2
+        :date: '2024'
   laval:
     :name: Laval
     :region: bos
     :locale: fr-CA
+    :date: March 23, 2024
   lincolnshire:
     :name: Lincolnshire
     :region: ord
+    :date: '2024'
   livermore:
     :name: Livermore
     :region: sjc
     :events:
       pep-rally:
         :name: Pep Rally
+        :date: Saturday January 13, 2024
       district-showcase:
         :name: District Showcase
+        :date: Sunday April 7th 2024
       barbecue-pep-rally:
         :name: Barbecue Pep Rally
+        :date: Sunday July 7th 2024
       live-medal-ball:
         :name: Live Medal Ball
+        :date: Saturday August 24, 2024
       willie-wonkas-magical-night:
         :name: Willie Wonka’s Magical Night
+        :date: September 20/21
       extravaganza:
         :name: Extravaganza
+        :date: Saturday November 16th 2024
   lwr:
     :name: Lakewood Ranch
     :region: mia
   manchester:
     :name: Manchester
     :region: bos
+    :date: Dec 5th, 2024
   mdballroom:
     :name: Memorial DanceSport Ballroom
     :region: dfw
@@ -714,22 +911,29 @@
     :events:
       february-team-match:
         :name: February Team Match
+        :date: 02/27/2024
       june-team-match:
         :name: June Team Match
+        :date: 06/22/2024
   merrillville:
     :name: Merrillville
     :region: ord
     :events:
       medal-ball:
         :name: Medal Ball
+        :date: '2025-01-11'
       team-match:
         :name: Team Match
+        :date: '2024-06-14'
       graduation-night:
         :name: Graduation Night
+        :date: '2024'
       newsome-twosome:
         :name: Newsome Twosome
+        :date: '2024'
       snowball-spotlight:
         :name: Snowball Spotlight
+        :date: '2025-01-11'
   monterey:
     :name: Monterey
     :region: sjc
@@ -739,12 +943,16 @@
     :events:
       dreamland:
         :name: Dreamland
+        :date: '2024-07-27'
       fort-wayne:
         :name: Fort Wayne
+        :date: '2024-09-15'
       cddc:
         :name: CDDC
+        :date: '2024-09-29'
       swing-sway:
         :name: Swing & Sway
+        :date: '2024-12-15'
   montreal:
     :name: Montreal
     :region: bos
@@ -752,10 +960,13 @@
     :events:
       june:
         :name: June
+        :date: June 1st, 2024
       november:
         :name: November
+        :date: November 2nd, 2024
       december:
         :name: December
+        :date: December 7, 2024
   perth:
     :name: Perth
     :region: syd
@@ -765,12 +976,16 @@
         :name: Karaoke
       country:
         :name: Country
+        :date: 25th of MAy
       pin-up-50s:
         :name: Pin Up 50's
+        :date: 24th of August
       hawaiian:
         :name: Hawaiian
+        :date: '2025-03-15'
       christmas:
         :name: Christmas
+        :date: 21st of December
   petaluma:
     :name: Petaluma
     :region: sjc
@@ -780,31 +995,39 @@
     :events:
       casino-royale:
         :name: Casino Royale
+        :date: January 26-27 2024
       in-house:
         :name: In House
+        :date: '09-15-2024'
   richmond:
     :name: Richmond
     :region: atl
     :events:
       medal-ball:
         :name: Medal Ball
+        :date: April 27, 2024
       team-match:
         :name: Team Match
       nouveau-duo:
         :name: Nouveau Duo
+        :date: December 14th, 2024
   ridgewood:
     :name: Ridgewood
     :region: ewr
+    :date: '2024'
   roanoke:
     :name: Roanoke
     :region: iad
     :events:
       team-match:
         :name: Team Match
+        :date: 03/09/2024
       spring-showcase:
         :name: Spring Showcase
+        :date: 04/05/25
       medal-ball:
         :name: Medal Ball
+        :date: '08/02/24'
       fall-showcase:
         :name: Fall Showcase
   salem:
@@ -813,30 +1036,38 @@
     :events:
       spring:
         :name: Spring
+        :date: 4/07/2024
       fall:
         :name: Fall
+        :date: 10/27/2024
   sanjose:
     :name: San Jose
     :region: sjc
     :events:
       march:
         :name: March
+        :date: 03/10/2024
       september:
         :name: September
+        :date: '09/15/2024'
   sarasota:
     :name: Sarasota
     :region: mia
+    :date: December 7th
   schaumburg:
     :name: Schaumburg
     :region: ord
+    :date: '2024'
   slc:
     :name: Salt Lake City
     :region: sjc
     :events:
       june:
         :name: June
+        :date: 06/29/24
       medal-ball:
         :name: Medal Ball
+        :date: August 22nd
   stockton:
     :name: Stockton
     :region: sjc
@@ -848,6 +1079,7 @@
   sugarland:
     :name: Sugar Land
     :region: dfw
+    :date: Saturday, July 13th, 2024
   sydney:
     :name: Sydney
     :region: syd
@@ -855,6 +1087,7 @@
     :events:
       gatsby:
         :name: Gatsby
+        :date: 6th April 2024
       dancing-with-the-stars:
         :name: Dancing With The Stars
   vabeach:
@@ -863,14 +1096,18 @@
     :events:
       newsome-twosome:
         :name: Medal Ball - Newsome Twosome
+        :date: March 15, 2024
       summer-beach-bash:
         :name: Summer Beach Bash
+        :date: August 3, 2024
       freestyles:
         :name: Virginia Beach Freestyles
+        :date: October 12-13, 2024
   vicenza:
     :name: Vicenza
     :region: ams
     :locale: it-IT
+    :date: '2024'
   warsaw:
     :name: Warsaw
     :region: ams
@@ -878,14 +1115,18 @@
     :events:
       june-warsaw-freestyle:
         :name: June Warsaw Freestyle
+        :date: '2024'
       freestyle-showcase-warsaw-2024:
         :name: Freestyle Showcase Warsaw 2024
+        :date: '2025-01-12'
   westchester:
     :name: West Chester
     :region: ord
+    :date: '2024'
   woodlands:
     :name: Woodlands
     :region: dfw
+    :date: 05/18/2024
 2023:
   annapolis:
     :name: Annapolis
@@ -893,97 +1134,127 @@
     :events:
       medalball:
         :name: Metal Ball
+        :date: June 10, 2023
       chesapeakeclassic:
         :name: Chesapeake Classic
+        :date: October 27-28, 2023
       gratitudegala:
         :name: Gratitude Gala
+        :date: Sunday, December 3 2023
   carmel:
     :name: Carmel
     :region: ord
+    :date: '2023-11-12'
   charlotte:
     :name: Charlotte
     :region: atl
+    :date: June 23 & 24, 2023
   chicago:
     :name: Chicago
     :region: ord
+    :date: '2023'
   clearwater:
     :name: Clearwater
     :region: mia
     :events:
       glassslipper:
         :name: Glass Slipper Gala
+        :date: June 21-24
       nationaldance:
         :name: National Dance Day
+        :date: 7/28/23
       flamingoopener:
         :name: Flamingo Opener
+        :date: September 15, 2023
       flamingo-fright:
         :name: Flamingo Fright Festival
+        :date: October 20, 2023
       snowball:
         :name: Snowball
+        :date: 12/16/23
   durham:
     :name: Durham
     :region: iad
+    :date: May 13, 2023
   greenhills:
     :name: Nashville-Green Hills
     :region: atl
+    :date: 11-11-23
   harrisburg:
     :name: Harrisburg
     :region: iad
+    :date: March 10 & 11
   kennesaw:
     :name: Kennesaw
     :region: atl
+    :date: Saturday November 11th, 2023
   lakeview:
     :name: Lakeview
     :region: ord
     :events:
       showcase:
         :name: Showcase
+        :date: '2023-06-24'
       showcase-rounds:
         :name: Showcase Rounds
+        :date: '2023'
   livermore:
     :name: Livermore
     :region: sjc
+    :date: 10/29/23
   montreal:
     :name: Montreal
     :region: bos
     :locale: fr-CA
+    :date: November 18, 2023
   raleigh:
     :name: Raleigh
     :region: iad
     :events:
       night-in-paris:
         :name: A Night In Paris
+        :date: Jan 27 & 28
       team-match:
         :name: Team Match
+        :date: September 29,2023
   richmond:
     :name: Richmond
     :region: atl
     :events:
       medalball:
         :name: Medal Ball
+        :date: April 29th, 2023
       teammatch:
         :name: Team Match
+        :date: 8/12/2023
       nouveau-duo:
         :name: Nouveau Duo
+        :date: December 16th, 2023
   salem:
     :name: Salem
     :region: sea
+    :date: 10/15/2023
   sarasota:
     :name: Sarasota
     :region: mia
+    :date: December 2nd 2023
   sugarland:
     :name: Sugar Land
     :region: dfw
+    :date: Saturday, December 16th, 2023
   sydney:
     :name: Sydney
     :region: syd
     :locale: en-AU
+    :date: 11th November 2023
   vabeach:
     :name: Virginia Beach
     :region: iad
+    :date: October 13-14, 2023
   woodlands:
     :name: Woodlands
     :region: dfw
+    :date: 7/8/2023
 2022:
   annapolis:
     :name: Annapolis
@@ -991,22 +1262,30 @@
     :events:
       medalball:
         :name: Metal Ball
+        :date: Saturday, June 11, 2022
       chesapeakeclassic:
         :name: Chesapeake Classic
+        :date: 23-24 September 2022
       gratitudegala:
         :name: Gratitude Gala
+        :date: Dec. 4th, 2022
   cary:
     :name: Cary
     :region: iad
+    :date: 9/8/2022
   charlotte:
     :name: Charlotte
     :region: atl
+    :date: July 29 & 30, 2022
   harrisburg:
     :name: Harrisburg
     :region: iad
+    :date: March 4-5
   kennesaw:
     :name: Kennesaw
     :region: atl
+    :date: August 26, 2023
   vabeach:
     :name: Virginia Beach
     :region: iad
+    :date: October 15-16, 2022
