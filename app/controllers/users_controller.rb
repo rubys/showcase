@@ -261,7 +261,10 @@ class UsersController < ApplicationController
         end
       end
 
-      @studios = @studios.map {|studio| (studio['name'] || studio[:name]).strip}.uniq.sort
+      studios = @studios.map {|studio| (studio['name'] || studio[:name]).strip}
+      locations = Location.order(:key).pluck(:name)
+
+      @studios = (studios + locations).uniq.sort
 
       @studios.unshift 'index'
     end
