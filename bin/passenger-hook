@@ -36,12 +36,6 @@ begin
   cable = status[/^showcase-cable.*?\n\n/m]
   processes -= 1 if cable and cable =~ /Sessions:\s*[1-9]/
 
-  # sentry keeps the index process running in iad, so we don't count it
-  if ENV['FLY_REGION'] == 'iad'
-    index = status[/^showcase-index.*?\n\n/m]
-    processes -= 1 if index =~ /Sessions: 0/
-  end
-
   if processes == 0
     # keep track of when demo was last updated
     if File.exist? DEMO
