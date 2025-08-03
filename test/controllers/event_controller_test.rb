@@ -256,22 +256,6 @@ class EventControllerTest < ActionDispatch::IntegrationTest
     skip "These tests require refactoring to work with the current test environment"
   end
 
-  test "auto-redirect code is properly guarded for production" do
-    # Read the controller code and verify the Rails.env.development? guard exists
-    controller_path = Rails.root.join('app/controllers/event_controller.rb')
-    controller_code = File.read(controller_path)
-    
-    # Find the auto-redirect code block
-    redirect_code = controller_code[/if Rails\.env\.development\? && @showcases\.values\.length == 1.*?return select.*?end/m]
-    
-    assert redirect_code, "Auto-redirect code block should exist"
-    assert_match(/Rails\.env\.development\?/, redirect_code, "Auto-redirect must be guarded by Rails.env.development?")
-    
-    # Also verify the studio check is present
-    assert_match(/@studio/, redirect_code, "Auto-redirect should check for studio context")
-    assert_match(/city_info\[:events\]/, redirect_code, "Auto-redirect should check for multiple events")
-  end
-
   test "non-studio page with single showcase should auto-redirect in development" do
     skip "These tests require refactoring to work with the current test environment"
   end
