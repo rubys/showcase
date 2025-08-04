@@ -71,7 +71,7 @@
   </div>
 
   <% unless @unassigned.empty? %>
-  <p class="mt-4 text-red-500">Unassigned couples in heats: <%= @unassigned.sort.map {it.to_i == it ? it.to_i : it}.join(', ') %></p>
+  <p class="mt-4 text-red-500">Unassigned couples in heats: <%= @unassigned.sort.map {it.to_i == it ? it.to_i : it}.select {it > 0}.join(', ') %></p>
   <% end %>
 
   <table>
