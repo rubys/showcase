@@ -229,6 +229,10 @@ GEM
     pp (0.6.2)
       prettyprint
     prettyprint (0.2.0)
+    propshaft (1.2.1)
+      actionpack (>= 7.0.0)
+      activesupport (>= 7.0.0)
+      rack
     psych (5.2.6)
       date
       stringio
@@ -313,14 +317,6 @@ GEM
       simplecov_json_formatter (~> 0.1)
     simplecov-html (0.13.2)
     simplecov_json_formatter (0.1.4)
-    sprockets (4.2.2)
-      concurrent-ruby (~> 1.0)
-      logger
-      rack (>= 2.2.4, < 4)
-    sprockets-rails (3.5.2)
-      actionpack (>= 6.1)
-      activesupport (>= 6.1)
-      sprockets (>= 3.0.0)
     sqlite3 (2.7.3-aarch64-linux-gnu)
     sqlite3 (2.7.3-aarch64-linux-musl)
     sqlite3 (2.7.3-arm-linux-gnu)
@@ -407,6 +403,7 @@ DEPENDENCIES
   kamal
   kramdown (~> 2.4)
   logger (~> 1.6)
+  propshaft
   puma (>= 5.0)
   rails (~> 8.0.2)
   redis (>= 4.0.1)
@@ -416,7 +413,6 @@ DEPENDENCIES
   sentry-ruby (~> 5.26)
   simplecov
   simplecov-html
-  sprockets-rails
   sqlite3 (~> 2.1)
   stimulus-rails
   tailwindcss-rails (~> 4.3.0)
