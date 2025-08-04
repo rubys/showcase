@@ -135,6 +135,6 @@ class FormationsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def formation_params
-      params.require(:formation).permit(:person_id, :solo_id)
+      params.expect(formation: [:person_id, :solo_id])
     end
 end

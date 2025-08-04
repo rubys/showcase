@@ -224,7 +224,7 @@ class ShowcasesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def showcase_params
-      params.require(:showcase).permit(:year, :key, :name, :location_id, :start_date, :end_date)
+      params.expect(showcase: [:year, :key, :name, :location_id, :start_date, :end_date])
     end
 
     def send_showcase_request_email(showcase)

@@ -226,7 +226,7 @@ class CategoriesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def category_params
-      params.require(:category).permit(:name, :order, :day, :time, :ballrooms, :max_heat_size, :split, :duration, :routines, :cost_override, :pro, :studio_cost_override)
+      params.expect(category: [:name, :order, :day, :time, :ballrooms, :max_heat_size, :split, :duration, :routines, :cost_override, :pro, :studio_cost_override])
     end
 
     def form_init
