@@ -9,10 +9,7 @@ Bundler.require(*Rails.groups)
 module AmEvent
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
-    # NOTE: Keeping Rails 7.0 defaults to avoid SQL reserved word quoting requirements.
-    # Rails 8.0 requires quoting columns named 'order' and 'name' which would need
-    # extensive codebase changes. Consider renaming these columns in the future.
-    config.load_defaults 7.0
+    config.load_defaults 8.0
     config.active_support.to_time_preserves_timezone = :zone
 
     # Configuration for the application, engines, and railties goes here.

@@ -4,31 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Rails Configuration
 
-The application runs on Rails 8.0.2 but uses Rails 7.0 configuration defaults (`config.load_defaults 7.0`). This is intentional to avoid breaking changes related to SQL reserved word quoting. Rails 8.0 requires explicit quoting of column names that are SQL reserved words (like 'order' and 'name'), which would require extensive codebase changes.
+The application runs on Rails 8.0.2 with full Rails 8.0 configuration defaults (`config.load_defaults 8.0`).
 
-### Rails 8.0 Migration Strategy
+### Rails 8.0 Migration Completed
 
-An incremental migration approach is being implemented:
+All SQL reserved word compatibility issues have been resolved:
 
-1. **Ordered Scopes Added**: Models with `order` columns now have an `ordered` scope that uses `arel_table[:order]` for Rails 8.0 compatibility:
-   - `Dance.ordered` instead of `Dance.order(:order)`
-   - `Category.ordered` instead of `Category.order(:order)`
-   - `Billable.ordered` instead of `Billable.order(:order)`
-   - `Song.ordered` instead of `Song.order(:order)`
+1. **Ordered Scopes**: Models with `order` columns use an `ordered` scope with `arel_table[:order]`:
+   - `Dance.ordered`, `Category.ordered`, `Billable.ordered`, `Song.ordered`, etc.
 
-2. **Gradual Replacement**: Replace `.order(:order)` calls with `.ordered` scopes as code is touched. Examples:
-   ```ruby
-   # Old (Rails 8.0 incompatible)
-   Dance.order(:order).where(heat_length: nil)
-   
-   # New (Rails 8.0 compatible) 
-   Dance.ordered.where(heat_length: nil)
-   ```
+2. **By Name Scopes**: Models with `name` columns use a `by_name` scope with `arel_table[:name]`:
+   - `Person.by_name`, `Studio.by_name`, `Dance.by_name`
 
-3. **Completed**: All `.order(:order)` calls have been migrated to `.ordered` scopes.
-4. **Completed**: All `.order(:name)` calls have been migrated to `.by_name` scopes.
+3. **All migrations complete**: The codebase is now fully compatible with Rails 8.0's SQL reserved word quoting requirements.
 
-Future work should consider renaming these columns to non-reserved words.
+Future work could consider renaming these columns to non-reserved words for cleaner code.
 
 ## Project Overview
 
