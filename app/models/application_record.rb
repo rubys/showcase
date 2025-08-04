@@ -25,11 +25,6 @@ class ApplicationRecord < ActiveRecord::Base
     end
   end
 
-  # stub normalizes until 7.1 upgrade
-  unless respond_to? :normalizes
-    def self.normalizes *args
-    end
-  end
 
   RAILS_STORAGE = Pathname.new(ENV.fetch("RAILS_STORAGE", Rails.root.join("storage")))
 
