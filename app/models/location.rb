@@ -1,6 +1,6 @@
 class Location < ApplicationRecord
   normalizes :key, with: -> name { name.strip }
-  normalizes :name, with: -> name { name.strip }
+  normalizes :name, with: -> name { name.split('.').first.strip }
   normalizes :locale, with: -> locale { locale.strip }
   
   validates :key, presence: true, uniqueness: true

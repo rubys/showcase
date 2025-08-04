@@ -22,6 +22,8 @@ export default class extends Controller {
   }
 
   normalize(name) {
-    return (name || '').toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+    return (name || '').toLowerCase()
+      .split(',')[0]
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
   }
 }

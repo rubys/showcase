@@ -6,19 +6,24 @@ export default class extends Controller {
 
   connect() {
     this.nameTarget.addEventListener('change', () => {
+      if (this.latitudeTarget.value || this.longitudeTarget.value) return
       let name = this.nameTarget.value
 
-      fetch(`https://geocode.maps.co/search?q=${encodeURIComponent(name)}`)
+      fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(name)}`, {
+        headers: {
+          'User-Agent': 'Showcase'
+        }
+      })
         .then(response => response.json())
         .then(locations => {
           let location = locations[0]
           if (!location) return 
+          this.element.title = location.display_name
           this.latitudeTarget.value = location.lat
           this.longitudeTarget.value = location.lon
           this.updateLocale()
 
-          this.nameTarget.parentElement.querySelector('label').title =
-            location.display_name
+          this.nameTarget.parentElement.querySelector('label').title =location.display_name
         })
     })
 
