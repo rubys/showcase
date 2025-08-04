@@ -208,8 +208,8 @@ class DancesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def dance_params
-      params.require(:dance).permit(:name, :category,
+      params.expect(dance: [:name, :category,
         :closed_category_id, :open_category_id, :solo_category_id,
-        :heat_length, :multi_category_id, :multi, :limit)
+        :heat_length, :multi_category_id, :multi, :limit])
     end
 end
