@@ -381,7 +381,7 @@ class HeatsController < ApplicationController
   def new
     @heat ||= Heat.new
     form_init(params[:primary])
-    @dances = Dance.order(:name).pluck(:name, :id).to_h
+    @dances = Dance.by_name.pluck(:name, :id).to_h
   end
 
   # GET /heats/1/edit
@@ -396,7 +396,7 @@ class HeatsController < ApplicationController
     @locked = Event.current.locked
 
     if Event.current.agenda_based_entries?
-      dances = Dance.where(order: 0...).order(:name)
+      dances = Dance.where(order: 0...).by_name
 
       if !dances.include?(@heat.dance) || !@heat.dance.freestyle_category
         @categories = dance_categories(@heat.dance, false)
@@ -406,7 +406,7 @@ class HeatsController < ApplicationController
 
       @dances = dances.map {|dance| [dance.name, dance.id]}
     else
-      @dances = Dance.order(:name).all.pluck(:name, :id)
+      @dances = Dance.by_name.all.pluck(:name, :id)
     end
 
     unless @avail.values.include? @partner
@@ -422,7 +422,7 @@ class HeatsController < ApplicationController
 
       if scores.length == 1
         @judge_id = scores.first.judge.id
-        @judges = Judge.includes(:person).where(present: true).order(:name).all.to_a.map {|judge| [judge.person.display_name, judge.person.id]}
+        @judges = Judge.includes(:person).where(present: true).joins(:person).merge(Person.by_name).all.to_a.map {|judge| [judge.person.display_name, judge.person.id]}
       end
     end
   end

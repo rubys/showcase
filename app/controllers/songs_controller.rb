@@ -15,12 +15,12 @@ class SongsController < ApplicationController
   # GET /songs/new
   def new
     @song = Song.new
-    @dances = Dance.order(:name).all.map {|dance| [dance.name, dance.id]}
+    @dances = Dance.by_name.all.map {|dance| [dance.name, dance.id]}
   end
 
   # GET /songs/1/edit
   def edit
-    @dances = Dance.order(:name).all.map {|dance| [dance.name, dance.id]}
+    @dances = Dance.by_name.all.map {|dance| [dance.name, dance.id]}
   end
 
   # POST /songs or /songs.json

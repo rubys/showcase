@@ -105,7 +105,7 @@ class PeopleController < ApplicationController
 
   def certificates
     if request.get?
-      @studios = [['-- all studios --', nil]] + Studio.order(:name).pluck(:name, :id)
+      @studios = [['-- all studios --', nil]] + Studio.by_name.pluck(:name, :id)
     else
       @people = Person.joins(:studio).where(type: 'Student').order('studios.name', :name).to_a
 
@@ -119,7 +119,7 @@ class PeopleController < ApplicationController
 
       unless params[:template].content_type == 'application/pdf'
         flash[:alert] = "template must be a PDF file."
-        @studios = [['-- all studios --', nil]] + Studio.order(:name).pluck(:name, :id)
+        @studios = [['-- all studios --', nil]] + Studio.by_name.pluck(:name, :id)
         render :certificates, status: :unprocessable_content
         return
       end
@@ -262,7 +262,7 @@ class PeopleController < ApplicationController
         .group("people.id")
         .order("COUNT(heats.id) DESC")
 
-      pros = Person.includes(:studio).where(type: 'Professional').order(:name)
+      pros = Person.includes(:studio).where(type: 'Professional').by_name
       @people += (pros - @people)
     else
      @people = Person.includes(:studio).where(type: 'Professional').order(sort_order)
@@ -344,7 +344,7 @@ class PeopleController < ApplicationController
     
     if package.type == 'Option'
       # For options, show all people who have access to this option (through packages or direct selection)
-      @people = Person.with_option(package_id).includes(:studio).order(:name)
+      @people = Person.with_option(package_id).includes(:studio).by_name
       @packages = package.option_included_by.map(&:package).sort_by {|package| [package.type, package.order]}
       @option = package
       
@@ -356,7 +356,7 @@ class PeopleController < ApplicationController
       end
     else
       # For packages, show people who have this package
-      @people = package.people.includes(:studio).order(:name)
+      @people = package.people.includes(:studio).by_name
     end
     
     @title = "#{package.type} - #{package.name}"
@@ -485,9 +485,9 @@ class PeopleController < ApplicationController
 
     seeking = @person.role == 'Leader' ? 'Follower' : 'Leader'
     teacher = Person.where(type: 'Professional', studio: studios,
-      role: [seeking, 'Both']).order(:name)
+      role: [seeking, 'Both']).by_name
     student = Person.where(type: 'Student', studio: @person.studio,
-      role: [seeking, 'Both']).order(:name)
+      role: [seeking, 'Both']).by_name
 
     @avail = teacher + student
     surname = @person.name.split(',').first + ','
@@ -537,7 +537,7 @@ class PeopleController < ApplicationController
 
   def studio_list
     @people = [['-- all students --', nil]] +
-      Person.where(type: 'Student', studio_id: params[:studio_id].to_i).order(:name).
+      Person.where(type: 'Student', studio_id: params[:studio_id].to_i).by_name.
          map {|person| [person.display_name, person.id]}
 
     respond_to do |format|
@@ -923,12 +923,12 @@ class PeopleController < ApplicationController
         @levels.select! {|name, id| id < @event.solo_level_id}
       end
 
-      @exclude = Person.where(studio: @person.studio).order(:name).to_a
+      @exclude = Person.where(studio: @person.studio).by_name.to_a
       @exclude.delete(@person)
       @exclude = @exclude.map {|exclude| [exclude.name, exclude.id]}
 
       @invoiceable = Person.where(studio: @person.studio, type: 'Student', invoice_to: nil).
-        where.not(id: @person.id).order(:name).to_a
+        where.not(id: @person.id).by_name.to_a
       related = @invoiceable.select {|person| person.last_name == @person.last_name}
       @invoiceable = (related + (@invoiceable - related)).map {|person| [person.name, person.id]}
 

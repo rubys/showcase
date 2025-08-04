@@ -28,7 +28,7 @@ class FormationsController < ApplicationController
     @levels.push ["All Levels", 0]
     @ages.push ["All Ages", 0]
 
-    @dances = Dance.order(:name).all.map {|dance| [dance.name, dance.id]}
+    @dances = Dance.by_name.all.map {|dance| [dance.name, dance.id]}
 
     @partner = nil
     @age = @person&.age_id
@@ -52,7 +52,7 @@ class FormationsController < ApplicationController
     @partner = @solo.heat.entry.partner(@person).id
 
     if Event.current.agenda_based_entries?
-      dances = Dance.where(order: 0...).order(:name)
+      dances = Dance.where(order: 0...).by_name
 
       @categories = dance_categories(@solo.heat.dance, true)
 
@@ -64,7 +64,7 @@ class FormationsController < ApplicationController
 
       @dances = dances.map {|dance| [dance.name, dance.id]}
     else
-      @dances = Dance.order(:name).all.pluck(:name, :id)
+      @dances = Dance.by_name.all.pluck(:name, :id)
     end
 
     @instructor = @solo.heat.entry.instructor

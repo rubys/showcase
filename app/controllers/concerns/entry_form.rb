@@ -35,18 +35,18 @@ module EntryForm
       @seeking = seeking
 
       instructors = Person.where(type: 'Professional', studio: studios,
-        role: [*seeking, 'Both']).order(:name)
+        role: [*seeking, 'Both']).by_name
 
       if @person.type == "Professional"
         more = Person.where(type: 'Professional',
-          role: [*seeking, 'Both']).order(:name) - instructors
+          role: [*seeking, 'Both']).by_name - instructors
         instructors += more
         @students = []
       else
         @students = Person.where(type: 'Student', studio: studio,
-          role: [*seeking, 'Both']).order(:name) +
+          role: [*seeking, 'Both']).by_name +
           Person.where(type: 'Student', studio: studio.pairs,
-          role: [*seeking, 'Both']).order(:name)
+          role: [*seeking, 'Both']).by_name
       end
 
       @avail = instructors + @students
@@ -63,10 +63,10 @@ module EntryForm
       @instructors = Person.where(type: 'Professional', studio: studios).
         all.map {|person| [person.display_name, person.id]}.sort.to_h
     else
-      @followers = Person.where(role: %w(Follower Both)).order(:name).pluck(:name, :id)
-      @leads = Person.where(role: %w(Leader Both)).order(:name).pluck(:name, :id)
-      @instructors = Person.where(type: 'Professional').order(:name).pluck(:name, :id)
-      @students = Person.where(type: 'Student').order(:name)
+      @followers = Person.where(role: %w(Follower Both)).by_name.pluck(:name, :id)
+      @leads = Person.where(role: %w(Leader Both)).by_name.pluck(:name, :id)
+      @instructors = Person.where(type: 'Professional').by_name.pluck(:name, :id)
+      @students = Person.where(type: 'Student').by_name
     end
 
     @ages = Age.all.order(:id).map {|age| [age.description, age.id]}

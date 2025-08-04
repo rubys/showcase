@@ -145,7 +145,7 @@ class TablesController < ApplicationController
                                        .merge(Person.with_option_unassigned(@option.id))
                                        .where(people: { type: ['Student', 'Professional', 'Guest', 'Official'] })
                                        .distinct
-                                       .order(:name)
+                                       .by_name
                                        .pluck(:id, :name)
     else
       # For main event tables, get studios with unassigned people
@@ -153,7 +153,7 @@ class TablesController < ApplicationController
                                        .where(people: { table_id: nil, type: ['Student', 'Professional', 'Guest'] })
                                        .where.not(id: 0)  # Exclude Event Staff
                                        .distinct
-                                       .order(:name)
+                                       .by_name
                                        .pluck(:id, :name)
     end
   end
@@ -177,7 +177,7 @@ class TablesController < ApplicationController
                                        .merge(Person.with_option_unassigned(@table.option_id))
                                        .where(people: { type: ['Student', 'Professional', 'Guest', 'Official'] })
                                        .distinct
-                                       .order(:name)
+                                       .by_name
                                        .pluck(:id, :name)
     else
       # For main event tables, get studios with unassigned people
@@ -185,7 +185,7 @@ class TablesController < ApplicationController
                                        .where(people: { table_id: nil, type: ['Student', 'Professional', 'Guest'] })
                                        .where.not(id: 0)  # Exclude Event Staff
                                        .distinct
-                                       .order(:name)
+                                       .by_name
                                        .pluck(:id, :name)
     end
     
@@ -229,7 +229,7 @@ class TablesController < ApplicationController
                                          .where(people: { table_id: nil, type: ['Student', 'Professional', 'Guest'] })
                                          .where.not(id: 0)
                                          .distinct
-                                         .order(:name)
+                                         .by_name
                                          .pluck(:id, :name)
         
         format.html { render :new, status: :unprocessable_content }
@@ -317,7 +317,7 @@ class TablesController < ApplicationController
                                            .where(people: { table_id: nil, type: ['Student', 'Professional', 'Guest'] })
                                            .where.not(id: 0)
                                            .distinct
-                                           .order(:name)
+                                           .by_name
                                            .pluck(:id, :name)
           @available_seats = table_size - current_people_count
         end
@@ -962,7 +962,7 @@ class TablesController < ApplicationController
       # Include Officials (Event Staff) for option tables
       unassigned_people = Person.with_option_unassigned(table.option_id)
                                 .where(studio_id: studio_id, type: ['Student', 'Professional', 'Guest', 'Official'])
-                                .order(:name)
+                                .by_name
                                 .limit(available_seats)
       
       # Assign them to the table via person_options
@@ -977,7 +977,7 @@ class TablesController < ApplicationController
     else
       # Get unassigned people from the studio for main event
       unassigned_people = Person.where(studio_id: studio_id, table_id: nil, type: ['Student', 'Professional', 'Guest'])
-                                .order(:name)
+                                .by_name
                                 .limit(available_seats)
       
       # Assign them to the table

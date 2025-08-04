@@ -264,7 +264,7 @@ module Printable
   def generate_invoice(studios = nil, student=false, instructor=nil)
     find_couples
 
-    studios ||= Studio.all.order(:name).preload(:studio1_pairs, :studio2_pairs, people: {options: :option, package: {package_includes: :option}})
+    studios ||= Studio.all.by_name.preload(:studio1_pairs, :studio2_pairs, people: {options: :option, package: {package_includes: :option}})
 
     @event = Event.current
     @track_ages = @event.track_ages
@@ -504,7 +504,7 @@ module Printable
   end
 
   def score_sheets
-    @judges = Person.where(type: 'Judge').order(:name)
+    @judges = Person.where(type: 'Judge').by_name
     @people ||= Person.joins(:studio).where(type: 'Student').order('studios.name, name')
     @heats = Heat.includes(:scores, :dance, entry: [:level, :age, :lead, :follow]).all.order(:number)
     @formations = Formation.joins(solo: :heat).where(on_floor: true).pluck(:person_id, :number)

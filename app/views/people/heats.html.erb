@@ -19,7 +19,7 @@
 <% if @studio %>
   <%= render "people/heats", person: nil %>
 <% elsif @people.length != 1
-  Studio.order(:name).each do |studio|
+  Studio.by_name.each do |studio|
     next if studio.name == 'Event Staff'
     @studio = studio %>
     <%= render "people/heats", person: nil %>

@@ -33,7 +33,7 @@
   </tr>
   </thead>
   <tbody>
-  <% @staff.people.order(:name).each do |person| %>
+  <% @staff.people.by_name.each do |person| %>
     <tr>
       <td><div class="mx-4"><%= person.name %></div></td>
       <td><div class="mx-4"><%= person.type %></div></td>

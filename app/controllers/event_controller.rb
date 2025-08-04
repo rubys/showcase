@@ -32,9 +32,9 @@ class EventController < ApplicationController
   end
 
   def root
-    @judges = Person.includes(:judge).where(type: 'Judge').order(:name)
-    @djs    = Person.where(type: 'DJ').order(:name)
-    @emcees = Person.where(type: 'Emcee').order(:name)
+    @judges = Person.includes(:judge).where(type: 'Judge').by_name
+    @djs    = Person.where(type: 'DJ').by_name
+    @emcees = Person.where(type: 'Emcee').by_name
 
     # If there are no DJs, but there are emcees, swap them as DJs will be used as emcees
     if @djs.empty? && !@emcees.empty?
@@ -80,9 +80,9 @@ class EventController < ApplicationController
   end
 
   def settings(status: :ok)
-    @judges = Person.where(type: 'Judge').order(:name)
-    @djs    = Person.where(type: 'DJ').order(:name)
-    @emcees = Person.where(type: 'Emcee').order(:name)
+    @judges = Person.where(type: 'Judge').by_name
+    @djs    = Person.where(type: 'DJ').by_name
+    @emcees = Person.where(type: 'Emcee').by_name
 
     @event ||= Event.current
 
@@ -284,8 +284,8 @@ class EventController < ApplicationController
     return select if params[:db]
 
     @people = Person.includes(:level, :age, :studio, :lead_entries, :follow_entries)
-      .order(:name)
-    @judges = Person.where(type: 'Judge').order(:name)
+      .by_name
+    @judges = Person.where(type: 'Judge').by_name
     @heats = Heat.joins(entry: :lead).
       includes(:scores, :dance, entry: [:level, :age, :lead, :follow]).
       order('number,people.back').all

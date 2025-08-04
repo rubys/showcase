@@ -40,7 +40,7 @@
       <% if @formations.any? {|id, number| number == heat.number} %>
       <td><ul>
       <% ids = (@formations.select {|id, number| number == heat.number}.map(&:first) + [heat.entry.lead_id, heat.entry.follow_id]) - [person.id]
-      Person.where(id: ids).order(:name).each do |dancer| %>
+      Person.where(id: ids).by_name.each do |dancer| %>
       <li><div class="mx-4"><%= link_to dancer.display_name, dancer %></div></li>
       <% end %>
       </ul></td>

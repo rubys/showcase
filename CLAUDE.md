@@ -26,7 +26,7 @@ An incremental migration approach is being implemented:
    ```
 
 3. **Completed**: All `.order(:order)` calls have been migrated to `.ordered` scopes.
-4. **Remaining Work**: ~40 `.order(:name)` calls still need migration (Person, Studio, Dance models).
+4. **Completed**: All `.order(:name)` calls have been migrated to `.by_name` scopes.
 
 Future work should consider renaming these columns to non-reserved words.
 

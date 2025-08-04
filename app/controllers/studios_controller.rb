@@ -8,7 +8,7 @@ class StudiosController < ApplicationController
 
   # GET /studios or /studios.json
   def index
-    @studios = Studio.all.order(:name).to_a
+    @studios = Studio.all.by_name.to_a
     staff = @studios.find {|studio| studio.id == 0}
     @studios.push @studios.delete staff
 
@@ -45,8 +45,8 @@ class StudiosController < ApplicationController
   def labels
     data = ['Name', 'Studio'].to_csv
 
-    Studio.order(:name).each do |studio|
-      studio.people.order(:name).each do |person|
+    Studio.by_name.each do |studio|
+      studio.people.by_name.each do |person|
         data << [person.display_name, studio.name].to_csv
       end
     end
@@ -62,7 +62,7 @@ class StudiosController < ApplicationController
   end
 
   def heats
-    @people = Person.where(type: ['Student', 'Professional'], studio: @studio).order(:name)
+    @people = Person.where(type: ['Student', 'Professional'], studio: @studio).by_name
     heat_sheets
 
     @event ||= Event.current

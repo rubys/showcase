@@ -7,6 +7,9 @@ class Person < ApplicationRecord
 
   normalizes :available, with: -> { _1.presence }
 
+  # Rails 8.0 compatible ordering scope
+  scope :by_name, -> { order(arel_table[:name]) }
+
   validates :name, presence: true, uniqueness: { scope: :type }
   validates :back, allow_nil: true, uniqueness: true
 

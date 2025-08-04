@@ -151,7 +151,7 @@ class TablesControllerTest < ActionDispatch::IntegrationTest
     assert_equal 2, new_table.people.count  # Should be limited by table size
     
     # Check that the first 2 people (alphabetically) were assigned
-    assigned_people = new_table.people.order(:name)
+    assigned_people = new_table.people.by_name
     assert_equal "Auto Pro", assigned_people.first.name
     assert_equal "Auto Student 1", assigned_people.second.name
     

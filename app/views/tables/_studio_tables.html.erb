@@ -31,7 +31,7 @@
           <% end %>
         <% else %>
           <% # For main event tables, use direct people association %>
-          <% all_people = table.people.includes(:studio).order(:name) %>
+          <% all_people = table.people.includes(:studio).by_name %>
           <% if all_people.any? %>
             <% all_people.each do |person| %>
               <% if person.studio == @studio %>

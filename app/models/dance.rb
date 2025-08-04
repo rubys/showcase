@@ -1,8 +1,9 @@
 class Dance < ApplicationRecord
   normalizes :name, with: -> name { name.strip }
 
-  # Rails 8.0 compatible ordering scope
+  # Rails 8.0 compatible ordering scopes
   scope :ordered, -> { order(arel_table[:order]) }
+  scope :by_name, -> { order(arel_table[:name]) }
 
   belongs_to :open_category, class_name: 'Category', optional: true
   belongs_to :closed_category, class_name: 'Category', optional: true

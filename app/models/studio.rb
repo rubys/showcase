@@ -1,6 +1,9 @@
 class Studio < ApplicationRecord
   normalizes :name, with: -> name { name.strip }
 
+  # Rails 8.0 compatible ordering scope
+  scope :by_name, -> { order(arel_table[:name]) }
+
   validates :name, presence: true, uniqueness: true
 
   belongs_to :default_student_package, class_name: 'Billable', optional: true
