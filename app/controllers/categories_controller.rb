@@ -230,7 +230,7 @@ class CategoriesController < ApplicationController
     end
 
     def form_init
-      dances = Dance.order(:order).all
+      dances = Dance.ordered.all
       @dances = dances.select {|dance| dance.heat_length == nil && dance.order >= 0}
       @multis = dances.select {|dance| dance.heat_length != nil && dance.order >= 0}
       @entries = {'Closed' => {}, 'Open' => {}, 'Solo' => {}, 'Multi' => {}}

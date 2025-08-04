@@ -159,7 +159,7 @@ end
 
 Category.update_all(split: nil, order: nil)
 CatExtension.delete_all
-category_count = Category.order(:order).all.map {|category| [category, []]}.to_h
+category_count = Category.ordered.all.map {|category| [category, []]}.to_h
 current_category = nil
 current_heat = nil
 order = []

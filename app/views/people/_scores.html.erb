@@ -150,7 +150,7 @@
   <h2 class="mt-4 ml-4 font-bold">Legend:</h2>
   <table class="ml-8 w-full">
   <% if Feedback.any? %>
-    <% Feedback.order(:order).each_slice(5) do |feedbacks| %>
+    <% Feedback.ordered.each_slice(5) do |feedbacks| %>
     <tr>
       <% feedbacks.each do |feedback| %>
         <td><abbr><%= feedback.abbr %></abbr>: <span><%= feedback.value %></span></td>

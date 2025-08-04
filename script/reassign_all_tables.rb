@@ -28,7 +28,7 @@ puts "Pack tables: #{pack_tables ? 'ENABLED' : 'DISABLED'}"
 puts
 
 # Get all billable options (meal options)
-options = Billable.where(type: 'Option').order(:order)
+options = Billable.where(type: 'Option').ordered
 puts "Found #{options.count} billable options"
 
 options.each do |option|

@@ -19,7 +19,7 @@ class ScoresController < ApplicationController
     setup_score_view_params
     
     # Get scrutineering dances only
-    dances = Dance.where(semi_finals: true).includes(:heats).order(:order)
+    dances = Dance.where(semi_finals: true).includes(:heats).ordered
     @scores = {}
     
     dances.each do |dance|
@@ -749,7 +749,7 @@ class ScoresController < ApplicationController
     @multi_scoring = event.multi_scoring
     dances = Dance.where.not(multi_category_id: nil).
       includes(multi_children: :dance, heats: [{entry: [:lead, :follow]}, :scores]).
-      order(:order)
+      ordered
 
     @score_range = get_scores_for_type(@multi_scoring)
 

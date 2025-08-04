@@ -92,8 +92,8 @@ class EventController < ApplicationController
     @levels = Level.all.order(:id).map {|level| [level.name, level.id]}
     @solo_levels = @levels[1..]
 
-    @packages = Billable.where.not(type: 'Order').order(:order).group_by(&:type)
-    @options = Billable.where(type: 'Option').order(:order)
+    @packages = Billable.where.not(type: 'Order').ordered.group_by(&:type)
+    @options = Billable.where(type: 'Option').ordered
 
     if not params[:tab] and Studio.pluck(:name).all? {|name| name == 'Event Staff'}
       clone unless ENV['RAILS_APP_OWNER'] == 'Demo'
@@ -137,10 +137,10 @@ class EventController < ApplicationController
       all.group_by {|person| person.type}
       # should .select(&:active?) be an option?
 
-    @packages = Billable.where.not(type: 'Option').order(:order).group_by(&:type).
+    @packages = Billable.where.not(type: 'Option').ordered.group_by(&:type).
       map {|type, packages| [type, packages.map {|package| [package, 0]}.to_h]}.to_h
 
-    @options = Billable.where(type: 'Option').order(:order).map {|package| [package, 0]}.to_h
+    @options = Billable.where(type: 'Option').ordered.map {|package| [package, 0]}.to_h
 
     @people.each do |type, people|
       people.each do |person|
@@ -815,7 +815,7 @@ class EventController < ApplicationController
 
   def dances
     if request.post?
-      dances = Dance.order(:order).map {|dance| [dance.name, dance]}.to_h
+      dances = Dance.ordered.map {|dance| [dance.name, dance]}.to_h
       new_names = params[:dances].split(/\s\s+|\n|\t|,/).
         map {|str| str.gsub(/^\W+/, '')}.select {|name| not name.empty?}.uniq
       order = dances.values.map(&:order)
@@ -844,7 +844,7 @@ class EventController < ApplicationController
         format.html { redirect_to settings_event_index_path(tab: 'Advanced'), notice: 'Dances successfully updated.' }
       end
     else
-      @dances = Dance.where(heat_length: nil).order(:order).pluck(:name).join("\n")
+      @dances = Dance.where(heat_length: nil).ordered.pluck(:name).join("\n")
     end
   end
 

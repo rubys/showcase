@@ -12,7 +12,7 @@ class SolosController < ApplicationController
     @solos = {}
 
     unscheduled = Struct.new(:id, :name).new(0, 'Unscheduled')
-    Solo.order(:order).each do |solo|
+    Solo.ordered.each do |solo|
       next unless solo.heat.category == 'Solo'
       cat = solo.heat.dance_category
       cat = cat ? cat.base_category : unscheduled
@@ -222,10 +222,10 @@ class SolosController < ApplicationController
 
     category = source.heat.solo.category_override
     if category
-      solos = Solo.order(:order).where(category_override_id: category.id)
+      solos = Solo.ordered.where(category_override_id: category.id)
     else
       category = source.heat.dance.solo_category
-      solos = Solo.where(category_override_id: nil).order(:order).joins(heat: :dance).where(dance: {solo_category_id: category&.id})
+      solos = Solo.where(category_override_id: nil).ordered.joins(heat: :dance).where(dance: {solo_category_id: category&.id})
     end
 
     if source.order > target.order
@@ -295,7 +295,7 @@ class SolosController < ApplicationController
     solos = {}
     order = []
 
-    Solo.order(:order).each do |solo|
+    Solo.ordered.each do |solo|
       cat = solo.heat.dance.solo_category
       solos[cat] ||= []
       solos[cat] << solo

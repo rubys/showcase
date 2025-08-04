@@ -3,8 +3,8 @@ class BillablesController < ApplicationController
 
   # GET /billables or /billables.json
   def index
-    @packages = Billable.where.not(type: 'Order').order(:order).group_by(&:type)
-    @options = Billable.where(type: 'Option').order(:order)
+    @packages = Billable.where.not(type: 'Order').ordered.group_by(&:type)
+    @options = Billable.where(type: 'Option').ordered
     @event = Event.current
   end
 
@@ -19,13 +19,13 @@ class BillablesController < ApplicationController
 
     if @type == 'package'
       current_options = @billable.package_includes.map(&:option_id)
-      @options = Billable.where(type: 'Option').order(:order).
+      @options = Billable.where(type: 'Option').ordered.
         map {|option| [option, current_options.include?(option.id)]}
     else
       current_packages = @billable.option_included_by.map(&:package_id)
-      @packages = (Billable.where(type: 'Student').order(:order) +
-        Billable.where(type: 'Guest').order(:order) +
-        Billable.where(type: 'Professional').order(:order)).
+      @packages = (Billable.where(type: 'Student').ordered +
+        Billable.where(type: 'Guest').ordered +
+        Billable.where(type: 'Professional').ordered).
         map {|package| [package, current_packages.include?(package.id)]}
     end
   end
@@ -92,13 +92,13 @@ class BillablesController < ApplicationController
     source = Billable.find(params[:source].to_i)
     target = Billable.find(params[:target].to_i)
 
-    group = Billable.where(type: source.type).order(:order)
+    group = Billable.where(type: source.type).ordered
 
     if source.order > target.order
-      billables = Billable.where(type: source.type, order: target.order..source.order).order(:order)
+      billables = Billable.where(type: source.type, order: target.order..source.order).ordered
       new_order = billables.map(&:order).rotate(1)
     else
-      billables = Billable.where(type: source.type, order: source.order..target.order).order(:order)
+      billables = Billable.where(type: source.type, order: source.order..target.order).ordered
       new_order = billables.map(&:order).rotate(-1)
     end
 

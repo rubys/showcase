@@ -277,8 +277,8 @@ class EntriesController < ApplicationController
     def agenda_init
       event = Event.current
 
-      dances = Dance.order(:order).where(heat_length: nil)
-      multis = Dance.order(:order).where.not(heat_length: nil)
+      dances = Dance.ordered.where(heat_length: nil)
+      multis = Dance.ordered.where.not(heat_length: nil)
 
       @include_open = event.include_open
       @include_closed = event.include_closed
@@ -321,12 +321,12 @@ class EntriesController < ApplicationController
 
         @agenda = []
         reorder = nil
-        Category.order(:order).each do |cat|
+        Category.ordered.each do |cat|
           next if cat.pro ^ pro
           dances = []
           category = nil
           dance_ids.each do |id, name|
-            dances = cat.send(id).order(:order)
+            dances = cat.send(id).ordered
 
             if dances.length > 0
               if dances.first.order < 0

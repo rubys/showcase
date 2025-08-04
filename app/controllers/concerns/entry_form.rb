@@ -110,7 +110,7 @@ module EntryForm
     end
 
     if not params[:age]
-      age = Age.order(:order).first
+      age = Age.order(:id).first
     else
       age = Age.where(id: params[:age]).first
       if not age and params[:age] == '0'

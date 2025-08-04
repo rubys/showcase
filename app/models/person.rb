@@ -118,7 +118,7 @@ class Person < ApplicationRecord
       self.package_id ||= studio&.default_guest_package_id
     end
 
-    self.package_id ||= Billable.where(type: type).order(:order).pluck(:id).first
+    self.package_id ||= Billable.where(type: type).ordered.pluck(:id).first
   end
 
   def default_package!

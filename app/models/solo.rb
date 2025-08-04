@@ -1,4 +1,7 @@
 class Solo < ApplicationRecord
+  # Rails 8.0 compatible ordering scope
+  scope :ordered, -> { order(arel_table[:order]) }
+
   belongs_to :heat
   belongs_to :combo_dance, class_name: 'Dance', optional: true
   belongs_to :category_override, class_name: 'Category', optional: true

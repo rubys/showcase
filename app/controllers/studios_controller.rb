@@ -202,9 +202,9 @@ class StudiosController < ApplicationController
     @studio.student_solo_cost ||= @studio.solo_cost;
     @studio.student_multi_cost ||= @studio.multi_cost;
 
-    @student_packages = Billable.where(type: 'Student').order(:order).pluck(:name, :id).to_h
-    @professional_packages = Billable.where(type: 'Professional').order(:order).pluck(:name, :id).to_h
-    @guest_packages = Billable.where(type: 'Guest').order(:order).pluck(:name, :id).to_h
+    @student_packages = Billable.where(type: 'Student').ordered.pluck(:name, :id).to_h
+    @professional_packages = Billable.where(type: 'Professional').ordered.pluck(:name, :id).to_h
+    @guest_packages = Billable.where(type: 'Guest').ordered.pluck(:name, :id).to_h
 
     if @studio.default_student_package_id
       @studio.student_registration_cost ||= Billable.find(@studio.default_student_package_id).price

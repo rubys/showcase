@@ -169,10 +169,10 @@ class ShowcasesController < ApplicationController
       target = Showcase.find(params[:target].to_i)
   
       if source.order > target.order
-        showcases = Showcase.where(order: target.order..source.order).order(:order)
+        showcases = Showcase.where(order: target.order..source.order).ordered
         new_order = showcases.map(&:order).rotate(1)
       else
-        showcases = Showcase.where(order: source.order..target.order).order(:order)
+        showcases = Showcase.where(order: source.order..target.order).ordered
         new_order = showcases.map(&:order).rotate(-1)
       end
   

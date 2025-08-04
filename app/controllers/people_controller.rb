@@ -378,7 +378,7 @@ class PeopleController < ApplicationController
         entry.lead == partner || entry.follow == partner
       }]}.to_h
 
-    @dances = Dance.order(:order).all.map {|dance|
+    @dances = Dance.ordered.all.map {|dance|
       [dance, partners.map {|partner, entries|
         [partner, entries.map {|entry| entry.active_heats.count {|heat| heat.category != 'Solo' and heat.dance == dance}}.sum]
       }.to_h]
@@ -932,7 +932,7 @@ class PeopleController < ApplicationController
       related = @invoiceable.select {|person| person.last_name == @person.last_name}
       @invoiceable = (related + (@invoiceable - related)).map {|person| [person.name, person.id]}
 
-      @packages = Billable.where(type: @person.type).order(:order).pluck(:name, :id)
+      @packages = Billable.where(type: @person.type).ordered.pluck(:name, :id)
       
       # Add table options for Professional, Student, and Guest types
       if %w[Professional Student Guest].include?(@person.type) && Table.exists?
@@ -951,7 +951,7 @@ class PeopleController < ApplicationController
 
       @person.default_package
 
-      @options = Billable.where(type: 'Option').order(:order)
+      @options = Billable.where(type: 'Option').ordered
 
       if @person.package_id
         package = @person.package || Billable.find(@person.package_id)

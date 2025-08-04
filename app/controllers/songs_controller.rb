@@ -67,7 +67,7 @@ class SongsController < ApplicationController
   def dancelist
     @dance = Dance.find(params[:dance])
     @heats = @dance.heats.select(:number).distinct.count
-    @songs = @dance.songs.order(:order)
+    @songs = @dance.songs.ordered
     @preload = 'auto'
   end
 
@@ -99,10 +99,10 @@ class SongsController < ApplicationController
     target = Song.find(params[:target].to_i)
 
     if source.order > target.order
-      songs = Song.where(order: target.order..source.order).order(:order)
+      songs = Song.where(order: target.order..source.order).ordered
       new_order = songs.map(&:order).rotate(1)
     else
-      songs = Song.where(order: source.order..target.order).order(:order)
+      songs = Song.where(order: source.order..target.order).ordered
       new_order = songs.map(&:order).rotate(-1)
     end
 

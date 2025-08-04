@@ -76,10 +76,10 @@ class FeedbacksController < ApplicationController
     end
 
     if source.order > target.order
-      feedbacks = Feedback.where(order: target.order..source.order).order(:order)
+      feedbacks = Feedback.where(order: target.order..source.order).ordered
       new_order = feedbacks.map(&:order).rotate(1)
     else
-      feedbacks = Feedback.where(order: source.order..target.order).order(:order)
+      feedbacks = Feedback.where(order: source.order..target.order).ordered
       new_order = feedbacks.map(&:order).rotate(-1)
     end
 

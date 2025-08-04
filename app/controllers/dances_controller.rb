@@ -4,7 +4,7 @@ class DancesController < ApplicationController
 
   # GET /dances or /dances.json
   def index
-    @dances = Dance.includes(:open_category, :closed_category, :solo_category, :multi_category).order(:order).all
+    @dances = Dance.includes(:open_category, :closed_category, :solo_category, :multi_category).ordered.all
     @heats = Heat.where(number: 1..).group(:dance_id).distinct.count(:number)
     @entries = Heat.where(number: 1..).group(:dance_id).count
     @songs = Song.group(:dance_id).count
@@ -89,10 +89,10 @@ class DancesController < ApplicationController
     target = Dance.find(params[:target].to_i)
 
     if source.order > target.order
-      dances = Dance.where(order: target.order..source.order).order(:order)
+      dances = Dance.where(order: target.order..source.order).ordered
       new_order = dances.map(&:order).rotate(1)
     else
-      dances = Dance.where(order: source.order..target.order).order(:order)
+      dances = Dance.where(order: source.order..target.order).ordered
       new_order = dances.map(&:order).rotate(-1)
     end
 
@@ -116,7 +116,7 @@ class DancesController < ApplicationController
   end
 
   def form
-    @dances = Dance.where(heat_length: nil).order(:order).all
+    @dances = Dance.where(heat_length: nil).ordered.all
     @columns = Dance.maximum(:col) || 4
   end
 
@@ -175,7 +175,7 @@ class DancesController < ApplicationController
     def form_init
       @event = Event.current
 
-      @categories = Category.order(:order).pluck(:name, :id)
+      @categories = Category.ordered.pluck(:name, :id)
 
       @affinities = Category.all.map do |category|
         dances = category.open_dances + category.closed_dances + category.solo_dances

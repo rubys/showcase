@@ -1,6 +1,9 @@
 class Song < ApplicationRecord
   normalizes :title, with: -> name { name.strip }
 
+  # Rails 8.0 compatible ordering scope
+  scope :ordered, -> { order(arel_table[:order]) }
+
   belongs_to :dance
   has_one_attached :song_file, dependent: false
 

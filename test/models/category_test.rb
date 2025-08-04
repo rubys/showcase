@@ -505,7 +505,7 @@ class CategoryTest < ActiveSupport::TestCase
   end
   
   test "fixture categories have proper ordering" do
-    categories = Category.order(:order)
+    categories = Category.ordered
     expected_order = [1, 2, 3, 4, 5] # Based on fixtures
     actual_order = categories.first(5).map(&:order)
     assert_equal expected_order, actual_order

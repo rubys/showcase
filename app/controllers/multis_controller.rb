@@ -15,10 +15,10 @@ class MultisController < ApplicationController
     @dance ||= Dance.new
     @dance.heat_length ||= 3
 
-    @dances = Dance.order(:order).where(heat_length: nil)
+    @dances = Dance.ordered.where(heat_length: nil)
     @multi = {}
 
-    @categories = Category.order(:order).pluck(:name, :id)
+    @categories = Category.ordered.pluck(:name, :id)
 
     previous = Dance.where.not(multi_category_id: nil).select(:multi_category_id).distinct.pluck(:multi_category_id)
     @dance.multi_category_id ||= previous.first if previous.length == 1

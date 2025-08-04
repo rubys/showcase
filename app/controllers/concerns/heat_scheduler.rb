@@ -244,7 +244,7 @@ module HeatScheduler
   end
 
   def reorder(groups)
-    categories = Category.order(:order).all
+    categories = Category.ordered.all
     cats = (categories.map {|cat| [cat, []]} + [[nil, []]]).to_h
     solos = (categories.map {|cat| [cat, []]} + [[nil, []]]).to_h
     multis = (categories.map {|cat| [cat, []]} + [[nil, []]]).to_h

@@ -3,6 +3,9 @@ class Billable < ApplicationRecord
 
   normalizes :name, with: -> name { name.strip }
 
+  # Rails 8.0 compatible ordering scope
+  scope :ordered, -> { order(arel_table[:order]) }
+
   validates :name, presence: true, uniqueness: { scope: :type }
   validates :price, presence: true
 

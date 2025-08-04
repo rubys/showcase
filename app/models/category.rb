@@ -1,6 +1,9 @@
 class Category < ApplicationRecord
   normalizes :name, with: -> name { name.strip }
 
+  # Rails 8.0 compatible ordering scope
+  scope :ordered, -> { order(arel_table[:order]) }
+
   before_destroy :delete_owned_dances
 
   has_many :open_dances, dependent: :nullify,

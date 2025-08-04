@@ -288,7 +288,7 @@ class EntryFormTest < ActiveSupport::TestCase
   end
   
   test "find_or_create_entry uses first age when no age specified" do
-    first_age = Age.order(:order).first
+    first_age = Age.order(:id).first
     
     params = {
       primary: @student.id,

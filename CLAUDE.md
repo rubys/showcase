@@ -6,6 +6,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The application runs on Rails 8.0.2 but uses Rails 7.0 configuration defaults (`config.load_defaults 7.0`). This is intentional to avoid breaking changes related to SQL reserved word quoting. Rails 8.0 requires explicit quoting of column names that are SQL reserved words (like 'order' and 'name'), which would require extensive codebase changes.
 
+### Rails 8.0 Migration Strategy
+
+An incremental migration approach is being implemented:
+
+1. **Ordered Scopes Added**: Models with `order` columns now have an `ordered` scope that uses `arel_table[:order]` for Rails 8.0 compatibility:
+   - `Dance.ordered` instead of `Dance.order(:order)`
+   - `Category.ordered` instead of `Category.order(:order)`
+   - `Billable.ordered` instead of `Billable.order(:order)`
+   - `Song.ordered` instead of `Song.order(:order)`
+
+2. **Gradual Replacement**: Replace `.order(:order)` calls with `.ordered` scopes as code is touched. Examples:
+   ```ruby
+   # Old (Rails 8.0 incompatible)
+   Dance.order(:order).where(heat_length: nil)
+   
+   # New (Rails 8.0 compatible) 
+   Dance.ordered.where(heat_length: nil)
+   ```
+
+3. **Completed**: All `.order(:order)` calls have been migrated to `.ordered` scopes.
+4. **Remaining Work**: ~40 `.order(:name)` calls still need migration (Person, Studio, Dance models).
+
 Future work should consider renaming these columns to non-reserved words.
 
 ## Project Overview
