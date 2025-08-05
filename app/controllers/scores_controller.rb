@@ -71,7 +71,7 @@ class ScoresController < ApplicationController
 
     @browser_warn = browser_warn
 
-    @unassigned = Event.current.assign_judges > 0 ? Heat.includes(:scores).where(scores: { id: nil }).distinct.pluck(:number) : []
+    @unassigned = Event.current.assign_judges > 0 ? Heat.includes(:scores).where(category: ['Open', 'Closed'], scores: { id: nil }).distinct.pluck(:number).select {it > 0} : []
 
     render :heatlist, status: (@browser_warn ? :upgrade_required : :ok)
   end
