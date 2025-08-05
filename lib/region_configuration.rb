@@ -278,7 +278,7 @@ module RegionConfiguration
         if location_events.length == 1 && location_events.first.key == 'showcase'
           showcase = location_events.first
           entry[:date] = showcase.date if showcase.date.present?
-        elsif location_events.length > 1
+        elsif location_events.length > 0
           entry[:events] = location_events.reverse.map do |event|
             event_data = { name: event.name }
             event_data[:date] = event.date if event.date.present?
