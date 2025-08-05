@@ -67,15 +67,40 @@ can click on it to see helpful hints.</li>
 <div id="studios-list" class="w-full">
 <ul class="grid gap-4 grid-cols-4">
 <% cities = @cities.to_a.sort %>
-<% rows = (cities.length.to_f/4).ceil %>
-<% (0...rows).each do |row| %>
-<% (0...4).each do |col| %>
-<% name, city = cities[col*rows + row] %>
-<% next unless city %>
-  <li class="w-full">
-    <span class="text-slate-500"><%= link_to name, studio_events_path(city), class: "cursor-pointer" %>
-  </li>
-<% end %>
+<% total_items = cities.length %>
+<% rows = (total_items.to_f/4).ceil %>
+<% 
+  # Calculate how many items each column should have
+  full_cols = total_items % 4
+  full_cols = 4 if full_cols == 0
+  
+  # Build a 2D array to hold the cities in column-first order
+  grid = Array.new(rows) { Array.new(4, nil) }
+  
+  city_index = 0
+  (0...4).each do |col|
+    # Determine how many items this column gets
+    col_height = col < full_cols ? rows : rows - 1
+    
+    (0...col_height).each do |row|
+      if city_index < cities.length
+        grid[row][col] = cities[city_index]
+        city_index += 1
+      end
+    end
+  end
+%>
+<% grid.each do |row| %>
+  <% row.each do |city_pair| %>
+    <% if city_pair %>
+      <% name, city = city_pair %>
+      <li class="w-full">
+        <span class="text-slate-500"><%= link_to name, studio_events_path(city), class: "cursor-pointer" %>
+      </li>
+    <% else %>
+      <li class="w-full">&nbsp;</li>
+    <% end %>
+  <% end %>
 <% end %>
 </ul>
 </div>
