@@ -18,6 +18,8 @@ module DbQuery
 
     results = dbconn.execute(query)
     results.map { |row| row.transform_keys(&:to_s) }
+  rescue SQLite3::SQLException
+    []
   ensure
     dbconn&.close
   end
@@ -30,6 +32,8 @@ module DbQuery
 
     results = dbconn.execute(sql)
     results.map { |row| row.transform_keys(&:to_s) }
+  rescue SQLite3::SQLException
+    []
   ensure
     dbconn&.close
   end
