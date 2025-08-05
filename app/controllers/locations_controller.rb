@@ -168,13 +168,15 @@ class LocationsController < ApplicationController
         return
       end
 
+      @user.update!(sites: @location.name)
+
       @location.user_id = @user.id
       @location.key = @user.userid
     end
 
     respond_to do |format|
       if @location.save
-        if params[:showcase]
+        if params[:showcase] && !showcase_params[:name].blank?
           @showcase = Showcase.new(showcase_params)
           @showcase.location_id = @location.id
           @showcase.order = (Showcase.maximum(:order) || 0) + 1
