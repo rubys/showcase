@@ -227,6 +227,12 @@
     :name: Folsom
     :region: sjc
     :date: 3/15/25
+  fremont:
+    :name: Fremont
+    :region: sjc
+    :events:
+      fall-medal-ball:
+        :name: Fall Medal Ball
   glenview:
     :name: Glenview
     :region: ord
