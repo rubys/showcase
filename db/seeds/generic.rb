@@ -13,12 +13,16 @@ event = Event.create!(
   heat_range_age: config[:settings][:heat][:age],
 )
 
+db_basename = ENV[ "RAILS_APP_DB"]
+if db_basename.blank? && ENV['DATABASE_URL']
+  db_basename = File.basename(ENV['DATABASE_URL'], '.sqlite3')
+end
+
 # Check for showcases.yml and update event with date/name if available
 showcases_file = Rails.root.join('config/tenant/showcases.yml')
-if File.exist?(showcases_file) && ENV['DATABASE_URL']
+if File.exist?(showcases_file) && db_basename.present?
   # Parse database URL to extract year, location, and optional event key
   # Expected format: .../YEAR-LOCATION.sqlite3 or .../YEAR-LOCATION-EVENT.sqlite3
-  db_basename = File.basename(ENV['DATABASE_URL'], '.sqlite3')
   parts = db_basename.split('-')
   
   if parts.length >= 2
@@ -34,18 +38,18 @@ if File.exist?(showcases_file) && ENV['DATABASE_URL']
     
     if location_data
       # Check if there are multiple events for this location
-      if location_data['events'] && event_key
+      if location_data[:events] && event_key
         # Multiple events - find the specific event
-        event_data = location_data['events'][event_key]
+        event_data = location_data[:events][event_key]
         if event_data
           event.update!(
-            name: event_data['name'],
-            date: event_data['date']
+            name: event_data[:name],
+            date: event_data[:date]
           )
         end
-      elsif location_data['date']
+      elsif location_data[:date]
         # Single event - use the date directly from location
-        event.update!(date: location_data['date'])
+        event.update!(date: location_data[:date])
       end
     end
   end
