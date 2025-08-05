@@ -1,5 +1,28 @@
 #!/usr/bin/env bash -e
 
+# Handle --kill option
+if [[ "$1" == "--kill" ]]; then
+  echo "Killing existing puma server on port 3000..."
+  
+  # Kill any process listening on port 3000
+  if command -v lsof &> /dev/null; then
+    pids=$(lsof -ti :3000 2>/dev/null || true)
+    if [[ -n "$pids" ]]; then
+      echo "Killing processes on port 3000: $pids"
+      kill -9 $pids 2>/dev/null || true
+    fi
+  fi
+  
+  # Remove the PID file
+  if [[ -f tmp/pids/server.pid ]]; then
+    echo "Removing tmp/pids/server.pid"
+    rm -f tmp/pids/server.pid
+  fi
+  
+  echo "Done."
+  exit 0
+fi
+
 if ! command -v foreman &> /dev/null
 then
   echo "Installing foreman..."
