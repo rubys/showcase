@@ -4,9 +4,9 @@
   <%= form_with url: locations_users_path do |form| %>
   <%= form.hidden_field :location, value: @location.id %>
   <% @auth.each do |user| %>
-  <div class="my-5">
+  <div class="my-5 flex items-center">
     <%= form.check_box "auth[#{user.id}]", class: 'entry-count h-8', checked: @checked[user.id] %>
-    <label class="text-xl align-middle pt-2" for="auth[<%= user.id %>]"><span class="inline-block min-w-40"><%= user.userid %></span><span class="ml-4"><%= user.name1 %></span></label>
+    <label class="text-xl pt-2" for="auth[<%= user.id %>]"><span class="inline-block min-w-40"><%= user.userid %></span><span class="ml-4"><%= user.name1 %></span></label>
   </div>
   <% end %>
   <%= form.submit 'Save', class: "btn-blue" %>

@@ -4,9 +4,9 @@
   <%= form_with url: update_sisters_location_path do |form| %>
   <%= form.hidden_field :location, value: @location.id %>
   <% @studios.each do |studio| %>
-  <div class="my-5">
+  <div class="my-5 ">
     <%= form.check_box "sisters[#{studio}]", class: 'entry-count h-8', checked: @checked[studio] %>
-    <%= form.label "sisters[#{studio}]", studio, class: 'text-xl align-middle pt-2' %>
+    <%= form.label "sisters[#{studio}]", studio, class: 'text-xl pt-2' %>
   </div>
   <% end %>
   <%= form.submit 'Save', class: "btn-blue" %>

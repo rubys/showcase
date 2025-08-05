@@ -12,9 +12,9 @@ be copied is entries, heats, scores, and any package and options a participant m
   </div>
 
   <% %i(settings dances agenda packages studios people ages levels).each do |model| %>
-  <div class="my-5">
+  <div class="my-5 flex items-center">
     <%= form.check_box model, class: 'entry-count h-8', checked: true %>
-    <%= form.label model, class: 'text-xl align-middle pt-2' %>
+    <%= form.label model, class: 'text-xl pt-2' %>
   </div>
   <% end %>
 

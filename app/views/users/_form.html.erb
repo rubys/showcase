@@ -62,11 +62,11 @@
     <%= form.label :sites %>
     <% selected = user.sites.to_s.split(',') %>
     <% @studios.each do |studio| %>
-      <div class="my-5">
+      <div class="my-5 flex items-center">
         <% field = "user[sites][#{studio}]" %>
         <input name="<%= field %>" type="hidden" value="0" autocomplete="off">
         <input class="entry-count h-8" type="checkbox" value="1" <% if selected.include?(studio) %>checked <% end %>name="<%= field %>" id="<%= field %>">
-        <label class="text-xl align-middle pt-2" for="<%= field %>"><%= studio %></label>
+        <label class="text-xl pt-2" for="<%= field %>"><%= studio %></label>
       </div>
     <% end %>
   </div>
