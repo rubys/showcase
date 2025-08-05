@@ -1,6 +1,8 @@
 <% if person.type == "Student" %>
 <div class="float-right flex flex-col justify-end">
+<% if Event.current.include_open? || Event.current.include_closed? || Dance.where.not(heat_length: nil).any? %>
 <%= up_link 'Add heats', new_entry_path(primary: person), class: "btn-blue" %>
+<% end %>
 <%= up_link 'Add solo', new_solo_path(primary: person), class: "btn-blue my-2" %>
 <%= up_link 'Add formation', new_formation_path(primary: person), class: "btn-blue" %>
 <% if routines %>
