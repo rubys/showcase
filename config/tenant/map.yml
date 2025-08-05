@@ -476,6 +476,14 @@ studios:
     map: eu
     x: 353.62379883480446
     y: 348.1190555647173
+  ottawa:
+    name: Ottawa
+    lat: 45.4208777
+    lon: -75.6901106
+    region: bos
+    map: us
+    x: 752.8013400154026
+    y: 95.38644636060508
   perth:
     name: Perth
     lat: -31.9558933

@@ -490,6 +490,10 @@
       december:
         :name: December
         :date: '2025'
+  ottawa:
+    :name: Ottawa
+    :region: bos
+    :locale: en-CA
   princeton:
     :name: Princeton
     :region: ewr
