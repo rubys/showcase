@@ -41,9 +41,9 @@
     end
   %>
   <% if (event[:rows]['entries'] || 0) == 0 && !event[:date].start_with?(Date.today.year.to_s) %>
-  <tr class="bg-gray-200">
+  <tr class="bg-gray-200 hover:bg-gray-300">
   <% else %>
-  <tr>
+  <tr class="hover:bg-yellow-200">
   <% end %>
     <% year, city, token = event[:db].split('-', 3) %>
     <td><%= link_to event[:studio], studio_events_path(city) %>
