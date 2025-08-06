@@ -217,7 +217,7 @@ class BillablesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def billable_params
-      params.require(:billable).permit(:type, :name, :price, :order, :couples, :table_size, options: {}, packages: {})
+      params.expect(billable: [:type, :name, :price, :order, :couples, :table_size, { options: {} }, { packages: {} }])
     end
 
     def update_includes

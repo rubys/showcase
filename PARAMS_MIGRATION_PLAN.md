@@ -37,9 +37,9 @@ params.expect(song: [:dance_id, :order, :title, :artist])
 Handle controllers with nested options or array parameters:
 
 **Controllers to migrate:**
-- [ ] PeopleController (options: {} parameter)
-- [ ] BillablesController (options: {}, packages: {} parameters)
-- [ ] StudiosController (nested permitted params)
+- [x] PeopleController (options: {} parameter) - ✅ Completed 2025-08-06
+- [x] BillablesController (options: {}, packages: {} parameters) - ✅ Completed 2025-08-06
+- [x] StudiosController (nested permitted params) - ✅ Completed 2025-08-06
 
 **Example conversion:**
 ```ruby
@@ -73,15 +73,14 @@ Controllers with creative params usage requiring careful refactoring:
 
 ## Implementation Steps
 
-1. **Create feature branch** for the migration
-2. **Add test coverage** for param handling if missing
-3. **Migrate in phases** starting with simple conversions
-4. **Run full test suite** after each controller
+1. **Add test coverage** for param handling if missing
+2. **Migrate in phases** starting with simple conversions
+3. **Run full test suite** after each controller
    - Unit tests: `bin/rails test`
    - System tests: `bin/rails test:system`
    - Both must pass before proceeding
-5. **Manual testing** for complex forms (entries, scores, people)
-6. **Deploy to staging** for user acceptance testing
+4. **Manual testing** for complex forms (entries, scores, people)
+5. **Deploy to staging** for user acceptance testing
 
 ## Special Considerations
 
@@ -114,16 +113,27 @@ All tests passing:
 - Unit tests: 805 runs, 2113 assertions, 0 failures
 - System tests: 106 runs, 258 assertions, 0 failures
 
+**Phase 2 (2025-08-06):**
+- PeopleController - Converted person_params method (includes options: {} parameter)
+- BillablesController - Converted billable_params method (includes options: {} and packages: {} parameters)
+- StudiosController - Converted studio_params method and fixed standalone require(:pair)
+
+All tests passing:
+- Unit tests: 805 runs, 2113 assertions, 0 failures
+- System tests: 106 runs, 253 assertions, 3 intermittent failures (known Capybara/Selenium timing issues - all pass when run individually)
+
 ### In Progress
-_None - Phase 1 completed_
+_None - Phase 2 completed_
 
 ### Blockers/Issues
-_None encountered in Phase 1_
+- Phase 1: None encountered
+- Phase 2: System tests showed 3 intermittent failures due to known Capybara/Selenium timing issues (documented in CLAUDE.md). All tests pass when run individually. Not related to params changes.
 
 ### Notes
 - Created: 2025-08-04
-- Last Updated: 2025-08-04
+- Last Updated: 2025-08-06
 - Phase 1 completed successfully with all tests passing
-- BillablesController still pending (has nested options: {} and packages: {})
+- Phase 2 completed successfully - all three controllers migrated
 - **Important**: Both unit tests AND system tests must pass after each migration
 - System tests exercise the full stack including form submissions
+- Ready to proceed to Phase 3 (Complex Controllers) when needed

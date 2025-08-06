@@ -258,7 +258,7 @@ class StudiosController < ApplicationController
   end
 
   def unpair
-    pair = params.require(:pair)
+    pair = params[:pair]
     if pair
       pair = Studio.find_by(name: pair)
       if pair and @studio.pairs.include? pair
@@ -288,11 +288,11 @@ class StudiosController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def studio_params
-      params.require(:studio).permit(:name, :pair,
+      params.expect(studio: [:name, :pair,
         :default_student_package_id, :ballroom,
         :cost_override, :heat_cost, :solo_cost, :multi_cost,
         :student_cost_override, :student_registration_cost,
-        :student_heat_cost, :student_solo_cost, :student_multi_cost)
+        :student_heat_cost, :student_solo_cost, :student_multi_cost])
     end
 
     def add_pair
