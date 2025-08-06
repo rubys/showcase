@@ -240,27 +240,6 @@ tenant_lists = File.open('tmp/tenants.list', 'w')
   if @region && tenant.owner == "Demo"
     FileUtils.cp database, "#{database}.seed", preserve: true
   end
-
-  storage = File.join(@storage, tenant.label)
-  if not Dir.exist?(storage)
-    basestore = File.join(@storage, tenant.base) if tenant.base
-    if basestore and File.exist?(basestore) and not File.symlink?(basestore)
-      File.rename basestore, storage
-      Dir.chdir @storage do
-        File.symlink File.basename(storage), File.basename(basestore)
-        unless HOST == 'rubix.intertwingly.net'
-          FileUtils.chown_R 'rails', 'rails', File.basename(basestore)
-        end
-      end
-    else
-      unless Dir.exist? storage
-        FileUtils.mkdir_p storage
-        unless HOST == 'rubix.intertwingly.net'
-          FileUtils.chown_R 'rails', 'rails', storage
-        end
-      end
-    end
-  end
 end
 
 tenant_lists.close

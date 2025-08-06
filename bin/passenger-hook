@@ -115,6 +115,11 @@ begin
       File.unlink name if File.size(name) == 0
     end
 
+    # remove empty storage directories
+    Dir["/data/storage/202*-*"].each do |dir|
+      FileUtils.rm_rf(dir) if Dir.empty?(dir)
+    end
+
     # rsync db directories to each instance
     addrs.each do |addr|
       cmd = %W[

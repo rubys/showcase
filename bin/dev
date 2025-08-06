@@ -40,7 +40,6 @@ if [[ $# -gt 0 ]]; then
   BASE="$(realpath $DIR/..)"
 
   export RAILS_APP_DB=$(basename -s .sqlite3 $1)
-  # export RAILS_STORAGE=$BASE/storage/$(basename -s .sqlite3 $1)
   export RAILS_STORAGE=$BASE/storage/
 
   if [[ $# -gt 1 ]]; then
