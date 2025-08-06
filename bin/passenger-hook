@@ -105,6 +105,9 @@ begin
       end
     end
 
+    # prune orphan databases older than 90 days
+    system "script/orphan_databases.rb --quiet --prune 90"
+
     # remove all 0 byte sqlite3 files from /data/db; chown the rest
     Dir["/data/db/*.sqlite3"].each do |name|
       next unless File.exist? name

@@ -2,6 +2,30 @@
 
 require 'yaml'
 require 'fileutils'
+require 'optparse'
+
+# Parse command line arguments
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: #{$0} [options]"
+  
+  opts.on("--symlink", "Check for symlinks pointing to databases") do
+    options[:symlink] = true
+  end
+  
+  opts.on("--prune DAYS", Integer, "Remove orphan databases older than DAYS") do |days|
+    options[:prune] = days
+  end
+  
+  opts.on("--quiet", "Suppress orphan database listing") do
+    options[:quiet] = true
+  end
+  
+  opts.on("-h", "--help", "Prints this help") do
+    puts opts
+    exit
+  end
+end.parse!
 
 # Load configurations
 git_path = File.realpath(File.expand_path('..', __dir__))
@@ -74,12 +98,42 @@ puts
 if orphaned.empty?
   puts "✓ No orphaned databases found (excluding symlink targets)"
 else
-  puts "Orphaned Databases (#{orphaned.length}):"
-  puts "These databases exist on disk but are not in the tenant list (symlink targets excluded):"
+  if !options[:quiet]
+    puts "Orphaned Databases (#{orphaned.length}):"
+    puts "These databases exist on disk but are not in the tenant list (symlink targets excluded):"
+  end
+  
+  # Track databases to prune if option is set
+  databases_to_prune = []
+  
   orphaned.sort.each do |db|
-    size = File.size("#{dbpath}/#{db}")
-    mtime = File.mtime("#{dbpath}/#{db}")
-    puts "  - #{db} (#{(size / 1024.0 / 1024.0).round(2)} MB, modified: #{mtime.strftime('%Y-%m-%d %H:%M')})"
+    file_path = "#{dbpath}/#{db}"
+    size = File.size(file_path)
+    mtime = File.mtime(file_path)
+    age_days = (Time.now - mtime) / 86400
+    
+    if !options[:quiet]
+      puts "  - #{db} (#{(size / 1024.0 / 1024.0).round(2)} MB, modified: #{mtime.strftime('%Y-%m-%d %H:%M')})"
+    end
+    
+    # Check if database should be pruned
+    if options[:prune] && age_days > options[:prune]
+      databases_to_prune << {path: file_path, name: db, age_days: age_days.round(1)}
+    end
+  end
+  
+  # Prune old orphan databases if requested
+  if options[:prune] && !databases_to_prune.empty?
+    puts
+    puts "Pruning #{databases_to_prune.length} orphan databases older than #{options[:prune]} days:"
+    databases_to_prune.each do |db_info|
+      puts "  Removing #{db_info[:name]} (#{db_info[:age_days]} days old)..."
+      File.delete(db_info[:path])
+      puts "    ✓ Deleted"
+    end
+  elsif options[:prune]
+    puts
+    puts "✓ No orphan databases older than #{options[:prune]} days to prune"
   end
 end
 
@@ -98,16 +152,18 @@ else
 end
 
 # Check for symlinks pointing to databases
-puts
-puts "Checking for database symlinks..."
-symlinks = Dir.glob("#{dbpath}/*.sqlite3").select { |path| File.symlink?(path) }
-if symlinks.empty?
-  puts "✓ No database symlinks found"
-else
-  puts "Database Symlinks (#{symlinks.length}):"
-  symlinks.each do |symlink|
-    target = File.readlink(symlink)
-    basename = File.basename(symlink)
-    puts "  - #{basename} -> #{target}"
+if options[:symlink]
+  puts
+  puts "Checking for database symlinks..."
+  symlinks = Dir.glob("#{dbpath}/*.sqlite3").select { |path| File.symlink?(path) }
+  if symlinks.empty?
+    puts "✓ No database symlinks found"
+  else
+    puts "Database Symlinks (#{symlinks.length}):"
+    symlinks.each do |symlink|
+      target = File.readlink(symlink)
+      basename = File.basename(symlink)
+      puts "  - #{basename} -> #{target}"
+    end
   end
 end
