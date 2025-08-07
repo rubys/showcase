@@ -306,7 +306,7 @@ expected_databases.each do |db_name|
               key: s3_key,
               body: file,
               metadata: {
-                'last-modified' => local_mtime.to_s
+                'last-modified' => local_mtime.utc.inspect
               }
             )
             
