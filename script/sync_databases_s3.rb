@@ -6,6 +6,15 @@ require 'optparse'
 require 'bundler/setup'
 require 'aws-sdk-s3'
 
+# Initialize Sentry if DSN is available
+if ENV["SENTRY_DSN"]
+  require 'sentry-ruby'
+  
+  Sentry.init do |config|
+    config.dsn = ENV["SENTRY_DSN"]
+  end
+end
+
 # Parse command line arguments
 options = { dry_run: false, verbose: false }
 OptionParser.new do |opts|
@@ -79,14 +88,16 @@ end
 # Get list of expected database names
 expected_databases = tenants.keys.map { |label| "#{label}.sqlite3" }
 
-puts "Database Sync with S3"
-puts "=" * 50
-puts "Local path: #{dbpath}"
-puts "S3 endpoint: #{ENV['AWS_ENDPOINT_URL_S3']}"
-puts "Total tenants: #{tenants.size}"
-puts "FLY_REGION: #{ENV['FLY_REGION']}" if ENV['FLY_REGION']
-puts "Dry run: #{options[:dry_run]}" if options[:dry_run]
-puts
+# Main sync logic wrapped in error handling
+begin
+  puts "Database Sync with S3"
+  puts "=" * 50
+  puts "Local path: #{dbpath}"
+  puts "S3 endpoint: #{ENV['AWS_ENDPOINT_URL_S3']}"
+  puts "Total tenants: #{tenants.size}"
+  puts "FLY_REGION: #{ENV['FLY_REGION']}" if ENV['FLY_REGION']
+  puts "Dry run: #{options[:dry_run]}" if options[:dry_run]
+  puts
 
 # Initialize S3 client
 s3_client = Aws::S3::Client.new(
@@ -139,7 +150,9 @@ begin
     continuation_token = response.next_continuation_token
   end
 rescue => e
-  puts "Error listing S3 objects: #{e.message}"
+  error_msg = "Error listing S3 objects: #{e.message}"
+  puts error_msg
+  Sentry.capture_exception(e) if ENV["SENTRY_DSN"]
   exit 1
 end
 
@@ -191,7 +204,16 @@ expected_databases.each do |db_name|
           # Preserve S3 modification time
           File.utime(s3_mtime, s3_mtime, local_path)
         rescue => e
+          error_msg = "Error downloading #{db_name}: #{e.message}"
           puts "  Error downloading: #{e.message}"
+          if ENV["SENTRY_DSN"]
+            Sentry.capture_message(error_msg, level: :error, extra: {
+              database: db_name,
+              operation: 'download',
+              s3_mtime: s3_mtime,
+              local_mtime: local_mtime
+            })
+          end
         end
       end
       
@@ -217,7 +239,18 @@ expected_databases.each do |db_name|
               )
             end
           rescue => e
+            error_msg = "Error uploading #{db_name}: #{e.message}"
             puts "  Error uploading: #{e.message}"
+            if ENV["SENTRY_DSN"]
+              Sentry.capture_message(error_msg, level: :error, extra: {
+                database: db_name,
+                operation: 'upload',
+                local_mtime: local_mtime,
+                s3_mtime: s3_mtime,
+                region: ENV['FLY_REGION'],
+                expected_region: tenant_regions[tenant_name]
+              })
+            end
           end
         end
       else
@@ -253,7 +286,17 @@ expected_databases.each do |db_name|
             )
           end
         rescue => e
+          error_msg = "Error uploading new #{db_name}: #{e.message}"
           puts "  Error uploading: #{e.message}"
+          if ENV["SENTRY_DSN"]
+            Sentry.capture_message(error_msg, level: :error, extra: {
+              database: db_name,
+              operation: 'upload_new',
+              local_mtime: local_mtime,
+              region: ENV['FLY_REGION'],
+              expected_region: tenant_regions[tenant_name]
+            })
+          end
         end
       end
     else
@@ -277,7 +320,15 @@ expected_databases.each do |db_name|
         # Preserve S3 modification time
         File.utime(s3_mtime, s3_mtime, local_path)
       rescue => e
+        error_msg = "Error downloading new #{db_name}: #{e.message}"
         puts "  Error downloading: #{e.message}"
+        if ENV["SENTRY_DSN"]
+          Sentry.capture_message(error_msg, level: :error, extra: {
+            database: db_name,
+            operation: 'download_new',
+            s3_mtime: s3_mtime
+          })
+        end
       end
     end
     
@@ -314,3 +365,20 @@ end if !uploads.empty?
 puts "Skipped (unchanged): #{skipped.size}" if options[:verbose]
 puts
 puts "Sync complete#{options[:dry_run] ? ' (dry run - no changes made)' : ''}."
+
+rescue => exception
+  # Capture any unexpected errors that weren't handled above
+  error_msg = "Unexpected error in S3 sync: #{exception.message}"
+  puts error_msg
+  puts exception.backtrace.join("\n") if options[:verbose]
+  
+  if ENV["SENTRY_DSN"]
+    Sentry.capture_exception(exception, extra: {
+      fly_region: ENV['FLY_REGION'],
+      dry_run: options[:dry_run],
+      verbose: options[:verbose]
+    })
+  end
+  
+  exit 1
+end
