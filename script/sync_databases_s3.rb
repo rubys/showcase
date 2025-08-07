@@ -234,8 +234,11 @@ expected_databases.each do |db_name|
     next
   end
   
-  # Compare timestamps
-  if s3_mtime > local_mtime
+  # Compare timestamps (truncate to second precision to avoid microsecond differences)
+  local_mtime_seconds = local_mtime.to_i
+  s3_mtime_seconds = s3_mtime.to_i
+  
+  if s3_mtime_seconds > local_mtime_seconds
     # S3 is newer (or local doesn't exist) - download
     downloads << { name: db_name, local_mtime: local_exists ? local_mtime : nil, s3_mtime: s3_mtime }
     
@@ -271,7 +274,7 @@ expected_databases.each do |db_name|
       end
     end
     
-  elsif local_mtime > s3_mtime
+  elsif local_mtime_seconds > s3_mtime_seconds
     # Local is newer (or S3 doesn't exist) - upload (if allowed)
     if allow_upload
       uploads << { name: db_name, local_mtime: local_mtime, s3_mtime: s3_exists ? s3_mtime : nil }
