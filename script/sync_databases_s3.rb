@@ -42,31 +42,38 @@ dbpath = ENV.fetch('RAILS_DB_VOLUME') { "#{git_path}/db" }
 showcases = YAML.load_file("#{git_path}/config/tenant/showcases.yml")
 
 # Build tenant hash from nginx-config.rb logic
+# Also track regions for each tenant
 tenants = {}
+tenant_regions = {}
 
-# Add index tenant
+# Add index tenant (no region restriction for index)
 tenants["index"] = "index"
+tenant_regions["index"] = nil
 
 # Process showcases to build tenant list
 showcases.each do |year, list|
   list.each do |token, info|
+    region = info[:region]
     if info[:events]
       info[:events].each do |subtoken, subinfo|
         label = "#{year}-#{token}-#{subtoken}"
         name = info[:name] + ' - ' + subinfo[:name]
         tenants[label] = name
+        tenant_regions[label] = region
       end
     else
       label = "#{year}-#{token}"
       name = info[:name]
       tenants[label] = name
+      tenant_regions[label] = region
     end
   end
 end
 
-# Add demo tenant if running in a region
+# Add demo tenant if running in a region (no region restriction for demo)
 if ENV['FLY_REGION'] || ENV['KAMAL_CONTAINER_NAME']
   tenants["demo"] = "Demo"
+  tenant_regions["demo"] = nil
 end
 
 # Get list of expected database names
@@ -77,6 +84,7 @@ puts "=" * 50
 puts "Local path: #{dbpath}"
 puts "S3 endpoint: #{ENV['AWS_ENDPOINT_URL_S3']}"
 puts "Total tenants: #{tenants.size}"
+puts "FLY_REGION: #{ENV['FLY_REGION']}" if ENV['FLY_REGION']
 puts "Dry run: #{options[:dry_run]}" if options[:dry_run]
 puts
 
@@ -151,6 +159,16 @@ expected_databases.each do |db_name|
   local_exists = File.exist?(local_path) && !File.symlink?(local_path)
   s3_exists = s3_objects.key?(db_name)
   
+  # Extract tenant name from database name (remove .sqlite3 extension)
+  tenant_name = db_name.sub(/\.sqlite3$/, '')
+  
+  # Check if uploads are allowed for this database based on FLY_REGION
+  allow_upload = true
+  if ENV['FLY_REGION'] && tenant_regions[tenant_name]
+    # Only allow upload if this region owns the database
+    allow_upload = (ENV['FLY_REGION'] == tenant_regions[tenant_name])
+  end
+  
   if local_exists && s3_exists
     # Both exist - compare timestamps
     local_mtime = File.mtime(local_path)
@@ -178,12 +196,49 @@ expected_databases.each do |db_name|
       end
       
     elsif local_mtime > s3_mtime
-      # Local is newer - upload
-      uploads << { name: db_name, local_mtime: local_mtime, s3_mtime: s3_mtime }
+      # Local is newer - upload (if allowed)
+      if allow_upload
+        uploads << { name: db_name, local_mtime: local_mtime, s3_mtime: s3_mtime }
+        
+        puts "Upload: #{db_name}" if options[:verbose]
+        puts "  Local: #{local_mtime.strftime('%Y-%m-%d %H:%M:%S')}" if options[:verbose]
+        puts "  S3: #{s3_mtime.strftime('%Y-%m-%d %H:%M:%S')}" if options[:verbose]
+        
+        unless options[:dry_run]
+          begin
+            File.open(local_path, 'rb') do |file|
+              s3_client.put_object(
+                bucket: bucket_name,
+                key: s3_key,
+                body: file,
+                metadata: {
+                  'last-modified' => local_mtime.to_s
+                }
+              )
+            end
+          rescue => e
+            puts "  Error uploading: #{e.message}"
+          end
+        end
+      else
+        skipped << db_name
+        puts "Skip (region mismatch): #{db_name} (belongs to #{tenant_regions[tenant_name]}, current region: #{ENV['FLY_REGION']})" if options[:verbose]
+      end
       
-      puts "Upload: #{db_name}" if options[:verbose]
+    else
+      # Same timestamp - skip
+      skipped << db_name
+      puts "Skip (same): #{db_name}" if options[:verbose]
+    end
+    
+  elsif local_exists && !s3_exists
+    # Only local exists - upload (if allowed)
+    if allow_upload
+      local_mtime = File.mtime(local_path)
+      uploads << { name: db_name, local_mtime: local_mtime, s3_mtime: nil }
+      
+      puts "Upload (new): #{db_name}" if options[:verbose]
       puts "  Local: #{local_mtime.strftime('%Y-%m-%d %H:%M:%S')}" if options[:verbose]
-      puts "  S3: #{s3_mtime.strftime('%Y-%m-%d %H:%M:%S')}" if options[:verbose]
       
       unless options[:dry_run]
         begin
@@ -201,36 +256,8 @@ expected_databases.each do |db_name|
           puts "  Error uploading: #{e.message}"
         end
       end
-      
     else
-      # Same timestamp - skip
-      skipped << db_name
-      puts "Skip (same): #{db_name}" if options[:verbose]
-    end
-    
-  elsif local_exists && !s3_exists
-    # Only local exists - upload
-    local_mtime = File.mtime(local_path)
-    uploads << { name: db_name, local_mtime: local_mtime, s3_mtime: nil }
-    
-    puts "Upload (new): #{db_name}" if options[:verbose]
-    puts "  Local: #{local_mtime.strftime('%Y-%m-%d %H:%M:%S')}" if options[:verbose]
-    
-    unless options[:dry_run]
-      begin
-        File.open(local_path, 'rb') do |file|
-          s3_client.put_object(
-            bucket: bucket_name,
-            key: s3_key,
-            body: file,
-            metadata: {
-              'last-modified' => local_mtime.to_s
-            }
-          )
-        end
-      rescue => e
-        puts "  Error uploading: #{e.message}"
-      end
+      puts "Skip (region mismatch): #{db_name} (belongs to #{tenant_regions[tenant_name]}, current region: #{ENV['FLY_REGION']})" if options[:verbose]
     end
     
   elsif !local_exists && s3_exists
