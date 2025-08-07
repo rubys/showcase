@@ -1,9 +1,9 @@
 #!/usr/bin/env ruby
 
+require 'bundler/setup'
 require 'yaml'
 require 'fileutils'
 require 'optparse'
-require 'bundler/setup'
 require 'aws-sdk-s3'
 
 # Initialize Sentry if DSN is available
@@ -109,7 +109,7 @@ s3_client = Aws::S3::Client.new(
 )
 
 # Extract bucket name from endpoint or use default
-bucket_name = ENV.fetch('S3_BUCKET', 'showcase-databases')
+bucket_name = ENV.fetch('BUCKET_NAME', 'showcase')
 
 # Ensure bucket exists
 begin
