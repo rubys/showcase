@@ -5,6 +5,7 @@ require 'yaml'
 require 'fileutils'
 require 'optparse'
 require 'aws-sdk-s3'
+require 'json'
 
 # Initialize Sentry if DSN is available
 if ENV["SENTRY_DSN"]
@@ -119,6 +120,36 @@ rescue Aws::S3::Errors::NotFound
   s3_client.create_bucket(bucket: bucket_name) unless options[:dry_run]
 end
 
+# Load inventories for all regions
+# Inventory tracks: db_name => { etag: string, last_modified: timestamp }
+inventories = {}
+inventory_changed = {}
+
+# Get unique regions plus 'index'
+all_regions = ['index'] + tenant_regions.values.compact.uniq
+
+puts "Loading inventories for regions: #{all_regions.join(', ')}" if options[:verbose]
+
+all_regions.each do |region|
+  inventory_key = "inventory/#{region}.json"
+  inventories[region] = {}
+  inventory_changed[region] = false
+  
+  begin
+    response = s3_client.get_object(bucket: bucket_name, key: inventory_key)
+    inventories[region] = JSON.parse(response.body.read)
+    puts "  Loaded inventory for #{region}: #{inventories[region].size} entries" if options[:verbose]
+  rescue Aws::S3::Errors::NoSuchKey
+    puts "  No inventory found for #{region}, starting fresh" if options[:verbose]
+  rescue => e
+    puts "  Error loading inventory for #{region}: #{e.message}" if options[:verbose]
+  end
+end
+
+# Determine which inventory to use for current operations
+current_region = ENV['FLY_REGION'] || 'index'
+current_inventory = inventories[current_region]
+
 # Get list of objects in S3 with "db/" prefix (handle pagination)
 s3_objects = {}
 begin
@@ -137,8 +168,19 @@ begin
       response.contents.each do |object|
         # Extract filename from key (remove "db/" prefix)
         filename = object.key.sub(/^db\//, '')
+        
+        # Determine which region owns this database
+        tenant_name = filename.sub(/\.sqlite3$/, '')
+        owner_region = tenant_regions[tenant_name] || 'index'
+        
+        # Check the owner region's inventory for matching etag to get actual last_modified time
+        actual_last_modified = nil
+        if inventories[owner_region][filename] && inventories[owner_region][filename]['etag'] == object.etag
+          actual_last_modified = Time.parse(inventories[owner_region][filename]['last_modified'])
+        end
+        
         s3_objects[filename] = {
-          last_modified: object.last_modified,
+          last_modified: actual_last_modified || object.last_modified,
           size: object.size,
           etag: object.etag
         }
@@ -169,8 +211,12 @@ expected_databases.each do |db_name|
   local_path = File.join(dbpath, db_name)
   s3_key = "db/#{db_name}"
   
+  # Use Time.new(0) as sentinel for non-existent files
   local_exists = File.exist?(local_path) && !File.symlink?(local_path)
+  local_mtime = local_exists ? File.mtime(local_path) : Time.new(0)
+  
   s3_exists = s3_objects.key?(db_name)
+  s3_mtime = s3_exists ? s3_objects[db_name][:last_modified] : Time.new(0)
   
   # Extract tenant name from database name (remove .sqlite3 extension)
   tenant_name = db_name.sub(/\.sqlite3$/, '')
@@ -182,134 +228,21 @@ expected_databases.each do |db_name|
     allow_upload = (ENV['FLY_REGION'] == tenant_regions[tenant_name])
   end
   
-  if local_exists && s3_exists
-    # Both exist - compare timestamps
-    local_mtime = File.mtime(local_path)
-    s3_mtime = s3_objects[db_name][:last_modified]
+  # Skip if neither exists
+  if !local_exists && !s3_exists
+    puts "Missing both locally and in S3: #{db_name}" if options[:verbose]
+    next
+  end
+  
+  # Compare timestamps
+  if s3_mtime > local_mtime
+    # S3 is newer (or local doesn't exist) - download
+    downloads << { name: db_name, local_mtime: local_exists ? local_mtime : nil, s3_mtime: s3_mtime }
     
-    if s3_mtime > local_mtime
-      # S3 is newer - download
-      downloads << { name: db_name, local_mtime: local_mtime, s3_mtime: s3_mtime }
-      
-      puts "Download: #{db_name}" if options[:verbose]
-      puts "  S3: #{s3_mtime.strftime('%Y-%m-%d %H:%M:%S')}" if options[:verbose]
-      puts "  Local: #{local_mtime.strftime('%Y-%m-%d %H:%M:%S')}" if options[:verbose]
-      
-      unless options[:dry_run]
-        begin
-          response = s3_client.get_object(bucket: bucket_name, key: s3_key)
-          File.open(local_path, 'wb') do |file|
-            file.write(response.body.read)
-          end
-          # Preserve S3 modification time
-          File.utime(s3_mtime, s3_mtime, local_path)
-        rescue => e
-          error_msg = "Error downloading #{db_name}: #{e.message}"
-          puts "  Error downloading: #{e.message}"
-          if ENV["SENTRY_DSN"]
-            Sentry.capture_message(error_msg, level: :error, extra: {
-              database: db_name,
-              operation: 'download',
-              s3_mtime: s3_mtime,
-              local_mtime: local_mtime
-            })
-          end
-        end
-      end
-      
-    elsif local_mtime > s3_mtime
-      # Local is newer - upload (if allowed)
-      if allow_upload
-        uploads << { name: db_name, local_mtime: local_mtime, s3_mtime: s3_mtime }
-        
-        puts "Upload: #{db_name}" if options[:verbose]
-        puts "  Local: #{local_mtime.strftime('%Y-%m-%d %H:%M:%S')}" if options[:verbose]
-        puts "  S3: #{s3_mtime.strftime('%Y-%m-%d %H:%M:%S')}" if options[:verbose]
-        
-        unless options[:dry_run]
-          begin
-            File.open(local_path, 'rb') do |file|
-              s3_client.put_object(
-                bucket: bucket_name,
-                key: s3_key,
-                body: file,
-                metadata: {
-                  'last-modified' => local_mtime.to_s
-                }
-              )
-            end
-          rescue => e
-            error_msg = "Error uploading #{db_name}: #{e.message}"
-            puts "  Error uploading: #{e.message}"
-            if ENV["SENTRY_DSN"]
-              Sentry.capture_message(error_msg, level: :error, extra: {
-                database: db_name,
-                operation: 'upload',
-                local_mtime: local_mtime,
-                s3_mtime: s3_mtime,
-                region: ENV['FLY_REGION'],
-                expected_region: tenant_regions[tenant_name]
-              })
-            end
-          end
-        end
-      else
-        skipped << db_name
-        puts "Skip (region mismatch): #{db_name} (belongs to #{tenant_regions[tenant_name]}, current region: #{ENV['FLY_REGION']})" if options[:verbose]
-      end
-      
-    else
-      # Same timestamp - skip
-      skipped << db_name
-      puts "Skip (same): #{db_name}" if options[:verbose]
-    end
-    
-  elsif local_exists && !s3_exists
-    # Only local exists - upload (if allowed)
-    if allow_upload
-      local_mtime = File.mtime(local_path)
-      uploads << { name: db_name, local_mtime: local_mtime, s3_mtime: nil }
-      
-      puts "Upload (new): #{db_name}" if options[:verbose]
-      puts "  Local: #{local_mtime.strftime('%Y-%m-%d %H:%M:%S')}" if options[:verbose]
-      
-      unless options[:dry_run]
-        begin
-          File.open(local_path, 'rb') do |file|
-            s3_client.put_object(
-              bucket: bucket_name,
-              key: s3_key,
-              body: file,
-              metadata: {
-                'last-modified' => local_mtime.to_s
-              }
-            )
-          end
-        rescue => e
-          error_msg = "Error uploading new #{db_name}: #{e.message}"
-          puts "  Error uploading: #{e.message}"
-          if ENV["SENTRY_DSN"]
-            Sentry.capture_message(error_msg, level: :error, extra: {
-              database: db_name,
-              operation: 'upload_new',
-              local_mtime: local_mtime,
-              region: ENV['FLY_REGION'],
-              expected_region: tenant_regions[tenant_name]
-            })
-          end
-        end
-      end
-    else
-      puts "Skip (region mismatch): #{db_name} (belongs to #{tenant_regions[tenant_name]}, current region: #{ENV['FLY_REGION']})" if options[:verbose]
-    end
-    
-  elsif !local_exists && s3_exists
-    # Only S3 exists - download
-    s3_mtime = s3_objects[db_name][:last_modified]
-    downloads << { name: db_name, local_mtime: nil, s3_mtime: s3_mtime }
-    
-    puts "Download (new): #{db_name}" if options[:verbose]
+    action_type = local_exists ? "Download" : "Download (new)"
+    puts "#{action_type}: #{db_name}" if options[:verbose]
     puts "  S3: #{s3_mtime.strftime('%Y-%m-%d %H:%M:%S')}" if options[:verbose]
+    puts "  Local: #{local_mtime.strftime('%Y-%m-%d %H:%M:%S')}" if options[:verbose] && local_exists
     
     unless options[:dry_run]
       begin
@@ -317,24 +250,81 @@ expected_databases.each do |db_name|
         File.open(local_path, 'wb') do |file|
           file.write(response.body.read)
         end
-        # Preserve S3 modification time
-        File.utime(s3_mtime, s3_mtime, local_path)
+        # Preserve modification time from metadata if available, otherwise use S3 object time
+        if response.metadata && response.metadata['last-modified']
+          metadata_time = Time.parse(response.metadata['last-modified'])
+          File.utime(metadata_time, metadata_time, local_path)
+        else
+          File.utime(s3_mtime, s3_mtime, local_path)
+        end
       rescue => e
-        error_msg = "Error downloading new #{db_name}: #{e.message}"
+        error_msg = "Error downloading #{db_name}: #{e.message}"
         puts "  Error downloading: #{e.message}"
         if ENV["SENTRY_DSN"]
           Sentry.capture_message(error_msg, level: :error, extra: {
             database: db_name,
-            operation: 'download_new',
-            s3_mtime: s3_mtime
+            operation: local_exists ? 'download' : 'download_new',
+            s3_mtime: s3_mtime,
+            local_mtime: local_exists ? local_mtime : nil
           })
         end
       end
     end
     
+  elsif local_mtime > s3_mtime
+    # Local is newer (or S3 doesn't exist) - upload (if allowed)
+    if allow_upload
+      uploads << { name: db_name, local_mtime: local_mtime, s3_mtime: s3_exists ? s3_mtime : nil }
+      
+      action_type = s3_exists ? "Upload" : "Upload (new)"
+      puts "#{action_type}: #{db_name}" if options[:verbose]
+      puts "  Local: #{local_mtime.strftime('%Y-%m-%d %H:%M:%S')}" if options[:verbose]
+      puts "  S3: #{s3_mtime.strftime('%Y-%m-%d %H:%M:%S')}" if options[:verbose] && s3_exists
+      
+      unless options[:dry_run]
+        begin
+          File.open(local_path, 'rb') do |file|
+            put_response = s3_client.put_object(
+              bucket: bucket_name,
+              key: s3_key,
+              body: file,
+              metadata: {
+                'last-modified' => local_mtime.to_s
+              }
+            )
+            
+            # Update inventory for the region that owns this database
+            owner_region = tenant_regions[tenant_name] || 'index'
+            inventories[owner_region][db_name] = {
+              'etag' => put_response.etag,
+              'last_modified' => local_mtime.to_s
+            }
+            inventory_changed[owner_region] = true
+          end
+        rescue => e
+          error_msg = "Error uploading #{db_name}: #{e.message}"
+          puts "  Error uploading: #{e.message}"
+          if ENV["SENTRY_DSN"]
+            Sentry.capture_message(error_msg, level: :error, extra: {
+              database: db_name,
+              operation: s3_exists ? 'upload' : 'upload_new',
+              local_mtime: local_mtime,
+              s3_mtime: s3_exists ? s3_mtime : nil,
+              region: ENV['FLY_REGION'],
+              expected_region: tenant_regions[tenant_name]
+            })
+          end
+        end
+      end
+    else
+      skipped << db_name
+      puts "Skip (region mismatch): #{db_name} (belongs to #{tenant_regions[tenant_name]}, current region: #{ENV['FLY_REGION']})" if options[:verbose]
+    end
+    
   else
-    # Neither exists (shouldn't happen for tenants, but handle gracefully)
-    puts "Missing both locally and in S3: #{db_name}" if options[:verbose]
+    # Same timestamp - skip
+    skipped << db_name
+    puts "Skip (same): #{db_name}" if options[:verbose]
   end
 end
 
@@ -363,6 +353,31 @@ uploads.each do |u|
 end if !uploads.empty?
 
 puts "Skipped (unchanged): #{skipped.size}" if options[:verbose]
+
+# Save updated inventories
+unless options[:dry_run]
+  inventory_changed.each do |region, changed|
+    if changed
+      inventory_key = "inventory/#{region}.json"
+      puts "Updating inventory for #{region}" if options[:verbose]
+      
+      begin
+        s3_client.put_object(
+          bucket: bucket_name,
+          key: inventory_key,
+          body: JSON.pretty_generate(inventories[region]),
+          content_type: 'application/json'
+        )
+      rescue => e
+        puts "Error saving inventory for #{region}: #{e.message}"
+        if ENV["SENTRY_DSN"]
+          Sentry.capture_message("Error saving inventory for #{region}: #{e.message}", level: :error)
+        end
+      end
+    end
+  end
+end
+
 puts
 puts "Sync complete#{options[:dry_run] ? ' (dry run - no changes made)' : ''}."
 
