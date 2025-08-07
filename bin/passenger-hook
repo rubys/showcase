@@ -97,7 +97,7 @@ begin
         files = Dir.chdir('tigris') {Dir["*"]}
         files.each do |file|
           dest = file.sub(/(..)(..)/, 'storage/\1/\2/\1\2')
-          if not File.exist? dest
+          if !File.exist?(dest) && !File.directory?(file)
             FileUtils.mkdir_p File.dirname(dest)
             File.link "tigris/#{file}", dest
           end
