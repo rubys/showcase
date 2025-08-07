@@ -17,7 +17,7 @@ if ENV["SENTRY_DSN"]
 end
 
 # Parse command line arguments
-options = { dry_run: false, verbose: false }
+options = { dry_run: false, verbose: false, safe: false }
 OptionParser.new do |opts|
   opts.banner = "Usage: #{$0} [options]"
   
@@ -27,6 +27,10 @@ OptionParser.new do |opts|
   
   opts.on("-v", "--verbose", "Verbose output") do
     options[:verbose] = true
+  end
+  
+  opts.on("--safe", "Disallow downloads to current region (when FLY_REGION is set)") do
+    options[:safe] = true
   end
   
   opts.on("-h", "--help", "Prints this help") do
@@ -98,6 +102,7 @@ begin
   puts "Total tenants: #{tenants.size}"
   puts "FLY_REGION: #{ENV['FLY_REGION']}" if ENV['FLY_REGION']
   puts "Dry run: #{options[:dry_run]}" if options[:dry_run]
+  puts "Safe mode: #{options[:safe]} (no downloads to current region)" if options[:safe] && ENV['FLY_REGION']
   puts
 
 # Initialize S3 client
@@ -240,36 +245,45 @@ expected_databases.each do |db_name|
   
   if s3_mtime_seconds > local_mtime_seconds
     # S3 is newer (or local doesn't exist) - download
-    downloads << { name: db_name, local_mtime: local_exists ? local_mtime : nil, s3_mtime: s3_mtime }
     
-    action_type = local_exists ? "Download" : "Download (new)"
-    puts "#{action_type}: #{db_name}" if options[:verbose]
-    puts "  S3: #{s3_mtime.strftime('%Y-%m-%d %H:%M:%S')}" if options[:verbose]
-    puts "  Local: #{local_mtime.strftime('%Y-%m-%d %H:%M:%S')}" if options[:verbose] && local_exists
-    
-    unless options[:dry_run]
-      begin
-        response = s3_client.get_object(bucket: bucket_name, key: s3_key)
-        File.open(local_path, 'wb') do |file|
-          file.write(response.body.read)
-        end
-        # Preserve modification time from metadata if available, otherwise use S3 object time
-        if response.metadata && response.metadata['last-modified']
-          metadata_time = Time.parse(response.metadata['last-modified'])
-          File.utime(metadata_time, metadata_time, local_path)
-        else
-          File.utime(s3_mtime, s3_mtime, local_path)
-        end
-      rescue => e
-        error_msg = "Error downloading #{db_name}: #{e.message}"
-        puts "  Error downloading: #{e.message}"
-        if ENV["SENTRY_DSN"]
-          Sentry.capture_message(error_msg, level: :error, extra: {
-            database: db_name,
-            operation: local_exists ? 'download' : 'download_new',
-            s3_mtime: s3_mtime,
-            local_mtime: local_exists ? local_mtime : nil
-          })
+    # Check if downloads are allowed when --safe is set
+    # Allow download if: not in safe mode, or file doesn't exist locally, or not owned by current region
+    if options[:safe] && ENV['FLY_REGION'] && tenant_regions[tenant_name] == ENV['FLY_REGION'] && local_exists
+      # Skip download - this region owns this database and file exists locally
+      skipped << db_name
+      puts "Skip download (--safe mode, owned by current region): #{db_name}" if options[:verbose]
+    else
+      downloads << { name: db_name, local_mtime: local_exists ? local_mtime : nil, s3_mtime: s3_mtime }
+      
+      action_type = local_exists ? "Download" : "Download (new)"
+      puts "#{action_type}: #{db_name}" if options[:verbose]
+      puts "  S3: #{s3_mtime.strftime('%Y-%m-%d %H:%M:%S')}" if options[:verbose]
+      puts "  Local: #{local_mtime.strftime('%Y-%m-%d %H:%M:%S')}" if options[:verbose] && local_exists
+      
+      unless options[:dry_run]
+        begin
+          response = s3_client.get_object(bucket: bucket_name, key: s3_key)
+          File.open(local_path, 'wb') do |file|
+            file.write(response.body.read)
+          end
+          # Preserve modification time from metadata if available, otherwise use S3 object time
+          if response.metadata && response.metadata['last-modified']
+            metadata_time = Time.parse(response.metadata['last-modified'])
+            File.utime(metadata_time, metadata_time, local_path)
+          else
+            File.utime(s3_mtime, s3_mtime, local_path)
+          end
+        rescue => e
+          error_msg = "Error downloading #{db_name}: #{e.message}"
+          puts "  Error downloading: #{e.message}"
+          if ENV["SENTRY_DSN"]
+            Sentry.capture_message(error_msg, level: :error, extra: {
+              database: db_name,
+              operation: local_exists ? 'download' : 'download_new',
+              s3_mtime: s3_mtime,
+              local_mtime: local_exists ? local_mtime : nil
+            })
+          end
         end
       end
     end
