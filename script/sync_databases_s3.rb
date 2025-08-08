@@ -203,6 +203,11 @@ begin
           obj_response = s3_client.get_object(bucket: bucket_name, key: object.key)
           if obj_response.metadata && obj_response.metadata['last-modified']
             actual_last_modified = Time.parse(obj_response.metadata['last-modified'])
+            inventories[owner_region] ||= {}
+            inventories[owner_region][filename] = {
+              'etag' => obj_response.etag,
+              'last_modified' => actual_last_modified.utc.inspect
+            }
             inventory_changed[owner_region] = true
           end
         end
