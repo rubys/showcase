@@ -175,6 +175,9 @@ if ENV['FLY_APP_NAME']
       )
     end
 
+    # sync databases to S3
+    system "script/sync_databases_s3.rb --safe --dry-run"
+
     # run webhook
     uri = URI('https://rubix.intertwingly.net/webhook/showcase')
     res = Net::HTTP.get_response(uri)

@@ -183,6 +183,13 @@ rescue => exception
   Sentry.capture_exception(exception)
 
 ensure
+  system "script/sync_databases_s3.rb --safe  --dry-run"
+
+  Dir['/data/inventory/*.json'].each do |file|
+    mtime = File.mtime(file)
+    lastupdated = mtime if mtime > lastupdated
+  end
+
   if prerender < lastupdated
     system 'bin/rails prerender'
     FileUtils.touch PREPRENDER
