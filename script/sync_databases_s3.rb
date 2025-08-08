@@ -314,7 +314,7 @@ expected_databases.each do |db_name|
             owner_region = tenant_regions[tenant_name] || 'index'
             inventories[owner_region][db_name] = {
               'etag' => put_response.etag,
-              'last_modified' => local_mtime.to_s
+              'last_modified' => local_mtime.utc_inspect
             }
             inventory_changed[owner_region] = true
           end
