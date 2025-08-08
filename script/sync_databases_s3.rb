@@ -398,14 +398,20 @@ unless options[:dry_run]
 
       inventory_key = "inventory/#{region}.json"
       puts "Updating inventory for #{region}" if options[:verbose]
+
+      inventory_data = JSON.pretty_generate(inventories[region])
       
       begin
-        s3_client.put_object(
+        response = s3_client.put_object(
           bucket: bucket_name,
           key: inventory_key,
-          body: JSON.pretty_generate(inventories[region]),
+          body: inventory_data,
           content_type: 'application/json'
         )
+
+        local_cache = "#{inventory_path}/#{region}.json"
+        File.write(local_cache, inventory_data)
+        File.utime(response.last_modified, response.last_modified, local_cache)
       rescue => e
         puts "Error saving inventory for #{region}: #{e.message}"
         if ENV["SENTRY_DSN"]
