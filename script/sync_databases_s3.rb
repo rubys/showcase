@@ -414,10 +414,6 @@ unless options[:dry_run]
           body: inventory_data,
           content_type: 'application/json'
         )
-
-        local_cache = "#{inventory_path}/#{region}.json"
-        File.write(local_cache, inventory_data)
-        File.utime(response.last_modified, response.last_modified, local_cache)
       rescue => e
         puts "Error saving inventory for #{region}: #{e.message}"
         if ENV["SENTRY_DSN"]
