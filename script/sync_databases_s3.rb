@@ -167,7 +167,7 @@ end
 
 local_inventories.each do |region|
   puts "Removing stale local inventory for #{region}" if options[:verbose]
-  File.delete("#{dbpath}/inventory/#{region}.json") unless options[:dry_run]
+  File.delete("#{inventory_path}/#{region}.json") unless options[:dry_run]
 end
 
 # Get list of objects in S3 with "db/" prefix (handle pagination)
