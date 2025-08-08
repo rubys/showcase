@@ -124,25 +124,29 @@ end
 inventories = {}
 inventory_changed = {}
 
-FileUtils.mkdir_p("#{dbpath}/inventory") unless options[:dry_run]
+inventory_path = "#{git_path}/tmp/inventory"
+inventory_path = File.expand_path("inventory", File.dirname(dbpath)) if ENV['RAILS_DB_VOLUME']
 
-local_inventories = Dir["#{dbpath}/inventory/*.json"].map { |file| File.basename(file, '.json') }
+FileUtils.mkdir_p(inventory_path) unless options[:dry_run]
+
+local_inventories = Dir["#{inventory_path}/*.json"].map { |file| File.basename(file, '.json') }
 response = s3_client.list_objects_v2(bucket: bucket_name, prefix: 'inventory/')
 if response.contents
   response.contents.each do |object|
     if object.key.end_with?('.json')
       region = File.basename(object.key, '.json')
       inventory_changed[region] = false  # Initialize for each region
-      local_cache = "#{dbpath}/inventory/#{region}.json"
-      
-      if local_inventories.include?(region) && File.exist?(local_cache) && 
-         File.mtime(local_cache) >= object.last_modified
+      local_cache = "#{inventory_path}/#{region}.json"
+
+      if local_inventories.include?(region) && File.exist?(local_cache) &&
+         File.mtime(local_cache).to_i >= object.last_modified.to_i
         inventories[region] = JSON.parse(File.read(local_cache))
       else
         begin
           response = s3_client.get_object(bucket: bucket_name, key: object.key)
           inventories[region] = JSON.parse(response.body.read)
           File.write(local_cache, JSON.pretty_generate(inventories[region])) unless options[:dry_run]
+          File.utime(object.last_modified, object.last_modified, local_cache) unless options[:dry_run]
         rescue => e
           puts "Error loading inventory for #{region}: #{e.message}" if options[:verbose]
           inventories[region] = {}
