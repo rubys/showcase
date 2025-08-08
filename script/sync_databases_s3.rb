@@ -200,9 +200,10 @@ begin
            inventories[owner_region][filename]['etag'] == object.etag
           actual_last_modified = Time.parse(inventories[owner_region][filename]['last_modified'])
         else
-          response = s3_client.get_object(bucket: bucket_name, key: object.key)
-          if response.metadata && response.metadata['last-modified']
-            actual_last_modified = Time.parse(response.metadata['last-modified'])
+          obj_response = s3_client.get_object(bucket: bucket_name, key: object.key)
+          if obj_response.metadata && obj_response.metadata['last-modified']
+            actual_last_modified = Time.parse(obj_response.metadata['last-modified'])
+            inventory_changed[owner_region] = true
           end
         end
         
