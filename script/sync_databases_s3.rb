@@ -390,7 +390,7 @@ puts "Skipped (unchanged): #{skipped.size}" if options[:verbose]
 unless options[:dry_run]
   inventory_changed.each do |region, changed|
     if changed
-      next if ENV['FLY_REGION'] && (region == ENV['FLY_REGION'] || region == 'index')
+      next if ENV['FLY_REGION'] && region != ENV['FLY_REGION'] && region != 'index'
 
       inventory_key = "inventory/#{region}.json"
       puts "Updating inventory for #{region}" if options[:verbose]
