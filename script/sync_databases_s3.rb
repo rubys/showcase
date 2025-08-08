@@ -84,12 +84,6 @@ showcases.each do |year, list|
   end
 end
 
-# Add demo tenant if running in a region (no region restriction for demo)
-if ENV['FLY_REGION'] || ENV['KAMAL_CONTAINER_NAME']
-  tenants["demo"] = "Demo"
-  tenant_regions["demo"] = nil
-end
-
 # Get list of expected database names
 expected_databases = tenants.keys.map { |label| "#{label}.sqlite3" }
 
@@ -121,8 +115,8 @@ bucket_name = ENV.fetch('BUCKET_NAME', 'showcase')
 begin
   s3_client.head_bucket(bucket: bucket_name)
 rescue Aws::S3::Errors::NotFound
-  puts "Creating bucket: #{bucket_name}"
-  s3_client.create_bucket(bucket: bucket_name) unless options[:dry_run]
+  puts "Bucket not found: #{bucket_name}"
+  exit 1
 end
 
 # Load inventories for all regions
@@ -130,30 +124,47 @@ end
 inventories = {}
 inventory_changed = {}
 
-# Get unique regions plus 'index'
-all_regions = ['index'] + tenant_regions.values.compact.uniq
+FileUtils.mkdir_p("#{dbpath}/inventory") unless options[:dry_run]
 
-puts "Loading inventories for regions: #{all_regions.join(', ')}" if options[:verbose]
+local_inventories = Dir["#{dbpath}/inventory/*.json"].map { |file| File.basename(file, '.json') }
+response = s3_client.list_objects_v2(bucket: bucket_name, prefix: 'inventory/')
+if response.contents
+  response.contents.each do |object|
+    if object.key.end_with?('.json')
+      region = File.basename(object.key, '.json')
+      inventory_changed[region] = false  # Initialize for each region
+      local_cache = "#{dbpath}/inventory/#{region}.json"
+      
+      if local_inventories.include?(region) && File.exist?(local_cache) && 
+         File.mtime(local_cache) >= object.last_modified
+        inventories[region] = JSON.parse(File.read(local_cache))
+      else
+        begin
+          response = s3_client.get_object(bucket: bucket_name, key: object.key)
+          inventories[region] = JSON.parse(response.body.read)
+          File.write(local_cache, JSON.pretty_generate(inventories[region])) unless options[:dry_run]
+        rescue => e
+          puts "Error loading inventory for #{region}: #{e.message}" if options[:verbose]
+          inventories[region] = {}
+        end
+      end
 
-all_regions.each do |region|
-  inventory_key = "inventory/#{region}.json"
-  inventories[region] = {}
-  inventory_changed[region] = false
-  
-  begin
-    response = s3_client.get_object(bucket: bucket_name, key: inventory_key)
-    inventories[region] = JSON.parse(response.body.read)
-    puts "  Loaded inventory for #{region}: #{inventories[region].size} entries" if options[:verbose]
-  rescue Aws::S3::Errors::NoSuchKey
-    puts "  No inventory found for #{region}, starting fresh" if options[:verbose]
-  rescue => e
-    puts "  Error loading inventory for #{region}: #{e.message}" if options[:verbose]
+      local_inventories.delete(region)
+    end
   end
 end
 
-# Determine which inventory to use for current operations
-current_region = ENV['FLY_REGION'] || 'index'
-current_inventory = inventories[current_region]
+# Initialize missing regions
+all_regions = ['index'] + tenant_regions.values.compact.uniq
+all_regions.each do |region|
+  inventories[region] ||= {}
+  inventory_changed[region] ||= false
+end
+
+local_inventories.each do |region|
+  puts "Removing stale local inventory for #{region}" if options[:verbose]
+  File.delete("#{dbpath}/inventory/#{region}.json") unless options[:dry_run]
+end
 
 # Get list of objects in S3 with "db/" prefix (handle pagination)
 s3_objects = {}
@@ -180,7 +191,9 @@ begin
         
         # Check the owner region's inventory for matching etag to get actual last_modified time
         actual_last_modified = nil
-        if inventories[owner_region][filename] && inventories[owner_region][filename]['etag'] == object.etag
+        if inventories[owner_region] && inventories[owner_region].is_a?(Hash) && 
+           inventories[owner_region][filename] && 
+           inventories[owner_region][filename]['etag'] == object.etag
           actual_last_modified = Time.parse(inventories[owner_region][filename]['last_modified'])
         end
         
@@ -312,9 +325,11 @@ expected_databases.each do |db_name|
             
             # Update inventory for the region that owns this database
             owner_region = tenant_regions[tenant_name] || 'index'
+            inventories[owner_region] ||= {}
+            inventory_changed[owner_region] ||= false
             inventories[owner_region][db_name] = {
               'etag' => put_response.etag,
-              'last_modified' => local_mtime.utc_inspect
+              'last_modified' => local_mtime.utc.inspect
             }
             inventory_changed[owner_region] = true
           end
@@ -375,6 +390,8 @@ puts "Skipped (unchanged): #{skipped.size}" if options[:verbose]
 unless options[:dry_run]
   inventory_changed.each do |region, changed|
     if changed
+      next if ENV['FLY_REGION'] && (region == ENV['FLY_REGION'] || region == 'index')
+
       inventory_key = "inventory/#{region}.json"
       puts "Updating inventory for #{region}" if options[:verbose]
       
