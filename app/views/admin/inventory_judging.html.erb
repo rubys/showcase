@@ -41,24 +41,6 @@
     </ul>
   </div>
 
-  <% # Multi scoring %>
-  <div class="bg-white rounded-lg shadow p-6">
-    <h2 class="font-bold text-2xl mb-4">Multi Scoring</h2>
-    <ul class="space-y-2">
-      <% @option_counts[:multi_scoring].each do |value, data| %>
-        <li class="flex items-center">
-          <span class="text-gray-500 w-12 text-right mr-4"><%= data[:count] %></span>
-          <% if data[:count] > 0 %>
-            <%= link_to data[:label], inventory_path(multi_scoring: value), 
-                class: "text-blue-600 hover:underline", data: { turbo: false } %>
-          <% else %>
-            <span class="text-gray-600"><%= data[:label] %></span>
-          <% end %>
-        </li>
-      <% end %>
-    </ul>
-  </div>
-
   <% # Solo scoring %>
   <div class="bg-white rounded-lg shadow p-6">
     <h2 class="font-bold text-2xl mb-4">Solo Scoring</h2>
@@ -68,6 +50,24 @@
           <span class="text-gray-500 w-12 text-right mr-4"><%= data[:count] %></span>
           <% if data[:count] > 0 %>
             <%= link_to data[:label], inventory_path(solo_scoring: value), 
+                class: "text-blue-600 hover:underline", data: { turbo: false } %>
+          <% else %>
+            <span class="text-gray-600"><%= data[:label] %></span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+
+  <% # Multi scoring %>
+  <div class="bg-white rounded-lg shadow p-6">
+    <h2 class="font-bold text-2xl mb-4">Multi Scoring</h2>
+    <ul class="space-y-2">
+      <% @option_counts[:multi_scoring].each do |value, data| %>
+        <li class="flex items-center">
+          <span class="text-gray-500 w-12 text-right mr-4"><%= data[:count] %></span>
+          <% if data[:count] > 0 %>
+            <%= link_to data[:label], inventory_path(multi_scoring: value), 
                 class: "text-blue-600 hover:underline", data: { turbo: false } %>
           <% else %>
             <span class="text-gray-600"><%= data[:label] %></span>
