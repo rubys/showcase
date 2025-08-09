@@ -13,10 +13,10 @@
       <% end %>
       <th class="text-left border-b-2 border-black" rowspan="2">Category</th>
       <th class="text-left border-b-2 border-black" rowspan="2">Studio</th>
-    <% unless @style == 'emcee' or @scores.empty? %>
+    <% unless @style == 'emcee' %>
     <% if @event.open_scoring == '#' || @event.closed_scoring == '#' %>
       <th class="text-center border-b-2 border-black">Score</th>
-    <% elsif @heat.dance.semi_finals %>
+    <% elsif @heat.dance.semi_finals and !@scores.empty?%>
       <th class="text-center" colspan="<%= @scores.length %>%>">Callback?</th>
     </tr>
     <tr>
