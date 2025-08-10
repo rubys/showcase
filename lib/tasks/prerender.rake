@@ -6,7 +6,8 @@ namespace :prerender do
     ENV['RAILS_ENV'] = 'production'
     ENV['RAILS_APP_DB'] = 'index'
     ENV['RAILS_APP_SCOPE'] = '/showcase'
-    ENV['DATABASE_URL'] = nil
+    ENV['RAILS_PROXY_HOST'] ||= `hostname`
+    ENV.delete('DATABASE_URL')
     Rake::Task['environment'].invoke
   end
 
@@ -62,6 +63,7 @@ task :prerender => "prerender:env" do
 
   files.delete ["docs/index", "docs/index.html"]
   files << ["docs/", "docs/index.html"]
+  files << ["studios/", "studios/index.html"]
 
   # prerender the files
   files.each do |path, html|
@@ -77,8 +79,9 @@ task :prerender => "prerender:env" do
       dir = File.join(public, path.chomp('/')) if path.end_with?('/')
       mkdir_p dir if not Dir.exist?(dir)
       dest = File.join(public, html)
-      if !File.exist?(dest) || IO.read(dest) != response.body.force_encoding('utf-8')
-        File.write File.join(public, html), response.body.force_encoding('utf-8')
+      body = response.body.force_encoding('utf-8')
+      if !File.exist?(dest) || IO.read(dest) != body
+        File.write File.join(public, html), body
       end
     else
       puts code

@@ -1,5 +1,12 @@
 #!/bin/bash
-bin/bundle exec rake prerender > /rails/log/prerender.log
+
+if [ "$1" = "clobber" ]; then
+  bin/bundle exec rake prerender:clobber
+  exit 0
+fi
+
+export RAILS_ENV=production
+bin/bundle exec rake prerender > log/prerender.log
 
 input_file="tmp/tenants.list"
 lines=()
@@ -14,4 +21,6 @@ if [ -f "$input_file" ] && [ -n "$FLY_REGION" ]; then
   fi
 fi
 
-sleep infinity
+if [ -n "$FLY_REGION" ]; then
+  sleep infinity
+fi
