@@ -241,4 +241,177 @@ class Locale
       time.strftime("%H:%M")  # 24-hour format for de-DE, fr-FR, es-ES, it-IT, pl-PL, uk-UA, ja-JP
     end
   end
+
+  # Format a number according to locale conventions with optional currency
+  # Options:
+  #   :style - 'decimal' (default), 'currency', 'percent'
+  #   :currency - Currency code (e.g., 'USD', 'EUR', 'JPY')
+  #   :minimum_fraction_digits - Minimum number of fraction digits (default: 0 for JPY, 2 for others)
+  #   :maximum_fraction_digits - Maximum number of fraction digits (default: 0 for JPY, 2 for others)
+  # Note: expects browser format (dash) as used by ApplicationHelper
+  def self.number_format(number, locale, options = {})
+    return nil unless number
+    
+    style = options[:style] || 'decimal'
+    currency = options[:currency] || 'USD'
+    
+    # Set default fraction digits based on currency
+    if style == 'currency' && currency == 'JPY'
+      min_fraction = options[:minimum_fraction_digits] || 0
+      max_fraction = options[:maximum_fraction_digits] || 0
+    else
+      min_fraction = options[:minimum_fraction_digits] || 2
+      max_fraction = options[:maximum_fraction_digits] || 2
+    end
+    
+    # Round the number to the specified decimal places
+    if max_fraction == 0
+      formatted_number = number.round.to_i
+    else
+      formatted_number = number.round(max_fraction)
+    end
+    
+    # Get the appropriate separators for the locale
+    thousand_sep, decimal_sep = get_number_separators(locale)
+    
+    # Format the number with proper separators
+    if style == 'percent'
+      percent_value = number * 100  # Use original number, not rounded
+      parts = format_number_parts(percent_value, thousand_sep, decimal_sep, min_fraction, max_fraction)
+      formatted = (number < 0 ? '-' : '') + parts + '%'
+    elsif style == 'currency'
+      parts = format_number_parts(formatted_number, thousand_sep, decimal_sep, min_fraction, max_fraction)
+      formatted = format_currency(parts, currency, locale, number < 0)
+    else # decimal
+      parts = format_number_parts(formatted_number, thousand_sep, decimal_sep, min_fraction, max_fraction)
+      formatted = (number < 0 ? '-' : '') + parts
+    end
+    
+    formatted
+  end
+  
+  private
+  
+  # Get thousand and decimal separators for a locale
+  def self.get_number_separators(locale)
+    case locale
+    when 'en-US', 'en-CA', 'ja-JP'
+      [',', '.']  # 1,234.56
+    when 'en-GB', 'en-AU'
+      [',', '.']  # 1,234.56
+    when 'fr-FR', 'es-ES', 'it-IT', 'pl-PL', 'uk-UA'
+      [' ', ',']  # 1 234,56 (space for thousands)
+    when 'fr-CA'
+      [' ', ',']  # 1 234,56 (French Canada follows French conventions)
+    when 'de-DE'
+      ['.', ',']  # 1.234,56
+    else
+      [',', '.']  # Default to US format
+    end
+  end
+  
+  # Format the number parts with separators
+  def self.format_number_parts(number, thousand_sep, decimal_sep, min_fraction, max_fraction)
+    # Remember if the number is negative
+    is_negative = number < 0
+    
+    # Split into integer and decimal parts
+    if number.is_a?(Integer) || max_fraction == 0
+      integer_part = number.to_i.abs.to_s
+      decimal_part = ''
+    else
+      parts = ("%.#{max_fraction}f" % number.abs).split('.')
+      integer_part = parts[0]
+      decimal_part = parts[1] || ''
+    end
+    
+    # Add thousand separators
+    integer_part = integer_part.reverse.gsub(/(\d{3})(?=\d)/, "\\1#{thousand_sep}").reverse
+    
+    # Handle decimal part
+    if min_fraction > 0 || (decimal_part != '' && decimal_part.to_i > 0)
+      # Pad or trim decimal part
+      decimal_part = decimal_part.ljust(min_fraction, '0')
+      decimal_part = decimal_part[0, max_fraction]
+      # Remove trailing zeros if not required by min_fraction
+      if min_fraction == 0
+        decimal_part = decimal_part.sub(/0+$/, '')
+      end
+      result = decimal_part.empty? ? integer_part : "#{integer_part}#{decimal_sep}#{decimal_part}"
+    else
+      result = integer_part
+    end
+    
+    # Return the formatted string (without negative sign - that's handled in format_currency)
+    result
+  end
+  
+  # Format currency based on locale and currency code
+  def self.format_currency(amount_str, currency, locale, is_negative = false)
+    symbol = get_currency_symbol(currency, locale)
+    
+    formatted = case locale
+    when 'en-US', 'en-CA'
+      "#{symbol}#{amount_str}"  # $1,234.56
+    when 'en-GB'
+      if currency == 'GBP'
+        "£#{amount_str}"  # £1,234.56
+      else
+        "#{symbol}#{amount_str}"
+      end
+    when 'en-AU'
+      if currency == 'AUD'
+        "$#{amount_str}"  # $1,234.56
+      else
+        "#{symbol}#{amount_str}"
+      end
+    when 'fr-FR', 'fr-CA'
+      "#{amount_str} #{symbol}"  # 1 234,56 €
+    when 'de-DE'
+      "#{amount_str} #{symbol}"  # 1.234,56 €
+    when 'es-ES'
+      "#{amount_str} #{symbol}"  # 1 234,56 €
+    when 'it-IT'
+      "#{symbol} #{amount_str}"  # € 1 234,56
+    when 'pl-PL'
+      "#{amount_str} #{symbol}"  # 1 234,56 zł
+    when 'uk-UA'
+      "#{amount_str} #{symbol}"  # 1 234,56 ₴
+    when 'ja-JP'
+      if currency == 'JPY'
+        "#{symbol}#{amount_str}"  # ¥1,234
+      else
+        "#{symbol}#{amount_str}"
+      end
+    else
+      "#{symbol}#{amount_str}"  # Default format
+    end
+    
+    # Add negative sign if needed
+    is_negative ? "-#{formatted}" : formatted
+  end
+  
+  # Get currency symbol for a currency code
+  def self.get_currency_symbol(currency, locale)
+    case currency
+    when 'USD'
+      '$'
+    when 'EUR'
+      '€'
+    when 'GBP'
+      '£'
+    when 'JPY'
+      '¥'
+    when 'CAD'
+      locale.start_with?('fr') ? '$' : '$'
+    when 'AUD'
+      '$'
+    when 'PLN'
+      'zł'
+    when 'UAH'
+      '₴'
+    else
+      currency  # Fall back to currency code
+    end
+  end
 end

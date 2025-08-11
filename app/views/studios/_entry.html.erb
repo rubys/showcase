@@ -48,7 +48,7 @@
       <td><%= level %></td>
       <td class="text-center"><%= subjcat %></td>
       <td class="text-right"><%= heats.length %></td>
-      <td class="text-right"><%= number_to_currency cost*heats.length/split, precision: 2, unit: '' %></td>
+      <td class="text-right"><%= localized_number cost*heats.length/split %></td>
     </tr>
     <% count += heats.length %>
     <% total += cost/split * heats.length %>
@@ -56,7 +56,7 @@
     <tr class="text-sm">
       <th colspan="4">subtotal</th>
       <th class="text-right"><%= count %></th>
-      <th class="text-right"><%= number_to_currency total, precision: 2, unit: '' %></th>
+      <th class="text-right"><%= localized_number total %></th>
     </tr>
   </tbody>
 </table>

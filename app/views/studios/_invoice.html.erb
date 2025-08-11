@@ -36,10 +36,10 @@
     <tr class="text-base">
       <td><div class="mx-4"><%= person.name %></div></td>
       <td><div class="mx-4 text-right"><%= number_with_precision dances[person][:dances], strip_insignificant_zeros: true %></div></td>
-      <td class="pr-4 text-right"><%= number_to_currency dance_cost, precision: 2, unit: '' %></td>
+      <td class="pr-4 text-right"><%= localized_number dance_cost %></td>
       <% if invoice[:purchases] > 0 %>
-      <td class="pr-4 text-right"><%= number_to_currency purchases, precision: 2, unit: '' %></td>
-      <td class="pr-4 text-right"><%= number_to_currency dance_cost + purchases, precision: 2, unit: '' %></td>
+      <td class="pr-4 text-right"><%= localized_number purchases %></td>
+      <td class="pr-4 text-right"><%= localized_number(dance_cost + purchases) %></td>
       <% end %>
     </tr>
     <% total_dance_cost += dance_cost %>
@@ -49,19 +49,19 @@
     <tr>
       <td><div class="mx-4"><%= name %></div></td>
       <td><div class="mx-4 text-right"><%= charge[:count] %></div></td>
-      <td class="pr-4 text-right"><%= number_to_currency charge[:cost], precision: 2, unit: '' %></td>
-      <td class="pr-4 text-right"><%= number_to_currency 0, precision: 2, unit: '' %></td>
-      <td class="pr-4 text-right"><%= number_to_currency charge[:cost], precision: 2, unit: '' %></td>
+      <td class="pr-4 text-right"><%= localized_number charge[:cost] %></td>
+      <td class="pr-4 text-right"><%= localized_number 0 %></td>
+      <td class="pr-4 text-right"><%= localized_number charge[:cost] %></td>
       <% total_dance_cost += charge[:cost] %>
     </tr>
     <% end %>
     <tr class="text-base">
       <th class="row-foot">total</th>
       <td><div class="row-foot text-right"><%= number_with_precision invoice[:dance_count], strip_insignificant_zeros: true %></div></td>
-      <td class="row-foot text-right"><%= number_to_currency total_dance_cost, precision: 2, unit: '' %></td>
+      <td class="row-foot text-right"><%= localized_number total_dance_cost %></td>
       <% if invoice[:purchases] > 0 %>
-      <td class="row-foot text-right"><%= number_to_currency total_purchases, precision: 2, unit: '' %></td>
-      <td class="row-foot text-right"><%= number_to_currency total_dance_cost + total_purchases, precision: 2, unit: '' %></td>
+      <td class="row-foot text-right"><%= localized_number total_purchases %></td>
+      <td class="row-foot text-right"><%= localized_number(total_dance_cost + total_purchases) %></td>
       <% end %>
     </tr>
   </tbody>
@@ -92,7 +92,7 @@
     <tr>
       <td><div class="mx-4"><%= person.name %></div></td>
       <td><div class="mx-4"><%= purchases.map {|name, list| list.length == 1 ? name : "#{list.length} &#215; #{name}"}.join(' + ').html_safe %></div></td>
-      <td class="text-right"><%= number_to_currency purchases.values.flatten.map(&:price).sum, precision: 2, unit: '' %></td>
+      <td class="text-right"><%= localized_number purchases.values.flatten.map(&:price).sum %></td>
     </tr>
     <% end %>
   </tbody>
@@ -154,7 +154,7 @@
   <% if person.package_id %>
   <tr>
     <th align="left" class="pr-8">Registration:</th>
-    <th align="left"><%= number_to_currency registration %> per <%= person.package.couples ? "couple" : "person" %></th>
+    <th align="left"><%= localized_currency registration %> per <%= person.package.couples ? "couple" : "person" %></th>
   </tr>
   <% end %>
   <% unless @event.student_package_description.blank? %>
@@ -164,25 +164,25 @@
   <% end %>
   <tr>
     <th align="left">Freestyles:</th>
-    <th align="left"><%= number_to_currency heat_cost %> per entry</th>
+    <th align="left"><%= localized_currency heat_cost %> per entry</th>
   </tr>
   <% if solo_cost > 0 %>
   <tr>
     <th align="left">Routines:</th>
-    <th align="left"><%= number_to_currency solo_cost %> per entry</th>
+    <th align="left"><%= localized_currency solo_cost %> per entry</th>
   </tr>
   <% end %>
   <% @cost.each do |name, cost| %>
   <% next if %w(Closed Open Solo Multi).include? name %>
   <tr>
     <th align="left"><%= name %>:</th>
-    <th align="left"><%= number_to_currency cost %> per entry</th>
+    <th align="left"><%= localized_currency cost %> per entry</th>
   </tr>
   <% end %>
   <% if multi_cost and multi_cost > 0 %>
     <tr>
     <th align="left" class="pr-8">Multi Dance Event:</th>
-    <th align="left"><%= number_to_currency multi_cost %> per entry</th>
+    <th align="left"><%= localized_currency multi_cost %> per entry</th>
   </tr>
   <% end %>
   </tbody>
@@ -197,7 +197,7 @@
   <% if person.package_id %>
   <tr>
     <td class="pr-8">Registration:</td>
-    <td align="right"><%= number_to_currency registration %></td>
+    <td align="right"><%= localized_number registration %></td>
   </tr>
   <% end %>
   <% person.options.group_by(&:option_id).each do |option_id, options| %> 
@@ -209,31 +209,31 @@
         <%= options.first.option.name %>
       </td>
       <td align="right">
-        <%= number_to_currency options.first.option.price * options.length %>
+        <%= localized_number(options.first.option.price * options.length) %>
       </td>
     </tr>
     <% end %>
     <% if @offered[:freestyles] %>
   <tr>
     <td>Freestyles:</td>
-    <td align="right"><%= number_to_currency heat_cost * (dances.fetch('Open', 0) + dances.fetch('Closed', 0)) %></td>
+    <td align="right"><%= localized_number(heat_cost * (dances.fetch('Open', 0) + dances.fetch('Closed', 0))) %></td>
   </tr>
   <% end %>
   <% if @offered[:solos] %>
   <tr>
     <td>Routines:
-    <td align="right"><%= number_to_currency solo_cost * dances.fetch('Solo', 0) %></td>
+    <td align="right"><%= localized_number(solo_cost * dances.fetch('Solo', 0)) %></td>
   </tr>
   <% end %>
   <% if @offered[:multis] %>
   <tr>
     <td class="pr-8">Multi dance event:
-    <td align="right"><%= number_to_currency multi_cost * dances.fetch('Multi', 0) %></td>
+    <td align="right"><%= localized_number(multi_cost * dances.fetch('Multi', 0)) %></td>
   </tr>
   <% end %>
   <tr>
     <th class="pr-8">Total:
-    <td align="right"><%= number_to_currency dances[:cost] + dances[:purchases] %></td>
+    <td align="right"><%= localized_currency(dances[:cost] + dances[:purchases]) %></td>
   </tr>
   </table>
 

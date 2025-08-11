@@ -56,4 +56,58 @@ class ApplicationHelperTest < ActionView::TestCase
     # Should use en_US as default
     assert_equal "Friday, March 15, 2024", localized_date("2024-03-15")
   end
+
+  test "localized_currency formats USD correctly" do
+    @locale = "en_US"
+    assert_equal "$1,234.56", localized_currency(1234.56)
+    assert_equal "$0.00", localized_currency(0)
+    assert_equal "-$100.50", localized_currency(-100.50)
+  end
+
+  test "localized_currency formats JPY correctly" do
+    @locale = "ja_JP"
+    assert_equal "¥1,235", localized_currency(1234.56)
+    assert_equal "¥0", localized_currency(0)
+    assert_equal "-¥101", localized_currency(-100.50)  # JPY rounds to nearest integer
+  end
+
+  test "localized_currency formats EUR correctly" do
+    @locale = "fr_FR"
+    assert_equal "1 234,56 €", localized_currency(1234.56)
+    
+    @locale = "de_DE"
+    assert_equal "1.234,56 €", localized_currency(1234.56)
+    
+    @locale = "it_IT"
+    assert_equal "€ 1 234,56", localized_currency(1234.56)
+  end
+
+  test "localized_currency formats GBP correctly" do
+    @locale = "en_GB"
+    assert_equal "£1,234.56", localized_currency(1234.56)
+  end
+
+  test "localized_currency handles nil" do
+    assert_nil localized_currency(nil)
+  end
+
+  test "localized_currency respects explicit currency parameter" do
+    @locale = "en_US"
+    assert_equal "€1,234.56", localized_currency(1234.56, nil, "EUR")
+    assert_equal "¥1,235", localized_currency(1234.56, nil, "JPY")
+  end
+
+  test "localized_currency uses locale to determine currency" do
+    @locale = "ja_JP"
+    # Should use JPY for Japanese locale
+    assert_equal "¥1,235", localized_currency(1234.56)
+    
+    @locale = "en_GB"
+    # Should use GBP for UK locale
+    assert_equal "£1,234.56", localized_currency(1234.56)
+    
+    @locale = "fr_FR"
+    # Should use EUR for French locale
+    assert_equal "1 234,56 €", localized_currency(1234.56)
+  end
 end

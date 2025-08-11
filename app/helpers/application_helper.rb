@@ -95,4 +95,57 @@ module ApplicationHelper
     Locale.format_time(time, locale)
   end
 
+  def localized_currency(number, locale = nil, currency = nil)
+    return nil unless number
+    
+    # Use provided locale or fall back to session locale or env locale
+    locale ||= @locale || ENV.fetch("RAILS_LOCALE", "en_US")
+    # Convert to browser format using centralized config
+    locale = Locale.to_browser_format(locale)
+    
+    # Determine currency based on locale if not provided
+    if currency.nil?
+      currency = case locale
+      when 'ja-JP'
+        'JPY'
+      when 'en-GB'
+        'GBP'
+      when 'en-AU'
+        'AUD'
+      when 'en-CA', 'fr-CA'
+        'CAD'
+      when 'fr-FR', 'de-DE', 'es-ES', 'it-IT'
+        'EUR'
+      when 'pl-PL'
+        'PLN'
+      when 'uk-UA'
+        'UAH'
+      else
+        'USD'
+      end
+    end
+    
+    Locale.number_format(number, locale, style: 'currency', currency: currency)
+  end
+
+  def localized_number(number, locale = nil, precision = nil)
+    return nil unless number
+    
+    # Use provided locale or fall back to session locale or env locale
+    locale ||= @locale || ENV.fetch("RAILS_LOCALE", "en_US")
+    # Convert to browser format using centralized config
+    locale = Locale.to_browser_format(locale)
+    
+    # Determine precision based on currency conventions if not provided
+    if precision.nil?
+      # Use 0 decimals for JPY, 2 for others
+      precision = (locale == 'ja-JP') ? 0 : 2
+    end
+    
+    # Format as decimal number without currency symbol
+    Locale.number_format(number, locale, style: 'decimal', 
+                        minimum_fraction_digits: precision, 
+                        maximum_fraction_digits: precision)
+  end
+
 end
