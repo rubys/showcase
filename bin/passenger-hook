@@ -183,7 +183,7 @@ rescue => exception
   Sentry.capture_exception(exception)
 
 ensure
-  system "script/sync_databases_s3.rb --safe  --dry-run"
+  system "script/sync_databases_s3.rb --safe"
 
   Dir['/data/inventory/*.json'].each do |file|
     mtime = File.mtime(file)
