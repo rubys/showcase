@@ -189,7 +189,8 @@ class ShowcasesController < ApplicationController
   
       flash.now.notice = "#{source.name} was successfully moved."
 
-      @showcases = source.location.showcases.order(:year, :order).reverse.group_by(&:year)
+      @location = source.location
+    @showcases = @location.showcases.order(:year, :order).reverse.group_by(&:year)
   
       respond_to do |format|
         format.turbo_stream { render turbo_stream: turbo_stream.replace('showcases', 
