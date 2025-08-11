@@ -272,6 +272,9 @@
       yokohama-showcase:
         :name: Yokohama Showcase
         :date: '2025-07-06'
+      summer-spotlight:
+        :name: Summer Spotlight
+        :date: 2025-08-24 - 2025-08-24
       fall-showcase:
         :name: Fall Showcase
         :date: '2025'
