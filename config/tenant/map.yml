@@ -284,6 +284,14 @@ studios:
     map: us
     x: 129.39451571700687
     y: 202.57986287602603
+  fortworth:
+    name: Fort Worth
+    lat: 32.753177
+    lon: -97.3327459
+    region: dfw
+    map: us
+    x: 467.85333363506163
+    y: 361.90302216120244
   fremont:
     name: Fremont
     lat: 37.5482697

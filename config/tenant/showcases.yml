@@ -227,6 +227,13 @@
     :name: Folsom
     :region: sjc
     :date: 3/15/25
+  fortworth:
+    :name: Fort Worth
+    :region: dfw
+    :events:
+      heart-of-texas:
+        :name: Heart of Texas
+        :date: 2025-10-25 - 2025-10-25
   fremont:
     :name: Fremont
     :region: sjc
