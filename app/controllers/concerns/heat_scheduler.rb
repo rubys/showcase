@@ -10,8 +10,9 @@ module HeatScheduler
     Score.where(value: nil, comments: nil, good: nil, bad: nil).delete_all
 
     # remove all scratches and orphaned entries
+    # commented out removing orphaned entries as this will delete entries for people with time restrctions
     Heat.where(number: ...0).each {|heat| heat.destroy}
-    Entry.includes(:heats).where(heats: {id: nil}).each {|entry| entry.destroy}
+    # Entry.includes(:heats).where(heats: {id: nil}).each {|entry| entry.destroy}
 
     fixups
 
