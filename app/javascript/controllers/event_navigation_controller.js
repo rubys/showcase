@@ -24,7 +24,12 @@ export default class extends Controller {
     } else if (event.key == "ArrowUp") {
       let link = document.querySelector("a[rel=up]");
       if (link) link.click();
+    } else if (event.key == "?") {
+      let home = document.querySelector("a[rel=home]");
+      if (!home) return;
+      Turbo.visit(home.href + "env");
     }
+    console.log("Key pressed:", event.key);
   };
 
   touchstart = event => {
