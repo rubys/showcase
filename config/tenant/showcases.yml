@@ -93,6 +93,12 @@
       summer-showcase:
         :name: Summer Showcase
         :date: 2025-08-15 - 2025-08-17
+      mini-comp:
+        :name: Mini Comp
+        :date: 2025-09-21 - 2025-09-21
+      winter-medal-ball:
+        :name: Winter Medal Ball
+        :date: 2025-12-07 - 2025-12-07
   boston:
     :name: Boston
     :region: bos
