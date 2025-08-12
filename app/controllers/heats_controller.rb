@@ -253,7 +253,7 @@ class HeatsController < ApplicationController
               heat.number = -newnumbers[number] || 0
             end
 
-            if heat.number == 0
+            if heat.number < 0
               heat.destroy
             else
               heat.save
