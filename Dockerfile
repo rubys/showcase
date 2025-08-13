@@ -24,7 +24,8 @@ RUN apt-get update -qq && \
       gpg --dearmor > /etc/apt/trusted.gpg.d/phusion.gpg && \
     # TODO: Revert to dynamic VERSION_CODENAME once Passenger supports Trixie (Debian 13)
     # For now, hardcode to bookworm as it's compatible with current Ruby images
-    bash -c 'echo deb https://oss-binaries.phusionpassenger.com/apt/passenger bookworm main > /etc/apt/sources.list.d/passenger.list' && \
+    # Also using [trusted=yes] to bypass GPG verification issues with SHA1 signatures
+    bash -c 'echo "deb [trusted=yes] https://oss-binaries.phusionpassenger.com/apt/passenger bookworm main" > /etc/apt/sources.list.d/passenger.list' && \
     apt-get update -qq && \
     apt-get install --no-install-recommends -y curl gnupg passenger && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
