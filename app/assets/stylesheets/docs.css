@@ -33,10 +33,15 @@ body.docs {
 .docs h3 {
   margin-top: 0.5em;
   font-size: x-large;
+  font-weight: bold;
+}
+
+.docs h3 span {
+  font-weight: normal;
 }
 
 .docs h3 + div.step {
-  margin-left: 2em;  
+  margin-left: 2em;
 }
 
 .docs h4 {

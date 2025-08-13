@@ -157,6 +157,11 @@ module HeatScheduler
       groups.sort_by! {|group| [group.first.entry.level_id, i += 1]}
     end
 
+    # Apply availability-based ordering if requested
+    if event.heat_order == 'A'
+      groups = order_by_availability(groups)
+    end
+
     ActiveRecord::Base.transaction do
       groups.each_with_index do |group, index|
         group.each do |heat|
@@ -167,7 +172,7 @@ module HeatScheduler
     end
 
     limited_availability = Person.where.not(available: nil).all
-    if limited_availability.any? && Event.current.heat_order == "R"
+    if limited_availability.any? && (Event.current.heat_order == "R" || Event.current.heat_order == "A")
       exchange_heats(limited_availability)
       rescue_individual_heats(limited_availability)
       unschedule_remaining_violations(limited_availability)
@@ -822,6 +827,85 @@ module HeatScheduler
     
     people_ids = people.map(&:id)
     (participants & people_ids).any?
+  end
+
+  # Order groups by availability constraints
+  def order_by_availability(groups)
+    # Get all people with availability constraints
+    people_with_constraints = Person.where.not(available: nil).index_by(&:id)
+    
+    # Score each group based on participant availability
+    groups_with_scores = groups.map do |group|
+      score, random_tie_breaker = score_group_availability(group, people_with_constraints)
+      [group, score, random_tie_breaker]
+    end
+    
+    # Sort by score (lower is earlier), then by random tie breaker
+    groups_with_scores.sort_by! { |group, score, tie| [score, tie] }
+    
+    # Return just the groups in the new order
+    groups_with_scores.map(&:first)
+  end
+  
+  # Calculate availability score for a group
+  def score_group_availability(group, people_with_constraints)
+    earliest_constraint = Float::INFINITY
+    has_early_departure = false
+    has_late_arrival = false
+    
+    group.each do |heat|
+      # Check lead and follow
+      [heat.entry&.lead_id, heat.entry&.follow_id].compact.each do |person_id|
+        if people_with_constraints[person_id]
+          constraint = people_with_constraints[person_id].available
+          if constraint[0] == '<'
+            # Early departure - extract time and use as negative score (earlier = lower)
+            has_early_departure = true
+            time_str = constraint[1..]
+            # Parse as hours and minutes for comparison
+            if time_str =~ /T(\d{2}):(\d{2})/
+              time_score = $1.to_i * 60 + $2.to_i
+              earliest_constraint = [earliest_constraint, time_score].min
+            end
+          elsif constraint[0] == '>'
+            # Late arrival
+            has_late_arrival = true
+          end
+        end
+      end
+      
+      # Check formations
+      heat.solo&.formations&.where(on_floor: true)&.each do |formation|
+        if people_with_constraints[formation.person_id]
+          constraint = people_with_constraints[formation.person_id].available
+          if constraint[0] == '<'
+            has_early_departure = true
+            time_str = constraint[1..]
+            if time_str =~ /T(\d{2}):(\d{2})/
+              time_score = $1.to_i * 60 + $2.to_i
+              earliest_constraint = [earliest_constraint, time_score].min
+            end
+          elsif constraint[0] == '>'
+            has_late_arrival = true
+          end
+        end
+      end
+    end
+    
+    # Calculate final score:
+    # 1. Early departures get lowest scores (schedule first)
+    # 2. No constraints get middle scores (schedule in middle)  
+    # 3. Late arrivals get highest scores (schedule last)
+    score = if has_early_departure
+      earliest_constraint  # Lower time = earlier in schedule
+    elsif has_late_arrival
+      20000  # High score to schedule late
+    else
+      10000  # Middle score for no constraints
+    end
+    
+    # Add random tie breaker for groups with same availability
+    [score, rand]
   end
 
   # Final cleanup: move any remaining availability violations to heat 0 (unscheduled)
