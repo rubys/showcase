@@ -145,7 +145,8 @@ module Printable
 
     # assign start and finish times
 
-    if start and event.include_times
+    @include_times = event.include_times if @include_times.nil?
+    if start and @include_times
       @start = []
       @finish = []
 

@@ -767,6 +767,7 @@ class PeopleController < ApplicationController
       @event = Event.current
 
       if Category.where.not(ballrooms: nil).any?
+        @include_times = true  # Override for admin view
         generate_agenda unless @agenda
         cat_ballrooms = Category.pluck(:name, :ballrooms).to_h
         heat_ballrooms = @agenda.map {|cat, heats|
@@ -785,6 +786,7 @@ class PeopleController < ApplicationController
 
       judge_dancers = Person.where(type: 'Judge').where.not(exclude_id: nil).pluck(:id, :exclude_id).to_h
       if judge_dancers.any?
+        @include_times = true  # Override for admin view
         generate_agenda
         dancers = @heats.map {|number, heats| [number.to_f, heats.map {|heat| [heat.entry.lead_id, heat.entry.follow_id]}.flatten]}.to_h
       end

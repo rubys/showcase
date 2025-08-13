@@ -12,6 +12,8 @@ class HeatsController < ApplicationController
 
   # GET /heats or /heats.json
   def index
+    # Override to always show times in admin view
+    @include_times = true
     generate_agenda
 
     @solos = Solo.includes(:heat).order('heats.number').
@@ -267,6 +269,7 @@ class HeatsController < ApplicationController
       respond_to do |format|
         format.turbo_stream {
           cat = source.dance_category
+          @include_times = true  # Override for admin view
           generate_agenda
           catname = cat&.name || 'Uncategorized'
           heats = @agenda[catname]
@@ -306,6 +309,7 @@ class HeatsController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream {
+        @include_times = true  # Override for admin view
         generate_agenda
         catname = cat&.name || 'Uncategorized'
         heats = @agenda[catname]
@@ -356,6 +360,7 @@ class HeatsController < ApplicationController
     respond_to do |format|
       format.turbo_stream {
         cat = source.dance_category
+        @include_times = true  # Override for admin view
         generate_agenda
         heats = @agenda[cat.name]
         @locked = Event.current.locked?

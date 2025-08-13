@@ -589,6 +589,7 @@ module HeatScheduler
     pinned = Set.new
     problems = []
 
+    @include_times = true
     generate_agenda
 
     return unless @start

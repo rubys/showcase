@@ -7,6 +7,7 @@ class CategoriesController < ApplicationController
 
   # GET /categories or /categories.json
   def index
+    @include_times = true  # Override for admin view
     generate_agenda
     @agenda = @agenda.to_h
     @categories = (Category.all + CatExtension.all).sort_by {|cat| cat.order}
@@ -35,6 +36,7 @@ class CategoriesController < ApplicationController
 
   # GET /categories/1/edit
   def edit
+    @include_times = true  # Override for admin view
     generate_agenda
     @day_placeholder = Date::DAYNAMES[@cat_start&.dig(@category.name)&.wday || 7]
     @event_date = Event.current.date
@@ -87,6 +89,7 @@ class CategoriesController < ApplicationController
     redo_agenda = false
 
     if @category.instance_of?(Category) && (!params[:category][:split].blank? || @category.extensions.any?)
+      @include_times = true  # Override for admin view
       generate_agenda
       heats = @agenda[@category.name].length + @category.extensions.map {|ext| @agenda[ext.name].length}.sum
       extensions_found = @category.extensions.order(:part).all.to_a
@@ -124,6 +127,7 @@ class CategoriesController < ApplicationController
 
         if redo_agenda
           ActiveRecord::Base.connection.query_cache.clear
+          @include_times = true  # Override for admin view
           generate_agenda
         end
 
@@ -475,6 +479,7 @@ class CategoriesController < ApplicationController
     def renumber_extensions
       CatExtension.update_all(start_heat: nil)
 
+      @include_times = true  # Override for admin view
       generate_agenda(expand_multi_heats: false)
 
       ActiveRecord::Base.transaction do
@@ -492,6 +497,7 @@ class CategoriesController < ApplicationController
         end
       end
 
+      @include_times = true  # Override for admin view
       generate_agenda(expand_multi_heats: false)
 
       CatExtension.all.each do |ext|
