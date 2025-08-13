@@ -169,6 +169,8 @@ module HeatScheduler
     limited_availability = Person.where.not(available: nil).all
     if limited_availability.any? && Event.current.heat_order == "R"
       exchange_heats(limited_availability)
+      rescue_individual_heats(limited_availability)
+      unschedule_remaining_violations(limited_availability)
       @heats = Heat.eager_load(
         :solo,
         dance: [:open_category, :closed_category, :solo_category, :multi_category],
@@ -696,6 +698,157 @@ module HeatScheduler
     end
     
     score
+  end
+
+  # Final pass to rescue individual heats that couldn't be handled by group swapping
+  def rescue_individual_heats(people)
+    @include_times = true
+    generate_agenda
+    return unless @start
+
+    start_times = @heats.map {|heat| heat.first.to_f}.zip(@start.compact)
+    
+    # Find all problematic heats (unscheduled + availability violations)
+    problematic_heats = []
+    
+    # Add unscheduled heats (heat 0)
+    Heat.where(number: 0).each do |heat|
+      if involves_availability_constrained_person?(heat, people)
+        problematic_heats << heat
+      end
+    end
+    
+    # Add scheduled heats with availability violations
+    people.each do |person|
+      eligible = person.eligible_heats(start_times)
+      
+      heats = Heat.joins(:entry).where('number > 0').
+        where('entries.lead_id = ? OR entries.follow_id = ?', person.id, person.id)
+      
+      formation_heats = Heat.joins(solo: :formations).
+        where(formations: { person_id: person.id, on_floor: true }, heats: { number: (0.1..Float::INFINITY) })
+      
+      (heats + formation_heats).uniq.each do |heat|
+        unless eligible.include?(heat.number.to_f)
+          problematic_heats << heat unless problematic_heats.include?(heat)
+        end
+      end
+    end
+    
+    # Try to rescue each problematic heat
+    problematic_heats.each do |heat|
+      rescue_single_heat(heat, people, start_times)
+    end
+  end
+  
+  # Try to move a single heat to a better time slot
+  def rescue_single_heat(heat, people, start_times)
+    # Get all participants in this heat
+    participants = []
+    participants += [heat.entry&.lead_id, heat.entry&.follow_id].compact if heat.entry
+    heat.solo&.formations&.where(on_floor: true)&.each do |formation|
+      participants << formation.person_id
+    end
+    
+    # Find availability windows for all participants
+    participant_people = people.select { |p| participants.include?(p.id) }
+    return if participant_people.empty?
+    
+    # Get intersection of all participants' available time windows
+    available_heats = nil
+    participant_people.each do |person|
+      person_available = person.eligible_heats(start_times)
+      available_heats = available_heats ? (available_heats & person_available) : person_available
+    end
+    
+    return if available_heats.empty?
+    
+    # Find candidate destination heats in available time windows
+    candidates = Heat.where(
+      category: heat.category,
+      dance_id: heat.dance_id,
+      number: available_heats.to_a
+    ).where('number > 0')
+    
+    best_candidate = nil
+    best_score = -Float::INFINITY
+    
+    candidates.each do |candidate_heat|
+      # Check if this heat has room and no participant conflicts
+      current_size = Heat.where(number: candidate_heat.number).count
+      max_size = Event.current.max_heat_size || 9999
+      
+      next if current_size >= max_size
+      
+      # Check for participant conflicts in the destination heat
+      has_conflict = false
+      Heat.where(number: candidate_heat.number).each do |existing_heat|
+        existing_participants = []
+        existing_participants += [existing_heat.entry&.lead_id, existing_heat.entry&.follow_id].compact if existing_heat.entry
+        existing_heat.solo&.formations&.where(on_floor: true)&.each do |formation|
+          existing_participants << formation.person_id
+        end
+        
+        if (participants & existing_participants).any?
+          has_conflict = true
+          break
+        end
+      end
+      
+      next if has_conflict
+      
+      # Score this candidate (prefer earlier heat numbers for better schedule flow)
+      score = -candidate_heat.number.to_f
+      
+      if score > best_score
+        best_score = score
+        best_candidate = candidate_heat
+      end
+    end
+    
+    # Move the heat to the best candidate slot
+    if best_candidate
+      heat.update!(number: best_candidate.number)
+    end
+  end
+  
+  # Check if a heat involves anyone with availability constraints
+  def involves_availability_constrained_person?(heat, people)
+    participants = []
+    participants += [heat.entry&.lead_id, heat.entry&.follow_id].compact if heat.entry
+    heat.solo&.formations&.where(on_floor: true)&.each do |formation|
+      participants << formation.person_id
+    end
+    
+    people_ids = people.map(&:id)
+    (participants & people_ids).any?
+  end
+
+  # Final cleanup: move any remaining availability violations to heat 0 (unscheduled)
+  def unschedule_remaining_violations(people)
+    @include_times = true
+    generate_agenda
+    return unless @start
+
+    start_times = @heats.map {|heat| heat.first.to_f}.zip(@start.compact)
+    
+    people.each do |person|
+      eligible = person.eligible_heats(start_times)
+      
+      # Find all heats this person is scheduled in
+      heats = Heat.joins(:entry).where('number > 0').
+        where('entries.lead_id = ? OR entries.follow_id = ?', person.id, person.id)
+      
+      formation_heats = Heat.joins(solo: :formations).
+        where(formations: { person_id: person.id, on_floor: true }, heats: { number: (0.1..Float::INFINITY) })
+      
+      (heats + formation_heats).uniq.each do |heat|
+        # If this heat violates their availability, unschedule it
+        unless eligible.include?(heat.number.to_f)
+          heat.update!(number: 0)
+        end
+      end
+    end
   end
 
   def fixups
