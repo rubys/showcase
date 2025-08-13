@@ -33,6 +33,17 @@ module HeatScheduler
       orders.each {|order| true_order[order] = max}
     end
 
+    # Calculate availability scores if using availability ordering
+    availability_scores = {}
+    if event.heat_order == 'A'
+      people_with_constraints = Person.where.not(available: nil).index_by(&:id)
+      
+      @heats.each do |heat|
+        score = calculate_heat_availability_score(heat, people_with_constraints)
+        availability_scores[heat] = score
+      end
+    end
+
     heats = @heats.map {|heat|
       if heat.solo&.category_override_id and routines[heat.solo.category_override_id]
         category = routines[heat.solo.category_override_id]
@@ -43,23 +54,49 @@ module HeatScheduler
         order = true_order[heat.dance.order]
       end
 
-      if heat.dance.semi_finals
-        # don't split semi-finals by level, age
-        [
-          order,
-          category,
-          1,
-          1,
-          heat
-        ]
+      # For availability ordering, prepend the availability score
+      if event.heat_order == 'A'
+        availability = availability_scores[heat] || 10000
+        
+        if heat.dance.semi_finals
+          # don't split semi-finals by level, age
+          [
+            availability,
+            order,
+            category,
+            1,
+            1,
+            heat
+          ]
+        else
+          [
+            availability,
+            order,
+            category,
+            heat.entry.level_id,
+            heat.entry.age_id,
+            heat
+          ]
+        end
       else
-        [
-          order,
-          category,
-          heat.entry.level_id,
-          heat.entry.age_id,
-          heat
-        ]
+        if heat.dance.semi_finals
+          # don't split semi-finals by level, age
+          [
+            order,
+            category,
+            1,
+            1,
+            heat
+          ]
+        else
+          [
+            order,
+            category,
+            heat.entry.level_id,
+            heat.entry.age_id,
+            heat
+          ]
+        end
       end
     }
 
@@ -81,12 +118,14 @@ module HeatScheduler
         pending = []
         group = nil
         heats.each_with_index do |entry, index|
+          # For availability ordering, skip the first element (availability score)
+          entry_params = event.heat_order == 'A' ? entry[1..] : entry
           if index == 0
             group = Group.new
-            group.add? *entry
+            group.add? *entry_params
             pending << index
           else
-            if group.match? *entry
+            if group.match? *entry_params
               pending << index
             else
               break
@@ -105,8 +144,10 @@ module HeatScheduler
           pending.each do |index|
             next if assignments[index]
             entry = heats[index]
+            # For availability ordering, skip the first element (availability score)
+            entry_params = event.heat_order == 'A' ? entry[1..] : entry
 
-            if group.add? *entry
+            if group.add? *entry_params
               assignments[index] = group
             else
               more ||= index
@@ -125,9 +166,11 @@ module HeatScheduler
 
           heats.each_with_index do |entry, index|
             next if assignments[index]
-            if group.add? *entry
+            # For availability ordering, skip the first element (availability score)
+            entry_params = event.heat_order == 'A' ? entry[1..] : entry
+            if group.add? *entry_params
               assignments[index] = group
-            elsif group.match? *entry
+            elsif group.match? *entry_params
               more ||= entry
             else
               break
@@ -157,10 +200,8 @@ module HeatScheduler
       groups.sort_by! {|group| [group.first.entry.level_id, i += 1]}
     end
 
-    # Apply availability-based ordering if requested
-    if event.heat_order == 'A'
-      groups = order_by_availability(groups)
-    end
+    # Note: Availability ordering is now handled during initial heat sorting,
+    # not as a post-processing step
 
     ActiveRecord::Base.transaction do
       groups.each_with_index do |group, index|
@@ -205,14 +246,19 @@ module HeatScheduler
     ceiling = (assignments.length.to_f / subgroups.length).ceil
     floor = (assignments.length.to_f / subgroups.length).floor
 
+    # Check if we're using availability ordering (entries have 6 elements instead of 5)
+    using_availability = assignments.keys.first && assignments.keys.first.length == 6
+
     assignments.to_a.reverse.each do |(entry, source)|
       subgroups.each do |target|
         break if target == source
         next if target.size >= ceiling
         next if target.size >= source.size
 
-        if target.add? *entry
-          source.remove *entry
+        # For availability ordering, skip the first element
+        entry_params = using_availability ? entry[1..] : entry
+        if target.add? *entry_params
+          source.remove *entry_params
           assignments[entry] = target
           break
         end
@@ -222,8 +268,10 @@ module HeatScheduler
     subgroups.select {|subgroup| subgroup.size < floor}.each do |target|
       assignments.each do |entry, source|
         next if source.size < max
-        if target.add? *entry
-          source.remove *entry
+        # For availability ordering, skip the first element
+        entry_params = using_availability ? entry[1..] : entry
+        if target.add? *entry_params
+          source.remove *entry_params
           assignments[entry] = target
           break if target.size >= max
         end
@@ -235,8 +283,10 @@ module HeatScheduler
         next if target.size >= max
         subgroups.each do |source|
           next if source.size <= max
-          if target.add? *entry
-            source.remove *entry
+          # For availability ordering, skip the first element
+          entry_params = using_availability ? entry[1..] : entry
+          if target.add? *entry_params
+            source.remove *entry_params
             assignments[entry] = target
             break if target.size >= max
           end
@@ -829,65 +879,45 @@ module HeatScheduler
     (participants & people_ids).any?
   end
 
-  # Order groups by availability constraints
-  def order_by_availability(groups)
-    # Get all people with availability constraints
-    people_with_constraints = Person.where.not(available: nil).index_by(&:id)
-    
-    # Score each group based on participant availability
-    groups_with_scores = groups.map do |group|
-      score, random_tie_breaker = score_group_availability(group, people_with_constraints)
-      [group, score, random_tie_breaker]
-    end
-    
-    # Sort by score (lower is earlier), then by random tie breaker
-    groups_with_scores.sort_by! { |group, score, tie| [score, tie] }
-    
-    # Return just the groups in the new order
-    groups_with_scores.map(&:first)
-  end
-  
-  # Calculate availability score for a group
-  def score_group_availability(group, people_with_constraints)
+  # Calculate availability score for a single heat
+  def calculate_heat_availability_score(heat, people_with_constraints)
     earliest_constraint = Float::INFINITY
     has_early_departure = false
     has_late_arrival = false
     
-    group.each do |heat|
-      # Check lead and follow
-      [heat.entry&.lead_id, heat.entry&.follow_id].compact.each do |person_id|
-        if people_with_constraints[person_id]
-          constraint = people_with_constraints[person_id].available
-          if constraint[0] == '<'
-            # Early departure - extract time and use as negative score (earlier = lower)
-            has_early_departure = true
-            time_str = constraint[1..]
-            # Parse as hours and minutes for comparison
-            if time_str =~ /T(\d{2}):(\d{2})/
-              time_score = $1.to_i * 60 + $2.to_i
-              earliest_constraint = [earliest_constraint, time_score].min
-            end
-          elsif constraint[0] == '>'
-            # Late arrival
-            has_late_arrival = true
+    # Check lead and follow
+    [heat.entry&.lead_id, heat.entry&.follow_id].compact.each do |person_id|
+      if people_with_constraints[person_id]
+        constraint = people_with_constraints[person_id].available
+        if constraint[0] == '<'
+          # Early departure - extract time and use as score (earlier departure = lower score)
+          has_early_departure = true
+          time_str = constraint[1..]
+          # Parse as hours and minutes for comparison
+          if time_str =~ /T(\d{2}):(\d{2})/
+            time_score = $1.to_i * 60 + $2.to_i
+            earliest_constraint = [earliest_constraint, time_score].min
           end
+        elsif constraint[0] == '>'
+          # Late arrival
+          has_late_arrival = true
         end
       end
-      
-      # Check formations
-      heat.solo&.formations&.where(on_floor: true)&.each do |formation|
-        if people_with_constraints[formation.person_id]
-          constraint = people_with_constraints[formation.person_id].available
-          if constraint[0] == '<'
-            has_early_departure = true
-            time_str = constraint[1..]
-            if time_str =~ /T(\d{2}):(\d{2})/
-              time_score = $1.to_i * 60 + $2.to_i
-              earliest_constraint = [earliest_constraint, time_score].min
-            end
-          elsif constraint[0] == '>'
-            has_late_arrival = true
+    end
+    
+    # Check formations
+    heat.solo&.formations&.where(on_floor: true)&.each do |formation|
+      if people_with_constraints[formation.person_id]
+        constraint = people_with_constraints[formation.person_id].available
+        if constraint[0] == '<'
+          has_early_departure = true
+          time_str = constraint[1..]
+          if time_str =~ /T(\d{2}):(\d{2})/
+            time_score = $1.to_i * 60 + $2.to_i
+            earliest_constraint = [earliest_constraint, time_score].min
           end
+        elsif constraint[0] == '>'
+          has_late_arrival = true
         end
       end
     end
@@ -896,16 +926,13 @@ module HeatScheduler
     # 1. Early departures get lowest scores (schedule first)
     # 2. No constraints get middle scores (schedule in middle)  
     # 3. Late arrivals get highest scores (schedule last)
-    score = if has_early_departure
+    if has_early_departure
       earliest_constraint  # Lower time = earlier in schedule
     elsif has_late_arrival
       20000  # High score to schedule late
     else
-      10000  # Middle score for no constraints
+      10000 + rand(100)  # Middle score for no constraints, with small random variation
     end
-    
-    # Add random tie breaker for groups with same availability
-    [score, rand]
   end
 
   # Final cleanup: move any remaining availability violations to heat 0 (unscheduled)
