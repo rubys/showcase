@@ -941,7 +941,10 @@ class EventController < ApplicationController
         if tables[:agenda]
           Category.transaction do
             Category.destroy_all
-            dbquery(source, 'categories').each {|category| Category.create category}
+            dbquery(source, 'categories').each do |category|
+              category.delete 'day'
+              Category.create category
+            end
           end
         end
 

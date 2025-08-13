@@ -597,6 +597,7 @@ module HeatScheduler
 
     people.each do |person|
       ok = person.eligible_heats(start_times)
+      boom if ok.empty?
 
       heats = Heat.joins(:entry).
         includes(:dance, entry: [:lead, :follow]).
@@ -614,6 +615,7 @@ module HeatScheduler
     end
 
     problems.shuffle!
+    boom
 
     problems.each do |heat, available|
       numbers = available - pinned - [heat.number.to_f]

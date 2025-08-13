@@ -56,7 +56,8 @@ module Printable
       start = Event.parse_date(Event.current.date, guess: false)&.begin || Time.now
 
       if not @categories.empty? and not @categories.values.first.day.blank?
-        start = Chronic.parse(@categories.values.first.day, guess: false)&.begin || start
+        cat_start = Chronic.parse(@categories.values.first.day, guess: false)&.begin || start
+        start = cat_start if cat_start > start and cat_start < start + 3*86_400
       end
     end
 
