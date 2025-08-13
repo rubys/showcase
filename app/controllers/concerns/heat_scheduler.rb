@@ -609,32 +609,93 @@ module HeatScheduler
         if ok.include? heat.number.to_f
           pinned.add heat.number.to_f
         else
-          problems << [heat, ok]
+          problems << [heat, ok, person]
         end
       end
     end
 
-    problems.shuffle!
+    # Sort problems by availability score - prioritize people with fewer available slots
+    problems.sort_by! do |heat, available, person|
+      [available.size, heat.number.to_f]
+    end
 
-    problems.each do |heat, available|
+    problems.each do |heat, available, person|
       numbers = available - pinned - [heat.number.to_f]
-      alternate = Heat.where(category: heat.category, dance_id: heat.dance_id, number: numbers).distinct.pluck(:number).sample
-
-      if alternate
+      
+      # Find all potential alternates with availability scoring
+      candidates = Heat.where(category: heat.category, dance_id: heat.dance_id, number: numbers).distinct.pluck(:number)
+      
+      if candidates.any?
+        # Score each candidate by how many availability conflicts it would resolve/create
+        best_alternate = candidates.max_by do |candidate_number|
+          score_heat_swap(heat.number, candidate_number, people, start_times)
+        end
+        
         original = heat.number
         source = Heat.where(number: original).all.to_a
-        destination = Heat.where(number: alternate).all.to_a
+        destination = Heat.where(number: best_alternate).all.to_a
 
         ActiveRecord::Base.transaction do
-          source.each {|heat| heat.update!(number: alternate)}
+          source.each {|heat| heat.update!(number: best_alternate)}
           destination.each {|heat| heat.update!(number: original)}
         end
 
-        pinned.add alternate
+        pinned.add best_alternate
       else
         heat.update(number: 0)
       end
     end
+  end
+
+  # Score a potential heat swap based on availability conflict resolution
+  def score_heat_swap(original_number, candidate_number, people, start_times)
+    score = 0
+    
+    # Get all participants in both heats
+    original_heats = Heat.includes(:entry, solo: :formations).where(number: original_number)
+    candidate_heats = Heat.includes(:entry, solo: :formations).where(number: candidate_number)
+    
+    people.each do |person|
+      person_ok = person.eligible_heats(start_times)
+      
+      # Check if person is in original heat
+      in_original = original_heats.any? do |heat|
+        [heat.entry&.lead_id, heat.entry&.follow_id].include?(person.id) ||
+        heat.solo&.formations&.where(person: person, on_floor: true)&.exists?
+      end
+      
+      # Check if person is in candidate heat  
+      in_candidate = candidate_heats.any? do |heat|
+        [heat.entry&.lead_id, heat.entry&.follow_id].include?(person.id) ||
+        heat.solo&.formations&.where(person: person, on_floor: true)&.exists?
+      end
+      
+      if in_original
+        # Moving from original to candidate - score based on availability improvement
+        original_ok = person_ok.include?(original_number.to_f)
+        candidate_ok = person_ok.include?(candidate_number.to_f)
+        
+        if !original_ok && candidate_ok
+          score += 10  # Resolves a conflict
+        elsif original_ok && !candidate_ok
+          score -= 10  # Creates a conflict
+        end
+      end
+      
+      if in_candidate
+        # Moving from candidate to original - score based on availability impact
+        original_ok = person_ok.include?(original_number.to_f)
+        candidate_ok = person_ok.include?(candidate_number.to_f)
+        
+        if !candidate_ok && original_ok
+          score += 10  # Resolves a conflict
+        elsif candidate_ok && !original_ok
+          score -= 10  # Creates a conflict
+        end
+      end
+    end
+    
+    score
   end
 
   def fixups
