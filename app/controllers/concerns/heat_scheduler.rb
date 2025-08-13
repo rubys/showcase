@@ -699,7 +699,10 @@ module HeatScheduler
 
         pinned.add best_alternate
       else
-        heat.update(number: 0)
+        # Don't unschedule solos even if no alternate can be found
+        unless heat.category == 'Solo'
+          heat.update(number: 0)
+        end
       end
     end
   end
@@ -954,6 +957,9 @@ module HeatScheduler
         where(formations: { person_id: person.id, on_floor: true }, heats: { number: (0.1..Float::INFINITY) })
       
       (heats + formation_heats).uniq.each do |heat|
+        # Skip solos - don't unschedule them even if they violate availability
+        next if heat.category == 'Solo'
+        
         # If this heat violates their availability, unschedule it
         unless eligible.include?(heat.number.to_f)
           heat.update!(number: 0)
