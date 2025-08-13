@@ -80,10 +80,11 @@ class ShowcasesController < ApplicationController
     
     @showcase = Showcase.new
     @showcase.location_id = @location.id
-    unless Showcase.where(location_id: @location.id, year: Time.now.year).exists?
-      @showcase.name = 'Showcase'
-      @showcase.key = 'showcase'
-    end
+    # Don't set default name/key - let the form handle it via JavaScript
+    # unless Showcase.where(location_id: @location.id, year: Time.now.year).exists?
+    #   @showcase.name = 'Showcase'
+    #   @showcase.key = 'showcase'
+    # end
     
     @locations = [[@location.name, @location.id]]
     @location_key = params[:location_key]
