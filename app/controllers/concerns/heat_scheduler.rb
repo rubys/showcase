@@ -598,7 +598,6 @@ module HeatScheduler
 
     people.each do |person|
       ok = person.eligible_heats(start_times)
-      boom if ok.empty?
 
       heats = Heat.joins(:entry).
         includes(:dance, entry: [:lead, :follow]).
