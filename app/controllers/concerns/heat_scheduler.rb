@@ -615,7 +615,6 @@ module HeatScheduler
     end
 
     problems.shuffle!
-    boom
 
     problems.each do |heat, available|
       numbers = available - pinned - [heat.number.to_f]
