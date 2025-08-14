@@ -36,7 +36,7 @@ export default class extends Controller {
     let dots = [...this.element.querySelectorAll("svg a")];
     let machines = this.element.querySelectorAll("tbody tr td:first-child a");
     let studios = this.element.querySelectorAll("tbody tr td:last-child a");
-
+    if (studios.length == 0) studios = this.element.querySelectorAll("#studios-list li a");
     document.querySelector('a[rel=next]').addEventListener("click", event => {
       event.preventDefault();
       this.next();
@@ -64,11 +64,13 @@ export default class extends Controller {
         dot.firstElementChild.style.fill = "";
       }
 
-      let region = active.closest("tr").querySelector("td a");
-      region.style.color = "";
-      dot = findDot(region.getAttribute("href"));
-      if (dot) {
-        dot.firstElementChild.style.fill = "";
+      let region = active.closest("tr")?.querySelector("td a");
+      if (region) {
+        region.style.color = "";
+        dot = findDot(region.getAttribute("href"));
+        if (dot) {
+          dot.firstElementChild.style.fill = "";
+        }
       }
 
       active = null;
@@ -87,11 +89,13 @@ export default class extends Controller {
           dot.firstElementChild.style.fill = "red";
         }
 
-        let region = studio.closest("tr").querySelector("td a");
-        region.style.color = "green";
-        dot = findDot(region.getAttribute("href"));
-        if (dot) {
-          dot.firstElementChild.style.fill = "green";
+        let region = studio.closest("tr")?.querySelector("td a");
+        if (region) {
+          region.style.color = "green";
+          dot = findDot(region.getAttribute("href"));
+          if (dot) {
+            dot.firstElementChild.style.fill = "green";
+          }
         }
       });
 
@@ -142,12 +146,14 @@ export default class extends Controller {
     for (let dot of dots) {
       dot.addEventListener("mouseover", event => {
         let link = this.element.querySelector(`tbody a[href="${dot.href.baseVal}"]`);
+        if (!link) link = this.element.querySelector(`#studios-list a[href="${dot.href.baseVal}"]`);
         event = new event.constructor(event.type, event);
         if (link) link.dispatchEvent(event);
       });
 
       dot.addEventListener("mouseleave", event => {
         let link = this.element.querySelector(`tbody a[href="${dot.href.baseVal}"]`);
+        if (!link) link = this.element.querySelector(`#studios-list a[href="${dot.href.baseVal}"]`);
         event = new event.constructor(event.type, event);
         if (link) link.dispatchEvent(event);
       });

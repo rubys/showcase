@@ -590,6 +590,10 @@ class EventController < ApplicationController
     return select if params[:year]
     return redirect_to root_path(db: params[:db]) if params[:db]
 
+    @list = params[:list]
+    @list ||= 'regions' if ENV['FLY_REGION']
+    @list ||= 'studios'
+
     showcases = YAML.load_file('config/tenant/showcases.yml')
     @map = YAML.load_file('config/tenant/map.yml')
 

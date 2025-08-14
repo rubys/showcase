@@ -51,7 +51,7 @@ can click on it to see helpful hints.</li>
 </div>
 </div>
 
-<% if ENV['FLY_REGION'] %>
+<% if @list == 'regions' %>
 <div id="region-list" class="w-full">
 <table class="table-auto mt-8 w-full">
 <% @regions.to_a.sort.each do |region, cities| %>

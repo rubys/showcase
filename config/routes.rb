@@ -18,7 +18,7 @@ Rails.application.routes.draw do
         trailing_slash: true
 
       get "/regions/:region", to: 'event#showcases', as: 'region'
-      get "/studios/", to: "event#regions", trailing_slash: true
+      get "/studios/", to: "event#regions", trailing_slash: true, defaults: { list: 'studios' }
       get "/events/", to: "event#showcases", trailing_slash: true
       get "/studios/:studio", to: 'event#showcases', as: 'studio_events'
 
@@ -76,7 +76,7 @@ Rails.application.routes.draw do
     get '/judge.xlsx', to: "event#judge", as: 'judge_spreadsheet'
     get '/judge.json', to: "event#judge", as: 'judge_json'
     get '/event.sqlite3', to: "event#database", as: 'event_database'
-    get '/regions/', to: "event#regions", trailing_slash: true
+    get '/regions/', to: "event#regions", trailing_slash: true, defaults: { list: 'regions' }
     get '/regions/:region/status', to: "event#region", as: 'region_status'
     get '/regions/:region/songs', to: "event#songs", as: 'region_songs'
     get '/regions/:region/logs/:file', to: "event#region_log", as: "region_log",
