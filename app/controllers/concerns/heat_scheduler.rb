@@ -54,49 +54,28 @@ module HeatScheduler
         order = true_order[heat.dance.order]
       end
 
-      # For availability ordering, prepend the availability score
-      if event.heat_order == 'A'
-        availability = availability_scores[heat] || 10000
-        
-        if heat.dance.semi_finals
-          # don't split semi-finals by level, age
-          [
-            availability,
-            order,
-            category,
-            1,
-            1,
-            heat
-          ]
-        else
-          [
-            availability,
-            order,
-            category,
-            heat.entry.level_id,
-            heat.entry.age_id,
-            heat
-          ]
-        end
+      # For availability ordering, add availability as third sort criterion
+      availability = event.heat_order == 'A' ? (availability_scores[heat] || 10000) : 0
+      
+      if heat.dance.semi_finals
+        # don't split semi-finals by level, age
+        [
+          order,
+          category,
+          availability,
+          1,
+          1,
+          heat
+        ]
       else
-        if heat.dance.semi_finals
-          # don't split semi-finals by level, age
-          [
-            order,
-            category,
-            1,
-            1,
-            heat
-          ]
-        else
-          [
-            order,
-            category,
-            heat.entry.level_id,
-            heat.entry.age_id,
-            heat
-          ]
-        end
+        [
+          order,
+          category,
+          availability,
+          heat.entry.level_id,
+          heat.entry.age_id,
+          heat
+        ]
       end
     }
 
@@ -118,14 +97,12 @@ module HeatScheduler
         pending = []
         group = nil
         heats.each_with_index do |entry, index|
-          # For availability ordering, skip the first element (availability score)
-          entry_params = event.heat_order == 'A' ? entry[1..] : entry
           if index == 0
             group = Group.new
-            group.add? *entry_params
+            group.add? *entry
             pending << index
           else
-            if group.match? *entry_params
+            if group.match? *entry
               pending << index
             else
               break
@@ -144,10 +121,8 @@ module HeatScheduler
           pending.each do |index|
             next if assignments[index]
             entry = heats[index]
-            # For availability ordering, skip the first element (availability score)
-            entry_params = event.heat_order == 'A' ? entry[1..] : entry
 
-            if group.add? *entry_params
+            if group.add? *entry
               assignments[index] = group
             else
               more ||= index
@@ -166,11 +141,9 @@ module HeatScheduler
 
           heats.each_with_index do |entry, index|
             next if assignments[index]
-            # For availability ordering, skip the first element (availability score)
-            entry_params = event.heat_order == 'A' ? entry[1..] : entry
-            if group.add? *entry_params
+            if group.add? *entry
               assignments[index] = group
-            elsif group.match? *entry_params
+            elsif group.match? *entry
               more ||= entry
             else
               break
@@ -246,19 +219,14 @@ module HeatScheduler
     ceiling = (assignments.length.to_f / subgroups.length).ceil
     floor = (assignments.length.to_f / subgroups.length).floor
 
-    # Check if we're using availability ordering (entries have 6 elements instead of 5)
-    using_availability = assignments.keys.first && assignments.keys.first.length == 6
-
     assignments.to_a.reverse.each do |(entry, source)|
       subgroups.each do |target|
         break if target == source
         next if target.size >= ceiling
         next if target.size >= source.size
 
-        # For availability ordering, skip the first element
-        entry_params = using_availability ? entry[1..] : entry
-        if target.add? *entry_params
-          source.remove *entry_params
+        if target.add? *entry
+          source.remove *entry
           assignments[entry] = target
           break
         end
@@ -268,10 +236,8 @@ module HeatScheduler
     subgroups.select {|subgroup| subgroup.size < floor}.each do |target|
       assignments.each do |entry, source|
         next if source.size < max
-        # For availability ordering, skip the first element
-        entry_params = using_availability ? entry[1..] : entry
-        if target.add? *entry_params
-          source.remove *entry_params
+        if target.add? *entry
+          source.remove *entry
           assignments[entry] = target
           break if target.size >= max
         end
@@ -283,10 +249,8 @@ module HeatScheduler
         next if target.size >= max
         subgroups.each do |source|
           next if source.size <= max
-          # For availability ordering, skip the first element
-          entry_params = using_availability ? entry[1..] : entry
-          if target.add? *entry_params
-            source.remove *entry_params
+          if target.add? *entry
+            source.remove *entry
             assignments[entry] = target
             break if target.size >= max
           end
@@ -518,14 +482,14 @@ module HeatScheduler
       @group = list
     end
 
-    def match?(dance, dcat, level, age, heat)
+    def match?(dance, dcat, availability, level, age, heat)
       return false unless @dance == dance
       return false unless @dcat == dcat or @@combinable.include? dance
       return false if heat.category == 'Solo'
       return true
     end
 
-    def add?(dance, dcat, level, age, heat)
+    def add?(dance, dcat, availability, level, age, heat)
       if @group.length == 0
         @participants = Set.new
 
@@ -571,7 +535,7 @@ module HeatScheduler
       @group << heat
     end
 
-    def remove(dance, dcat, level, age, heat)
+    def remove(dance, dcat, availability, level, age, heat)
       @group.delete heat
       @participants.delete heat.lead
       @participants.delete heat.follow
