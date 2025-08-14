@@ -16,12 +16,23 @@ class ShowcasesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should create showcase" do
+    # Set RAILS_APP_DB to 'index' to enable studio_events_path route
+    original_rails_app_db = ENV['RAILS_APP_DB']
+    ENV['RAILS_APP_DB'] = 'index'
+    
+    # Reload routes to pick up the environment change
+    Rails.application.reload_routes!
+    
     assert_difference("Showcase.count") do
       post showcases_url, params: { showcase: { key: @showcase.key+'2', name: @showcase.name+'2', location_id: @showcase.location_id, year: @showcase.year } }
     end
 
-    assert_redirected_to events_location_path(@showcase.location)
+    assert_redirected_to studio_events_path(@showcase.location.key)
     assert_equal 'MyString2 was successfully requested.', flash[:notice]
+  ensure
+    # Restore original environment
+    ENV['RAILS_APP_DB'] = original_rails_app_db
+    Rails.application.reload_routes!
   end
 
   test "should show showcase" do
