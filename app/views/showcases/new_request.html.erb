@@ -26,7 +26,8 @@
     <div class="my-5">
       <%= form.label :location_id, 'Studio' %>
       <%= form.select :location_id, [[@location.name, @location.id]], {}, 
-        {disabled: true, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full bg-gray-100"} %>
+        {readonly: true, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full bg-gray-100"} %>
+      <%= form.hidden_field :location_id, value: @location.id %>
     </div>
 
     <div class="my-5">
