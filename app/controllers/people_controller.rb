@@ -224,20 +224,24 @@ class PeopleController < ApplicationController
 
   def assign_backs
     leaders = Entry.includes(:heats).where.not(heats: {category: 'Solo'}).distinct.pluck(:lead_id)
-    people = Person.where(id: leaders).order(:type, :name)
+    people = Person.where(id: leaders).order(:name)
 
     pro_numbers = (params[:pro_numbers] || 101).to_i
     student_numbers = (params[:student_numbers] || 101).to_i
 
-    number = pro_numbers
     Person.transaction do
       Person.where.not(back: nil).where.not(id: leaders).update_all(back: nil)
 
       people.each do |person|
-        number = student_numbers if number < student_numbers and person.type == "Student"
-        person.back = number
+        if person.type == "Student"
+          person.back = student_numbers
+          student_numbers += 1
+        else
+          person.back = pro_numbers
+          pro_numbers += 1
+        end
+
         person.save! validate: false
-        number += 1
       end
 
       raise ActiveRecord::Rollback unless people.all? {|person| person.valid?}
