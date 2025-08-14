@@ -63,6 +63,8 @@ class ShowcasesController < ApplicationController
 
   # GET /studios/:location_key/request
   def new_request
+    return create if request.post?
+
     if ENV['FLY_REGION']
       # Build the return URL for the studios page
       return_url = url_for(controller: 'event', action: 'showcases', only_path: false).sub('/showcase/events/', '/studios/') + params[:location_key]
@@ -122,14 +124,22 @@ class ShowcasesController < ApplicationController
           format.html { redirect_to events_location_url(@showcase.location),
             notice: "#{@showcase.name} was successfully created." }
         else
-          format.html { redirect_to events_location_url(@showcase.location),
+          format.html { redirect_to studio_events_path(@showcase.location&.key),
             notice: "#{@showcase.name} was successfully requested." }
         end
         format.json { render :show, status: :created, location: @showcase }
       else
         new
         @return_to = params[:return_to]
-        format.html { render :new, status: :unprocessable_content }
+
+        # If @return_to is set and there is a name error, remove key errors
+        if @return_to && @showcase.errors[:name].present?
+          @showcase.errors.delete(:key)
+        end
+
+        @location_key = @showcase.location&.key if @return_to
+
+        format.html { render @return_to ? :new_request : :new, status: :unprocessable_content }
         format.json { render json: @showcase.errors, status: :unprocessable_content }
       end
     end

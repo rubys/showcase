@@ -186,7 +186,7 @@ Rails.application.routes.draw do
       get 'solos', on: :member
     end
 
-    get '/studios/:location_key/request', to: 'showcases#new_request', as: 'studio_request'
+    match '/studios/:location_key/request', to: 'showcases#new_request', as: 'studio_request', via: [:get, :post]
 
     resources :tables do
       get 'arrange', on: :collection
