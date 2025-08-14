@@ -371,11 +371,11 @@ class HeatSchedulerTest < ActiveSupport::TestCase
     heat2 = heats(:two)
     
     # Test adding first heat
-    result = group.add?(1, 0, 1, 1, heat1)
+    result = group.add?(1, 0, 0, 1, 1, heat1)
     assert result
     
     # Test matching logic
-    matches = group.match?(1, 0, 1, 1, heat2)
+    matches = group.match?(1, 0, 0, 1, 1, heat2)
     assert matches
   end
   
@@ -418,11 +418,11 @@ class HeatSchedulerTest < ActiveSupport::TestCase
     )
     
     # Add first heat (with person1)
-    result = group.add?(1, 0, 1, 1, heat1)
+    result = group.add?(1, 0, 0, 1, 1, heat1)
     assert_not_nil result
     
     # Second heat (with person2) should be rejected because person2 excludes person1
-    result = group.add?(1, 0, 1, 1, heat2)
+    result = group.add?(1, 0, 0, 1, 1, heat2)
     assert_nil result
   end
   
