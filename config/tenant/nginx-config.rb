@@ -358,6 +358,13 @@ server {
     proxy_pass https://rubix.intertwingly.net/showcase/password;
   }
 
+  # Event requests
+  location ~ ^<%= ROOT %>/studios/([a-z]*)/request$ {
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_pass https://rubix.intertwingly.net/showcase/studios/$1/request;
+  }
+
   # Demo
   location = <%= ROOT %>/demo/ {
     return 302 <%= ROOT %>/regions/<%= @region %>/demo/;
