@@ -244,13 +244,23 @@ class SolosController < ApplicationController
       target.reload
     end
 
-    category = source.heat.solo.category_override
-    if category
-      solos = Solo.ordered.where(category_override_id: category.id)
-    else
-      category = source.heat.dance.solo_category
-      solos = Solo.where(category_override_id: nil).ordered.joins(heat: :dance).where(dance: {solo_category_id: category&.id})
+    # Call index to get all solos organized by category
+    index
+    
+    # Find which category contains our source solo
+    category = nil
+    category_heats = []
+    
+    @solos.each do |cat, heats|
+      if heats.any? { |heat| heat.id == source.heat_id }
+        category = cat
+        category_heats = heats
+        break
+      end
     end
+    
+    # Get the solos for this category from the heats
+    solos = Solo.where(heat_id: category_heats.map(&:id)).ordered
 
     if source.order > target.order
       slice = solos.where(order: target.order..source.order)
@@ -280,27 +290,17 @@ class SolosController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream {
-        # Get ALL solos for this category, including both those with and without override
-        if category
-          # If we have a category override, get all solos with this override OR matching solo_category
-          all_category_solos = Solo.ordered.left_joins(heat: :dance).where(
-            'solos.category_override_id = ? OR (solos.category_override_id IS NULL AND dances.solo_category_id = ?)', 
-            category.id, category.id
-          )
-          id = helpers.dom_id(category)
-        else
-          # For unscheduled/no category
-          all_category_solos = Solo.ordered.left_joins(heat: :dance).where(
-            category_override_id: nil, 
-            dance: {solo_category_id: nil}
-          )
-          id = 'category_0'
-        end
+        # Call index again to get the updated heats after the order changes
+        index
         
-        heats = all_category_solos.select { |solo| solo.heat.category == 'Solo' }.map(&:heat)
+        # Find the updated heats for the affected category
+        updated_heats = @solos.find { |cat, _| cat == category || (cat && category && cat.id == category.id) }&.last || []
+        
+        # Determine the DOM ID based on the category
+        id = category ? helpers.dom_id(category) : 'category_0'
 
         render turbo_stream: turbo_stream.replace(id,
-          render_to_string(partial: 'cat', layout: false, locals: {heats: heats, id: id})
+          render_to_string(partial: 'cat', layout: false, locals: {heats: updated_heats, id: id})
         )
       }
 
