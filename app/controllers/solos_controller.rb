@@ -220,6 +220,30 @@ class SolosController < ApplicationController
     source = Solo.find(params[:source].to_i)
     target = Solo.find(params[:target].to_i)
 
+    # First, detect and fix any duplicate order values
+    all_solos = Solo.all.order(:order, :id)
+    orders = all_solos.pluck(:order)
+    duplicates = orders.select { |order| orders.count(order) > 1 }.uniq
+    
+    if duplicates.any?
+      # Fix duplicate orders by reassigning sequential values
+      Solo.transaction do
+        # Temporarily set all orders to negative values to avoid uniqueness conflicts
+        all_solos.each_with_index do |solo, index|
+          solo.update_column(:order, -(index + 1))
+        end
+        
+        # Now set them to proper sequential values
+        all_solos.each_with_index do |solo, index|
+          solo.update_column(:order, index + 1)
+        end
+      end
+      
+      # Reload source and target with new order values
+      source.reload
+      target.reload
+    end
+
     category = source.heat.solo.category_override
     if category
       solos = Solo.ordered.where(category_override_id: category.id)
@@ -256,8 +280,24 @@ class SolosController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream {
-        id = category ? helpers.dom_id(category) : 'category_0'
-        heats = solos.map(&:heat)
+        # Get ALL solos for this category, including both those with and without override
+        if category
+          # If we have a category override, get all solos with this override OR matching solo_category
+          all_category_solos = Solo.ordered.left_joins(heat: :dance).where(
+            'solos.category_override_id = ? OR (solos.category_override_id IS NULL AND dances.solo_category_id = ?)', 
+            category.id, category.id
+          )
+          id = helpers.dom_id(category)
+        else
+          # For unscheduled/no category
+          all_category_solos = Solo.ordered.left_joins(heat: :dance).where(
+            category_override_id: nil, 
+            dance: {solo_category_id: nil}
+          )
+          id = 'category_0'
+        end
+        
+        heats = all_category_solos.select { |solo| solo.heat.category == 'Solo' }.map(&:heat)
 
         render turbo_stream: turbo_stream.replace(id,
           render_to_string(partial: 'cat', layout: false, locals: {heats: heats, id: id})
