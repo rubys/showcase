@@ -92,7 +92,7 @@ class ShowcasesController < ApplicationController
     @location_key = params[:location_key]
     
     # Set return_to URL from params or default to studios page
-    @return_to = params[:return_to] || "/studios/#{params[:location_key]}"
+    @return_to = params[:return_to] || "/showcase/studios/#{params[:location_key]}"
   end
 
   # POST /showcases or /showcases.json
