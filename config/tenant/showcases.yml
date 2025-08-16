@@ -158,7 +158,13 @@
   columbia:
     :name: Columbia
     :region: iad
-    :date: '2025-04-27'
+    :events:
+      showcase:
+        :name: Showcase
+        :date: '2025-04-27'
+      newsome-twosome:
+        :name: Newsome Twosome
+        :date: 2025-09-17 - 2025-09-17
   coquitlam:
     :name: Coquitlam
     :region: sea
