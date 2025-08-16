@@ -302,7 +302,8 @@ class AdminController < ApplicationController
     # Heat order options
     @option_counts[:heat_order] = {
       'L' => { label: 'Newcomer to Advanced', count: 0 },
-      'R' => { label: 'Random', count: 0 }
+      'R' => { label: 'Random', count: 0 },
+      'A' => { label: 'Availability (earliest departure first, then no constraints, then late arrivals)', count: 0 }
     }
     
     # Boolean options (only those on the Options settings page)
