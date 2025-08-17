@@ -277,6 +277,10 @@
     :name: Honolulu
     :region: sjc
     :date: '2025-06-21'
+  hornsby:
+    :name: Hornsby
+    :region: syd
+    :locale: en-AU
   kennesaw:
     :name: Kennesaw
     :region: atl
