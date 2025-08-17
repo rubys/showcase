@@ -282,8 +282,6 @@
     :region: syd
     :locale: en-AU
     :events:
-      showcase:
-        :name: Showcase
       disney-showcase:
         :name: Disney Showcase
         :date: 2025-09-13 - 2025-09-13
