@@ -7,6 +7,9 @@
   <div class="info-button">&#x24D8;</div>
   <ul class="info-box">
   <li>Clicking on a column heading will sort the table by that column.</li>
+  <% if @title == 'Students' %>
+  <li>To add a student, go to the <%= link_to 'Studios', studios_path %> page and add a studio, then add people to that studio.</li>
+  <% end %>
   </ul>
   </div>
 
@@ -99,6 +102,10 @@
   <% end %>
   </tbody>
   </table>
+
+  <% if @people.empty? %>
+  <p class="text-center mt-8">To add people, go to the <%= link_to 'Studios', studios_path %> page and add a studio, then add people to that studio.</p>
+  <% end %>
 
   <% if @packages and !@packages.empty? %>
   <div class="my-4 mx-auto md:w-2/3 lg:w-1/2">
