@@ -49,7 +49,14 @@ class SolosController < ApplicationController
 
     if Event.current.agenda_based_entries?
       category = (@person.type == 'Professional') ? :pro_solo_category : :solo_category
-      @dances = Dance.where(order: 0...).where.not(category => nil).by_name.all.map {|dance| [dance.name, dance.id]}
+      @dances = Dance.where.not(category => nil).by_name.all.map do |dance|
+        if dance.order < 0
+          id = Dance.where(name: dance.name, order: 0..).first&.id || dance.id
+          [dance.name, id]
+        else
+          [dance.name, dance.id]
+        end
+      end.uniq
     else
       @dances = Dance.where(order: 0...).by_name.all.map {|dance| [dance.name, dance.id]}
     end
