@@ -86,7 +86,7 @@ module Printable
       else
         cat = heats.first.dance_category
         cat = cat.category if cat.is_a? CatExtension
-        cat = current if cat != current and event.heat_range_cat == 1 and heats.first.category != 'Solo' and (heats.first.dance.open_category == current or heats.first.dance.closed_category == current)
+        cat = current if cat != current && event.heat_range_cat == 1 && heats.first.category != 'Solo' && heats.first.dance.open_category_id == heats.first.dance.closed_category_id && (heats.first.dance.open_category == current || heats.first.dance.closed_category == current)
         current = cat
         ballrooms = cat&.ballrooms || event.ballrooms || 1
 
