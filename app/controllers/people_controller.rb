@@ -707,9 +707,7 @@ class PeopleController < ApplicationController
   end
 
   def assign_judges
-    retry_transaction do
-      Score.where(value: nil, comments: nil, good: nil, bad: nil).delete_all
-    end
+    delete_judge_assignments_in_unscored_heats
 
     unless Person.includes(:judge).where(type: 'Judge').all.any?(&:present?)
       redirect_to person_path(params[:id]), alert: "No judges are marked as present."
@@ -828,8 +826,7 @@ class PeopleController < ApplicationController
   end
 
   def reset_assignments
-    Score.where(value: nil, comments: nil, good: nil, bad: nil).delete_all
-    Score.where(value: nil, good: nil, bad: nil).to_a.select {it.comments.blank?}.each(&:delete)
+    delete_judge_assignments_in_unscored_heats
 
     redirect_to person_path(params[:id]), :notice => "Assignments cleared"
   end
@@ -1128,5 +1125,28 @@ class PeopleController < ApplicationController
     def list_heats
       Heat.joins(:entry).where(entry: {follow_id: @person.id}).
         or(Heat.joins(:entry).where(entry: {lead_id: @person.id}))
+    end
+
+    def delete_judge_assignments_in_unscored_heats
+      retry_transaction do
+        # find heats that have scores with one or more of: a value, comments, good, or bad
+        completed = Heat.joins(:scores)
+          .where.not(scores: { value: nil, comments: nil, good: nil, bad: nil })
+          .pluck(:number).uniq
+
+        # delete scores that have no value, comments, good, or bad (i.e., are judge assignments)
+        # and are not in completed heats
+        Score.joins(:heat)
+          .where(value: nil, comments: nil, good: nil, bad: nil)
+          .where.not(heats: { number: completed })
+          .delete_all
+
+        # Use SQL to check for blank comments (NULL or only whitespace) using TRIM
+        Score.joins(:heat)
+          .where(value: nil, good: nil, bad: nil)
+          .where("TRIM(COALESCE(comments, '')) = ''")
+          .where.not(heats: { number: completed })
+          .delete_all
+      end
     end
 end
