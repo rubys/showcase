@@ -211,7 +211,7 @@ end
       <tr>
         <td></td>
         <td colspan="9" class="text-lg">Heat <%= number %>:
-          <% unless @combine_open_and_closed and %w(Open Closed).include? heats.first.category %><%= heats.first.category %><% end %>
+          <% unless @combine_open_and_closed && %w(Open Closed).include?(heats.first.category) && heats.first.dance.open_category_id == heats.first.dance.closed_category_id %><%= heats.first.category %><% end %>
           <% if heats.first.dance_id == heats.last.dance_id %>
           <%= heats.first.display_dance_name %>
           <% if heats.first.category == 'Solo' and heats.first.solo.combo_dance and !heats.first.child_dance_name %>
