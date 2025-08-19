@@ -1,0 +1,94 @@
+# syntax = docker/dockerfile:1
+
+# Make sure RUBY_VERSION matches the Ruby version in .ruby-version and Gemfile
+ARG RUBY_VERSION=3.4.5
+FROM ruby:$RUBY_VERSION-slim AS base
+
+# Rails app lives here
+WORKDIR /rails
+
+# Set production environment
+ENV RAILS_ENV="production" \
+    BUNDLE_PATH="/usr/local/bundle" \
+    BUNDLE_WITHOUT="development:test" \
+    BUNDLE_DEPLOYMENT="1"
+
+# Update gems and bundler; install sentry-ruby for error reporting
+RUN gem update --system --no-document && \
+    gem install -N bundler sentry-ruby
+
+# Install curl
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y curl 
+
+
+# Throw-away build stage to reduce size of final image
+FROM base AS build
+
+# Install packages needed to build gems
+RUN apt-get install --no-install-recommends -y build-essential libyaml-dev pkg-config zlib1g-dev
+
+# Install application gems
+COPY --link Gemfile Gemfile.lock ./
+RUN bundle install && \
+    bundle exec bootsnap precompile --gemfile && \
+    rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git
+
+# Copy application code
+COPY --link . .
+
+# Install esbuild
+RUN cd /usr/local/bin && \
+    curl -fsSL https://esbuild.github.io/dl/latest | sh
+
+# Precompile bootsnap code for faster boot times
+RUN ls /usr/local/bin && bundle exec bootsnap precompile app/ lib/
+
+# Precompiling assets for production without requiring secret RAILS_MASTER_KEY
+RUN SECRET_KEY_BASE=DUMMY ./bin/rails assets:precompile
+
+
+# Final stage for app image
+FROM base
+
+# Install packages needed for deployment
+RUN apt-get install --no-install-recommends -y dnsutils poppler-utils procps redis-server ruby-foreman sqlite3 sudo vim unzip && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Copy built artifacts: gems, application
+COPY --from=build /usr/local/bundle /usr/local/bundle
+COPY --from=build /rails /rails
+
+# Download and unpack the latest navigator-linux-amd64.tar.gz into /usr/local/bin
+RUN curl -sSL $(curl -s https://api.github.com/repos/rubys/navigator/releases/latest | grep browser_download_url | grep navigator-linux-amd64.tar.gz | cut -d '"' -f 4) \
+    | tar xz -C /usr/local/bin \
+    && mv /usr/local/bin/navigator-linux-amd64 /usr/local/bin/navigator \
+    && chmod +x /usr/local/bin/navigator
+
+# Run and own only the runtime files as a non-root user for security
+RUN useradd rails --create-home --shell /bin/bash && \
+    mkdir /data && \
+    chown -R rails:rails db log storage tmp /data
+
+# configure redis
+RUN sed -i 's/^daemonize yes/daemonize no/' /etc/redis/redis.conf &&\
+  sed -i 's/^bind/# bind/' /etc/redis/redis.conf &&\
+  sed -i 's/^protected-mode yes/protected-mode no/' /etc/redis/redis.conf &&\
+  sed -i 's/^logfile/# logfile/' /etc/redis/redis.conf &&\
+  echo "vm.overcommit_memory = 1" >> /etc/sysctl.conf
+
+# Prep demo
+# RUN SECRET_KEY_BASE=DUMMY RAILS_APP_DB=demo bin/rails db:prepare
+
+# Deployment options
+ENV DATABASE_URL="sqlite3:///data/production.sqlite3" \
+    RAILS_DB_VOLUME="/data/db" \
+    RAILS_LOG_TO_STDOUT="1" \
+    RAILS_LOG_VOLUME="/data/log" \
+    RAILS_SERVE_STATIC_FILES="true" \
+    RAILS_STORAGE="/data/storage"
+
+# Start navigator
+EXPOSE 3000
+VOLUME /data
+CMD [ "/usr/local/bin/navigator", "serve" ]

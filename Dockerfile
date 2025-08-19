@@ -48,7 +48,7 @@ RUN passenger-config build-native-support
 COPY --link . .
 
 # Install esbuild
-RUN chdir /usr/local/bin && \
+RUN cd /usr/local/bin && \
     curl -fsSL https://esbuild.github.io/dl/latest | sh
 
 
