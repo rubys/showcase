@@ -89,7 +89,7 @@ module ShowcaseInventory
         counts_parts = table_names.map do |table_name|
           if table_name == 'entries'
             # For entries, count heats where number > 0
-            "SELECT 'entries' as table_name, COUNT(*) as count FROM heats WHERE number > 0"
+            "SELECT 'entries' as table_name, COUNT(*) as count FROM heats WHERE number >= 0"
           elsif table_name == 'heats'
             # For heats, get both total count and distinct number count
             "SELECT 'heats' as table_name, COUNT(*) as count FROM heats UNION ALL SELECT 'heat_numbers' as table_name, COUNT(DISTINCT number) as count FROM heats WHERE number > 0"
