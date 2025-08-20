@@ -81,3 +81,7 @@ flat-storage
 *.swp
 *.swo
 *~
+
+# Navigator Go project
+/bin/navigator
+go.sum

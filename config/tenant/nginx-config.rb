@@ -15,16 +15,18 @@ else
   'rubix.intertwingly.net'
 end
 
+@git_path = File.realpath(File.expand_path('../..', __dir__))
+@storage = ENV['RAILS_STORAGE'] || File.join(@git_path, 'storage')
+
 if File.exist? '/opt/homebrew/etc/nginx'
   NGINX_CONF = '/opt/homebrew/etc/nginx/servers'
 elsif File.exist? '/etc/nginx/sites-enabled'
   NGINX_CONF = '/etc/nginx/sites-enabled'
+else
+  NGINX_CONF = "#{@git_path}/tmp"
 end
 
 SHOWCASE_CONF = "#{NGINX_CONF}/showcase.conf"
-
-@git_path = File.realpath(File.expand_path('../..', __dir__))
-@storage = ENV['RAILS_STORAGE'] || File.join(@git_path, 'storage')
 
 showcases = YAML.load_file("#{__dir__}/showcases.yml")
 maps = "#{__dir__}/map.yml"

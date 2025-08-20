@@ -1,0 +1,18 @@
+server:
+  listen: ":3000"
+  url_prefix: "/showcase"
+
+rails:
+  showcases: "config/tenant/showcases.yml"
+  db_path: "db"
+  storage: "storage"
+
+manager:
+  max_puma: 20
+  idle_timeout: "10m"
+
+auth:
+  htpasswd_file: "db/htpasswd"
+
+logging:
+  level: "debug"
