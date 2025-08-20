@@ -98,11 +98,11 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
     assert_match /Table \d+ -/, response.body
   end
 
-  test "should not show table options for Judge in edit" do
+  test "should show table options for Judge in edit" do
     judge = people(:Judy)
     get edit_person_url(judge)
     assert_response :success
-    assert_no_match /Table \d+ -/, response.body
+    assert_match /Table \d+ -/, response.body
   end
 
   test "should destroy person" do

@@ -937,8 +937,8 @@ class PeopleController < ApplicationController
 
       @packages = Billable.where(type: @person.type).ordered.pluck(:name, :id)
       
-      # Add table options for Professional, Student, and Guest types
-      if %w[Professional Student Guest].include?(@person.type) && Table.exists?
+      # Add table options for all person types
+      if Table.exists?
         @tables = Table.where(option: nil).includes(:people).order(:number).map do |table|
           ["Table #{table.number} - #{table.name}", table.id]
         end

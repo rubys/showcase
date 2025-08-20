@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus";
 
 // Connects to data-controller="person"
 export default class extends Controller {
-  static targets = [ "studio", "independent", "level", "age", "role", "back", "exclude", "type", "availability", "package", "options" ];
+  static targets = [ "studio", "independent", "level", "age", "role", "back", "exclude", "type", "availability", "package", "options", "table" ];
 
   connect() {
     this.id = JSON.parse(this.element.dataset.id);
@@ -15,6 +15,9 @@ export default class extends Controller {
   }
 
   setType(event) {
+    // Table field is always visible for all types
+    if (this.hasTableTarget) this.tableTarget.style.display = "block";
+    
     if (event.target.value == "Student") {
       this.levelTarget.style.display = "block";
       if (this.hasAgeTarget) this.ageTarget.style.display = "block";
