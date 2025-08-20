@@ -70,11 +70,12 @@ body {
         <% end %>
       </td>
       <% end %>
-      <% if heat.entry.lead != person %>
-      <td><div class="mx-4"><%= link_to heat.entry.lead.display_name, heat.entry.lead %></div></td>
-      <% elsif heat.entry.follow != person %>
-      <td><div class="mx-4"><%= link_to heat.entry.follow.display_name, heat.entry.follow %></div></td>
+      <td>
+      <% partners = heat.partners(person) %>
+      <% partners.each_with_index do |partner, index| %>
+        <div class="mx-4"><%= link_to partner.display_name, partner %></div>
       <% end %>
+      </td>
       <td><div class="mx-4"><%= heat.dance.name %></div></td>
       <td><div class="mx-4"><%= heat.category %></div></td>
       <td class="text-center"><%= heat.entry.subject_lvlcat(@track_ages) %></td>

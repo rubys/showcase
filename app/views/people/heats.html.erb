@@ -15,7 +15,7 @@
 <p>No heats are scheduled yet for this event.</p>
 <% end %>
 
-<% if @event.print_studio_heats %>
+<% if @event.print_studio_heats && @person.nil? %>
 <% if @studio %>
   <%= render "people/heats", person: nil %>
 <% elsif @people.length != 1

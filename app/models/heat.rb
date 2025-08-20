@@ -59,6 +59,14 @@ class Heat < ApplicationRecord
     entry.partner(person)
   end
 
+  def partners(person)
+    return [ entry.partner(person) ].compact if category != "Solo"
+
+    people = [ entry.lead, entry.follow ] + solo.formations.includes(:person).to_a.flat_map(&:person)
+    people -= [ person ]
+    people.compact.uniq.sort_by { |p| p.name }
+  end
+
   def subject
     entry.subject
   end
