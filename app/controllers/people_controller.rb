@@ -940,7 +940,23 @@ class PeopleController < ApplicationController
       # Add table options for all person types
       if Table.exists?
         @tables = Table.where(option: nil).includes(:people).order(:number).map do |table|
-          ["Table #{table.number} - #{table.name}", table.id]
+          # Calculate occupancy like in tables controller
+          table_size = table.size
+          if table_size.nil? || table_size == 0
+            table_size = @event&.table_size || 10
+          end
+          people_count = table.people.count
+          
+          # Add status indicator like in tables views
+          status_indicator = if people_count < table_size
+            "🟢" # Green dot for empty seats
+          elsif people_count == table_size
+            "🟡" # Yellow dot for at capacity
+          else
+            "🔴" # Red dot for over capacity
+          end
+          
+          ["#{status_indicator} Table #{table.number} - #{table.name} (#{people_count}/#{table_size})", table.id]
         end
       end
 
