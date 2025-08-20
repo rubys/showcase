@@ -29,7 +29,7 @@ class Person < ApplicationRecord
   belongs_to :table, optional: true
 
   belongs_to :invoice_to, class_name: 'Person', optional: true
-  has_many :responsible_for, class_name: 'Person', foreign_key: :invoice_to_id
+  has_many :responsible_for, class_name: 'Person', foreign_key: :invoice_to_id, dependent: :nullify
 
   has_one :judge, required: false, dependent: :destroy
 
