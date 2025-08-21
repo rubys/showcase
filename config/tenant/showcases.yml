@@ -477,6 +477,9 @@
       lincolnshire:
         :name: Lincolnshire
         :date: '2025'
+      fort-wayne-showcase:
+        :name: Fort Wayne Showcase
+        :date: 2025-09-14 - 2025-09-14
   montreal:
     :name: Montreal
     :region: bos
@@ -561,6 +564,13 @@
         :date: '2025-08-09'
       nouveau-duo:
         :name: Nouveau Duo
+  roanoke:
+    :name: Roanoke
+    :region: iad
+    :events:
+      rodeo-showcase:
+        :name: Rodeo Showcase
+        :date: 2025-09-27 - 2025-09-27
   rogers:
     :name: Rogers
     :region: dfw
