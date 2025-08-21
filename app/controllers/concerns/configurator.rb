@@ -193,7 +193,21 @@ module Configurator
     
     {
       'global_env' => build_global_env,
+      'standard_vars' => build_standard_vars,
       'tenants' => tenants
+    }
+  end
+
+  def build_standard_vars
+    dbpath = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
+    
+    {
+      'RAILS_APP_DB' => '${tenant.database}',
+      'DATABASE_URL' => "sqlite3://#{dbpath}/${tenant.database}.sqlite3",
+      'RAILS_APP_OWNER' => '${tenant.owner}',
+      'RAILS_STORAGE' => '${tenant.storage}',
+      'RAILS_APP_SCOPE' => '${tenant.scope}',
+      'PIDFILE' => "#{Rails.root}/tmp/pids/${tenant.database}.pid"
     }
   end
 
@@ -210,6 +224,9 @@ module Configurator
       'path' => '/',
       'group' => 'showcase-index',
       'database' => 'index',
+      'owner' => 'Index',
+      'storage' => File.join(storage, 'index'),
+      'scope' => '',
       'env' => {
         'RAILS_SERVE_STATIC_FILES' => 'true'
       }
@@ -222,7 +239,9 @@ module Configurator
         'path' => region ? "/regions/#{region}/demo/" : "/demo/",
         'group' => 'showcase-demo',
         'database' => 'demo',
+        'owner' => 'Demo',
         'storage' => '/demo/storage/demo',
+        'scope' => region ? "regions/#{region}/demo" : "demo",
         'env' => {
           'SHOWCASE_LOGO' => 'intertwingly.png'
         }
@@ -243,8 +262,8 @@ module Configurator
               'database' => "#{year}-#{token}-#{subtoken}",
               'owner' => "#{info[:name]} - #{subinfo[:name]}",
               'storage' => File.join(storage, "#{year}-#{token}-#{subtoken}"),
+              'scope' => "#{year}/#{token}/#{subtoken}",
               'env' => {
-                'RAILS_APP_SCOPE' => "#{year}/#{token}/#{subtoken}",
                 'SHOWCASE_LOGO' => info[:logo] || 'arthur-murray-logo.gif'
               }
             }
@@ -263,8 +282,8 @@ module Configurator
             'database' => "#{year}-#{token}",
             'owner' => info[:name],
             'storage' => File.join(storage, "#{year}-#{token}"),
+            'scope' => "#{year}/#{token}",
             'env' => {
-              'RAILS_APP_SCOPE' => "#{year}/#{token}",
               'SHOWCASE_LOGO' => info[:logo] || 'arthur-murray-logo.gif'
             }
           }
@@ -278,21 +297,21 @@ module Configurator
       end
     end
     
-    # Add cable tenant
+    # Add cable tenant (special case - no standard vars)
     tenants << {
       'name' => 'cable',
       'path' => '/cable',
       'group' => 'showcase-cable',
-      'database' => nil,
+      'special' => true,
       'force_max_concurrent_requests' => 0
     }
     
-    # Add publish tenant
+    # Add publish tenant (special case - no standard vars)
     tenants << {
       'name' => 'publish',
       'path' => '/publish',
       'group' => 'showcase-publish',
-      'database' => nil,
+      'special' => true,
       'root' => Rails.root.join('fly/applications/publish/public').to_s,
       'env' => {
         'SECRET_KEY_BASE' => '1'

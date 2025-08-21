@@ -74,11 +74,33 @@ static:
 applications:
   global_env:
     RAILS_RELATIVE_URL_ROOT: /showcase
+  
+  # Standard environment variables applied to all tenants (except special ones)
+  standard_vars:
+    RAILS_APP_DB: "${tenant.database}"
+    DATABASE_URL: "sqlite3:///path/to/db/${tenant.database}.sqlite3"
+    RAILS_APP_OWNER: "${tenant.owner}"
+    RAILS_STORAGE: "${tenant.storage}"
+    RAILS_APP_SCOPE: "${tenant.scope}"
+    PIDFILE: "/path/to/pids/${tenant.database}.pid"
+  
   tenants:
     - name: 2025-boston
       path: /showcase/2025/boston/
       group: showcase-2025-boston
       database: 2025-boston
+      owner: "Boston Dance Studio"
+      storage: "/path/to/storage/2025-boston"
+      scope: "2025/boston"
+      env:
+        SHOWCASE_LOGO: "boston-logo.png"
+    
+    # Special tenants that don't use standard_vars
+    - name: cable
+      path: /cable
+      group: showcase-cable
+      special: true
+      force_max_concurrent_requests: 0
 ```
 
 ### Nginx Configuration (Deprecated)

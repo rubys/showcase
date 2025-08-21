@@ -157,15 +157,18 @@ type YAMLConfig struct {
 	} `yaml:"static"`
 	
 	Applications struct {
-		GlobalEnv map[string]string `yaml:"global_env"`
-		Tenants   []struct {
+		GlobalEnv    map[string]string `yaml:"global_env"`
+		StandardVars map[string]string `yaml:"standard_vars"`
+		Tenants      []struct {
 			Name                      string            `yaml:"name"`
 			Path                      string            `yaml:"path"`
 			Group                     string            `yaml:"group"`
-			Database                  *string           `yaml:"database"`
+			Database                  string            `yaml:"database"`
 			Owner                     string            `yaml:"owner"`
 			Storage                   string            `yaml:"storage"`
+			Scope                     string            `yaml:"scope"`
 			Root                      string            `yaml:"root"`
+			Special                   bool              `yaml:"special"`
 			Env                       map[string]string `yaml:"env"`
 			ForceMaxConcurrentRequests int              `yaml:"force_max_concurrent_requests"`
 		} `yaml:"tenants"`
@@ -275,6 +278,30 @@ func LoadConfig(filename string) (*Config, error) {
 	}
 }
 
+// substituteVars replaces template variables with tenant values
+func substituteVars(template string, tenant struct {
+	Name                      string            `yaml:"name"`
+	Path                      string            `yaml:"path"`
+	Group                     string            `yaml:"group"`
+	Database                  string            `yaml:"database"`
+	Owner                     string            `yaml:"owner"`
+	Storage                   string            `yaml:"storage"`
+	Scope                     string            `yaml:"scope"`
+	Root                      string            `yaml:"root"`
+	Special                   bool              `yaml:"special"`
+	Env                       map[string]string `yaml:"env"`
+	ForceMaxConcurrentRequests int              `yaml:"force_max_concurrent_requests"`
+}) string {
+	result := template
+	result = strings.ReplaceAll(result, "${tenant.name}", tenant.Name)
+	result = strings.ReplaceAll(result, "${tenant.database}", tenant.Database)
+	result = strings.ReplaceAll(result, "${tenant.owner}", tenant.Owner)
+	result = strings.ReplaceAll(result, "${tenant.storage}", tenant.Storage)
+	result = strings.ReplaceAll(result, "${tenant.scope}", tenant.Scope)
+	result = strings.ReplaceAll(result, "${tenant.group}", tenant.Group)
+	return result
+}
+
 // ParseYAML parses the new YAML configuration format
 func ParseYAML(content []byte) (*Config, error) {
 	var yamlConfig YAMLConfig
@@ -357,18 +384,14 @@ func ParseYAML(content []byte) (*Config, error) {
 			location.EnvVars[k] = v
 		}
 		
-		// Add standard variables
-		if tenant.Database != nil {
-			location.EnvVars["RAILS_APP_DB"] = *tenant.Database
-			location.EnvVars["DATABASE_URL"] = fmt.Sprintf("sqlite3:///%s/%s.sqlite3", 
-				config.GlobalEnvVars["RAILS_DB_VOLUME"], *tenant.Database)
+		// Add standard variables (unless it's a special tenant)
+		if !tenant.Special {
+			for varName, template := range yamlConfig.Applications.StandardVars {
+				value := substituteVars(template, tenant)
+				location.EnvVars[varName] = value
+			}
 		}
-		if tenant.Owner != "" {
-			location.EnvVars["RAILS_APP_OWNER"] = tenant.Owner
-		}
-		if tenant.Storage != "" {
-			location.EnvVars["RAILS_STORAGE"] = tenant.Storage
-		}
+		
 		if tenant.Root != "" {
 			location.Root = tenant.Root
 		} else if yamlConfig.Server.PublicDir != "" {
