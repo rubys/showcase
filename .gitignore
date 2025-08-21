@@ -84,4 +84,4 @@ flat-storage
 
 # Navigator Go project
 /bin/navigator
-go.sum
+/vendor/
