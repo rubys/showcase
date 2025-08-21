@@ -5,6 +5,11 @@ if [ "$1" = "clobber" ]; then
   exit 0
 fi
 
+if [ "$1" = "nav" ]; then
+  bin/bundle exec rake nav:config
+  bin/bundle exec rake assets:precompile
+fi
+
 export RAILS_ENV=production
 bin/bundle exec rake prerender > log/prerender.log
 

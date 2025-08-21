@@ -19,8 +19,10 @@ Navigator supports both nginx-style and modern YAML configuration formats:
 # Build the navigator
 make build
 
-# Run with YAML configuration (recommended)
-./bin/navigator tmp/navigator.yaml
+# Run with YAML configuration (recommended - default location)
+./bin/navigator
+# Or specify a custom config file
+./bin/navigator config/navigator.yml
 
 # Run with nginx configuration (deprecated)
 ./bin/navigator tmp/showcase.conf

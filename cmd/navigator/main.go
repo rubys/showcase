@@ -213,7 +213,7 @@ type BasicAuth struct {
 // Placeholder for removed APR1 implementation - now handled by go-htpasswd library
 
 func main() {
-	configFile := "tmp/showcase.conf"
+	configFile := "config/navigator.yml"
 	if len(os.Args) > 1 {
 		configFile = os.Args[1]
 	}

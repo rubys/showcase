@@ -17,7 +17,7 @@ module Configurator
 
   def generate_navigator_config
     config = build_navigator_config
-    file = File.join(Rails.root, 'tmp', 'navigator.yaml')
+    file = File.join(Rails.root, 'config', 'navigator.yml')
     RegionConfiguration.write_yaml_if_changed(file, config)
   end
 
@@ -92,29 +92,49 @@ module Configurator
 
   def build_auth_exclusions(studios)
     patterns = []
+    root = determine_root_path
     
-    # Add index pages for years/events
+    # Add root showcase path
     patterns << {
-      'pattern' => '^/\\d{4}/\\w+/?$',
-      'description' => 'Event index pages'
+      'pattern' => "^#{root}/?$",
+      'description' => 'Root showcase path'
+    }
+    
+    # Add year/event index pages (matches nginx line 17)
+    # This includes year-only paths and year/event paths
+    showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
+    years = showcases.keys.sort.reverse
+    
+    years.each do |year|
+      sites = showcases[year].keys.join('/|') + '/'
+      patterns << {
+        'pattern' => "^#{root}/#{year}(/(#{sites})?)?/?$",
+        'description' => "#{year} event index pages"
+      }
+    end
+    
+    # Add static file pattern
+    patterns << {
+      'pattern' => "^#{root}/[-\\w]+\\.\\w+$",
+      'description' => 'Static files in root'
     }
     
     # Add public event pages
     patterns << {
-      'pattern' => '^/\\d{4}/\\w+/([-\\w]+/)?public/',
+      'pattern' => "^#{root}/\\d{4}/\\w+/([-\\w]+/)?public/",
       'description' => 'Public event pages'
     }
     
     # Add event console
     patterns << {
-      'pattern' => '^/events/console$',
+      'pattern' => "^#{root}/events/console$",
       'description' => 'Event console access'
     }
     
     # Add studio-specific patterns if needed
     if studios.any?
       patterns << {
-        'pattern' => "^/studios/(#{studios.join('|')}|)$",
+        'pattern' => "^#{root}/studios/(#{studios.join('|')}|)$",
         'description' => 'Studio pages'
       }
     end
@@ -199,11 +219,8 @@ module Configurator
   end
 
   def build_standard_vars
-    dbpath = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
-    
     {
       'RAILS_APP_DB' => '${tenant.database}',
-      'DATABASE_URL' => "sqlite3://#{dbpath}/${tenant.database}.sqlite3",
       'RAILS_APP_OWNER' => '${tenant.owner}',
       'RAILS_STORAGE' => '${tenant.storage}',
       'RAILS_APP_SCOPE' => '${tenant.scope}',
@@ -218,22 +235,24 @@ module Configurator
     
     tenants = []
     
-    # Add index tenant
+    # Add index tenant (special case - doesn't use standard_vars)
     tenants << {
       'name' => 'index',
       'path' => '/',
       'group' => 'showcase-index',
-      'database' => 'index',
-      'owner' => 'Index',
-      'storage' => File.join(storage, 'index'),
-      'scope' => '',
+      'special' => true,
       'env' => {
+        'RAILS_APP_DB' => 'index',
+        'RAILS_APP_OWNER' => 'Index',
+        'RAILS_STORAGE' => File.join(storage, 'index'),
+        'PIDFILE' => "#{Rails.root}/tmp/pids/index.pid",
         'RAILS_SERVE_STATIC_FILES' => 'true'
       }
     }
     
     # Add demo tenant if in a region
     if region || ENV['KAMAL_CONTAINER_NAME']
+      dbpath = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
       tenants << {
         'name' => 'demo',
         'path' => region ? "/regions/#{region}/demo/" : "/demo/",
@@ -243,7 +262,8 @@ module Configurator
         'storage' => '/demo/storage/demo',
         'scope' => region ? "regions/#{region}/demo" : "demo",
         'env' => {
-          'SHOWCASE_LOGO' => 'intertwingly.png'
+          'SHOWCASE_LOGO' => 'intertwingly.png',
+          'DATABASE_URL' => "sqlite3://#{dbpath}/demo.sqlite3"
         }
       }
     end

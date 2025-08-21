@@ -84,3 +84,4 @@ flat-storage
 
 # Navigator Go project
 /bin/navigator
+/config/navigator.yml
