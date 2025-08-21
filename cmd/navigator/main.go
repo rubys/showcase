@@ -18,6 +18,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+	
+	"gopkg.in/yaml.v3"
 )
 
 // RewriteRule represents an nginx rewrite rule
@@ -55,6 +57,19 @@ type Config struct {
 	PassengerRuby   string
 	MinInstances    int
 	PreloadBundler  bool
+	IdleTimeout     time.Duration  // Idle timeout for app processes
+	StartPort       int            // Starting port for Rails apps
+	StaticDirs      []*StaticDir   // Static directory mappings
+	StaticExts      []string       // File extensions to serve statically
+	TryFilesSuffixes []string      // Suffixes for try_files behavior
+	PublicDir       string         // Default public directory
+}
+
+// StaticDir represents a static directory mapping
+type StaticDir struct {
+	URLPath   string // URL path prefix (e.g., "/assets/")
+	LocalPath string // Local filesystem path (e.g., "public/assets/")
+	CacheTTL  int    // Cache TTL in seconds
 }
 
 // ProxyRoute represents a route that proxies to another server
@@ -84,6 +99,97 @@ type RailsApp struct {
 	mutex       sync.RWMutex
 	ctx         context.Context
 	cancel      context.CancelFunc
+}
+
+// YAMLConfig represents the new YAML configuration format
+type YAMLConfig struct {
+	Server struct {
+		Listen    int    `yaml:"listen"`
+		Hostname  string `yaml:"hostname"`
+		RootPath  string `yaml:"root_path"`
+		PublicDir string `yaml:"public_dir"`
+	} `yaml:"server"`
+	
+	Pools struct {
+		MaxSize     int `yaml:"max_size"`
+		IdleTimeout int `yaml:"idle_timeout"`
+		StartPort   int `yaml:"start_port"`
+	} `yaml:"pools"`
+	
+	Auth struct {
+		Enabled        bool     `yaml:"enabled"`
+		Realm          string   `yaml:"realm"`
+		HTPasswd       string   `yaml:"htpasswd"`
+		PublicPaths    []string `yaml:"public_paths"`
+		ExcludePatterns []struct {
+			Pattern     string `yaml:"pattern"`
+			Description string `yaml:"description"`
+		} `yaml:"exclude_patterns"`
+	} `yaml:"auth"`
+	
+	Routes struct {
+		Redirects []struct {
+			From string `yaml:"from"`
+			To   string `yaml:"to"`
+		} `yaml:"redirects"`
+		Rewrites []struct {
+			From string `yaml:"from"`
+			To   string `yaml:"to"`
+		} `yaml:"rewrites"`
+		Proxies []struct {
+			Path    string            `yaml:"path"`
+			Target  string            `yaml:"target"`
+			Headers map[string]string `yaml:"headers"`
+		} `yaml:"proxies"`
+	} `yaml:"routes"`
+	
+	Static struct {
+		Directories []struct {
+			Path  string `yaml:"path"`
+			Root  string `yaml:"root"`
+			Cache int    `yaml:"cache"`
+		} `yaml:"directories"`
+		Extensions []string `yaml:"extensions"`
+		TryFiles   struct {
+			Enabled  bool     `yaml:"enabled"`
+			Suffixes []string `yaml:"suffixes"`
+			Fallback string   `yaml:"fallback"`
+		} `yaml:"try_files"`
+	} `yaml:"static"`
+	
+	Applications struct {
+		GlobalEnv map[string]string `yaml:"global_env"`
+		Tenants   []struct {
+			Name                      string            `yaml:"name"`
+			Path                      string            `yaml:"path"`
+			Group                     string            `yaml:"group"`
+			Database                  *string           `yaml:"database"`
+			Owner                     string            `yaml:"owner"`
+			Storage                   string            `yaml:"storage"`
+			Root                      string            `yaml:"root"`
+			Env                       map[string]string `yaml:"env"`
+			ForceMaxConcurrentRequests int              `yaml:"force_max_concurrent_requests"`
+		} `yaml:"tenants"`
+	} `yaml:"applications"`
+	
+	Process struct {
+		Ruby           string `yaml:"ruby"`
+		BundlerPreload bool   `yaml:"bundler_preload"`
+		MinInstances   int    `yaml:"min_instances"`
+	} `yaml:"process"`
+	
+	Logging struct {
+		AccessLog string `yaml:"access_log"`
+		ErrorLog  string `yaml:"error_log"`
+		Level     string `yaml:"level"`
+		Format    string `yaml:"format"`
+	} `yaml:"logging"`
+	
+	Health struct {
+		Endpoint string `yaml:"endpoint"`
+		Timeout  int    `yaml:"timeout"`
+		Interval int    `yaml:"interval"`
+	} `yaml:"health"`
 }
 
 // AppManager manages Rails application processes
@@ -253,7 +359,7 @@ func main() {
 	}
 
 	log.Printf("Loading configuration from %s", configFile)
-	config, err := ParseConfig(configFile)
+	config, err := LoadConfig(configFile)
 	if err != nil {
 		log.Fatalf("Failed to parse config: %v", err)
 	}
@@ -284,8 +390,195 @@ func main() {
 	}
 }
 
-// ParseConfig parses the nginx/passenger configuration file
-func ParseConfig(filename string) (*Config, error) {
+// LoadConfig auto-detects and loads either YAML or nginx configuration
+func LoadConfig(filename string) (*Config, error) {
+	ext := filepath.Ext(filename)
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Auto-detect by extension or content
+	switch {
+	case ext == ".yaml" || ext == ".yml":
+		log.Println("Detected YAML configuration format")
+		return ParseYAML(content)
+	case ext == ".conf" || strings.Contains(string(content), "server {"):
+		log.Println("Warning: nginx format is deprecated, please migrate to YAML")
+		return ParseNginxFile(filename)
+	default:
+		// Try to detect by content
+		if strings.Contains(string(content), "server {") {
+			log.Println("Warning: nginx format is deprecated, please migrate to YAML")
+			return ParseNginxFile(filename)
+		}
+		// Default to YAML
+		log.Println("Assuming YAML configuration format")
+		return ParseYAML(content)
+	}
+}
+
+// ParseYAML parses the new YAML configuration format
+func ParseYAML(content []byte) (*Config, error) {
+	var yamlConfig YAMLConfig
+	if err := yaml.Unmarshal(content, &yamlConfig); err != nil {
+		return nil, fmt.Errorf("failed to parse YAML: %w", err)
+	}
+	
+	// Convert YAML config to internal Config structure
+	config := &Config{
+		ServerName:    yamlConfig.Server.Hostname,
+		ListenPort:    yamlConfig.Server.Listen,
+		MaxPoolSize:   yamlConfig.Pools.MaxSize,
+		Locations:     make(map[string]*Location),
+		ProxyRoutes:   make(map[string]*ProxyRoute),
+		GlobalEnvVars: yamlConfig.Applications.GlobalEnv,
+		RewriteRules:  []*RewriteRule{},
+		AuthPatterns:  []*AuthPattern{},
+	}
+	
+	// Set authentication config
+	if yamlConfig.Auth.Enabled {
+		config.AuthFile = yamlConfig.Auth.HTPasswd
+		config.AuthRealm = yamlConfig.Auth.Realm
+		config.AuthExclude = yamlConfig.Auth.PublicPaths
+		
+		// Convert exclude patterns
+		for _, pattern := range yamlConfig.Auth.ExcludePatterns {
+			if re, err := regexp.Compile(pattern.Pattern); err == nil {
+				config.AuthPatterns = append(config.AuthPatterns, &AuthPattern{
+					Pattern: re,
+					Action:  "off",
+				})
+			} else {
+				log.Printf("Warning: Invalid auth pattern %s: %v", pattern.Pattern, err)
+			}
+		}
+	}
+	
+	// Convert redirects to rewrite rules
+	for _, redirect := range yamlConfig.Routes.Redirects {
+		if re, err := regexp.Compile(redirect.From); err == nil {
+			config.RewriteRules = append(config.RewriteRules, &RewriteRule{
+				Pattern:     re,
+				Replacement: redirect.To,
+				Flag:        "redirect",
+			})
+		}
+	}
+	
+	// Convert internal rewrites
+	for _, rewrite := range yamlConfig.Routes.Rewrites {
+		if re, err := regexp.Compile(rewrite.From); err == nil {
+			config.RewriteRules = append(config.RewriteRules, &RewriteRule{
+				Pattern:     re,
+				Replacement: rewrite.To,
+				Flag:        "last",
+			})
+		}
+	}
+	
+	// Convert proxy routes
+	for _, proxy := range yamlConfig.Routes.Proxies {
+		config.ProxyRoutes[proxy.Path] = &ProxyRoute{
+			Pattern:    proxy.Path,
+			ProxyPass:  proxy.Target,
+			SetHeaders: proxy.Headers,
+		}
+	}
+	
+	// Convert tenant applications to locations
+	for _, tenant := range yamlConfig.Applications.Tenants {
+		location := &Location{
+			Path:         tenant.Path,
+			AppGroupName: tenant.Group,
+			EnvVars:      make(map[string]string),
+		}
+		
+		// Copy tenant environment variables
+		for k, v := range tenant.Env {
+			location.EnvVars[k] = v
+		}
+		
+		// Add standard variables
+		if tenant.Database != nil {
+			location.EnvVars["RAILS_APP_DB"] = *tenant.Database
+			location.EnvVars["DATABASE_URL"] = fmt.Sprintf("sqlite3:///%s/%s.sqlite3", 
+				config.GlobalEnvVars["RAILS_DB_VOLUME"], *tenant.Database)
+		}
+		if tenant.Owner != "" {
+			location.EnvVars["RAILS_APP_OWNER"] = tenant.Owner
+		}
+		if tenant.Storage != "" {
+			location.EnvVars["RAILS_STORAGE"] = tenant.Storage
+		}
+		if tenant.Root != "" {
+			location.Root = tenant.Root
+		} else if yamlConfig.Server.PublicDir != "" {
+			location.Root = yamlConfig.Server.PublicDir
+		}
+		
+		config.Locations[tenant.Path] = location
+	}
+	
+	// Set process config
+	config.PassengerRuby = yamlConfig.Process.Ruby
+	config.PreloadBundler = yamlConfig.Process.BundlerPreload
+	config.MinInstances = yamlConfig.Process.MinInstances
+	
+	// Set logging config
+	config.AccessLog = yamlConfig.Logging.AccessLog
+	config.ErrorLog = yamlConfig.Logging.ErrorLog
+	
+	// Set idle timeout from pools config
+	if yamlConfig.Pools.IdleTimeout > 0 {
+		config.IdleTimeout = time.Duration(yamlConfig.Pools.IdleTimeout) * time.Second
+	} else {
+		config.IdleTimeout = 10 * time.Minute // Default
+	}
+	
+	// Set start port for Rails apps
+	if yamlConfig.Pools.StartPort > 0 {
+		config.StartPort = yamlConfig.Pools.StartPort
+	} else {
+		config.StartPort = 4000 // Default
+	}
+	
+	// Set public directory
+	config.PublicDir = yamlConfig.Server.PublicDir
+	
+	// Set static file configuration
+	config.StaticDirs = []*StaticDir{}
+	for _, dir := range yamlConfig.Static.Directories {
+		config.StaticDirs = append(config.StaticDirs, &StaticDir{
+			URLPath:   dir.Path,
+			LocalPath: dir.Root,
+			CacheTTL:  dir.Cache,
+		})
+	}
+	
+	// Set static file extensions
+	config.StaticExts = yamlConfig.Static.Extensions
+	if len(config.StaticExts) == 0 {
+		// Default extensions if not specified
+		config.StaticExts = []string{"html", "htm", "txt", "xml", "json", "css", "js", 
+			"png", "jpg", "jpeg", "gif", "svg", "ico", "woff", "woff2", "ttf", "eot"}
+	}
+	
+	// Set try_files suffixes
+	if yamlConfig.Static.TryFiles.Enabled {
+		config.TryFilesSuffixes = yamlConfig.Static.TryFiles.Suffixes
+		if len(config.TryFilesSuffixes) == 0 {
+			// Default suffixes if not specified
+			config.TryFilesSuffixes = []string{".html", ".htm", ".txt", ".xml", ".json"}
+		}
+	}
+	
+	return config, nil
+}
+
+// ParseNginxFile parses the nginx/passenger configuration file
+func ParseNginxFile(filename string) (*Config, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -293,18 +586,32 @@ func ParseConfig(filename string) (*Config, error) {
 	defer file.Close()
 
 	config := &Config{
-		ListenPort:    3000,
-		MaxPoolSize:   68,
-		DefaultUser:   "root",
-		DefaultGroup:  "root",
-		Locations:     make(map[string]*Location),
-		ProxyRoutes:   make(map[string]*ProxyRoute),
-		GlobalEnvVars: make(map[string]string),
-		AuthExclude:   []string{},
-		AuthPatterns:  []*AuthPattern{},
-		RewriteRules:  []*RewriteRule{},
-		MinInstances:  0,
+		ListenPort:     3000,
+		MaxPoolSize:    68,
+		DefaultUser:    "root",
+		DefaultGroup:   "root",
+		Locations:      make(map[string]*Location),
+		ProxyRoutes:    make(map[string]*ProxyRoute),
+		GlobalEnvVars:  make(map[string]string),
+		AuthExclude:    []string{},
+		AuthPatterns:   []*AuthPattern{},
+		RewriteRules:   []*RewriteRule{},
+		MinInstances:   0,
 		PreloadBundler: false,
+		IdleTimeout:    10 * time.Minute,
+		StartPort:      4000,
+		// Default static configuration for nginx compatibility
+		StaticDirs: []*StaticDir{
+			{URLPath: "/assets/", LocalPath: "public/assets/", CacheTTL: 86400},
+			{URLPath: "/docs/", LocalPath: "public/docs/", CacheTTL: 0},
+			{URLPath: "/fonts/", LocalPath: "public/fonts/", CacheTTL: 86400},
+			{URLPath: "/regions/", LocalPath: "public/regions/", CacheTTL: 0},
+			{URLPath: "/studios/", LocalPath: "public/studios/", CacheTTL: 0},
+		},
+		StaticExts: []string{"html", "htm", "txt", "xml", "json", "css", "js",
+			"png", "jpg", "jpeg", "gif", "svg", "ico", "pdf", "xlsx",
+			"woff", "woff2", "ttf", "eot"},
+		TryFilesSuffixes: []string{".html", ".htm", ".txt", ".xml", ".json"},
 	}
 
 	scanner := bufio.NewScanner(file)
@@ -509,13 +816,29 @@ func ParseConfig(filename string) (*Config, error) {
 	return config, scanner.Err()
 }
 
+// ParseConfig is deprecated, use LoadConfig instead
+func ParseConfig(filename string) (*Config, error) {
+	log.Println("Warning: ParseConfig is deprecated, use LoadConfig instead")
+	return ParseNginxFile(filename)
+}
+
 // NewAppManager creates a new application manager
 func NewAppManager(config *Config) *AppManager {
+	idleTimeout := config.IdleTimeout
+	if idleTimeout == 0 {
+		idleTimeout = 10 * time.Minute // Default if not set
+	}
+	
+	startPort := config.StartPort
+	if startPort == 0 {
+		startPort = 4000 // Default if not set
+	}
+	
 	return &AppManager{
 		apps:        make(map[string]*RailsApp),
 		config:      config,
-		nextPort:    4000,
-		idleTimeout: 10 * time.Minute,
+		nextPort:    startPort,
+		idleTimeout: idleTimeout,
 	}
 }
 
@@ -907,7 +1230,34 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 
 // shouldExcludeFromAuth checks if a path should be excluded from authentication using parsed patterns
 func shouldExcludeFromAuth(path string, config *Config) bool {
-	// Check each auth pattern from the config file
+	// Check simple exclusion paths first (from YAML public_paths)
+	for _, excludePath := range config.AuthExclude {
+		// Handle glob patterns like *.css
+		if strings.HasPrefix(excludePath, "*") {
+			if strings.HasSuffix(path, excludePath[1:]) {
+				return true
+			}
+		} else if strings.Contains(excludePath, "*") {
+			// Handle patterns like /path/*.ext
+			if matched, _ := filepath.Match(excludePath, path); matched {
+				return true
+			}
+		} else {
+			// Check for prefix match (paths ending with /)
+			if strings.HasSuffix(excludePath, "/") {
+				if strings.HasPrefix(path, excludePath) {
+					return true
+				}
+			} else {
+				// Exact match
+				if path == excludePath {
+					return true
+				}
+			}
+		}
+	}
+	
+	// Check regex auth patterns from the config file
 	for _, authPattern := range config.AuthPatterns {
 		if authPattern.Pattern.MatchString(path) && authPattern.Action == "off" {
 			return true
@@ -922,32 +1272,39 @@ func serveStaticFile(w http.ResponseWriter, r *http.Request, config *Config) boo
 	// Check if this is a request for static assets
 	path := r.URL.Path
 	
-	// Common static file patterns that should be served directly
+	// First check static directories from config
+	for _, staticDir := range config.StaticDirs {
+		if strings.HasPrefix(path, staticDir.URLPath) {
+			// Calculate the local file path
+			relativePath := strings.TrimPrefix(path, staticDir.URLPath)
+			fsPath := filepath.Join(config.PublicDir, staticDir.LocalPath, relativePath)
+			
+			// Check if file exists
+			if info, err := os.Stat(fsPath); err == nil && !info.IsDir() {
+				// Set cache headers if configured
+				if staticDir.CacheTTL > 0 {
+					w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", staticDir.CacheTTL))
+				}
+				
+				// Set content type and serve
+				setContentType(w, fsPath)
+				http.ServeFile(w, r, fsPath)
+				log.Printf("Serving static file from directory: %s -> %s", path, fsPath)
+				return true
+			}
+		}
+	}
+	
+	// Check if file has a static extension from config
 	isStatic := false
-	if strings.Contains(path, "/assets/") ||
-		strings.Contains(path, "/images/") ||
-		strings.Contains(path, "/javascripts/") ||
-		strings.Contains(path, "/stylesheets/") ||
-		strings.Contains(path, "/regions/") ||
-		strings.Contains(path, "/studios/") ||
-		strings.Contains(path, "/docs/") ||
-		strings.Contains(path, "/fonts/") ||
-		strings.HasSuffix(path, ".js") ||
-		strings.HasSuffix(path, ".css") ||
-		strings.HasSuffix(path, ".png") ||
-		strings.HasSuffix(path, ".jpg") ||
-		strings.HasSuffix(path, ".jpeg") ||
-		strings.HasSuffix(path, ".gif") ||
-		strings.HasSuffix(path, ".ico") ||
-		strings.HasSuffix(path, ".svg") ||
-		strings.HasSuffix(path, ".woff") ||
-		strings.HasSuffix(path, ".woff2") ||
-		strings.HasSuffix(path, ".ttf") ||
-		strings.HasSuffix(path, ".eot") ||
-		strings.HasSuffix(path, ".html") ||
-		strings.HasSuffix(path, ".txt") ||
-		strings.HasSuffix(path, ".xml") {
-		isStatic = true
+	ext := strings.TrimPrefix(filepath.Ext(path), ".")
+	if ext != "" {
+		for _, staticExt := range config.StaticExts {
+			if ext == staticExt {
+				isStatic = true
+				break
+			}
+		}
 	}
 	
 	if !isStatic {
@@ -989,40 +1346,8 @@ func serveStaticFile(w http.ResponseWriter, r *http.Request, config *Config) boo
 		fsPath = publicPath
 	}
 	
-	// Set appropriate content type
-	ext := filepath.Ext(fsPath)
-	switch ext {
-	case ".js":
-		w.Header().Set("Content-Type", "application/javascript")
-	case ".css":
-		w.Header().Set("Content-Type", "text/css")
-	case ".html":
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	case ".txt":
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	case ".xml":
-		w.Header().Set("Content-Type", "application/xml; charset=utf-8")
-	case ".png":
-		w.Header().Set("Content-Type", "image/png")
-	case ".jpg", ".jpeg":
-		w.Header().Set("Content-Type", "image/jpeg")
-	case ".gif":
-		w.Header().Set("Content-Type", "image/gif")
-	case ".svg":
-		w.Header().Set("Content-Type", "image/svg+xml")
-	case ".ico":
-		w.Header().Set("Content-Type", "image/x-icon")
-	case ".woff":
-		w.Header().Set("Content-Type", "font/woff")
-	case ".woff2":
-		w.Header().Set("Content-Type", "font/woff2")
-	case ".ttf":
-		w.Header().Set("Content-Type", "font/ttf")
-	case ".eot":
-		w.Header().Set("Content-Type", "application/vnd.ms-fontobject")
-	}
-	
-	// Serve the file
+	// Set content type and serve the file
+	setContentType(w, fsPath)
 	http.ServeFile(w, r, fsPath)
 	log.Printf("Serving static file: %s -> %s", path, fsPath)
 	return true
@@ -1035,6 +1360,11 @@ func tryFiles(w http.ResponseWriter, r *http.Request, config *Config) bool {
 	
 	// Only try files for paths that don't already have an extension
 	if filepath.Ext(path) != "" {
+		return false
+	}
+	
+	// Skip if try_files is disabled (no suffixes configured)
+	if len(config.TryFilesSuffixes) == 0 {
 		return false
 	}
 	
@@ -1059,8 +1389,8 @@ func tryFiles(w http.ResponseWriter, r *http.Request, config *Config) bool {
 		relativePath = "/" + relativePath
 	}
 	
-	// Common file extensions to try (in order of preference)
-	extensions := []string{".html", ".htm", ".txt", ".xml", ".json"}
+	// Use extensions from config
+	extensions := config.TryFilesSuffixes
 	
 	for _, ext := range extensions {
 		// Try in the root directory first
@@ -1082,8 +1412,22 @@ func tryFiles(w http.ResponseWriter, r *http.Request, config *Config) bool {
 // serveFile serves a specific file with appropriate headers
 func serveFile(w http.ResponseWriter, r *http.Request, fsPath, requestPath string) bool {
 	// Set appropriate content type
+	setContentType(w, fsPath)
+	
+	// Serve the file
+	http.ServeFile(w, r, fsPath)
+	log.Printf("Try files: %s -> %s", requestPath, fsPath)
+	return true
+}
+
+// setContentType sets the appropriate Content-Type header based on file extension
+func setContentType(w http.ResponseWriter, fsPath string) {
 	ext := filepath.Ext(fsPath)
 	switch ext {
+	case ".js":
+		w.Header().Set("Content-Type", "application/javascript")
+	case ".css":
+		w.Header().Set("Content-Type", "text/css")
 	case ".html", ".htm":
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	case ".txt":
@@ -1092,12 +1436,29 @@ func serveFile(w http.ResponseWriter, r *http.Request, fsPath, requestPath strin
 		w.Header().Set("Content-Type", "application/xml; charset=utf-8")
 	case ".json":
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	case ".png":
+		w.Header().Set("Content-Type", "image/png")
+	case ".jpg", ".jpeg":
+		w.Header().Set("Content-Type", "image/jpeg")
+	case ".gif":
+		w.Header().Set("Content-Type", "image/gif")
+	case ".svg":
+		w.Header().Set("Content-Type", "image/svg+xml")
+	case ".ico":
+		w.Header().Set("Content-Type", "image/x-icon")
+	case ".pdf":
+		w.Header().Set("Content-Type", "application/pdf")
+	case ".xlsx":
+		w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	case ".woff":
+		w.Header().Set("Content-Type", "font/woff")
+	case ".woff2":
+		w.Header().Set("Content-Type", "font/woff2")
+	case ".ttf":
+		w.Header().Set("Content-Type", "font/ttf")
+	case ".eot":
+		w.Header().Set("Content-Type", "application/vnd.ms-fontobject")
 	}
-	
-	// Serve the file
-	http.ServeFile(w, r, fsPath)
-	log.Printf("Try files: %s -> %s", requestPath, fsPath)
-	return true
 }
 
 // proxyRequest proxies a request to another server
