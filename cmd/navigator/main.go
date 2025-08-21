@@ -3,8 +3,6 @@ package main
 import (
 	"bufio"
 	"context"
-	"crypto/md5"
-	"crypto/subtle"
 	"fmt"
 	"log"
 	"net/http"
@@ -19,6 +17,7 @@ import (
 	"sync"
 	"time"
 	
+	"github.com/tg123/go-htpasswd"
 	"gopkg.in/yaml.v3"
 )
 
@@ -203,154 +202,12 @@ type AppManager struct {
 
 // BasicAuth represents HTTP basic authentication
 type BasicAuth struct {
-	Users   map[string]string
+	File    *htpasswd.File
 	Realm   string
 	Exclude []string
 }
 
-// Apache MD5 password hashing (APR1)
-const apr1Magic = "$apr1$"
-const itoa64 = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-
-// VerifyAPR1Password verifies a password against an APR1 (Apache MD5) hash
-func VerifyAPR1Password(password, hash string) bool {
-	if !strings.HasPrefix(hash, apr1Magic) {
-		return false
-	}
-	
-	// Extract salt from hash
-	parts := strings.Split(hash[len(apr1Magic):], "$")
-	if len(parts) != 2 {
-		return false
-	}
-	
-	salt := parts[0]
-	expectedHash := parts[1]
-	
-	// Generate hash with the same salt
-	generatedHash := generateAPR1Hash(password, salt)
-	
-	// Constant time comparison to prevent timing attacks
-	return subtle.ConstantTimeCompare([]byte(expectedHash), []byte(generatedHash)) == 1
-}
-
-// generateAPR1Hash generates an APR1 hash for the given password and salt
-func generateAPR1Hash(password, salt string) string {
-	// Initial MD5 computation
-	ctx := md5.New()
-	ctx.Write([]byte(password))
-	ctx.Write([]byte(apr1Magic))
-	ctx.Write([]byte(salt))
-	
-	// Create alternate MD5 sum
-	ctx2 := md5.New()
-	ctx2.Write([]byte(password))
-	ctx2.Write([]byte(salt))
-	ctx2.Write([]byte(password))
-	altSum := ctx2.Sum(nil)
-	
-	// Add alternate sum to main context
-	pwLen := len(password)
-	for i := pwLen; i > 0; i -= 16 {
-		if i >= 16 {
-			ctx.Write(altSum)
-		} else {
-			ctx.Write(altSum[:i])
-		}
-	}
-	
-	// Add password characters or null bytes based on password length bits
-	for i := pwLen; i > 0; i >>= 1 {
-		if i&1 != 0 {
-			ctx.Write([]byte{0})
-		} else {
-			ctx.Write([]byte(password[:1]))
-		}
-	}
-	
-	sum := ctx.Sum(nil)
-	
-	// 1000 rounds of hashing
-	for i := 0; i < 1000; i++ {
-		ctx = md5.New()
-		
-		// Alternate password and sum based on round number
-		if i&1 != 0 {
-			ctx.Write([]byte(password))
-		} else {
-			ctx.Write(sum)
-		}
-		
-		// Add salt for rounds not divisible by 3
-		if i%3 != 0 {
-			ctx.Write([]byte(salt))
-		}
-		
-		// Add password for rounds not divisible by 7
-		if i%7 != 0 {
-			ctx.Write([]byte(password))
-		}
-		
-		// Alternate sum and password based on round number
-		if i&1 != 0 {
-			ctx.Write(sum)
-		} else {
-			ctx.Write([]byte(password))
-		}
-		
-		sum = ctx.Sum(nil)
-	}
-	
-	// Convert to base64-like encoding using Apache's character set
-	return apr1Encode(sum)
-}
-
-// apr1Encode encodes bytes using Apache's base64 variant
-func apr1Encode(data []byte) string {
-	result := make([]byte, 0, 22)
-	
-	// Apache MD5 uses a specific byte order for encoding
-	order := []int{0, 6, 12, 1, 7, 13, 2, 8, 14, 3, 9, 15, 4, 10, 5, 11}
-	
-	for i := 0; i < 5; i++ {
-		v := (uint32(data[order[i*3]]) << 16) | 
-			(uint32(data[order[i*3+1]]) << 8) | 
-			uint32(data[order[i*3+2]])
-		
-		for j := 0; j < 4; j++ {
-			result = append(result, itoa64[v&0x3f])
-			v >>= 6
-		}
-	}
-	
-	// Handle last byte
-	v := uint32(data[order[15]])
-	result = append(result, itoa64[v&0x3f])
-	result = append(result, itoa64[(v>>6)&0x3f])
-	
-	return string(result)
-}
-
-// VerifyHTPasswd verifies a password against various htpasswd hash formats
-func VerifyHTPasswd(password, hash string) bool {
-	// Check for different hash formats
-	if strings.HasPrefix(hash, apr1Magic) {
-		// Apache MD5
-		return VerifyAPR1Password(password, hash)
-	} else if strings.HasPrefix(hash, "$2y$") || strings.HasPrefix(hash, "$2a$") || strings.HasPrefix(hash, "$2b$") {
-		// bcrypt - would need golang.org/x/crypto/bcrypt
-		return false
-	} else if strings.HasPrefix(hash, "{SHA}") {
-		// SHA1 base64 encoded
-		return false
-	} else if len(hash) == 13 {
-		// Unix crypt() DES
-		return false
-	} else {
-		// Plain text comparison (not recommended for production)
-		return password == hash
-	}
-}
+// Placeholder for removed APR1 implementation - now handled by go-htpasswd library
 
 func main() {
 	configFile := "tmp/showcase.conf"
@@ -372,7 +229,7 @@ func main() {
 		if err != nil {
 			log.Printf("Warning: Failed to load auth file %s: %v", config.AuthFile, err)
 		} else {
-			log.Printf("Loaded authentication with %d users", len(auth.Users))
+			log.Printf("Loaded authentication from %s", config.AuthFile)
 		}
 	}
 
@@ -1056,31 +913,19 @@ func LoadAuthFile(filename, realm string, exclude []string) (*BasicAuth, error) 
 		return nil, nil
 	}
 
-	file, err := os.Open(filename)
+	// Use go-htpasswd library to load the file
+	htFile, err := htpasswd.New(filename, htpasswd.DefaultSystems, nil)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
 
 	auth := &BasicAuth{
-		Users:   make(map[string]string),
+		File:    htFile,
 		Realm:   realm,
 		Exclude: exclude,
 	}
 
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" {
-			continue
-		}
-		parts := strings.SplitN(line, ":", 2)
-		if len(parts) == 2 {
-			auth.Users[parts[0]] = parts[1]
-		}
-	}
-
-	return auth, scanner.Err()
+	return auth, nil
 }
 
 // CreateHandler creates the main HTTP handler
@@ -1193,13 +1038,8 @@ func checkAuth(r *http.Request, auth *BasicAuth) bool {
 		return false
 	}
 
-	storedHash, exists := auth.Users[username]
-	if !exists {
-		return false
-	}
-
-	// Use VerifyHTPasswd to check the password
-	return VerifyHTPasswd(password, storedHash)
+	// Use go-htpasswd library to match the password
+	return auth.File.Match(username, password)
 }
 
 // handleRewrites handles nginx-style rewrite rules from config
