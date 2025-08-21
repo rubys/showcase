@@ -27,6 +27,13 @@ namespace :prerender do
       puts "Removing #{showcase_js}"
       FileUtils.rm showcase_js
     end
+
+    # remove the public/index.html file
+    index_html = File.join(Rails.application.root, 'public', 'index.html')
+    if File.exist?(index_html)
+      puts "Removing #{index_html}"
+      FileUtils.rm index_html
+    end
   end
 end
 
@@ -47,8 +54,9 @@ task :prerender => "prerender:env" do
     end
   end
 
-  # start with the regions/index.html files
+  # start with the index.html and regions/index.html files
   files = [
+    ['/', 'index.html'],
     ['regions/', 'regions/index.html'],
   ]
 
