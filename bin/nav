@@ -1,0 +1,23 @@
+#!/bin/bash
+
+export RAILS_ENV=production
+
+if lsof -i :9999 -t >/dev/null; then
+    lsof -i :9999 -t | xargs -r kill -INT
+    sleep 1
+fi
+
+if [ ! -d "public/assets" ]; then
+    bin/rails assets:precompile
+fi
+
+if [ ! -d "public/docs" ]; then
+    bin/prerender
+fi
+
+if [ ! -f "config/navigator.yml" ] || [ "db/index.sqlite3" -nt "config/navigator.yml" ]; then
+    bin/rails nav:config
+fi
+
+open -a Firefox http://localhost:9999
+bin/navigator

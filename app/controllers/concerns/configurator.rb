@@ -202,7 +202,7 @@ module Configurator
       'extensions' => %w[html htm txt xml json css js png jpg gif pdf xlsx],
       'try_files' => {
         'enabled' => true,
-        'suffixes' => %w[.html .htm .txt .xml .json],
+        'suffixes' => %w[index.html .html .htm .txt .xml .json],
         'fallback' => 'rails'
       }
     }
@@ -219,10 +219,11 @@ module Configurator
   end
 
   def build_standard_vars
+    storage = ENV['RAILS_STORAGE'] || Rails.root.join('storage').to_s
     {
       'RAILS_APP_DB' => '${tenant.database}',
       'RAILS_APP_OWNER' => '${tenant.owner}',
-      'RAILS_STORAGE' => '${tenant.storage}',
+      'RAILS_STORAGE' => storage,
       'RAILS_APP_SCOPE' => '${tenant.scope}',
       'PIDFILE' => "#{Rails.root}/tmp/pids/${tenant.database}.pid"
     }
@@ -281,8 +282,7 @@ module Configurator
               'path' => "#{root}/#{year}/#{token}/#{subtoken}/",
               'group' => "showcase-#{year}-#{token}-#{subtoken}",
               'database' => "#{year}-#{token}-#{subtoken}",
-              'owner' => "#{info[:name]} - #{subinfo[:name]}",
-              'storage' => File.join(storage, "#{year}-#{token}-#{subtoken}"),
+              'owner' => info[:name],
               'scope' => "#{year}/#{token}/#{subtoken}",
               'env' => {
                 'SHOWCASE_LOGO' => info[:logo] || 'arthur-murray-logo.gif'
@@ -302,7 +302,6 @@ module Configurator
             'group' => "showcase-#{year}-#{token}",
             'database' => "#{year}-#{token}",
             'owner' => info[:name],
-            'storage' => File.join(storage, "#{year}-#{token}"),
             'scope' => "#{year}/#{token}",
             'env' => {
               'SHOWCASE_LOGO' => info[:logo] || 'arthur-murray-logo.gif'
