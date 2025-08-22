@@ -157,7 +157,7 @@ module Configurator
       routes['redirects'] << { 'from' => '^/$', 'to' => "#{root}/regions/" }
       routes['redirects'] << { 'from' => "^#{root}/demo$", 'to' => "#{root}/demo/" }
     elsif root != ''
-      routes['redirects'] << { 'from' => '^/(showcase)?$', 'to' => "#{root}/" }
+      routes['redirects'] << { 'from' => '^/(showcase)?$', 'to' => "#{root}/studios/" }
     else
       routes['redirects'] << { 'from' => '^/$', 'to' => "#{root}/studios/" }
     end
