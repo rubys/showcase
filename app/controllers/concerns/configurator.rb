@@ -232,13 +232,14 @@ module Configurator
     showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
     region = ENV['FLY_REGION']
     storage = ENV['RAILS_STORAGE'] || Rails.root.join('storage').to_s
+    root = determine_root_path
     
     tenants = []
     
     # Add index tenant (special case - doesn't use standard_vars)
     tenants << {
       'name' => 'index',
-      'path' => '/',
+      'path' => root.empty? ? '/' : "#{root}/",
       'group' => 'showcase-index',
       'special' => true,
       'env' => {
@@ -277,7 +278,7 @@ module Configurator
           info[:events].each do |subtoken, subinfo|
             tenant = {
               'name' => "#{year}-#{token}-#{subtoken}",
-              'path' => "/#{year}/#{token}/#{subtoken}/",
+              'path' => "#{root}/#{year}/#{token}/#{subtoken}/",
               'group' => "showcase-#{year}-#{token}-#{subtoken}",
               'database' => "#{year}-#{token}-#{subtoken}",
               'owner' => "#{info[:name]} - #{subinfo[:name]}",
@@ -297,7 +298,7 @@ module Configurator
         else
           tenant = {
             'name' => "#{year}-#{token}",
-            'path' => "/#{year}/#{token}/",
+            'path' => "#{root}/#{year}/#{token}/",
             'group' => "showcase-#{year}-#{token}",
             'database' => "#{year}-#{token}",
             'owner' => info[:name],
@@ -320,7 +321,7 @@ module Configurator
     # Add cable tenant (special case - no standard vars)
     tenants << {
       'name' => 'cable',
-      'path' => '/cable',
+      'path' => "#{root}/cable",
       'group' => 'showcase-cable',
       'special' => true,
       'force_max_concurrent_requests' => 0
@@ -329,7 +330,7 @@ module Configurator
     # Add publish tenant (special case - no standard vars)
     tenants << {
       'name' => 'publish',
-      'path' => '/publish',
+      'path' => "#{root}/publish",
       'group' => 'showcase-publish',
       'special' => true,
       'root' => Rails.root.join('fly/applications/publish/public').to_s,
