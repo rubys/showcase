@@ -5,16 +5,19 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 	
 	"github.com/tg123/go-htpasswd"
@@ -199,8 +202,108 @@ type AppManager struct {
 	apps        map[string]*RailsApp
 	config      *Config
 	mutex       sync.RWMutex
-	nextPort    int
 	idleTimeout time.Duration
+	minPort     int  // Minimum port for Rails apps
+	maxPort     int  // Maximum port for Rails apps
+}
+
+// cleanupPidFile checks for and removes stale PID file
+func cleanupPidFile(pidfilePath string) error {
+	if pidfilePath == "" {
+		return nil
+	}
+	
+	// Check if PID file exists
+	data, err := os.ReadFile(pidfilePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil // No PID file, nothing to clean up
+		}
+		return fmt.Errorf("error reading PID file %s: %v", pidfilePath, err)
+	}
+	
+	// Parse PID
+	pidStr := strings.TrimSpace(string(data))
+	pid, err := strconv.Atoi(pidStr)
+	if err != nil {
+		log.Printf("Invalid PID in file %s: %s", pidfilePath, pidStr)
+		// Remove invalid PID file
+		os.Remove(pidfilePath)
+		return nil
+	}
+	
+	// Try to kill the process
+	process, err := os.FindProcess(pid)
+	if err == nil {
+		// Send SIGTERM
+		err = process.Signal(syscall.SIGTERM)
+		if err == nil {
+			log.Printf("Killed stale process %d from %s", pid, pidfilePath)
+			// Give it a moment to exit cleanly
+			time.Sleep(100 * time.Millisecond)
+		}
+		// Try SIGKILL if needed
+		process.Signal(syscall.SIGKILL)
+	}
+	
+	// Remove PID file
+	if err := os.Remove(pidfilePath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("error removing PID file %s: %v", pidfilePath, err)
+	}
+	
+	return nil
+}
+
+// findAvailablePort finds an available port in the specified range
+func findAvailablePort(minPort, maxPort int) (int, error) {
+	for port := minPort; port <= maxPort; port++ {
+		// Try to listen on the port
+		listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+		if err == nil {
+			// Port is available
+			listener.Close()
+			return port, nil
+		}
+	}
+	return 0, fmt.Errorf("no available ports in range %d-%d", minPort, maxPort)
+}
+
+// getPidFilePath gets the PID file path from environment variables
+func getPidFilePath(envVars map[string]string) string {
+	if pidfile, ok := envVars["PIDFILE"]; ok {
+		return pidfile
+	}
+	return ""
+}
+
+// Cleanup stops all running Rails applications
+func (m *AppManager) Cleanup() {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	
+	log.Println("Cleaning up all Rails applications...")
+	
+	for path, app := range m.apps {
+		log.Printf("Stopping Rails app for %s", path)
+		
+		// Clean up PID file
+		pidfilePath := getPidFilePath(app.Location.EnvVars)
+		if pidfilePath != "" {
+			if err := os.Remove(pidfilePath); err != nil && !os.IsNotExist(err) {
+				log.Printf("Warning: Error removing PID file %s: %v", pidfilePath, err)
+			}
+		}
+		
+		if app.cancel != nil {
+			app.cancel()
+		}
+	}
+	
+	// Clear the apps map
+	m.apps = make(map[string]*RailsApp)
+	
+	// Give processes a moment to exit cleanly
+	time.Sleep(500 * time.Millisecond)
 }
 
 // BasicAuth represents HTTP basic authentication
@@ -237,6 +340,19 @@ func main() {
 	}
 
 	manager := NewAppManager(config)
+	
+	// Set up signal handling for graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	
+	// Start cleanup goroutine
+	go func() {
+		<-sigChan
+		log.Println("Received interrupt signal, cleaning up...")
+		manager.Cleanup()
+		os.Exit(0)
+	}()
+	
 	go manager.IdleChecker()
 
 	handler := CreateHandler(config, manager, auth)
@@ -717,7 +833,8 @@ func NewAppManager(config *Config) *AppManager {
 	return &AppManager{
 		apps:        make(map[string]*RailsApp),
 		config:      config,
-		nextPort:    startPort,
+		minPort:     startPort,
+		maxPort:     startPort + 100, // Allow up to 100 Rails apps
 		idleTimeout: idleTimeout,
 	}
 }
@@ -761,14 +878,20 @@ func (m *AppManager) GetOrStartApp(location *Location) (*RailsApp, error) {
 		}
 	}
 
+	// Find an available port
+	port, err := findAvailablePort(m.minPort, m.maxPort)
+	if err != nil {
+		m.mutex.Unlock()
+		return nil, fmt.Errorf("no available ports: %v", err)
+	}
+
 	// Start new app
 	app = &RailsApp{
 		Location:   location,
-		Port:       m.nextPort,
+		Port:       port,
 		LastAccess: time.Now(),
 		Starting:   true,
 	}
-	m.nextPort++
 	m.apps[key] = app
 	m.mutex.Unlock()
 
@@ -818,6 +941,14 @@ func (m *AppManager) startApp(app *RailsApp) {
 	
 	// Add port
 	env = append(env, fmt.Sprintf("PORT=%d", app.Port))
+
+	// Check for and clean up PID file before starting
+	pidfilePath := getPidFilePath(app.Location.EnvVars)
+	if pidfilePath != "" {
+		if err := cleanupPidFile(pidfilePath); err != nil {
+			log.Printf("Warning: Error cleaning up PID file for %s: %v", app.Location.Path, err)
+		}
+	}
 
 	// Change to Rails directory
 	railsDir := "/rails"
@@ -879,6 +1010,14 @@ func (m *AppManager) startApp(app *RailsApp) {
 	go func() {
 		cmd.Wait()
 		log.Printf("Rails app for %s on port %d exited", app.Location.Path, app.Port)
+		
+		// Clean up PID file when app exits
+		if pidfilePath != "" {
+			if err := os.Remove(pidfilePath); err != nil && !os.IsNotExist(err) {
+				log.Printf("Warning: Error removing PID file %s: %v", pidfilePath, err)
+			}
+		}
+		
 		// Remove from apps map when process exits
 		m.mutex.Lock()
 		delete(m.apps, app.Location.Path)
@@ -897,6 +1036,14 @@ func (m *AppManager) StopApp(path string) {
 	}
 
 	log.Printf("Stopping Rails app for %s", path)
+	
+	// Clean up PID file
+	pidfilePath := getPidFilePath(app.Location.EnvVars)
+	if pidfilePath != "" {
+		if err := os.Remove(pidfilePath); err != nil && !os.IsNotExist(err) {
+			log.Printf("Warning: Error removing PID file %s: %v", pidfilePath, err)
+		}
+	}
 	
 	if app.cancel != nil {
 		app.cancel()
@@ -925,6 +1072,7 @@ func (m *AppManager) IdleChecker() {
 		m.mutex.RUnlock()
 
 		for _, path := range toStop {
+			log.Printf("Stopping idle app: %s", path)
 			m.StopApp(path)
 		}
 	}
