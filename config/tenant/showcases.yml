@@ -527,6 +527,14 @@
     :name: Ottawa
     :region: bos
     :locale: en-CA
+  perth:
+    :name: Perth
+    :region: syd
+    :locale: en-AU
+    :events:
+      disco-showcase:
+        :name: DISCO Showcase
+        :date: 2025-08-30 - 2025-08-30
   pinehurst:
     :name: Pinehurst
     :region: iad
