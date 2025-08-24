@@ -98,6 +98,8 @@ type Location struct {
 	AppGroupName    string
 	EnvVars         map[string]string
 	BaseURI         string
+	MatchPattern    string  // Pattern for matching request paths (e.g., "*/cable")
+	StandaloneServer string  // If set, proxy to this server instead of Rails app
 }
 
 // RailsApp represents a running Rails application
@@ -181,6 +183,8 @@ type YAMLConfig struct {
 			Scope                     string            `yaml:"scope"`
 			Root                      string            `yaml:"root"`
 			Special                   bool              `yaml:"special"`
+			MatchPattern              string            `yaml:"match_pattern"`
+			StandaloneServer          string            `yaml:"standalone_server"`
 			Env                       map[string]string `yaml:"env"`
 			ForceMaxConcurrentRequests int              `yaml:"force_max_concurrent_requests"`
 		} `yaml:"tenants"`
@@ -591,6 +595,8 @@ func substituteVars(template string, tenant struct {
 	Scope                     string            `yaml:"scope"`
 	Root                      string            `yaml:"root"`
 	Special                   bool              `yaml:"special"`
+	MatchPattern              string            `yaml:"match_pattern"`
+	StandaloneServer          string            `yaml:"standalone_server"`
 	Env                       map[string]string `yaml:"env"`
 	ForceMaxConcurrentRequests int              `yaml:"force_max_concurrent_requests"`
 }) string {
@@ -676,9 +682,11 @@ func ParseYAML(content []byte) (*Config, error) {
 	// Convert tenant applications to locations
 	for _, tenant := range yamlConfig.Applications.Tenants {
 		location := &Location{
-			Path:         tenant.Path,
-			AppGroupName: tenant.Group,
-			EnvVars:      make(map[string]string),
+			Path:             tenant.Path,
+			AppGroupName:     tenant.Group,
+			EnvVars:          make(map[string]string),
+			MatchPattern:     tenant.MatchPattern,
+			StandaloneServer: tenant.StandaloneServer,
 		}
 		
 		// Copy tenant environment variables
@@ -1340,10 +1348,23 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth) http.Ha
 		var bestMatch *Location
 		bestMatchLen := 0
 		
-		for path, location := range config.Locations {
-			if strings.HasPrefix(r.URL.Path, path) && len(path) > bestMatchLen {
-				bestMatch = location
-				bestMatchLen = len(path)
+		// First, check for pattern matches
+		for _, location := range config.Locations {
+			if location.MatchPattern != "" {
+				if matched, _ := filepath.Match(location.MatchPattern, r.URL.Path); matched {
+					bestMatch = location
+					break  // Pattern matches take priority
+				}
+			}
+		}
+		
+		// If no pattern match, use prefix matching (existing logic)
+		if bestMatch == nil {
+			for path, location := range config.Locations {
+				if strings.HasPrefix(r.URL.Path, path) && len(path) > bestMatchLen {
+					bestMatch = location
+					bestMatchLen = len(path)
+				}
 			}
 		}
 
@@ -1356,6 +1377,18 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth) http.Ha
 				mux.ServeHTTP(w, r)
 				return
 			}
+		}
+
+		// Check if this should be routed to a standalone server
+		if bestMatch.StandaloneServer != "" {
+			target, err := url.Parse(fmt.Sprintf("http://%s", bestMatch.StandaloneServer))
+			if err != nil {
+				http.Error(w, "Invalid standalone server configuration", http.StatusInternalServerError)
+				return
+			}
+			proxy := httputil.NewSingleHostReverseProxy(target)
+			proxy.ServeHTTP(w, r)
+			return
 		}
 
 		// Get or start the Rails app

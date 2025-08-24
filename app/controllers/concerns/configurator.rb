@@ -319,13 +319,21 @@ module Configurator
     end
     
     # Add cable tenant (special case - no standard vars)
-    tenants << {
+    cable_config = {
       'name' => 'cable',
       'path' => "#{root}/cable",
       'group' => 'showcase-cable',
       'special' => true,
+      'match_pattern' => '*/cable',  # Match any path ending in /cable
       'force_max_concurrent_requests' => 0
     }
+    
+    # If standalone cable is enabled, add standalone server configuration
+    if ENV['START_CABLE'] == 'true'
+      cable_config['standalone_server'] = "localhost:#{ENV.fetch('CABLE_PORT', '28080')}"
+    end
+    
+    tenants << cable_config
     
     # Add publish tenant (special case - no standard vars)
     tenants << {
@@ -457,6 +465,22 @@ module Configurator
     # This can be customized based on your needs
     processes = []
     
+    # Add standalone Action Cable server if configured
+    if ENV['START_CABLE'] == 'true'
+      processes << {
+        'name' => 'action-cable',
+        'command' => 'bundle',
+        'args' => ['exec', 'puma', '-p', ENV.fetch('CABLE_PORT', '28080'), 'cable/config.ru'],
+        'working_dir' => Rails.root.to_s,
+        'env' => {
+          'RAILS_ENV' => Rails.env,
+          'RAILS_MAX_THREADS' => '10'  # Handle multiple concurrent WebSocket connections
+        },
+        'auto_restart' => true,
+        'start_delay' => 2  # Wait 2 seconds after Navigator starts
+      }
+    end
+    
     # Example: Add a Redis server if configured
     if ENV['START_REDIS'] == 'true'
       processes << {
@@ -481,7 +505,7 @@ module Configurator
           'RAILS_ENV' => Rails.env
         },
         'auto_restart' => true,
-        'start_delay' => 2  # Wait 2 seconds after Navigator starts
+        'start_delay' => 4  # Wait for cable server to start first
       }
     end
     
