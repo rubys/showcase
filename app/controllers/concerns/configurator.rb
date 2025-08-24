@@ -33,7 +33,8 @@ module Configurator
       'applications' => build_applications_config,
       'process' => build_process_config,
       'logging' => build_logging_config,
-      'health' => build_health_config
+      'health' => build_health_config,
+      'managed_processes' => build_managed_processes_config
     }
   end
 
@@ -449,5 +450,60 @@ module Configurator
   def load_studios
     showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
     showcases.values.map(&:keys).flatten.uniq.sort
+  end
+
+  def build_managed_processes_config
+    # Return an array of managed process configurations
+    # This can be customized based on your needs
+    processes = []
+    
+    # Example: Add a Redis server if configured
+    if ENV['START_REDIS'] == 'true'
+      processes << {
+        'name' => 'redis',
+        'command' => 'redis-server',
+        'args' => [],
+        'working_dir' => Rails.root.to_s,
+        'env' => {},
+        'auto_restart' => true,
+        'start_delay' => 0
+      }
+    end
+    
+    # Example: Add a background worker if configured
+    if ENV['START_WORKER'] == 'true'
+      processes << {
+        'name' => 'sidekiq',
+        'command' => 'bundle',
+        'args' => ['exec', 'sidekiq'],
+        'working_dir' => Rails.root.to_s,
+        'env' => {
+          'RAILS_ENV' => Rails.env
+        },
+        'auto_restart' => true,
+        'start_delay' => 2  # Wait 2 seconds after Navigator starts
+      }
+    end
+    
+    # Example: Add a custom monitoring script
+    if ENV['START_MONITOR'] == 'true'
+      processes << {
+        'name' => 'monitor',
+        'command' => Rails.root.join('bin', 'monitor').to_s,
+        'args' => [],
+        'working_dir' => Rails.root.to_s,
+        'env' => {
+          'RAILS_ENV' => Rails.env,
+          'MONITOR_PORT' => '8080'
+        },
+        'auto_restart' => true,
+        'start_delay' => 5  # Wait 5 seconds after Navigator starts
+      }
+    end
+    
+    # You can add more processes here as needed
+    # They will be started when Navigator starts and stopped when it exits
+    
+    processes
   end
 end

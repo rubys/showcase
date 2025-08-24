@@ -65,6 +65,15 @@ type Config struct {
 	StaticExts      []string       // File extensions to serve statically
 	TryFilesSuffixes []string      // Suffixes for try_files behavior
 	PublicDir       string         // Default public directory
+	ManagedProcesses []struct {    // Managed processes to start/stop with Navigator
+		Name        string            `yaml:"name"`
+		Command     string            `yaml:"command"`
+		Args        []string          `yaml:"args"`
+		WorkingDir  string            `yaml:"working_dir"`
+		Env         map[string]string `yaml:"env"`
+		AutoRestart bool              `yaml:"auto_restart"`
+		StartDelay  int               `yaml:"start_delay"`
+	}
 }
 
 // StaticDir represents a static directory mapping
@@ -195,6 +204,37 @@ type YAMLConfig struct {
 		Timeout  int    `yaml:"timeout"`
 		Interval int    `yaml:"interval"`
 	} `yaml:"health"`
+	
+	ManagedProcesses []struct {
+		Name        string            `yaml:"name"`
+		Command     string            `yaml:"command"`
+		Args        []string          `yaml:"args"`
+		WorkingDir  string            `yaml:"working_dir"`
+		Env         map[string]string `yaml:"env"`
+		AutoRestart bool              `yaml:"auto_restart"`
+		StartDelay  int               `yaml:"start_delay"`  // Delay in seconds before starting
+	} `yaml:"managed_processes"`
+}
+
+// ManagedProcess represents an external process managed by Navigator
+type ManagedProcess struct {
+	Name        string
+	Command     string
+	Args        []string
+	WorkingDir  string
+	Env         map[string]string
+	AutoRestart bool
+	StartDelay  time.Duration
+	Process     *exec.Cmd
+	Cancel      context.CancelFunc
+	mutex       sync.RWMutex
+}
+
+// ProcessManager manages external processes
+type ProcessManager struct {
+	processes []*ManagedProcess
+	mutex     sync.RWMutex
+	wg        sync.WaitGroup
 }
 
 // AppManager manages Rails application processes
@@ -306,6 +346,144 @@ func (m *AppManager) Cleanup() {
 	time.Sleep(500 * time.Millisecond)
 }
 
+// NewProcessManager creates a new process manager
+func NewProcessManager() *ProcessManager {
+	return &ProcessManager{
+		processes: make([]*ManagedProcess, 0),
+	}
+}
+
+// StartProcess starts a managed process
+func (pm *ProcessManager) StartProcess(mp *ManagedProcess) error {
+	pm.mutex.Lock()
+	defer pm.mutex.Unlock()
+	
+	// Add delay if specified
+	if mp.StartDelay > 0 {
+		log.Printf("Waiting %v before starting process %s", mp.StartDelay, mp.Name)
+		time.Sleep(mp.StartDelay)
+	}
+	
+	ctx, cancel := context.WithCancel(context.Background())
+	mp.Cancel = cancel
+	
+	// Create the command
+	cmd := exec.CommandContext(ctx, mp.Command, mp.Args...)
+	
+	if mp.WorkingDir != "" {
+		cmd.Dir = mp.WorkingDir
+	}
+	
+	// Set up environment
+	env := os.Environ()
+	for k, v := range mp.Env {
+		env = append(env, fmt.Sprintf("%s=%s", k, v))
+	}
+	cmd.Env = env
+	
+	// Set up output
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	
+	mp.Process = cmd
+	
+	log.Printf("Starting managed process '%s': %s %s", mp.Name, mp.Command, strings.Join(mp.Args, " "))
+	
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start process %s: %v", mp.Name, err)
+	}
+	
+	// Monitor the process
+	pm.wg.Add(1)
+	go func() {
+		defer pm.wg.Done()
+		err := cmd.Wait()
+		
+		mp.mutex.Lock()
+		shouldRestart := mp.AutoRestart
+		mp.mutex.Unlock()
+		
+		if err != nil {
+			log.Printf("Process '%s' exited with error: %v", mp.Name, err)
+		} else {
+			log.Printf("Process '%s' exited normally", mp.Name)
+		}
+		
+		// Auto-restart if configured
+		if shouldRestart && err != nil {
+			log.Printf("Auto-restarting process '%s' in 5 seconds", mp.Name)
+			time.Sleep(5 * time.Second)
+			if err := pm.StartProcess(mp); err != nil {
+				log.Printf("Failed to restart process '%s': %v", mp.Name, err)
+			}
+		}
+	}()
+	
+	pm.processes = append(pm.processes, mp)
+	return nil
+}
+
+// StartAll starts all configured processes
+func (pm *ProcessManager) StartAll(processes []struct {
+	Name        string            `yaml:"name"`
+	Command     string            `yaml:"command"`
+	Args        []string          `yaml:"args"`
+	WorkingDir  string            `yaml:"working_dir"`
+	Env         map[string]string `yaml:"env"`
+	AutoRestart bool              `yaml:"auto_restart"`
+	StartDelay  int               `yaml:"start_delay"`
+}) {
+	for _, proc := range processes {
+		mp := &ManagedProcess{
+			Name:        proc.Name,
+			Command:     proc.Command,
+			Args:        proc.Args,
+			WorkingDir:  proc.WorkingDir,
+			Env:         proc.Env,
+			AutoRestart: proc.AutoRestart,
+			StartDelay:  time.Duration(proc.StartDelay) * time.Second,
+		}
+		
+		if err := pm.StartProcess(mp); err != nil {
+			log.Printf("Failed to start process '%s': %v", proc.Name, err)
+		}
+	}
+}
+
+// StopAll stops all managed processes
+func (pm *ProcessManager) StopAll() {
+	pm.mutex.Lock()
+	defer pm.mutex.Unlock()
+	
+	log.Println("Stopping all managed processes...")
+	
+	for _, mp := range pm.processes {
+		if mp.Cancel != nil {
+			log.Printf("Stopping process '%s'", mp.Name)
+			mp.Cancel()
+		}
+	}
+	
+	// Wait for all processes to finish with timeout
+	done := make(chan struct{})
+	go func() {
+		pm.wg.Wait()
+		close(done)
+	}()
+	
+	select {
+	case <-done:
+		log.Println("All managed processes stopped")
+	case <-time.After(10 * time.Second):
+		log.Println("Timeout waiting for processes to stop, forcing shutdown")
+		for _, mp := range pm.processes {
+			if mp.Process != nil && mp.Process.Process != nil {
+				mp.Process.Process.Kill()
+			}
+		}
+	}
+}
+
 // BasicAuth represents HTTP basic authentication
 type BasicAuth struct {
 	File    *htpasswd.File
@@ -341,6 +519,13 @@ func main() {
 
 	manager := NewAppManager(config)
 	
+	// Create and start process manager for managed processes
+	processManager := NewProcessManager()
+	if len(config.ManagedProcesses) > 0 {
+		log.Printf("Starting %d managed processes", len(config.ManagedProcesses))
+		processManager.StartAll(config.ManagedProcesses)
+	}
+	
 	// Set up signal handling for graceful shutdown
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
@@ -349,7 +534,8 @@ func main() {
 	go func() {
 		<-sigChan
 		log.Println("Received interrupt signal, cleaning up...")
-		manager.Cleanup()
+		manager.Cleanup()          // Stop Rails apps first
+		processManager.StopAll()  // Then stop managed processes
 		os.Exit(0)
 	}()
 	
@@ -569,6 +755,9 @@ func ParseYAML(content []byte) (*Config, error) {
 			config.TryFilesSuffixes = []string{".html", ".htm", ".txt", ".xml", ".json"}
 		}
 	}
+	
+	// Set managed processes
+	config.ManagedProcesses = yamlConfig.ManagedProcesses
 	
 	return config, nil
 }
