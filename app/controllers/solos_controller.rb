@@ -34,9 +34,12 @@ class SolosController < ApplicationController
     
     respond_to do |format|
       format.html
-      format.zip { send_data generate_offline_package, 
-                             filename: "dj-playlist-#{Event.current.name.parameterize}.zip",
-                             type: 'application/zip' }
+      format.zip { 
+        headers['Content-Disposition'] = "attachment; filename=\"dj-playlist-#{Event.current.name.parameterize}.zip\""
+        headers['Content-Type'] = 'application/zip'
+        headers.delete('Content-Length') # Let Rack calculate it from the stream
+        self.response_body = generate_offline_package_stream
+      }
     end
   end
 
@@ -500,36 +503,76 @@ class SolosController < ApplicationController
       params.require(:solo).permit(:heat_id, :combo_dance_id, :order, :song, :artist, :song_file)
     end
     
-    def generate_offline_package
+    def generate_offline_package_stream
       require 'zip'
       require 'base64'
+      require 'tempfile'
       
-      html_content = render_to_string(template: 'solos/offline_djlist', layout: false, formats: [:html])
-      
-      # Create a zip file in memory
-      Zip::OutputStream.write_buffer do |zip|
-        # Add the HTML file
-        zip.put_next_entry("dj-playlist.html")
-        zip.write(html_content)
+      Enumerator.new do |yielder|
+        # Create a temporary file for the ZIP
+        tempfile = Tempfile.new(['dj-playlist', '.zip'])
+        tempfile.binmode
         
-        # Add a README file
-        zip.put_next_entry("README.txt")
-        zip.write(<<~README)
-          DJ Playlist - Offline Version
-          ==============================
+        begin
+          # Create the ZIP file
+          Zip::OutputStream.open(tempfile.path) do |zip|
+            # Add the HTML file
+            zip.put_next_entry("dj-playlist.html")
+            
+            # Create a custom output buffer that writes directly to the ZIP
+            zip_writer = ZipWriterAdapter.new(zip)
+            
+            # Use ActionView's streaming to render directly to the ZIP
+            render_to_stream(zip_writer)
+            
+            # Add a README file
+            zip.put_next_entry("README.txt")
+            zip.write(render_to_string(partial: 'solos/offline_readme', formats: [:text], locals: { event: Event.current }))
+          end
           
-          This package contains an offline version of the DJ playlist for #{Event.current.name}.
-          
-          To use:
-          1. Extract this ZIP file to a folder on your computer
-          2. Open the 'dj-playlist.html' file in your web browser (Safari, Chrome, Firefox, or Edge)
-          3. All audio files are embedded in the HTML for offline playback
-          
-          Note: The audio files are embedded as base64 data, so the HTML file will be large.
-          This ensures complete offline functionality without requiring separate audio files.
-          
-          Generated on: #{Time.current.strftime('%Y-%m-%d %H:%M')}
-        README
-      end.string
+          # Stream the file contents in chunks
+          File.open(tempfile.path, 'rb') do |file|
+            while (chunk = file.read(65536))  # 64KB chunks
+              yielder << chunk
+            end
+          end
+        ensure
+          # Clean up the temporary file
+          tempfile.close
+          tempfile.unlink
+        end
+      end
     end
+    
+    # Adapter class to make ZIP output work with ActionView streaming
+    class ZipWriterAdapter
+      def initialize(zip)
+        @zip = zip
+      end
+      
+      def write(data)
+        @zip.write(data)
+        data.bytesize
+      end
+      
+      def <<(data)
+        write(data)
+        self
+      end
+    end
+    
+    def render_to_stream(output)
+      # Render and write the header
+      output.write(render_to_string(partial: 'solos/offline_header', formats: [:html], locals: { event: Event.current }))
+      
+      # Render and write each heat row individually to avoid loading all rows into memory at once
+      @heats.each do |heat|
+        next if heat.number <= 0
+        output.write(render_to_string(partial: 'solos/offline_heat_row', formats: [:html], locals: { heat: heat }))
+      end
+      
+      # Render and write the footer
+      output.write(render_to_string(partial: 'solos/offline_footer', formats: [:html]))
+    end
+    
   end

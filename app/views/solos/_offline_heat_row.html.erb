@@ -1,0 +1,52 @@
+<tr>
+  <td class="heat-number"><%= heat.number %></td>
+  <td class="dance-info">
+    <div class="dance-name">
+      <% if heat.category == 'Solo' && heat.solo.combo_dance %>
+        <%= heat.dance.name %> / <%= heat.solo.combo_dance.name %>
+      <% else %>
+        <%= heat.dance.name %>
+      <% end %>
+    </div>
+    <% if heat.solo.song.present? || heat.solo.artist.present? %>
+      <div class="song-info">
+        <%= heat.solo.song if heat.solo.song.present? %>
+        <%= heat.solo.artist if heat.solo.artist.present? %>
+      </div>
+    <% end %>
+  </td>
+  <td>
+    <% if heat.solo.song_file.attached? %>
+      <% begin %>
+        <% blob = heat.solo.song_file.blob %>
+        <% audio_data = blob.download %>
+        <% base64_audio = Base64.strict_encode64(audio_data) %>
+        <audio controls>
+          <source src="data:<%= blob.content_type %>;base64,<%= base64_audio %>" type="<%= blob.content_type %>">
+          Your browser does not support the audio element.
+        </audio>
+      <% rescue => e %>
+        <div class="no-audio">Error loading audio</div>
+      <% end %>
+    <% else %>
+      <div class="no-audio">No audio file</div>
+    <% end %>
+  </td>
+  <td class="participant">
+    <%= heat.lead.display_name %>
+    <% heat.solo.formations.each_with_index do |formation, index| %>
+      <% if index % 2 == 0 && formation.on_floor %>
+        <br><%= formation.person.display_name %>
+      <% end %>
+    <% end %>
+  </td>
+  <td class="participant">
+    <%= heat.follow.display_name %>
+    <% heat.solo.formations.each_with_index do |formation, index| %>
+      <% if index % 2 == 1 && formation.on_floor %>
+        <br><%= formation.person.display_name %>
+      <% end %>
+    <% end %>
+  </td>
+  <td class="studio"><%= heat.studio.name %></td>
+</tr>
