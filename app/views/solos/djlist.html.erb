@@ -42,6 +42,9 @@
 
   <div class="flex justify-between items-center">
     <h1 class="mx-auto font-bold text-4xl">Solos</h1>
+    <%= link_to "Download Offline Version", djlist_solos_path(format: :zip), 
+                class: "ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600",
+                title: "Download a self-contained HTML file with embedded audio for offline playback" %>
   </div>
 
   <div class="min-w-full">

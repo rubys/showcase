@@ -31,6 +31,13 @@ class SolosController < ApplicationController
     index
 
     @heats = @solos.map {|solo| solo.last}.flatten.sort_by {|heat| heat.number}
+    
+    respond_to do |format|
+      format.html
+      format.zip { send_data generate_offline_package, 
+                             filename: "dj-playlist-#{Event.current.name.parameterize}.zip",
+                             type: 'application/zip' }
+    end
   end
 
   # GET /solos/1 or /solos/1.json
@@ -491,5 +498,38 @@ class SolosController < ApplicationController
     # Only allow a list of trusted parameters through.
     def solo_params
       params.require(:solo).permit(:heat_id, :combo_dance_id, :order, :song, :artist, :song_file)
+    end
+    
+    def generate_offline_package
+      require 'zip'
+      require 'base64'
+      
+      html_content = render_to_string(template: 'solos/offline_djlist', layout: false, formats: [:html])
+      
+      # Create a zip file in memory
+      Zip::OutputStream.write_buffer do |zip|
+        # Add the HTML file
+        zip.put_next_entry("dj-playlist.html")
+        zip.write(html_content)
+        
+        # Add a README file
+        zip.put_next_entry("README.txt")
+        zip.write(<<~README)
+          DJ Playlist - Offline Version
+          ==============================
+          
+          This package contains an offline version of the DJ playlist for #{Event.current.name}.
+          
+          To use:
+          1. Extract this ZIP file to a folder on your computer
+          2. Open the 'dj-playlist.html' file in your web browser (Safari, Chrome, Firefox, or Edge)
+          3. All audio files are embedded in the HTML for offline playback
+          
+          Note: The audio files are embedded as base64 data, so the HTML file will be large.
+          This ensures complete offline functionality without requiring separate audio files.
+          
+          Generated on: #{Time.current.strftime('%Y-%m-%d %H:%M')}
+        README
+      end.string
     end
   end
