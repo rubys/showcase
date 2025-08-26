@@ -477,7 +477,9 @@ class HeatsController < ApplicationController
         @heat.category = params[:heat][:category]
         count = 0
 
-        dance_limit = Dance.find(@heat.dance_id)&.limit || dance_limit
+        dance = Dance.find(@heat.dance_id)
+        # Override limit to 1 for semi_finals dances
+        effective_limit = dance&.semi_finals ? 1 : (dance&.limit || dance_limit)
 
         entry = @heat.entry
       
@@ -487,8 +489,9 @@ class HeatsController < ApplicationController
         entries = Entry.where(lead_id: entry.lead_id).or(Entry.where(follow_id: entry.lead_id)).pluck(:id)
         count = [count, Heat.where(entry_id: entries, dance_id: @heat.dance_id, category: @heat.category).count].max
 
-        if count >= dance_limit
-          @heat.errors.add(:dance_id, "limit of #{dance_limit} reached for this category.")
+        if count >= effective_limit
+          limit_text = dance&.semi_finals ? "1 (scrutineering)" : effective_limit.to_s
+          @heat.errors.add(:dance_id, "limit of #{limit_text} reached for this category.")
         end
       end
     end

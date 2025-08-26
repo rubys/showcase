@@ -399,9 +399,12 @@ class EntriesController < ApplicationController
 
           if wants != was
             if dance_limit
-              if wants > was and (counts[[dance.id, category]] || 0) + wants > (dance.limit || dance_limit)
+              # Override limit to 1 for semi_finals dances
+              effective_limit = dance.semi_finals ? 1 : (dance.limit || dance_limit)
+              if wants > was and (counts[[dance.id, category]] || 0) + wants > effective_limit
+                limit_text = dance.semi_finals ? "1 (scrutineering)" : effective_limit.to_s
                 @entry.errors.add(:base, :dance_limit_exceeded,
-                  message: "#{dance.name} #{category} heats are limited to #{dance_limit}.")
+                  message: "#{dance.name} #{category} heats are limited to #{limit_text}.")
                 @entries[category][dance.id] = [Heat.new(number: 9999)] * wants
                 next
               elsif @entry.errors.any?
