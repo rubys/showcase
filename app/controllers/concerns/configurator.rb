@@ -388,6 +388,26 @@ module Configurator
       env['GEM_PATH'] = ENV['GEM_PATH']
     end
     
+    # Pass through AWS/Tigris configuration for Active Storage
+    if ENV['AWS_ACCESS_KEY_ID']
+      env['AWS_ACCESS_KEY_ID'] = ENV['AWS_ACCESS_KEY_ID']
+    end
+    
+    if ENV['AWS_SECRET_ACCESS_KEY']
+      env['AWS_SECRET_ACCESS_KEY'] = ENV['AWS_SECRET_ACCESS_KEY']
+    end
+    
+    if ENV['AWS_ENDPOINT_URL_S3']
+      env['AWS_ENDPOINT_URL_S3'] = ENV['AWS_ENDPOINT_URL_S3']
+    end
+    
+    if ENV['BUCKET_NAME']
+      env['BUCKET_NAME'] = ENV['BUCKET_NAME']
+    end
+    
+    # Default AWS_REGION if not set (required for S3 SDK)
+    env['AWS_REGION'] = ENV.fetch('AWS_REGION', 'auto')
+    
     if ENV['FLY_REGION']
       env['PAPERSIZE'] = determine_papersize
     end
