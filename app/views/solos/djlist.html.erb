@@ -40,8 +40,31 @@
     </ul>
   </div>
 
-  <div class="flex justify-between items-center">
+  <div class="flex justify-between items-center" data-controller="offline-playlist">
     <h1 class="mx-auto font-bold text-4xl">Solos</h1>
+    <div class="ml-4">
+      <button data-offline-playlist-target="button"
+              data-action="click->offline-playlist#generate"
+              class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              title="Generate and download a self-contained HTML file with embedded audio for offline playback">
+        Prepare Offline Version
+      </button>
+      
+      <div data-offline-playlist-target="progress" class="hidden">
+        <div class="mb-2 mt-4">
+          <div class="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
+            <div data-offline-playlist-target="progressBar" 
+                 class="bg-blue-500 h-full text-xs font-medium text-white text-center p-0.5 leading-5 transition-all duration-300"
+                 style="width: 0%">
+              0%
+            </div>
+          </div>
+        </div>
+        <p data-offline-playlist-target="message" class="text-sm text-gray-600">
+          Preparing download...
+        </p>
+      </div>
+    </div>
   </div>
 
   <div class="min-w-full">

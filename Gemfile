@@ -109,3 +109,5 @@ gem "logger", "~> 1.6"
 gem "aws-sdk-s3", "~> 1.176"
 
 gem "geocoder", "~> 1.8"
+
+gem "rubyzip", "~> 2.3"

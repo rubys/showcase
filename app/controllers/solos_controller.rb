@@ -31,6 +31,57 @@ class SolosController < ApplicationController
     index
 
     @heats = @solos.map {|solo| solo.last}.flatten.sort_by {|heat| heat.number}
+    
+    respond_to do |format|
+      format.html
+      format.json {
+        user_id = SecureRandom.hex(8)
+        OfflinePlaylistJob.perform_later(Event.current.id, user_id)
+        render json: { user_id: user_id, status: 'initiated' }
+      }
+      format.zip { 
+        cache_key = params[:cache_key]
+        cached_data = Rails.cache.read(cache_key) if cache_key
+        
+        if cached_data && cached_data[:file_path] && File.exist?(cached_data[:file_path])
+          # Don't delete the file immediately - let it be cleaned up by the 2-hour safety net
+          # This ensures the file is available for the full download
+          
+          # Get file size for Content-Length header (needed for browser download progress)
+          file_size = File.size(cached_data[:file_path])
+          
+          # Set headers to ensure proper download behavior
+          response.headers['Content-Length'] = file_size.to_s
+          response.headers['Content-Type'] = 'application/zip'
+          response.headers['Content-Disposition'] = "attachment; filename=\"#{cached_data[:filename]}\""
+          response.headers['Cache-Control'] = 'no-cache, no-store'
+          response.headers['Accept-Ranges'] = 'bytes'  # Enable range requests
+          
+          # Stream the file directly
+          send_file cached_data[:file_path], 
+                    filename: cached_data[:filename],
+                    type: 'application/zip',
+                    disposition: 'attachment',
+                    stream: true,         # Enable streaming
+                    buffer_size: 65536   # 64KB chunks
+        else
+          Rails.logger.warn "Download failed - cache_key: #{cache_key}, cached_data: #{cached_data.inspect}, file_exists: #{cached_data && cached_data[:file_path] ? File.exist?(cached_data[:file_path]) : 'N/A'}"
+          render plain: "Download link has expired or file not found. Please generate a new download.", status: :not_found
+        end
+      }
+    end
+  end
+
+  def cleanup_cache
+    cache_key = params[:cache_key]
+    if cache_key
+      cached_data = Rails.cache.read(cache_key)
+      if cached_data && cached_data[:file_path] && File.exist?(cached_data[:file_path])
+        File.delete(cached_data[:file_path]) rescue nil
+      end
+      Rails.cache.delete(cache_key)
+    end
+    head :ok
   end
 
   # GET /solos/1 or /solos/1.json

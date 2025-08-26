@@ -229,6 +229,7 @@ Rails.application.routes.draw do
 
     resources :solos do
       get 'djlist', on: :collection
+      post 'djlist/cleanup_cache', to: 'solos#cleanup_cache', on: :collection
       post 'drop', on: :collection
       post 'sort_level', on: :collection
       post 'sort_gap', on: :collection
