@@ -166,6 +166,8 @@ module Configurator
     # Add rewrites
     if root != ''
       routes['rewrites'] << { 'from' => '^/assets/(.*)', 'to' => "#{root}/assets/$1" }
+      # Add rewrite for root-level static files (images, etc.)
+      routes['rewrites'] << { 'from' => '^/(.*\.(gif|png|jpg|jpeg|ico|pdf|svg|webp))$', 'to' => "#{root}/$1" }
     end
     
     # Add proxy routes for remote services
@@ -192,14 +194,24 @@ module Configurator
 
   def build_static_config
     root = determine_root_path
+    directories = [
+      { 'path' => "#{root}/assets/", 'root' => 'assets/', 'cache' => 86400 },
+      { 'path' => "#{root}/docs/", 'root' => 'docs/' },
+      { 'path' => "#{root}/fonts/", 'root' => 'fonts/' },
+      { 'path' => "#{root}/regions/", 'root' => 'regions/' },
+      { 'path' => "#{root}/studios/", 'root' => 'studios/' }
+    ]
+    
+    # Add root path for serving root-level static files (e.g., /arthur-murray-logo.gif)
+    # This allows files directly in public/ to be served
+    if root != ''
+      directories << { 'path' => "#{root}/", 'root' => '.', 'cache' => 86400 }
+    else
+      directories << { 'path' => "/", 'root' => '.', 'cache' => 86400 }
+    end
+    
     {
-      'directories' => [
-        { 'path' => "#{root}/assets/", 'root' => 'assets/', 'cache' => 86400 },
-        { 'path' => "#{root}/docs/", 'root' => 'docs/' },
-        { 'path' => "#{root}/fonts/", 'root' => 'fonts/' },
-        { 'path' => "#{root}/regions/", 'root' => 'regions/' },
-        { 'path' => "#{root}/studios/", 'root' => 'studios/' }
-      ],
+      'directories' => directories,
       'extensions' => %w[html htm txt xml json css js png jpg gif pdf xlsx],
       'try_files' => {
         'enabled' => true,
