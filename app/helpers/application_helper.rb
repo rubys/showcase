@@ -22,10 +22,13 @@ module ApplicationHelper
     scheme = (request.env['HTTP_X_FORWARDED_PROTO'] || request.env["rack.url_scheme"] || '').split(',').last
     return '' if scheme.blank?
     host = request.env['HTTP_X_FORWARDED_HOST'] || request.env["HTTP_HOST"]
-    scope = request.env['RAILS_APP_SCOPE']
-    root = request.env['RAILS_RELATIVE_URL_ROOT']
+    # Check both request.env and ENV for RAILS_APP_SCOPE
+    scope = request.env['RAILS_APP_SCOPE'] || ENV['RAILS_APP_SCOPE']
+    root = request.env['RAILS_RELATIVE_URL_ROOT'] || ENV['RAILS_RELATIVE_URL_ROOT']
 
-    if ENV['FLY_REGION'] and scope
+    # Use scope in cable URL when available, not just on Fly
+    # This ensures WebSocket connections work correctly with navigator
+    if scope.present?
       websocket = "#{scheme.sub('http', 'ws')}://#{host}#{root}/#{scope}/cable"
     else
       websocket = "#{scheme.sub('http', 'ws')}://#{host}#{root}/cable"
