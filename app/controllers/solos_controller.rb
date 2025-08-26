@@ -34,13 +34,54 @@ class SolosController < ApplicationController
     
     respond_to do |format|
       format.html
+      format.json {
+        user_id = SecureRandom.hex(8)
+        OfflinePlaylistJob.perform_later(Event.current.id, user_id)
+        render json: { user_id: user_id, status: 'initiated' }
+      }
       format.zip { 
-        headers['Content-Disposition'] = "attachment; filename=\"dj-playlist-#{Event.current.name.parameterize}.zip\""
-        headers['Content-Type'] = 'application/zip'
-        headers.delete('Content-Length') # Let Rack calculate it from the stream
-        self.response_body = generate_offline_package_stream
+        cache_key = params[:cache_key]
+        cached_data = Rails.cache.read(cache_key) if cache_key
+        
+        if cached_data && cached_data[:file_path] && File.exist?(cached_data[:file_path])
+          # Don't delete the file immediately - let it be cleaned up by the 2-hour safety net
+          # This ensures the file is available for the full download
+          
+          # Get file size for Content-Length header (needed for browser download progress)
+          file_size = File.size(cached_data[:file_path])
+          
+          # Set headers to ensure proper download behavior
+          response.headers['Content-Length'] = file_size.to_s
+          response.headers['Content-Type'] = 'application/zip'
+          response.headers['Content-Disposition'] = "attachment; filename=\"#{cached_data[:filename]}\""
+          response.headers['Cache-Control'] = 'no-cache, no-store'
+          response.headers['Accept-Ranges'] = 'bytes'  # Enable range requests
+          
+          # Stream the file directly
+          send_file cached_data[:file_path], 
+                    filename: cached_data[:filename],
+                    type: 'application/zip',
+                    disposition: 'attachment',
+                    stream: true,         # Enable streaming
+                    buffer_size: 65536   # 64KB chunks
+        else
+          Rails.logger.warn "Download failed - cache_key: #{cache_key}, cached_data: #{cached_data.inspect}, file_exists: #{cached_data && cached_data[:file_path] ? File.exist?(cached_data[:file_path]) : 'N/A'}"
+          render plain: "Download link has expired or file not found. Please generate a new download.", status: :not_found
+        end
       }
     end
+  end
+
+  def cleanup_cache
+    cache_key = params[:cache_key]
+    if cache_key
+      cached_data = Rails.cache.read(cache_key)
+      if cached_data && cached_data[:file_path] && File.exist?(cached_data[:file_path])
+        File.delete(cached_data[:file_path]) rescue nil
+      end
+      Rails.cache.delete(cache_key)
+    end
+    head :ok
   end
 
   # GET /solos/1 or /solos/1.json
@@ -502,77 +543,4 @@ class SolosController < ApplicationController
     def solo_params
       params.require(:solo).permit(:heat_id, :combo_dance_id, :order, :song, :artist, :song_file)
     end
-    
-    def generate_offline_package_stream
-      require 'zip'
-      require 'base64'
-      require 'tempfile'
-      
-      Enumerator.new do |yielder|
-        # Create a temporary file for the ZIP
-        tempfile = Tempfile.new(['dj-playlist', '.zip'])
-        tempfile.binmode
-        
-        begin
-          # Create the ZIP file
-          Zip::OutputStream.open(tempfile.path) do |zip|
-            # Add the HTML file
-            zip.put_next_entry("dj-playlist.html")
-            
-            # Create a custom output buffer that writes directly to the ZIP
-            zip_writer = ZipWriterAdapter.new(zip)
-            
-            # Use ActionView's streaming to render directly to the ZIP
-            render_to_stream(zip_writer)
-            
-            # Add a README file
-            zip.put_next_entry("README.txt")
-            zip.write(render_to_string(partial: 'solos/offline_readme', formats: [:text], locals: { event: Event.current }))
-          end
-          
-          # Stream the file contents in chunks
-          File.open(tempfile.path, 'rb') do |file|
-            while (chunk = file.read(65536))  # 64KB chunks
-              yielder << chunk
-            end
-          end
-        ensure
-          # Clean up the temporary file
-          tempfile.close
-          tempfile.unlink
-        end
-      end
-    end
-    
-    # Adapter class to make ZIP output work with ActionView streaming
-    class ZipWriterAdapter
-      def initialize(zip)
-        @zip = zip
-      end
-      
-      def write(data)
-        @zip.write(data)
-        data.bytesize
-      end
-      
-      def <<(data)
-        write(data)
-        self
-      end
-    end
-    
-    def render_to_stream(output)
-      # Render and write the header
-      output.write(render_to_string(partial: 'solos/offline_header', formats: [:html], locals: { event: Event.current }))
-      
-      # Render and write each heat row individually to avoid loading all rows into memory at once
-      @heats.each do |heat|
-        next if heat.number <= 0
-        output.write(render_to_string(partial: 'solos/offline_heat_row', formats: [:html], locals: { heat: heat }))
-      end
-      
-      # Render and write the footer
-      output.write(render_to_string(partial: 'solos/offline_footer', formats: [:html]))
-    end
-    
   end
