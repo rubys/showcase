@@ -167,7 +167,10 @@ module Configurator
     if root != ''
       routes['rewrites'] << { 'from' => '^/assets/(.*)', 'to' => "#{root}/assets/$1" }
       # Add rewrite for root-level static files (images, etc.)
-      routes['rewrites'] << { 'from' => '^/(.*\.(gif|png|jpg|jpeg|ico|pdf|svg|webp))$', 'to' => "#{root}/$1" }
+      # Match files that don't already have the showcase prefix
+      # Go regexp doesn't support negative lookahead, so we'll use a simpler pattern
+      # that just matches root-level image files
+      routes['rewrites'] << { 'from' => '^/([^/]+\.(gif|png|jpg|jpeg|ico|pdf|svg|webp))$', 'to' => "#{root}/$1" }
     end
     
     # Add proxy routes for remote services
