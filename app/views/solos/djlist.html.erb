@@ -18,6 +18,15 @@
     <li class="text-xl mb-4 text-center">Having Trouble?</li>
     <ul class="list-disc ml-4">
     <li>Refresh the page; there may have been wifi issues.</li>
+    <li>Consider downloading an offline version of the playlist. This is a multi-step process:
+      <ol class="list-decimal ml-4">
+        <li>Click the "Prepare Offline Version" button.</li>
+        <li>Wait for the preparation to complete.</li>
+        <li>Download the generated ZIP file.</li>
+        <li>Open the ZIP file and examine its contents.</li>
+        <li>Open the HTML file in a web browser to play the audio files locally.</li>
+      </ol>
+    </li>
     <li>Try a different browser.  Safari, Chrome, Firefox, and Edge all support different audio formats.</li>
     <li>Try a different site:
     <ul class="mt-2 list-disc ml-4">
@@ -100,7 +109,10 @@
          </audio>
        </td>
        <% else %>
-       <td class="bg-red-200">
+       <td>
+         <div class="bg-red-50 text-red-700 px-3 py-2 rounded text-center">
+           No audio file
+         </div>
        </td>
        <% end %>
        <td class="row"><%= link_to heat.lead.display_name, polymorphic_path(heat.lead, anchor: 'heats') %>

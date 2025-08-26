@@ -109,6 +109,8 @@ class OfflinePlaylistJob < ApplicationJob
     zip_stream.write(render_partial('solos/offline_header', event: event))
     
     processed = 0
+    last_broadcast_time = Time.current
+    
     heats.each do |heat|
       next if heat.number <= 0
       
@@ -118,7 +120,9 @@ class OfflinePlaylistJob < ApplicationJob
       processed += 1
       progress = (processed.to_f / total_heats * 100).to_i
       
-      if processed % 5 == 0 || processed == total_heats
+      # Broadcast if a second or more has elapsed since last broadcast, or if we're done
+      current_time = Time.current
+      if (current_time - last_broadcast_time) >= 1.0 || processed == total_heats
         ActionCable.server.broadcast(
           "offline_playlist_#{user_id}",
           { 
@@ -127,6 +131,7 @@ class OfflinePlaylistJob < ApplicationJob
             message: "Processing heat #{processed} of #{total_heats}..."
           }
         )
+        last_broadcast_time = current_time
       end
     end
     
