@@ -26,6 +26,6 @@ if [ -f "$input_file" ] && [ -n "$FLY_REGION" ]; then
   fi
 fi
 
-if [ -n "$FLY_REGION" ]; then
+if [ -n "$FLY_REGION" ] && [ "$FLY_APP_NAME" == "smooth" ]; then
   sleep infinity
 fi

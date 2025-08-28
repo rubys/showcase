@@ -48,6 +48,20 @@ RUN ls /usr/local/bin && bundle exec bootsnap precompile app/ lib/
 RUN SECRET_KEY_BASE=DUMMY ./bin/rails assets:precompile
 
 
+# Build Navigator
+FROM golang:bookworm AS build-nav
+
+# Copy Go modules
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY cmd ./cmd
+
+# Build navigator
+RUN go build -mod=readonly -o /usr/local/bin/navigator ./cmd/navigator
+
+
 # Final stage for app image
 FROM base
 
@@ -58,12 +72,7 @@ RUN apt-get install --no-install-recommends -y dnsutils poppler-utils procps red
 # Copy built artifacts: gems, application
 COPY --from=build /usr/local/bundle /usr/local/bundle
 COPY --from=build /rails /rails
-
-# Download and unpack the latest navigator-linux-amd64.tar.gz into /usr/local/bin
-RUN curl -sSL $(curl -s https://api.github.com/repos/rubys/navigator/releases/latest | grep browser_download_url | grep navigator-linux-amd64.tar.gz | cut -d '"' -f 4) \
-    | tar xz -C /usr/local/bin \
-    && mv /usr/local/bin/navigator-linux-amd64 /usr/local/bin/navigator \
-    && chmod +x /usr/local/bin/navigator
+COPY --from=build-nav /usr/local/bin/navigator /usr/local/bin/
 
 # Run and own only the runtime files as a non-root user for security
 RUN useradd rails --create-home --shell /bin/bash && \
@@ -91,4 +100,4 @@ ENV DATABASE_URL="sqlite3:///data/production.sqlite3" \
 # Start navigator
 EXPOSE 3000
 VOLUME /data
-CMD [ "/usr/local/bin/navigator", "serve" ]
+CMD [ "/usr/local/bin/navigator" ]
