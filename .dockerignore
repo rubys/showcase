@@ -60,3 +60,7 @@ public/studios/
 
 config/storage/production.yml
 flat-storage
+
+# Navigator Go project
+/bin/navigator
+/config/navigator.yml

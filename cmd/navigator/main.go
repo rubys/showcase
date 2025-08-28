@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -320,6 +321,32 @@ func getPidFilePath(envVars map[string]string) string {
 	return ""
 }
 
+// UpdateConfig updates the AppManager configuration after a reload
+func (m *AppManager) UpdateConfig(newConfig *Config) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	
+	m.config = newConfig
+	
+	// Update idle timeout if changed
+	idleTimeout := newConfig.IdleTimeout
+	if idleTimeout == 0 {
+		idleTimeout = 10 * time.Minute
+	}
+	m.idleTimeout = idleTimeout
+	
+	// Update port range if changed
+	startPort := newConfig.StartPort
+	if startPort == 0 {
+		startPort = 4000
+	}
+	m.minPort = startPort
+	m.maxPort = startPort + 100
+	
+	log.Printf("Updated AppManager configuration: idle timeout=%v, port range=%d-%d", 
+		m.idleTimeout, m.minPort, m.maxPort)
+}
+
 // Cleanup stops all running Rails applications
 func (m *AppManager) Cleanup() {
 	m.mutex.Lock()
@@ -497,11 +524,121 @@ type BasicAuth struct {
 
 // Placeholder for removed APR1 implementation - now handled by go-htpasswd library
 
+const navigatorPIDFile = "/tmp/navigator.pid"
+
+// writePIDFile writes the current process PID to a file
+func writePIDFile() error {
+	pid := os.Getpid()
+	return os.WriteFile(navigatorPIDFile, []byte(strconv.Itoa(pid)), 0644)
+}
+
+// removePIDFile removes the PID file
+func removePIDFile() {
+	os.Remove(navigatorPIDFile)
+}
+
+// sendReloadSignal sends a HUP signal to the running navigator process
+func sendReloadSignal() error {
+	// Read PID from file
+	pidData, err := os.ReadFile(navigatorPIDFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("navigator is not running (PID file not found)")
+		}
+		return fmt.Errorf("failed to read PID file: %v", err)
+	}
+	
+	pid, err := strconv.Atoi(strings.TrimSpace(string(pidData)))
+	if err != nil {
+		return fmt.Errorf("invalid PID in file: %v", err)
+	}
+	
+	// Find the process
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		return fmt.Errorf("failed to find process %d: %v", pid, err)
+	}
+	
+	// Send HUP signal
+	if err := process.Signal(syscall.SIGHUP); err != nil {
+		// Check if process exists
+		if err.Error() == "os: process already finished" {
+			// Clean up stale PID file
+			removePIDFile()
+			return fmt.Errorf("navigator is not running (process %d not found)", pid)
+		}
+		return fmt.Errorf("failed to send signal to process %d: %v", pid, err)
+	}
+	
+	log.Printf("Reload signal sent to navigator (PID: %d)", pid)
+	return nil
+}
+
 func main() {
+	// Initialize logger with level from environment variable
+	logLevel := slog.LevelInfo // Default to Info level
+	if lvl := os.Getenv("LOG_LEVEL"); lvl != "" {
+		switch strings.ToLower(lvl) {
+		case "debug":
+			logLevel = slog.LevelDebug
+		case "info":
+			logLevel = slog.LevelInfo
+		case "warn", "warning":
+			logLevel = slog.LevelWarn
+		case "error":
+			logLevel = slog.LevelError
+		}
+	}
+	
+	// Create text handler with the specified level
+	opts := &slog.HandlerOptions{
+		Level: logLevel,
+	}
+	logger := slog.New(slog.NewTextHandler(os.Stdout, opts))
+	slog.SetDefault(logger)
+	
+	// Handle -s reload option like nginx
+	if len(os.Args) > 1 && os.Args[1] == "-s" {
+		if len(os.Args) > 2 && os.Args[2] == "reload" {
+			if err := sendReloadSignal(); err != nil {
+				log.Fatalf("Failed to reload: %v", err)
+			}
+			os.Exit(0)
+		} else if len(os.Args) > 2 {
+			log.Fatalf("Unknown signal: %s (only 'reload' is supported)", os.Args[2])
+		} else {
+			log.Fatalf("Option -s requires a signal name (e.g., -s reload)")
+		}
+	}
+	
+	// Handle --help option
+	if len(os.Args) > 1 && (os.Args[1] == "--help" || os.Args[1] == "-h") {
+		fmt.Println("Navigator - Rails application server")
+		fmt.Println()
+		fmt.Println("Usage:")
+		fmt.Println("  navigator [config-file]     Start server with optional config file")
+		fmt.Println("  navigator -s reload         Reload configuration of running server")
+		fmt.Println("  navigator --help            Show this help message")
+		fmt.Println()
+		fmt.Println("Default config file: config/navigator.yml")
+		fmt.Println()
+		fmt.Println("Signals:")
+		fmt.Println("  SIGHUP   Reload configuration without restart")
+		fmt.Println("  SIGTERM  Graceful shutdown")
+		fmt.Println("  SIGINT   Immediate shutdown")
+		os.Exit(0)
+	}
+
 	configFile := "config/navigator.yml"
 	if len(os.Args) > 1 {
 		configFile = os.Args[1]
 	}
+
+	// Write PID file for -s reload functionality
+	if err := writePIDFile(); err != nil {
+		log.Printf("Warning: Could not write PID file: %v", err)
+	}
+	defer removePIDFile()
 
 	log.Printf("Loading configuration from %s", configFile)
 	config, err := LoadConfig(configFile)
@@ -530,28 +667,85 @@ func main() {
 		processManager.StartAll(config.ManagedProcesses)
 	}
 	
-	// Set up signal handling for graceful shutdown
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	// Create a mutable handler wrapper for configuration reloading
+	handler := CreateHandler(config, manager, auth)
 	
-	// Start cleanup goroutine
+	// Wrapper handler that delegates to the current configuration
+	var handlerMutex sync.RWMutex
+	currentHandler := handler
+	
+	mainHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlerMutex.RLock()
+		h := currentHandler
+		handlerMutex.RUnlock()
+		h.ServeHTTP(w, r)
+	})
+	
+	// Set up signal handling for graceful shutdown and reload
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
+	
+	// Start signal handler goroutine
 	go func() {
-		<-sigChan
-		log.Println("Received interrupt signal, cleaning up...")
-		manager.Cleanup()          // Stop Rails apps first
-		processManager.StopAll()  // Then stop managed processes
-		os.Exit(0)
+		for sig := range sigChan {
+			switch sig {
+			case syscall.SIGHUP:
+				// Reload configuration
+				log.Println("Received SIGHUP signal, reloading configuration...")
+				
+				newConfig, err := LoadConfig(configFile)
+				if err != nil {
+					log.Printf("Error reloading configuration: %v", err)
+					continue
+				}
+				
+				log.Printf("Reloaded %d locations and %d proxy routes", len(newConfig.Locations), len(newConfig.ProxyRoutes))
+				
+				// Reload auth if configured
+				var newAuth *BasicAuth
+				if newConfig.AuthFile != "" {
+					newAuth, err = LoadAuthFile(newConfig.AuthFile, newConfig.AuthRealm, newConfig.AuthExclude)
+					if err != nil {
+						log.Printf("Warning: Failed to reload auth file %s: %v", newConfig.AuthFile, err)
+						// Keep existing auth on error
+						newAuth = auth
+					} else {
+						log.Printf("Reloaded authentication from %s", newConfig.AuthFile)
+					}
+				}
+				
+				// Update manager configuration
+				manager.UpdateConfig(newConfig)
+				
+				// Create new handler with updated config
+				newHandler := CreateHandler(newConfig, manager, newAuth)
+				
+				// Atomically swap the handler
+				handlerMutex.Lock()
+				currentHandler = newHandler
+				config = newConfig
+				auth = newAuth
+				handlerMutex.Unlock()
+				
+				log.Println("Configuration reload complete")
+				
+			case os.Interrupt, syscall.SIGTERM:
+				log.Println("Received interrupt signal, cleaning up...")
+				manager.Cleanup()          // Stop Rails apps first
+				processManager.StopAll()  // Then stop managed processes
+				os.Exit(0)
+			}
+		}
 	}()
 	
 	go manager.IdleChecker()
-
-	handler := CreateHandler(config, manager, auth)
 	
 	addr := fmt.Sprintf(":%d", config.ListenPort)
 	log.Printf("Starting Navigator server on %s", addr)
 	log.Printf("Max pool size: %d, Idle timeout: %v", config.MaxPoolSize, manager.idleTimeout)
+	log.Printf("Send SIGHUP to reload configuration without restart (kill -HUP %d)", os.Getpid())
 	
-	if err := http.ListenAndServe(addr, handler); err != nil {
+	if err := http.ListenAndServe(addr, mainHandler); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
 }
@@ -1309,6 +1503,8 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth) http.Ha
 
 	// Main handler
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Debug("Request received", "method", r.Method, "path", r.URL.Path)
+		
 		// Handle nginx-style rewrites/redirects first
 		if handleRewrites(w, r, config) {
 			return
@@ -1316,6 +1512,7 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth) http.Ha
 
 		// Check if path should be excluded from auth using parsed patterns
 		needsAuth := auth != nil && auth.Realm != "off" && !shouldExcludeFromAuth(r.URL.Path, config)
+		slog.Debug("Auth check", "needed", needsAuth)
 
 		// Apply basic auth if needed
 		if needsAuth && !checkAuth(r, auth) {
@@ -1371,9 +1568,11 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth) http.Ha
 		if bestMatch == nil {
 			// Try root location
 			if rootLoc, ok := config.Locations["/"]; ok {
+				slog.Debug("No specific location match, using root location")
 				bestMatch = rootLoc
 			} else {
 				// Delegate to health check handler
+				slog.Debug("No location match found", "path", r.URL.Path)
 				mux.ServeHTTP(w, r)
 				return
 			}
@@ -1418,7 +1617,7 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth) http.Ha
 		r.Header.Set("X-Forwarded-Host", r.Host)
 		r.Header.Set("X-Forwarded-Proto", "http")
 		
-		log.Printf("Proxying %s -> Rails on port %d (matched location: %s)", originalPath, app.Port, bestMatch.Path)
+		slog.Info("Proxying to Rails", "path", originalPath, "port", app.Port, "location", bestMatch.Path)
 		
 		proxy.ServeHTTP(w, r)
 	})
@@ -1439,10 +1638,14 @@ func checkAuth(r *http.Request, auth *BasicAuth) bool {
 func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool {
 	path := r.URL.Path
 	
+	slog.Debug("Checking rewrites", "path", path, "rulesCount", len(config.RewriteRules))
+	
 	for _, rule := range config.RewriteRules {
+		slog.Debug("Checking rewrite rule", "pattern", rule.Pattern.String())
 		if rule.Pattern.MatchString(path) {
 			// Apply the rewrite
 			newPath := rule.Pattern.ReplaceAllString(path, rule.Replacement)
+			slog.Debug("Rewrite matched", "originalPath", path, "newPath", newPath, "flag", rule.Flag)
 			
 			if rule.Flag == "redirect" {
 				http.Redirect(w, r, newPath, http.StatusFound)
@@ -1458,6 +1661,7 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 		}
 	}
 	
+	slog.Debug("No rewrite rules matched", "path", path)
 	return false
 }
 
@@ -1505,12 +1709,22 @@ func serveStaticFile(w http.ResponseWriter, r *http.Request, config *Config) boo
 	// Check if this is a request for static assets
 	path := r.URL.Path
 	
+	slog.Debug("Checking static file", 
+		"path", path, 
+		"staticDirsCount", len(config.StaticDirs),
+		"publicDir", config.PublicDir)
+	
 	// First check static directories from config
 	for _, staticDir := range config.StaticDirs {
+		slog.Debug("Checking static dir", 
+			"urlPath", staticDir.URLPath, 
+			"localPath", staticDir.LocalPath)
 		if strings.HasPrefix(path, staticDir.URLPath) {
 			// Calculate the local file path
 			relativePath := strings.TrimPrefix(path, staticDir.URLPath)
 			fsPath := filepath.Join(config.PublicDir, staticDir.LocalPath, relativePath)
+			
+			slog.Debug("Checking file", "fsPath", fsPath)
 			
 			// Check if file exists
 			if info, err := os.Stat(fsPath); err == nil && !info.IsDir() {
@@ -1522,8 +1736,12 @@ func serveStaticFile(w http.ResponseWriter, r *http.Request, config *Config) boo
 				// Set content type and serve
 				setContentType(w, fsPath)
 				http.ServeFile(w, r, fsPath)
-				log.Printf("Serving static file from directory: %s -> %s", path, fsPath)
+				slog.Info("Serving static file", "path", path, "fsPath", fsPath)
 				return true
+			} else {
+				slog.Debug("File not found or is directory", 
+					"error", err, 
+					"isDir", info != nil && info.IsDir())
 			}
 		}
 	}
@@ -1591,13 +1809,17 @@ func serveStaticFile(w http.ResponseWriter, r *http.Request, config *Config) boo
 func tryFiles(w http.ResponseWriter, r *http.Request, config *Config) bool {
 	path := r.URL.Path
 	
+	slog.Debug("tryFiles checking", "path", path)
+	
 	// Only try files for paths that don't already have an extension
 	if filepath.Ext(path) != "" {
+		slog.Debug("tryFiles skipping - path has extension")
 		return false
 	}
 	
 	// Skip if try_files is disabled (no suffixes configured)
 	if len(config.TryFilesSuffixes) == 0 {
+		slog.Debug("tryFiles disabled - no suffixes configured")
 		return false
 	}
 	
