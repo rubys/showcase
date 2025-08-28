@@ -454,7 +454,13 @@
   millbrae:
     :name: Millbrae
     :region: sjc
-    :date: '2025-06-22'
+    :events:
+      showcase:
+        :name: Showcase
+        :date: '2025-06-22'
+      halloween-haunt:
+        :name: Halloween Haunt
+        :date: 2025-10-26 - 2025-10-26
   montgomery:
     :name: Montgomery
     :region: ord
