@@ -203,3 +203,9 @@ bin/rails assets:clobber
   bin/rails test test/system/formations_test.rb:38  # or the specific failing test line
   ```
 
+- **System Test Asset Routing Failures**: If system tests fail with "No route matches [GET] '/showcase/assets/...'" errors, this is caused by precompiled assets interfering with the test environment. Clean the assets and rerun:
+  ```bash
+  bin/rails assets:clobber
+  bin/rails test:system
+  ```
+
