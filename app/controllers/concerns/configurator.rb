@@ -150,7 +150,9 @@ module Configurator
     routes = {
       'redirects' => [],
       'rewrites' => [],
-      'proxies' => []
+      'proxies' => [],
+      'fly_replay' => [],
+      'reverse_proxies' => []
     }
     
     # Add redirects
@@ -192,7 +194,61 @@ module Configurator
       }
     end
     
+    # Add fly-replay and reverse proxy support for cross-region events
+    if region && ENV['FLY_APP_NAME']
+      add_cross_region_routing(routes, root, region)
+    end
+    
     routes
+  end
+
+  def add_cross_region_routing(routes, root, current_region)
+    showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
+    
+    # Group sites by region
+    regions_sites = {}
+    showcases.each do |year, sites|
+      sites.each do |token, info|
+        site_region = info[:region]
+        next unless site_region && site_region != current_region
+        
+        regions_sites[site_region] ||= []
+        regions_sites[site_region] << token
+      end
+    end
+    
+    # Add region index fly-replay routes
+    regions_sites.keys.each do |target_region|
+      routes['fly_replay'] << {
+        'path' => "#{root}/regions/#{target_region}/",
+        'region' => target_region,
+        'status' => 307
+      }
+    end
+    
+    # Add event-specific routing for each region
+    regions_sites.each do |target_region, sites|
+      years = showcases.keys.join('|')
+      sites_pattern = sites.join('|')
+      
+      # Fly-replay for GET requests
+      routes['fly_replay'] << {
+        'path' => "^#{root}/(?<year>#{years})/(?<site>#{sites_pattern})(?<rest>/.*)?$",
+        'region' => target_region,
+        'status' => 307,
+        'methods' => ['GET']
+      }
+      
+      # Reverse proxy for non-GET requests
+      routes['reverse_proxies'] << {
+        'path' => "^#{root}/(?<year>#{years})/(?<site>#{sites_pattern})(?<rest>/.*)?$",
+        'target' => "http://#{target_region}.smooth.internal:3000#{root}/$year/$site$rest",
+        'headers' => {
+          'X-Forwarded-Host' => '$host'
+        },
+        'exclude_methods' => ['GET']
+      }
+    end
   end
 
   def build_static_config

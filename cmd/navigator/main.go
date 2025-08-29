@@ -86,10 +86,11 @@ type StaticDir struct {
 
 // ProxyRoute represents a route that proxies to another server
 type ProxyRoute struct {
-	Pattern     string
-	ProxyPass   string
-	SetHeaders  map[string]string
-	SSLVerify   bool
+	Pattern        string
+	ProxyPass      string
+	SetHeaders     map[string]string
+	SSLVerify      bool
+	ExcludeMethods []string // Methods to exclude from proxying
 }
 
 // Location represents a Rails application location
@@ -155,6 +156,18 @@ type YAMLConfig struct {
 			Target  string            `yaml:"target"`
 			Headers map[string]string `yaml:"headers"`
 		} `yaml:"proxies"`
+		FlyReplay []struct {
+			Path    string   `yaml:"path"`
+			Region  string   `yaml:"region"`
+			Status  int      `yaml:"status"`
+			Methods []string `yaml:"methods"`
+		} `yaml:"fly_replay"`
+		ReverseProxies []struct {
+			Path           string            `yaml:"path"`
+			Target         string            `yaml:"target"`
+			Headers        map[string]string `yaml:"headers"`
+			ExcludeMethods []string          `yaml:"exclude_methods"`
+		} `yaml:"reverse_proxies"`
 	} `yaml:"routes"`
 	
 	Static struct {
@@ -873,6 +886,27 @@ func ParseYAML(content []byte) (*Config, error) {
 		}
 	}
 	
+	// Convert fly-replay routes
+	for _, flyReplay := range yamlConfig.Routes.FlyReplay {
+		if re, err := regexp.Compile(flyReplay.Path); err == nil {
+			config.RewriteRules = append(config.RewriteRules, &RewriteRule{
+				Pattern:     re,
+				Replacement: flyReplay.Path, // Keep original path for fly-replay
+				Flag:        fmt.Sprintf("fly-replay:%s:%d", flyReplay.Region, flyReplay.Status),
+			})
+		}
+	}
+	
+	// Convert reverse proxy routes
+	for _, reverseProxy := range yamlConfig.Routes.ReverseProxies {
+		config.ProxyRoutes[reverseProxy.Path] = &ProxyRoute{
+			Pattern:        reverseProxy.Path,
+			ProxyPass:      reverseProxy.Target,
+			SetHeaders:     reverseProxy.Headers,
+			ExcludeMethods: reverseProxy.ExcludeMethods,
+		}
+	}
+	
 	// Convert tenant applications to locations
 	for _, tenant := range yamlConfig.Applications.Tenants {
 		location := &Location{
@@ -1532,12 +1566,24 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth) http.Ha
 			return
 		}
 
-		// Check for proxy routes (PDF/XLSX)
+		// Check for proxy routes (PDF/XLSX and reverse proxies)
 		for pattern, route := range config.ProxyRoutes {
 			matched, _ := regexp.MatchString(pattern, r.URL.Path)
 			if matched {
-				proxyRequest(w, r, route)
-				return
+				// Check if method should be excluded
+				excluded := false
+				for _, excludeMethod := range route.ExcludeMethods {
+					if r.Method == excludeMethod {
+						excluded = true
+						break
+					}
+				}
+				
+				// Only proxy if method is not excluded
+				if !excluded {
+					proxyRequest(w, r, route)
+					return
+				}
 			}
 		}
 
@@ -1650,6 +1696,24 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 			if rule.Flag == "redirect" {
 				http.Redirect(w, r, newPath, http.StatusFound)
 				return true
+			} else if strings.HasPrefix(rule.Flag, "fly-replay:") {
+				// Handle fly-replay: fly-replay:region:status
+				parts := strings.Split(rule.Flag, ":")
+				if len(parts) == 3 {
+					region := parts[1]
+					status := parts[2]
+					
+					// Only apply fly-replay for GET requests (if methods not specified) or specified methods
+					if r.Method == "GET" {
+						w.Header().Set("Fly-Replay", fmt.Sprintf("region=%s", region))
+						if statusCode, err := strconv.Atoi(status); err == nil {
+							w.WriteHeader(statusCode)
+						} else {
+							w.WriteHeader(http.StatusTemporaryRedirect)
+						}
+						return true
+					}
+				}
 			} else if rule.Flag == "last" {
 				// Internal rewrite, modify the path and continue
 				r.URL.Path = newPath
