@@ -10,8 +10,10 @@ Navigator supports both nginx-style and modern YAML configuration formats:
 - **Managed processes**: Start and stop additional processes alongside Navigator (Redis, workers, etc.)
 - **Static file serving**: Serves assets, images, and static content directly from filesystem with configurable caching
 - **Authentication**: Full htpasswd support (APR1, bcrypt, SHA, etc.) with pattern-based exclusions
-- **URL rewriting**: Nginx-style rewrite rules with redirect and last flags
-- **Reverse proxy**: Forwards dynamic requests to Rails applications
+- **URL rewriting**: Nginx-style rewrite rules with redirect, last, and fly-replay flags
+- **Reverse proxy**: Forwards dynamic requests to Rails applications with method-based exclusions
+- **Machine suspension**: Auto-suspend Fly.io machines after idle timeout (when enabled)
+- **Configuration reload**: Live configuration reload with SIGHUP signal (no restart needed)
 - **Dual configuration**: Supports both nginx config files (deprecated) and modern YAML format
 
 ## Building and Running
@@ -22,10 +24,18 @@ make build
 # Or build directly with Go
 go build -mod=readonly -o bin/navigator cmd/navigator/main.go
 
+# Display help
+./bin/navigator --help
+
 # Run with YAML configuration (recommended - default location)
 ./bin/navigator
 # Or specify a custom config file
 ./bin/navigator config/navigator.yml
+
+# Reload configuration without restart
+./bin/navigator -s reload
+# Or send SIGHUP signal directly
+kill -HUP $(cat /tmp/navigator.pid)
 
 # Helper script for production mode with automatic setup
 bin/nav  # Sets RAILS_ENV=production, precompiles assets, generates config, opens browser
@@ -119,6 +129,18 @@ applications:
       group: showcase-cable
       special: true
       force_max_concurrent_requests: 0
+    
+    # Tenants with pattern matching for WebSocket support
+    - name: cable-pattern
+      path: /cable-specific
+      group: showcase-cable
+      match_pattern: "*/cable"  # Matches any path ending with /cable
+      special: true
+    
+    # Tenants with standalone servers (e.g., Action Cable)
+    - name: external-service
+      path: /external/
+      standalone_server: "localhost:28080"  # Proxy to standalone server instead of Rails
 
 managed_processes:
   - name: redis
@@ -138,6 +160,28 @@ managed_processes:
       RAILS_ENV: production
     auto_restart: true
     start_delay: 2
+
+# Machine suspension (Fly.io specific)
+suspend:
+  enabled: false
+  idle_timeout: 600  # Seconds of inactivity before suspending machine
+
+# Routing enhancements
+routes:
+  # Fly-replay support for region-specific routing
+  fly_replay:
+    - path: "^/showcase/2025/sydney/"
+      region: syd
+      status: 307
+      methods: [GET]
+  
+  # Reverse proxy with method exclusions
+  reverse_proxies:
+    - path: "/api/"
+      target: "http://api.example.com"
+      headers:
+        X-API-Key: "secret"
+      exclude_methods: [POST, DELETE]  # Don't proxy these methods
 ```
 
 ### Nginx Configuration (Deprecated)
@@ -234,11 +278,15 @@ For non-authenticated routes, implements nginx-style `try_files` behavior:
 - **Basic Auth**: Standard HTTP Basic Authentication
 
 ### Request Flow
-1. **Rewrite rules**: Applied first for redirects and path modifications
-2. **Authentication**: Checked against patterns and htpasswd file
-3. **Static files**: Attempted if path matches static patterns (assets, explicit extensions)
-4. **Try files**: For non-authenticated routes, attempts to find static files with common extensions
-5. **Rails proxy**: Falls back to starting/proxying to Rails application
+1. **Suspend tracking**: Track request start/finish for idle detection (Fly.io only)
+2. **Rewrite rules**: Applied first for redirects, path modifications, and fly-replay
+3. **Authentication**: Checked against patterns and htpasswd file
+4. **Static files**: Attempted if path matches static patterns (assets, explicit extensions)
+5. **Try files**: For non-authenticated routes, attempts to find static files with common extensions
+6. **Proxy routes**: Check for reverse proxy configurations with method exclusions
+7. **Location matching**: Find best match using pattern matching or prefix matching
+8. **Standalone servers**: Proxy to external servers if configured
+9. **Rails proxy**: Falls back to starting/proxying to Rails application
 
 ## Key Features
 
@@ -269,16 +317,27 @@ For non-authenticated routes, implements nginx-style `try_files` behavior:
 - `Makefile` - Build configuration
 - `go.mod`, `go.sum` - Go module dependencies
 
+### Logging
+Navigator uses Go's `slog` package for structured logging:
+- **Log Level**: Set via `LOG_LEVEL` environment variable (debug, info, warn, error)
+- **Default Level**: Info level if not specified
+- **Debug Output**: Includes detailed request routing, auth checks, and file serving attempts
+- **Structured Format**: Text handler with consistent key-value pairs
+
 ### Key Functions
-- `LoadYAMLConfig()` / `LoadNginxConfig()` - Parses configuration files (YAML preferred)
+- `LoadConfig()` - Auto-detects and loads either YAML or nginx configuration
+- `ParseYAML()` - Parses YAML configuration with template variable substitution
 - `cleanupPidFile()` - Checks for and removes stale PID files
 - `findAvailablePort()` - Finds available ports dynamically instead of sequential assignment
-- `Cleanup()` - Gracefully stops all Rails apps and cleans up PID files
+- `UpdateConfig()` - Updates configuration without restart (via SIGHUP)
+- `NewAppManager()` - Manages Rails application lifecycle with improved cleanup
+- `NewProcessManager()` - Manages external processes with auto-restart capability
+- `NewSuspendManager()` - Handles Fly.io machine suspension after idle timeout
 - `serveStaticFile()` - Handles static file serving for assets and explicit extensions
 - `tryFiles()` - Implements nginx-style try_files with index.html support
-- `handleRewrites()` - Processes URL rewrite rules
+- `handleRewrites()` - Processes URL rewrite rules including fly-replay
 - `shouldExcludeFromAuth()` - Checks authentication exclusion patterns
-- `NewAppManager()` - Manages Rails application lifecycle with improved cleanup
+- `sendReloadSignal()` - Sends SIGHUP to reload configuration without restart
 
 ### Testing
 ```bash
@@ -296,14 +355,43 @@ curl -u username:password http://localhost:9999/protected/path
 curl -u test:secret http://localhost:9999/showcase/2025/boston/
 ```
 
-## Recent Improvements (August 2025)
+## Recent Improvements (August-December 2025)
 
-### Managed Processes Feature (New)
+### Machine Suspension Support (New - December 2025)
+- **Fly.io Integration**: Auto-suspend machines after configurable idle timeout
+- **Request Tracking**: Monitors active requests to determine idle state
+- **Automatic Wake**: Machines wake automatically on incoming requests
+- **Configurable Timeout**: Set idle timeout duration in YAML configuration
+
+### Configuration Reload (New - December 2025)
+- **Live Reload**: Reload configuration without restart using SIGHUP signal
+- **nginx-style Command**: Support for `navigator -s reload` command
+- **PID File Management**: Writes PID file to /tmp/navigator.pid for signal management
+- **Atomic Updates**: Configuration changes applied atomically with no downtime
+
+### Fly-Replay Support (New - December 2025)
+- **Region Routing**: Route requests to specific Fly.io regions
+- **Pattern Matching**: Configure URL patterns for region-specific routing
+- **Status Codes**: Configurable HTTP status codes for replay responses
+- **Method Filtering**: Apply replay rules only to specific HTTP methods
+
+### Reverse Proxy Enhancements (New - December 2025)
+- **Method Exclusions**: Exclude specific HTTP methods from proxy routing
+- **Custom Headers**: Add headers to proxied requests
+- **Multiple Targets**: Support for multiple proxy configurations
+
+### Standalone Server Support (New - November 2025)
+- **External Services**: Proxy to standalone servers (e.g., Action Cable)
+- **Pattern Matching**: Use wildcard patterns for location matching
+- **WebSocket Support**: Full support for WebSocket connections
+
+### Managed Processes Feature (New - August 2025)
 - **External Process Management**: Navigator can now start and stop additional processes defined in configuration
 - **Auto-restart Capability**: Processes can be configured to automatically restart if they crash
 - **Startup Delays**: Processes can be delayed to ensure proper initialization order
 - **Environment Variables**: Each process can have custom environment variables
 - **Graceful Shutdown**: Rails apps stopped first, then managed processes (preserving dependencies)
+- **Configuration Updates**: Managed processes updated on configuration reload
 
 ### Process Management Enhancements
 - **PID File Handling**: Navigator now checks for and cleans up stale PID files before starting Rails apps, preventing "server is already running" errors
@@ -391,6 +479,8 @@ Several YAML configuration fields are parsed but not yet fully utilized:
 ### 5. Production Readiness Enhancements
 - ~~**Graceful shutdown**: Proper SIGTERM handling for zero-downtime deployments~~ ✅ Implemented
 - ~~**External process management**: Start/stop additional processes with Navigator~~ ✅ Implemented
+- ~~**Configuration reload**: Live configuration updates without restart~~ ✅ Implemented
+- ~~**Machine suspension**: Auto-suspend idle Fly.io machines~~ ✅ Implemented
 - **Connection pooling**: Improved HTTP client management for Rails application proxying
 - **Error handling**: More robust error responses, recovery mechanisms, and structured logging
 - **Monitoring**: Built-in metrics collection and health monitoring capabilities

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"log/slog"
 	"net"
@@ -651,17 +652,44 @@ func (sm *SuspendManager) suspendMachine() {
 	
 	slog.Info("Suspending machine", "app", appName, "machine", machineId)
 	
-	// Execute curl command to suspend via Fly API
-	cmd := exec.Command("curl", "--unix-socket", "/.fly/api", "-X", "POST", 
-		fmt.Sprintf("http://flaps/v1/apps/%s/machines/%s/suspend", appName, machineId))
+	// Create HTTP client with Unix socket transport
+	client := &http.Client{
+		Transport: &http.Transport{
+			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+				return net.Dial("unix", "/.fly/api")
+			},
+		},
+		Timeout: 10 * time.Second,
+	}
 	
-	output, err := cmd.Output()
+	// Create suspend request
+	url := fmt.Sprintf("http://flaps/v1/apps/%s/machines/%s/suspend", appName, machineId)
+	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
-		slog.Error("Failed to suspend machine", "error", err, "output", string(output))
+		slog.Error("Failed to create suspend request", "error", err)
 		return
 	}
 	
-	slog.Info("Machine suspend requested", "response", string(output))
+	// Execute request
+	resp, err := client.Do(req)
+	if err != nil {
+		slog.Error("Failed to suspend machine", "error", err)
+		return
+	}
+	defer resp.Body.Close()
+	
+	// Read response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		slog.Error("Failed to read suspend response", "error", err)
+		return
+	}
+	
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		slog.Info("Machine suspend requested successfully", "status", resp.StatusCode, "response", string(body))
+	} else {
+		slog.Error("Machine suspend failed", "status", resp.StatusCode, "response", string(body))
+	}
 }
 
 // UpdateConfig updates the suspend manager configuration
