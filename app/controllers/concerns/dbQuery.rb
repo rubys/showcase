@@ -4,6 +4,10 @@ module DbQuery
   def dbquery(db, table, fields=nil, where=nil)
     dbpath = ENV.fetch('RAILS_DB_VOLUME', 'db')
     dbfile = "#{dbpath}/#{db}.sqlite3"
+    
+    # Return empty results if database doesn't exist
+    return [] unless File.exist?(dbfile)
+    
     dbconn = SQLite3::Database.new(dbfile)
     dbconn.results_as_hash = true
 
@@ -27,6 +31,10 @@ module DbQuery
   def dbquery_raw(db, sql)
     dbpath = ENV.fetch('RAILS_DB_VOLUME', 'db')
     dbfile = "#{dbpath}/#{db}.sqlite3"
+    
+    # Return empty results if database doesn't exist
+    return [] unless File.exist?(dbfile)
+    
     dbconn = SQLite3::Database.new(dbfile)
     dbconn.results_as_hash = true
 

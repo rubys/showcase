@@ -292,11 +292,13 @@ module Configurator
 
   def build_standard_vars
     storage = ENV['RAILS_STORAGE'] || Rails.root.join('storage').to_s
+    dbpath = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
     {
       'RAILS_APP_DB' => '${tenant.database}',
       'RAILS_APP_OWNER' => '${tenant.owner}',
       'RAILS_STORAGE' => storage,
       'RAILS_APP_SCOPE' => '${tenant.scope}',
+      'DATABASE_URL' => "sqlite3://#{dbpath}/${tenant.database}.sqlite3",
       'PIDFILE' => "#{Rails.root}/tmp/pids/${tenant.database}.pid"
     }
   end
