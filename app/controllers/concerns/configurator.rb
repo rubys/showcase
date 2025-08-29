@@ -24,7 +24,7 @@ module Configurator
   private
 
   def build_navigator_config
-    {
+    config = {
       'server' => build_server_config,
       'pools' => build_pools_config,
       'auth' => build_auth_config,
@@ -36,6 +36,13 @@ module Configurator
       'health' => build_health_config,
       'managed_processes' => build_managed_processes_config
     }
+    
+    # Add suspend configuration if running on Fly.io
+    if ENV['FLY_REGION']
+      config['suspend'] = build_suspend_config
+    end
+    
+    config
   end
 
   def build_server_config
@@ -622,5 +629,12 @@ module Configurator
     # They will be started when Navigator starts and stopped when it exits
     
     processes
+  end
+  
+  def build_suspend_config
+    {
+      'enabled' => true,
+      'idle_timeout' => 1200  # 20 minutes in seconds
+    }
   end
 end

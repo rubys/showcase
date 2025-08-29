@@ -75,6 +75,10 @@ type Config struct {
 		AutoRestart bool              `yaml:"auto_restart"`
 		StartDelay  int               `yaml:"start_delay"`
 	}
+	
+	// Suspend configuration
+	SuspendEnabled     bool
+	SuspendIdleTimeout time.Duration
 }
 
 // StaticDir represents a static directory mapping
@@ -223,6 +227,11 @@ type YAMLConfig struct {
 		Interval int    `yaml:"interval"`
 	} `yaml:"health"`
 	
+	Suspend struct {
+		Enabled     bool `yaml:"enabled"`
+		IdleTimeout int  `yaml:"idle_timeout"` // Seconds of inactivity before suspend
+	} `yaml:"suspend"`
+	
 	ManagedProcesses []struct {
 		Name        string            `yaml:"name"`
 		Command     string            `yaml:"command"`
@@ -245,6 +254,7 @@ type ManagedProcess struct {
 	StartDelay  time.Duration
 	Process     *exec.Cmd
 	Cancel      context.CancelFunc
+	Running     bool
 	mutex       sync.RWMutex
 }
 
@@ -253,6 +263,16 @@ type ProcessManager struct {
 	processes []*ManagedProcess
 	mutex     sync.RWMutex
 	wg        sync.WaitGroup
+}
+
+// SuspendManager tracks active requests and handles machine suspension
+type SuspendManager struct {
+	enabled        bool
+	idleTimeout    time.Duration
+	activeRequests int64
+	lastActivity   time.Time
+	mutex          sync.RWMutex
+	timer          *time.Timer
 }
 
 // AppManager manages Rails application processes
@@ -528,6 +548,148 @@ func (pm *ProcessManager) StopAll() {
 	}
 }
 
+// UpdateConfig updates the process manager configuration
+func (pm *ProcessManager) UpdateConfig(processes []struct {
+	Name        string            `yaml:"name"`
+	Command     string            `yaml:"command"`
+	Args        []string          `yaml:"args"`
+	WorkingDir  string            `yaml:"working_dir"`
+	Env         map[string]string `yaml:"env"`
+	AutoRestart bool              `yaml:"auto_restart"`
+	StartDelay  int               `yaml:"start_delay"`
+}) {
+	slog.Info("Updating managed processes configuration", "count", len(processes))
+	
+	// Stop all existing processes
+	pm.StopAll()
+	
+	// Clear the process list
+	pm.mutex.Lock()
+	pm.processes = make([]*ManagedProcess, 0)
+	pm.mutex.Unlock()
+	
+	// Start new processes with updated config
+	pm.StartAll(processes)
+}
+
+// NewSuspendManager creates a new suspend manager
+func NewSuspendManager(enabled bool, idleTimeout time.Duration) *SuspendManager {
+	if !enabled {
+		return &SuspendManager{enabled: false}
+	}
+	
+	return &SuspendManager{
+		enabled:      true,
+		idleTimeout:  idleTimeout,
+		lastActivity: time.Now(),
+	}
+}
+
+// RequestStarted increments active request counter and resets idle timer
+func (sm *SuspendManager) RequestStarted() {
+	if !sm.enabled {
+		return
+	}
+	
+	sm.mutex.Lock()
+	defer sm.mutex.Unlock()
+	
+	sm.activeRequests++
+	sm.lastActivity = time.Now()
+	
+	// Cancel existing timer since we have activity
+	if sm.timer != nil {
+		sm.timer.Stop()
+		sm.timer = nil
+	}
+	
+	slog.Debug("Request started", "activeRequests", sm.activeRequests)
+}
+
+// RequestFinished decrements active request counter and starts suspend timer if idle
+func (sm *SuspendManager) RequestFinished() {
+	if !sm.enabled {
+		return
+	}
+	
+	sm.mutex.Lock()
+	defer sm.mutex.Unlock()
+	
+	sm.activeRequests--
+	sm.lastActivity = time.Now()
+	
+	slog.Debug("Request finished", "activeRequests", sm.activeRequests)
+	
+	// Start suspend timer if no active requests
+	if sm.activeRequests == 0 {
+		sm.startSuspendTimer()
+	}
+}
+
+// startSuspendTimer starts the suspend countdown (must be called with mutex held)
+func (sm *SuspendManager) startSuspendTimer() {
+	if sm.timer != nil {
+		sm.timer.Stop()
+	}
+	
+	sm.timer = time.AfterFunc(sm.idleTimeout, func() {
+		sm.suspendMachine()
+	})
+	
+	slog.Debug("Suspend timer started", "timeout", sm.idleTimeout)
+}
+
+// suspendMachine calls the Fly API to suspend the machine
+func (sm *SuspendManager) suspendMachine() {
+	appName := os.Getenv("FLY_APP_NAME")
+	machineId := os.Getenv("FLY_MACHINE_ID")
+	
+	if appName == "" || machineId == "" {
+		slog.Warn("Cannot suspend: missing FLY_APP_NAME or FLY_MACHINE_ID")
+		return
+	}
+	
+	slog.Info("Suspending machine", "app", appName, "machine", machineId)
+	
+	// Execute curl command to suspend via Fly API
+	cmd := exec.Command("curl", "--unix-socket", "/.fly/api", "-X", "POST", 
+		fmt.Sprintf("http://flaps/v1/apps/%s/machines/%s/suspend", appName, machineId))
+	
+	output, err := cmd.Output()
+	if err != nil {
+		slog.Error("Failed to suspend machine", "error", err, "output", string(output))
+		return
+	}
+	
+	slog.Info("Machine suspend requested", "response", string(output))
+}
+
+// UpdateConfig updates the suspend manager configuration
+func (sm *SuspendManager) UpdateConfig(enabled bool, idleTimeout time.Duration) {
+	sm.mutex.Lock()
+	defer sm.mutex.Unlock()
+	
+	// Stop existing timer if configuration is changing
+	if sm.timer != nil {
+		sm.timer.Stop()
+		sm.timer = nil
+	}
+	
+	sm.enabled = enabled
+	sm.idleTimeout = idleTimeout
+	
+	if enabled {
+		slog.Info("Suspend feature enabled", "idleTimeout", idleTimeout)
+		sm.lastActivity = time.Now()
+		// Start timer if we're idle (no active requests)
+		if sm.activeRequests == 0 {
+			sm.startSuspendTimer()
+		}
+	} else {
+		slog.Info("Suspend feature disabled")
+	}
+}
+
 // BasicAuth represents HTTP basic authentication
 type BasicAuth struct {
 	File    *htpasswd.File
@@ -673,6 +835,12 @@ func main() {
 
 	manager := NewAppManager(config)
 	
+	// Create suspend manager
+	suspendManager := NewSuspendManager(config.SuspendEnabled, config.SuspendIdleTimeout)
+	if suspendManager.enabled {
+		slog.Info("Suspend feature enabled", "idleTimeout", config.SuspendIdleTimeout)
+	}
+	
 	// Create and start process manager for managed processes
 	processManager := NewProcessManager()
 	if len(config.ManagedProcesses) > 0 {
@@ -681,7 +849,7 @@ func main() {
 	}
 	
 	// Create a mutable handler wrapper for configuration reloading
-	handler := CreateHandler(config, manager, auth)
+	handler := CreateHandler(config, manager, auth, suspendManager)
 	
 	// Wrapper handler that delegates to the current configuration
 	var handlerMutex sync.RWMutex
@@ -730,8 +898,14 @@ func main() {
 				// Update manager configuration
 				manager.UpdateConfig(newConfig)
 				
+				// Update suspend manager configuration
+				suspendManager.UpdateConfig(newConfig.SuspendEnabled, newConfig.SuspendIdleTimeout)
+				
+				// Update process manager configuration
+				processManager.UpdateConfig(newConfig.ManagedProcesses)
+				
 				// Create new handler with updated config
-				newHandler := CreateHandler(newConfig, manager, newAuth)
+				newHandler := CreateHandler(newConfig, manager, newAuth, suspendManager)
 				
 				// Atomically swap the handler
 				handlerMutex.Lock()
@@ -994,6 +1168,14 @@ func ParseYAML(content []byte) (*Config, error) {
 	
 	// Set managed processes
 	config.ManagedProcesses = yamlConfig.ManagedProcesses
+	
+	// Set suspend configuration
+	config.SuspendEnabled = yamlConfig.Suspend.Enabled
+	if yamlConfig.Suspend.IdleTimeout > 0 {
+		config.SuspendIdleTimeout = time.Duration(yamlConfig.Suspend.IdleTimeout) * time.Second
+	} else {
+		config.SuspendIdleTimeout = 10 * time.Minute // Default
+	}
 	
 	return config, nil
 }
@@ -1525,7 +1707,7 @@ func LoadAuthFile(filename, realm string, exclude []string) (*BasicAuth, error) 
 }
 
 // CreateHandler creates the main HTTP handler
-func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth) http.Handler {
+func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspendManager *SuspendManager) http.Handler {
 	mux := http.NewServeMux()
 
 	// Health check
@@ -1537,6 +1719,10 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth) http.Ha
 
 	// Main handler
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Track request for suspend management
+		suspendManager.RequestStarted()
+		defer suspendManager.RequestFinished()
+		
 		slog.Debug("Request received", "method", r.Method, "path", r.URL.Path)
 		
 		// Handle nginx-style rewrites/redirects first

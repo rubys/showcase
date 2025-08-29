@@ -3,7 +3,6 @@
 
 app = "smooth-nav"
 primary_region = "iad"
-swap_size_mb = 2048
 
 [build]
   dockerfile = "Dockerfile.nav"
