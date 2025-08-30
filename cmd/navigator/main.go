@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"io"
@@ -26,20 +25,20 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// RewriteRule represents an nginx rewrite rule
+// RewriteRule represents a rewrite rule
 type RewriteRule struct {
 	Pattern     *regexp.Regexp
 	Replacement string
 	Flag        string // redirect, last, etc.
 }
 
-// AuthPattern represents an nginx auth exclusion pattern
+// AuthPattern represents an auth exclusion pattern
 type AuthPattern struct {
 	Pattern *regexp.Regexp
 	Action  string // "off" or realm name
 }
 
-// Config represents the parsed nginx/passenger configuration
+// Config represents the parsed configuration
 type Config struct {
 	ServerName      string
 	ListenPort      int
@@ -800,7 +799,7 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, opts))
 	slog.SetDefault(logger)
 	
-	// Handle -s reload option like nginx
+	// Handle -s reload option
 	if len(os.Args) > 1 && os.Args[1] == "-s" {
 		if len(os.Args) > 2 && os.Args[2] == "reload" {
 			if err := sendReloadSignal(); err != nil {
@@ -965,32 +964,15 @@ func main() {
 	}
 }
 
-// LoadConfig auto-detects and loads either YAML or nginx configuration
+// LoadConfig loads YAML configuration
 func LoadConfig(filename string) (*Config, error) {
-	ext := filepath.Ext(filename)
 	content, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 	
-	// Auto-detect by extension or content
-	switch {
-	case ext == ".yaml" || ext == ".yml":
-		log.Println("Detected YAML configuration format")
-		return ParseYAML(content)
-	case ext == ".conf" || strings.Contains(string(content), "server {"):
-		log.Println("Warning: nginx format is deprecated, please migrate to YAML")
-		return ParseNginxFile(filename)
-	default:
-		// Try to detect by content
-		if strings.Contains(string(content), "server {") {
-			log.Println("Warning: nginx format is deprecated, please migrate to YAML")
-			return ParseNginxFile(filename)
-		}
-		// Default to YAML
-		log.Println("Assuming YAML configuration format")
-		return ParseYAML(content)
-	}
+	log.Println("Loading YAML configuration")
+	return ParseYAML(content)
 }
 
 // substituteVars replaces template variables with tenant values
@@ -1208,250 +1190,6 @@ func ParseYAML(content []byte) (*Config, error) {
 	return config, nil
 }
 
-// ParseNginxFile parses the nginx/passenger configuration file
-func ParseNginxFile(filename string) (*Config, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	config := &Config{
-		ListenPort:     3000,
-		MaxPoolSize:    68,
-		DefaultUser:    "root",
-		DefaultGroup:   "root",
-		Locations:      make(map[string]*Location),
-		ProxyRoutes:    make(map[string]*ProxyRoute),
-		GlobalEnvVars:  make(map[string]string),
-		AuthExclude:    []string{},
-		AuthPatterns:   []*AuthPattern{},
-		RewriteRules:   []*RewriteRule{},
-		MinInstances:   0,
-		PreloadBundler: false,
-		IdleTimeout:    10 * time.Minute,
-		StartPort:      4000,
-		// Default static configuration for nginx compatibility
-		StaticDirs: []*StaticDir{
-			{URLPath: "/assets/", LocalPath: "public/assets/", CacheTTL: 86400},
-			{URLPath: "/docs/", LocalPath: "public/docs/", CacheTTL: 0},
-			{URLPath: "/fonts/", LocalPath: "public/fonts/", CacheTTL: 86400},
-			{URLPath: "/regions/", LocalPath: "public/regions/", CacheTTL: 0},
-			{URLPath: "/studios/", LocalPath: "public/studios/", CacheTTL: 0},
-		},
-		StaticExts: []string{"html", "htm", "txt", "xml", "json", "css", "js",
-			"png", "jpg", "jpeg", "gif", "svg", "ico", "pdf", "xlsx",
-			"woff", "woff2", "ttf", "eot"},
-		TryFilesSuffixes: []string{".html", ".htm", ".txt", ".xml", ".json"},
-	}
-
-	scanner := bufio.NewScanner(file)
-	var currentLocation *Location
-	var currentProxy *ProxyRoute
-	inServer := false
-	inLocation := false
-	inProxyLocation := false
-
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		
-		// Skip comments and empty lines
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		// Handle server block
-		if strings.HasPrefix(line, "server {") {
-			inServer = true
-			continue
-		}
-
-		// Handle location blocks
-		if strings.HasPrefix(line, "location") {
-			parts := strings.Fields(line)
-			if len(parts) >= 2 {
-				locPath := parts[1]
-				
-				// Check if it's a proxy location (PDF/XLSX)
-				if strings.Contains(line, "~") && (strings.Contains(locPath, "\\.pdf$") || strings.Contains(locPath, "\\.xlsx$")) {
-					inProxyLocation = true
-					pattern := strings.Trim(locPath, "~")
-					currentProxy = &ProxyRoute{
-						Pattern:    pattern,
-						SetHeaders: make(map[string]string),
-					}
-				} else if locPath != "/" && !strings.Contains(locPath, "/up") {
-					inLocation = true
-					currentLocation = &Location{
-						Path:    locPath,
-						EnvVars: make(map[string]string),
-					}
-				} else if locPath == "/" {
-					// Handle root location
-					inLocation = true
-					currentLocation = &Location{
-						Path:    "/",
-						EnvVars: make(map[string]string),
-					}
-				}
-			}
-			continue
-		}
-
-		// End of location block
-		if line == "}" {
-			if inLocation && currentLocation != nil {
-				config.Locations[currentLocation.Path] = currentLocation
-				currentLocation = nil
-				inLocation = false
-			} else if inProxyLocation && currentProxy != nil {
-				config.ProxyRoutes[currentProxy.Pattern] = currentProxy
-				currentProxy = nil
-				inProxyLocation = false
-			}
-			continue
-		}
-
-		// Parse directives
-		if inProxyLocation && currentProxy != nil {
-			if strings.HasPrefix(line, "proxy_pass ") {
-				currentProxy.ProxyPass = strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(line, "proxy_pass")), ";")
-			} else if strings.HasPrefix(line, "proxy_set_header ") {
-				parts := strings.SplitN(strings.TrimSuffix(strings.TrimPrefix(line, "proxy_set_header "), ";"), " ", 2)
-				if len(parts) == 2 {
-					currentProxy.SetHeaders[parts[0]] = parts[1]
-				}
-			} else if strings.HasPrefix(line, "proxy_ssl_server_name ") {
-				currentProxy.SSLVerify = strings.Contains(line, "on")
-			}
-		} else if inLocation && currentLocation != nil {
-			// Parse location-specific directives
-			if strings.HasPrefix(line, "root ") {
-				currentLocation.Root = strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(line, "root")), ";")
-			} else if strings.HasPrefix(line, "passenger_app_group_name ") {
-				currentLocation.AppGroupName = strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(line, "passenger_app_group_name")), ";")
-			} else if strings.HasPrefix(line, "passenger_base_uri ") {
-				currentLocation.BaseURI = strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(line, "passenger_base_uri")), ";")
-			} else if strings.HasPrefix(line, "passenger_env_var ") {
-				parts := strings.SplitN(strings.TrimSuffix(strings.TrimPrefix(line, "passenger_env_var "), ";"), " ", 2)
-				if len(parts) == 2 {
-					key := parts[0]
-					value := strings.Trim(parts[1], "\"")
-					currentLocation.EnvVars[key] = value
-				}
-			}
-		} else if inServer {
-			// Parse server-level directives
-			if strings.HasPrefix(line, "listen ") {
-				portStr := strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(line, "listen")), ";")
-				portStr = strings.Fields(portStr)[0] // Handle "listen [::]:3000"
-				if port, err := strconv.Atoi(portStr); err == nil {
-					config.ListenPort = port
-				}
-			} else if strings.HasPrefix(line, "server_name ") {
-				config.ServerName = strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(line, "server_name")), ";")
-			} else if strings.HasPrefix(line, "rewrite ") {
-				// Parse rewrite rule: rewrite ^pattern$ replacement flag;
-				rewriteStr := strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(line, "rewrite")), ";")
-				parts := strings.Fields(rewriteStr)
-				if len(parts) >= 2 {
-					patternStr := parts[0]
-					replacement := parts[1]
-					flag := ""
-					if len(parts) >= 3 {
-						flag = parts[2]
-					}
-					
-					// Convert nginx regex to Go regex
-					if pattern, err := regexp.Compile(patternStr); err == nil {
-						config.RewriteRules = append(config.RewriteRules, &RewriteRule{
-							Pattern:     pattern,
-							Replacement: replacement,
-							Flag:        flag,
-						})
-						log.Printf("Parsed rewrite rule: %s -> %s (%s)", patternStr, replacement, flag)
-					} else {
-						log.Printf("Warning: Invalid rewrite pattern %s: %v", patternStr, err)
-					}
-				}
-			} else if strings.HasPrefix(line, "if (") && strings.Contains(line, "set $realm") {
-				// Parse auth pattern: if ($request_uri ~ "pattern") { set $realm off; }
-				if strings.Contains(line, "~") {
-					// Extract the regex pattern between quotes
-					start := strings.Index(line, "\"")
-					end := strings.LastIndex(line, "\"")
-					if start != -1 && end != -1 && start < end {
-						patternStr := line[start+1 : end]
-						action := "off" // Default action for exclusions
-						
-						// Convert nginx regex to Go regex
-						if pattern, err := regexp.Compile(patternStr); err == nil {
-							config.AuthPatterns = append(config.AuthPatterns, &AuthPattern{
-								Pattern: pattern,
-								Action:  action,
-							})
-							log.Printf("Parsed auth pattern: %s -> %s", patternStr, action)
-						} else {
-							log.Printf("Warning: Invalid auth pattern %s: %v", patternStr, err)
-						}
-					}
-				}
-			} else if strings.HasPrefix(line, "auth_basic_user_file ") {
-				config.AuthFile = strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(line, "auth_basic_user_file")), ";")
-			} else if strings.HasPrefix(line, "set $realm ") {
-				config.AuthRealm = strings.Trim(strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(line, "set $realm")), ";"), "\"")
-			} else if strings.HasPrefix(line, "client_max_body_size ") {
-				config.ClientMaxBody = strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(line, "client_max_body_size")), ";")
-			} else if strings.HasPrefix(line, "passenger_ruby ") {
-				config.PassengerRuby = strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(line, "passenger_ruby")), ";")
-			} else if strings.HasPrefix(line, "passenger_min_instances ") {
-				if n, err := strconv.Atoi(strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(line, "passenger_min_instances")), ";")); err == nil {
-					config.MinInstances = n
-				}
-			} else if strings.HasPrefix(line, "passenger_preload_bundler ") {
-				config.PreloadBundler = strings.Contains(line, "on")
-			} else if strings.HasPrefix(line, "passenger_env_var ") {
-				parts := strings.SplitN(strings.TrimSuffix(strings.TrimPrefix(line, "passenger_env_var "), ";"), " ", 2)
-				if len(parts) == 2 {
-					key := parts[0]
-					value := strings.Trim(parts[1], "\"")
-					config.GlobalEnvVars[key] = value
-				}
-			}
-		} else {
-			// Global directives
-			if strings.HasPrefix(line, "passenger_max_pool_size ") {
-				if n, err := strconv.Atoi(strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(line, "passenger_max_pool_size")), ";")); err == nil {
-					config.MaxPoolSize = n
-				}
-			} else if strings.HasPrefix(line, "passenger_default_user ") {
-				config.DefaultUser = strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(line, "passenger_default_user")), ";")
-			} else if strings.HasPrefix(line, "passenger_default_group ") {
-				config.DefaultGroup = strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(line, "passenger_default_group")), ";")
-			} else if strings.HasPrefix(line, "passenger_log_file ") {
-				config.LogFile = strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(line, "passenger_log_file")), ";")
-			} else if strings.HasPrefix(line, "error_log ") {
-				config.ErrorLog = strings.TrimSuffix(strings.TrimSpace(strings.TrimPrefix(line, "error_log")), ";")
-			} else if strings.HasPrefix(line, "access_log ") {
-				parts := strings.Fields(strings.TrimSuffix(strings.TrimPrefix(line, "access_log "), ";"))
-				if len(parts) > 0 {
-					config.AccessLog = parts[0]
-				}
-			}
-		}
-	}
-
-	// Auth exclusions are now parsed from the config file as AuthPatterns
-	// No need for hard-coded exclusions
-
-	return config, scanner.Err()
-}
-
-// ParseConfig is deprecated, use LoadConfig instead
-func ParseConfig(filename string) (*Config, error) {
-	log.Println("Warning: ParseConfig is deprecated, use LoadConfig instead")
-	return ParseNginxFile(filename)
-}
 
 // NewAppManager creates a new application manager
 func NewAppManager(config *Config) *AppManager {
@@ -1753,7 +1491,7 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 		
 		slog.Debug("Request received", "method", r.Method, "path", r.URL.Path)
 		
-		// Handle nginx-style rewrites/redirects first
+		// Handle rewrites/redirects first
 		if handleRewrites(w, r, config) {
 			return
 		}
@@ -1774,7 +1512,7 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 			return
 		}
 
-		// For non-authenticated routes, try nginx-style try_files behavior
+		// For non-authenticated routes, try try_files behavior
 		// This attempts to serve static files with common extensions before falling back to Rails
 		if !needsAuth && tryFiles(w, r, config) {
 			return
@@ -1894,7 +1632,7 @@ func checkAuth(r *http.Request, auth *BasicAuth) bool {
 	return auth.File.Match(username, password)
 }
 
-// handleRewrites handles nginx-style rewrite rules from config
+// handleRewrites handles rewrite rules from config
 func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool {
 	path := r.URL.Path
 	
@@ -2089,7 +1827,7 @@ func serveStaticFile(w http.ResponseWriter, r *http.Request, config *Config) boo
 	return true
 }
 
-// tryFiles implements nginx-style try_files behavior for non-authenticated routes
+// tryFiles implements try_files behavior for non-authenticated routes
 // Attempts to serve static files with common extensions before falling back to Rails
 func tryFiles(w http.ResponseWriter, r *http.Request, config *Config) bool {
 	path := r.URL.Path

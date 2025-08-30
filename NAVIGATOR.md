@@ -1,20 +1,20 @@
 # Navigator - Go Web Server
 
-Navigator is a Go-based replacement for nginx + Phusion Passenger that provides multi-tenant Rails application hosting with on-demand process management.
+Navigator is a Go-based web server that provides multi-tenant Rails application hosting with on-demand process management.
 
 ## Overview
 
-Navigator supports both nginx-style and modern YAML configuration formats:
+Navigator uses YAML configuration format for:
 - **Multi-tenant hosting**: Manages multiple Rails applications with separate databases
 - **On-demand process management**: Starts Rails apps when needed, stops after idle timeout
 - **Managed processes**: Start and stop additional processes alongside Navigator (Redis, workers, etc.)
 - **Static file serving**: Serves assets, images, and static content directly from filesystem with configurable caching
 - **Authentication**: Full htpasswd support (APR1, bcrypt, SHA, etc.) with pattern-based exclusions
-- **URL rewriting**: Nginx-style rewrite rules with redirect, last, and fly-replay flags
+- **URL rewriting**: Rewrite rules with redirect, last, and fly-replay flags
 - **Reverse proxy**: Forwards dynamic requests to Rails applications with method-based exclusions
 - **Machine suspension**: Auto-suspend Fly.io machines after idle timeout (when enabled)
 - **Configuration reload**: Live configuration reload with SIGHUP signal (no restart needed)
-- **Dual configuration**: Supports both nginx config files (deprecated) and modern YAML format
+- **YAML configuration**: Modern YAML-based configuration format
 
 ## Building and Running
 
@@ -27,7 +27,7 @@ go build -mod=readonly -o bin/navigator cmd/navigator/main.go
 # Display help
 ./bin/navigator --help
 
-# Run with YAML configuration (recommended - default location)
+# Run with YAML configuration (default location)
 ./bin/navigator
 # Or specify a custom config file
 ./bin/navigator config/navigator.yml
@@ -54,11 +54,9 @@ bin/rails nav:prep
 # - Handle graceful shutdown on interrupt signals
 ```
 
-## Configuration Formats
+## Configuration Format
 
-Navigator supports two configuration formats:
-
-### YAML Configuration (Recommended)
+### YAML Configuration
 
 **⚠️ IMPORTANT**: `config/navigator.yml` is a generated file. DO NOT edit it directly!
 - To modify configuration: Edit `app/controllers/concerns/configurator.rb`
@@ -184,37 +182,6 @@ routes:
       exclude_methods: [POST, DELETE]  # Don't proxy these methods
 ```
 
-### Nginx Configuration (Deprecated)
-
-Navigator also parses nginx configuration files and extracts:
-
-### Server Directives
-- `listen 9999` - Port to listen on
-- `server_name localhost` - Server name
-- `passenger_max_pool_size 54` - Maximum number of Rails processes
-
-### Location Blocks
-```nginx
-location /showcase/2025/boston/ {
-  root /Users/rubys/git/showcase/public;
-  passenger_app_group_name showcase-boston-2025;
-  passenger_env_var RAILS_APP_DB "2025-boston";
-  passenger_env_var RAILS_STORAGE "/path/to/storage";
-}
-```
-
-### Rewrite Rules
-```nginx
-rewrite ^/(showcase)?$ /showcase/ redirect;
-rewrite ^/assets/ /showcase/assets/ last;
-```
-
-### Authentication Patterns
-```nginx
-if ($request_uri ~ "^/showcase/assets/") { set $realm off; }
-auth_basic_user_file /path/to/htpasswd;
-```
-
 ## Architecture
 
 ### Managed Processes
@@ -294,7 +261,6 @@ For non-authenticated routes, implements nginx-style `try_files` behavior:
 - **No recompilation needed**: All patterns parsed from config file
 - **Generated YAML**: Configuration is generated from Rails settings via `configurator.rb`
 - **Dynamic reloads**: Regenerate config with `bin/rails nav:config` and restart navigator
-- **Nginx compatibility**: Reads standard nginx configuration syntax (deprecated)
 
 ### Performance Optimizations
 - **Static file serving**: Bypasses Rails for assets and static content
@@ -325,7 +291,7 @@ Navigator uses Go's `slog` package for structured logging:
 - **Structured Format**: Text handler with consistent key-value pairs
 
 ### Key Functions
-- `LoadConfig()` - Auto-detects and loads either YAML or nginx configuration
+- `LoadConfig()` - Loads YAML configuration
 - `ParseYAML()` - Parses YAML configuration with template variable substitution
 - `cleanupPidFile()` - Checks for and removes stale PID files
 - `findAvailablePort()` - Finds available ports dynamically instead of sequential assignment
@@ -334,7 +300,7 @@ Navigator uses Go's `slog` package for structured logging:
 - `NewProcessManager()` - Manages external processes with auto-restart capability
 - `NewSuspendManager()` - Handles Fly.io machine suspension after idle timeout
 - `serveStaticFile()` - Handles static file serving for assets and explicit extensions
-- `tryFiles()` - Implements nginx-style try_files with index.html support
+- `tryFiles()` - Implements try_files with index.html support
 - `handleRewrites()` - Processes URL rewrite rules including fly-replay
 - `shouldExcludeFromAuth()` - Checks authentication exclusion patterns
 - `sendReloadSignal()` - Sends SIGHUP to reload configuration without restart
@@ -365,7 +331,7 @@ curl -u test:secret http://localhost:9999/showcase/2025/boston/
 
 ### Configuration Reload (New - December 2025)
 - **Live Reload**: Reload configuration without restart using SIGHUP signal
-- **nginx-style Command**: Support for `navigator -s reload` command
+- **Reload Command**: Support for `navigator -s reload` command
 - **PID File Management**: Writes PID file to /tmp/navigator.pid for signal management
 - **Atomic Updates**: Configuration changes applied atomically with no downtime
 
@@ -427,27 +393,12 @@ Navigator is designed to replace nginx + Passenger in production environments:
 - **Basic proxy features**: Supports essential reverse proxy functionality
 - **Try files scope**: Only applies to non-authenticated routes for security
 
-## Nginx Equivalent
+## Try Files Behavior
 
-Navigator's try_files implementation is equivalent to nginx configuration like:
-
-```nginx
-location /showcase/studios/ {
-    auth_basic off;
-    try_files $uri $uri.html $uri.htm $uri.txt $uri.xml $uri.json @rails;
-}
-
-location /showcase/regions/ {
-    auth_basic off;
-    try_files $uri $uri.html $uri.htm $uri.txt $uri.xml $uri.json @rails;
-}
-
-location @rails {
-    proxy_pass http://rails_app;
-}
-```
-
-This provides zero Rails overhead for public content while maintaining security for protected routes.
+Navigator's try_files implementation attempts to serve static files with various extensions before falling back to Rails:
+- Tries: `$uri`, `$uri.html`, `$uri.htm`, `$uri.txt`, `$uri.xml`, `$uri.json`
+- Falls back to Rails application if no static file found
+- Provides zero Rails overhead for public content while maintaining security for protected routes
 
 ## Future Implementation Ideas
 
@@ -471,10 +422,10 @@ Several YAML configuration fields are parsed but not yet fully utilized:
 - **Debug modes**: Add verbose logging modes and metrics endpoint for troubleshooting
 - **Configuration testing**: Tool to test configuration without starting full server
 
-### 4. Migration and Deprecation Path
-- **Deprecation timeline**: Set clear timeline for removing nginx configuration support
-- **Migration tooling**: Automated script to convert existing nginx configs to YAML format
-- **Documentation updates**: Comprehensive migration guide and updated deployment documentation
+### 4. Documentation and Best Practices
+- **Configuration validation**: Tool to test configuration without starting full server
+- **Documentation updates**: Comprehensive deployment documentation
+- **Best practices guide**: Guide for optimal configuration patterns
 
 ### 5. Production Readiness Enhancements
 - ~~**Graceful shutdown**: Proper SIGTERM handling for zero-downtime deployments~~ ✅ Implemented
