@@ -9,29 +9,31 @@ require 'fileutils'
 
 migrations = Dir["db/migrate/2*"].map {|name| name[/\d+/]}
 
+# Check for required S3 environment variables
+required_env = ["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_ENDPOINT_URL_S3"]
+missing_env = required_env.select { |var| ENV[var].nil? || ENV[var].empty? }
+s3_client = nil
+if missing_env.empty? && Rails.env.production?
+  # Initialize S3 client
+  s3_client = Aws::S3::Client.new(
+    region: ENV['AWS_REGION'] || 'auto',
+    access_key_id: ENV['AWS_ACCESS_KEY_ID'],
+    secret_access_key: ENV['AWS_SECRET_ACCESS_KEY'],
+    endpoint: ENV['AWS_ENDPOINT_URL_S3'],
+    force_path_style: true
+  )
+end
+
 ARGV.each do |database|
   lock_file = database.sub('.sqlite3', '.lock')
   applied = []
 
   File.open(lock_file, 'w') do |file|
     if file.flock(File::LOCK_EX)
-      # Check if database exists, if not fetch from S3
-      unless File.exist?(database) && File.size(database) > 0
-        # Check for required S3 environment variables
-        required_env = ["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_ENDPOINT_URL_S3"]
-        missing_env = required_env.select { |var| ENV[var].nil? || ENV[var].empty? }
-        
-        if missing_env.empty?
-          begin
-            # Initialize S3 client
-            s3_client = Aws::S3::Client.new(
-              region: ENV['AWS_REGION'] || 'auto',
-              access_key_id: ENV['AWS_ACCESS_KEY_ID'],
-              secret_access_key: ENV['AWS_SECRET_ACCESS_KEY'],
-              endpoint: ENV['AWS_ENDPOINT_URL_S3'],
-              force_path_style: true
-            )
-            
+      if s3_client 
+        # Check if database is up to date, if not fetch from S3; skip if FLY_APP_NAME is smooth and database exists
+        if !(File.exist?(database) && File.size(database) > 0) || (ENV['FLY_APP_NAME'] && ENV['FLY_APP_NAME'] != 'smooth')
+          begin            
             bucket_name = ENV.fetch('BUCKET_NAME', 'showcase')
             db_name = File.basename(database)
             s3_key = "db/#{db_name}"
@@ -39,14 +41,6 @@ ARGV.each do |database|
             # Try to download from S3
             begin
               response = s3_client.get_object(bucket: bucket_name, key: s3_key)
-              
-              # Write the database file
-              File.open(database, 'wb') do |db_file|
-                db_file.write(response.body.read)
-              end
-              
-              # Get the actual last_modified from inventory
-              actual_mtime = nil
               
               # Load showcases to determine region
               git_path = File.realpath(File.expand_path('..', __dir__))
@@ -112,6 +106,9 @@ ARGV.each do |database|
                   puts "Error loading inventory from S3: #{e.message}"
                 end
               end
+
+              # Get the actual last_modified from inventory
+              actual_mtime = nil
               
               # Extract the mtime from inventory
               if inventory && inventory[db_name] && inventory[db_name]['last_modified']
@@ -119,10 +116,18 @@ ARGV.each do |database|
               end
               
               # Set the mtime on the file
-              if actual_mtime
-                File.utime(actual_mtime, actual_mtime, database)
-              elsif response.last_modified
-                File.utime(response.last_modified, response.last_modified, database)
+              if !actual_mtime && response.last_modified
+                actual_mtime = response.last_modified
+              end
+
+              local_time = File.exist?(database) ? File.mtime(database) : nil
+
+              if !local_time || (actual_mtime && actual_mtime > local_time)
+                # Write the database file
+                File.open(database, 'wb') do |db_file|
+                  db_file.write(response.body.read)
+                  File.utime(actual_mtime, actual_mtime, database) if actual_mtime
+                end
               end
               
               puts "Downloaded #{db_name} from S3"
@@ -135,9 +140,9 @@ ARGV.each do |database|
           rescue => e
             puts "Error initializing S3 client: #{e.message}"
           end
-        else
-          puts "S3 environment variables not configured, skipping S3 download"
         end
+      else
+        puts "S3 environment variables not configured, skipping S3 download"
       end
       
       if File.exist?(database) and File.size(database) > 0
@@ -170,3 +175,5 @@ ARGV.each do |database|
 
   File.unlink(lock_file) if File.exist?(lock_file)
 end
+
+s3_client.close if s3_client
