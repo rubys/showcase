@@ -77,7 +77,7 @@ showcases.each do |year, list|
 end
 
 @region = ENV['FLY_REGION']
-REGIONS = @region ? `dig +short txt regions.smooth.internal`.scan(/\w+/) : []
+REGIONS = @region ? `dig +short txt regions.#{ENV["FLY_APP_NAME"]}.internal`.scan(/\w+/) : []
 
 ROOT = ENV['KAMAL_CONTAINER_NAME'] ? '' : '/showcase'
 
@@ -480,7 +480,7 @@ server {
 
     proxy_set_header X-Forwarded-Host $host;
 <% if REGIONS.include?(region) -%>
-    proxy_pass http://<%= region %>.smooth.internal:3000/showcase/$year/$site$rest;
+    proxy_pass http://<%= region %>.<%= ENV["FLY_APP_NAME"] %>.internal:3000/showcase/$year/$site$rest;
 <% else -%>
     return 410;
 <% end -%>

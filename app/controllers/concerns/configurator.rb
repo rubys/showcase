@@ -249,7 +249,7 @@ module Configurator
       # Reverse proxy for non-GET requests
       routes['reverse_proxies'] << {
         'path' => "^#{root}/(?<year>#{years})/(?<site>#{sites_pattern})(?<rest>/.*)?$",
-        'target' => "http://#{target_region}.smooth.internal:3000#{root}/$year/$site$rest",
+        'target' => "http://#{target_region}.#{ENV["FLY_APP_NAME"]}.internal:3000#{root}/$year/$site$rest",
         'headers' => {
           'X-Forwarded-Host' => '$host'
         },
