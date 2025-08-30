@@ -265,8 +265,7 @@ module Configurator
       { 'path' => "#{root}/docs/", 'root' => 'docs/' },
       { 'path' => "#{root}/fonts/", 'root' => 'fonts/' },
       { 'path' => "#{root}/regions/", 'root' => 'regions/' },
-      { 'path' => "#{root}/studios/", 'root' => 'studios/' },
-      { 'path' => "#{root}/index", 'root' => '.', 'file' => 'index.html' }
+      { 'path' => "#{root}/studios/", 'root' => 'studios/' }
     ]
     
     # Add root path for serving root-level static files (e.g., /arthur-murray-logo.gif)
