@@ -81,6 +81,7 @@ Rails.application.routes.draw do
     get '/regions/:region/songs', to: "event#songs", as: 'region_songs'
     get '/regions/:region/logs/:file', to: "event#region_log", as: "region_log",
       constraints: { file: /[-\w.]+/ }
+    get '/regions/:region/navigator.yml', to: "event#navigator_config", as: "navigator_config"
 
     scope 'public' do
       get 'heats', to: 'heats#mobile', as: 'public_heats'

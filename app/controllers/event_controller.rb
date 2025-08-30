@@ -10,7 +10,8 @@ class EventController < ApplicationController
   include ActiveStorage::SetCurrent
   include ShowcaseInventory
 
-  skip_before_action :authenticate_user, only: %i[ counter showcases regions console upload ]
+  skip_before_action :authenticate_user, only: %i[ counter showcases regions console upload navigator_config ]
+  skip_before_action :current_event, only: %i[ navigator_config ]
   skip_before_action :verify_authenticity_token, only: :console
 
   permit_site_owners :root, trust_level: 25
@@ -647,6 +648,15 @@ class EventController < ApplicationController
     file = params[:file]
 
     render plain: IO.read(Rails.root.join('log', file).to_s)
+  end
+
+  def navigator_config
+    config_path = Rails.root.join('config', 'navigator.yml')
+    if File.exist?(config_path)
+      render plain: File.read(config_path), content_type: 'text/plain'
+    else
+      render plain: "Navigator configuration not found", status: :not_found
+    end
   end
 
   def logs
