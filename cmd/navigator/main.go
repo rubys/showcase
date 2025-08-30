@@ -1920,11 +1920,18 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 					// Only apply fly-replay for GET requests (if methods not specified) or specified methods
 					if r.Method == "GET" {
 						w.Header().Set("Fly-Replay", fmt.Sprintf("region=%s", region))
-						if statusCode, err := strconv.Atoi(status); err == nil {
-							w.WriteHeader(statusCode)
-						} else {
-							w.WriteHeader(http.StatusTemporaryRedirect)
+						statusCode := http.StatusTemporaryRedirect
+						if code, err := strconv.Atoi(status); err == nil {
+							statusCode = code
 						}
+						
+						slog.Info("Sending fly-replay response", 
+							"path", path, 
+							"region", region, 
+							"status", statusCode, 
+							"method", r.Method)
+						
+						w.WriteHeader(statusCode)
 						return true
 					}
 				}
