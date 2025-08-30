@@ -56,6 +56,7 @@ task :prerender => "prerender:env" do
 
   # start with the index.html and regions/index.html files
   files = [
+    ['/', 'index.html'],
     ['regions/', 'regions/index.html'],
   ]
 
