@@ -1583,8 +1583,7 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 				http.Error(w, "Invalid standalone server configuration", http.StatusInternalServerError)
 				return
 			}
-			proxy := httputil.NewSingleHostReverseProxy(target)
-			proxy.ServeHTTP(w, r)
+			proxyWithRetry(w, r, target, 3*time.Second)
 			return
 		}
 
@@ -1597,7 +1596,6 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 
 		// Proxy to Rails app
 		target, _ := url.Parse(fmt.Sprintf("http://localhost:%d", app.Port))
-		proxy := httputil.NewSingleHostReverseProxy(target)
 		
 		// For Rails apps, preserve the full path - don't strip the location prefix
 		// Rails routing expects to see the full path like "/2025/adelaide/adelaide-combined/"
@@ -1617,7 +1615,8 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 		
 		slog.Info("Proxying to Rails", "path", originalPath, "port", app.Port, "location", bestMatch.Path)
 		
-		proxy.ServeHTTP(w, r)
+		// Use retry logic for Rails apps too
+		proxyWithRetry(w, r, target, 3*time.Second)
 	})
 }
 
@@ -1974,7 +1973,90 @@ func setContentType(w http.ResponseWriter, fsPath string) {
 	}
 }
 
-// proxyRequest proxies a request to another server
+// proxyWithRetry handles proxying with automatic retry on 502 errors
+func proxyWithRetry(w http.ResponseWriter, r *http.Request, target *url.URL, maxRetryDuration time.Duration) {
+	startTime := time.Now()
+	retryCount := 0
+	sleepDuration := 100 * time.Millisecond // Start with 100ms
+	
+	for {
+		// Create a new proxy for each attempt
+		proxy := httputil.NewSingleHostReverseProxy(target)
+		
+		// Track if we got an error
+		errorOccurred := false
+		errorHandled := false
+		
+		// Custom error handler to detect connection errors
+		proxy.ErrorHandler = func(rw http.ResponseWriter, req *http.Request, err error) {
+			errorOccurred = true
+			
+			// Check if we should retry
+			if time.Since(startTime) < maxRetryDuration {
+				// We'll retry, don't write response yet
+				return
+			}
+			
+			// Max retry time exceeded or non-retryable error
+			if !errorHandled {
+				errorHandled = true
+				slog.Warn("Proxy error after retries", 
+					"target", target.String(), 
+					"error", err,
+					"retries", retryCount,
+					"duration", time.Since(startTime))
+				http.Error(rw, "Bad Gateway", http.StatusBadGateway)
+			}
+		}
+		
+		// Attempt the proxy request
+		proxy.ServeHTTP(w, r)
+		
+		// If no error occurred, we're done
+		if !errorOccurred {
+			return
+		}
+		
+		// Check if we've exceeded max retry duration
+		if time.Since(startTime) >= maxRetryDuration {
+			if !errorHandled {
+				slog.Warn("Proxy retry timeout", 
+					"target", target.String(), 
+					"retries", retryCount,
+					"duration", time.Since(startTime))
+				http.Error(w, "Bad Gateway", http.StatusBadGateway)
+			}
+			return
+		}
+		
+		// Log retry attempt
+		retryCount++
+		slog.Debug("Retrying proxy request", 
+			"target", target.String(), 
+			"retry", retryCount,
+			"sleep", sleepDuration)
+		
+		// Sleep before retry with exponential backoff
+		time.Sleep(sleepDuration)
+		sleepDuration = sleepDuration * 2
+		if sleepDuration > 500*time.Millisecond {
+			sleepDuration = 500 * time.Millisecond // Cap at 500ms
+		}
+		
+		// Clone the request for retry (body might have been consumed)
+		if r.Body != nil && r.ContentLength > 0 {
+			// For retries with body, we'd need to buffer the body
+			// For now, we'll only retry GET/HEAD requests without body
+			if r.Method != "GET" && r.Method != "HEAD" {
+				slog.Debug("Not retrying request with body", "method", r.Method)
+				http.Error(w, "Bad Gateway", http.StatusBadGateway)
+				return
+			}
+		}
+	}
+}
+
+// proxyRequest proxies a request to another server with retry logic
 func proxyRequest(w http.ResponseWriter, r *http.Request, route *ProxyRoute) {
 	target, err := url.Parse(route.ProxyPass)
 	if err != nil {
@@ -1982,12 +2064,11 @@ func proxyRequest(w http.ResponseWriter, r *http.Request, route *ProxyRoute) {
 		return
 	}
 
-	proxy := httputil.NewSingleHostReverseProxy(target)
-	
 	// Add custom headers
 	for k, v := range route.SetHeaders {
 		r.Header.Set(k, v)
 	}
 	
-	proxy.ServeHTTP(w, r)
+	// Use the retry proxy helper
+	proxyWithRetry(w, r, target, 3*time.Second)
 }
