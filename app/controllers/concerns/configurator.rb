@@ -1,4 +1,5 @@
 # RegionConfiguration will be autoloaded by Rails since we added lib to autoload_paths
+require 'set'
 
 module Configurator
   DBPATH = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
@@ -212,20 +213,21 @@ module Configurator
   def add_cross_region_routing(routes, root, current_region)
     showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
     
-    # Group sites by region
-    regions_sites = {}
+    # Group sites and years by region (like nginx-config.rb does)
+    regions = {}
     showcases.each do |year, sites|
       sites.each do |token, info|
         site_region = info[:region]
         next unless site_region && site_region != current_region
         
-        regions_sites[site_region] ||= []
-        regions_sites[site_region] << token
+        regions[site_region] ||= { years: Set.new, sites: Set.new }
+        regions[site_region][:years] << year
+        regions[site_region][:sites] << token
       end
     end
     
     # Add region index fly-replay routes
-    regions_sites.keys.each do |target_region|
+    regions.keys.each do |target_region|
       routes['fly_replay'] << {
         'path' => "#{root}/regions/#{target_region}/",
         'region' => target_region,
@@ -233,15 +235,15 @@ module Configurator
       }
     end
     
-    # Add event-specific routing for each region
-    regions_sites.each do |target_region, sites|
-      years = showcases.keys.join('|')
-      sites_pattern = sites.join('|')
+    # Add event-specific routing for each region using only years that actually exist in that region
+    regions.each do |target_region, data|
+      years = data[:years].to_a.sort.join('|')
+      sites = data[:sites].to_a.sort.join('|')
       
       # Fly-replay for all methods - Navigator automatically falls back to reverse proxy
       # when content constraints prevent fly-replay (eliminating need for separate reverse proxy rules)
       routes['fly_replay'] << {
-        'path' => "^#{root}/(?<year>#{years})/(?<site>#{sites_pattern})(?<rest>/.*)?$",
+        'path' => "^#{root}/(?<year>#{years})/(?<site>#{sites})(?<rest>/.*)?$",
         'region' => target_region,
         'status' => 307
       }
