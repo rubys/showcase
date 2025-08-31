@@ -433,50 +433,6 @@ module Configurator
     
     env['RAILS_APP_REDIS'] = 'showcase_production'
     
-    if ENV['RAILS_LOG_VOLUME']
-      env['RAILS_LOG_VOLUME'] = ENV['RAILS_LOG_VOLUME']
-    end
-    
-    if ENV['RAILS_DB_VOLUME']
-      env['RAILS_DB_VOLUME'] = ENV['RAILS_DB_VOLUME']
-    end
-    
-    if ENV['GEM_HOME']
-      env['GEM_HOME'] = ENV['GEM_HOME']
-    end
-    
-    if ENV['GEM_PATH']
-      env['GEM_PATH'] = ENV['GEM_PATH']
-    end
-    
-    # Pass through AWS/Tigris configuration for Active Storage
-    if ENV['AWS_ACCESS_KEY_ID']
-      env['AWS_ACCESS_KEY_ID'] = ENV['AWS_ACCESS_KEY_ID']
-    end
-    
-    if ENV['AWS_SECRET_ACCESS_KEY']
-      env['AWS_SECRET_ACCESS_KEY'] = ENV['AWS_SECRET_ACCESS_KEY']
-    end
-    
-    if ENV['AWS_ENDPOINT_URL_S3']
-      env['AWS_ENDPOINT_URL_S3'] = ENV['AWS_ENDPOINT_URL_S3']
-    end
-    
-    if ENV['BUCKET_NAME']
-      env['BUCKET_NAME'] = ENV['BUCKET_NAME']
-    end
-    
-    # Default AWS_REGION if not set (required for S3 SDK)
-    env['AWS_REGION'] = ENV.fetch('AWS_REGION', 'auto')
-    
-    if ENV['FLY_REGION']
-      env['PAPERSIZE'] = determine_papersize
-    end
-    
-    unless ENV['FLY_REGION']
-      env['RAILS_PROXY_HOST'] = determine_host
-    end
-    
     env
   end
 
