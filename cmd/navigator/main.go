@@ -29,7 +29,8 @@ import (
 type RewriteRule struct {
 	Pattern     *regexp.Regexp
 	Replacement string
-	Flag        string // redirect, last, etc.
+	Flag        string   // redirect, last, fly-replay:region:status, etc.
+	Methods     []string // Allowed methods for this rule
 }
 
 // AuthPattern represents an auth exclusion pattern
@@ -1077,6 +1078,7 @@ func ParseYAML(content []byte) (*Config, error) {
 				Pattern:     re,
 				Replacement: flyReplay.Path, // Keep original path for fly-replay
 				Flag:        fmt.Sprintf("fly-replay:%s:%d", flyReplay.Region, flyReplay.Status),
+				Methods:     flyReplay.Methods,
 			})
 		}
 	}
@@ -1658,22 +1660,42 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 					region := parts[1]
 					status := parts[2]
 					
-					// Only apply fly-replay for GET requests (if methods not specified) or specified methods
-					if r.Method == "GET" {
-						w.Header().Set("Fly-Replay", fmt.Sprintf("region=%s", region))
-						statusCode := http.StatusTemporaryRedirect
-						if code, err := strconv.Atoi(status); err == nil {
-							statusCode = code
+					// Check if method is allowed for this rule
+					methodAllowed := len(rule.Methods) == 0 // If no methods specified, allow all
+					if len(rule.Methods) > 0 {
+						for _, method := range rule.Methods {
+							if r.Method == method {
+								methodAllowed = true
+								break
+							}
 						}
-						
-						slog.Info("Sending fly-replay response", 
-							"path", path, 
-							"region", region, 
-							"status", statusCode, 
-							"method", r.Method)
-						
-						w.WriteHeader(statusCode)
-						return true
+					}
+					
+					if methodAllowed {
+						if shouldUseFlyReplay(r) {
+							w.Header().Set("Fly-Replay", fmt.Sprintf("region=%s", region))
+							statusCode := http.StatusTemporaryRedirect
+							if code, err := strconv.Atoi(status); err == nil {
+								statusCode = code
+							}
+							
+							slog.Info("Sending fly-replay response", 
+								"path", path, 
+								"region", region, 
+								"status", statusCode, 
+								"method", r.Method,
+								"contentLength", r.ContentLength)
+							
+							w.WriteHeader(statusCode)
+							return true
+						} else {
+							// Don't use fly-replay, but let the request continue to reverse proxy handling
+							slog.Debug("Skipping fly-replay due to content constraints", 
+								"path", path, 
+								"method", r.Method,
+								"contentLength", r.ContentLength)
+							// Return false to continue processing and hit reverse proxy rules
+						}
 					}
 				}
 			} else if rule.Flag == "last" {
@@ -1689,6 +1711,37 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 	
 	slog.Debug("No rewrite rules matched", "path", path)
 	return false
+}
+
+// shouldUseFlyReplay determines if a request should use fly-replay based on content length
+// Fly replay can handle any method as long as the content length is less than 1MB
+func shouldUseFlyReplay(r *http.Request) bool {
+	const maxFlyReplaySize = 1000000 // 1 million bytes
+
+	// If Content-Length is explicitly set and >= 1MB, use reverse proxy
+	if r.ContentLength >= maxFlyReplaySize {
+		slog.Debug("Using reverse proxy due to large content length", 
+			"method", r.Method, 
+			"contentLength", r.ContentLength)
+		return false
+	}
+	
+	// If Content-Length is missing (-1) on methods that typically require content
+	// (POST, PUT, PATCH), be conservative and use reverse proxy
+	if r.ContentLength == -1 {
+		methodsRequiringContent := []string{"POST", "PUT", "PATCH"}
+		for _, method := range methodsRequiringContent {
+			if r.Method == method {
+				slog.Debug("Using reverse proxy due to missing content length on body method", 
+					"method", r.Method)
+				return false
+			}
+		}
+	}
+	
+	// For GET, HEAD, DELETE, OPTIONS and other methods without content, or 
+	// methods with content < 1MB, use fly-replay
+	return true
 }
 
 // shouldExcludeFromAuth checks if a path should be excluded from authentication using parsed patterns
