@@ -43,37 +43,7 @@ begin
   dbpath = ENV.fetch('RAILS_DB_VOLUME') { "#{git_path}/db" }
   FileUtils.mkdir_p dbpath
 
-  puts "Fetch index.sqlite3 from S3"
-
-  # Initialize S3 client
-  s3_client = Aws::S3::Client.new(
-    region: ENV.fetch('AWS_REGION', 'auto'),
-    access_key_id: ENV['AWS_ACCESS_KEY_ID'],
-    secret_access_key: ENV['AWS_SECRET_ACCESS_KEY'],
-    endpoint: ENV['AWS_ENDPOINT_URL_S3'],
-    force_path_style: true
-  )
-
-  # Extract bucket name from endpoint or use default
-  bucket_name = ENV.fetch('BUCKET_NAME', 'showcase')
-
-  # Ensure bucket exists
-  begin
-    s3_client.head_bucket(bucket: bucket_name)
-  rescue Aws::S3::Errors::NotFound
-    puts "Bucket not found: #{bucket_name}"
-    exit 1
-  end
-
-  # Process each expected database
-  db_name = "index.sqlite3"
-  local_path = File.join(dbpath, db_name)
-  s3_key = "db/#{db_name}"
-  
-  response = s3_client.get_object(bucket: bucket_name, key: s3_key)
-  File.open(local_path, 'wb') do |file|
-    file.write(response.body.read)
-  end
+  system "ruby #{git_path}/script/sync_databases_s3.rb --index-only"
 
   thread = Thread.new { system 'bin/prerender' }
   system 'bin/rails nav:config'

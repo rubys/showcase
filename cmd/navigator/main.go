@@ -1512,9 +1512,34 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 			return
 		}
 
+		// Find matching location early to determine if this is a Rails app
+		var bestMatch *Location
+		bestMatchLen := 0
+		
+		// First, check for pattern matches
+		for _, location := range config.Locations {
+			if location.MatchPattern != "" {
+				if matched, _ := filepath.Match(location.MatchPattern, r.URL.Path); matched {
+					bestMatch = location
+					break  // Pattern matches take priority
+				}
+			}
+		}
+		
+		// If no pattern match, use prefix matching (existing logic)
+		if bestMatch == nil {
+			for path, location := range config.Locations {
+				if strings.HasPrefix(r.URL.Path, path) && len(path) > bestMatchLen {
+					bestMatch = location
+					bestMatchLen = len(path)
+				}
+			}
+		}
+
 		// For non-authenticated routes, try try_files behavior
-		// This attempts to serve static files with common extensions before falling back to Rails
-		if !needsAuth && tryFiles(w, r, config) {
+		// Skip tryFiles for Rails application locations (those without StandaloneServer)
+		isRailsApp := bestMatch != nil && bestMatch.StandaloneServer == ""
+		if !needsAuth && !isRailsApp && tryFiles(w, r, config) {
 			return
 		}
 
@@ -1539,30 +1564,7 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 			}
 		}
 
-		// Find matching location
-		var bestMatch *Location
-		bestMatchLen := 0
-		
-		// First, check for pattern matches
-		for _, location := range config.Locations {
-			if location.MatchPattern != "" {
-				if matched, _ := filepath.Match(location.MatchPattern, r.URL.Path); matched {
-					bestMatch = location
-					break  // Pattern matches take priority
-				}
-			}
-		}
-		
-		// If no pattern match, use prefix matching (existing logic)
-		if bestMatch == nil {
-			for path, location := range config.Locations {
-				if strings.HasPrefix(r.URL.Path, path) && len(path) > bestMatchLen {
-					bestMatch = location
-					bestMatchLen = len(path)
-				}
-			}
-		}
-
+		// Now check if we still don't have a match (moved from after proxy routes)
 		if bestMatch == nil {
 			// Try root location
 			if rootLoc, ok := config.Locations["/"]; ok {

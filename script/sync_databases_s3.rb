@@ -17,7 +17,7 @@ if ENV["SENTRY_DSN"]
 end
 
 # Parse command line arguments
-options = { dry_run: false, verbose: false, safe: false }
+options = { dry_run: false, verbose: false, safe: false, index_only: false }
 OptionParser.new do |opts|
   opts.banner = "Usage: #{$0} [options]"
   
@@ -32,7 +32,11 @@ OptionParser.new do |opts|
   opts.on("--safe", "Disallow downloads to current region (when FLY_REGION is set)") do
     options[:safe] = true
   end
-  
+
+  opts.on("--index-only", "Only sync the index database") do
+    options[:index_only] = true
+  end
+
   opts.on("-h", "--help", "Prints this help") do
     puts opts
     exit
@@ -40,7 +44,7 @@ OptionParser.new do |opts|
 end.parse!
 
 # Check for required environment variables
-required_env = ["AWS_REGION", "AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_ENDPOINT_URL_S3"]
+required_env = ["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_ENDPOINT_URL_S3"]
 missing_env = required_env.select { |var| ENV[var].nil? || ENV[var].empty? }
 
 if !missing_env.empty?
@@ -86,6 +90,7 @@ end
 
 # Get list of expected database names
 expected_databases = tenants.keys.map { |label| "#{label}.sqlite3" }
+expected_databases = ["index.sqlite3"] if options[:index_only]
 
 # Main sync logic wrapped in error handling
 begin
@@ -96,12 +101,13 @@ begin
   puts "Total tenants: #{tenants.size}"
   puts "FLY_REGION: #{ENV['FLY_REGION']}" if ENV['FLY_REGION']
   puts "Dry run: #{options[:dry_run]}" if options[:dry_run]
+  puts "Index only: #{options[:index_only]}" if options[:index_only]
   puts "Safe mode: #{options[:safe]} (no downloads to current region)" if options[:safe] && ENV['FLY_REGION']
   puts
 
 # Initialize S3 client
 s3_client = Aws::S3::Client.new(
-  region: ENV['AWS_REGION'],
+  region: ENV['AWS_REGION'] || 'auto',
   access_key_id: ENV['AWS_ACCESS_KEY_ID'],
   secret_access_key: ENV['AWS_SECRET_ACCESS_KEY'],
   endpoint: ENV['AWS_ENDPOINT_URL_S3'],
