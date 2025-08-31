@@ -39,6 +39,78 @@ type AuthPattern struct {
 	Action  string // "off" or realm name
 }
 
+// DNSCacheEntry represents a cached DNS lookup result
+type DNSCacheEntry struct {
+	Available bool
+	ExpiresAt time.Time
+}
+
+// DNSCache manages cached DNS availability results
+type DNSCache struct {
+	mutex sync.RWMutex
+	cache map[string]*DNSCacheEntry
+	ttl   time.Duration
+}
+
+// NewDNSCache creates a new DNS cache with specified TTL
+func NewDNSCache(ttl time.Duration) *DNSCache {
+	return &DNSCache{
+		cache: make(map[string]*DNSCacheEntry),
+		ttl:   ttl,
+	}
+}
+
+// Get retrieves a cached DNS result if available and not expired
+func (c *DNSCache) Get(region string) (bool, bool) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+	
+	entry, exists := c.cache[region]
+	if !exists {
+		return false, false
+	}
+	
+	if time.Now().After(entry.ExpiresAt) {
+		// Entry expired, will be cleaned up later
+		return false, false
+	}
+	
+	return entry.Available, true
+}
+
+// Set stores a DNS result in the cache
+func (c *DNSCache) Set(region string, available bool) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	
+	c.cache[region] = &DNSCacheEntry{
+		Available: available,
+		ExpiresAt: time.Now().Add(c.ttl),
+	}
+}
+
+// Clear removes all cached entries
+func (c *DNSCache) Clear() {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	
+	c.cache = make(map[string]*DNSCacheEntry)
+	slog.Debug("DNS cache cleared")
+}
+
+// CleanExpired removes expired entries from the cache
+func (c *DNSCache) CleanExpired() {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	
+	now := time.Now()
+	for region, entry := range c.cache {
+		if now.After(entry.ExpiresAt) {
+			delete(c.cache, region)
+		}
+	}
+}
+
 // Config represents the parsed configuration
 type Config struct {
 	ServerName      string
@@ -651,6 +723,12 @@ func (sm *SuspendManager) suspendMachine() {
 		return
 	}
 	
+	// Clear DNS cache before suspending
+	if dnsCache != nil {
+		dnsCache.Clear()
+		slog.Debug("DNS cache cleared before machine suspend")
+	}
+	
 	slog.Info("Suspending machine", "app", appName, "machine", machineId)
 	
 	// Create HTTP client with Unix socket transport
@@ -778,6 +856,9 @@ func sendReloadSignal() error {
 	return nil
 }
 
+// Global DNS cache for target machine availability checks
+var dnsCache *DNSCache
+
 func main() {
 	// Initialize logger with level from environment variable
 	logLevel := slog.LevelInfo // Default to Info level
@@ -800,6 +881,9 @@ func main() {
 	}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, opts))
 	slog.SetDefault(logger)
+	
+	// Initialize DNS cache with 30-second TTL
+	dnsCache = NewDNSCache(30 * time.Second)
 	
 	// Handle -s reload option
 	if len(os.Args) > 1 && os.Args[1] == "-s" {
@@ -876,6 +960,18 @@ func main() {
 		log.Printf("Starting %d managed processes", len(config.ManagedProcesses))
 		processManager.StartAll(config.ManagedProcesses)
 	}
+	
+	// Start DNS cache cleanup goroutine
+	go func() {
+		ticker := time.NewTicker(60 * time.Second) // Clean every minute
+		defer ticker.Stop()
+		
+		for range ticker.C {
+			if dnsCache != nil {
+				dnsCache.CleanExpired()
+			}
+		}
+	}()
 	
 	// Create a mutable handler wrapper for configuration reloading
 	handler := CreateHandler(config, manager, auth, suspendManager)
@@ -1755,10 +1851,19 @@ func shouldUseFlyReplay(r *http.Request) bool {
 
 // checkTargetMachineAvailable checks if the target machine is available via IPv6 DNS
 // This helps detect if a machine is in the process of redeploying
+// Results are cached to avoid expensive DNS lookups
 func checkTargetMachineAvailable(region string) bool {
 	flyAppName := os.Getenv("FLY_APP_NAME")
 	if flyAppName == "" {
 		return true // Can't check without app name, assume available
+	}
+	
+	// Check cache first
+	if available, found := dnsCache.Get(region); found {
+		slog.Debug("DNS cache hit for target machine", 
+			"region", region, 
+			"available", available)
+		return available
 	}
 	
 	// Construct the IPv6 DNS name for the target machine
@@ -1775,6 +1880,8 @@ func checkTargetMachineAvailable(region string) bool {
 		slog.Debug("DNS lookup failed for target machine", 
 			"dnsName", dnsName, 
 			"error", err)
+		// Cache negative result
+		dnsCache.Set(region, false)
 		return false
 	}
 	
@@ -1792,6 +1899,8 @@ func checkTargetMachineAvailable(region string) bool {
 		"addressCount", len(addrs),
 		"hasIPv6", hasIPv6)
 	
+	// Cache the result
+	dnsCache.Set(region, hasIPv6)
 	return hasIPv6
 }
 
