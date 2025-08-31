@@ -17,7 +17,7 @@ if ENV["SENTRY_DSN"]
 end
 
 # Parse command line arguments
-options = { dry_run: false, verbose: false, safe: false, index_only: false }
+options = { dry_run: false, verbose: false, safe: false, index_only: false, quiet: false }
 OptionParser.new do |opts|
   opts.banner = "Usage: #{$0} [options]"
   
@@ -27,6 +27,12 @@ OptionParser.new do |opts|
   
   opts.on("-v", "--verbose", "Verbose output") do
     options[:verbose] = true
+    options[:quiet] = false  # Verbose overrides quiet
+  end
+  
+  opts.on("-q", "--quiet", "Suppress informational output (errors still shown)") do
+    options[:quiet] = true
+    options[:verbose] = false  # Quiet overrides verbose
   end
   
   opts.on("--safe", "Disallow downloads to current region (when FLY_REGION is set)") do
@@ -94,16 +100,18 @@ expected_databases = ["index.sqlite3"] if options[:index_only]
 
 # Main sync logic wrapped in error handling
 begin
-  puts "Database Sync with S3"
-  puts "=" * 50
-  puts "Local path: #{dbpath}"
-  puts "S3 endpoint: #{ENV['AWS_ENDPOINT_URL_S3']}"
-  puts "Total tenants: #{tenants.size}"
-  puts "FLY_REGION: #{ENV['FLY_REGION']}" if ENV['FLY_REGION']
-  puts "Dry run: #{options[:dry_run]}" if options[:dry_run]
-  puts "Index only: #{options[:index_only]}" if options[:index_only]
-  puts "Safe mode: #{options[:safe]} (no downloads to current region)" if options[:safe] && ENV['FLY_REGION']
-  puts
+  unless options[:quiet]
+    puts "Database Sync with S3"
+    puts "=" * 50
+    puts "Local path: #{dbpath}"
+    puts "S3 endpoint: #{ENV['AWS_ENDPOINT_URL_S3']}"
+    puts "Total tenants: #{tenants.size}"
+    puts "FLY_REGION: #{ENV['FLY_REGION']}" if ENV['FLY_REGION']
+    puts "Dry run: #{options[:dry_run]}" if options[:dry_run]
+    puts "Index only: #{options[:index_only]}" if options[:index_only]
+    puts "Safe mode: #{options[:safe]} (no downloads to current region)" if options[:safe] && ENV['FLY_REGION']
+    puts
+  end
 
 # Initialize S3 client
 s3_client = Aws::S3::Client.new(
@@ -237,8 +245,8 @@ rescue => e
   exit 1
 end
 
-puts "S3 objects found: #{s3_objects.size}"
-puts
+puts "S3 objects found: #{s3_objects.size}" unless options[:quiet]
+puts unless options[:quiet]
 
 # Track actions
 downloads = []
@@ -392,20 +400,22 @@ if !s3_only.empty? && options[:verbose]
 end
 
 # Summary
-puts
-puts "Summary:"
-puts "=" * 50
-puts "Downloads: #{downloads.size}"
-downloads.each do |d|
-  puts "  - #{d[:name]}"
-end if !downloads.empty?
+unless options[:quiet]
+  puts
+  puts "Summary:"
+  puts "=" * 50
+  puts "Downloads: #{downloads.size}"
+  downloads.each do |d|
+    puts "  - #{d[:name]}"
+  end if !downloads.empty? && options[:verbose]
 
-puts "Uploads: #{uploads.size}"
-uploads.each do |u|
-  puts "  - #{u[:name]}"
-end if !uploads.empty?
+  puts "Uploads: #{uploads.size}"
+  uploads.each do |u|
+    puts "  - #{u[:name]}"
+  end if !uploads.empty? && options[:verbose]
 
-puts "Skipped (unchanged): #{skipped.size}" if options[:verbose]
+  puts "Skipped (unchanged): #{skipped.size}" if options[:verbose]
+end
 
 # Save updated inventories
 unless options[:dry_run]
@@ -435,8 +445,10 @@ unless options[:dry_run]
   end
 end
 
-puts
-puts "Sync complete#{options[:dry_run] ? ' (dry run - no changes made)' : ''}."
+unless options[:quiet]
+  puts
+  puts "Sync complete#{options[:dry_run] ? ' (dry run - no changes made)' : ''}."
+end
 
 rescue => exception
   # Capture any unexpected errors that weren't handled above

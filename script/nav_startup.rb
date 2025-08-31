@@ -43,7 +43,7 @@ begin
   dbpath = ENV.fetch('RAILS_DB_VOLUME') { "#{git_path}/db" }
   FileUtils.mkdir_p dbpath
 
-  system "ruby #{git_path}/script/sync_databases_s3.rb --index-only"
+  system "ruby #{git_path}/script/sync_databases_s3.rb --index-only --quiet"
 
   thread = Thread.new { system 'bin/prerender' }
   system 'bin/rails nav:config'
