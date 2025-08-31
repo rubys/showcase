@@ -1497,8 +1497,10 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 		}
 
 		// Check if path should be excluded from auth using parsed patterns
-		needsAuth := auth != nil && auth.Realm != "off" && !shouldExcludeFromAuth(r.URL.Path, config)
-		slog.Debug("Auth check", "needed", needsAuth)
+		// This tells us if the path is "public" regardless of whether auth is actually enabled
+		isPublicPath := shouldExcludeFromAuth(r.URL.Path, config)
+		needsAuth := auth != nil && auth.Realm != "off" && !isPublicPath
+		slog.Debug("Auth check", "needed", needsAuth, "isPublic", isPublicPath)
 
 		// Apply basic auth if needed
 		if needsAuth && !checkAuth(r, auth) {
@@ -1509,11 +1511,6 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 
 		// Try to serve static files first (assets, images, etc.)
 		if serveStaticFile(w, r, config) {
-			return
-		}
-
-		// For non-authenticated routes, try try_files behavior before checking Rails apps
-		if !needsAuth && tryFiles(w, r, config) {
 			return
 		}
 
@@ -1539,6 +1536,13 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 					bestMatchLen = len(path)
 				}
 			}
+		}
+
+		// Try tryFiles for public paths (those that would be excluded from auth)
+		// This ensures static content is served for public paths like /showcase/regions/
+		// while Rails apps (which would require auth if enabled) are always proxied
+		if isPublicPath && tryFiles(w, r, config) {
+			return
 		}
 
 		// Check for proxy routes (PDF/XLSX and reverse proxies)
