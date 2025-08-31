@@ -1689,12 +1689,8 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 							w.WriteHeader(statusCode)
 							return true
 						} else {
-							// Don't use fly-replay, but let the request continue to reverse proxy handling
-							slog.Debug("Skipping fly-replay due to content constraints", 
-								"path", path, 
-								"method", r.Method,
-								"contentLength", r.ContentLength)
-							// Return false to continue processing and hit reverse proxy rules
+							// Automatically reverse proxy instead of fly-replay
+							return handleFlyReplayFallback(w, r, region, config)
 						}
 					}
 				}
@@ -1741,6 +1737,47 @@ func shouldUseFlyReplay(r *http.Request) bool {
 	
 	// For GET, HEAD, DELETE, OPTIONS and other methods without content, or 
 	// methods with content < 1MB, use fly-replay
+	return true
+}
+
+// handleFlyReplayFallback automatically reverse proxies the request when fly-replay isn't suitable
+// Constructs the target URL as http://<region>.<FLY_APP_NAME>.internal:<port><path>
+func handleFlyReplayFallback(w http.ResponseWriter, r *http.Request, region string, config *Config) bool {
+	flyAppName := os.Getenv("FLY_APP_NAME")
+	if flyAppName == "" {
+		slog.Debug("FLY_APP_NAME not set, cannot construct fallback proxy URL")
+		return false
+	}
+	
+	// Construct the target URL: http://<region>.<FLY_APP_NAME>.internal:<port><path>
+	listenPort := config.ListenPort
+	if listenPort == 0 {
+		listenPort = 3000 // Default port
+	}
+	
+	targetURL := fmt.Sprintf("http://%s.%s.internal:%d%s", region, flyAppName, listenPort, r.URL.Path)
+	if r.URL.RawQuery != "" {
+		targetURL += "?" + r.URL.RawQuery
+	}
+	
+	target, err := url.Parse(targetURL)
+	if err != nil {
+		slog.Debug("Failed to parse fallback proxy URL", "url", targetURL, "error", err)
+		return false
+	}
+	
+	// Set forwarding headers
+	r.Header.Set("X-Forwarded-Host", r.Host)
+	
+	slog.Info("Using automatic reverse proxy fallback for fly-replay", 
+		"originalPath", r.URL.Path,
+		"targetURL", targetURL,
+		"region", region,
+		"method", r.Method,
+		"contentLength", r.ContentLength)
+	
+	// Use the existing retry proxy logic
+	proxyWithRetry(w, r, target, 3*time.Second)
 	return true
 }
 

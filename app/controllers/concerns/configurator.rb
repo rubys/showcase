@@ -238,20 +238,12 @@ module Configurator
       years = showcases.keys.join('|')
       sites_pattern = sites.join('|')
       
-      # Fly-replay for all methods - Navigator will intelligently choose based on content-length
+      # Fly-replay for all methods - Navigator automatically falls back to reverse proxy
+      # when content constraints prevent fly-replay (eliminating need for separate reverse proxy rules)
       routes['fly_replay'] << {
         'path' => "^#{root}/(?<year>#{years})/(?<site>#{sites_pattern})(?<rest>/.*)?$",
         'region' => target_region,
         'status' => 307
-      }
-      
-      # Reverse proxy as fallback when fly-replay is not suitable (large content, etc.)
-      routes['reverse_proxies'] << {
-        'path' => "^#{root}/(?<year>#{years})/(?<site>#{sites_pattern})(?<rest>/.*)?$",
-        'target' => "http://#{target_region}.#{ENV["FLY_APP_NAME"]}.internal:3000#{root}/$year/$site$rest",
-        'headers' => {
-          'X-Forwarded-Host' => '$host'
-        }
       }
     end
   end
