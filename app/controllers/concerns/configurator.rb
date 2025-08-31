@@ -52,7 +52,8 @@ module Configurator
       'listen' => determine_listen_port,
       'hostname' => host,
       'root_path' => determine_root_path,
-      'public_dir' => Rails.root.join('public').to_s
+      'public_dir' => Rails.root.join('public').to_s,
+      'maintenance_page' => '/503.html'
     }
   end
 

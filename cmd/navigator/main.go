@@ -67,6 +67,7 @@ type Config struct {
 	StaticExts      []string       // File extensions to serve statically
 	TryFilesSuffixes []string      // Suffixes for try_files behavior
 	PublicDir       string         // Default public directory
+	MaintenancePage string         // Path to maintenance page (e.g., "/503.html")
 	ManagedProcesses []struct {    // Managed processes to start/stop with Navigator
 		Name        string            `yaml:"name"`
 		Command     string            `yaml:"command"`
@@ -1673,6 +1674,18 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 					
 					if methodAllowed {
 						if shouldUseFlyReplay(r) {
+							// Check if target machine is available via DNS
+							if !checkTargetMachineAvailable(region) {
+								// Target machine unavailable, serve maintenance page
+								slog.Info("Target machine unavailable, serving maintenance page", 
+									"path", path, 
+									"region", region, 
+									"method", r.Method)
+								
+								serveMaintenancePage(w, r, config)
+								return true
+							}
+							
 							w.Header().Set("Fly-Replay", fmt.Sprintf("region=%s", region))
 							statusCode := http.StatusTemporaryRedirect
 							if code, err := strconv.Atoi(status); err == nil {
@@ -1738,6 +1751,107 @@ func shouldUseFlyReplay(r *http.Request) bool {
 	// For GET, HEAD, DELETE, OPTIONS and other methods without content, or 
 	// methods with content < 1MB, use fly-replay
 	return true
+}
+
+// checkTargetMachineAvailable checks if the target machine is available via IPv6 DNS
+// This helps detect if a machine is in the process of redeploying
+func checkTargetMachineAvailable(region string) bool {
+	flyAppName := os.Getenv("FLY_APP_NAME")
+	if flyAppName == "" {
+		return true // Can't check without app name, assume available
+	}
+	
+	// Construct the IPv6 DNS name for the target machine
+	dnsName := fmt.Sprintf("%s.%s.internal", region, flyAppName)
+	
+	// Set a reasonable timeout for DNS lookup
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	
+	// Perform IPv6 DNS lookup
+	resolver := &net.Resolver{}
+	addrs, err := resolver.LookupIPAddr(ctx, dnsName)
+	if err != nil {
+		slog.Debug("DNS lookup failed for target machine", 
+			"dnsName", dnsName, 
+			"error", err)
+		return false
+	}
+	
+	// Check if we found any IPv6 addresses
+	hasIPv6 := false
+	for _, addr := range addrs {
+		if addr.IP.To4() == nil { // IPv6 address
+			hasIPv6 = true
+			break
+		}
+	}
+	
+	slog.Debug("DNS lookup result for target machine", 
+		"dnsName", dnsName, 
+		"addressCount", len(addrs),
+		"hasIPv6", hasIPv6)
+	
+	return hasIPv6
+}
+
+// serveMaintenancePage serves a maintenance page when target machine is unavailable
+func serveMaintenancePage(w http.ResponseWriter, r *http.Request, config *Config) {
+	// Set appropriate status code
+	w.WriteHeader(http.StatusServiceUnavailable)
+	
+	// Try to serve the configured maintenance page file
+	maintenancePath := config.MaintenancePage
+	if maintenancePath == "" {
+		maintenancePath = "/503.html" // Default fallback
+	}
+	if config.PublicDir != "" {
+		fullPath := filepath.Join(config.PublicDir, maintenancePath)
+		if content, err := os.ReadFile(fullPath); err == nil {
+			// Set content type based on file extension
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+			w.Header().Set("Pragma", "no-cache")
+			w.Header().Set("Expires", "0")
+			
+			w.Write(content)
+			slog.Debug("Served maintenance page from file", "path", fullPath)
+			return
+		} else {
+			slog.Debug("Could not read maintenance page file", "path", fullPath, "error", err)
+		}
+	}
+	
+	// Fallback to simple HTML response if no maintenance page file found
+	fallbackHTML := `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Temporarily Unavailable</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #d73502; }
+        p { color: #666; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Service Temporarily Unavailable</h1>
+        <p>The service you are trying to reach is currently unavailable. This may be due to maintenance or a temporary deployment.</p>
+        <p>Please try again in a few minutes.</p>
+    </div>
+</body>
+</html>`
+	
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	w.Header().Set("Pragma", "no-cache")
+	w.Header().Set("Expires", "0")
+	
+	w.Write([]byte(fallbackHTML))
+	slog.Debug("Served fallback maintenance page")
 }
 
 // handleFlyReplayFallback automatically reverse proxies the request when fly-replay isn't suitable
