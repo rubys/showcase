@@ -45,6 +45,8 @@ begin
 
   system "ruby #{git_path}/script/sync_databases_s3.rb --index-only --quiet"
 
+  system %(sqlite3 #{dbpath}/index.sqlite3 'select "password" from users where "password" IS NOT NULL' > #{dbpath}/htpasswd)
+
   thread = Thread.new { system 'bin/prerender' }
   system 'bin/rails nav:config'
   Process.kill('HUP', nav_pid)

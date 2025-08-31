@@ -31,6 +31,8 @@ if missing_env.empty? && ENV["RAILS_ENV"] == "production" && (ENV['FLY_APP_NAME'
     endpoint: ENV['AWS_ENDPOINT_URL_S3'],
     force_path_style: true
   )
+
+  bucket_name = ENV.fetch('BUCKET_NAME', 'showcase')
 end
 
 ARGV.each do |database|
@@ -53,8 +55,8 @@ ARGV.each do |database|
 
           if !local_mtime || (actual_mtime && actual_mtime.to_i > local_mtime.to_i) || File.size(database) == 0
             # Try to download from S3
-            response = s3_client.get_object(bucket: bucket_name, key: s3_key)
-            
+            response = s3_client.get_object(bucket: bucket_name, key: "db/#{db_name}")
+
             # Set the mtime on the file
             if !actual_mtime && response.last_modified
               actual_mtime = response.last_modified
@@ -92,7 +94,7 @@ ARGV.each do |database|
 
       # only run migrations if there are new ones to apply
       unless (migrations - applied).empty?
-        ENV['DATABASE_URL'] = "sqlite3://#{File.realpath(database)}"
+        ENV['DATABASE_URL'] = "sqlite3://#{File.realpath(database) rescue database}"
 
         # only run migrations in one place - fly.io; rely on rsync to update others
         system 'bin/rails db:prepare'
