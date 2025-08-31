@@ -1512,6 +1512,11 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 			return
 		}
 
+		// For non-authenticated routes, try try_files behavior before checking Rails apps
+		if !needsAuth && tryFiles(w, r, config) {
+			return
+		}
+
 		// Find matching location early to determine if this is a Rails app
 		var bestMatch *Location
 		bestMatchLen := 0
@@ -1534,13 +1539,6 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 					bestMatchLen = len(path)
 				}
 			}
-		}
-
-		// For non-authenticated routes, try try_files behavior
-		// Skip tryFiles for Rails application locations (those without StandaloneServer)
-		isRailsApp := bestMatch != nil && bestMatch.StandaloneServer == ""
-		if !needsAuth && !isRailsApp && tryFiles(w, r, config) {
-			return
 		}
 
 		// Check for proxy routes (PDF/XLSX and reverse proxies)
@@ -1848,7 +1846,42 @@ func tryFiles(w http.ResponseWriter, r *http.Request, config *Config) bool {
 		return false
 	}
 	
-	// Find the best matching location for this path
+	// First, check static directories from config
+	var bestStaticDir *StaticDir
+	bestStaticDirLen := 0
+	
+	for _, staticDir := range config.StaticDirs {
+		if strings.HasPrefix(path, staticDir.URLPath) && len(staticDir.URLPath) > bestStaticDirLen {
+			bestStaticDir = staticDir
+			bestStaticDirLen = len(staticDir.URLPath)
+		}
+	}
+	
+	// If we found a matching static directory, try to serve from there
+	if bestStaticDir != nil {
+		// Remove the URL prefix to get the relative path
+		relativePath := strings.TrimPrefix(path, bestStaticDir.URLPath)
+		if relativePath == "" {
+			relativePath = "/"
+		}
+		if relativePath[0] != '/' {
+			relativePath = "/" + relativePath
+		}
+		
+		// Use extensions from config
+		extensions := config.TryFilesSuffixes
+		
+		for _, ext := range extensions {
+			// Build the full filesystem path
+			fsPath := filepath.Join(config.PublicDir, bestStaticDir.LocalPath, relativePath+ext)
+			slog.Debug("tryFiles checking static", "fsPath", fsPath)
+			if _, err := os.Stat(fsPath); err == nil {
+				return serveFile(w, r, fsPath, path+ext)
+			}
+		}
+	}
+	
+	// Fall back to checking locations (for backward compatibility)
 	var bestMatch *Location
 	bestMatchLen := 0
 	
