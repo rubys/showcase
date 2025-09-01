@@ -231,7 +231,7 @@ module Configurator
       # Fly-replay for all methods - Navigator automatically falls back to reverse proxy
       # when content constraints prevent fly-replay (eliminating need for separate reverse proxy rules)
       routes['fly_replay'] << {
-        'path' => "^#{root}/(?<year>#{years})/(?<site>#{sites})(?<rest>/.*)?$",
+        'path' => "^#{root}/(?:#{years})/(?:#{sites})(?:/.*)?$",
         'region' => target_region,
         'status' => 307
       }
