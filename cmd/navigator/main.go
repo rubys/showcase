@@ -175,7 +175,6 @@ type ProxyRoute struct {
 type Location struct {
 	Path            string
 	Root            string
-	AppGroupName    string
 	EnvVars         map[string]string
 	BaseURI         string
 	MatchPattern    string  // Pattern for matching request paths (e.g., "*/cable")
@@ -268,7 +267,6 @@ type YAMLConfig struct {
 		Tenants      []struct {
 			Name                      string            `yaml:"name"`
 			Path                      string            `yaml:"path"`
-			Group                     string            `yaml:"group"`
 			Database                  string            `yaml:"database"`
 			Owner                     string            `yaml:"owner"`
 			Storage                   string            `yaml:"storage"`
@@ -1077,7 +1075,6 @@ func LoadConfig(filename string) (*Config, error) {
 func substituteVars(template string, tenant struct {
 	Name                      string            `yaml:"name"`
 	Path                      string            `yaml:"path"`
-	Group                     string            `yaml:"group"`
 	Database                  string            `yaml:"database"`
 	Owner                     string            `yaml:"owner"`
 	Storage                   string            `yaml:"storage"`
@@ -1095,7 +1092,6 @@ func substituteVars(template string, tenant struct {
 	result = strings.ReplaceAll(result, "${tenant.owner}", tenant.Owner)
 	result = strings.ReplaceAll(result, "${tenant.storage}", tenant.Storage)
 	result = strings.ReplaceAll(result, "${tenant.scope}", tenant.Scope)
-	result = strings.ReplaceAll(result, "${tenant.group}", tenant.Group)
 	return result
 }
 
@@ -1194,7 +1190,6 @@ func ParseYAML(content []byte) (*Config, error) {
 	for _, tenant := range yamlConfig.Applications.Tenants {
 		location := &Location{
 			Path:             tenant.Path,
-			AppGroupName:     tenant.Group,
 			EnvVars:          make(map[string]string),
 			MatchPattern:     tenant.MatchPattern,
 			StandaloneServer: tenant.StandaloneServer,

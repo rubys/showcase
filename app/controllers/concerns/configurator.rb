@@ -308,7 +308,6 @@ module Configurator
     tenants << {
       'name' => 'index',
       'path' => root.empty? ? '/' : "#{root}/",
-      'group' => 'showcase-index',
       'special' => true,
       'env' => {
         'RAILS_APP_DB' => 'index',
@@ -325,7 +324,6 @@ module Configurator
       tenants << {
         'name' => 'demo',
         'path' => region ? "/regions/#{region}/demo/" : "/demo/",
-        'group' => 'showcase-demo',
         'database' => 'demo',
         'owner' => 'Demo',
         'storage' => '/demo/storage/demo',
@@ -347,7 +345,6 @@ module Configurator
             tenant = {
               'name' => "#{year}-#{token}-#{subtoken}",
               'path' => "#{root}/#{year}/#{token}/#{subtoken}/",
-              'group' => "showcase-#{year}-#{token}-#{subtoken}",
               'database' => "#{year}-#{token}-#{subtoken}",
               'owner' => info[:name],
               'scope' => "#{year}/#{token}/#{subtoken}",
@@ -366,7 +363,6 @@ module Configurator
           tenant = {
             'name' => "#{year}-#{token}",
             'path' => "#{root}/#{year}/#{token}/",
-            'group' => "showcase-#{year}-#{token}",
             'database' => "#{year}-#{token}",
             'owner' => info[:name],
             'scope' => "#{year}/#{token}",
@@ -388,7 +384,6 @@ module Configurator
     cable_config = {
       'name' => 'cable',
       'path' => "#{root}/cable",
-      'group' => 'showcase-cable',
       'special' => true,
       'match_pattern' => '*/cable',  # Match any path ending in /cable
       'force_max_concurrent_requests' => 0
@@ -405,7 +400,6 @@ module Configurator
     tenants << {
       'name' => 'publish',
       'path' => "#{root}/publish",
-      'group' => 'showcase-publish',
       'special' => true,
       'root' => Rails.root.join('fly/applications/publish/public').to_s,
       'env' => {
