@@ -29,24 +29,24 @@ import (
 // Constants for configuration defaults and limits
 const (
 	// Timeout constants
-	DefaultIdleTimeout   = 10 * time.Minute
-	RailsStartupTimeout  = 30 * time.Second
-	ProxyRetryTimeout    = 3 * time.Second
-	ProcessStopTimeout   = 10 * time.Second
-	RailsStartupDelay    = 5 * time.Second
+	DefaultIdleTimeout  = 10 * time.Minute
+	RailsStartupTimeout = 30 * time.Second
+	ProxyRetryTimeout   = 3 * time.Second
+	ProcessStopTimeout  = 10 * time.Second
+	RailsStartupDelay   = 5 * time.Second
 
 	// Port configuration
-	DefaultStartPort = 4000
-	MaxPortRange     = 100
+	DefaultStartPort  = 4000
+	MaxPortRange      = 100
 	DefaultListenPort = 3000
 
 	// Proxy configuration
-	MaxFlyReplaySize = 1000000 // 1MB
+	MaxFlyReplaySize       = 1000000 // 1MB
 	ProxyRetryInitialDelay = 100 * time.Millisecond
-	ProxyRetryMaxDelay = 500 * time.Millisecond
+	ProxyRetryMaxDelay     = 500 * time.Millisecond
 
 	// File paths
-	NavigatorPIDFile = "/tmp/navigator.pid"
+	NavigatorPIDFile       = "/tmp/navigator.pid"
 	DefaultMaintenancePage = "/503.html"
 )
 
@@ -75,7 +75,6 @@ type AuthPattern struct {
 	Action  string // "off" or realm name
 }
 
-
 // Config represents the parsed configuration
 type Config struct {
 	ServerName       string
@@ -92,13 +91,13 @@ type Config struct {
 	PassengerRuby    string
 	MinInstances     int
 	PreloadBundler   bool
-	IdleTimeout      time.Duration // Idle timeout for app processes
-	StartPort        int           // Starting port for Rails apps
-	StaticDirs       []*StaticDir  // Static directory mappings
-	StaticExts       []string      // File extensions to serve statically
-	TryFilesSuffixes []string      // Suffixes for try_files behavior
-	PublicDir        string        // Default public directory
-	MaintenancePage  string        // Path to maintenance page (e.g., "/503.html")
+	IdleTimeout      time.Duration          // Idle timeout for app processes
+	StartPort        int                    // Starting port for Rails apps
+	StaticDirs       []*StaticDir           // Static directory mappings
+	StaticExts       []string               // File extensions to serve statically
+	TryFilesSuffixes []string               // Suffixes for try_files behavior
+	PublicDir        string                 // Default public directory
+	MaintenancePage  string                 // Path to maintenance page (e.g., "/503.html")
 	ManagedProcesses []ManagedProcessConfig // Managed processes to start/stop with Navigator
 
 	// Suspend configuration
@@ -628,7 +627,6 @@ func (sm *SuspendManager) suspendMachine() {
 		return
 	}
 
-
 	slog.Info("Suspending machine", "app", appName, "machine", machineId)
 
 	// Create HTTP client with Unix socket transport
@@ -752,7 +750,6 @@ func sendReloadSignal() error {
 	return nil
 }
 
-
 func main() {
 	// Initialize logger with level from environment variable
 	logLevel := slog.LevelInfo // Default to Info level
@@ -775,7 +772,6 @@ func main() {
 	}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, opts))
 	slog.SetDefault(logger)
-
 
 	// Handle -s reload option
 	if len(os.Args) > 1 && os.Args[1] == "-s" {
@@ -852,7 +848,6 @@ func main() {
 		log.Printf("Starting %d managed processes", len(config.ManagedProcesses))
 		processManager.StartAll(config.ManagedProcesses)
 	}
-
 
 	// Create a mutable handler wrapper for configuration reloading
 	handler := CreateHandler(config, manager, auth, suspendManager)
@@ -1112,7 +1107,6 @@ func ParseYAML(content []byte) (*Config, error) {
 	config.PassengerRuby = yamlConfig.Process.Ruby
 	config.PreloadBundler = yamlConfig.Process.BundlerPreload
 	config.MinInstances = yamlConfig.Process.MinInstances
-
 
 	// Set idle timeout from pools config
 	if yamlConfig.Pools.IdleTimeout > 0 {
@@ -1682,6 +1676,7 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 
 							// Write the JSON body with transform instructions
 							responseMap := map[string]interface{}{
+								"region": region,
 								"transform": map[string]interface{}{
 									"set_headers": []map[string]string{
 										{"name": "X-Navigator-Retry", "value": "true"},
@@ -1747,7 +1742,6 @@ func shouldUseFlyReplay(r *http.Request) bool {
 	// methods with content < 1MB, use fly-replay
 	return true
 }
-
 
 // serveMaintenancePage serves a maintenance page when target machine is unavailable
 func serveMaintenancePage(w http.ResponseWriter, r *http.Request, config *Config) {
