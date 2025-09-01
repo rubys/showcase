@@ -10,6 +10,16 @@ export default class extends Controller {
     this.activeSubscription = null
     this.terminal = null
     
+    // Clean up any existing subscriptions when connecting
+    this.cleanup()
+    
+    // Add cleanup on page unload to prevent stale connections
+    this.handlePageUnload = () => {
+      this.cleanup()
+    }
+    window.addEventListener('beforeunload', this.handlePageUnload)
+    window.addEventListener('pagehide', this.handlePageUnload)
+    
     // Handle multiple submit buttons
     this.submitTargets.forEach(submitTarget => {
       submitTarget.addEventListener('click', event => {
@@ -37,14 +47,17 @@ export default class extends Controller {
           stream: stream
         }, {
           connected() {
-            this.perform("command", params)
-            submitTarget.disabled=true
-            outputTarget.parentNode.classList.remove("hidden")
+            // Add a small delay to ensure WebSocket is fully ready
+            setTimeout(() => {
+              this.perform("command", params)
+              submitTarget.disabled=true
+              outputTarget.parentNode.classList.remove("hidden")
 
-            // Clear the output area and create a new terminal
-            outputTarget.innerHTML = ''
-            this.controller.terminal = new xterm.Terminal()
-            this.controller.terminal.open(outputTarget)
+              // Clear the output area and create a new terminal
+              outputTarget.innerHTML = ''
+              this.controller.terminal = new xterm.Terminal()
+              this.controller.terminal.open(outputTarget)
+            }, 100)
           },
 
           received(data) {
@@ -74,6 +87,17 @@ export default class extends Controller {
       this.activeSubscription = null
     }
     
+    // More aggressive cleanup - unsubscribe from all OutputChannel subscriptions
+    // This helps with stale connections in production
+    if (consumer && consumer.subscriptions) {
+      const outputChannelSubscriptions = consumer.subscriptions.subscriptions.filter(
+        subscription => subscription.identifier && JSON.parse(subscription.identifier).channel === 'OutputChannel'
+      )
+      outputChannelSubscriptions.forEach(subscription => {
+        subscription.unsubscribe()
+      })
+    }
+    
     // Clean up existing terminal
     if (this.terminal) {
       this.terminal.dispose()
@@ -88,5 +112,11 @@ export default class extends Controller {
   
   disconnect() {
     this.cleanup()
+    
+    // Remove page unload event listeners
+    if (this.handlePageUnload) {
+      window.removeEventListener('beforeunload', this.handlePageUnload)
+      window.removeEventListener('pagehide', this.handlePageUnload)
+    }
   }
 }
