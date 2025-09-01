@@ -110,18 +110,9 @@ module Configurator
       'description' => 'Root showcase path'
     }
     
-    # Add year/event index pages (matches nginx line 17)
-    # This includes year-only paths and year/event paths
-    showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
-    years = showcases.keys.sort.reverse
-    
-    years.each do |year|
-      sites = showcases[year].keys.join('/|') + '/'
-      patterns << {
-        'pattern' => "^#{root}/#{year}(/(#{sites})?)?/?$",
-        'description' => "#{year} event index pages"
-      }
-    end
+    # Year-based index pages are now served as static files
+    # No need for complex exclude patterns since Navigator's try_files
+    # will automatically serve the pre-rendered HTML files
     
     # Add static file pattern
     patterns << {
@@ -260,6 +251,12 @@ module Configurator
       { 'path' => "#{root}/regions/", 'root' => 'regions/' },
       { 'path' => "#{root}/studios/", 'root' => 'studios/' }
     ]
+    
+    # Add year-based directories (2022, 2023, 2024, 2025, etc.)
+    showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
+    showcases.keys.each do |year|
+      directories << { 'path' => "#{root}/#{year}/", 'root' => "#{year}/" }
+    end
     
     # Add root path for serving root-level static files (e.g., /arthur-murray-logo.gif)
     # This allows files directly in public/ to be served
