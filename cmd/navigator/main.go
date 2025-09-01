@@ -1853,6 +1853,11 @@ func shouldUseFlyReplay(r *http.Request) bool {
 // This helps detect if a machine is in the process of redeploying
 // Results are cached to avoid expensive DNS lookups
 func checkTargetMachineAvailable(region string) bool {
+	// DNS check is disabled by default - must be explicitly enabled
+	if os.Getenv("ENABLE_DNS_CHECK") == "" {
+		return true // Default: assume target is available
+	}
+	
 	flyAppName := os.Getenv("FLY_APP_NAME")
 	if flyAppName == "" {
 		return true // Can't check without app name, assume available
