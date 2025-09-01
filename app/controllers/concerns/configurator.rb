@@ -277,23 +277,33 @@ module Configurator
     tenants = build_tenants_list
     
     {
-      'global_env' => build_global_env,
-      'standard_vars' => build_standard_vars,
+      'env' => build_application_env,
       'tenants' => tenants
     }
   end
 
-  def build_standard_vars
+  def build_application_env
     storage = ENV['RAILS_STORAGE'] || Rails.root.join('storage').to_s
     dbpath = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
-    {
-      'RAILS_APP_DB' => '${tenant.database}',
-      'RAILS_APP_OWNER' => '${tenant.owner}',
-      'RAILS_STORAGE' => storage,
-      'RAILS_APP_SCOPE' => '${tenant.scope}',
-      'DATABASE_URL' => "sqlite3://#{dbpath}/${tenant.database}.sqlite3",
-      'PIDFILE' => "#{Rails.root}/tmp/pids/${tenant.database}.pid"
-    }
+    root = determine_root_path
+    
+    env = {}
+    
+    # Global environment variables (no substitution needed)
+    if root != ''
+      env['RAILS_RELATIVE_URL_ROOT'] = root
+    end
+    env['RAILS_APP_REDIS'] = 'showcase_production'
+    
+    # Template variables (need substitution)
+    env['RAILS_APP_DB'] = '${database}'
+    env['RAILS_APP_OWNER'] = '${owner}'
+    env['RAILS_STORAGE'] = storage
+    env['RAILS_APP_SCOPE'] = '${scope}'
+    env['DATABASE_URL'] = "sqlite3://#{dbpath}/${database}.sqlite3"
+    env['PIDFILE'] = "#{Rails.root}/tmp/pids/${database}.pid"
+    
+    env
   end
 
   def build_tenants_list
@@ -306,7 +316,6 @@ module Configurator
     
     # Add index tenant (special case - doesn't use standard_vars)
     tenants << {
-      'name' => 'index',
       'path' => root.empty? ? '/' : "#{root}/",
       'special' => true,
       'env' => {
@@ -322,15 +331,16 @@ module Configurator
     if region || ENV['KAMAL_CONTAINER_NAME']
       dbpath = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
       tenants << {
-        'name' => 'demo',
         'path' => region ? "/regions/#{region}/demo/" : "/demo/",
-        'database' => 'demo',
-        'owner' => 'Demo',
-        'storage' => '/demo/storage/demo',
-        'scope' => region ? "regions/#{region}/demo" : "demo",
+        'var' => {
+          'database' => 'demo',
+          'owner' => 'Demo',
+          'scope' => region ? "regions/#{region}/demo" : "demo"
+        },
         'env' => {
           'SHOWCASE_LOGO' => 'intertwingly.png',
-          'DATABASE_URL' => "sqlite3://#{dbpath}/demo.sqlite3"
+          'DATABASE_URL' => "sqlite3://#{dbpath}/demo.sqlite3",
+          'RAILS_STORAGE' => '/demo/storage/demo'
         }
       }
     end
@@ -343,11 +353,12 @@ module Configurator
         if info[:events]
           info[:events].each do |subtoken, subinfo|
             tenant = {
-              'name' => "#{year}-#{token}-#{subtoken}",
               'path' => "#{root}/#{year}/#{token}/#{subtoken}/",
-              'database' => "#{year}-#{token}-#{subtoken}",
-              'owner' => info[:name],
-              'scope' => "#{year}/#{token}/#{subtoken}",
+              'var' => {
+                'database' => "#{year}-#{token}-#{subtoken}",
+                'owner' => info[:name],
+                'scope' => "#{year}/#{token}/#{subtoken}"
+              },
               'env' => {
                 'SHOWCASE_LOGO' => info[:logo] || 'arthur-murray-logo.gif'
               }
@@ -361,11 +372,12 @@ module Configurator
           end
         else
           tenant = {
-            'name' => "#{year}-#{token}",
             'path' => "#{root}/#{year}/#{token}/",
-            'database' => "#{year}-#{token}",
-            'owner' => info[:name],
-            'scope' => "#{year}/#{token}",
+            'var' => {
+              'database' => "#{year}-#{token}",
+              'owner' => info[:name],
+              'scope' => "#{year}/#{token}"
+            },
             'env' => {
               'SHOWCASE_LOGO' => info[:logo] || 'arthur-murray-logo.gif'
             }
@@ -382,7 +394,6 @@ module Configurator
     
     # Add cable tenant (special case - no standard vars)
     cable_config = {
-      'name' => 'cable',
       'path' => "#{root}/cable",
       'special' => true,
       'match_pattern' => '*/cable',  # Match any path ending in /cable
@@ -398,7 +409,6 @@ module Configurator
     
     # Add publish tenant (special case - no standard vars)
     tenants << {
-      'name' => 'publish',
       'path' => "#{root}/publish",
       'special' => true,
       'root' => Rails.root.join('fly/applications/publish/public').to_s,
@@ -410,18 +420,6 @@ module Configurator
     tenants
   end
 
-  def build_global_env
-    env = {}
-    
-    root = determine_root_path
-    if root != ''
-      env['RAILS_RELATIVE_URL_ROOT'] = root
-    end
-    
-    env['RAILS_APP_REDIS'] = 'showcase_production'
-    
-    env
-  end
 
   def build_process_config
     {

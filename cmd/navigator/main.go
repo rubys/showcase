@@ -262,20 +262,15 @@ type YAMLConfig struct {
 	} `yaml:"static"`
 	
 	Applications struct {
-		GlobalEnv    map[string]string `yaml:"global_env"`
-		StandardVars map[string]string `yaml:"standard_vars"`
-		Tenants      []struct {
-			Name                      string            `yaml:"name"`
+		Env     map[string]string `yaml:"env"`
+		Tenants []struct {
 			Path                      string            `yaml:"path"`
-			Database                  string            `yaml:"database"`
-			Owner                     string            `yaml:"owner"`
-			Storage                   string            `yaml:"storage"`
-			Scope                     string            `yaml:"scope"`
 			Root                      string            `yaml:"root"`
 			Special                   bool              `yaml:"special"`
 			MatchPattern              string            `yaml:"match_pattern"`
 			StandaloneServer          string            `yaml:"standalone_server"`
 			Env                       map[string]string `yaml:"env"`
+			Var                       map[string]string `yaml:"var"`
 			ForceMaxConcurrentRequests int              `yaml:"force_max_concurrent_requests"`
 		} `yaml:"tenants"`
 	} `yaml:"applications"`
@@ -1073,25 +1068,22 @@ func LoadConfig(filename string) (*Config, error) {
 
 // substituteVars replaces template variables with tenant values
 func substituteVars(template string, tenant struct {
-	Name                      string            `yaml:"name"`
 	Path                      string            `yaml:"path"`
-	Database                  string            `yaml:"database"`
-	Owner                     string            `yaml:"owner"`
-	Storage                   string            `yaml:"storage"`
-	Scope                     string            `yaml:"scope"`
 	Root                      string            `yaml:"root"`
 	Special                   bool              `yaml:"special"`
 	MatchPattern              string            `yaml:"match_pattern"`
 	StandaloneServer          string            `yaml:"standalone_server"`
 	Env                       map[string]string `yaml:"env"`
+	Var                       map[string]string `yaml:"var"`
 	ForceMaxConcurrentRequests int              `yaml:"force_max_concurrent_requests"`
 }) string {
 	result := template
-	result = strings.ReplaceAll(result, "${tenant.name}", tenant.Name)
-	result = strings.ReplaceAll(result, "${tenant.database}", tenant.Database)
-	result = strings.ReplaceAll(result, "${tenant.owner}", tenant.Owner)
-	result = strings.ReplaceAll(result, "${tenant.storage}", tenant.Storage)
-	result = strings.ReplaceAll(result, "${tenant.scope}", tenant.Scope)
+	// Replace ${var} with values from the Var map
+	if tenant.Var != nil {
+		for key, value := range tenant.Var {
+			result = strings.ReplaceAll(result, "${"+key+"}", value)
+		}
+	}
 	return result
 }
 
@@ -1109,7 +1101,7 @@ func ParseYAML(content []byte) (*Config, error) {
 		MaxPoolSize:   yamlConfig.Pools.MaxSize,
 		Locations:     make(map[string]*Location),
 		ProxyRoutes:   make(map[string]*ProxyRoute),
-		GlobalEnvVars: yamlConfig.Applications.GlobalEnv,
+		GlobalEnvVars: make(map[string]string),
 		RewriteRules:  []*RewriteRule{},
 		AuthPatterns:  []*AuthPattern{},
 	}
@@ -1186,6 +1178,14 @@ func ParseYAML(content []byte) (*Config, error) {
 		}
 	}
 	
+	// Process applications.env to separate global vars from templates
+	for varName, value := range yamlConfig.Applications.Env {
+		// If the value doesn't contain variables, it's a global env var
+		if !strings.Contains(value, "${") {
+			config.GlobalEnvVars[varName] = value
+		}
+	}
+	
 	// Convert tenant applications to locations
 	for _, tenant := range yamlConfig.Applications.Tenants {
 		location := &Location{
@@ -1200,11 +1200,14 @@ func ParseYAML(content []byte) (*Config, error) {
 			location.EnvVars[k] = v
 		}
 		
-		// Add standard variables (unless it's a special tenant)
+		// Add variables from applications.env that need substitution (unless it's a special tenant)
 		if !tenant.Special {
-			for varName, template := range yamlConfig.Applications.StandardVars {
-				value := substituteVars(template, tenant)
-				location.EnvVars[varName] = value
+			for varName, template := range yamlConfig.Applications.Env {
+				// Only process templates that contain variables
+				if strings.Contains(template, "${") {
+					value := substituteVars(template, tenant)
+					location.EnvVars[varName] = value
+				}
 			}
 		}
 		
