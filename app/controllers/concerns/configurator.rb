@@ -132,13 +132,9 @@ module Configurator
       'description' => 'Event console access'
     }
     
-    # Add studio-specific patterns if needed
-    if studios.any?
-      patterns << {
-        'pattern' => "^#{root}/studios/(#{studios.join('|')}|)$",
-        'description' => 'Studio pages'
-      }
-    end
+    # Studio pages are now served as static files from public/studios/
+    # No need for exclude patterns since Navigator's try_files
+    # will automatically serve the pre-rendered HTML files
     
     patterns
   end
