@@ -65,6 +65,7 @@ public/showcase.js
 public/site/
 public/studios/
 public/index.html
+public/20*
 
 config/storage/production.yml
 flat-storage

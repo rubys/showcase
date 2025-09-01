@@ -64,6 +64,12 @@ task :prerender => "prerender:env" do
     end if cities.is_a?(Hash)
   end
 
+  # add studios without events
+  map_data = RegionConfiguration.generate_map_data
+  map_data["studios"].each do |studio, info|
+    studios[studio] ||= info["region"]
+  end
+
   # start with the index.html and regions/index.html files
   files = [
     ['/', 'index.html'],
