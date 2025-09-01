@@ -100,14 +100,6 @@ studios:
     map: au
     x: 398.4384995267775
     y: 372.66189890178106
-  ajax:
-    name: Ajax
-    lat: 43.8505287
-    lon: -79.0208814
-    region: ewr
-    map: us
-    x: 715.2133389170556
-    y: 132.81629550643606
   alexandria:
     name: Alexandria
     lat: 38.805
@@ -229,7 +221,7 @@ studios:
     x: 790.815075673393
     y: 178.46885561265594
   crowsnest:
-    name: Crows Nest
+    name: Crows Nest, Indiana
     lat: -33.825894
     lon: 151.200094
     region: syd
@@ -292,22 +284,6 @@ studios:
     map: us
     x: 129.39451571700687
     y: 202.57986287602603
-  fortworth:
-    name: Fort Worth
-    lat: 32.753177
-    lon: -97.3327459
-    region: dfw
-    map: us
-    x: 467.85333363506163
-    y: 361.90302216120244
-  fremont:
-    name: Fremont
-    lat: 37.5482697
-    lon: -121.988571
-    region: sjc
-    map: us
-    x: 112.33259789354952
-    y: 219.97257053626845
   glenview:
     name: Glenview
     lat: 42.078
@@ -340,14 +316,6 @@ studios:
     map: us
     x: 298.5243983473093
     y: 451.0312519131176
-  hornsby:
-    name: Hornsby
-    lat: -33.5724083
-    lon: 151.1317755
-    region: syd
-    map: au
-    x: 534.4695876516182
-    y: 368.89663955629413
   kennesaw:
     name: Kennesaw
     lat: 34.023
@@ -500,14 +468,6 @@ studios:
     map: eu
     x: 353.62379883480446
     y: 348.1190555647173
-  ottawa:
-    name: Ottawa
-    lat: 45.4208777
-    lon: -75.6901106
-    region: bos
-    map: us
-    x: 752.8013400154026
-    y: 95.38644636060508
   perth:
     name: Perth
     lat: -31.9558933
@@ -524,14 +484,6 @@ studios:
     map: us
     x: 107.4094830912855
     y: 203.92725719975465
-  pinehurst:
-    name: Pinehurst
-    lat: 35.1951981
-    lon: -79.4692796
-    region: iad
-    map: us
-    x: 737.4985611296945
-    y: 294.40860949932846
   princeton:
     name: Princeton
     lat: 40.3496953
