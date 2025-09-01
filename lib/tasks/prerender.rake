@@ -20,6 +20,14 @@ namespace :prerender do
       FileUtils.rm_rf(path)
       end
     end
+    
+    # remove year-based directories (2022, 2023, 2024, 2025, etc.)
+    Dir[File.join(Rails.application.root, 'public', '[0-9][0-9][0-9][0-9]')].each do |path|
+      if Dir.exist?(path)
+        puts "Removing #{path}"
+        FileUtils.rm_rf(path)
+      end
+    end
 
     # remove the public/showcase.js file
     showcase_js = File.join(Rails.application.root, 'public', 'showcase.js')
@@ -46,12 +54,14 @@ task :prerender => "prerender:env" do
   # get a list of all the regions and studios from the showcases.yml file
   regions = Set.new
   studios = {}
+  years = {}
   showcases = YAML.load_file(File.join(Rails.application.root, 'config/tenant/showcases.yml'))
   showcases.each do |year, cities|
+    years[year] = cities.keys if cities.is_a?(Hash)
     cities.each do |city, data|
       regions << data[:region] if data[:region]
       studios[city] = data[:region] if data[:region]
-    end
+    end if cities.is_a?(Hash)
   end
 
   # start with the index.html and regions/index.html files
@@ -63,6 +73,17 @@ task :prerender => "prerender:env" do
   # add the region and studio index.html files
   files += regions.map {|region| ['regions/' + region, 'regions/' + region + '.html']}
   files += studios.keys.map {|studio| ['studios/' + studio, 'studios/' + studio + '.html']}
+  
+  # add year-based index files (e.g., /2025/, /2025/boston/)
+  years.each do |year, cities|
+    # Add the year index (e.g., /2025/)
+    files << ["#{year}/", "#{year}/index.html"]
+    
+    # Add each city index within the year (e.g., /2025/boston/)
+    cities.each do |city|
+      files << ["#{year}/#{city}/", "#{year}/#{city}/index.html"]
+    end
+  end
 
   # add the markdown files
   files += Dir.chdir('app/views') do
@@ -112,6 +133,8 @@ task :prerender => "prerender:env" do
     const regions = #{regions.to_a.sort.to_json()};
 
     const studios = #{studios.sort.to_h.to_json()};
+    
+    const years = #{years.to_json()};
 
     async function fly(request, path) {
       if (!request.headers.get("Authorization") && !path.startsWith("demo/")) {
