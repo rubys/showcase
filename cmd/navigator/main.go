@@ -1781,18 +1781,10 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 								return true
 							}
 
-							w.Header().Set("Fly-Replay", fmt.Sprintf("region=%s", region))
-							w.Header().Set("Content-Type", "application/json")
+							w.Header().Set("Content-Type", "application/vnd.fly.replay+json")
 							statusCode := http.StatusTemporaryRedirect
 							if code, err := strconv.Atoi(status); err == nil {
 								statusCode = code
-							}
-
-							// Log all request headers for debugging
-							for name, values := range r.Header {
-								for _, value := range values {
-									slog.Info("Request header", "name", name, "value", value)
-								}
 							}
 
 							slog.Info("Sending fly-replay response",
@@ -1807,10 +1799,8 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 							// Write the JSON body with transform instructions
 							responseMap := map[string]interface{}{
 								"transform": map[string]interface{}{
-									"remove-headers": []string{"Fly-Region"},
 									"set_headers": []map[string]string{
 										{"name": "X-Navigator-Retry", "value": "true"},
-										{"name": "Fly-Prefer-Region", "value": region},
 									},
 								},
 							}
@@ -1820,7 +1810,7 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 								http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 								return true
 							}
-							slog.Info("Fly replay response body", "body", string(responseBodyBytes))
+							slog.Debug("Fly replay response body", "body", string(responseBodyBytes))
 							w.Write(responseBodyBytes)
 							return true
 						} else {
