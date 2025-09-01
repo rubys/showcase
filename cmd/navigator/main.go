@@ -26,6 +26,41 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Constants for configuration defaults and limits
+const (
+	// Timeout constants
+	DefaultIdleTimeout   = 10 * time.Minute
+	RailsStartupTimeout  = 30 * time.Second
+	ProxyRetryTimeout    = 3 * time.Second
+	ProcessStopTimeout   = 10 * time.Second
+	RailsStartupDelay    = 5 * time.Second
+
+	// Port configuration
+	DefaultStartPort = 4000
+	MaxPortRange     = 100
+	DefaultListenPort = 3000
+
+	// Proxy configuration
+	MaxFlyReplaySize = 1000000 // 1MB
+	ProxyRetryInitialDelay = 100 * time.Millisecond
+	ProxyRetryMaxDelay = 500 * time.Millisecond
+
+	// File paths
+	NavigatorPIDFile = "/tmp/navigator.pid"
+	DefaultMaintenancePage = "/503.html"
+)
+
+// ManagedProcessConfig represents configuration for a managed process
+type ManagedProcessConfig struct {
+	Name        string            `yaml:"name"`
+	Command     string            `yaml:"command"`
+	Args        []string          `yaml:"args"`
+	WorkingDir  string            `yaml:"working_dir"`
+	Env         map[string]string `yaml:"env"`
+	AutoRestart bool              `yaml:"auto_restart"`
+	StartDelay  int               `yaml:"start_delay"`
+}
+
 // RewriteRule represents a rewrite rule
 type RewriteRule struct {
 	Pattern     *regexp.Regexp
@@ -46,11 +81,6 @@ type Config struct {
 	ServerName       string
 	ListenPort       int
 	MaxPoolSize      int
-	DefaultUser      string
-	DefaultGroup     string
-	LogFile          string
-	ErrorLog         string
-	AccessLog        string
 	AuthFile         string
 	AuthRealm        string
 	AuthExclude      []string
@@ -59,7 +89,6 @@ type Config struct {
 	ProxyRoutes      map[string]*ProxyRoute
 	Locations        map[string]*Location
 	GlobalEnvVars    map[string]string
-	ClientMaxBody    string
 	PassengerRuby    string
 	MinInstances     int
 	PreloadBundler   bool
@@ -70,15 +99,7 @@ type Config struct {
 	TryFilesSuffixes []string      // Suffixes for try_files behavior
 	PublicDir        string        // Default public directory
 	MaintenancePage  string        // Path to maintenance page (e.g., "/503.html")
-	ManagedProcesses []struct {    // Managed processes to start/stop with Navigator
-		Name        string            `yaml:"name"`
-		Command     string            `yaml:"command"`
-		Args        []string          `yaml:"args"`
-		WorkingDir  string            `yaml:"working_dir"`
-		Env         map[string]string `yaml:"env"`
-		AutoRestart bool              `yaml:"auto_restart"`
-		StartDelay  int               `yaml:"start_delay"`
-	}
+	ManagedProcesses []ManagedProcessConfig // Managed processes to start/stop with Navigator
 
 	// Suspend configuration
 	SuspendEnabled     bool
@@ -97,7 +118,6 @@ type ProxyRoute struct {
 	Pattern        string
 	ProxyPass      string
 	SetHeaders     map[string]string
-	SSLVerify      bool
 	ExcludeMethods []string // Methods to exclude from proxying
 }
 
@@ -106,7 +126,6 @@ type Location struct {
 	Path             string
 	Root             string
 	EnvVars          map[string]string
-	BaseURI          string
 	MatchPattern     string // Pattern for matching request paths (e.g., "*/cable")
 	StandaloneServer string // If set, proxy to this server instead of Rails app
 }
@@ -211,33 +230,12 @@ type YAMLConfig struct {
 		MinInstances   int    `yaml:"min_instances"`
 	} `yaml:"process"`
 
-	Logging struct {
-		AccessLog string `yaml:"access_log"`
-		ErrorLog  string `yaml:"error_log"`
-		Level     string `yaml:"level"`
-		Format    string `yaml:"format"`
-	} `yaml:"logging"`
-
-	Health struct {
-		Endpoint string `yaml:"endpoint"`
-		Timeout  int    `yaml:"timeout"`
-		Interval int    `yaml:"interval"`
-	} `yaml:"health"`
-
 	Suspend struct {
 		Enabled     bool `yaml:"enabled"`
 		IdleTimeout int  `yaml:"idle_timeout"` // Seconds of inactivity before suspend
 	} `yaml:"suspend"`
 
-	ManagedProcesses []struct {
-		Name        string            `yaml:"name"`
-		Command     string            `yaml:"command"`
-		Args        []string          `yaml:"args"`
-		WorkingDir  string            `yaml:"working_dir"`
-		Env         map[string]string `yaml:"env"`
-		AutoRestart bool              `yaml:"auto_restart"`
-		StartDelay  int               `yaml:"start_delay"` // Delay in seconds before starting
-	} `yaml:"managed_processes"`
+	ManagedProcesses []ManagedProcessConfig `yaml:"managed_processes"`
 }
 
 // ManagedProcess represents an external process managed by Navigator
@@ -361,17 +359,17 @@ func (m *AppManager) UpdateConfig(newConfig *Config) {
 	// Update idle timeout if changed
 	idleTimeout := newConfig.IdleTimeout
 	if idleTimeout == 0 {
-		idleTimeout = 10 * time.Minute
+		idleTimeout = DefaultIdleTimeout
 	}
 	m.idleTimeout = idleTimeout
 
 	// Update port range if changed
 	startPort := newConfig.StartPort
 	if startPort == 0 {
-		startPort = 4000
+		startPort = DefaultStartPort
 	}
 	m.minPort = startPort
-	m.maxPort = startPort + 100
+	m.maxPort = startPort + MaxPortRange
 
 	log.Printf("Updated AppManager configuration: idle timeout=%v, port range=%d-%d",
 		m.idleTimeout, m.minPort, m.maxPort)
@@ -485,15 +483,7 @@ func (pm *ProcessManager) StartProcess(mp *ManagedProcess) error {
 }
 
 // StartAll starts all configured processes
-func (pm *ProcessManager) StartAll(processes []struct {
-	Name        string            `yaml:"name"`
-	Command     string            `yaml:"command"`
-	Args        []string          `yaml:"args"`
-	WorkingDir  string            `yaml:"working_dir"`
-	Env         map[string]string `yaml:"env"`
-	AutoRestart bool              `yaml:"auto_restart"`
-	StartDelay  int               `yaml:"start_delay"`
-}) {
+func (pm *ProcessManager) StartAll(processes []ManagedProcessConfig) {
 	for _, proc := range processes {
 		mp := &ManagedProcess{
 			Name:        proc.Name,
@@ -535,7 +525,7 @@ func (pm *ProcessManager) StopAll() {
 	select {
 	case <-done:
 		log.Println("All managed processes stopped")
-	case <-time.After(10 * time.Second):
+	case <-time.After(ProcessStopTimeout):
 		log.Println("Timeout waiting for processes to stop, forcing shutdown")
 		for _, mp := range pm.processes {
 			if mp.Process != nil && mp.Process.Process != nil {
@@ -546,15 +536,7 @@ func (pm *ProcessManager) StopAll() {
 }
 
 // UpdateConfig updates the process manager configuration
-func (pm *ProcessManager) UpdateConfig(processes []struct {
-	Name        string            `yaml:"name"`
-	Command     string            `yaml:"command"`
-	Args        []string          `yaml:"args"`
-	WorkingDir  string            `yaml:"working_dir"`
-	Env         map[string]string `yaml:"env"`
-	AutoRestart bool              `yaml:"auto_restart"`
-	StartDelay  int               `yaml:"start_delay"`
-}) {
+func (pm *ProcessManager) UpdateConfig(processes []ManagedProcessConfig) {
 	slog.Info("Updating managed processes configuration", "count", len(processes))
 
 	// Stop all existing processes
@@ -722,25 +704,21 @@ type BasicAuth struct {
 	Exclude []string
 }
 
-// Placeholder for removed APR1 implementation - now handled by go-htpasswd library
-
-const navigatorPIDFile = "/tmp/navigator.pid"
-
 // writePIDFile writes the current process PID to a file
 func writePIDFile() error {
 	pid := os.Getpid()
-	return os.WriteFile(navigatorPIDFile, []byte(strconv.Itoa(pid)), 0644)
+	return os.WriteFile(NavigatorPIDFile, []byte(strconv.Itoa(pid)), 0644)
 }
 
 // removePIDFile removes the PID file
 func removePIDFile() {
-	os.Remove(navigatorPIDFile)
+	os.Remove(NavigatorPIDFile)
 }
 
 // sendReloadSignal sends a HUP signal to the running navigator process
 func sendReloadSignal() error {
 	// Read PID from file
-	pidData, err := os.ReadFile(navigatorPIDFile)
+	pidData, err := os.ReadFile(NavigatorPIDFile)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("navigator is not running (PID file not found)")
@@ -1135,22 +1113,19 @@ func ParseYAML(content []byte) (*Config, error) {
 	config.PreloadBundler = yamlConfig.Process.BundlerPreload
 	config.MinInstances = yamlConfig.Process.MinInstances
 
-	// Set logging config
-	config.AccessLog = yamlConfig.Logging.AccessLog
-	config.ErrorLog = yamlConfig.Logging.ErrorLog
 
 	// Set idle timeout from pools config
 	if yamlConfig.Pools.IdleTimeout > 0 {
 		config.IdleTimeout = time.Duration(yamlConfig.Pools.IdleTimeout) * time.Second
 	} else {
-		config.IdleTimeout = 10 * time.Minute // Default
+		config.IdleTimeout = DefaultIdleTimeout
 	}
 
 	// Set start port for Rails apps
 	if yamlConfig.Pools.StartPort > 0 {
 		config.StartPort = yamlConfig.Pools.StartPort
 	} else {
-		config.StartPort = 4000 // Default
+		config.StartPort = DefaultStartPort
 	}
 
 	// Set public directory
@@ -1191,7 +1166,7 @@ func ParseYAML(content []byte) (*Config, error) {
 	if yamlConfig.Suspend.IdleTimeout > 0 {
 		config.SuspendIdleTimeout = time.Duration(yamlConfig.Suspend.IdleTimeout) * time.Second
 	} else {
-		config.SuspendIdleTimeout = 10 * time.Minute // Default
+		config.SuspendIdleTimeout = DefaultIdleTimeout
 	}
 
 	return config, nil
@@ -1201,19 +1176,19 @@ func ParseYAML(content []byte) (*Config, error) {
 func NewAppManager(config *Config) *AppManager {
 	idleTimeout := config.IdleTimeout
 	if idleTimeout == 0 {
-		idleTimeout = 10 * time.Minute // Default if not set
+		idleTimeout = DefaultIdleTimeout
 	}
 
 	startPort := config.StartPort
 	if startPort == 0 {
-		startPort = 4000 // Default if not set
+		startPort = DefaultStartPort
 	}
 
 	return &AppManager{
 		apps:        make(map[string]*RailsApp),
 		config:      config,
 		minPort:     startPort,
-		maxPort:     startPort + 100, // Allow up to 100 Rails apps
+		maxPort:     startPort + MaxPortRange,
 		idleTimeout: idleTimeout,
 	}
 }
@@ -1236,7 +1211,7 @@ func (m *AppManager) GetOrStartApp(location *Location) (*RailsApp, error) {
 		}
 
 		// Wait if app is still starting (with timeout)
-		timeout := time.NewTimer(30 * time.Second)
+		timeout := time.NewTimer(RailsStartupTimeout)
 		defer timeout.Stop()
 
 		ticker := time.NewTicker(100 * time.Millisecond)
@@ -1278,7 +1253,7 @@ func (m *AppManager) GetOrStartApp(location *Location) (*RailsApp, error) {
 	go m.startApp(app)
 
 	// Wait for app to start (with timeout)
-	timeout := time.NewTimer(30 * time.Second)
+	timeout := time.NewTimer(RailsStartupTimeout)
 	defer timeout.Stop()
 
 	ticker := time.NewTicker(100 * time.Millisecond)
@@ -1379,7 +1354,7 @@ func (m *AppManager) startApp(app *RailsApp) {
 	}
 
 	// Wait a moment for Rails to start, then mark as ready
-	time.Sleep(5 * time.Second)
+	time.Sleep(RailsStartupDelay)
 	app.mutex.Lock()
 	app.Starting = false
 	app.mutex.Unlock()
@@ -1593,7 +1568,7 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 				http.Error(w, "Invalid standalone server configuration", http.StatusInternalServerError)
 				return
 			}
-			proxyWithRetry(w, r, target, 3*time.Second)
+			proxyWithRetry(w, r, target, ProxyRetryTimeout)
 			return
 		}
 
@@ -1626,7 +1601,7 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 		slog.Info("Proxying to Rails", "path", originalPath, "port", app.Port, "location", bestMatch.Path)
 
 		// Use retry logic for Rails apps too
-		proxyWithRetry(w, r, target, 3*time.Second)
+		proxyWithRetry(w, r, target, ProxyRetryTimeout)
 	})
 }
 
@@ -1746,10 +1721,9 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 // shouldUseFlyReplay determines if a request should use fly-replay based on content length
 // Fly replay can handle any method as long as the content length is less than 1MB
 func shouldUseFlyReplay(r *http.Request) bool {
-	const maxFlyReplaySize = 1000000 // 1 million bytes
 
 	// If Content-Length is explicitly set and >= 1MB, use reverse proxy
-	if r.ContentLength >= maxFlyReplaySize {
+	if r.ContentLength >= MaxFlyReplaySize {
 		slog.Debug("Using reverse proxy due to large content length",
 			"method", r.Method,
 			"contentLength", r.ContentLength)
@@ -1846,7 +1820,7 @@ func handleFlyReplayFallback(w http.ResponseWriter, r *http.Request, region stri
 	// Construct the target URL: http://<region>.<FLY_APP_NAME>.internal:<port><path>
 	listenPort := config.ListenPort
 	if listenPort == 0 {
-		listenPort = 3000 // Default port
+		listenPort = DefaultListenPort
 	}
 
 	targetURL := fmt.Sprintf("http://%s.%s.internal:%d%s", region, flyAppName, listenPort, r.URL.Path)
@@ -1871,7 +1845,7 @@ func handleFlyReplayFallback(w http.ResponseWriter, r *http.Request, region stri
 		"contentLength", r.ContentLength)
 
 	// Use the existing retry proxy logic
-	proxyWithRetry(w, r, target, 3*time.Second)
+	proxyWithRetry(w, r, target, ProxyRetryTimeout)
 	return true
 }
 
@@ -2258,5 +2232,5 @@ func proxyRequest(w http.ResponseWriter, r *http.Request, route *ProxyRoute) {
 	}
 
 	// Use the retry proxy helper
-	proxyWithRetry(w, r, target, 3*time.Second)
+	proxyWithRetry(w, r, target, ProxyRetryTimeout)
 }
