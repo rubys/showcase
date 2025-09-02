@@ -190,6 +190,21 @@ module Configurator
       }
     end
     
+    # Add PDF and XLSX generation routing to smooth-pdf app
+    if ENV['FLY_APP_NAME']
+      routes['fly_replay'] << {
+        'path' => "^#{root}/.+\\.pdf$",
+        'app' => 'smooth-pdf',
+        'status' => 307
+      }
+      
+      routes['fly_replay'] << {
+        'path' => "^#{root}/.+\\.xlsx$",
+        'app' => 'smooth-pdf',
+        'status' => 307
+      }
+    end
+    
     # Add fly-replay and reverse proxy support for cross-region events
     if region && ENV['FLY_APP_NAME']
       add_cross_region_routing(routes, root, region)
