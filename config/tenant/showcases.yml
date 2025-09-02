@@ -464,6 +464,12 @@
       halloween-haunt:
         :name: Halloween Haunt
         :date: 2025-10-26 - 2025-10-26
+  montclair:
+    :name: Montclair
+    :region: sjc
+    :events:
+      bye-bye-summer:
+        :name: Bye Bye Summer
   montgomery:
     :name: Montgomery
     :region: ord
