@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"log/slog"
 	"net"
 	"net/http"
@@ -298,7 +297,7 @@ func cleanupPidFile(pidfilePath string) error {
 	pidStr := strings.TrimSpace(string(data))
 	pid, err := strconv.Atoi(pidStr)
 	if err != nil {
-		log.Printf("Invalid PID in file %s: %s", pidfilePath, pidStr)
+		slog.Warn("Invalid PID in file", "file", pidfilePath, "pid", pidStr)
 		// Remove invalid PID file
 		os.Remove(pidfilePath)
 		return nil
@@ -310,7 +309,7 @@ func cleanupPidFile(pidfilePath string) error {
 		// Send SIGTERM
 		err = process.Signal(syscall.SIGTERM)
 		if err == nil {
-			log.Printf("Killed stale process %d from %s", pid, pidfilePath)
+			slog.Info("Killed stale process", "pid", pid, "file", pidfilePath)
 			// Give it a moment to exit cleanly
 			time.Sleep(100 * time.Millisecond)
 		}
@@ -370,8 +369,10 @@ func (m *AppManager) UpdateConfig(newConfig *Config) {
 	m.minPort = startPort
 	m.maxPort = startPort + MaxPortRange
 
-	log.Printf("Updated AppManager configuration: idle timeout=%v, port range=%d-%d",
-		m.idleTimeout, m.minPort, m.maxPort)
+	slog.Info("Updated AppManager configuration",
+		"idleTimeout", m.idleTimeout,
+		"minPort", m.minPort,
+		"maxPort", m.maxPort)
 }
 
 // Cleanup stops all running Rails applications
@@ -379,16 +380,16 @@ func (m *AppManager) Cleanup() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	log.Println("Cleaning up all Rails applications...")
+	slog.Info("Cleaning up all Rails applications")
 
 	for path, app := range m.apps {
-		log.Printf("Stopping Rails app for %s", path)
+		slog.Info("Stopping Rails app", "path", path)
 
 		// Clean up PID file
 		pidfilePath := getPidFilePath(app.Location.EnvVars)
 		if pidfilePath != "" {
 			if err := os.Remove(pidfilePath); err != nil && !os.IsNotExist(err) {
-				log.Printf("Warning: Error removing PID file %s: %v", pidfilePath, err)
+				slog.Warn("Error removing PID file", "file", pidfilePath, "error", err)
 			}
 		}
 
@@ -418,7 +419,7 @@ func (pm *ProcessManager) StartProcess(mp *ManagedProcess) error {
 
 	// Add delay if specified
 	if mp.StartDelay > 0 {
-		log.Printf("Waiting %v before starting process %s", mp.StartDelay, mp.Name)
+		slog.Info("Waiting before starting process", "delay", mp.StartDelay, "name", mp.Name)
 		time.Sleep(mp.StartDelay)
 	}
 
@@ -445,7 +446,10 @@ func (pm *ProcessManager) StartProcess(mp *ManagedProcess) error {
 
 	mp.Process = cmd
 
-	log.Printf("Starting managed process '%s': %s %s", mp.Name, mp.Command, strings.Join(mp.Args, " "))
+	slog.Info("Starting managed process",
+		"name", mp.Name,
+		"command", mp.Command,
+		"args", strings.Join(mp.Args, " "))
 
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start process %s: %v", mp.Name, err)
@@ -462,17 +466,17 @@ func (pm *ProcessManager) StartProcess(mp *ManagedProcess) error {
 		mp.mutex.Unlock()
 
 		if err != nil {
-			log.Printf("Process '%s' exited with error: %v", mp.Name, err)
+			slog.Error("Process exited with error", "name", mp.Name, "error", err)
 		} else {
-			log.Printf("Process '%s' exited normally", mp.Name)
+			slog.Info("Process exited normally", "name", mp.Name)
 		}
 
 		// Auto-restart if configured
 		if shouldRestart && err != nil {
-			log.Printf("Auto-restarting process '%s' in 5 seconds", mp.Name)
+			slog.Info("Auto-restarting process in 5 seconds", "name", mp.Name)
 			time.Sleep(5 * time.Second)
 			if err := pm.StartProcess(mp); err != nil {
-				log.Printf("Failed to restart process '%s': %v", mp.Name, err)
+				slog.Error("Failed to restart process", "name", mp.Name, "error", err)
 			}
 		}
 	}()
@@ -495,7 +499,7 @@ func (pm *ProcessManager) StartAll(processes []ManagedProcessConfig) {
 		}
 
 		if err := pm.StartProcess(mp); err != nil {
-			log.Printf("Failed to start process '%s': %v", proc.Name, err)
+			slog.Error("Failed to start process", "name", proc.Name, "error", err)
 		}
 	}
 }
@@ -505,11 +509,11 @@ func (pm *ProcessManager) StopAll() {
 	pm.mutex.Lock()
 	defer pm.mutex.Unlock()
 
-	log.Println("Stopping all managed processes...")
+	slog.Info("Stopping all managed processes")
 
 	for _, mp := range pm.processes {
 		if mp.Cancel != nil {
-			log.Printf("Stopping process '%s'", mp.Name)
+			slog.Info("Stopping process", "name", mp.Name)
 			mp.Cancel()
 		}
 	}
@@ -523,9 +527,9 @@ func (pm *ProcessManager) StopAll() {
 
 	select {
 	case <-done:
-		log.Println("All managed processes stopped")
+		slog.Info("All managed processes stopped")
 	case <-time.After(ProcessStopTimeout):
-		log.Println("Timeout waiting for processes to stop, forcing shutdown")
+		slog.Warn("Timeout waiting for processes to stop, forcing shutdown")
 		for _, mp := range pm.processes {
 			if mp.Process != nil && mp.Process.Process != nil {
 				mp.Process.Process.Kill()
@@ -746,7 +750,7 @@ func sendReloadSignal() error {
 		return fmt.Errorf("failed to send signal to process %d: %v", pid, err)
 	}
 
-	log.Printf("Reload signal sent to navigator (PID: %d)", pid)
+	slog.Info("Reload signal sent to navigator", "pid", pid)
 	return nil
 }
 
@@ -777,13 +781,16 @@ func main() {
 	if len(os.Args) > 1 && os.Args[1] == "-s" {
 		if len(os.Args) > 2 && os.Args[2] == "reload" {
 			if err := sendReloadSignal(); err != nil {
-				log.Fatalf("Failed to reload: %v", err)
+				slog.Error("Failed to reload", "error", err)
+				os.Exit(1)
 			}
 			os.Exit(0)
 		} else if len(os.Args) > 2 {
-			log.Fatalf("Unknown signal: %s (only 'reload' is supported)", os.Args[2])
+			slog.Error("Unknown signal (only 'reload' is supported)", "signal", os.Args[2])
+			os.Exit(1)
 		} else {
-			log.Fatalf("Option -s requires a signal name (e.g., -s reload)")
+			slog.Error("Option -s requires a signal name (e.g., -s reload)")
+			os.Exit(1)
 		}
 	}
 
@@ -812,25 +819,28 @@ func main() {
 
 	// Write PID file for -s reload functionality
 	if err := writePIDFile(); err != nil {
-		log.Printf("Warning: Could not write PID file: %v", err)
+		slog.Warn("Could not write PID file", "error", err)
 	}
 	defer removePIDFile()
 
-	log.Printf("Loading configuration from %s", configFile)
+	slog.Info("Loading configuration", "file", configFile)
 	config, err := LoadConfig(configFile)
 	if err != nil {
-		log.Fatalf("Failed to parse config: %v", err)
+		slog.Error("Failed to parse config", "error", err)
+		os.Exit(1)
 	}
 
-	log.Printf("Loaded %d locations and %d proxy routes", len(config.Locations), len(config.ProxyRoutes))
+	slog.Info("Loaded configuration",
+		"locations", len(config.Locations),
+		"proxyRoutes", len(config.ProxyRoutes))
 
 	var auth *BasicAuth
 	if config.AuthFile != "" {
 		auth, err = LoadAuthFile(config.AuthFile, config.AuthRealm, config.AuthExclude)
 		if err != nil {
-			log.Printf("Warning: Failed to load auth file %s: %v", config.AuthFile, err)
+			slog.Warn("Failed to load auth file", "file", config.AuthFile, "error", err)
 		} else {
-			log.Printf("Loaded authentication from %s", config.AuthFile)
+			slog.Info("Loaded authentication", "file", config.AuthFile)
 		}
 	}
 
@@ -845,7 +855,7 @@ func main() {
 	// Create and start process manager for managed processes
 	processManager := NewProcessManager()
 	if len(config.ManagedProcesses) > 0 {
-		log.Printf("Starting %d managed processes", len(config.ManagedProcesses))
+		slog.Info("Starting managed processes", "count", len(config.ManagedProcesses))
 		processManager.StartAll(config.ManagedProcesses)
 	}
 
@@ -873,26 +883,28 @@ func main() {
 			switch sig {
 			case syscall.SIGHUP:
 				// Reload configuration
-				log.Println("Received SIGHUP signal, reloading configuration...")
+				slog.Info("Received SIGHUP signal, reloading configuration")
 
 				newConfig, err := LoadConfig(configFile)
 				if err != nil {
-					log.Printf("Error reloading configuration: %v", err)
+					slog.Error("Error reloading configuration", "error", err)
 					continue
 				}
 
-				log.Printf("Reloaded %d locations and %d proxy routes", len(newConfig.Locations), len(newConfig.ProxyRoutes))
+				slog.Info("Reloaded configuration",
+					"locations", len(newConfig.Locations),
+					"proxyRoutes", len(newConfig.ProxyRoutes))
 
 				// Reload auth if configured
 				var newAuth *BasicAuth
 				if newConfig.AuthFile != "" {
 					newAuth, err = LoadAuthFile(newConfig.AuthFile, newConfig.AuthRealm, newConfig.AuthExclude)
 					if err != nil {
-						log.Printf("Warning: Failed to reload auth file %s: %v", newConfig.AuthFile, err)
+						slog.Warn("Failed to reload auth file", "file", newConfig.AuthFile, "error", err)
 						// Keep existing auth on error
 						newAuth = auth
 					} else {
-						log.Printf("Reloaded authentication from %s", newConfig.AuthFile)
+						slog.Info("Reloaded authentication", "file", newConfig.AuthFile)
 					}
 				}
 
@@ -915,10 +927,10 @@ func main() {
 				auth = newAuth
 				handlerMutex.Unlock()
 
-				log.Println("Configuration reload complete")
+				slog.Info("Configuration reload complete")
 
 			case os.Interrupt, syscall.SIGTERM:
-				log.Println("Received interrupt signal, cleaning up...")
+				slog.Info("Received interrupt signal, cleaning up")
 				manager.Cleanup()        // Stop Rails apps first
 				processManager.StopAll() // Then stop managed processes
 				os.Exit(0)
@@ -929,12 +941,15 @@ func main() {
 	go manager.IdleChecker()
 
 	addr := fmt.Sprintf(":%d", config.ListenPort)
-	log.Printf("Starting Navigator server on %s", addr)
-	log.Printf("Max pool size: %d, Idle timeout: %v", config.MaxPoolSize, manager.idleTimeout)
-	log.Printf("Send SIGHUP to reload configuration without restart (kill -HUP %d)", os.Getpid())
+	slog.Info("Starting Navigator server", "address", addr)
+	slog.Info("Server configuration",
+		"maxPoolSize", config.MaxPoolSize,
+		"idleTimeout", manager.idleTimeout)
+	slog.Info("Configuration reload available", "signal", "SIGHUP", "pid", os.Getpid())
 
 	if err := http.ListenAndServe(addr, mainHandler); err != nil {
-		log.Fatalf("Server failed: %v", err)
+		slog.Error("Server failed", "error", err)
+		os.Exit(1)
 	}
 }
 
@@ -945,7 +960,7 @@ func LoadConfig(filename string) (*Config, error) {
 		return nil, err
 	}
 
-	log.Println("Loading YAML configuration")
+	slog.Debug("Loading YAML configuration")
 	return ParseYAML(content)
 }
 
@@ -1003,7 +1018,7 @@ func ParseYAML(content []byte) (*Config, error) {
 					Action:  "off",
 				})
 			} else {
-				log.Printf("Warning: Invalid auth pattern %s: %v", pattern.Pattern, err)
+				slog.Warn("Invalid auth pattern", "pattern", pattern.Pattern, "error", err)
 			}
 		}
 	}
@@ -1294,7 +1309,7 @@ func (m *AppManager) startApp(app *RailsApp) {
 	pidfilePath := getPidFilePath(app.Location.EnvVars)
 	if pidfilePath != "" {
 		if err := cleanupPidFile(pidfilePath); err != nil {
-			log.Printf("Warning: Error cleaning up PID file for %s: %v", app.Location.Path, err)
+			slog.Warn("Error cleaning up PID file", "path", app.Location.Path, "error", err)
 		}
 	}
 
@@ -1337,10 +1352,13 @@ func (m *AppManager) startApp(app *RailsApp) {
 	app.Process = cmd
 	app.mutex.Unlock()
 
-	log.Printf("Starting Rails app for %s on port %d in %s", app.Location.Path, app.Port, railsDir)
+	slog.Info("Starting Rails app",
+		"path", app.Location.Path,
+		"port", app.Port,
+		"directory", railsDir)
 
 	if err := cmd.Start(); err != nil {
-		log.Printf("Failed to start Rails app for %s: %v", app.Location.Path, err)
+		slog.Error("Failed to start Rails app", "path", app.Location.Path, "error", err)
 		app.mutex.Lock()
 		app.Starting = false
 		app.mutex.Unlock()
@@ -1352,17 +1370,17 @@ func (m *AppManager) startApp(app *RailsApp) {
 	app.mutex.Lock()
 	app.Starting = false
 	app.mutex.Unlock()
-	log.Printf("Rails app for %s ready on port %d", app.Location.Path, app.Port)
+	slog.Info("Rails app ready", "path", app.Location.Path, "port", app.Port)
 
 	// Wait for process to exit in background
 	go func() {
 		cmd.Wait()
-		log.Printf("Rails app for %s on port %d exited", app.Location.Path, app.Port)
+		slog.Info("Rails app exited", "path", app.Location.Path, "port", app.Port)
 
 		// Clean up PID file when app exits
 		if pidfilePath != "" {
 			if err := os.Remove(pidfilePath); err != nil && !os.IsNotExist(err) {
-				log.Printf("Warning: Error removing PID file %s: %v", pidfilePath, err)
+				slog.Warn("Error removing PID file", "file", pidfilePath, "error", err)
 			}
 		}
 
@@ -1383,13 +1401,13 @@ func (m *AppManager) StopApp(path string) {
 		return
 	}
 
-	log.Printf("Stopping Rails app for %s", path)
+	slog.Info("Stopping Rails app", "path", path)
 
 	// Clean up PID file
 	pidfilePath := getPidFilePath(app.Location.EnvVars)
 	if pidfilePath != "" {
 		if err := os.Remove(pidfilePath); err != nil && !os.IsNotExist(err) {
-			log.Printf("Warning: Error removing PID file %s: %v", pidfilePath, err)
+			slog.Warn("Error removing PID file", "file", pidfilePath, "error", err)
 		}
 	}
 
@@ -1420,7 +1438,7 @@ func (m *AppManager) IdleChecker() {
 		m.mutex.RUnlock()
 
 		for _, path := range toStop {
-			log.Printf("Stopping idle app: %s", path)
+			slog.Info("Stopping idle app", "path", path)
 			m.StopApp(path)
 		}
 	}
@@ -1978,7 +1996,7 @@ func serveStaticFile(w http.ResponseWriter, r *http.Request, config *Config) boo
 	// Set content type and serve the file
 	setContentType(w, fsPath)
 	http.ServeFile(w, r, fsPath)
-	log.Printf("Serving static file: %s -> %s", path, fsPath)
+	slog.Info("Serving static file", "path", path, "fsPath", fsPath)
 	return true
 }
 
@@ -2084,7 +2102,7 @@ func serveFile(w http.ResponseWriter, r *http.Request, fsPath, requestPath strin
 
 	// Serve the file
 	http.ServeFile(w, r, fsPath)
-	log.Printf("Try files: %s -> %s", requestPath, fsPath)
+	slog.Info("Try files served", "requestPath", requestPath, "fsPath", fsPath)
 	return true
 }
 
