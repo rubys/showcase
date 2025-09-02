@@ -22,14 +22,6 @@ const FETCH_TIMEOUT = 30_000
 const FORMAT = (process.env.PAPERSIZE || "letter") as PaperFormat
 const JAVASCRIPT = (process.env.JAVASCRIPT != "false")
 const TIMEOUT = (parseInt(process.env.TIMEOUT || '15')) * 60 * 1000 // minutes
-const HOSTNAME = process.env.BASE_HOSTNAME || process.env.HOSTNAME ||
-  (process.env.FLY_APP_NAME?.endsWith("-pdf") &&
-    `${process.env.FLY_APP_NAME.slice(0, -4)}.fly.dev`)
-
-if (!HOSTNAME) {
-  console.error("HOSTNAME is required")
-  process.exit(1)
-}
 
 // location of Chrome executable (useful for local debugging)
 const chrome = process.platform == "darwin"
@@ -90,14 +82,91 @@ const server = Bun.serve({
     // cancel timeout
     clearTimeout(timeout)
 
-    // map URL to showcase site
+    // map URL to original site
     const url = new URL(request.url)
-    url.hostname = HOSTNAME
     url.protocol = 'https:'
     url.port = ''
 
     if (url.pathname == "/up") {
       return new Response("OK")
+    }
+
+    if (url.pathname.match(/\/env(\.\w+)?$/)) {
+      // Build HTML page showing request and environment information
+      const requestInfo = {
+        method: request.method,
+        url: request.url,
+        pathname: url.pathname,
+        hostname: url.hostname,
+        search: url.search,
+        headers: {} as Record<string, string>
+      }
+      
+      request.headers.forEach((value, key) => {
+        requestInfo.headers[key] = value
+      })
+
+      const html = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Environment Information</title>
+  <style>
+    body { font-family: monospace; margin: 20px; }
+    h2 { color: #333; border-bottom: 2px solid #ccc; padding-bottom: 5px; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+    .key { font-weight: bold; color: #0066cc; }
+  </style>
+</head>
+<body>
+  <h1>Environment Information</h1>
+  
+  <h2>Request Information</h2>
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td class="key">Method</td><td>${requestInfo.method}</td></tr>
+    <tr><td class="key">URL</td><td>${requestInfo.url}</td></tr>
+    <tr><td class="key">Pathname</td><td>${requestInfo.pathname}</td></tr>
+    <tr><td class="key">Hostname</td><td>${requestInfo.hostname}</td></tr>
+    <tr><td class="key">Search</td><td>${requestInfo.search || '(none)'}</td></tr>
+  </table>
+
+  <h2>Request Headers</h2>
+  <table>
+    <tr><th>Header</th><th>Value</th></tr>
+    ${Object.entries(requestInfo.headers).map(([key, value]) => 
+      `<tr><td class="key">${key}</td><td>${value}</td></tr>`
+    ).join('')}
+  </table>
+
+  <h2>Environment Variables</h2>
+  <table>
+    <tr><th>Variable</th><th>Value</th></tr>
+    ${Object.entries(process.env).sort().map(([key, value]) => 
+      `<tr><td class="key">${key}</td><td>${value}</td></tr>`
+    ).join('')}
+  </table>
+
+  <h2>Server Configuration</h2>
+  <table>
+    <tr><th>Setting</th><th>Value</th></tr>
+    <tr><td class="key">PORT</td><td>${PORT}</td></tr>
+    <tr><td class="key">FORMAT</td><td>${FORMAT}</td></tr>
+    <tr><td class="key">JAVASCRIPT</td><td>${JAVASCRIPT}</td></tr>
+    <tr><td class="key">TIMEOUT</td><td>${TIMEOUT / 60000} minutes</td></tr>
+    <tr><td class="key">FETCH_TIMEOUT</td><td>${FETCH_TIMEOUT / 1000} seconds</td></tr>
+    <tr><td class="key">Platform</td><td>${process.platform}</td></tr>
+    <tr><td class="key">Chrome Path</td><td>${chrome}</td></tr>
+  </table>
+</body>
+</html>`
+
+      deadManSwitch = false
+      return new Response(html, {
+        headers: { "Content-Type": "text/html" }
+      })
     }
 
     if (url.pathname.endsWith('.xlsx')) {

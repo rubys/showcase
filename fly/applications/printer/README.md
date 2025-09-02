@@ -19,7 +19,6 @@ This application enables you to offload your applications PDF generation require
 
 ## [Configure your environment](#environment)
 
-* `HOSTNAME`: name of the host that this appliance will generate PDFs for.  Useful if you have a [custom domain](https://fly.io/docs/app-guides/custom-domains-with-fly/) or if you did not follow the recommendation to name your appliance app the same as your base application with a `-pdf` suffix.
 * `PORT`: Port that the appliance listens to.  Must match the `internal_port` in your fly.toml.  Defaults to 3000.
 * `TIMEOUT`: Number of minutes the appliance can remain idle before it is shutdown.
 * `PAPERSIZE`: Puppeteer [PaperFormat](https://pptr.dev/api/puppeteer.paperformat).  Defaults to `letter`.
