@@ -36,7 +36,7 @@ class ScoresController < ApplicationController
     @style = params[:style]
     @sort = @judge.sort_order
     @show = @judge.show_assignments
-    @assign_judges = event.assign_judges?
+    @assign_judges = event.assign_judges? && Person.where(type: 'Judge').count > 1
 
     @heats = Heat.all.where(number: 1..).order(:number).group(:number).includes(
       dance: [:open_category, :closed_category, :multi_category, {solo_category: :extensions}],
@@ -57,7 +57,7 @@ class ScoresController < ApplicationController
       group_by {|score| score.heat.number.to_f}
     @count = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance).count
 
-    if event.assign_judges? and Score.where(judge: @judge).any?
+    if @assign_judges and Score.where(judge: @judge).any?
       @missed = Score.includes(:heat).where(judge: @judge, good: nil, bad: nil, value: nil).distinct.pluck(:number)
       @missed += Solo.includes(:heat).pluck(:number).select {|number| !@scored[number]}
     else
@@ -71,7 +71,7 @@ class ScoresController < ApplicationController
 
     @browser_warn = browser_warn
 
-    @unassigned = Event.current.assign_judges > 0 ? Heat.includes(:scores).where(category: ['Open', 'Closed'], scores: { id: nil }).distinct.pluck(:number).select {it > 0} : []
+    @unassigned = @assign_judges ? Heat.includes(:scores).where(category: ['Open', 'Closed'], scores: { id: nil }).distinct.pluck(:number).select {it > 0} : []
 
     render :heatlist, status: (@browser_warn ? :upgrade_required : :ok)
   end
