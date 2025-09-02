@@ -32,6 +32,8 @@ class OutputChannel < ApplicationCable::Channel
   end
 
   def command(data)
+    Rails.logger.info("Registry entry for stream: #{self.class.registry[@stream].inspect}")
+    Rails.logger.info("Command data: #{data.inspect}")
     block = COMMANDS[self.class.registry[@stream]]
     run(block.call(data)) if block
 
@@ -58,15 +60,15 @@ private
     token = "#{Time.now.to_f.to_s.tr('.', '')}_#{SecureRandom.base64(12)}"
 
     registry = self.registry
-    
+
     # Ensure token is unique (very unlikely but just in case)
     while registry.key?(token)
       token = "#{Time.now.to_f.to_s.tr('.', '')}_#{SecureRandom.base64(12)}"
     end
-    
+
     # Add the new token first
     registry[token] = command
-    
+
     # Then clean up old entries, keeping the most recent 20 (increased further)
     # This ensures we don't accidentally remove recently created tokens
     if registry.length > 20
@@ -74,7 +76,7 @@ private
       sorted_entries = registry.to_a.sort_by { |k, v| k.split('_').first.to_f }.last(20)
       registry = sorted_entries.to_h
     end
-    
+
     IO.write REGISTRY, YAML.dump(registry)
 
     token
@@ -94,16 +96,16 @@ private
     PTY.spawn({"PATH" => path}, *command) do |read, write, pid|
       @pid = pid
       write.close
-    
+
       transmit read.readpartial(BLOCK_SIZE) while not read.eof
-    
+
     rescue EOFError
     rescue Interrupt
     rescue => e
       Rails.logger.error("OutputChannel error: #{e}")
-      
+
     ensure
       read.close
-    end    
+    end
   end
 end
