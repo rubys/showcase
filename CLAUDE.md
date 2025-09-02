@@ -175,7 +175,8 @@ bin/rails assets:clobber
 - Runs on Fly.io across multiple regions globally
 - Each region contains complete copy of all databases
 - Automatic rsync backup between regions
-- PDF generation runs on separate appliance machines
+- PDF generation runs on separate appliance machines via Fly-Replay routing
+- Navigator supports app-based, machine-based, and region-based request routing
 - Logging aggregated to dedicated logger instances
 
 ### Database Schema

@@ -166,8 +166,20 @@ suspend:
 
 # Routing enhancements
 routes:
-  # Fly-replay support for region-specific routing
+  # Fly-replay support for multi-target routing
   fly_replay:
+    # App-based routing (route to any instance of smooth-pdf app)
+    - path: "^/showcase/.+\\.pdf$"
+      app: smooth-pdf
+      status: 307
+    
+    # Machine-based routing (route to specific machine instance)
+    - path: "^/showcase/priority/.+\\.pdf$"
+      machine: "48e403dc711e18"
+      app: smooth-pdf
+      status: 307
+    
+    # Region-based routing (route to specific region)
     - path: "^/showcase/2025/sydney/"
       region: syd
       status: 307
@@ -336,10 +348,15 @@ curl -u test:secret http://localhost:9999/showcase/2025/boston/
 - **Atomic Updates**: Configuration changes applied atomically with no downtime
 
 ### Fly-Replay Support (New - December 2025)
-- **Region Routing**: Route requests to specific Fly.io regions
-- **Pattern Matching**: Configure URL patterns for region-specific routing
+- **Multi-Target Routing**: Support for three routing types:
+  - **App-based**: Route to any instance of a specific app (e.g., `smooth-pdf`)
+  - **Machine-based**: Route to a specific machine instance using `prefer_instance`
+  - **Region-based**: Route to a specific Fly.io region
+- **Pattern Matching**: Configure URL patterns for targeted routing
 - **Status Codes**: Configurable HTTP status codes for replay responses
 - **Method Filtering**: Apply replay rules only to specific HTTP methods
+- **Fallback Proxy**: Automatic reverse proxy when fly-replay constraints prevent direct routing
+- **Internal Networking**: Support for `.internal`, `.vm.app.internal`, and regional `.internal` URLs
 
 ### Reverse Proxy Enhancements (New - December 2025)
 - **Method Exclusions**: Exclude specific HTTP methods from proxy routing

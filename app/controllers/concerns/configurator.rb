@@ -191,6 +191,10 @@ module Configurator
     end
     
     # Add PDF and XLSX generation routing to smooth-pdf app
+    # Navigator supports three types of fly-replay routing:
+    # 1. App-based: { 'app' => 'smooth-pdf' } -> routes to any instance of smooth-pdf app
+    # 2. Machine-based: { 'machine' => 'machine_id', 'app' => 'smooth-pdf' } -> routes to specific machine instance
+    # 3. Region-based: { 'region' => 'iad' } -> routes to specific region
     if ENV['FLY_APP_NAME']
       routes['fly_replay'] << {
         'path' => "^#{root}/.+\\.pdf$",

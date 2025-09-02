@@ -184,6 +184,7 @@ type YAMLConfig struct {
 			Path    string   `yaml:"path"`
 			Region  string   `yaml:"region"`
 			App     string   `yaml:"app"`
+			Machine string   `yaml:"machine"`
 			Status  int      `yaml:"status"`
 			Methods []string `yaml:"methods"`
 		} `yaml:"fly_replay"`
@@ -1058,9 +1059,11 @@ func ParseYAML(content []byte) (*Config, error) {
 	// Convert fly-replay routes
 	for _, flyReplay := range yamlConfig.Routes.FlyReplay {
 		if re, err := regexp.Compile(flyReplay.Path); err == nil {
-			// Support both app and region based fly-replay
+			// Support app, region, and machine based fly-replay
 			var target string
-			if flyReplay.App != "" {
+			if flyReplay.Machine != "" && flyReplay.App != "" {
+				target = fmt.Sprintf("machine=%s:%s", flyReplay.Machine, flyReplay.App)
+			} else if flyReplay.App != "" {
 				target = fmt.Sprintf("app=%s", flyReplay.App)
 			} else {
 				target = flyReplay.Region
@@ -1692,9 +1695,34 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 								statusCode = code
 							}
 
-							// Parse target to determine if it's app or region
+							// Parse target to determine if it's machine, app, or region
 							var responseMap map[string]interface{}
-							if strings.HasPrefix(target, "app=") {
+							if strings.HasPrefix(target, "machine=") {
+								// Machine-based fly-replay: machine=machine_id:app_name
+								machineAndApp := strings.TrimPrefix(target, "machine=")
+								parts := strings.Split(machineAndApp, ":")
+								if len(parts) == 2 {
+									machineID := parts[0]
+									appName := parts[1]
+									slog.Info("Sending fly-replay response",
+										"path", path,
+										"machine", machineID,
+										"app", appName,
+										"status", statusCode,
+										"method", r.Method,
+										"contentLength", r.ContentLength)
+
+									responseMap = map[string]interface{}{
+										"app": appName,
+										"prefer_instance": machineID,
+										"transform": map[string]interface{}{
+											"set_headers": []map[string]string{
+												{"name": "X-Navigator-Retry", "value": "true"},
+											},
+										},
+									}
+								}
+							} else if strings.HasPrefix(target, "app=") {
 								// App-based fly-replay
 								appName := strings.TrimPrefix(target, "app=")
 								slog.Info("Sending fly-replay response",
@@ -1852,7 +1880,10 @@ func serveMaintenancePage(w http.ResponseWriter, r *http.Request, config *Config
 }
 
 // handleFlyReplayFallback automatically reverse proxies the request when fly-replay isn't suitable
-// Constructs the target URL as http://<region>.<FLY_APP_NAME>.internal:<port><path>
+// Constructs the target URL based on target type:
+// - Machine: http://<machine_id>.vm.<appname>.internal:<port><path>
+// - App: http://<appname>.internal:<port><path>
+// - Region: http://<region>.<FLY_APP_NAME>.internal:<port><path>
 func handleFlyReplayFallback(w http.ResponseWriter, r *http.Request, target string, config *Config) bool {
 	flyAppName := os.Getenv("FLY_APP_NAME")
 	if flyAppName == "" {
@@ -1867,7 +1898,19 @@ func handleFlyReplayFallback(w http.ResponseWriter, r *http.Request, target stri
 	}
 
 	var targetURL string
-	if strings.HasPrefix(target, "app=") {
+	if strings.HasPrefix(target, "machine=") {
+		// Machine-based: http://<machine_id>.vm.<appname>.internal:<port><path>
+		machineAndApp := strings.TrimPrefix(target, "machine=")
+		parts := strings.Split(machineAndApp, ":")
+		if len(parts) == 2 {
+			machineID := parts[0]
+			appName := parts[1]
+			targetURL = fmt.Sprintf("http://%s.vm.%s.internal:%d%s", machineID, appName, listenPort, r.URL.Path)
+		} else {
+			slog.Debug("Invalid machine target format", "target", target)
+			return false
+		}
+	} else if strings.HasPrefix(target, "app=") {
 		// App-based: http://<appname>.internal:<port><path>
 		appName := strings.TrimPrefix(target, "app=")
 		targetURL = fmt.Sprintf("http://%s.internal:%d%s", appName, listenPort, r.URL.Path)
