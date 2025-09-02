@@ -29,7 +29,7 @@ class Category < ApplicationRecord
   has_many :extensions, dependent: :destroy,
     class_name: 'CatExtension'
 
-  validates :name, presence: true, uniqueness: true
+  validates :name, presence: true, uniqueness: { unless: :is_spacer? }
   validates :order, presence: true, uniqueness: true
 
   validates :day, chronic: true, allow_blank: true
@@ -62,5 +62,14 @@ class Category < ApplicationRecord
     else
       split.split(/[, ]+/).first.to_i
     end
+  end
+
+  def is_spacer?
+    Dance.where(
+      'open_category_id = :id OR closed_category_id = :id OR solo_category_id = :id OR ' \
+      'multi_category_id = :id OR pro_open_category_id = :id OR pro_closed_category_id = :id OR ' \
+      'pro_solo_category_id = :id OR pro_multi_category_id = :id',
+      id: id
+    ).none? && Solo.where(category_override_id: id).none?
   end
 end
