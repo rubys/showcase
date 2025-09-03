@@ -1,17 +1,18 @@
 # Navigator - Go Web Server
 
-Navigator is a Go-based web server that provides multi-tenant Rails application hosting with on-demand process management.
+Navigator is a Go-based web server that provides multi-tenant web application hosting with on-demand process management. It supports multiple web frameworks through configurable settings.
 
 ## Overview
 
 Navigator uses YAML configuration format for:
-- **Multi-tenant hosting**: Manages multiple Rails applications with separate databases
-- **On-demand process management**: Starts Rails apps when needed, stops after idle timeout
+- **Multi-tenant hosting**: Manages multiple web applications with separate databases
+- **Framework independence**: Supports Rails, Django, Node.js, and other frameworks via configuration
+- **On-demand process management**: Starts web apps when needed, stops after idle timeout
 - **Managed processes**: Start and stop additional processes alongside Navigator (Redis, workers, etc.)
 - **Static file serving**: Serves assets, images, and static content directly from filesystem with configurable caching
 - **Authentication**: Full htpasswd support (APR1, bcrypt, SHA, etc.) with pattern-based exclusions
 - **URL rewriting**: Rewrite rules with redirect, last, and fly-replay flags
-- **Reverse proxy**: Forwards dynamic requests to Rails applications with method-based exclusions
+- **Reverse proxy**: Forwards dynamic requests to web applications with method-based exclusions
 - **Machine suspension**: Auto-suspend Fly.io machines after idle timeout (when enabled)
 - **Configuration reload**: Live configuration reload with SIGHUP signal (no restart needed)
 - **YAML configuration**: Modern YAML-based configuration format

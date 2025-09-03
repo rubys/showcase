@@ -296,8 +296,21 @@ module Configurator
     tenants = build_tenants_list
     
     {
+      'framework' => build_framework_config,
       'env' => build_application_env,
       'tenants' => tenants
+    }
+  end
+  
+  def build_framework_config
+    {
+      'runtime_executable' => RbConfig.ruby,
+      'server_executable' => 'bin/rails',
+      'server_command' => 'server',
+      'server_args' => ['-p', '${port}'],
+      'app_directory' => '/rails',
+      'port_env_var' => 'PORT',
+      'startup_delay' => 5
     }
   end
 

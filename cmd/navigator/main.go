@@ -87,11 +87,12 @@ type Config struct {
 	ProxyRoutes      map[string]*ProxyRoute
 	Locations        map[string]*Location
 	GlobalEnvVars    map[string]string
+	Framework        FrameworkConfig // Framework-specific configuration
 	PassengerRuby    string
 	MinInstances     int
 	PreloadBundler   bool
 	IdleTimeout      time.Duration          // Idle timeout for app processes
-	StartPort        int                    // Starting port for Rails apps
+	StartPort        int                    // Starting port for web apps
 	StaticDirs       []*StaticDir           // Static directory mappings
 	StaticExts       []string               // File extensions to serve statically
 	TryFilesSuffixes []string               // Suffixes for try_files behavior
@@ -119,17 +120,17 @@ type ProxyRoute struct {
 	ExcludeMethods []string // Methods to exclude from proxying
 }
 
-// Location represents a Rails application location
+// Location represents a web application location
 type Location struct {
 	Path             string
 	Root             string
 	EnvVars          map[string]string
 	MatchPattern     string // Pattern for matching request paths (e.g., "*/cable")
-	StandaloneServer string // If set, proxy to this server instead of Rails app
+	StandaloneServer string // If set, proxy to this server instead of web app
 }
 
-// RailsApp represents a running Rails application
-type RailsApp struct {
+// WebApp represents a running web application
+type WebApp struct {
 	Location   *Location
 	Process    *exec.Cmd
 	Port       int
@@ -138,6 +139,17 @@ type RailsApp struct {
 	mutex      sync.RWMutex
 	ctx        context.Context
 	cancel     context.CancelFunc
+}
+
+// FrameworkConfig represents framework-specific configuration
+type FrameworkConfig struct {
+	RuntimeExecutable string   `yaml:"runtime_executable"` // e.g., "ruby", "node", "python"
+	ServerExecutable  string   `yaml:"server_executable"`  // e.g., "bin/rails", "server.js"
+	ServerCommand     string   `yaml:"server_command"`     // e.g., "server"
+	ServerArgs        []string `yaml:"server_args"`        // e.g., ["-p", "4000"]
+	AppDirectory      string   `yaml:"app_directory"`      // e.g., "/rails", "/app"
+	PortEnvVar        string   `yaml:"port_env_var"`       // e.g., "PORT"
+	StartupDelay      int      `yaml:"startup_delay"`      // seconds to wait before marking ready
 }
 
 // YAMLConfig represents the new YAML configuration format
@@ -211,8 +223,9 @@ type YAMLConfig struct {
 	} `yaml:"static"`
 
 	Applications struct {
-		Env     map[string]string `yaml:"env"`
-		Tenants []struct {
+		Framework FrameworkConfig   `yaml:"framework"`
+		Env       map[string]string `yaml:"env"`
+		Tenants   []struct {
 			Path                       string            `yaml:"path"`
 			Root                       string            `yaml:"root"`
 			Special                    bool              `yaml:"special"`
@@ -270,14 +283,14 @@ type SuspendManager struct {
 	timer          *time.Timer
 }
 
-// AppManager manages Rails application processes
+// AppManager manages web application processes
 type AppManager struct {
-	apps        map[string]*RailsApp
+	apps        map[string]*WebApp
 	config      *Config
 	mutex       sync.RWMutex
 	idleTimeout time.Duration
-	minPort     int // Minimum port for Rails apps
-	maxPort     int // Maximum port for Rails apps
+	minPort     int // Minimum port for web apps
+	maxPort     int // Maximum port for web apps
 }
 
 // cleanupPidFile checks for and removes stale PID file
@@ -377,15 +390,15 @@ func (m *AppManager) UpdateConfig(newConfig *Config) {
 		"maxPort", m.maxPort)
 }
 
-// Cleanup stops all running Rails applications
+// Cleanup stops all running web applications
 func (m *AppManager) Cleanup() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	slog.Info("Cleaning up all Rails applications")
+	slog.Info("Cleaning up all web applications")
 
 	for path, app := range m.apps {
-		slog.Info("Stopping Rails app", "path", path)
+		slog.Info("Stopping web app", "path", path)
 
 		// Clean up PID file
 		pidfilePath := getPidFilePath(app.Location.EnvVars)
@@ -401,7 +414,7 @@ func (m *AppManager) Cleanup() {
 	}
 
 	// Clear the apps map
-	m.apps = make(map[string]*RailsApp)
+	m.apps = make(map[string]*WebApp)
 
 	// Give processes a moment to exit cleanly
 	time.Sleep(500 * time.Millisecond)
@@ -798,7 +811,7 @@ func main() {
 
 	// Handle --help option
 	if len(os.Args) > 1 && (os.Args[1] == "--help" || os.Args[1] == "-h") {
-		fmt.Println("Navigator - Rails application server")
+		fmt.Println("Navigator - Web application server")
 		fmt.Println()
 		fmt.Println("Usage:")
 		fmt.Println("  navigator [config-file]     Start server with optional config file")
@@ -933,7 +946,7 @@ func main() {
 
 			case os.Interrupt, syscall.SIGTERM:
 				slog.Info("Received interrupt signal, cleaning up")
-				manager.Cleanup()        // Stop Rails apps first
+				manager.Cleanup()        // Stop web apps first
 				processManager.StopAll() // Then stop managed processes
 				os.Exit(0)
 			}
@@ -1088,6 +1101,9 @@ func ParseYAML(content []byte) (*Config, error) {
 		}
 	}
 
+	// Set framework configuration
+	config.Framework = yamlConfig.Applications.Framework
+	
 	// Process applications.env to separate global vars from templates
 	for varName, value := range yamlConfig.Applications.Env {
 		// If the value doesn't contain variables, it's a global env var
@@ -1142,7 +1158,7 @@ func ParseYAML(content []byte) (*Config, error) {
 		config.IdleTimeout = DefaultIdleTimeout
 	}
 
-	// Set start port for Rails apps
+	// Set start port for web apps
 	if yamlConfig.Pools.StartPort > 0 {
 		config.StartPort = yamlConfig.Pools.StartPort
 	} else {
@@ -1206,7 +1222,7 @@ func NewAppManager(config *Config) *AppManager {
 	}
 
 	return &AppManager{
-		apps:        make(map[string]*RailsApp),
+		apps:        make(map[string]*WebApp),
 		config:      config,
 		minPort:     startPort,
 		maxPort:     startPort + MaxPortRange,
@@ -1215,7 +1231,7 @@ func NewAppManager(config *Config) *AppManager {
 }
 
 // GetOrStartApp gets an existing app or starts a new one
-func (m *AppManager) GetOrStartApp(location *Location) (*RailsApp, error) {
+func (m *AppManager) GetOrStartApp(location *Location) (*WebApp, error) {
 	m.mutex.Lock()
 	key := location.Path
 	app, exists := m.apps[key]
@@ -1261,7 +1277,7 @@ func (m *AppManager) GetOrStartApp(location *Location) (*RailsApp, error) {
 	}
 
 	// Start new app
-	app = &RailsApp{
+	app = &WebApp{
 		Location:   location,
 		Port:       port,
 		LastAccess: time.Now(),
@@ -1295,12 +1311,15 @@ func (m *AppManager) GetOrStartApp(location *Location) (*RailsApp, error) {
 	}
 }
 
-// startApp starts a Rails application
-func (m *AppManager) startApp(app *RailsApp) {
+// startApp starts a web application
+func (m *AppManager) startApp(app *WebApp) {
 	ctx, cancel := context.WithCancel(context.Background())
 	app.ctx = ctx
 	app.cancel = cancel
 
+	// Get framework configuration
+	framework := &m.config.Framework
+	
 	// Build environment variables
 	env := os.Environ()
 
@@ -1314,8 +1333,12 @@ func (m *AppManager) startApp(app *RailsApp) {
 		env = append(env, fmt.Sprintf("%s=%s", k, v))
 	}
 
-	// Add port
-	env = append(env, fmt.Sprintf("PORT=%d", app.Port))
+	// Add port using configurable environment variable name
+	portEnvVar := framework.PortEnvVar
+	if portEnvVar == "" {
+		portEnvVar = "PORT" // Default fallback
+	}
+	env = append(env, fmt.Sprintf("%s=%d", portEnvVar, app.Port))
 
 	// Check for and clean up PID file before starting
 	pidfilePath := getPidFilePath(app.Location.EnvVars)
@@ -1325,37 +1348,64 @@ func (m *AppManager) startApp(app *RailsApp) {
 		}
 	}
 
-	// Change to Rails directory
-	railsDir := "/rails"
+	// Determine application directory using framework configuration
+	appDir := framework.AppDirectory
+	if appDir == "" {
+		appDir = "/app" // Generic fallback
+	}
+	
+	// Use location root if specified, otherwise use framework app directory
 	if app.Location.Root != "" {
-		railsDir = strings.TrimSuffix(app.Location.Root, "/public")
+		appDir = strings.TrimSuffix(app.Location.Root, "/public")
 	}
 
-	// Try to use the current working directory if /rails doesn't exist
-	if _, err := os.Stat(railsDir); os.IsNotExist(err) {
+	// Try to use the current working directory if configured directory doesn't exist
+	if _, err := os.Stat(appDir); os.IsNotExist(err) {
 		if cwd, err := os.Getwd(); err == nil {
-			railsDir = cwd
+			appDir = cwd
 		}
 	}
 
-	// Determine which command to use
+	// Build command using framework configuration
 	var cmd *exec.Cmd
-
-	// Always use rails server directly to control the port
-	// bin/dev starts on port 3000 which conflicts with navigator
-	binRails := filepath.Join(railsDir, "bin", "rails")
-	if _, err := os.Stat(binRails); err == nil {
-		cmd = exec.CommandContext(ctx, binRails, "server", "-p", strconv.Itoa(app.Port))
-	} else {
-		// Fallback to ruby bin/rails
-		rubyPath := m.config.PassengerRuby
-		if rubyPath == "" {
-			rubyPath = "ruby"
+	
+	// Expand server args with port substitution
+	serverArgs := make([]string, len(framework.ServerArgs))
+	for i, arg := range framework.ServerArgs {
+		if arg == "${port}" {
+			serverArgs[i] = strconv.Itoa(app.Port)
+		} else {
+			serverArgs[i] = arg
 		}
-		cmd = exec.CommandContext(ctx, rubyPath, "bin/rails", "server", "-p", strconv.Itoa(app.Port))
+	}
+	
+	// Check if server executable exists in app directory
+	serverPath := filepath.Join(appDir, framework.ServerExecutable)
+	if _, err := os.Stat(serverPath); err == nil {
+		// Use the server executable directly
+		if framework.ServerCommand != "" {
+			// Add server command as first argument
+			args := append([]string{framework.ServerCommand}, serverArgs...)
+			cmd = exec.CommandContext(ctx, serverPath, args...)
+		} else {
+			cmd = exec.CommandContext(ctx, serverPath, serverArgs...)
+		}
+	} else {
+		// Fallback to runtime executable with server executable as argument
+		runtime := framework.RuntimeExecutable
+		if runtime == "" {
+			return // Cannot start without runtime executable configured
+		}
+		if framework.ServerCommand != "" {
+			args := append([]string{framework.ServerExecutable, framework.ServerCommand}, serverArgs...)
+			cmd = exec.CommandContext(ctx, runtime, args...)
+		} else {
+			args := append([]string{framework.ServerExecutable}, serverArgs...)
+			cmd = exec.CommandContext(ctx, runtime, args...)
+		}
 	}
 
-	cmd.Dir = railsDir
+	cmd.Dir = appDir
 	cmd.Env = env
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -1364,30 +1414,34 @@ func (m *AppManager) startApp(app *RailsApp) {
 	app.Process = cmd
 	app.mutex.Unlock()
 
-	slog.Info("Starting Rails app",
+	slog.Info("Starting web app",
 		"path", app.Location.Path,
 		"port", app.Port,
-		"directory", railsDir)
+		"directory", appDir)
 
 	if err := cmd.Start(); err != nil {
-		slog.Error("Failed to start Rails app", "path", app.Location.Path, "error", err)
+		slog.Error("Failed to start web app", "path", app.Location.Path, "error", err)
 		app.mutex.Lock()
 		app.Starting = false
 		app.mutex.Unlock()
 		return
 	}
 
-	// Wait a moment for Rails to start, then mark as ready
-	time.Sleep(RailsStartupDelay)
+	// Wait a moment for app to start, then mark as ready
+	startupDelay := time.Duration(framework.StartupDelay) * time.Second
+	if startupDelay == 0 {
+		startupDelay = RailsStartupDelay // Default fallback
+	}
+	time.Sleep(startupDelay)
 	app.mutex.Lock()
 	app.Starting = false
 	app.mutex.Unlock()
-	slog.Info("Rails app ready", "path", app.Location.Path, "port", app.Port)
+	slog.Info("Web app ready", "path", app.Location.Path, "port", app.Port)
 
 	// Wait for process to exit in background
 	go func() {
 		cmd.Wait()
-		slog.Info("Rails app exited", "path", app.Location.Path, "port", app.Port)
+		slog.Info("Web app exited", "path", app.Location.Path, "port", app.Port)
 
 		// Clean up PID file when app exits
 		if pidfilePath != "" {
@@ -1403,7 +1457,7 @@ func (m *AppManager) startApp(app *RailsApp) {
 	}()
 }
 
-// StopApp stops a Rails application
+// StopApp stops a web application
 func (m *AppManager) StopApp(path string) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
@@ -1413,7 +1467,7 @@ func (m *AppManager) StopApp(path string) {
 		return
 	}
 
-	slog.Info("Stopping Rails app", "path", path)
+	slog.Info("Stopping web app", "path", path)
 
 	// Clean up PID file
 	pidfilePath := getPidFilePath(app.Location.EnvVars)
@@ -1519,7 +1573,7 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 			return
 		}
 
-		// Find matching location early to determine if this is a Rails app
+		// Find matching location early to determine if this is a web app
 		var bestMatch *Location
 		bestMatchLen := 0
 
@@ -1545,7 +1599,7 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 
 		// Try tryFiles for public paths (those that would be excluded from auth)
 		// This ensures static content is served for public paths like /showcase/regions/
-		// while Rails apps (which would require auth if enabled) are always proxied
+		// while web apps (which would require auth if enabled) are always proxied
 		if isPublicPath && tryFiles(w, r, config) {
 			return
 		}
@@ -1596,23 +1650,23 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 			return
 		}
 
-		// Get or start the Rails app
+		// Get or start the web app
 		app, err := manager.GetOrStartApp(bestMatch)
 		if err != nil {
 			http.Error(w, "Failed to start application", http.StatusInternalServerError)
 			return
 		}
 
-		// Proxy to Rails app
+		// Proxy to web app
 		target, _ := url.Parse(fmt.Sprintf("http://localhost:%d", app.Port))
 
-		// For Rails apps, preserve the full path - don't strip the location prefix
-		// Rails routing expects to see the full path like "/2025/adelaide/adelaide-combined/"
+		// For web apps, preserve the full path - don't strip the location prefix
+		// App routing expects to see the full path like "/2025/adelaide/adelaide-combined/"
 		// Only strip if the location is "/" (root)
 		originalPath := r.URL.Path
 		if bestMatch.Path != "/" {
-			// Don't modify the path - Rails needs to see the full path
-			// The RAILS_APP_SCOPE environment variable tells Rails what prefix to expect
+			// Don't modify the path - app needs to see the full path
+			// Framework-specific environment variables tell the app what prefix to expect
 		} else {
 			// Root location - path is already correct
 		}
@@ -1622,9 +1676,9 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 		r.Header.Set("X-Forwarded-Host", r.Host)
 		r.Header.Set("X-Forwarded-Proto", "http")
 
-		slog.Info("Proxying to Rails", "path", originalPath, "port", app.Port, "location", bestMatch.Path)
+		slog.Info("Proxying to web app", "path", originalPath, "port", app.Port, "location", bestMatch.Path)
 
-		// Use retry logic for Rails apps too
+		// Use retry logic for web apps too
 		proxyWithRetry(w, r, target, ProxyRetryTimeout)
 	})
 }
@@ -2083,7 +2137,7 @@ func serveStaticFile(w http.ResponseWriter, r *http.Request, config *Config) boo
 }
 
 // tryFiles implements try_files behavior for non-authenticated routes
-// Attempts to serve static files with common extensions before falling back to Rails
+// Attempts to serve static files with common extensions before falling back to web app
 func tryFiles(w http.ResponseWriter, r *http.Request, config *Config) bool {
 	path := r.URL.Path
 
