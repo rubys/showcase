@@ -65,9 +65,12 @@ task :prerender => "prerender:env" do
   end
 
   # add studios without events
-  map_data = RegionConfiguration.generate_map_data
-  map_data["studios"].each do |studio, info|
-    studios[studio] ||= info["region"]
+  map_file = File.join(Rails.application.root, 'config/tenant/map.yml')
+  if File.exist?(map_file)
+    map_data = YAML.load_file(map_file)
+    map_data["studios"].each do |studio, info|
+      studios[studio] ||= info["region"]
+    end
   end
 
   # start with the index.html and regions/index.html files
