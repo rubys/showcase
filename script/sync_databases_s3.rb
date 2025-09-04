@@ -6,6 +6,7 @@ require 'fileutils'
 require 'optparse'
 require 'aws-sdk-s3'
 require 'json'
+require 'sqlite3'
 
 # Initialize Sentry if DSN is available
 if ENV["SENTRY_DSN"]
@@ -184,6 +185,22 @@ local_inventories.each do |region|
   File.delete("#{inventory_path}/#{region}.json") unless options[:dry_run]
 end
 
+# Helper to get 'date' from database (first event date)
+def dbdate(filename, dbpath)
+  fullpath = File.expand_path(File.basename(filename, '.sqlite3') + '.sqlite3', dbpath)
+  if File.exist?(fullpath)
+    begin
+      db = SQLite3::Database.new(fullpath)
+      result = db.get_first_value("SELECT date FROM events LIMIT 1")
+      result
+    rescue
+      nil
+    ensure
+      db.close if db
+    end
+  end
+end
+
 # Get list of objects in S3 with "db/" prefix (handle pagination)
 s3_objects = {}
 begin
@@ -220,6 +237,7 @@ begin
             inventories[owner_region] ||= {}
             inventories[owner_region][filename] = {
               'etag' => obj_response.etag,
+              'date' => dbdate(filename, dbpath),
               'last_modified' => actual_last_modified.utc.inspect
             }
             inventory_changed[owner_region] = true
@@ -358,6 +376,7 @@ expected_databases.each do |db_name|
             inventory_changed[owner_region] ||= false
             inventories[owner_region][db_name] = {
               'etag' => put_response.etag,
+              'date' => dbdate(db_name, dbpath),
               'last_modified' => local_mtime.utc.inspect
             }
             inventory_changed[owner_region] = true
@@ -425,6 +444,13 @@ unless options[:dry_run]
 
       inventory_key = "inventory/#{region}.json"
       puts "Updating inventory for #{region}" if options[:verbose]
+
+      # Ensure all entries have 'date' field (may be nil)
+      inventories[region].each do |database, info|
+        if !info.has_key?('date')
+          info['date'] = dbdate(database, dbpath)
+        end
+      end
 
       inventory_data = JSON.pretty_generate(inventories[region])
       
