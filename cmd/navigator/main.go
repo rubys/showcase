@@ -1801,7 +1801,7 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 									"contentLength", r.ContentLength)
 
 								responseMap = map[string]interface{}{
-									"region": target,
+									"region": target + ",any",
 									"transform": map[string]interface{}{
 										"set_headers": []map[string]string{
 											{"name": "X-Navigator-Retry", "value": "true"},
