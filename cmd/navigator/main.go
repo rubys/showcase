@@ -152,6 +152,18 @@ type FrameworkConfig struct {
 	StartupDelay      int      `yaml:"startup_delay"`      // seconds to wait before marking ready
 }
 
+// Tenant represents a tenant configuration with optional framework overrides
+type Tenant struct {
+	Path                       string            `yaml:"path"`
+	Root                       string            `yaml:"root"`
+	Special                    bool              `yaml:"special"`
+	MatchPattern               string            `yaml:"match_pattern"`
+	StandaloneServer           string            `yaml:"standalone_server"`
+	Env                        map[string]string `yaml:"env"`
+	Var                        map[string]string `yaml:"var"`
+	ForceMaxConcurrentRequests int               `yaml:"force_max_concurrent_requests"`
+}
+
 // YAMLConfig represents the new YAML configuration format
 type YAMLConfig struct {
 	Server struct {
@@ -225,16 +237,7 @@ type YAMLConfig struct {
 	Applications struct {
 		Framework FrameworkConfig   `yaml:"framework"`
 		Env       map[string]string `yaml:"env"`
-		Tenants   []struct {
-			Path                       string            `yaml:"path"`
-			Root                       string            `yaml:"root"`
-			Special                    bool              `yaml:"special"`
-			MatchPattern               string            `yaml:"match_pattern"`
-			StandaloneServer           string            `yaml:"standalone_server"`
-			Env                        map[string]string `yaml:"env"`
-			Var                        map[string]string `yaml:"var"`
-			ForceMaxConcurrentRequests int               `yaml:"force_max_concurrent_requests"`
-		} `yaml:"tenants"`
+		Tenants   []Tenant          `yaml:"tenants"`
 	} `yaml:"applications"`
 
 	Process struct {
@@ -980,16 +983,7 @@ func LoadConfig(filename string) (*Config, error) {
 }
 
 // substituteVars replaces template variables with tenant values
-func substituteVars(template string, tenant struct {
-	Path                       string            `yaml:"path"`
-	Root                       string            `yaml:"root"`
-	Special                    bool              `yaml:"special"`
-	MatchPattern               string            `yaml:"match_pattern"`
-	StandaloneServer           string            `yaml:"standalone_server"`
-	Env                        map[string]string `yaml:"env"`
-	Var                        map[string]string `yaml:"var"`
-	ForceMaxConcurrentRequests int               `yaml:"force_max_concurrent_requests"`
-}) string {
+func substituteVars(template string, tenant *Tenant) string {
 	result := template
 	// Replace ${var} with values from the Var map
 	if tenant.Var != nil {
@@ -1081,7 +1075,7 @@ func ParseYAML(content []byte) (*Config, error) {
 			} else {
 				target = flyReplay.Region
 			}
-			
+
 			config.RewriteRules = append(config.RewriteRules, &RewriteRule{
 				Pattern:     re,
 				Replacement: flyReplay.Path, // Keep original path for fly-replay
@@ -1103,7 +1097,7 @@ func ParseYAML(content []byte) (*Config, error) {
 
 	// Set framework configuration
 	config.Framework = yamlConfig.Applications.Framework
-	
+
 	// Process applications.env to separate global vars from templates
 	for varName, value := range yamlConfig.Applications.Env {
 		// If the value doesn't contain variables, it's a global env var
@@ -1131,7 +1125,7 @@ func ParseYAML(content []byte) (*Config, error) {
 			for varName, template := range yamlConfig.Applications.Env {
 				// Only process templates that contain variables
 				if strings.Contains(template, "${") {
-					value := substituteVars(template, tenant)
+					value := substituteVars(template, &tenant)
 					location.EnvVars[varName] = value
 				}
 			}
@@ -1319,7 +1313,7 @@ func (m *AppManager) startApp(app *WebApp) {
 
 	// Get framework configuration
 	framework := &m.config.Framework
-	
+
 	// Build environment variables
 	env := os.Environ()
 
@@ -1353,7 +1347,7 @@ func (m *AppManager) startApp(app *WebApp) {
 	if appDir == "" {
 		appDir = "/app" // Generic fallback
 	}
-	
+
 	// Use location root if specified, otherwise use framework app directory
 	if app.Location.Root != "" {
 		appDir = strings.TrimSuffix(app.Location.Root, "/public")
@@ -1368,7 +1362,7 @@ func (m *AppManager) startApp(app *WebApp) {
 
 	// Build command using framework configuration
 	var cmd *exec.Cmd
-	
+
 	// Expand server args with port substitution
 	serverArgs := make([]string, len(framework.ServerArgs))
 	for i, arg := range framework.ServerArgs {
@@ -1378,7 +1372,7 @@ func (m *AppManager) startApp(app *WebApp) {
 			serverArgs[i] = arg
 		}
 	}
-	
+
 	// Check if server executable exists in app directory
 	serverPath := filepath.Join(appDir, framework.ServerExecutable)
 	if _, err := os.Stat(serverPath); err == nil {
@@ -1770,7 +1764,7 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 										"contentLength", r.ContentLength)
 
 									responseMap = map[string]interface{}{
-										"app": appName,
+										"app":             appName,
 										"prefer_instance": machineID,
 										"transform": map[string]interface{}{
 											"set_headers": []map[string]string{
