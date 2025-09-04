@@ -547,12 +547,12 @@ module Configurator
       }
     end
     
-    # Example: Add a Redis server if configured
-    if ENV['START_REDIS'] == 'true'
+    # Add a Redis server if running on Fly.io
+    if ENV['FLY_APP_NAME']
       processes << {
         'name' => 'redis',
         'command' => 'redis-server',
-        'args' => [],
+        'args' => ['/etc/redis/redis.conf'],
         'working_dir' => Rails.root.to_s,
         'env' => {},
         'auto_restart' => true,

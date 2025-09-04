@@ -1674,7 +1674,10 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 		// Add headers
 		r.Header.Set("X-Forwarded-For", r.RemoteAddr)
 		r.Header.Set("X-Forwarded-Host", r.Host)
-		r.Header.Set("X-Forwarded-Proto", "http")
+		// Preserve X-Forwarded-Proto if it exists (from upstream proxy), otherwise default to http
+		if r.Header.Get("X-Forwarded-Proto") == "" {
+			r.Header.Set("X-Forwarded-Proto", "http")
+		}
 
 		slog.Info("Proxying to web app", "path", originalPath, "port", app.Port, "location", bestMatch.Path)
 
