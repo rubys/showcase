@@ -90,6 +90,7 @@ task :prerender => "prerender:env" do
     
     # Add each city index within the year (e.g., /2025/boston/)
     cities.each do |city|
+      next unless showcases.dig(year, city, :events)
       files << ["#{year}/#{city}/", "#{year}/#{city}/index.html"]
     end
   end
