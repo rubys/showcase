@@ -61,6 +61,9 @@ COPY cmd ./cmd
 # Build navigator
 RUN go build -mod=readonly -o /usr/local/bin/navigator ./cmd/navigator
 
+# Nats CLI
+RUN go install github.com/nats-io/natscli/nats@latest
+
 
 # Final stage for app image
 FROM base
@@ -68,13 +71,13 @@ FROM base
 # Install packages needed for deployment
 RUN bash -c "$(curl -L https://setup.vector.dev)" && \
     apt-get install --no-install-recommends -y dnsutils nats-server poppler-utils procps redis-server ruby-foreman sqlite3 sudo vector vim unzip && \
-    curl -sSL https://github.com/nats-io/natscli/releases/latest/download/nats-linux-amd64.zip -o /tmp/nats.zip && unzip /tmp/nats.zip -d /tmp && mv /tmp/nats /usr/local/bin/ && rm -rf /tmp/nats.zip && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Copy built artifacts: gems, application
 COPY --from=build /usr/local/bundle /usr/local/bundle
 COPY --from=build /rails /rails
 COPY --from=build-nav /usr/local/bin/navigator /usr/local/bin/
+COPY --from=build-nav /go/bin/nats /usr/local/bin/nats
 
 # Run and own only the runtime files as a non-root user for security
 RUN useradd rails --create-home --shell /bin/bash && \
