@@ -303,6 +303,8 @@ class EventController < ApplicationController
 
     sheet = []
 
+    track_ages = Event.current.track_ages
+
     headers = [
       'Name',
       'Type',
@@ -314,7 +316,7 @@ class EventController < ApplicationController
     ]
 
     @people.each do |person|
-      sheet << headers.zip([
+      row = headers.zip([
         person.name,
         person.type,
         person.role,
@@ -323,6 +325,10 @@ class EventController < ApplicationController
         person.age&.category,
         person.studio&.name
       ]).to_h
+
+      row.delete('Age') unless track_ages
+
+      sheet << row
     end
 
     @sheets['Participants'] = sheet
