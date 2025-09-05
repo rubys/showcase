@@ -35,8 +35,8 @@
       <% judge_ids.each do |judge| %>
         <td class="text-center"><%= heat.scores.select {|score| score.judge_id == judge}.sort_by {it.slot || 0}.map { |score| 
           display_val = score.display_value
-          if params[:F].present? && display_val == 'F'
-            params[:F]
+          if display_val == 'F'
+            Event.current.finalist
           else
             display_val
           end

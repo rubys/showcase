@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_31_121950) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_05_233753) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -205,6 +205,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_31_121950) do
     t.string "solo_scoring", default: "1"
     t.boolean "judge_recordings", default: false
     t.integer "table_size"
+    t.string "finalist", default: "F"
     t.index ["solo_level_id"], name: "index_events_on_solo_level_id"
   end
 
