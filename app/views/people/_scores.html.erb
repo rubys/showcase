@@ -33,7 +33,14 @@
       <% end %>
       <% elsif @score_values != false %>
       <% judge_ids.each do |judge| %>
-        <td class="text-center"><%= heat.scores.select {|score| score.judge_id == judge}.sort_by {it.slot || 0}.map(&:display_value).join(' ') %></td>
+        <td class="text-center"><%= heat.scores.select {|score| score.judge_id == judge}.sort_by {it.slot || 0}.map { |score| 
+          display_val = score.display_value
+          if params[:F].present? && display_val == 'F'
+            params[:F]
+          else
+            display_val
+          end
+        }.join(' ') %></td>
       <% end %>
       <% end %>
       <td><div class="mx-4"><%= heat.category %> <%= heat.dance.name %></div></td>
