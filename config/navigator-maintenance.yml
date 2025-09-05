@@ -54,3 +54,4 @@ logging:
   access_log: /dev/stdout
   error_log: /dev/stderr
   level: info
+  format: json  # Use JSON format for structured logging

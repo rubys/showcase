@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -74,6 +75,11 @@ type AuthPattern struct {
 	Action  string // "off" or realm name
 }
 
+// LogConfig represents logging configuration
+type LogConfig struct {
+	Format string `yaml:"format"` // "text" or "json"
+}
+
 // Config represents the parsed configuration
 type Config struct {
 	ServerName       string
@@ -99,6 +105,7 @@ type Config struct {
 	PublicDir        string                 // Default public directory
 	MaintenancePage  string                 // Path to maintenance page (e.g., "/503.html")
 	ManagedProcesses []ManagedProcessConfig // Managed processes to start/stop with Navigator
+	Logging          LogConfig              // Logging configuration
 
 	// Suspend configuration
 	SuspendEnabled     bool
@@ -252,6 +259,7 @@ type YAMLConfig struct {
 	} `yaml:"suspend"`
 
 	ManagedProcesses []ManagedProcessConfig `yaml:"managed_processes"`
+	Logging          LogConfig              `yaml:"logging"`
 }
 
 // ManagedProcess represents an external process managed by Navigator
@@ -272,6 +280,7 @@ type ManagedProcess struct {
 // ProcessManager manages external processes
 type ProcessManager struct {
 	processes []*ManagedProcess
+	config    *Config
 	mutex     sync.RWMutex
 	wg        sync.WaitGroup
 }
@@ -294,6 +303,69 @@ type AppManager struct {
 	idleTimeout time.Duration
 	minPort     int // Minimum port for web apps
 	maxPort     int // Maximum port for web apps
+}
+
+// LogWriter wraps output streams to add source identification
+type LogWriter struct {
+	source string     // app name or process name
+	stream string     // "stdout" or "stderr"
+	output io.Writer
+}
+
+// Write implements io.Writer interface, prefixing each line with source metadata
+func (w *LogWriter) Write(p []byte) (n int, err error) {
+	// Split input into lines
+	lines := bytes.Split(p, []byte("\n"))
+	for i, line := range lines {
+		// Skip empty lines at the end
+		if len(line) == 0 && i == len(lines)-1 {
+			continue
+		}
+		// Write prefixed line
+		prefix := fmt.Sprintf("[%s.%s] ", w.source, w.stream)
+		w.output.Write([]byte(prefix))
+		w.output.Write(line)
+		w.output.Write([]byte("\n"))
+	}
+	return len(p), nil
+}
+
+// LogEntry represents a structured log entry
+type LogEntry struct {
+	Timestamp string `json:"@timestamp"`
+	Source    string `json:"source"`
+	Stream    string `json:"stream"`
+	Message   string `json:"message"`
+	Tenant    string `json:"tenant,omitempty"`
+}
+
+// JSONLogWriter writes structured JSON log entries
+type JSONLogWriter struct {
+	source string
+	stream string
+	tenant string
+	output io.Writer
+}
+
+// Write implements io.Writer interface, outputting JSON log entries
+func (w *JSONLogWriter) Write(p []byte) (n int, err error) {
+	lines := bytes.Split(p, []byte("\n"))
+	for _, line := range lines {
+		if len(line) == 0 {
+			continue
+		}
+		entry := LogEntry{
+			Timestamp: time.Now().Format(time.RFC3339),
+			Source:    w.source,
+			Stream:    w.stream,
+			Message:   string(line),
+			Tenant:    w.tenant,
+		}
+		data, _ := json.Marshal(entry)
+		w.output.Write(data)
+		w.output.Write([]byte("\n"))
+	}
+	return len(p), nil
 }
 
 // cleanupPidFile checks for and removes stale PID file
@@ -424,9 +496,10 @@ func (m *AppManager) Cleanup() {
 }
 
 // NewProcessManager creates a new process manager
-func NewProcessManager() *ProcessManager {
+func NewProcessManager(config *Config) *ProcessManager {
 	return &ProcessManager{
 		processes: make([]*ManagedProcess, 0),
+		config:    config,
 	}
 }
 
@@ -458,9 +531,14 @@ func (pm *ProcessManager) StartProcess(mp *ManagedProcess) error {
 	}
 	cmd.Env = env
 
-	// Set up output
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	// Set up output with source identification
+	if pm.config != nil && pm.config.Logging.Format == "json" {
+		cmd.Stdout = &JSONLogWriter{source: mp.Name, stream: "stdout", output: os.Stdout}
+		cmd.Stderr = &JSONLogWriter{source: mp.Name, stream: "stderr", output: os.Stderr}
+	} else {
+		cmd.Stdout = &LogWriter{source: mp.Name, stream: "stdout", output: os.Stdout}
+		cmd.Stderr = &LogWriter{source: mp.Name, stream: "stderr", output: os.Stderr}
+	}
 
 	mp.Process = cmd
 
@@ -852,6 +930,13 @@ func main() {
 		"locations", len(config.Locations),
 		"proxyRoutes", len(config.ProxyRoutes))
 
+	// Update logger based on configuration
+	if config.Logging.Format == "json" {
+		jsonLogger := slog.New(slog.NewJSONHandler(os.Stdout, opts))
+		slog.SetDefault(jsonLogger)
+		slog.Info("Switched to JSON logging format")
+	}
+
 	var auth *BasicAuth
 	if config.AuthFile != "" {
 		auth, err = LoadAuthFile(config.AuthFile, config.AuthRealm, config.AuthExclude)
@@ -871,7 +956,7 @@ func main() {
 	}
 
 	// Create and start process manager for managed processes
-	processManager := NewProcessManager()
+	processManager := NewProcessManager(config)
 	if len(config.ManagedProcesses) > 0 {
 		slog.Info("Starting managed processes", "count", len(config.ManagedProcesses))
 		processManager.StartAll(config.ManagedProcesses)
@@ -1192,6 +1277,9 @@ func ParseYAML(content []byte) (*Config, error) {
 	// Set managed processes
 	config.ManagedProcesses = yamlConfig.ManagedProcesses
 
+	// Set logging configuration
+	config.Logging = yamlConfig.Logging
+
 	// Set suspend configuration
 	config.SuspendEnabled = yamlConfig.Suspend.Enabled
 	if yamlConfig.Suspend.IdleTimeout > 0 {
@@ -1401,8 +1489,29 @@ func (m *AppManager) startApp(app *WebApp) {
 
 	cmd.Dir = appDir
 	cmd.Env = env
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	// Use the location path as the source identifier
+	appName := strings.TrimPrefix(app.Location.Path, "/")
+	if appName == "" {
+		appName = "root"
+	}
+	
+	// Extract tenant from environment if available
+	tenant := ""
+	for _, envVar := range env {
+		if strings.HasPrefix(envVar, "TENANT=") {
+			tenant = strings.TrimPrefix(envVar, "TENANT=")
+			break
+		}
+	}
+	
+	// Set up output with appropriate format
+	if m.config.Logging.Format == "json" {
+		cmd.Stdout = &JSONLogWriter{source: appName, stream: "stdout", tenant: tenant, output: os.Stdout}
+		cmd.Stderr = &JSONLogWriter{source: appName, stream: "stderr", tenant: tenant, output: os.Stderr}
+	} else {
+		cmd.Stdout = &LogWriter{source: appName, stream: "stdout", output: os.Stdout}
+		cmd.Stderr = &LogWriter{source: appName, stream: "stderr", output: os.Stderr}
+	}
 
 	app.mutex.Lock()
 	app.Process = cmd

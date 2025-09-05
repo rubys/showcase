@@ -66,7 +66,9 @@ RUN go build -mod=readonly -o /usr/local/bin/navigator ./cmd/navigator
 FROM base
 
 # Install packages needed for deployment
-RUN apt-get install --no-install-recommends -y dnsutils poppler-utils procps redis-server ruby-foreman sqlite3 sudo vim unzip && \
+RUN bash -c "$(curl -L https://setup.vector.dev)" && \
+    apt-get install --no-install-recommends -y dnsutils nats-server poppler-utils procps redis-server ruby-foreman sqlite3 sudo vector vim unzip && \
+    curl -sSL https://github.com/nats-io/natscli/releases/latest/download/nats-linux-amd64.zip -o /tmp/nats.zip && unzip /tmp/nats.zip -d /tmp && mv /tmp/nats /usr/local/bin/ && rm -rf /tmp/nats.zip && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Copy built artifacts: gems, application

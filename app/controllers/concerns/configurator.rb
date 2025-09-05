@@ -464,7 +464,7 @@ module Configurator
   def build_logging_config
     config = {
       'level' => 'info',
-      'format' => 'combined'
+      'format' => 'json'  # Use JSON format for structured logging
     }
     
     if ENV['FLY_APP_NAME'] || ENV['KAMAL_CONTAINER_NAME']
