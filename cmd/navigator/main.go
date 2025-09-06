@@ -120,9 +120,6 @@ type Config struct {
 	Locations        map[string]*Location
 	GlobalEnvVars    map[string]string
 	Framework        FrameworkConfig // Framework-specific configuration
-	PassengerRuby    string
-	MinInstances     int
-	PreloadBundler   bool
 	IdleTimeout      time.Duration          // Idle timeout for app processes
 	StartPort        int                    // Starting port for web apps
 	StaticDirs       []*StaticDir           // Static directory mappings
@@ -133,9 +130,9 @@ type Config struct {
 	ManagedProcesses []ManagedProcessConfig // Managed processes to start/stop with Navigator
 	Logging          LogConfig              // Logging configuration
 
-	// Suspend configuration
-	SuspendEnabled     bool
-	SuspendIdleTimeout time.Duration
+	// Machine idle configuration
+	MachineIdleAction  string        // "suspend", "stop", or empty
+	MachineIdleTimeout time.Duration // Duration before machine idle action
 	
 	// Hooks configuration
 	ServerHooks        ServerHooks // Server lifecycle hooks
@@ -210,13 +207,11 @@ type YAMLConfig struct {
 		Hostname  string `yaml:"hostname"`
 		RootPath  string `yaml:"root_path"`
 		PublicDir string `yaml:"public_dir"`
+		Idle      struct {
+			Action  string `yaml:"action"`  // "suspend", "stop", or empty
+			Timeout string `yaml:"timeout"` // Duration string like "20m", "1h30m"
+		} `yaml:"idle"`
 	} `yaml:"server"`
-
-	Pools struct {
-		MaxSize     int `yaml:"max_size"`
-		IdleTimeout int `yaml:"idle_timeout"`
-		StartPort   int `yaml:"start_port"`
-	} `yaml:"pools"`
 
 	Auth struct {
 		Enabled         bool     `yaml:"enabled"`
@@ -277,18 +272,14 @@ type YAMLConfig struct {
 		Framework FrameworkConfig   `yaml:"framework"`
 		Env       map[string]string `yaml:"env"`
 		Tenants   []Tenant          `yaml:"tenants"`
+		Pools     struct {
+			MaxSize   int    `yaml:"max_size"`
+			Timeout   string `yaml:"timeout"` // Duration string like "5m", "30s"
+			StartPort int    `yaml:"start_port"`
+		} `yaml:"pools"`
 	} `yaml:"applications"`
 
-	Process struct {
-		Ruby           string `yaml:"ruby"`
-		BundlerPreload bool   `yaml:"bundler_preload"`
-		MinInstances   int    `yaml:"min_instances"`
-	} `yaml:"process"`
 
-	Suspend struct {
-		Enabled     bool `yaml:"enabled"`
-		IdleTimeout int  `yaml:"idle_timeout"` // Seconds of inactivity before suspend
-	} `yaml:"suspend"`
 
 	ManagedProcesses []ManagedProcessConfig `yaml:"managed_processes"`
 	Logging          LogConfig              `yaml:"logging"`
@@ -322,9 +313,10 @@ type ProcessManager struct {
 	wg        sync.WaitGroup
 }
 
-// SuspendManager tracks active requests and handles machine suspension
-type SuspendManager struct {
+// IdleManager tracks active requests and handles machine idle actions (suspend/stop)
+type IdleManager struct {
 	enabled        bool
+	action         string        // "suspend" or "stop"
 	idleTimeout    time.Duration
 	activeRequests int64
 	lastActivity   time.Time
@@ -804,79 +796,80 @@ func (pm *ProcessManager) UpdateConfig(processes []ManagedProcessConfig) {
 	pm.StartAll(processes)
 }
 
-// NewSuspendManager creates a new suspend manager
-func NewSuspendManager(config *Config) *SuspendManager {
-	if !config.SuspendEnabled {
-		return &SuspendManager{enabled: false, config: config}
+// NewIdleManager creates a new idle manager
+func NewIdleManager(config *Config) *IdleManager {
+	if config.MachineIdleAction == "" {
+		return &IdleManager{enabled: false, config: config}
 	}
 
-	return &SuspendManager{
+	return &IdleManager{
 		enabled:      true,
-		idleTimeout:  config.SuspendIdleTimeout,
+		action:       config.MachineIdleAction,
+		idleTimeout:  config.MachineIdleTimeout,
 		lastActivity: time.Now(),
 		config:       config,
 	}
 }
 
 // RequestStarted increments active request counter and resets idle timer
-func (sm *SuspendManager) RequestStarted() {
-	if !sm.enabled {
+func (im *IdleManager) RequestStarted() {
+	if !im.enabled {
 		return
 	}
 
-	sm.mutex.Lock()
-	defer sm.mutex.Unlock()
+	im.mutex.Lock()
+	defer im.mutex.Unlock()
 
-	sm.activeRequests++
-	sm.lastActivity = time.Now()
+	im.activeRequests++
+	im.lastActivity = time.Now()
 
 	// Cancel existing timer since we have activity
-	if sm.timer != nil {
-		sm.timer.Stop()
-		sm.timer = nil
+	if im.timer != nil {
+		im.timer.Stop()
+		im.timer = nil
 	}
 
-	slog.Debug("Request started", "activeRequests", sm.activeRequests)
+	slog.Debug("Request started", "activeRequests", im.activeRequests)
 }
 
-// RequestFinished decrements active request counter and starts suspend timer if idle
-func (sm *SuspendManager) RequestFinished() {
-	if !sm.enabled {
+// RequestFinished decrements active request counter and starts idle timer if idle
+func (im *IdleManager) RequestFinished() {
+	if !im.enabled {
 		return
 	}
 
-	sm.mutex.Lock()
-	defer sm.mutex.Unlock()
+	im.mutex.Lock()
+	defer im.mutex.Unlock()
 
-	sm.activeRequests--
-	sm.lastActivity = time.Now()
+	im.activeRequests--
+	im.lastActivity = time.Now()
 
-	slog.Debug("Request finished", "activeRequests", sm.activeRequests)
+	slog.Debug("Request finished", "activeRequests", im.activeRequests)
 
-	// Start suspend timer if no active requests
-	if sm.activeRequests == 0 {
-		sm.startSuspendTimer()
+	// Start idle timer if no active requests
+	if im.activeRequests == 0 {
+		im.startIdleTimer()
 	}
 }
 
-// startSuspendTimer starts the suspend countdown (must be called with mutex held)
-func (sm *SuspendManager) startSuspendTimer() {
-	if sm.timer != nil {
-		sm.timer.Stop()
+// startIdleTimer starts the idle countdown timer
+func (im *IdleManager) startIdleTimer() {
+	if im.timer != nil {
+		im.timer.Stop()
 	}
 
-	sm.timer = time.AfterFunc(sm.idleTimeout, func() {
-		sm.suspendMachine()
+	im.timer = time.AfterFunc(im.idleTimeout, func() {
+		im.performIdleAction()
 	})
 
-	slog.Debug("Suspend timer started", "timeout", sm.idleTimeout)
+	slog.Debug("Idle timer started", "timeout", im.idleTimeout)
 }
 
-// suspendMachine calls the Fly API to suspend the machine
-func (sm *SuspendManager) suspendMachine() {
-	// Execute server.idle hooks before suspension
-	if sm.config != nil && len(sm.config.ServerHooks.Idle) > 0 {
-		if err := executeServerHooks(sm.config.ServerHooks.Idle, "idle"); err != nil {
+// performIdleAction calls the Fly API to suspend or stop the machine
+func (im *IdleManager) performIdleAction() {
+	// Execute server.idle hooks before idle action
+	if im.config != nil && len(im.config.ServerHooks.Idle) > 0 {
+		if err := executeServerHooks(im.config.ServerHooks.Idle, "idle"); err != nil {
 			slog.Error("Server idle hooks failed", "error", err)
 		}
 	}
@@ -885,11 +878,18 @@ func (sm *SuspendManager) suspendMachine() {
 	machineId := os.Getenv("FLY_MACHINE_ID")
 
 	if appName == "" || machineId == "" {
-		slog.Warn("Cannot suspend: missing FLY_APP_NAME or FLY_MACHINE_ID")
+		slog.Warn("Cannot perform idle action: missing FLY_APP_NAME or FLY_MACHINE_ID")
 		return
 	}
 
-	slog.Info("Suspending machine", "app", appName, "machine", machineId)
+	// Determine action endpoint
+	action := im.action
+	if action != "suspend" && action != "stop" {
+		slog.Warn("Invalid idle action", "action", action)
+		return
+	}
+
+	slog.Info("Performing idle action", "action", action, "app", appName, "machine", machineId)
 
 	// Create HTTP client with Unix socket transport
 	client := &http.Client{
@@ -901,18 +901,18 @@ func (sm *SuspendManager) suspendMachine() {
 		Timeout: 10 * time.Second,
 	}
 
-	// Create suspend request
-	url := fmt.Sprintf("http://flaps/v1/apps/%s/machines/%s/suspend", appName, machineId)
+	// Create request for the appropriate action
+	url := fmt.Sprintf("http://flaps/v1/apps/%s/machines/%s/%s", appName, machineId, action)
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
-		slog.Error("Failed to create suspend request", "error", err)
+		slog.Error("Failed to create idle action request", "action", action, "error", err)
 		return
 	}
 
 	// Execute request
 	resp, err := client.Do(req)
 	if err != nil {
-		slog.Error("Failed to suspend machine", "error", err)
+		slog.Error("Failed to perform idle action", "action", action, "error", err)
 		return
 	}
 	defer resp.Body.Close()
@@ -920,41 +920,42 @@ func (sm *SuspendManager) suspendMachine() {
 	// Read response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		slog.Error("Failed to read suspend response", "error", err)
+		slog.Error("Failed to read idle action response", "action", action, "error", err)
 		return
 	}
 
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		slog.Info("Machine suspend requested successfully", "status", resp.StatusCode, "response", string(body))
+		slog.Info("Machine idle action requested successfully", "action", action, "status", resp.StatusCode, "response", string(body))
 	} else {
-		slog.Error("Machine suspend failed", "status", resp.StatusCode, "response", string(body))
+		slog.Error("Machine idle action failed", "action", action, "status", resp.StatusCode, "response", string(body))
 	}
 }
 
-// UpdateConfig updates the suspend manager configuration
-func (sm *SuspendManager) UpdateConfig(config *Config) {
-	sm.mutex.Lock()
-	defer sm.mutex.Unlock()
+// UpdateConfig updates the idle manager configuration
+func (im *IdleManager) UpdateConfig(config *Config) {
+	im.mutex.Lock()
+	defer im.mutex.Unlock()
 
 	// Stop existing timer if configuration is changing
-	if sm.timer != nil {
-		sm.timer.Stop()
-		sm.timer = nil
+	if im.timer != nil {
+		im.timer.Stop()
+		im.timer = nil
 	}
 
-	sm.enabled = config.SuspendEnabled
-	sm.idleTimeout = config.SuspendIdleTimeout
-	sm.config = config
+	im.enabled = config.MachineIdleAction != ""
+	im.action = config.MachineIdleAction
+	im.idleTimeout = config.MachineIdleTimeout
+	im.config = config
 
-	if sm.enabled {
-		slog.Info("Suspend feature enabled", "idleTimeout", sm.idleTimeout)
-		sm.lastActivity = time.Now()
+	if im.enabled {
+		slog.Info("Idle action enabled", "action", im.action, "timeout", im.idleTimeout)
+		im.lastActivity = time.Now()
 		// Start timer if we're idle (no active requests)
-		if sm.activeRequests == 0 {
-			sm.startSuspendTimer()
+		if im.activeRequests == 0 {
+			im.startIdleTimer()
 		}
 	} else {
-		slog.Info("Suspend feature disabled")
+		slog.Info("Idle action disabled")
 	}
 }
 
@@ -1178,9 +1179,9 @@ func main() {
 	manager := NewAppManager(config)
 
 	// Create suspend manager
-	suspendManager := NewSuspendManager(config)
-	if suspendManager.enabled {
-		slog.Info("Suspend feature enabled", "idleTimeout", config.SuspendIdleTimeout)
+	idleManager := NewIdleManager(config)
+	if idleManager.enabled {
+		slog.Info("Machine idle feature enabled", "action", config.MachineIdleAction, "timeout", config.MachineIdleTimeout)
 	}
 
 	// Execute server.start hooks before starting anything
@@ -1223,7 +1224,7 @@ func main() {
 	}
 
 	// Create a mutable handler wrapper for configuration reloading
-	handler := CreateHandler(config, manager, auth, suspendManager)
+	handler := CreateHandler(config, manager, auth, idleManager)
 
 	// Wrapper handler that delegates to the current configuration
 	var handlerMutex sync.RWMutex
@@ -1275,13 +1276,13 @@ func main() {
 				manager.UpdateConfig(newConfig)
 
 				// Update suspend manager configuration
-				suspendManager.UpdateConfig(newConfig)
+				idleManager.UpdateConfig(newConfig)
 
 				// Update process manager configuration
 				processManager.UpdateConfig(newConfig.ManagedProcesses)
 
 				// Create new handler with updated config
-				newHandler := CreateHandler(newConfig, manager, newAuth, suspendManager)
+				newHandler := CreateHandler(newConfig, manager, newAuth, idleManager)
 
 				// Atomically swap the handler
 				handlerMutex.Lock()
@@ -1369,7 +1370,7 @@ func ParseYAML(content []byte) (*Config, error) {
 	config := &Config{
 		ServerName:    yamlConfig.Server.Hostname,
 		ListenPort:    yamlConfig.Server.Listen,
-		MaxPoolSize:   yamlConfig.Pools.MaxSize,
+		MaxPoolSize:   yamlConfig.Applications.Pools.MaxSize,
 		Locations:     make(map[string]*Location),
 		ProxyRoutes:   make(map[string]*ProxyRoute),
 		GlobalEnvVars: make(map[string]string),
@@ -1505,21 +1506,22 @@ func ParseYAML(content []byte) (*Config, error) {
 		config.Locations[tenant.Path] = location
 	}
 
-	// Set process config
-	config.PassengerRuby = yamlConfig.Process.Ruby
-	config.PreloadBundler = yamlConfig.Process.BundlerPreload
-	config.MinInstances = yamlConfig.Process.MinInstances
-
-	// Set idle timeout from pools config
-	if yamlConfig.Pools.IdleTimeout > 0 {
-		config.IdleTimeout = time.Duration(yamlConfig.Pools.IdleTimeout) * time.Second
+	// Set app idle timeout from pools config
+	if yamlConfig.Applications.Pools.Timeout != "" {
+		duration, err := time.ParseDuration(yamlConfig.Applications.Pools.Timeout)
+		if err != nil {
+			slog.Warn("Invalid pools timeout format, using default", "timeout", yamlConfig.Applications.Pools.Timeout, "error", err)
+			config.IdleTimeout = DefaultIdleTimeout
+		} else {
+			config.IdleTimeout = duration
+		}
 	} else {
 		config.IdleTimeout = DefaultIdleTimeout
 	}
 
 	// Set start port for web apps
-	if yamlConfig.Pools.StartPort > 0 {
-		config.StartPort = yamlConfig.Pools.StartPort
+	if yamlConfig.Applications.Pools.StartPort > 0 {
+		config.StartPort = yamlConfig.Applications.Pools.StartPort
 	} else {
 		config.StartPort = DefaultStartPort
 	}
@@ -1560,12 +1562,19 @@ func ParseYAML(content []byte) (*Config, error) {
 	// Set logging configuration
 	config.Logging = yamlConfig.Logging
 
-	// Set suspend configuration
-	config.SuspendEnabled = yamlConfig.Suspend.Enabled
-	if yamlConfig.Suspend.IdleTimeout > 0 {
-		config.SuspendIdleTimeout = time.Duration(yamlConfig.Suspend.IdleTimeout) * time.Second
-	} else {
-		config.SuspendIdleTimeout = DefaultIdleTimeout
+	// Set machine idle configuration
+	config.MachineIdleAction = yamlConfig.Server.Idle.Action
+	if yamlConfig.Server.Idle.Timeout != "" {
+		duration, err := time.ParseDuration(yamlConfig.Server.Idle.Timeout)
+		if err != nil {
+			slog.Warn("Invalid idle timeout format, using default", "timeout", yamlConfig.Server.Idle.Timeout, "error", err)
+			config.MachineIdleTimeout = DefaultIdleTimeout
+		} else {
+			config.MachineIdleTimeout = duration
+		}
+	} else if config.MachineIdleAction != "" {
+		// If action is specified but no timeout, use default
+		config.MachineIdleTimeout = DefaultIdleTimeout
 	}
 
 	// Set hooks configuration
@@ -1996,7 +2005,7 @@ func LoadAuthFile(filename, realm string, exclude []string) (*BasicAuth, error) 
 }
 
 // CreateHandler creates the main HTTP handler
-func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspendManager *SuspendManager) http.Handler {
+func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, idleManager *IdleManager) http.Handler {
 	mux := http.NewServeMux()
 
 	// Health check
@@ -2009,8 +2018,8 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, suspend
 	// Main handler
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Track request for suspend management
-		suspendManager.RequestStarted()
-		defer suspendManager.RequestFinished()
+		idleManager.RequestStarted()
+		defer idleManager.RequestFinished()
 
 		slog.Debug("Request received", "method", r.Method, "path", r.URL.Path)
 

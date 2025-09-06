@@ -27,47 +27,38 @@ module Configurator
   def build_navigator_config
     config = {
       'server' => build_server_config,
-      'pools' => build_pools_config,
       'auth' => build_auth_config,
       'routes' => build_routes_config,
       'static' => build_static_config,
       'applications' => build_applications_config,
-      'process' => build_process_config,
+      'managed_processes' => build_managed_processes_config,
       'logging' => build_logging_config,
-      'health' => build_health_config,
-      'managed_processes' => build_managed_processes_config
+      'hooks' => build_hooks_config
     }
-    
-    # Add suspend configuration if running on Fly.io
-    if ENV['FLY_REGION']
-      config['suspend'] = build_suspend_config
-    end
     
     config
   end
 
   def build_server_config
     host = determine_host
-    {
+    config = {
       'listen' => determine_listen_port,
       'hostname' => host,
       'root_path' => determine_root_path,
-      'public_dir' => Rails.root.join('public').to_s,
-      'maintenance_page' => '/503.html'
+      'public_dir' => Rails.root.join('public').to_s
     }
+    
+    # Add idle configuration for Fly.io deployments
+    if ENV['FLY_REGION']
+      config['idle'] = {
+        'action' => 'suspend',
+        'timeout' => '20m'
+      }
+    end
+    
+    config
   end
 
-  def build_pools_config
-    mem = File.exist?('/proc/meminfo') ?
-      IO.read('/proc/meminfo')[/\d+/].to_i : `sysctl -n hw.memsize`.to_i/1024
-    pool_size = 6 + mem / 1024 / 1024
-    
-    {
-      'max_size' => pool_size,
-      'idle_timeout' => 300,
-      'start_port' => 4000
-    }
-  end
 
   def build_auth_config
     htpasswd_path = File.join(DBPATH, 'htpasswd')
@@ -153,7 +144,7 @@ module Configurator
     
     # Add redirects
     if region
-      routes['redirects'] << { 'from' => '^/$', 'to' => "#{root}/regions/" }
+      routes['redirects'] << { 'from' => '^/$', 'to' => "#{root}/studios/" }
       routes['redirects'] << { 'from' => "^#{root}/demo$", 'to' => "#{root}/demo/" }
     elsif root != ''
       routes['redirects'] << { 'from' => '^/(showcase)?$', 'to' => "#{root}/studios/" }
@@ -294,11 +285,19 @@ module Configurator
 
   def build_applications_config
     tenants = build_tenants_list
+    mem = File.exist?('/proc/meminfo') ?
+      IO.read('/proc/meminfo')[/\d+/].to_i : `sysctl -n hw.memsize`.to_i/1024
+    pool_size = 6 + mem / 1024 / 1024
     
     {
       'framework' => build_framework_config,
       'env' => build_application_env,
-      'tenants' => tenants
+      'tenants' => tenants,
+      'pools' => {
+        'max_size' => pool_size,
+        'timeout' => '5m',
+        'start_port' => 4000
+      }
     }
   end
   
@@ -453,13 +452,6 @@ module Configurator
   end
 
 
-  def build_process_config
-    {
-      'ruby' => RbConfig.ruby,
-      'bundler_preload' => true,
-      'min_instances' => 0
-    }
-  end
 
   def build_logging_config
     config = {
@@ -478,13 +470,6 @@ module Configurator
     config
   end
 
-  def build_health_config
-    {
-      'endpoint' => '/up',
-      'timeout' => 5,
-      'interval' => 30
-    }
-  end
 
   def determine_host
     if ENV['FLY_APP_NAME']
@@ -597,10 +582,16 @@ module Configurator
     processes
   end
   
-  def build_suspend_config
+  def build_hooks_config
     {
-      'enabled' => true,
-      'idle_timeout' => 1200  # 20 minutes in seconds
+      'server' => {
+        'startup' => [],
+        'shutdown' => []
+      },
+      'tenant' => {
+        'startup' => [],
+        'shutdown' => []
+      }
     }
   end
 end
