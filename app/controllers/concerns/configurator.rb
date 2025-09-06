@@ -28,12 +28,13 @@ module Configurator
     config = {
       'server' => build_server_config,
       'auth' => build_auth_config,
-      'routes' => build_routes_config,
       'static' => build_static_config,
       'applications' => build_applications_config,
       'managed_processes' => build_managed_processes_config,
+      'routes' => build_routes_config,
+      'hooks' => build_hooks_config,
       'logging' => build_logging_config,
-      'hooks' => build_hooks_config
+      'maintenance' => build_maintenance_config
     }
     
     config
@@ -251,7 +252,7 @@ module Configurator
   def build_static_config
     root = determine_root_path
     directories = [
-      { 'path' => "#{root}/assets/", 'root' => 'assets/', 'cache' => 86400 },
+      { 'path' => "#{root}/assets/", 'root' => 'assets/', 'cache' => '24h' },
       { 'path' => "#{root}/docs/", 'root' => 'docs/' },
       { 'path' => "#{root}/fonts/", 'root' => 'fonts/' },
       { 'path' => "#{root}/regions/", 'root' => 'regions/' },
@@ -267,9 +268,9 @@ module Configurator
     # Add root path for serving root-level static files (e.g., /arthur-murray-logo.gif)
     # This allows files directly in public/ to be served
     if root != ''
-      directories << { 'path' => "#{root}/", 'root' => '.', 'cache' => 86400 }
+      directories << { 'path' => "#{root}/", 'root' => '.', 'cache' => '24h' }
     else
-      directories << { 'path' => "/", 'root' => '.', 'cache' => 86400 }
+      directories << { 'path' => "/", 'root' => '.', 'cache' => '24h' }
     end
     
     {
@@ -451,22 +452,16 @@ module Configurator
 
 
   def build_logging_config
-    config = {
-      'level' => 'info',
-      'format' => 'json'  # Use JSON format for structured logging
+    {
+      'format' => 'json'
     }
-    
-    if ENV['FLY_APP_NAME'] || ENV['KAMAL_CONTAINER_NAME']
-      config['access_log'] = '/dev/stdout'
-      config['error_log'] = '/dev/stderr'
-    else
-      config['access_log'] = Rails.root.join('log/access.log').to_s
-      config['error_log'] = Rails.root.join('log/error.log').to_s
-    end
-    
-    config
   end
 
+  def build_maintenance_config
+    {
+      'page' => '/503.html'
+    }
+  end
 
   def determine_host
     if ENV['FLY_APP_NAME']
@@ -582,12 +577,12 @@ module Configurator
   def build_hooks_config
     {
       'server' => {
-        'startup' => [],
-        'shutdown' => []
+        'start' => [],
+        'stop' => []
       },
       'tenant' => {
-        'startup' => [],
-        'shutdown' => []
+        'start' => [],
+        'stop' => []
       }
     }
   end

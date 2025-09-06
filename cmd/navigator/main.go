@@ -198,19 +198,21 @@ type Tenant struct {
 	Hooks                      TenantHooks       `yaml:"hooks"` // Tenant-specific hooks
 }
 
-// YAMLConfig represents the new YAML configuration format
+// YAMLConfig represents the unified YAML configuration format
 type YAMLConfig struct {
+	// Server configuration
 	Server struct {
 		Listen    int    `yaml:"listen"`
 		Hostname  string `yaml:"hostname"`
 		RootPath  string `yaml:"root_path"`
 		PublicDir string `yaml:"public_dir"`
 		Idle      struct {
-			Action  string `yaml:"action"`  // "suspend", "stop", or empty
-			Timeout string `yaml:"timeout"` // Duration string like "20m", "1h30m"
+			Action  string `yaml:"action"`  // "suspend", "stop", or omit
+			Timeout string `yaml:"timeout"` // Duration format: "20m", "1h30m"
 		} `yaml:"idle"`
 	} `yaml:"server"`
 
+	// Authentication & security
 	Auth struct {
 		Enabled         bool     `yaml:"enabled"`
 		Realm           string   `yaml:"realm"`
@@ -222,6 +224,36 @@ type YAMLConfig struct {
 		} `yaml:"exclude_patterns"`
 	} `yaml:"auth"`
 
+	// Static file serving
+	Static struct {
+		Directories []struct {
+			Path  string `yaml:"path"`
+			Root  string `yaml:"root"`
+			Cache string `yaml:"cache"` // Duration format: "24h", "1h"
+		} `yaml:"directories"`
+		Extensions []string `yaml:"extensions"`
+		TryFiles   struct {
+			Enabled  bool     `yaml:"enabled"`
+			Suffixes []string `yaml:"suffixes"`
+		} `yaml:"try_files"`
+	} `yaml:"static"`
+
+	// Application management
+	Applications struct {
+		Framework FrameworkConfig   `yaml:"framework"`
+		Pools     struct {
+			MaxSize   int    `yaml:"max_size"`
+			Timeout   string `yaml:"timeout"`    // Duration format: "5m", "30s" - app idle timeout
+			StartPort int    `yaml:"start_port"`
+		} `yaml:"pools"`
+		Env     map[string]string `yaml:"env"`
+		Tenants []Tenant          `yaml:"tenants"`
+	} `yaml:"applications"`
+
+	// External process management
+	ManagedProcesses []ManagedProcessConfig `yaml:"managed_processes"`
+
+	// Request routing
 	Routes struct {
 		Redirects []struct {
 			From string `yaml:"from"`
@@ -252,39 +284,19 @@ type YAMLConfig struct {
 		} `yaml:"reverse_proxies"`
 	} `yaml:"routes"`
 
-	Static struct {
-		Directories []struct {
-			Path  string `yaml:"path"`
-			Root  string `yaml:"root"`
-			Cache string `yaml:"cache"` // Duration string like "24h", "1h"
-		} `yaml:"directories"`
-		Extensions []string `yaml:"extensions"`
-		TryFiles   struct {
-			Enabled  bool     `yaml:"enabled"`
-			Suffixes []string `yaml:"suffixes"`
-		} `yaml:"try_files"`
-	} `yaml:"static"`
-
-	Applications struct {
-		Framework FrameworkConfig   `yaml:"framework"`
-		Env       map[string]string `yaml:"env"`
-		Tenants   []Tenant          `yaml:"tenants"`
-		Pools     struct {
-			MaxSize   int    `yaml:"max_size"`
-			Timeout   string `yaml:"timeout"` // Duration string like "5m", "30s"
-			StartPort int    `yaml:"start_port"`
-		} `yaml:"pools"`
-	} `yaml:"applications"`
-
-
-
-	ManagedProcesses []ManagedProcessConfig `yaml:"managed_processes"`
-	Logging          LogConfig              `yaml:"logging"`
-	
+	// Lifecycle hooks
 	Hooks struct {
 		Server ServerHooks `yaml:"server"`
 		Tenant TenantHooks `yaml:"tenant"` // Default hooks for all tenants
 	} `yaml:"hooks"`
+
+	// Logging configuration
+	Logging LogConfig `yaml:"logging"`
+
+	// Optional maintenance page
+	Maintenance struct {
+		Page string `yaml:"page"` // Path to custom maintenance page (e.g., "/503.html")
+	} `yaml:"maintenance"`
 }
 
 // ManagedProcess represents an external process managed by Navigator
@@ -1599,6 +1611,13 @@ func ParseYAML(content []byte) (*Config, error) {
 	// Set hooks configuration
 	config.ServerHooks = yamlConfig.Hooks.Server
 	config.DefaultTenantHooks = yamlConfig.Hooks.Tenant
+
+	// Set maintenance page
+	if yamlConfig.Maintenance.Page != "" {
+		config.MaintenancePage = yamlConfig.Maintenance.Page
+	} else {
+		config.MaintenancePage = DefaultMaintenancePage
+	}
 
 	return config, nil
 }
