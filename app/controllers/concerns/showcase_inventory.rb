@@ -40,8 +40,50 @@ module ShowcaseInventory
     end
     
     # Update inventory cache
-    File.write('tmp/inventory.json', JSON.pretty_generate(@inventory))
-    
+    json = JSON.pretty_generate(@inventory)
+    if !File.exist?('tmp/inventory.json') || File.read('tmp/inventory.json') != json
+      File.write('tmp/inventory.json', json)
+    end
+
+    if showcases
+      # read inventory files for event dates
+      inventory = {}
+      dbpath = ENV.fetch("RAILS_DB_VOLUME", Rails.root.join('db').to_s)
+      inventory_path = "#{File.dirname(dbpath)}/inventory"
+      if Dir.exist?(inventory_path)
+        Dir["#{inventory_path}/*.json"].each do |file|
+          inventory.merge! JSON.parse(File.read(file)) rescue nil
+        end
+      end
+
+      this_year = Time.now.year
+
+      # Update showcases with event dates from inventory
+      showcases.each do |year, sites|
+        sites.each do |token, info|
+          if info[:events]
+            info[:events].each do |name, info|
+              next unless info["date"].blank?
+              db = "#{year}-#{token}-#{name}.sqlite3"
+              if inventory[db] && inventory[db]['date']
+                info["date"] = inventory[db]['date']
+              elsif year.to_i >= this_year
+                info["date"] = "TBD"
+              end
+            end
+          else
+            next unless info["date"].blank?
+            db = "#{year}-#{token}.sqlite3"
+            if inventory[db] && inventory[db]['date']
+              info["date"] = inventory[db]['date']
+            elsif year.to_i >= this_year
+              info["date"] = "TBD"
+            end
+          end
+        end
+      end
+    end
+
     events
   end
 
