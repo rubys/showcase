@@ -58,7 +58,7 @@ type ManagedProcessConfig struct {
 	WorkingDir  string            `yaml:"working_dir"`
 	Env         map[string]string `yaml:"env"`
 	AutoRestart bool              `yaml:"auto_restart"`
-	StartDelay  int               `yaml:"start_delay"`
+	StartDelay  string            `yaml:"start_delay"` // Duration string like "2s", "1m"
 }
 
 // RewriteRule represents a rewrite rule
@@ -90,7 +90,7 @@ type LogConfig struct {
 type HookConfig struct {
 	Command string   `yaml:"command"`
 	Args    []string `yaml:"args"`
-	Timeout int      `yaml:"timeout"` // Timeout in seconds, 0 for no timeout
+	Timeout string   `yaml:"timeout"` // Duration string like "30s", "5m", 0 for no timeout
 }
 
 // ServerHooks represents server lifecycle hooks
@@ -143,7 +143,7 @@ type Config struct {
 type StaticDir struct {
 	URLPath   string // URL path prefix (e.g., "/assets/")
 	LocalPath string // Local filesystem path (e.g., "public/assets/")
-	CacheTTL  int    // Cache TTL in seconds
+	CacheTTL  string // Cache TTL duration (e.g., "24h", "1h")
 }
 
 // ProxyRoute represents a route that proxies to another server
@@ -182,7 +182,7 @@ type FrameworkConfig struct {
 	Args         []string `yaml:"args"`          // e.g., ["server", "-p", "${port}"]
 	AppDirectory string   `yaml:"app_directory"` // e.g., "/rails", "/app"
 	PortEnvVar   string   `yaml:"port_env_var"`  // e.g., "PORT"
-	StartupDelay int      `yaml:"startup_delay"` // seconds to wait before marking ready
+	StartDelay   string   `yaml:"start_delay"`   // Duration to wait before marking ready (e.g., "5s")
 }
 
 // Tenant represents a tenant configuration with optional framework overrides
@@ -256,7 +256,7 @@ type YAMLConfig struct {
 		Directories []struct {
 			Path  string `yaml:"path"`
 			Root  string `yaml:"root"`
-			Cache int    `yaml:"cache"`
+			Cache string `yaml:"cache"` // Duration string like "24h", "1h"
 		} `yaml:"directories"`
 		Extensions []string `yaml:"extensions"`
 		TryFiles   struct {
@@ -727,6 +727,20 @@ func (pm *ProcessManager) StartProcess(mp *ManagedProcess) error {
 // StartAll starts all configured processes
 func (pm *ProcessManager) StartAll(processes []ManagedProcessConfig) {
 	for _, proc := range processes {
+		// Parse start delay
+		var startDelay time.Duration
+		if proc.StartDelay != "" {
+			if parsed, err := time.ParseDuration(proc.StartDelay); err != nil {
+				slog.Warn("Invalid managed process start_delay format, using default", 
+					"name", proc.Name, 
+					"startDelay", proc.StartDelay, 
+					"error", err)
+				startDelay = 0 // No delay on error
+			} else {
+				startDelay = parsed
+			}
+		}
+		
 		mp := &ManagedProcess{
 			Name:        proc.Name,
 			Command:     proc.Command,
@@ -734,7 +748,7 @@ func (pm *ProcessManager) StartAll(processes []ManagedProcessConfig) {
 			WorkingDir:  proc.WorkingDir,
 			Env:         proc.Env,
 			AutoRestart: proc.AutoRestart,
-			StartDelay:  time.Duration(proc.StartDelay) * time.Second,
+			StartDelay:  startDelay,
 		}
 
 		if err := pm.StartProcess(mp); err != nil {
@@ -970,10 +984,18 @@ func executeHooks(hooks []HookConfig, env map[string]string, hookType string) er
 		var ctx context.Context
 		var cancel context.CancelFunc
 		
-		if hook.Timeout > 0 {
-			ctx, cancel = context.WithTimeout(context.Background(), time.Duration(hook.Timeout)*time.Second)
-			defer cancel()
-			cmd = exec.CommandContext(ctx, hook.Command, hook.Args...)
+		if hook.Timeout != "" {
+			if timeout, err := time.ParseDuration(hook.Timeout); err != nil {
+				slog.Warn("Invalid hook timeout format, running without timeout", 
+					"hookType", hookType, 
+					"timeout", hook.Timeout, 
+					"error", err)
+				cmd = exec.Command(hook.Command, hook.Args...)
+			} else {
+				ctx, cancel = context.WithTimeout(context.Background(), timeout)
+				defer cancel()
+				cmd = exec.CommandContext(ctx, hook.Command, hook.Args...)
+			}
 		} else {
 			cmd = exec.Command(hook.Command, hook.Args...)
 		}
@@ -1203,7 +1225,7 @@ func main() {
 				Command:     "vector",
 				Args:        []string{"--config", config.Logging.Vector.Config},
 				AutoRestart: true,
-				StartDelay:  0, // Start immediately
+				StartDelay:  "", // Start immediately (no delay)
 			}
 			managedProcs = append(managedProcs, vectorProc)
 			slog.Info("Vector integration enabled", 
@@ -1868,8 +1890,18 @@ func (m *AppManager) startApp(app *WebApp) {
 	}
 
 	// Wait a moment for app to start, then mark as ready
-	startupDelay := time.Duration(framework.StartupDelay) * time.Second
-	if startupDelay == 0 {
+	var startupDelay time.Duration
+	if framework.StartDelay != "" {
+		if parsed, err := time.ParseDuration(framework.StartDelay); err != nil {
+			slog.Warn("Invalid framework start_delay format, using default", 
+				"path", app.Location.Path, 
+				"startDelay", framework.StartDelay, 
+				"error", err)
+			startupDelay = RailsStartupDelay
+		} else {
+			startupDelay = parsed
+		}
+	} else {
 		startupDelay = RailsStartupDelay // Default fallback
 	}
 	time.Sleep(startupDelay)
@@ -2552,8 +2584,16 @@ func serveStaticFile(w http.ResponseWriter, r *http.Request, config *Config) boo
 			// Check if file exists
 			if info, err := os.Stat(fsPath); err == nil && !info.IsDir() {
 				// Set cache headers if configured
-				if staticDir.CacheTTL > 0 {
-					w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", staticDir.CacheTTL))
+				if staticDir.CacheTTL != "" {
+					if duration, err := time.ParseDuration(staticDir.CacheTTL); err != nil {
+						slog.Warn("Invalid cache TTL format, no cache headers set", 
+							"path", staticDir.URLPath, 
+							"cacheTTL", staticDir.CacheTTL, 
+							"error", err)
+					} else {
+						seconds := int(duration.Seconds())
+						w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", seconds))
+					}
 				}
 
 				// Set content type and serve

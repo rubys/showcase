@@ -306,7 +306,7 @@ module Configurator
       'args' => ['server', '-p', '${port}'],
       'app_directory' => '/rails',
       'port_env_var' => 'PORT',
-      'startup_delay' => 5
+      'start_delay' => '2s'
     }
   end
 
@@ -525,7 +525,7 @@ module Configurator
           'RAILS_MAX_THREADS' => '10'  # Handle multiple concurrent WebSocket connections
         },
         'auto_restart' => true,
-        'start_delay' => 2  # Wait 2 seconds after Navigator starts
+        'start_delay' => '2s'  # Wait 2 seconds after Navigator starts
       }
     end
     
@@ -538,7 +538,7 @@ module Configurator
         'working_dir' => Rails.root.to_s,
         'env' => {},
         'auto_restart' => true,
-        'start_delay' => 0
+        'start_delay' => '2s'
       }
     end
     
@@ -553,7 +553,7 @@ module Configurator
           'RAILS_ENV' => Rails.env
         },
         'auto_restart' => true,
-        'start_delay' => 4  # Wait for cable server to start first
+        'start_delay' => '2s'  # Wait for cable server to start first
       }
     end
     
@@ -569,7 +569,7 @@ module Configurator
           'MONITOR_PORT' => '8080'
         },
         'auto_restart' => true,
-        'start_delay' => 5  # Wait 5 seconds after Navigator starts
+        'start_delay' => '2s'  # Wait 2 seconds after Navigator starts
       }
     end
     
