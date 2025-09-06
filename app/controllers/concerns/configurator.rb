@@ -277,8 +277,7 @@ module Configurator
       'extensions' => %w[html htm txt xml json css js png jpg gif pdf xlsx],
       'try_files' => {
         'enabled' => true,
-        'suffixes' => %w[index.html .html .htm .txt .xml .json],
-        'fallback' => 'rails'
+        'suffixes' => %w[index.html .html .htm .txt .xml .json]
       }
     }
   end
