@@ -86,6 +86,26 @@ type LogConfig struct {
 	} `yaml:"vector"`
 }
 
+// HookConfig represents a hook command configuration
+type HookConfig struct {
+	Command string   `yaml:"command"`
+	Args    []string `yaml:"args"`
+	Timeout int      `yaml:"timeout"` // Timeout in seconds, 0 for no timeout
+}
+
+// ServerHooks represents server lifecycle hooks
+type ServerHooks struct {
+	Start []HookConfig `yaml:"start"` // Before accepting requests
+	Ready []HookConfig `yaml:"ready"` // Once accepting requests
+	Idle  []HookConfig `yaml:"idle"`  // Before suspend
+}
+
+// TenantHooks represents tenant lifecycle hooks
+type TenantHooks struct {
+	Start []HookConfig `yaml:"start"` // After tenant starts
+	Stop  []HookConfig `yaml:"stop"`  // Before tenant stops
+}
+
 // Config represents the parsed configuration
 type Config struct {
 	ServerName       string
@@ -116,6 +136,10 @@ type Config struct {
 	// Suspend configuration
 	SuspendEnabled     bool
 	SuspendIdleTimeout time.Duration
+	
+	// Hooks configuration
+	ServerHooks        ServerHooks // Server lifecycle hooks
+	DefaultTenantHooks TenantHooks // Default hooks for all tenants
 }
 
 // StaticDir represents a static directory mapping
@@ -138,8 +162,9 @@ type Location struct {
 	Path             string
 	Root             string
 	EnvVars          map[string]string
-	MatchPattern     string // Pattern for matching request paths (e.g., "*/cable")
-	StandaloneServer string // If set, proxy to this server instead of web app
+	MatchPattern     string      // Pattern for matching request paths (e.g., "*/cable")
+	StandaloneServer string      // If set, proxy to this server instead of web app
+	Hooks            TenantHooks // Tenant-specific hooks
 }
 
 // WebApp represents a running web application
@@ -175,6 +200,7 @@ type Tenant struct {
 	Env                        map[string]string `yaml:"env"`
 	Var                        map[string]string `yaml:"var"`
 	ForceMaxConcurrentRequests int               `yaml:"force_max_concurrent_requests"`
+	Hooks                      TenantHooks       `yaml:"hooks"` // Tenant-specific hooks
 }
 
 // YAMLConfig represents the new YAML configuration format
@@ -266,6 +292,11 @@ type YAMLConfig struct {
 
 	ManagedProcesses []ManagedProcessConfig `yaml:"managed_processes"`
 	Logging          LogConfig              `yaml:"logging"`
+	
+	Hooks struct {
+		Server ServerHooks `yaml:"server"`
+		Tenant TenantHooks `yaml:"tenant"` // Default hooks for all tenants
+	} `yaml:"hooks"`
 }
 
 // ManagedProcess represents an external process managed by Navigator
@@ -299,6 +330,7 @@ type SuspendManager struct {
 	lastActivity   time.Time
 	mutex          sync.RWMutex
 	timer          *time.Timer
+	config         *Config
 }
 
 // AppManager manages web application processes
@@ -773,15 +805,16 @@ func (pm *ProcessManager) UpdateConfig(processes []ManagedProcessConfig) {
 }
 
 // NewSuspendManager creates a new suspend manager
-func NewSuspendManager(enabled bool, idleTimeout time.Duration) *SuspendManager {
-	if !enabled {
-		return &SuspendManager{enabled: false}
+func NewSuspendManager(config *Config) *SuspendManager {
+	if !config.SuspendEnabled {
+		return &SuspendManager{enabled: false, config: config}
 	}
 
 	return &SuspendManager{
 		enabled:      true,
-		idleTimeout:  idleTimeout,
+		idleTimeout:  config.SuspendIdleTimeout,
 		lastActivity: time.Now(),
+		config:       config,
 	}
 }
 
@@ -841,6 +874,13 @@ func (sm *SuspendManager) startSuspendTimer() {
 
 // suspendMachine calls the Fly API to suspend the machine
 func (sm *SuspendManager) suspendMachine() {
+	// Execute server.idle hooks before suspension
+	if sm.config != nil && len(sm.config.ServerHooks.Idle) > 0 {
+		if err := executeServerHooks(sm.config.ServerHooks.Idle, "idle"); err != nil {
+			slog.Error("Server idle hooks failed", "error", err)
+		}
+	}
+
 	appName := os.Getenv("FLY_APP_NAME")
 	machineId := os.Getenv("FLY_MACHINE_ID")
 
@@ -892,7 +932,7 @@ func (sm *SuspendManager) suspendMachine() {
 }
 
 // UpdateConfig updates the suspend manager configuration
-func (sm *SuspendManager) UpdateConfig(enabled bool, idleTimeout time.Duration) {
+func (sm *SuspendManager) UpdateConfig(config *Config) {
 	sm.mutex.Lock()
 	defer sm.mutex.Unlock()
 
@@ -902,11 +942,12 @@ func (sm *SuspendManager) UpdateConfig(enabled bool, idleTimeout time.Duration) 
 		sm.timer = nil
 	}
 
-	sm.enabled = enabled
-	sm.idleTimeout = idleTimeout
+	sm.enabled = config.SuspendEnabled
+	sm.idleTimeout = config.SuspendIdleTimeout
+	sm.config = config
 
-	if enabled {
-		slog.Info("Suspend feature enabled", "idleTimeout", idleTimeout)
+	if sm.enabled {
+		slog.Info("Suspend feature enabled", "idleTimeout", sm.idleTimeout)
 		sm.lastActivity = time.Now()
 		// Start timer if we're idle (no active requests)
 		if sm.activeRequests == 0 {
@@ -915,6 +956,71 @@ func (sm *SuspendManager) UpdateConfig(enabled bool, idleTimeout time.Duration) 
 	} else {
 		slog.Info("Suspend feature disabled")
 	}
+}
+
+// executeHooks runs a list of hook commands sequentially
+func executeHooks(hooks []HookConfig, env map[string]string, hookType string) error {
+	for i, hook := range hooks {
+		if hook.Command == "" {
+			continue
+		}
+		
+		slog.Info("Executing hook", "type", hookType, "index", i, "command", hook.Command)
+		
+		// Create command with timeout if specified
+		var cmd *exec.Cmd
+		var ctx context.Context
+		var cancel context.CancelFunc
+		
+		if hook.Timeout > 0 {
+			ctx, cancel = context.WithTimeout(context.Background(), time.Duration(hook.Timeout)*time.Second)
+			defer cancel()
+			cmd = exec.CommandContext(ctx, hook.Command, hook.Args...)
+		} else {
+			cmd = exec.Command(hook.Command, hook.Args...)
+		}
+		
+		// Set environment variables if provided
+		if env != nil {
+			cmd.Env = os.Environ()
+			for k, v := range env {
+				cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
+			}
+		}
+		
+		// Capture output
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			slog.Error("Hook failed", "type", hookType, "index", i, "error", err, "output", string(output))
+			return fmt.Errorf("hook %s[%d] failed: %w", hookType, i, err)
+		}
+		
+		if len(output) > 0 {
+			slog.Info("Hook output", "type", hookType, "index", i, "output", string(output))
+		}
+	}
+	
+	return nil
+}
+
+// executeServerHooks runs server lifecycle hooks
+func executeServerHooks(hooks []HookConfig, hookType string) error {
+	return executeHooks(hooks, nil, fmt.Sprintf("server.%s", hookType))
+}
+
+// executeTenantHooks runs tenant lifecycle hooks with tenant environment
+func executeTenantHooks(defaultHooks, specificHooks []HookConfig, env map[string]string, tenantName, hookType string) error {
+	// Execute default hooks first
+	if err := executeHooks(defaultHooks, env, fmt.Sprintf("tenant.default.%s", hookType)); err != nil {
+		return err
+	}
+	
+	// Then execute tenant-specific hooks
+	if err := executeHooks(specificHooks, env, fmt.Sprintf("tenant.%s.%s", tenantName, hookType)); err != nil {
+		return err
+	}
+	
+	return nil
 }
 
 // BasicAuth represents HTTP basic authentication
@@ -1072,9 +1178,15 @@ func main() {
 	manager := NewAppManager(config)
 
 	// Create suspend manager
-	suspendManager := NewSuspendManager(config.SuspendEnabled, config.SuspendIdleTimeout)
+	suspendManager := NewSuspendManager(config)
 	if suspendManager.enabled {
 		slog.Info("Suspend feature enabled", "idleTimeout", config.SuspendIdleTimeout)
+	}
+
+	// Execute server.start hooks before starting anything
+	if err := executeServerHooks(config.ServerHooks.Start, "start"); err != nil {
+		slog.Error("Server start hooks failed", "error", err)
+		os.Exit(1)
 	}
 
 	// Create and start process manager for managed processes
@@ -1163,7 +1275,7 @@ func main() {
 				manager.UpdateConfig(newConfig)
 
 				// Update suspend manager configuration
-				suspendManager.UpdateConfig(newConfig.SuspendEnabled, newConfig.SuspendIdleTimeout)
+				suspendManager.UpdateConfig(newConfig)
 
 				// Update process manager configuration
 				processManager.UpdateConfig(newConfig.ManagedProcesses)
@@ -1198,10 +1310,29 @@ func main() {
 		"idleTimeout", manager.idleTimeout)
 	slog.Info("Configuration reload available", "signal", "SIGHUP", "pid", os.Getpid())
 
-	if err := http.ListenAndServe(addr, mainHandler); err != nil {
-		slog.Error("Server failed", "error", err)
-		os.Exit(1)
+	// Start the server in a goroutine so we can execute ready hooks
+	server := &http.Server{
+		Addr:    addr,
+		Handler: mainHandler,
 	}
+	
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			slog.Error("Server failed", "error", err)
+			os.Exit(1)
+		}
+	}()
+	
+	// Wait a moment for the server to start
+	time.Sleep(100 * time.Millisecond)
+	
+	// Execute server.ready hooks after server starts accepting requests
+	if err := executeServerHooks(config.ServerHooks.Ready, "ready"); err != nil {
+		slog.Error("Server ready hooks failed", "error", err)
+	}
+	
+	// Block forever (signal handler will manage shutdown)
+	select {}
 }
 
 // LoadConfig loads YAML configuration
@@ -1346,6 +1477,7 @@ func ParseYAML(content []byte) (*Config, error) {
 			EnvVars:          make(map[string]string),
 			MatchPattern:     tenant.MatchPattern,
 			StandaloneServer: tenant.StandaloneServer,
+			Hooks:            tenant.Hooks, // Copy tenant-specific hooks
 		}
 
 		// Copy tenant environment variables
@@ -1435,6 +1567,10 @@ func ParseYAML(content []byte) (*Config, error) {
 	} else {
 		config.SuspendIdleTimeout = DefaultIdleTimeout
 	}
+
+	// Set hooks configuration
+	config.ServerHooks = yamlConfig.Hooks.Server
+	config.DefaultTenantHooks = yamlConfig.Hooks.Tenant
 
 	return config, nil
 }
@@ -1718,6 +1854,26 @@ func (m *AppManager) startApp(app *WebApp) {
 	app.mutex.Unlock()
 	slog.Info("Web app ready", "path", app.Location.Path, "port", app.Port)
 
+	// Execute tenant start hooks with tenant environment
+	tenantName := app.Location.Path
+	if tenantName == "" {
+		tenantName = "default"
+	}
+	
+	// Build environment map for hooks (same env as the app)
+	envMap := make(map[string]string)
+	for _, e := range env {
+		parts := strings.SplitN(e, "=", 2)
+		if len(parts) == 2 {
+			envMap[parts[0]] = parts[1]
+		}
+	}
+	
+	// Execute hooks (default hooks first, then tenant-specific from location)
+	if err := executeTenantHooks(m.config.DefaultTenantHooks.Start, app.Location.Hooks.Start, envMap, tenantName, "start"); err != nil {
+		slog.Error("Tenant start hooks failed", "tenant", tenantName, "error", err)
+	}
+
 	// Wait for process to exit in background
 	go func() {
 		cmd.Wait()
@@ -1748,6 +1904,34 @@ func (m *AppManager) StopApp(path string) {
 	}
 
 	slog.Info("Stopping web app", "path", path)
+
+	// Execute tenant stop hooks before stopping the app
+	tenantName := app.Location.Path
+	if tenantName == "" {
+		tenantName = "default"
+	}
+	
+	// Build environment map for hooks (same env as the app would have)
+	envMap := make(map[string]string)
+	// Add global env vars
+	for k, v := range m.config.GlobalEnvVars {
+		envMap[k] = v
+	}
+	// Add location-specific env vars
+	for k, v := range app.Location.EnvVars {
+		envMap[k] = v
+	}
+	// Add port
+	portEnvVar := m.config.Framework.PortEnvVar
+	if portEnvVar == "" {
+		portEnvVar = "PORT"
+	}
+	envMap[portEnvVar] = fmt.Sprintf("%d", app.Port)
+	
+	// Execute hooks (default hooks first, then tenant-specific from location)
+	if err := executeTenantHooks(m.config.DefaultTenantHooks.Stop, app.Location.Hooks.Stop, envMap, tenantName, "stop"); err != nil {
+		slog.Error("Tenant stop hooks failed", "tenant", tenantName, "error", err)
+	}
 
 	// Clean up PID file
 	pidfilePath := getPidFilePath(app.Location.EnvVars)
