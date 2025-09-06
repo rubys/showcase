@@ -87,7 +87,8 @@ class ScoresController < ApplicationController
     @style = 'radio' if @style.blank?
     @subjects = Heat.where(number: @number).includes(
       dance: [:multi_children],
-      entry: [:age, :level, :lead, :follow]
+      entry: [:age, :level, :lead, :follow],
+      scores: []
     ).to_a
 
     @slot ||= 1 if @subjects.first&.category == 'Multi' and @slot.nil?
@@ -193,26 +194,29 @@ class ScoresController < ApplicationController
       end
     end
 
-    @subjects.sort_by! {|heat| [heat.dance_id, heat.entry.lead.back || 0]} unless @final
-    ballrooms = @subjects.first&.dance_category&.ballrooms || @event.ballrooms
-    @ballrooms = assign_rooms(ballrooms, @subjects, @number)
-
     @sort = @judge.sort_order || 'back' unless @final
     @show = @judge.show_assignments || 'first'
     @show = 'mixed' unless @event.assign_judges > 0 and @show != 'mixed' && Person.where(type: 'Judge').count > 1
+    
+    # Apply assignment sorting first, before ballroom assignment
+    if @show != 'mixed'
+      @subjects.sort_by! do |subject|
+        assignment_priority = subject.scores.any? {|score| score.judge_id == @judge.id} ? 0 : 1
+        [assignment_priority, subject.dance_id, subject.entry.lead.back || 0]
+      end
+    else
+      @subjects.sort_by! {|heat| [heat.dance_id, heat.entry.lead.back || 0]}
+    end
+    
+    @ballrooms_count = @subjects.first&.dance_category&.ballrooms || @event.ballrooms
+    @ballrooms = assign_rooms(@ballrooms_count, @subjects, @number, preserve_order: @show != 'mixed')
+
     if @sort == 'level'
       @ballrooms.each do |ballroom, subjects|
         subjects.sort_by! do |subject|
           entry = subject.entry
-          [entry.level_id || 0, entry.age_id || 0, entry.lead.back || 0]
-        end
-      end
-    end
-    if @show != 'mixed'
-      @ballrooms.each do |ballroom, subjects|
-        subjects.sort_by! do |subject|
-          entry = subject.entry
-          subject.scores.any? {|score| score.judge_id == @judge.id} ? 0 : 1
+          assignment_priority = @show != 'mixed' && subject.scores.any? {|score| score.judge_id == @judge.id} ? 0 : 1
+          [assignment_priority, entry.level_id || 0, entry.age_id || 0, entry.lead.back || 0]
         end
       end
     end

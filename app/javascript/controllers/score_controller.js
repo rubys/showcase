@@ -133,32 +133,28 @@ export default class extends Controller {
   nextSubject() {
     if (this.selected) {
       let back = this.selected.id;
-      let backs = [...this.subjects.keys()];
-      let index = backs.indexOf(back) + 1;
-      if (index >= backs.length) {
-        this.select(this.subjects.get(backs[0]));
+      let index = this.subjectOrder.indexOf(back) + 1;
+      if (index >= this.subjectOrder.length) {
+        this.select(this.subjects.get(this.subjectOrder[0]));
       } else {
-        this.select(this.subjects.get(backs[index]));
+        this.select(this.subjects.get(this.subjectOrder[index]));
       }
     } else {
-      let backs = [...this.subjects.keys()];
-      this.select(this.subjects.get(backs[0]));
+      this.select(this.subjects.get(this.subjectOrder[0]));
     }
   }
 
   prevSubject() {
     if (this.selected) {
       let back = this.selected.id;
-      let backs = [...this.subjects.keys()].sort();
-      let index = backs.indexOf(back) - 1;
+      let index = this.subjectOrder.indexOf(back) - 1;
       if (index < 0) {
-        this.select(this.subjects.get(backs[backs.length - 1]));
+        this.select(this.subjects.get(this.subjectOrder[this.subjectOrder.length - 1]));
       } else {
-        this.select(this.subjects.get(backs[index]));
+        this.select(this.subjects.get(this.subjectOrder[index]));
       }
     } else {
-      let backs = [...this.subjects.keys()].sort();
-      this.select(this.subjects.get(backs[backs.length - 1]));
+      this.select(this.subjects.get(this.subjectOrder[this.subjectOrder.length - 1]));
     }
   }
 
@@ -271,23 +267,10 @@ export default class extends Controller {
 
     this.subjects = [...this.element.querySelectorAll("*[draggable=true]")];
 
-    let backs = this.subjects.map((element, index) => (
-      {index, back: parseInt(element.querySelector("span").textContent || 1)}
-    ));
-
-    backs.sort((a, b) => {
-      if (a.back > b.back) {
-        return 1;
-      } else if (b.back < a.back) {
-        return -1;
-      } else {
-        return 0;
-      }
-    });
-
-    this.subjects = new Map(backs.map(back => this.subjects[back.index])
-      .map(element => [element.id, element])
-    );
+    // Preserve the server-side ordering (which respects assignment priority)
+    // instead of sorting by back number
+    this.subjectOrder = this.subjects.map(element => element.id);
+    this.subjects = new Map(this.subjects.map(element => [element.id, element]));
 
     this.scores = [...this.element.querySelectorAll("*[data-score]")];
 

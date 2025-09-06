@@ -226,7 +226,7 @@ module Printable
     end
   end
 
-  def assign_rooms(ballrooms, heats, number)
+  def assign_rooms(ballrooms, heats, number, preserve_order: false)
     if heats.all? {|heat| heat.category == 'Solo'}
       {nil => heats}
     elsif heats.all? {|heat| !heat.ballroom.nil?}
@@ -237,7 +237,7 @@ module Printable
       b = heats.select {|heat| heat.entry.lead.type == "Student"}
       {'A': heats - b, 'B': b}
     else
-      if number && (number < 0 || Judge.where.not(ballroom: 'Both').exists?)
+      if number && (number < 0 || Judge.where.not(ballroom: 'Both').exists?) && !preserve_order
         # negative number means it has already been determined that
         # judges ae assigned to a specific ballroom.
         heats = heats.sort_by(&:id)

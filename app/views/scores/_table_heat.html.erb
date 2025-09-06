@@ -4,6 +4,9 @@
   <thead>
     <tr>
       <th class="text-left border-b-2 border-black" rowspan="2">Back</th>
+      <% if @ballrooms_count && @ballrooms_count > 1 %>
+      <th class="text-left border-b-2 border-black" rowspan="2">Ballroom</th>
+      <% end %>
       <% if @column_order == 1 %>
       <th class="text-left border-b-2 border-black" rowspan="2">Lead</th>
       <th class="text-left border-b-2 border-black" rowspan="2">Follow</th>
@@ -40,13 +43,13 @@
     <% next if subjects.empty? %>
     <% dance = subjects.first.dance_id %> 
     <% if ballroom.to_s == 'B' %>
-      <tr><td colspan="10" class="bg-black"></td></tr>
+      <tr><td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) + (@scores&.length || 0) %>" class="bg-black"></td></tr>
     <% end %>
     <% subjects.each do |subject| %>
     <% assign = @event.assign_judges > 0 ? subject.scores.any? {|score| score.judge_id == @judge.id} : true %>
     <% next if @show == 'only' and not assign %>
     <% if subject.dance_id != dance %>
-    <tr><td colspan="10" class="bg-gray-400"></td></tr>
+    <tr><td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) + (@scores&.length || 0) %>" class="bg-gray-400"></td></tr>
     <% dance = subject.dance_id %>
     <% end %>
     <% subcat = subject.entry.pro ? 'Pro' : "#{subject.entry.subject_category(@track_ages)} - #{subject.entry.level.initials}" %>
@@ -66,6 +69,9 @@
       <td class="<% if @sort != 'level' %>py-2 <% end %>font-bold text-xl"><span class="border-2 border-red-600 px-2 rounded-full"><%= subject.lead.back || '&#9733;'.html_safe %></span></td>
       <% else %>
       <td class="<% if @sort != 'level' %>py-2 <% end %>text-xl"><%= subject.lead.back %></td>
+      <% end %>
+      <% if @ballrooms_count && @ballrooms_count > 1 %>
+      <td class="<% if @sort != 'level' %>py-2 <% end %>text-center font-medium"><%= ballroom || '-' %></td>
       <% end %>
       <% if @column_order == 1 || subject.lead.type == 'Student' %>
       <td><%= subject.lead.display_name %></td>
@@ -93,7 +99,7 @@
     </tr>
     <% if @style != 'emcee' and !%w(1 G #).include?(@scoring) # and @scores.empty? %>
     <tr data-controller="open-feedback" class="open-fb-row" data-heat="<%= subject.id %>" data-feedback-action="<%= post_feedback_path(judge: @judge) %>">
-    <td colspan="5">
+    <td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) %>">
     <% if @scoring == '&' %>
     <div class="grid value w-full" data-value="<%= @value[subject.id] %>" style="grid-template-columns: 100px repeat(5, 1fr)">
       <div class="bg-gray-200 inline-flex justify-center items-center">Overall</div>
@@ -186,7 +192,7 @@
     <% if @event.judge_comments and @style != 'emcee' %>
     <tr>
       <td></td>
-      <td colspan="4">
+      <td colspan="<%= 4 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) %>">
       <textarea disabled data-score-target="comments" data-heat="<%= subject.id %>"
         class="resize-none block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
         ><%= @comments[subject.id] %></textarea>
@@ -199,9 +205,9 @@
   <% unless lastassign %>
     <tr>
       <% if @event.assign_judges > 0 %>
-      <td colspan="10"><p class="m-5">No couples assigned to this judge for this heat.</p></td>
+      <td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) + (@scores&.length || 0) %>"><p class="m-5">No couples assigned to this judge for this heat.</p></td>
       <% else %>
-      <td colspan="5"><p class="m-5">No couples on the floor for this heat.</p></td>
+      <td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) %>"><p class="m-5">No couples on the floor for this heat.</p></td>
       <% end %>
     </tr>
   <% end %>
