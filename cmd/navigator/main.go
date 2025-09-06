@@ -178,13 +178,11 @@ type WebApp struct {
 
 // FrameworkConfig represents framework-specific configuration
 type FrameworkConfig struct {
-	RuntimeExecutable string   `yaml:"runtime_executable"` // e.g., "ruby", "node", "python"
-	ServerExecutable  string   `yaml:"server_executable"`  // e.g., "bin/rails", "server.js"
-	ServerCommand     string   `yaml:"server_command"`     // e.g., "server"
-	ServerArgs        []string `yaml:"server_args"`        // e.g., ["-p", "4000"]
-	AppDirectory      string   `yaml:"app_directory"`      // e.g., "/rails", "/app"
-	PortEnvVar        string   `yaml:"port_env_var"`       // e.g., "PORT"
-	StartupDelay      int      `yaml:"startup_delay"`      // seconds to wait before marking ready
+	Command      string   `yaml:"command"`       // e.g., "ruby", "node", "python", "bin/rails"
+	Args         []string `yaml:"args"`          // e.g., ["server", "-p", "${port}"]
+	AppDirectory string   `yaml:"app_directory"` // e.g., "/rails", "/app"
+	PortEnvVar   string   `yaml:"port_env_var"`  // e.g., "PORT"
+	StartupDelay int      `yaml:"startup_delay"` // seconds to wait before marking ready
 }
 
 // Tenant represents a tenant configuration with optional framework overrides
@@ -264,7 +262,6 @@ type YAMLConfig struct {
 		TryFiles   struct {
 			Enabled  bool     `yaml:"enabled"`
 			Suffixes []string `yaml:"suffixes"`
-			Fallback string   `yaml:"fallback"`
 		} `yaml:"try_files"`
 	} `yaml:"static"`
 
@@ -1742,43 +1739,38 @@ func (m *AppManager) startApp(app *WebApp) {
 	}
 
 	// Build command using framework configuration
-	var cmd *exec.Cmd
+	if framework.Command == "" {
+		slog.Error("Framework command not configured", "path", app.Location.Path)
+		return // Cannot start without command configured
+	}
 
-	// Expand server args with port substitution
-	serverArgs := make([]string, len(framework.ServerArgs))
-	for i, arg := range framework.ServerArgs {
+	// Log the framework configuration being used
+	slog.Info("Starting application with framework config", 
+		"path", app.Location.Path,
+		"command", framework.Command,
+		"args", framework.Args,
+		"appDirectory", appDir,
+		"port", app.Port)
+
+	// Expand args with port substitution
+	args := make([]string, len(framework.Args))
+	for i, arg := range framework.Args {
 		if arg == "${port}" {
-			serverArgs[i] = strconv.Itoa(app.Port)
+			args[i] = strconv.Itoa(app.Port)
 		} else {
-			serverArgs[i] = arg
+			args[i] = arg
 		}
 	}
 
-	// Check if server executable exists in app directory
-	serverPath := filepath.Join(appDir, framework.ServerExecutable)
-	if _, err := os.Stat(serverPath); err == nil {
-		// Use the server executable directly
-		if framework.ServerCommand != "" {
-			// Add server command as first argument
-			args := append([]string{framework.ServerCommand}, serverArgs...)
-			cmd = exec.CommandContext(ctx, serverPath, args...)
-		} else {
-			cmd = exec.CommandContext(ctx, serverPath, serverArgs...)
-		}
-	} else {
-		// Fallback to runtime executable with server executable as argument
-		runtime := framework.RuntimeExecutable
-		if runtime == "" {
-			return // Cannot start without runtime executable configured
-		}
-		if framework.ServerCommand != "" {
-			args := append([]string{framework.ServerExecutable, framework.ServerCommand}, serverArgs...)
-			cmd = exec.CommandContext(ctx, runtime, args...)
-		} else {
-			args := append([]string{framework.ServerExecutable}, serverArgs...)
-			cmd = exec.CommandContext(ctx, runtime, args...)
-		}
-	}
+	// Log the final command that will be executed
+	slog.Info("Executing command", 
+		"path", app.Location.Path,
+		"command", framework.Command,
+		"expandedArgs", args,
+		"workingDir", appDir)
+
+	// Create command with framework command and args
+	cmd := exec.CommandContext(ctx, framework.Command, args...)
 
 	cmd.Dir = appDir
 	cmd.Env = env
@@ -1845,7 +1837,30 @@ func (m *AppManager) startApp(app *WebApp) {
 		"directory", appDir)
 
 	if err := cmd.Start(); err != nil {
-		slog.Error("Failed to start web app", "path", app.Location.Path, "error", err)
+		slog.Error("Failed to start web app", 
+			"path", app.Location.Path, 
+			"command", framework.Command,
+			"args", args,
+			"workingDir", appDir,
+			"port", app.Port,
+			"error", err)
+		
+		// Check if the command executable exists
+		if _, statErr := os.Stat(framework.Command); statErr != nil {
+			slog.Error("Command executable not found",
+				"path", app.Location.Path,
+				"command", framework.Command,
+				"statError", statErr)
+		}
+		
+		// Check if working directory exists
+		if _, statErr := os.Stat(appDir); statErr != nil {
+			slog.Error("Working directory not found",
+				"path", app.Location.Path,
+				"workingDir", appDir,
+				"statError", statErr)
+		}
+		
 		app.mutex.Lock()
 		app.Starting = false
 		app.mutex.Unlock()

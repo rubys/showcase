@@ -302,10 +302,8 @@ module Configurator
   
   def build_framework_config
     {
-      'runtime_executable' => RbConfig.ruby,
-      'server_executable' => 'bin/rails',
-      'server_command' => 'server',
-      'server_args' => ['-p', '${port}'],
+      'command' => 'bin/rails',
+      'args' => ['server', '-p', '${port}'],
       'app_directory' => '/rails',
       'port_env_var' => 'PORT',
       'startup_delay' => 5
