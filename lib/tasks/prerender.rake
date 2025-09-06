@@ -75,7 +75,7 @@ task :prerender => "prerender:env" do
 
   # start with the index.html and regions/index.html files
   files = [
-    ['/', 'index.html'],
+    ['/', "#{ENV['FLY_APP_NAME'] == 'smooth' ? 'showcase/' : ''}index.html"],
     ['regions/', 'regions/index.html'],
   ]
 

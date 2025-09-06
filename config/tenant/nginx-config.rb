@@ -295,7 +295,7 @@ server {
 <% end -%>
   port_in_redirect off;
 <% if ENV['FLY_REGION'] -%>
-  rewrite ^/$ <%= ROOT %>/regions/ redirect;
+  rewrite ^/$ <%= ROOT %>/studios/ redirect;
   rewrite ^<%= ROOT %>/demo$ <%= ROOT %>/demo/ redirect;
 <% elsif ROOT != "" -%>
   rewrite ^/(showcase)?$ <%= ROOT %>/ redirect;
