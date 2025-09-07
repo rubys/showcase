@@ -16,7 +16,9 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <% if ENV['FLY_REGION']
+  <% 
+  route = ""
+  if ENV['FLY_REGION']
      if ENV['FLY_APP_NAME'] == 'smooth'
       route = " data-region='#{ENV['FLY_REGION']}' data-controller='region'"
     else
