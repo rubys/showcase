@@ -16,7 +16,14 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body<% if ENV['FLY_REGION'] %> data-region="<%= ENV['FLY_REGION'] %>" data-controller="region"<% end %> data-turbo-prefetch="false" data-locale="<%= (@locale || ENV.fetch("RAILS_LOCALE", "en_US")).gsub('_', '-') %>">
+  <% if ENV['FLY_REGION']
+     if ENV['FLY_APP_NAME'] == 'smooth'
+      route = " data-region='#{ENV['FLY_REGION']}' data-controller='region'"
+    else
+      route = " data-machine='#{ENV['FLY_MACHINE_ID']}' data-controller='region'"
+    end
+  end
+  %><body<%= route.html_safe %> data-turbo-prefetch="false" data-locale="<%= (@locale || ENV.fetch("RAILS_LOCALE", "en_US")).gsub('_', '-') %>">
 
     <% unless @nologo %>
     <% if ENV['RAILS_APP_DB'] != 'index'
