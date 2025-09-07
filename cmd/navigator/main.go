@@ -275,11 +275,6 @@ type YAMLConfig struct {
 			From string `yaml:"from"`
 			To   string `yaml:"to"`
 		} `yaml:"rewrites"`
-		Proxies []struct {
-			Path    string            `yaml:"path"`
-			Target  string            `yaml:"target"`
-			Headers map[string]string `yaml:"headers"`
-		} `yaml:"proxies"`
 		FlyReplay []struct {
 			Path    string   `yaml:"path"`
 			Region  string   `yaml:"region"`
@@ -1475,15 +1470,6 @@ func ParseYAML(content []byte) (*Config, error) {
 		}
 	}
 
-	// Convert proxy routes
-	for _, proxy := range yamlConfig.Routes.Proxies {
-		config.ProxyRoutes[proxy.Path] = &ProxyRoute{
-			Pattern:    proxy.Path,
-			ProxyPass:  proxy.Target,
-			SetHeaders: proxy.Headers,
-		}
-	}
-
 	// Convert fly-replay routes
 	for _, flyReplay := range yamlConfig.Routes.FlyReplay {
 		if re, err := regexp.Compile(flyReplay.Path); err == nil {
@@ -2222,21 +2208,35 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, idleMan
 
 		// Check for proxy routes (PDF/XLSX and reverse proxies)
 		for pattern, route := range config.ProxyRoutes {
-			matched, _ := regexp.MatchString(pattern, r.URL.Path)
-			if matched {
-				// Check if method should be excluded
-				excluded := false
-				for _, excludeMethod := range route.ExcludeMethods {
-					if r.Method == excludeMethod {
-						excluded = true
-						break
+			if re, err := regexp.Compile(pattern); err == nil {
+				if re.MatchString(r.URL.Path) {
+					// Check if method should be excluded
+					excluded := false
+					for _, excludeMethod := range route.ExcludeMethods {
+						if r.Method == excludeMethod {
+							excluded = true
+							break
+						}
 					}
-				}
 
-				// Only proxy if method is not excluded
-				if !excluded {
-					proxyRequest(w, r, route)
-					return
+					// Only proxy if method is not excluded
+					if !excluded {
+						// Perform regex substitution in target URL using capture groups from path
+						targetURL := route.ProxyPass
+						
+						// Find capture groups from the path match
+						matches := re.FindStringSubmatch(r.URL.Path)
+						if len(matches) > 1 {
+							// Replace $1, $2, etc. in the target URL with capture groups
+							for i := 1; i < len(matches); i++ {
+								placeholder := fmt.Sprintf("$%d", i)
+								targetURL = strings.ReplaceAll(targetURL, placeholder, matches[i])
+							}
+						}
+						
+						proxyRequestWithTarget(w, r, route, targetURL)
+						return
+					}
 				}
 			}
 		}
@@ -3129,9 +3129,15 @@ func proxyWithRetry(w http.ResponseWriter, r *http.Request, target *url.URL, max
 
 // proxyRequest proxies a request to another server with retry logic
 func proxyRequest(w http.ResponseWriter, r *http.Request, route *ProxyRoute) {
-	target, err := url.Parse(route.ProxyPass)
+	proxyRequestWithTarget(w, r, route, route.ProxyPass)
+}
+
+// proxyRequestWithTarget proxies a request to a specific target URL with retry logic
+func proxyRequestWithTarget(w http.ResponseWriter, r *http.Request, route *ProxyRoute, targetURL string) {
+	target, err := url.Parse(targetURL)
 	if err != nil {
 		http.Error(w, "Invalid proxy target", http.StatusInternalServerError)
+		slog.Error("Invalid proxy target URL", "url", targetURL, "error", err)
 		return
 	}
 
@@ -3140,6 +3146,28 @@ func proxyRequest(w http.ResponseWriter, r *http.Request, route *ProxyRoute) {
 		r.Header.Set(k, v)
 	}
 
+	slog.Debug("Proxying request with substitution",
+		"original_path", r.URL.Path,
+		"target_url", targetURL,
+		"pattern", route.Pattern)
+
+	// For complete URL replacement, modify the request to match the target path
+	// This prevents httputil.NewSingleHostReverseProxy from appending the original path
+	originalPath := r.URL.Path
+	r.URL.Path = target.Path
+	r.URL.RawQuery = target.RawQuery
+	
+	// Create target with only scheme and host for proxy
+	baseTarget := &url.URL{
+		Scheme: target.Scheme,
+		Host:   target.Host,
+	}
+	
+	slog.Debug("Modified request for complete URL replacement",
+		"original_path", originalPath,
+		"new_path", r.URL.Path,
+		"base_target", baseTarget.String())
+
 	// Use the retry proxy helper
-	proxyWithRetry(w, r, target, ProxyRetryTimeout)
+	proxyWithRetry(w, r, baseTarget, ProxyRetryTimeout)
 }

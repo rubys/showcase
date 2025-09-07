@@ -138,9 +138,8 @@ module Configurator
     routes = {
       'redirects' => [],
       'rewrites' => [],
-      'proxies' => [],
-      'fly_replay' => [],
-      'reverse_proxies' => []
+      'reverse_proxies' => [],
+      'fly_replay' => []
     }
     
     # Add redirects
@@ -165,16 +164,16 @@ module Configurator
     
     # Add proxy routes for remote services
     if ENV['FLY_APP_NAME']
-      routes['proxies'] << {
-        'path' => '/password',
+      routes['reverse_proxies'] << {
+        'path' => '^/showease/password',
         'target' => 'https://rubix.intertwingly.net/showcase/password',
         'headers' => {
           'X-Forwarded-Host' => '$host'
         }
       }
-      
-      routes['proxies'] << {
-        'path' => '^/studios/([a-z]*)/request$',
+
+      routes['reverse_proxies'] << {
+        'path' => '^/showcase/studios/([a-z]*)/request$',
         'target' => 'https://rubix.intertwingly.net/showcase/studios/$1/request',
         'headers' => {
           'X-Forwarded-Host' => '$host'
