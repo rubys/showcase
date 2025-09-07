@@ -13,6 +13,10 @@ fi
 export RAILS_ENV=production
 bin/bundle exec rake prerender > log/prerender.log
 
+if [ -n "$AWS_ACCESS_KEY_ID" ]; then
+  bin/rails assets:bridge
+fi
+
 input_file="tmp/tenants.list"
 lines=()
 
