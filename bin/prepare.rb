@@ -69,6 +69,11 @@ ARGV.each do |database|
             end
 
             puts "Downloaded #{db_name} from S3"
+
+            # avoid throttling
+            sleep 1 if ENV['FLY_REGION'] && ARGV.length > 1
+          else
+            puts "Local database #{db_name} is up to date"
           end
           
         rescue Aws::S3::Errors::NoSuchKey

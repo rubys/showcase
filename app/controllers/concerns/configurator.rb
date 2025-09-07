@@ -337,6 +337,7 @@ module Configurator
   def build_tenants_list
     showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
     region = ENV['FLY_REGION']
+    dbpath = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
     storage = ENV['RAILS_STORAGE'] || Rails.root.join('storage').to_s
     root = determine_root_path
     
@@ -419,7 +420,16 @@ module Configurator
         end
       end
     end
-    
+
+    # Write out a list of database files for bin/prerender
+    tenant_lists = File.open('tmp/tenants.list', 'w')
+    tenants.each do |t|
+      db = t.dig('var', 'database') || t.dig('env', 'RAILS_APP_DB')
+      next unless db
+      tenant_lists.puts "#{dbpath}/#{db}.sqlite3"
+    end
+    tenant_lists.close
+
     # Add cable tenant (special case - no standard vars)
     cable_config = {
       'path' => "#{root}/cable",
