@@ -29,7 +29,6 @@ export default class extends Controller {
       if (!home) return;
       Turbo.visit(home.href + "env");
     }
-    console.log("Key pressed:", event.key);
   };
 
   touchstart = event => {

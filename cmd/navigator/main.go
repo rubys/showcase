@@ -134,6 +134,18 @@ type Config struct {
 	MachineIdleAction  string        // "suspend", "stop", or empty
 	MachineIdleTimeout time.Duration // Duration before machine idle action
 	
+	// Sticky sessions configuration
+	StickySessions struct {
+		Enabled        bool     // Enable sticky sessions
+		CookieName     string   // Name of the sticky session cookie
+		CookieMaxAge   string   // Duration format: "1h", "30m"
+		CookiePath     string   // Cookie path
+		CookieSecure   bool     // Secure flag for HTTPS
+		CookieHTTPOnly bool     // HttpOnly flag
+		CookieSameSite string   // SameSite setting: "lax", "strict", "none"
+		Paths          []string // Optional paths to apply sticky sessions
+	}
+	
 	// Hooks configuration
 	ServerHooks        ServerHooks // Server lifecycle hooks
 	DefaultTenantHooks TenantHooks // Default hooks for all tenants
@@ -297,6 +309,18 @@ type YAMLConfig struct {
 	Maintenance struct {
 		Page string `yaml:"page"` // Path to custom maintenance page (e.g., "/503.html")
 	} `yaml:"maintenance"`
+	
+	// Sticky sessions configuration
+	StickySessions struct {
+		Enabled        bool     `yaml:"enabled"`
+		CookieName     string   `yaml:"cookie_name"`
+		CookieMaxAge   string   `yaml:"cookie_max_age"`  // Duration format: "1h", "30m"
+		CookiePath     string   `yaml:"cookie_path"`
+		CookieSecure   bool     `yaml:"cookie_secure"`
+		CookieHTTPOnly bool     `yaml:"cookie_httponly"`
+		CookieSameSite string   `yaml:"cookie_samesite"`
+		Paths          []string `yaml:"paths"`
+	} `yaml:"sticky_sessions"`
 }
 
 // ManagedProcess represents an external process managed by Navigator
@@ -1188,7 +1212,8 @@ func main() {
 
 	slog.Info("Loaded configuration",
 		"locations", len(config.Locations),
-		"proxyRoutes", len(config.ProxyRoutes))
+		"proxyRoutes", len(config.ProxyRoutes),
+		"stickySessions", config.StickySessions.Enabled)
 
 	// Update logger based on configuration
 	if config.Logging.Format == "json" {
@@ -1617,6 +1642,53 @@ func ParseYAML(content []byte) (*Config, error) {
 		config.MaintenancePage = yamlConfig.Maintenance.Page
 	} else {
 		config.MaintenancePage = DefaultMaintenancePage
+	}
+	
+	// Set sticky sessions configuration
+	config.StickySessions.Enabled = yamlConfig.StickySessions.Enabled
+	
+	if config.StickySessions.Enabled {
+		// Set cookie name with default
+		if yamlConfig.StickySessions.CookieName != "" {
+			config.StickySessions.CookieName = yamlConfig.StickySessions.CookieName
+		} else {
+			config.StickySessions.CookieName = "_navigator_machine"
+		}
+		
+		// Set and validate max age with default
+		if yamlConfig.StickySessions.CookieMaxAge != "" {
+			if _, err := time.ParseDuration(yamlConfig.StickySessions.CookieMaxAge); err != nil {
+				slog.Warn("Invalid sticky session cookie_max_age format, using default",
+					"cookie_max_age", yamlConfig.StickySessions.CookieMaxAge,
+					"error", err)
+				config.StickySessions.CookieMaxAge = "1h"
+			} else {
+				config.StickySessions.CookieMaxAge = yamlConfig.StickySessions.CookieMaxAge
+			}
+		} else {
+			config.StickySessions.CookieMaxAge = "1h"
+		}
+		
+		// Set cookie path with default
+		if yamlConfig.StickySessions.CookiePath != "" {
+			config.StickySessions.CookiePath = yamlConfig.StickySessions.CookiePath
+		} else {
+			config.StickySessions.CookiePath = "/"
+		}
+		
+		// Set other cookie settings
+		config.StickySessions.CookieSecure = yamlConfig.StickySessions.CookieSecure
+		config.StickySessions.CookieHTTPOnly = yamlConfig.StickySessions.CookieHTTPOnly
+		
+		// Set SameSite with default
+		if yamlConfig.StickySessions.CookieSameSite != "" {
+			config.StickySessions.CookieSameSite = yamlConfig.StickySessions.CookieSameSite
+		} else {
+			config.StickySessions.CookieSameSite = "lax"
+		}
+		
+		// Set paths if specified
+		config.StickySessions.Paths = yamlConfig.StickySessions.Paths
 	}
 
 	return config, nil
@@ -2088,8 +2160,13 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, idleMan
 		defer idleManager.RequestFinished()
 
 		slog.Debug("Request received", "method", r.Method, "path", r.URL.Path)
+		
+		// Handle sticky sessions early (before rewrites/redirects)
+		if handleStickySession(w, r, config) {
+			return
+		}
 
-		// Handle rewrites/redirects first
+		// Handle rewrites/redirects
 		if handleRewrites(w, r, config) {
 			return
 		}
@@ -2414,6 +2491,140 @@ func shouldUseFlyReplay(r *http.Request) bool {
 	// For GET, HEAD, DELETE, OPTIONS and other methods without content, or
 	// methods with content < 1MB, use fly-replay
 	return true
+}
+
+// handleStickySession handles sticky session routing using Fly-Replay
+func handleStickySession(w http.ResponseWriter, r *http.Request, config *Config) bool {
+	if !config.StickySessions.Enabled {
+		return false
+	}
+	
+	// Check if path requires sticky sessions
+	if len(config.StickySessions.Paths) > 0 {
+		matched := false
+		for _, pattern := range config.StickySessions.Paths {
+			if matched, _ = filepath.Match(pattern, r.URL.Path); matched {
+				break
+			}
+		}
+		if !matched {
+			return false
+		}
+	}
+	
+	currentMachineID := os.Getenv("FLY_MACHINE_ID")
+	appName := os.Getenv("FLY_APP_NAME")
+	
+	if currentMachineID == "" || appName == "" {
+		slog.Debug("Sticky sessions require FLY_MACHINE_ID and FLY_APP_NAME")
+		return false
+	}
+	
+	// Check for existing sticky cookie
+	cookie, err := r.Cookie(config.StickySessions.CookieName)
+	
+	if err == nil && cookie.Value != "" && cookie.Value != currentMachineID {
+		targetMachine := cookie.Value
+		
+		// Check if this is a retry (machine was unavailable)
+		if r.Header.Get("X-Navigator-Retry") == "true" {
+			// Machine unavailable, serve maintenance page
+			slog.Info("Sticky session machine unavailable, serving maintenance page",
+				"target_machine", targetMachine,
+				"current_machine", currentMachineID,
+				"path", r.URL.Path)
+			
+			serveMaintenancePage(w, r, config)
+			return true
+		}
+		
+		// Use Fly-Replay for cross-region routing
+		if shouldUseFlyReplay(r) {
+			// Set retry header for detection if machine is down
+			w.Header().Set("fly-replay", fmt.Sprintf("instance=%s", targetMachine))
+			w.Header().Set("X-Navigator-Retry", "true")
+			
+			statusCode := http.StatusTemporaryRedirect
+			w.WriteHeader(statusCode)
+			
+			response := map[string]interface{}{
+				"message": "Routing to sticky session machine",
+				"machine": targetMachine,
+				"app":     appName,
+				"path":    r.URL.Path,
+			}
+			
+			json.NewEncoder(w).Encode(response)
+			
+			slog.Info("Sticky session fly-replay",
+				"target_machine", targetMachine,
+				"current_machine", currentMachineID,
+				"path", r.URL.Path)
+			
+			return true
+		} else {
+			// Large request, use reverse proxy
+			targetURL := fmt.Sprintf("http://%s.vm.%s.internal:%d%s",
+				targetMachine, appName, config.ListenPort, r.URL.Path)
+			
+			target, err := url.Parse(targetURL)
+			if err != nil {
+				slog.Error("Failed to parse sticky session target URL",
+					"url", targetURL,
+					"error", err)
+				return false
+			}
+			
+			// Use existing proxy function
+			proxyWithRetry(w, r, target, ProxyRetryTimeout)
+			return true
+		}
+	}
+	
+	// Set sticky cookie for current machine
+	setStickySessionCookie(w, currentMachineID, config)
+	
+	return false
+}
+
+// setStickySessionCookie sets a cookie with the current machine ID
+func setStickySessionCookie(w http.ResponseWriter, machineID string, config *Config) {
+	// Parse duration for max age
+	maxAge := 3600 // Default 1 hour in seconds
+	if config.StickySessions.CookieMaxAge != "" {
+		if duration, err := time.ParseDuration(config.StickySessions.CookieMaxAge); err != nil {
+			slog.Warn("Invalid sticky session cookie_max_age format, using default",
+				"cookie_max_age", config.StickySessions.CookieMaxAge,
+				"error", err)
+		} else {
+			maxAge = int(duration.Seconds())
+		}
+	}
+	
+	sameSite := http.SameSiteLaxMode
+	switch config.StickySessions.CookieSameSite {
+	case "strict":
+		sameSite = http.SameSiteStrictMode
+	case "none":
+		sameSite = http.SameSiteNoneMode
+	}
+	
+	cookie := &http.Cookie{
+		Name:     config.StickySessions.CookieName,
+		Value:    machineID,
+		Path:     config.StickySessions.CookiePath,
+		MaxAge:   maxAge,
+		Secure:   config.StickySessions.CookieSecure,
+		HttpOnly: config.StickySessions.CookieHTTPOnly,
+		SameSite: sameSite,
+	}
+	
+	http.SetCookie(w, cookie)
+	
+	slog.Debug("Set sticky session cookie",
+		"machine_id", machineID,
+		"cookie_name", cookie.Name,
+		"max_age_seconds", maxAge)
 }
 
 // serveMaintenancePage serves a maintenance page when target machine is unavailable
