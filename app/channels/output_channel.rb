@@ -35,7 +35,15 @@ class OutputChannel < ApplicationCable::Channel
     Rails.logger.info("Stream: #{@stream.inspect}")
     Rails.logger.info("Registry entry for stream: #{self.class.registry[@stream].inspect}")
     Rails.logger.info("Command data: #{data.inspect}")
-    block = COMMANDS[self.class.registry[@stream]]
+
+    # Wait up to 1 second for the command to appear in the registry
+    block = nil
+    10.times do
+      block = COMMANDS[self.class.registry[@stream]]
+      break if block
+      sleep 0.1
+    end
+
     run(block.call(data)) if block
 
     transmit "\u0004"
