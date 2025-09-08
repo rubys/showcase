@@ -67,6 +67,8 @@ private
       token = "#{Time.now.to_f.to_s.tr('.', '')}_#{SecureRandom.base64(12)}"
     end
 
+    Rails.logger.info("Registering command: #{command.inspect} with token: #{token}")
+
     # Add the new token first
     registry[token] = command
 
