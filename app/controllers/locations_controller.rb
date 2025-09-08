@@ -37,8 +37,8 @@ class LocationsController < ApplicationController
     regions = RegionConfiguration.load_deployed_regions
     regions_data = RegionConfiguration.load_regions_data
     @regions = regions_data.
-      select {|region| regions.include? region['Code']}.
-      map {|region| [region['Name'], region['Code']]}.
+      select {|region| regions.include? region['code']}.
+      map {|region| [region['name'], region['code']]}.
       sort
     @regions.unshift ["", nil]
 
