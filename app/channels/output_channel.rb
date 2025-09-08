@@ -32,9 +32,8 @@ class OutputChannel < ApplicationCable::Channel
   end
 
   def command(data)
-    Rails.logger.info("Stream: #{@stream.inspect}")
-    Rails.logger.info("Registry entry for stream: #{self.class.registry[@stream].inspect}")
     Rails.logger.info("Command data: #{data.inspect}")
+    Rails.logger.info("Stream: #{@stream.inspect}")
 
     # Wait up to 1 second for the command to appear in the registry
     block = nil
@@ -43,6 +42,8 @@ class OutputChannel < ApplicationCable::Channel
       break if block
       sleep 0.1
     end
+
+    Rails.logger.info("Registry entry for stream: #{self.class.registry[@stream].inspect}")
 
     run(block.call(data)) if block
 
