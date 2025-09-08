@@ -122,7 +122,7 @@
         :date: '2025'
   charlotte:
     :name: Charlotte
-    :region: atl
+    :region: iad
     :date: 2025-07-11 - 2025-07-13
   chicago:
     :name: Chicago
@@ -258,7 +258,7 @@
     :date: '2025'
   greenhills:
     :name: Nashville-Green Hills
-    :region: atl
+    :region: ord
     :events:
       spring:
         :name: Spring
@@ -287,7 +287,7 @@
         :date: 2025-09-13 - 2025-09-13
   kennesaw:
     :name: Kennesaw
-    :region: atl
+    :region: iad
   kobe:
     :name: Kobe
     :region: nrt
@@ -577,7 +577,7 @@
     :date: '2025-08-10'
   richmond:
     :name: Richmond
-    :region: atl
+    :region: iad
     :events:
       medal-ball:
         :name: Medal Ball
@@ -834,7 +834,7 @@
     :date: April 12, 2024
   charlotte:
     :name: Charlotte
-    :region: atl
+    :region: iad
     :date: June 22, 2024
   chicago:
     :name: Chicago
@@ -898,7 +898,7 @@
         :date: '2024'
   greenhills:
     :name: Nashville-Green Hills
-    :region: atl
+    :region: ord
     :events:
       spring:
         :name: Spring
@@ -912,7 +912,7 @@
     :date: March 8-9, 2024
   kennesaw:
     :name: Kennesaw
-    :region: atl
+    :region: iad
     :date: Saturday  November 9th, 2024
   kyiv:
     :name: Kyiv
@@ -1079,7 +1079,7 @@
         :date: '09-15-2024'
   richmond:
     :name: Richmond
-    :region: atl
+    :region: iad
     :events:
       medal-ball:
         :name: Medal Ball
@@ -1225,7 +1225,7 @@
     :date: '2023-11-12'
   charlotte:
     :name: Charlotte
-    :region: atl
+    :region: iad
     :date: June 23 & 24, 2023
   chicago:
     :name: Chicago
@@ -1256,7 +1256,7 @@
     :date: May 13, 2023
   greenhills:
     :name: Nashville-Green Hills
-    :region: atl
+    :region: ord
     :date: 11-11-23
   harrisburg:
     :name: Harrisburg
@@ -1264,7 +1264,7 @@
     :date: March 10 & 11
   kennesaw:
     :name: Kennesaw
-    :region: atl
+    :region: iad
     :date: Saturday November 11th, 2023
   lakeview:
     :name: Lakeview
@@ -1297,7 +1297,7 @@
         :date: September 29,2023
   richmond:
     :name: Richmond
-    :region: atl
+    :region: iad
     :events:
       medalball:
         :name: Medal Ball
@@ -1353,7 +1353,7 @@
     :date: 9/8/2022
   charlotte:
     :name: Charlotte
-    :region: atl
+    :region: iad
     :date: July 29 & 30, 2022
   harrisburg:
     :name: Harrisburg
@@ -1361,7 +1361,7 @@
     :date: March 4-5
   kennesaw:
     :name: Kennesaw
-    :region: atl
+    :region: iad
     :date: August 26, 2023
   vabeach:
     :name: Virginia Beach

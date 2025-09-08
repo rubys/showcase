@@ -32,6 +32,7 @@ class OutputChannel < ApplicationCable::Channel
   end
 
   def command(data)
+    Rails.logger.info("Stream: #{@stream.inspect}")
     Rails.logger.info("Registry entry for stream: #{self.class.registry[@stream].inspect}")
     Rails.logger.info("Command data: #{data.inspect}")
     block = COMMANDS[self.class.registry[@stream]]

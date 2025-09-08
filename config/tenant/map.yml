@@ -13,13 +13,6 @@ regions:
     map: us
     x: 753.3598022258124
     y: 218.05721663167571
-  atl:
-    name: Atlanta, Georgia (US)
-    lat: 33.6407
-    lon: -84.4277
-    map: us
-    x: 666.8622894496666
-    y: 334.50323467265434
   bos:
     name: Boston, Massachusetts (US)
     lat: 42.366978
@@ -184,7 +177,7 @@ studios:
     name: Charlotte
     lat: 35.223
     lon: -80.838
-    region: atl
+    region: iad
     map: us
     x: 716.9949924630313
     y: 297.3280639322754
@@ -320,7 +313,7 @@ studios:
     name: Nashville-Green Hills
     lat: 36.105
     lon: -86.815
-    region: atl
+    region: ord
     map: us
     x: 625.7519967420483
     y: 292.3296808842899
@@ -352,7 +345,7 @@ studios:
     name: Kennesaw
     lat: 34.023
     lon: -84.616
-    region: atl
+    region: iad
     map: us
     x: 663.1172630068728
     y: 327.71284702649643
@@ -568,7 +561,7 @@ studios:
     name: Richmond
     lat: 37.541
     lon: -77.434
-    region: atl
+    region: iad
     map: us
     x: 759.1837835261686
     y: 245.37727238439845
