@@ -3,36 +3,36 @@
 
   <p class="my-5">
     <strong class="block font-bold mb-1">Name:</strong>
-    <span class="pl-6"><%= @region['Name'] %></span>
+    <span class="pl-6"><%= @region['name'] %></span>
   </p>
 
   <p class="my-5">
     <strong class="block font-bold mb-1">Latitude:</strong>
-    <span class="pl-6"><%= @region[''] %></span>
+    <span class="pl-6"><%= @region['latitude'] %></span>
   </p>
 
   <p class="my-5">
     <strong class="block font-bold mb-1">Longitude:</strong>
-    <span class="pl-6"><%= @region['Longitude'] %></span>
+    <span class="pl-6"><%= @region['longitude'] %></span>
   </p>
 
   <p class="my-5">
     <strong class="block font-bold mb-1">Gateway Available:</strong>
-    <span class="pl-6"><%= @region['GatewayAvailable'] %></span>
+    <span class="pl-6"><%= @region['gateway_available'] %></span>
   </p>
 
   <p class="my-5">
     <strong class="block font-bold mb-1">Requires Paid Plan:</strong>
-    <span class="pl-6"><%= @region['RequiresPaidPlan'] %></span>
+    <span class="pl-6"><%= @region['requires_paid_plan'] %></span>
   </p>
 
   <div>
   <div class="inline-block ml-2">
-  <% if (@pending['delete'] || []).include? @region['Code'] %>
-  <%= button_to "Add", admin_regions_path(code: @region['Code']), method: :post,
+  <% if (@pending['delete'] || []).include? @region['code'] %>
+  <%= button_to "Add", admin_regions_path(code: @region['code']), method: :post,
     class: "btn-orange", disabled: (@code == @primary_region)  %>
   <% else %>
-  <%= button_to "Delete", destroy_region_path(@region['Code']), method: :delete,
+  <%= button_to "Delete", destroy_region_path(@region['code']), method: :delete,
     class: "btn-orange", disabled: (@code == @primary_region)  %>
   <% end %>
   </div>

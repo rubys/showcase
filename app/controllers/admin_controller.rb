@@ -106,7 +106,7 @@ class AdminController < ApplicationController
     @primary_region = Tomlrb.load_file('fly.toml')['primary_region'] || 'iad'
     @pending = RegionConfiguration.load_deployed_data['pending'] || {}
     @code = params[:code]
-    @region = RegionConfiguration.load_regions_data.find { |region| region['Code'] == @code }
+    @region = RegionConfiguration.load_regions_data.find { |region| region['code'] == @code }
     render :region
   end
 
