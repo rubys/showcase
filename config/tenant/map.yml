@@ -13,13 +13,6 @@ regions:
     map: us
     x: 753.3598022258124
     y: 218.05721663167571
-  bos:
-    name: Boston, Massachusetts (US)
-    lat: 42.366978
-    lon: -71.02236
-    map: us
-    x: 827.1098175107608
-    y: 136.23009703027913
   ord:
     name: Chicago, Illinois (US)
     lat: 41.891544
@@ -146,7 +139,7 @@ studios:
     name: Boston
     lat: 42.3554334
     lon: -71.060511
-    region: bos
+    region: ewr
     map: us
     x: 826.661092211232
     y: 136.57544481515015
@@ -370,7 +363,7 @@ studios:
     name: Laval
     lat: 45.6066
     lon: -73.707092
-    region: bos
+    region: ewr
     map: us
     x: 777.3324153383578
     y: 86.23752866493703
@@ -402,7 +395,7 @@ studios:
     name: Manchester
     lat: 42.9956
     lon: -71.4548
-    region: bos
+    region: ewr
     map: us
     x: 818.3657544827604
     y: 126.33737918952897
@@ -482,7 +475,7 @@ studios:
     name: Montreal
     lat: 45.5019
     lon: -73.5674
-    region: bos
+    region: ewr
     map: us
     x: 779.5648385687444
     y: 87.71272338612823
@@ -498,7 +491,7 @@ studios:
     name: Ottawa
     lat: 45.4208777
     lon: -75.6901106
-    region: bos
+    region: ewr
     map: us
     x: 752.8013400154026
     y: 95.38644636060508

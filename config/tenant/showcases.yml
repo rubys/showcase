@@ -101,7 +101,7 @@
         :date: 2025-12-07 - 2025-12-07
   boston:
     :name: Boston
-    :region: bos
+    :region: ewr
     :events:
       april:
         :name: April
@@ -334,7 +334,7 @@
         :date: '2025'
   laval:
     :name: Laval
-    :region: bos
+    :region: ewr
     :locale: fr-CA
     :date: '2025-04-05'
   livermore:
@@ -497,7 +497,7 @@
         :date: 2025-09-14 - 2025-09-14
   montreal:
     :name: Montreal
-    :region: bos
+    :region: ewr
     :locale: fr-CA
     :events:
       certification-exams:
@@ -540,7 +540,7 @@
         :date: '2025'
   ottawa:
     :name: Ottawa
-    :region: bos
+    :region: ewr
     :locale: en-CA
   perth:
     :name: Perth
@@ -816,7 +816,7 @@
         :date: December 8th, 2024
   boston:
     :name: Boston
-    :region: bos
+    :region: ewr
     :date: Sunday, October 13
   carmel:
     :name: Carmel
@@ -946,7 +946,7 @@
         :date: '2024'
   laval:
     :name: Laval
-    :region: bos
+    :region: ewr
     :locale: fr-CA
     :date: March 23, 2024
   lincolnshire:
@@ -980,7 +980,7 @@
     :region: iad
   manchester:
     :name: Manchester
-    :region: bos
+    :region: ewr
     :date: Dec 5th, 2024
   mdballroom:
     :name: Memorial DanceSport Ballroom
@@ -1033,7 +1033,7 @@
         :date: '2024-12-15'
   montreal:
     :name: Montreal
-    :region: bos
+    :region: ewr
     :locale: fr-CA
     :events:
       june:
@@ -1282,7 +1282,7 @@
     :date: 10/29/23
   montreal:
     :name: Montreal
-    :region: bos
+    :region: ewr
     :locale: fr-CA
     :date: November 18, 2023
   raleigh:
