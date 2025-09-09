@@ -34,13 +34,6 @@ regions:
     map: us
     x: 476.1993201496286
     y: 361.5248496538476
-  mia:
-    name: Miami, Florida (US)
-    lat: 25.7877
-    lon: -80.2241
-    map: us
-    x: 755.3064170132483
-    y: 469.82316642663625
   sjc:
     name: San Jose, California (US)
     lat: 37.3516
@@ -193,7 +186,7 @@ studios:
     name: Clearwater
     lat: 27.966
     lon: -82.796
-    region: mia
+    region: dfw
     map: us
     x: 706.5473236124388
     y: 436.43303362885484
@@ -401,7 +394,7 @@ studios:
     name: Lakewood Ranch
     lat: 27.409191200000002
     lon: -82.39252437499218
-    region: mia
+    region: iad
     map: us
     x: 714.6376165537483
     y: 445.74101093532545
@@ -441,7 +434,7 @@ studios:
     name: Miami
     lat: 25.7741728
     lon: -80.19362
-    region: mia
+    region: iad
     map: us
     x: 755.8582522492002
     y: 469.9842854067238
@@ -609,7 +602,7 @@ studios:
     name: Sarasota
     lat: 27.339
     lon: -82.539
-    region: mia
+    region: iad
     map: us
     x: 712.4055629423673
     y: 447.3783588884137

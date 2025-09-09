@@ -130,7 +130,7 @@
     :date: '2025'
   clearwater:
     :name: Clearwater
-    :region: mia
+    :region: dfw
     :events:
       valentines-opener:
         :name: Valentine’s Opener
@@ -401,7 +401,7 @@
         :date: '2025'
   miami:
     :name: Miami
-    :region: mia
+    :region: iad
     :events:
       april:
         :name: April
@@ -842,7 +842,7 @@
     :date: '2024'
   clearwater:
     :name: Clearwater
-    :region: mia
+    :region: dfw
     :events:
       texas-opener:
         :name: Texas Opener
@@ -977,7 +977,7 @@
         :date: Saturday November 16th 2024
   lwr:
     :name: Lakewood Ranch
-    :region: mia
+    :region: iad
   manchester:
     :name: Manchester
     :region: bos
@@ -1130,7 +1130,7 @@
         :date: '09/15/2024'
   sarasota:
     :name: Sarasota
-    :region: mia
+    :region: iad
     :date: December 7th
   schaumburg:
     :name: Schaumburg
@@ -1233,7 +1233,7 @@
     :date: '2023'
   clearwater:
     :name: Clearwater
-    :region: mia
+    :region: dfw
     :events:
       glassslipper:
         :name: Glass Slipper Gala
@@ -1314,7 +1314,7 @@
     :date: 10/15/2023
   sarasota:
     :name: Sarasota
-    :region: mia
+    :region: iad
     :date: December 2nd 2023
   sugarland:
     :name: Sugar Land
