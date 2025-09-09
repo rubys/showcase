@@ -18,7 +18,7 @@ if ENV["SENTRY_DSN"]
 end
 
 # Parse command line arguments
-options = { dry_run: false, verbose: false, safe: false, index_only: false, quiet: false }
+options = { dry_run: false, verbose: false, safe: false, index_only: false, quiet: false, skip_list: [] }
 OptionParser.new do |opts|
   opts.banner = "Usage: #{$0} [options]"
   
@@ -40,6 +40,18 @@ OptionParser.new do |opts|
     options[:safe] = true
   end
 
+  opts.on("--skip FILE", "Skip databases listed in the specified file") do |file|
+    if File.exist?(file)
+      options[:skip_list] = File.readlines(file).map do |line|
+        # Extract just the database filename from the path
+        File.basename(line.strip)
+      end.reject(&:empty?)
+    else
+      puts "Error: Skip file '#{file}' does not exist"
+      exit 1
+    end
+  end
+
   opts.on("--index-only", "Only sync the index database") do
     options[:index_only] = true
   end
@@ -49,6 +61,39 @@ OptionParser.new do |opts|
     exit
   end
 end.parse!
+
+# Try to load missing environment variables from rclone config
+rclone_config_path = File.expand_path("~/.config/rclone/rclone.conf")
+if File.exist?(rclone_config_path)
+  rclone_config = File.read(rclone_config_path)
+  
+  # Parse the showcase section if it exists
+  if rclone_config =~ /\[showcase\](.*?)(?:\n\[|\z)/m
+    showcase_section = $1
+    
+    # Extract values from the showcase section
+    if ENV["AWS_ACCESS_KEY_ID"].nil? || ENV["AWS_ACCESS_KEY_ID"].empty?
+      if showcase_section =~ /^access_key_id\s*=\s*(.+)$/
+        ENV["AWS_ACCESS_KEY_ID"] = $1.strip
+        puts "Using AWS_ACCESS_KEY_ID from rclone config" if options[:verbose]
+      end
+    end
+    
+    if ENV["AWS_SECRET_ACCESS_KEY"].nil? || ENV["AWS_SECRET_ACCESS_KEY"].empty?
+      if showcase_section =~ /^secret_access_key\s*=\s*(.+)$/
+        ENV["AWS_SECRET_ACCESS_KEY"] = $1.strip
+        puts "Using AWS_SECRET_ACCESS_KEY from rclone config" if options[:verbose]
+      end
+    end
+    
+    if ENV["AWS_ENDPOINT_URL_S3"].nil? || ENV["AWS_ENDPOINT_URL_S3"].empty?
+      if showcase_section =~ /^endpoint\s*=\s*(.+)$/
+        ENV["AWS_ENDPOINT_URL_S3"] = $1.strip
+        puts "Using AWS_ENDPOINT_URL_S3 from rclone config" if options[:verbose]
+      end
+    end
+  end
+end
 
 # Check for required environment variables
 required_env = ["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_ENDPOINT_URL_S3"]
@@ -111,6 +156,7 @@ begin
     puts "Dry run: #{options[:dry_run]}" if options[:dry_run]
     puts "Index only: #{options[:index_only]}" if options[:index_only]
     puts "Safe mode: #{options[:safe]} (no downloads to current region)" if options[:safe] && ENV['FLY_REGION']
+    puts "Skip list: #{options[:skip_list].size} databases" if options[:skip_list].any?
     puts
   end
 
@@ -312,6 +358,10 @@ expected_databases.each do |db_name|
       # Skip download - this region owns this database and file exists locally
       skipped << db_name
       puts "Skip download (--safe mode, owned by current region): #{db_name}" if options[:verbose]
+    elsif options[:skip_list].include?(db_name) && local_exists
+      # Skip download - database is in skip list and exists locally
+      skipped << db_name
+      puts "Skip download (--skip list): #{db_name}" if options[:verbose]
     else
       downloads << { name: db_name, local_mtime: local_exists ? local_mtime : nil, s3_mtime: s3_mtime }
       
