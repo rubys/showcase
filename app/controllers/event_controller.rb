@@ -10,9 +10,9 @@ class EventController < ApplicationController
   include ActiveStorage::SetCurrent
   include ShowcaseInventory
 
-  skip_before_action :authenticate_user, only: %i[ counter showcases regions console upload navigator_config ]
+  skip_before_action :authenticate_user, only: %i[ counter showcases regions console upload navigator_config index_update ]
   skip_before_action :current_event, only: %i[ navigator_config ]
-  skip_before_action :verify_authenticity_token, only: :console
+  skip_before_action :verify_authenticity_token, only: %i[ console index_update ]
 
   permit_site_owners :root, trust_level: 25
 
@@ -164,6 +164,12 @@ class EventController < ApplicationController
     @pro_heats = Event.current.pro_heats
 
     @track_ages = Event.current.track_ages
+
+    # Count entries by studio (using subject's studio)
+    @entries_by_studio = Entry.includes(:lead, :follow)
+      .map { |entry| entry.subject.studio.name }
+      .tally
+      .sort_by { |studio, count| -count }
   end
 
   def upload
@@ -755,6 +761,23 @@ class EventController < ApplicationController
     dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
     database = "#{dbpath}/#{ENV.fetch("RAILS_APP_DB") { Rails.env }}.sqlite3"
     render plain: `sqlite3 #{database} .dump`
+  end
+
+  def index_update
+    # Run the sync script with --index-only option
+    script_path = Rails.root.join('script', 'sync_databases_s3.rb')
+    stdout, stderr, status = Open3.capture3('ruby', script_path.to_s, '--index-only')
+    
+    # Combine stdout and stderr for complete output
+    output = stdout
+    output += "\n#{stderr}" unless stderr.empty?
+    
+    # Return plain text response with appropriate status
+    if status.success?
+      render plain: output, status: :ok
+    else
+      render plain: output, status: :internal_server_error
+    end
   end
 
   def start_heat
