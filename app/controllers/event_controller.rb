@@ -165,9 +165,9 @@ class EventController < ApplicationController
 
     @track_ages = Event.current.track_ages
 
-    # Count entries by studio (using subject's studio)
-    @entries_by_studio = Entry.includes(:lead, :follow)
-      .map { |entry| entry.subject.studio.name }
+    # Count heats by studio (using subject's studio)
+    @heats_by_studio = Heat.includes(entry: [:lead, :follow])
+      .map { |heat| heat.subject.studio.name }
       .tally
       .sort_by { |studio, count| -count }
   end

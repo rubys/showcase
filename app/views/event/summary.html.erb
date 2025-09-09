@@ -67,9 +67,9 @@
   </div>
 
   <div>
-    <h2 class="font-bold text-2xl mb-4">Entries, by Studio</h2>
+    <h2 class="font-bold text-2xl mb-4">Heats, by Studio</h2>
     <ul class="list-disc list-inside">
-      <% @entries_by_studio.each do |studio, count| %>
+      <% @heats_by_studio.each do |studio, count| %>
         <li><%= studio %>: <%= count %></li>
       <% end %>
     </ul>
