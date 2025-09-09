@@ -35,17 +35,32 @@ class OutputChannel < ApplicationCable::Channel
     Rails.logger.info("Command data: #{data.inspect}")
     Rails.logger.info("Stream: #{@stream.inspect}")
 
-    # Wait up to 1 second for the command to appear in the registry
+    # Wait up to 2 seconds for the command to appear in the registry
+    # Reload registry from disk each time to catch recent writes
     block = nil
-    10.times do
-      block = COMMANDS[self.class.registry[@stream]]
-      break if block
+    command_type = nil
+    20.times do |i|
+      # Force reload from disk to catch any recent writes
+      registry = YAML.load_file(REGISTRY) rescue {}
+      command_type = registry[@stream]
+      block = COMMANDS[command_type]
+      
+      if block
+        Rails.logger.info("Found command #{command_type} for stream #{@stream} after #{i * 0.1}s")
+        break
+      end
+      
       sleep 0.1
     end
 
-    Rails.logger.info("Registry entry for stream: #{self.class.registry[@stream].inspect}")
-
-    run(block.call(data)) if block
+    if block.nil?
+      Rails.logger.error("Command not found for stream: #{@stream}")
+      Rails.logger.error("Available tokens in registry: #{(YAML.load_file(REGISTRY) rescue {}).keys.last(5).inspect}")
+      transmit "Error: Command not found. Please refresh and try again.\n"
+    else
+      Rails.logger.info("Executing command: #{command_type}")
+      run(block.call(data))
+    end
 
     transmit "\u0004"
     stop_stream_from @stream
@@ -66,14 +81,18 @@ private
   BLOCK_SIZE = 4096
 
   def self.register(command)
-    # Generate a unique token with timestamp to avoid collisions
-    token = "#{Time.now.to_f.to_s.tr('.', '')}_#{SecureRandom.base64(12)}"
+    # Use a consistent timestamp format - milliseconds since epoch as integer
+    # This avoids floating point string conversion issues
+    timestamp = (Time.now.to_f * 1000000).to_i
+    token = "#{timestamp}_#{SecureRandom.base64(12)}"
 
     registry = self.registry
 
     # Ensure token is unique (very unlikely but just in case)
     while registry.key?(token)
-      token = "#{Time.now.to_f.to_s.tr('.', '')}_#{SecureRandom.base64(12)}"
+      sleep 0.001 # Wait 1ms to ensure different timestamp
+      timestamp = (Time.now.to_f * 1000000).to_i
+      token = "#{timestamp}_#{SecureRandom.base64(12)}"
     end
 
     Rails.logger.info("Registering command: #{command.inspect} with token: #{token}")
@@ -81,11 +100,12 @@ private
     # Add the new token first
     registry[token] = command
 
-    # Then clean up old entries, keeping the most recent 20 (increased further)
+    # Then clean up old entries, keeping the most recent 50 (increased to reduce race conditions)
     # This ensures we don't accidentally remove recently created tokens
-    if registry.length > 20
+    if registry.length > 50
       # Sort by timestamp (embedded in token) and keep the most recent
-      sorted_entries = registry.to_a.sort_by { |k, v| k.split('_').first.to_f }.last(20)
+      # Parse as integer to ensure consistent sorting
+      sorted_entries = registry.to_a.sort_by { |k, v| k.split('_').first.to_i }.last(50)
       registry = sorted_entries.to_h
     end
 
