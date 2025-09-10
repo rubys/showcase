@@ -556,7 +556,7 @@ class HeatsController < ApplicationController
     if people.any?
       @include_times = true
       generate_agenda
-      start_times = @heats.map {|heat| heat.first.to_f}.zip(@start.compact)
+      start_times = @heats.map {|heat| heat.first.to_f}.zip(@start&.compact || [])
 
       limited_availability.each do |person|
         time_restrictions[person.id] = person.eligible_heats(start_times)
