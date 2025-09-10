@@ -1,0 +1,137 @@
+#!/usr/bin/env ruby
+
+require 'net/http'
+require 'uri'
+require 'json'
+require 'open3'
+require 'optparse'
+
+# Parse command line options
+options = { verbose: false, dry_run: false }
+OptionParser.new do |opts|
+  opts.banner = "Usage: #{$0} [options]"
+  opts.separator ""
+  opts.separator "Updates the index database and triggers updates on all Fly machines"
+  opts.separator ""
+  opts.separator "Options:"
+  
+  opts.on("-v", "--verbose", "Verbose output") do
+    options[:verbose] = true
+  end
+  
+  opts.on("--dry-run", "Show what would be done without making changes") do
+    options[:dry_run] = true
+  end
+  
+  opts.on("-h", "--help", "Show this help message") do
+    puts opts
+    exit 0
+  end
+end.parse!
+
+# Step 1: Run sync_databases_s3.rb with --index-only
+puts "Step 1: Syncing index database..."
+puts "=" * 50
+
+script_path = File.expand_path('sync_databases_s3.rb', __dir__)
+
+if options[:dry_run]
+  puts "Would run: ruby #{script_path} --index-only"
+else
+  cmd_args = ['ruby', script_path, '--index-only']
+  cmd_args << '--verbose' if options[:verbose]
+  stdout, stderr, status = Open3.capture3(*cmd_args)
+
+  puts stdout
+  puts stderr unless stderr.empty?
+
+  unless status.success?
+    puts "Error: Index sync failed with exit code #{status.exitstatus}"
+    exit 1
+  end
+end
+
+puts "\n"
+
+# Step 2: Get list of Fly machines
+puts "Step 2: Getting list of Fly machines..."
+puts "=" * 50
+
+# Check if fly CLI is available
+fly_check, _, _ = Open3.capture3('which', 'fly')
+if fly_check.empty?
+  puts "Error: 'fly' CLI not found. Please install the Fly CLI first."
+  puts "Visit: https://fly.io/docs/flyctl/install/"
+  exit 1
+end
+
+machines_output, machines_stderr, machines_status = Open3.capture3('fly', 'machines', 'list', '--quiet')
+
+unless machines_status.success?
+  puts "Error: Failed to get machines list"
+  puts machines_stderr unless machines_stderr.empty?
+  exit 1
+end
+
+# Parse machine IDs from the output
+# The --quiet flag should give us just the machine IDs
+# Strip any whitespace/tabs from each ID
+machine_ids = machines_output.strip.split("\n").map(&:strip).reject(&:empty?)
+
+if machine_ids.empty?
+  puts "No machines found"
+  exit 0
+end
+
+puts "Found #{machine_ids.length} machines: #{machine_ids.join(', ')}"
+puts "\n"
+
+# Step 3: Call index_update endpoint on each machine
+puts "Step 3: Triggering index update on each machine..."
+puts "=" * 50
+
+uri = URI.parse('https://smooth.fly.dev/showcase/index_update')
+success_count = 0
+failure_count = 0
+
+machine_ids.each do |machine_id|
+  print "Updating machine #{machine_id}... "
+  
+  if options[:dry_run]
+    puts "(dry run - would POST to #{uri} with Fly-Force-Instance-Id: #{machine_id})"
+    success_count += 1
+  else
+    begin
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      http.read_timeout = 30
+      http.open_timeout = 10
+      
+      request = Net::HTTP::Post.new(uri.path)
+      request['Fly-Force-Instance-Id'] = machine_id
+      
+      response = http.request(request)
+      
+      if response.code == '200'
+        puts "✓ Success"
+        success_count += 1
+        puts "  Response: #{response.body}" if options[:verbose] && response.body && !response.body.empty?
+      else
+        puts "✗ Failed (HTTP #{response.code})"
+        puts "  Response: #{response.body}" if response.body && !response.body.empty?
+        failure_count += 1
+      end
+    rescue => e
+      puts "✗ Error: #{e.message}"
+      failure_count += 1
+    end
+  end
+end
+
+puts "\n"
+puts "Summary:"
+puts "=" * 50
+puts "Successfully updated: #{success_count} machines"
+puts "Failed updates: #{failure_count} machines" if failure_count > 0
+
+exit(failure_count > 0 ? 1 : 0)

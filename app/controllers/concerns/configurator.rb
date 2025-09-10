@@ -124,6 +124,12 @@ module Configurator
       'description' => 'Event console access'
     }
     
+    # Add index update endpoint
+    patterns << {
+      'pattern' => "^#{root}/index_update$",
+      'description' => 'Index database update endpoint'
+    }
+    
     # Studio pages are now served as static files from public/studios/
     # No need for exclude patterns since Navigator's try_files
     # will automatically serve the pre-rendered HTML files
