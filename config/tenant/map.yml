@@ -34,13 +34,6 @@ regions:
     map: us
     x: 112.63114487340647
     y: 223.9075025700198
-  sea:
-    name: Seattle, Washington (US)
-    lat: 47.6097
-    lon: -122.3331
-    map: us
-    x: 159.108421435958
-    y: 37.01944688208971
   ewr:
     name: Secaucus, NJ (US)
     lat: 40.789543
@@ -131,7 +124,7 @@ studios:
     name: Bellevue
     lat: 47.6144219
     lon: -122.192337
-    region: sea
+    region: sjc
     map: us
     x: 160.84891797792403
     y: 37.4219765697967
@@ -195,7 +188,7 @@ studios:
     name: Coquitlam
     lat: 49.2842958
     lon: -122.793281
-    region: sea
+    region: sjc
     map: us
     x: 162.11317965957727
     y: 5.675253914880955
@@ -243,7 +236,7 @@ studios:
     name: Edmonton
     lat: 53.631611
     lon: -113.323975
-    region: sea
+    region: sjc
     map: us
     x: 240.22723932236266
     y: -5.264247432342131
@@ -251,7 +244,7 @@ studios:
     name: Everett
     lat: 47.9793437
     lon: -122.2127011
-    region: sea
+    region: sjc
     map: us
     x: 162.44243958813217
     y: 30.84344800516351
@@ -579,7 +572,7 @@ studios:
     name: Salem
     lat: 44.933
     lon: -123.04
-    region: sea
+    region: sjc
     map: us
     x: 136.50150209185773
     y: 82.40005410159029

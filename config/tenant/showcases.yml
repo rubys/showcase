@@ -79,7 +79,7 @@
         :date: '2025'
   bellevue:
     :name: Bellevue
-    :region: sea
+    :region: sjc
     :events:
       hawaii:
         :name: Hawaii
@@ -167,7 +167,7 @@
         :date: 2025-09-17 - 2025-09-17
   coquitlam:
     :name: Coquitlam
-    :region: sea
+    :region: sjc
     :locale: en-CA
     :events:
       ballroom-blitz:
@@ -204,10 +204,10 @@
     :date: '2025-07-12'
   edmonton:
     :name: Edmonton
-    :region: sea
+    :region: sjc
   everett:
     :name: Everett
-    :region: sea
+    :region: sjc
     :date: '2025-05-09'
   firenze:
     :name: Firenze
@@ -599,7 +599,7 @@
     :region: dfw
   salem:
     :name: Salem
-    :region: sea
+    :region: sjc
     :events:
       spring:
         :name: Spring
@@ -799,7 +799,7 @@
     :date: Saturday, January 27, 2024
   bellevue:
     :name: Bellevue
-    :region: sea
+    :region: sjc
     :events:
       june-medal-ball:
         :name: June Medal Ball
@@ -884,7 +884,7 @@
     :region: iad
   everett:
     :name: Everett
-    :region: sea
+    :region: sjc
     :date: Friday, May 9
   glenview:
     :name: Glenview
@@ -1110,7 +1110,7 @@
         :name: Fall Showcase
   salem:
     :name: Salem
-    :region: sea
+    :region: sjc
     :events:
       spring:
         :name: Spring
@@ -1310,7 +1310,7 @@
         :date: December 16th, 2023
   salem:
     :name: Salem
-    :region: sea
+    :region: sjc
     :date: 10/15/2023
   sarasota:
     :name: Sarasota
