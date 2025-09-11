@@ -91,6 +91,11 @@ class User < ApplicationRecord
     @@trust_level
   end
 
+  def self.update_htpasswd
+    require Rails.root.join('lib/htpasswd_updater').to_s
+    HtpasswdUpdater.update
+  end
+
   private
 
     def self.load_auth

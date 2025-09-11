@@ -271,7 +271,7 @@ class UsersController < ApplicationController
 
     def update_htpasswd_everywhere
       return if Rails.env.test?
-      update_htpasswd
+      User.update_htpasswd
 
       if Rails.env.production?
         spawn RbConfig.ruby, Rails.root.join('script/user-update').to_s

@@ -45,14 +45,4 @@ module DbQuery
   ensure
     dbconn&.close
   end
-
-  def update_htpasswd
-    return if Rails.env.test?
-    dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
-    contents = User.order(:password).pluck(:password).join("\n")
-
-    if contents != (IO.read "#{dbpath}/htpasswd" rescue '')
-      IO.write "#{dbpath}/htpasswd", contents
-    end
-  end
 end

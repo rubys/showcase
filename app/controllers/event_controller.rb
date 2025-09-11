@@ -768,7 +768,7 @@ class EventController < ApplicationController
     script_path = Rails.root.join('script', 'sync_databases_s3.rb')
     stdout, stderr, status = Open3.capture3('ruby', script_path.to_s, '--index-only')
 
-    update_htpasswd
+    User.update_htpasswd
     
     # Combine stdout and stderr for complete output
     output = stdout
