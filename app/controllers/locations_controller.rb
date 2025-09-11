@@ -223,7 +223,7 @@ class LocationsController < ApplicationController
         generate_map
 
         if Rails.env.production? and trust_level != @location.trust_level
-          spawn RbConfig.ruby, Rails.root.join('bin/user-update').to_s
+          spawn RbConfig.ruby, Rails.root.join('script/user-update').to_s
         end
 
         format.html { redirect_to locations_url, notice: "#{@location.name} was successfully updated." }

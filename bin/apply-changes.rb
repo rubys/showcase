@@ -8,7 +8,7 @@ primary_region = Tomlrb.parse(IO.read 'fly.toml')['primary_region']
 
 # index.sqlite3
 unless `rsync -i --dry-run db/index.sqlite3 smooth:/data/db/`.empty?
-  exit 1 unless system "bin/user-update"
+  exit 1 unless system "script/user-update"
 end
 
 # create machine(s)
