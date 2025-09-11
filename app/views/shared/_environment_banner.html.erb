@@ -8,6 +8,6 @@
 </a>
 <% elsif ENV['FLY_APP_NAME'] != 'smooth' %>
 <a href="/showcase/docs/ops/Hosting" class="absolute right-36 text-5xl rotate-45 text-purple-600 border-2 p-2 border-purple-600 rounded-xl">
-<%= ENV['FLY_APP_NAME'].capitalize %>
+<%= ENV['FLY_APP_NAME']&.capitalize %>
 </a>
 <% end -%>
