@@ -1,0 +1,30 @@
+<% if (not ENV['FLY_REGION'] or (ENV['FLY_APP_NAME'] && ENV['FLY_APP_NAME'] != 'smooth')) and not Rails.env.development? and (local_assigns[:show_backup_warning] != false) %>
+  <% if ENV['RAILS_APP_DB'] == "demo" %>
+    <%# Skip backup warning for demo %>
+  <% else %>
+    <div class="border-double border-4 bg-white rounded-lg border-red-600 mx-4 my-8 pl-4 pr-4 py-4 text-left">
+      <% if local_assigns[:backup_message_type] == 'event' %>
+        <p>This server is for backup use only.  Unless there are problems, the link you should be using is:
+          <a class="underline" href="<%= Showcase.url %>/<%= ENV['RAILS_APP_SCOPE'] %>/"%><%= Showcase.url %>/<%= ENV['RAILS_APP_SCOPE'] %>/</a>.
+        
+        <p class="mt-4">If you make changes in both locations without waiting for the sites to synchronize,
+          <span class="bold text-red-600">you will lose data</span>.
+      <% else %>
+        <p>This server is intended for backup use only.  Unless there are problems, the link you should be using is:
+          <%
+            path = request.original_fullpath
+            path = path[1..] if request.local? or ENV['RAILS_PROXY_HOST']&.include?('hetzner')
+            link = URI::join("#{Showcase.url}/", path).to_s
+          %>
+          <a class="underline" href="<%= link %>"><%= link %></a>.
+      <% end %>
+    </div>
+  <% end %>
+<% end %>
+
+<% if local_assigns[:browser_warn] %>
+  <div class="border-double border-4 rounded-lg border-red-600 mx-4 my-8 pl-4 pr-4 py-4 text-left">
+    <strong><%= browser_warn %></strong>
+    <p class="mt-4">This application uses web features that may not be supported by the browser you are using.</p>
+  </div>
+<% end %>

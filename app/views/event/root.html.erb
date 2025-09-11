@@ -1,19 +1,6 @@
 <div class="mx-auto md:w-2/3 lg:w-1/2">
 
-  <% if not ENV['FLY_REGION'] and not Rails.env.development? and ENV['RAILS_APP_DB'] != "demo" %>
-  <div class="border-double border-4 bg-white rounded-lg border-red-600 mx-4 my-8 pl-4 pr-4 py-4 text-left">
-  <p>This server is for backup use only.  Unless there are problems, the link you should be using is:
-    <a class="underline" href="<%= Showcase.url %>/<%= ENV['RAILS_APP_SCOPE'] %>/"%><%= Showcase.url %>/<%= ENV['RAILS_APP_SCOPE'] %>/</a>.
-
-  <p class="mt-4">If you make changes in both locations without waiting for the sites to synchronize,
-    <span class="bold text-red-600">you will lose data</span>.
-  </div>
-  <% elsif @browser_warn %>
-  <div class="border-double border-4 rounded-lg border-red-600 mx-4 my-8 pl-4 pr-4 py-4 text-left">
-    <strong><%= @browser_warn %></strong>
-    <p class="mt-4">This application uses web features that may not be supported by the browser you are using.</p>
-  </div>
-  <% end %>
+  <%= render 'shared/server_warnings', backup_message_type: 'event', browser_warn: @browser_warn %>
 
 <div data-controller="info-box">
   <div class="info-button">&#x24D8;</div>

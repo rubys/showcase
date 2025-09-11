@@ -1,10 +1,5 @@
 <div class="mx-auto w-full md:w-2/3">
-<% if @browser_warn %>
-<div class="border-double border-4 rounded-lg border-red-600 mx-4 my-8 pl-4 pr-4 py-4 text-left">
-  <strong><%= @browser_warn %></strong>
-  <p class="mt-4">This application uses web features that may not be supported by the browser you are using.</p>
-</div>
-<% end %>
+<%= render 'shared/server_warnings', browser_warn: @browser_warn, show_backup_warning: false %>
 
   <% if notice.present? %>
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
