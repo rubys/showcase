@@ -29,9 +29,7 @@
   </ul>
 </div>
 
-<% if ENV['RAILS_APP_DB'] == "demo" -%>
-<span class="absolute text-5xl -rotate-45 text-purple-600 border-2 p-2 border-purple-600 rounded-xl">Demo</span>
-<% end -%>
+<%= render 'shared/environment_banner' %>
 
 <span data-controller="event-navigation">
   <a rel="up" href="<%= @up || ".." %>"></a>
@@ -39,13 +37,6 @@
   <% if @next %><a rel="next" href="<%= @next %>"></a><% end %>
 </span>
 
-  <% if Rails.env.development? %>
-  <a href="<%= select_path %>" class="absolute right-36 text-5xl rotate-45 text-purple-600 border-2 p-2 border-purple-600 rounded-xl">Dev</a>
-  <% elsif not ENV['FLY_REGION'] and not Rails.env.test? and ENV['RAILS_PROXY_HOST'] -%>
-  <a href="/showcase/docs/ops/Hosting" class="absolute right-36 text-5xl rotate-45 text-purple-600 border-2 p-2 border-purple-600 rounded-xl">
-  <%= ENV['RAILS_PROXY_HOST'].split('.').first.capitalize %>
-  </a>
-  <% end -%>
 
   <h1 class="font-bold text-center text-4xl"><%= @event.name %></h1>
 
