@@ -2,32 +2,6 @@
 
 <h1 class="font-bold text-center text-4xl mb-6">Event Summary</h1>
 
-<% if @packages.values.map(&:values).flatten.any? {|count| count > 0} %>
-<h2 class="font-bold text-2xl my-4">Packages</h2>
-<ul class="list-disc list-inside">
-  <% @packages.each do |type, packages| %>
-    <% next if packages.values.all? {|count| count == 0 } %>
-    <li><%= type %>
-    <ul class="ml-4 list-disc list-inside">
-    <% packages.each do |package, count| %>
-      <% next if count == 0 %>
-      <li><%= link_to package.name, people_package_path(package.id) %>: <%= count %></li>
-    <% end %>
-    </ul>
-  <% end %>
-</ul>
-<% end %>
-
-<% if @options.values.any? {|count| count > 0} %>
-<h2 class="font-bold text-2xl my-4">Options</h2>
-<ul class="list-disc list-inside">
-  <% @options.each do |option, count| %>
-    <% next if count == 0 %>
-    <li><%= link_to option.name, people_package_path(option.id) %>: <%= count %></li>
-  <% end %>
-</ul>
-<% end %>
-
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
   <div>
     <h2 class="font-bold text-2xl mb-4">People</h2>
@@ -44,6 +18,32 @@
         <% end %>
       <% end %>
     </ul>
+
+    <% if @packages.values.map(&:values).flatten.any? {|count| count > 0} %>
+    <h2 class="font-bold text-2xl mt-6 mb-4">Packages</h2>
+    <ul class="list-disc list-inside">
+      <% @packages.each do |type, packages| %>
+        <% next if packages.values.all? {|count| count == 0 } %>
+        <li><%= type %>
+        <ul class="ml-4 list-disc list-inside">
+        <% packages.each do |package, count| %>
+          <% next if count == 0 %>
+          <li><%= link_to package.name, people_package_path(package.id) %>: <%= count %></li>
+        <% end %>
+        </ul>
+      <% end %>
+    </ul>
+    <% end %>
+
+    <% if @options.values.any? {|count| count > 0} %>
+    <h2 class="font-bold text-2xl mt-6 mb-4">Options</h2>
+    <ul class="list-disc list-inside">
+      <% @options.each do |option, count| %>
+        <% next if count == 0 %>
+        <li><%= link_to option.name, people_package_path(option.id) %>: <%= count %></li>
+      <% end %>
+    </ul>
+    <% end %>
   </div>
 
   <div>
