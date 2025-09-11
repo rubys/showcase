@@ -57,15 +57,30 @@ puts "\n"
 puts "Step 2: Getting list of Fly machines..."
 puts "=" * 50
 
-# Check if fly CLI is available
-fly_check, _, _ = Open3.capture3('which', 'fly')
-if fly_check.empty?
-  puts "Error: 'fly' CLI not found. Please install the Fly CLI first."
+# Check if flyctl CLI is available
+# First check for ~/bin/flyctl, then check system PATH
+flyctl_cmd = nil
+home_flyctl = File.expand_path('~/bin/flyctl')
+
+if File.exist?(home_flyctl) && File.executable?(home_flyctl)
+  flyctl_cmd = home_flyctl
+  puts "Using flyctl from: #{flyctl_cmd}" if options[:verbose]
+else
+  flyctl_check, _, _ = Open3.capture3('which', 'flyctl')
+  if !flyctl_check.empty?
+    flyctl_cmd = 'flyctl'
+    puts "Using system flyctl" if options[:verbose]
+  end
+end
+
+if flyctl_cmd.nil?
+  puts "Error: 'flyctl' CLI not found. Please install the Fly CLI first."
   puts "Visit: https://fly.io/docs/flyctl/install/"
+  puts "Or place flyctl in ~/bin/flyctl"
   exit 1
 end
 
-machines_output, machines_stderr, machines_status = Open3.capture3('fly', 'machines', 'list', '--quiet')
+machines_output, machines_stderr, machines_status = Open3.capture3(flyctl_cmd, 'machines', 'list', '--quiet')
 
 unless machines_status.success?
   puts "Error: Failed to get machines list"
