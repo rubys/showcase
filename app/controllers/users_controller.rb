@@ -46,7 +46,7 @@ class UsersController < ApplicationController
 
     respond_to do |format|
       if @user.save
-        update_htpasswd
+        update_htpasswd_everywhere
 
         format.html { redirect_to users_url, notice: "#{@user.userid} was successfully created." }
         format.json { render :show, status: :created, location: @user }
@@ -68,7 +68,7 @@ class UsersController < ApplicationController
       link = @user.link
 
       if @user.update(user_params)
-        update_htpasswd
+        update_htpasswd_everywhere
 
         if not @user.token.blank? and not admin
           @user.link = ""
@@ -128,7 +128,7 @@ class UsersController < ApplicationController
   # DELETE /users/1 or /users/1.json
   def destroy
     @user.destroy
-    update_htpasswd
+    update_htpasswd_everywhere
 
     respond_to do |format|
       format.html { redirect_to users_url, status: 303,
@@ -269,17 +269,12 @@ class UsersController < ApplicationController
       @studios.unshift 'index'
     end
 
-    def update_htpasswd
+    def update_htpasswd_everywhere
       return if Rails.env.test?
-      dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
-      contents = User.order(:password).pluck(:password).join("\n")
-
-      if contents != (IO.read "#{dbpath}/htpasswd" rescue '')
-        IO.write "#{dbpath}/htpasswd", contents
-      end
+      update_htpasswd
 
       if Rails.env.production?
-        spawn RbConfig.ruby, Rails.root.join('bin/user-update').to_s
+        spawn RbConfig.ruby, Rails.root.join('script/user-update').to_s
       end
     end
 
