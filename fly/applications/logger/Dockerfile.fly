@@ -47,13 +47,9 @@ COPY --link . .
 # Final stage for app image
 FROM base
 
-# Install packages needed for deployment and Vector
+# Install packages needed for deployment
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y dnsutils openssh-server procps rsync vim curl ca-certificates && \
-    curl -1sLf 'https://repositories.timber.io/public/vector/gpg.3543DB2D0A2BC4B8.key' | gpg --dearmor -o /usr/share/keyrings/timber-vector-archive-keyring.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/timber-vector-archive-keyring.gpg] https://repositories.timber.io/public/vector/deb/debian bookworm main" > /etc/apt/sources.list.d/timber-vector.list && \
-    apt-get update && \
-    apt-get install --no-install-recommends -y vector && \
+    apt-get install --no-install-recommends -y dnsutils openssh-server procps rsync vim && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Copy built application
@@ -62,14 +58,6 @@ COPY --from=build /app /app
 # Copy thruster
 COPY --from=thruster /usr/local/bin/thrust /usr/local/bin/
 
-# Copy Vector configuration and entrypoint
-COPY vector.toml /etc/vector/vector.toml
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
-# Create log directory
-RUN mkdir -p /logs/showcase && chmod 755 /logs/showcase
-
-# Start both services
-EXPOSE 3000 9000
-CMD [ "/usr/local/bin/entrypoint.sh" ]
+# Start the server by default, this can be overwritten at runtime
+EXPOSE 3000
+CMD [ "thrust", "bun", "run", "start" ]

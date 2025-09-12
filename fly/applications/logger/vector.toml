@@ -1,0 +1,39 @@
+# Vector configuration for log aggregation
+# Receives logs from Fly machines and writes to daily files
+
+# Source - Receive via Vector's native protocol
+[sources.vector_receiver]
+type = "vector"
+address = "0.0.0.0:9000"
+version = "2"
+connection_limit = 200
+keepalive.enabled = true
+keepalive.time_secs = 60
+# No TLS needed - kamal-proxy handles SSL termination
+# Authentication via bearer token
+auth.strategy = "bearer"
+auth.token = "${EXPECTED_RAILS_MASTER_KEY}"
+
+# Transform - Extract date from timestamp
+[transforms.add_date]
+type = "remap"
+inputs = ["vector_receiver"]
+source = '''
+.date = format_timestamp!(.["@timestamp"], "%Y-%m-%d")
+'''
+
+# Sink - Write to daily log file
+[sinks.daily_logs]
+type = "file"
+inputs = ["add_date"]
+path = "/logs/showcase/{{ date }}.log"
+encoding.codec = "json"
+compression = "gzip"
+
+# Optional: Separate error logs
+[sinks.errors]
+type = "file"
+inputs = ["add_date"]
+path = "/logs/showcase/errors-{{ date }}.log"
+encoding.codec = "json"
+condition = '.stream == "stderr" || .level == "error" || .level == "ERROR"'
