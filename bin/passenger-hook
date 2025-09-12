@@ -186,7 +186,6 @@ rescue => exception
   Sentry.capture_exception(exception)
 
 ensure
-
   Dir['/data/inventory/*.json'].each do |file|
     mtime = File.mtime(file)
     lastupdated = mtime if mtime > lastupdated
