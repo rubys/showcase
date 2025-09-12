@@ -49,7 +49,7 @@ FROM base
 
 # Install packages needed for deployment and Vector
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y dnsutils openssh-server procps rsync vim curl ca-certificates && \
+    apt-get install --no-install-recommends -y dnsutils openssh-server procps rsync vim curl ca-certificates gnupg && \
     curl -1sLf 'https://repositories.timber.io/public/vector/gpg.3543DB2D0A2BC4B8.key' | gpg --dearmor -o /usr/share/keyrings/timber-vector-archive-keyring.gpg && \
     echo "deb [signed-by=/usr/share/keyrings/timber-vector-archive-keyring.gpg] https://repositories.timber.io/public/vector/deb/debian bookworm main" > /etc/apt/sources.list.d/timber-vector.list && \
     apt-get update && \
