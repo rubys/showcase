@@ -52,8 +52,10 @@ RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y dnsutils openssh-server procps rsync vim curl ca-certificates && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
-# Install Vector using official installation script
-RUN bash -c "$(curl -L https://setup.vector.dev)" -- -y --no-modify-path
+# Install Vector from official Debian package
+RUN curl -1sLf 'https://repositories.timber.io/public/vector/cfg/setup/bash.deb.sh' | bash && \
+    apt-get update && \
+    apt-get install -y vector
 
 # Copy built application
 COPY --from=build /app /app
