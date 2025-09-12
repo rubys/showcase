@@ -62,6 +62,9 @@ begin
     exit 0 unless updated
     FileUtils.touch MARKTIME
 
+    # sync databases to s3
+    system "script/sync_databases_s3.rb --safe"
+
     #  make sure the storage directory is owned by the rails user
     system "chown -R rails:rails /data/storage"
 
@@ -183,7 +186,6 @@ rescue => exception
   Sentry.capture_exception(exception)
 
 ensure
-  system "script/sync_databases_s3.rb --safe"
 
   Dir['/data/inventory/*.json'].each do |file|
     mtime = File.mtime(file)
