@@ -2,13 +2,46 @@
 
 ## Overview
 
-This document describes the setup for centralized logging from Fly.io machines running Navigator to a Hetzner aggregation server using Vector's native protocol. Vector is deployed as part of the logger Kamal application on Hetzner.
+This document describes the setup for centralized logging from Fly.io machines running Navigator to a Hetzner aggregation server using Vector's native protocol. Both Vector and Traefik run as Kamal accessories for clean container management.
 
 ## Architecture
 
 ```
-[Fly Machines with Navigator] → [Vector Agent] → Native Protocol → [Hetzner Server (logger.showcase.party)] → [Vector in Docker] → [Daily Log Files]
+[Fly Machines with Navigator] → [Vector Agent] → Native Protocol → [hub.showcase.party:9000] → [Traefik Accessory] → [Vector Accessory] → [Daily Log Files]
 ```
+
+## Key Benefits of Vector + Traefik Accessories
+
+- **Easy deployments**: Both services managed through Kamal accessories
+- **Automatic certificate handling**: Traefik handles TLS termination and renewal
+- **Container isolation**: Vector runs in its own Docker container
+- **Consistent deployment**: All infrastructure managed through accessories
+- **Simplified architecture**: No system service configuration needed
+
+## Prerequisites
+
+### DNS Configuration
+
+Add DNS record for the Vector endpoint:
+```
+hub.showcase.party → 65.109.81.136
+```
+
+### Firewall Configuration (Hetzner Robot)
+
+Configure Hetzner Robot firewall rules to allow Vector traffic:
+
+1. **Log in to Hetzner Robot console**
+2. **Navigate to your server** → Firewall
+3. **Add firewall rule**:
+   - **Name**: Vector Logging
+   - **IP Version**: IPv4
+   - **Protocol**: TCP  
+   - **Port**: 9000
+   - **Source**: Any (0.0.0.0/0) or restrict to your Fly.io IP ranges
+   - **Action**: Accept
+
+4. **Apply the firewall template** to your server
 
 ## 1. Navigator Configuration (Fly Machines)
 
@@ -40,7 +73,7 @@ path = "/tmp/navigator-vector.sock"
 [sinks.hetzner]
 type = "vector"
 inputs = ["navigator_socket"]
-address = "logger.showcase.party:9000"
+address = "hub.showcase.party:9000"
 version = "2"
 compression = true
 buffer.type = "disk"
@@ -49,7 +82,6 @@ buffer.when_full = "drop_newest"
 healthcheck.enabled = true
 # Authentication using existing Rails master key
 tls.enabled = true
-tls.verify_certificate = true
 auth.strategy = "bearer"
 auth.token = "${RAILS_MASTER_KEY}"  # Already set in Fly secrets
 ```
@@ -58,51 +90,51 @@ auth.token = "${RAILS_MASTER_KEY}"  # Already set in Fly secrets
 
 ```dockerfile
 # Install Vector alongside Navigator
-RUN curl -L https://repositories.timber.io/public/vector/cfg/setup/script.deb.sh | bash && \
+RUN curl -1sLf 'https://repositories.timber.io/public/vector/cfg/setup/bash.deb.sh' | bash && \
+    apt-get update && \
     apt-get install -y vector
 
 # Copy Vector config
 COPY navigator-vector.toml /etc/vector/navigator-vector.toml
 ```
 
-## 2. Hetzner Aggregator Setup (Kamal Deployment)
+## 2. Hetzner Aggregator Setup (Kamal Accessories)
 
-Vector is deployed as part of the logger application using Kamal. This approach:
-- Runs Vector inside a Docker container managed by Kamal
-- Shares the same deployment pipeline as the logger application
-- Automatically manages SSL certificates via kamal-proxy
-- Provides easy updates and rollbacks
+Both Vector and Traefik run as Kamal accessories for clean management:
 
-### Logger Application Structure
+### Vector Accessory Configuration
 
+File: `fly/applications/logger/accessories/vector.yml`
+
+```yaml
+service: logger-vector
+image: timberio/vector:latest
+host: 65.109.81.136
+volumes:
+  - vector-data:/var/lib/vector
+  - /home/rubys/logs:/logs
+env:
+  secret:
+    - RAILS_MASTER_KEY
+files:
+  - vector.toml:/etc/vector/vector.toml
 ```
-fly/applications/logger/
-├── Dockerfile         # Used by Kamal (includes Vector)
-├── Dockerfile.fly     # Used by Fly.io (original, no Vector)
-├── deploy.yml         # Kamal configuration
-├── vector.toml        # Vector configuration
-├── entrypoint.sh      # Starts both logger app and Vector
-└── .kamal/
-    └── secrets        # Contains EXPECTED_RAILS_MASTER_KEY
-```
 
-### Vector Aggregator Config (Integrated with Logger App)
-
-File: `fly/applications/logger/vector.toml`
+File: `fly/applications/logger/accessories/files/vector.toml`
 
 ```toml
-# Source - Receive via Vector's native protocol
+# Source - Receive via Vector's native protocol (no TLS - Traefik handles it)
 [sources.vector_receiver]
 type = "vector"
-address = "0.0.0.0:9000"
+address = "0.0.0.0:9001"  # Listen inside container, Traefik proxies to this
 version = "2"
 connection_limit = 200  # Support up to 200 concurrent connections
 keepalive.enabled = true
 keepalive.time_secs = 60
-# No TLS needed - runs inside Docker container
-# Port 9000 is exposed by Kamal deployment
+# No TLS needed - Traefik terminates TLS and forwards plain TCP to Vector
+# Authentication using Rails master key
 auth.strategy = "bearer"
-auth.token = "${EXPECTED_RAILS_MASTER_KEY}"  # Set in Kamal secrets
+auth.token = "${RAILS_MASTER_KEY}"
 
 # Transform - Extract date from timestamp
 [transforms.add_date]
@@ -116,7 +148,7 @@ source = '''
 [sinks.daily_logs]
 type = "file"
 inputs = ["add_date"]
-path = "/logs/showcase/{{ date }}.log"  # Uses Kamal volume mount
+path = "/logs/showcase/{{ date }}.log"  # Container path
 encoding.codec = "json"
 compression = "gzip"
 
@@ -124,82 +156,86 @@ compression = "gzip"
 [sinks.errors]
 type = "file"
 inputs = ["add_date"]
-path = "/var/log/showcase/errors-{{ date }}.log"
+path = "/logs/showcase/errors-{{ date }}.log"
 encoding.codec = "json"
 condition = '.stream == "stderr" || .level == "error" || .level == "ERROR"'
-
-# Optional: Metrics for monitoring
-[sinks.metrics]
-type = "prometheus_exporter"
-inputs = ["add_date"]
-address = "127.0.0.1:9598"
-default_namespace = "vector"
 ```
 
-### Kamal Configuration
+### Traefik Accessory Configuration
 
-File: `fly/applications/logger/deploy.yml` (key sections):
+File: `fly/applications/logger/accessories/traefik.yml`
 
 ```yaml
-# Deploy to these servers.
-servers:
-  web:
-    hosts:
-      - 65.109.81.136
-    options:
-      add-host: host.docker.internal:host-gateway
-      publish:
-        - "9000:9000"  # Vector port for log aggregation
-
-# Inject ENV variables into containers (secrets come from .kamal/secrets).
+service: logger-traefik
+image: traefik:v3.0
+host: 65.109.81.136
 env:
   clear:
-    KAMAL_HETZNER: 1
-  secret:
-    - HTPASSWD
-    - EXPECTED_RAILS_MASTER_KEY
-
-# Use a persistent storage volume.
+    TRAEFIK_DOMAIN: hub.showcase.party
+port: 9000
 volumes:
-  - /home/rubys/logs:/logs
+  - /var/run/docker.sock:/var/run/docker.sock:ro
+  - traefik-data:/data
+options:
+  network: kamal
+cmd: >
+  --api.dashboard=false
+  --entrypoints.vector.address=:9000
+  --providers.file.filename=/data/traefik.yml
+  --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+  --certificatesresolvers.letsencrypt.acme.email=rubys@intertwingly.net
+  --certificatesresolvers.letsencrypt.acme.storage=/data/acme.json
+  --log.level=INFO
+files:
+  - traefik.yml:/data/traefik.yml
 ```
 
-### Entrypoint Script
+File: `fly/applications/logger/accessories/files/traefik.yml`
 
-File: `fly/applications/logger/entrypoint.sh`:
+```yaml
+tcp:
+  routers:
+    vector:
+      rule: "HostSNI(`hub.showcase.party`)"
+      service: vector-service
+      tls:
+        certResolver: letsencrypt
+  services:
+    vector-service:
+      loadBalancer:
+        servers:
+          - address: "logger-vector:9001"  # Vector container listening on port 9001
+```
+
+### Deploy Both Accessories
 
 ```bash
-#!/bin/bash
-set -e
+# Deploy both accessories (run from your project directory)
+cd fly/applications/logger
 
-# Start Vector in the background
-echo "Starting Vector log aggregator..."
-vector --config /etc/vector/vector.toml &
-VECTOR_PID=$!
+# Deploy Vector first
+kamal accessory boot vector -c deploy.yml
 
-# Start the main application
-echo "Starting logger application..."
-exec thrust bun run start
+# Deploy Traefik  
+kamal accessory boot traefik -c deploy.yml
+
+# Check status
+kamal accessory details vector -c deploy.yml
+kamal accessory details traefik -c deploy.yml
+
+# View logs
+kamal accessory logs vector -c deploy.yml
+kamal accessory logs traefik -c deploy.yml
 ```
 
-### Authentication Setup
+## 3. Authentication Setup
 
-Update `fly/applications/logger/.kamal/secrets`:
+The RAILS_MASTER_KEY is automatically sourced from your Rails application:
 
-```bash
-# Add your Rails master key here for Vector authentication
-EXPECTED_RAILS_MASTER_KEY=your-actual-rails-master-key-here
-```
-
-## 3. SSL/TLS Setup (Automatic via Kamal-Proxy)
-
-SSL certificates are automatically managed by kamal-proxy for the `logger.showcase.party` domain. No manual certificate management is required.
-
-### How it works:
-- Kamal-proxy automatically obtains Let's Encrypt certificates
-- Certificates are stored in Docker volumes
-- Auto-renewal is handled by kamal-proxy
-- Vector runs inside the container without needing direct TLS (port 9000 is exposed by Docker)
+- **Source**: `config/master.key` (your Rails application's master key)
+- **Configuration**: `.kamal/secrets` extracts it with `$(cat ../../../config/master.key)`
+- **Usage**: Vector accessory receives it as an environment variable
+- **No manual setup needed** - already configured in the accessory files
 
 ## 4. System Tuning
 
@@ -240,14 +276,14 @@ sysctl -p /etc/sysctl.d/99-vector.conf
 File: `/etc/logrotate.d/showcase`
 
 ```logrotate
-/var/log/showcase/*.log {
+/home/rubys/logs/showcase/*.log {
     daily
     rotate 30
     compress
     delaycompress
     missingok
     notifempty
-    create 0644 vector vector
+    create 0644 root root
     sharedscripts
     postrotate
         # Optional: Upload to S3 for long-term storage
@@ -257,20 +293,20 @@ File: `/etc/logrotate.d/showcase`
     endscript
 }
 
-/var/log/showcase/errors-*.log {
+/home/rubys/logs/showcase/errors-*.log {
     daily
     rotate 7
     compress
     delaycompress
     missingok
     notifempty
-    create 0644 vector vector
+    create 0644 root root
 }
 ```
 
 ## 6. Monitoring Scripts
 
-### Connection Monitor (Updated for Kamal/Docker)
+### Connection Monitor
 
 File: `/usr/local/bin/check-vector-connections.sh`
 
@@ -282,39 +318,25 @@ echo "=== Vector Connection Status ==="
 echo "Timestamp: $(date)"
 echo
 
-# Count established connections
-CONNECTIONS=$(netstat -tn | grep :9000 | grep ESTABLISHED | wc -l)
-echo "Active Vector connections: $CONNECTIONS"
+# Count established connections to Traefik (port 9000)
+TRAEFIK_CONNECTIONS=$(netstat -tn | grep :9000 | grep ESTABLISHED | wc -l)
+echo "Active Traefik connections: $TRAEFIK_CONNECTIONS"
+
+# Check Vector container connections (internal to Docker)
+echo "Vector container connections: $(docker exec logger-vector netstat -tn 2>/dev/null | grep :9001 | grep ESTABLISHED | wc -l 2>/dev/null || echo 'N/A')"
 
 # Show connections by source IP
-echo -e "\nConnections by source:"
+echo -e "\nTraefik connections by source:"
 netstat -tn | grep :9000 | grep ESTABLISHED | \
   awk '{print $5}' | cut -d: -f1 | sort | uniq -c | sort -rn
 
-# Check Vector health
-if systemctl is-active --quiet vector; then
-    echo -e "\nVector service: Running"
-else
-    echo -e "\nVector service: NOT RUNNING"
-fi
+# Check Vector accessory health
+echo -e "\nVector accessory status:"
+docker ps --filter "name=logger-vector" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
-# Check disk usage  
+# Check disk usage for logs
 echo -e "\nDisk usage:"
-df -h /home/rubys/logs
-
-# Show latest logs size
-echo -e "\nToday's log size:"
-ls -lh /home/rubys/logs/showcase/$(date +%Y-%m-%d).log* 2>/dev/null || echo "No logs yet today"
-
-# Error count
-if [ -f "/home/rubys/logs/showcase/errors-$(date +%Y-%m-%d).log" ]; then
-    ERROR_COUNT=$(wc -l < "/home/rubys/logs/showcase/errors-$(date +%Y-%m-%d).log")
-    echo -e "\nErrors today: $ERROR_COUNT"
-fi
-
-# Check Vector container status
-echo -e "\nVector container status:"
-docker ps | grep showcase-logger
+df -h /home/rubys/logs/showcase
 ```
 
 Make executable:
@@ -323,310 +345,70 @@ Make executable:
 chmod +x /usr/local/bin/check-vector-connections.sh
 ```
 
-### Daily Stats Script
+## 7. Testing the Setup
 
-File: `/usr/local/bin/showcase-log-stats.sh`
+### Basic Connection Test
 
-```bash
-#!/bin/bash
-# Daily statistics for showcase logs
-
-DATE=${1:-$(date +%Y-%m-%d)}
-LOG_FILE="/var/log/showcase/${DATE}.log"
-
-echo "=== Showcase Log Statistics for $DATE ==="
-echo
-
-if [ ! -f "$LOG_FILE" ] && [ ! -f "${LOG_FILE}.gz" ]; then
-    echo "No logs found for $DATE"
-    exit 1
-fi
-
-# Use zcat if file is compressed
-if [ -f "${LOG_FILE}.gz" ]; then
-    CAT="zcat ${LOG_FILE}.gz"
-else
-    CAT="cat ${LOG_FILE}"
-fi
-
-echo "Total log entries:"
-$CAT | wc -l
-
-echo -e "\nLog entries by source:"
-$CAT | jq -r '.source' 2>/dev/null | sort | uniq -c | sort -rn | head -20
-
-echo -e "\nLog entries by tenant:"
-$CAT | jq -r '.tenant // "none"' 2>/dev/null | sort | uniq -c | sort -rn | head -20
-
-echo -e "\nLog entries by stream:"
-$CAT | jq -r '.stream' 2>/dev/null | sort | uniq -c | sort -rn
-
-echo -e "\nLog entries by hour:"
-$CAT | jq -r '.["@timestamp"]' 2>/dev/null | cut -dT -f2 | cut -d: -f1 | sort | uniq -c
-
-echo -e "\nFile size:"
-ls -lh "${LOG_FILE}"* 2>/dev/null
-```
-
-Make executable:
+Use the included test script to verify connectivity:
 
 ```bash
-chmod +x /usr/local/bin/showcase-log-stats.sh
+# Test Vector connectivity from development machine
+ruby test-vector.rb
 ```
 
-## 7. Firewall Configuration
-
-### Hetzner Robot Firewall (Recommended)
-
-For Hetzner Robot servers, configure firewall rules in the Robot console:
-
-#### Option 1: Restrict to Fly.io IP ranges (Most Secure)
-```
-Name: Vector-Fly-Logs
-Direction: In
-Port: 9000
-Protocol: TCP
-Source IPs: 
-- 66.241.124.0/24
-- 66.241.125.0/24
-- 66.51.124.0/24
-- 66.51.125.0/24
-- 161.35.39.0/24
-- 149.248.212.0/24
-```
-
-#### Option 2: Allow from anywhere (For testing)
-```
-Name: Vector-Logs
-Direction: In
-Port: 9000
-Protocol: TCP
-Source IPs: 0.0.0.0/0
-```
-
-#### Steps to configure in Hetzner Robot:
-1. Go to your server in Robot console
-2. Click "Firewall" 
-3. Click "Add Rule"
-4. Fill in the rule details above
-5. Activate the firewall
-
-#### Get Current Fly.io IP Ranges:
-```bash
-# Query Fly.io API for current IP ranges
-curl -s https://api.fly.io/v1/platform/regions | jq -r '.data[].ipv4_cidr' | sort -u
-```
-
-### Alternative: UFW (If not using Robot firewall)
+### Check Log Files
 
 ```bash
-# Allow Vector port only from Fly.io IP ranges
-# Note: Get current Fly.io IP ranges from their API
+# SSH to the Hetzner server and check log files
+ssh root@65.109.81.136
 
-# Basic UFW setup
-ufw allow 22/tcp  # SSH
-ufw allow 9000/tcp  # Vector
-ufw enable
+# Check today's log file
+today=$(date +%Y-%m-%d)
+ls -la /home/rubys/logs/showcase/${today}.log*
+
+# View recent log entries
+tail -f /home/rubys/logs/showcase/${today}.log | jq .
 ```
 
-**Recommendation**: Start with Option 2 (allow all) for initial testing, then restrict to Fly.io ranges once Vector is working properly.
-
-## 8. Deployment
-
-### Deploy Logger Application with Vector to Hetzner
+### Monitor Vector Performance
 
 ```bash
-# Navigate to logger application directory
+# Run the connection monitoring script
+/usr/local/bin/check-vector-connections.sh
+
+# Check Vector accessory logs
+cd fly/applications/logger
+kamal accessory logs vector -c deploy.yml --lines 100
+
+# Check Traefik accessory logs  
+kamal accessory logs traefik -c deploy.yml --lines 100
+```
+
+## 8. Maintenance Commands
+
+### Update Vector Version
+
+```bash
 cd fly/applications/logger
 
-# Update the RAILS_MASTER_KEY in .kamal/secrets
-vim .kamal/secrets
-# Replace 'your-actual-rails-master-key-here' with your actual Rails master key
-
-# Deploy with Kamal
-kamal deploy
-
-# Check deployment status
-kamal app logs
-kamal app details
+# Update image version in accessories/vector.yml, then:
+kamal accessory reboot vector -c deploy.yml
 ```
 
-### Verify Vector is Running
+### Restart Services
 
 ```bash
-# Check if Vector port is exposed
-kamal app exec 'netstat -tlnp | grep 9000'
+# Restart Vector accessory
+kamal accessory restart vector -c deploy.yml
 
-# Check Vector logs
-kamal app exec 'ps aux | grep vector'
-
-# View Vector startup logs
-kamal app logs | grep -i vector
+# Restart Traefik accessory  
+kamal accessory restart traefik -c deploy.yml
 ```
 
-## 9. Testing and Verification
-
-### Test Vector Connection from Fly
+### Remove Services
 
 ```bash
-# On a Fly machine
-flyctl ssh console
-
-# Check if Vector is running
-ps aux | grep vector
-
-# Check Vector logs
-journalctl -u vector -n 50
-
-# Test connectivity to Hetzner
-nc -zv logger.showcase.party 9000
+# Remove accessories (if needed)
+kamal accessory remove vector -c deploy.yml
+kamal accessory remove traefik -c deploy.yml
 ```
-
-### Test on Hetzner
-
-```bash
-# Check Vector is receiving connections
-kamal app exec 'netstat -tn | grep :9000'
-
-# Monitor incoming logs in real-time
-tail -f /home/rubys/logs/showcase/$(date +%Y-%m-%d).log | jq '.'
-
-# Check for errors
-tail -f /home/rubys/logs/showcase/errors-$(date +%Y-%m-%d).log | jq '.'
-
-# View Vector's own logs inside the container
-kamal app logs | grep vector
-
-# Check container status
-docker ps | grep showcase-logger
-```
-
-## 9. Troubleshooting
-
-### Common Issues and Solutions
-
-1. **No connections showing**
-   - Check firewall rules
-   - Verify TLS certificates are valid
-   - Ensure RAILS_MASTER_KEY matches on both sides
-
-2. **High memory usage**
-   - Reduce buffer sizes in Vector config
-   - Check for backpressure (slow disk I/O)
-
-3. **Missing logs**
-   - Check Navigator's Vector socket is created
-   - Verify Vector agent is running on Fly machines
-   - Check authentication token matches
-
-4. **Connection refused**
-   - Ensure Vector is listening: `netstat -tlnp | grep 9000`
-   - Check TLS certificate validity: `openssl s_client -connect logger.showcase.party:9000`
-
-### Debug Commands
-
-```bash
-# Check Vector configuration is valid
-vector validate /etc/vector/vector.toml
-
-# Run Vector in debug mode (temporarily)
-systemctl stop vector
-RUST_LOG=debug vector --config /etc/vector/vector.toml
-
-# Check system limits
-ulimit -n  # Should show 65535 or higher
-```
-
-## 10. Capacity Planning
-
-### Expected Load
-
-- **Connections**: 20-50 concurrent (typical), up to 200 (configured limit)
-- **Log volume**: ~1-10 GB/day depending on traffic
-- **Disk space**: 30 days × 10 GB = 300 GB recommended
-- **Network**: 100-200 Mbps typical, 500 Mbps peak
-
-### Recommended Hetzner Server Specs
-
-For typical deployment (5-10 regions, 3-5 machines per region):
-- **CPU**: 4 cores
-- **RAM**: 4 GB
-- **Disk**: 500 GB SSD
-- **Network**: 1 Gbps
-
-### Monitoring Alerts
-
-Set up alerts for:
-- Disk usage > 80%
-- Connection count > 150
-- Vector service down
-- Error rate > 100/minute
-- No logs received for > 5 minutes
-
-## 11. Security Considerations
-
-1. **Authentication**: Uses RAILS_MASTER_KEY as bearer token
-2. **Encryption**: TLS 1.2+ for all connections
-3. **Firewall**: Restrict port 9000 to Fly.io IPs only
-4. **File permissions**: Logs readable only by vector user
-5. **Log retention**: 30 days on disk, then archive to S3
-6. **No PII in logs**: Ensure Navigator doesn't log sensitive data
-
-## 12. Next Steps
-
-1. **Set up S3 archival** for long-term storage
-2. **Add search interface** (Grafana Loki or similar)
-3. **Create dashboards** for log visualization
-4. **Set up alerting** for error patterns
-5. **Implement log sampling** if volume becomes too high
-
-## Appendix: Quick Setup Script
-
-```bash
-#!/bin/bash
-# quick-setup-vector-hetzner.sh
-
-set -e
-
-echo "Setting up Vector log aggregator on Hetzner..."
-
-# Install Vector
-curl -L https://repositories.timber.io/public/vector/cfg/setup/bash.rpm.sh | bash
-apt-get update
-apt-get install -y vector certbot
-
-# Create directories and user
-useradd -r -s /bin/false vector || true
-mkdir -p /var/log/showcase
-chown -R vector:vector /var/log/showcase
-
-# Get SSL certificate
-read -p "Enter domain (e.g., logger.showcase.party): " DOMAIN
-read -p "Enter email for Let's Encrypt: " EMAIL
-certbot certonly --standalone -d "$DOMAIN" --non-interactive --agree-tos --email "$EMAIL"
-
-# Get Rails master key
-read -s -p "Enter RAILS_MASTER_KEY: " RAILS_KEY
-echo
-echo "EXPECTED_RAILS_MASTER_KEY=$RAILS_KEY" > /etc/vector/environment
-chmod 600 /etc/vector/environment
-
-# Apply system tuning
-cat > /etc/sysctl.d/99-vector.conf << 'EOF'
-fs.file-max = 100000
-net.core.somaxconn = 1024
-net.ipv4.tcp_keepalive_time = 60
-EOF
-sysctl -p /etc/sysctl.d/99-vector.conf
-
-# Create Vector config (you'll need to add the content)
-echo "Please create /etc/vector/vector.toml with the configuration from this document"
-echo "Then run: systemctl enable --now vector"
-
-echo "Setup complete!"
-```
-
----
-
-*Last updated: 2025-01-11*
-*Version: 1.0*

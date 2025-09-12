@@ -1,0 +1,11 @@
+service: logger-vector
+image: timberio/vector:latest
+host: 65.109.81.136
+volumes:
+  - vector-data:/var/lib/vector
+  - /home/rubys/logs:/logs
+env:
+  secret:
+    - RAILS_MASTER_KEY
+files:
+  - vector.toml:/etc/vector/vector.toml

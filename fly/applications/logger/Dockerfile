@@ -49,14 +49,8 @@ FROM base
 
 # Install packages needed for deployment
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y dnsutils openssh-server procps rsync vim curl ca-certificates gpg && \
+    apt-get install --no-install-recommends -y dnsutils openssh-server procps rsync vim && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
-
-# Install Vector from official .deb package
-RUN VECTOR_VERSION="0.49.0" && \
-    curl -L "https://github.com/vectordotdev/vector/releases/download/v${VECTOR_VERSION}/vector_${VECTOR_VERSION}-1_amd64.deb" -o vector.deb && \
-    dpkg -i vector.deb && \
-    rm vector.deb
 
 # Copy built application
 COPY --from=build /app /app
@@ -64,14 +58,6 @@ COPY --from=build /app /app
 # Copy thruster
 COPY --from=thruster /usr/local/bin/thrust /usr/local/bin/
 
-# Copy Vector configuration and entrypoint
-COPY vector.toml /etc/vector/vector.toml
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
-# Create log directory
-RUN mkdir -p /logs/showcase && chmod 755 /logs/showcase
-
-# Start both services
-EXPOSE 3000 9000
-CMD [ "/usr/local/bin/entrypoint.sh" ]
+# Start the server by default, this can be overwritten at runtime
+EXPOSE 3000
+CMD [ "thrust", "bun", "run", "start" ]

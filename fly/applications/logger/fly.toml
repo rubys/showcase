@@ -8,7 +8,6 @@ primary_region = "iad"
 swap_size_mb = 2048
 
 [build]
-  dockerfile = "Dockerfile.fly"
 
 [processes]
   app = 'bun run start'
