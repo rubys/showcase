@@ -52,12 +52,11 @@ RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y dnsutils openssh-server procps rsync vim curl ca-certificates gpg && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
-# Install Vector from official APT repository
-RUN echo "deb https://apt.vector.dev/ stable vector-0" > /etc/apt/sources.list.d/vector.list && \
-    curl -1sLf 'https://repositories.timber.io/public/vector/gpg.3543DB2D0A2BC4B8.key' | gpg --dearmor > /usr/share/keyrings/timber-vector-archive-keyring.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/timber-vector-archive-keyring.gpg] https://apt.vector.dev/ stable vector-0" > /etc/apt/sources.list.d/vector.list && \
-    apt-get update && \
-    apt-get install -y vector
+# Install Vector from official .deb package
+RUN VECTOR_VERSION="0.49.0" && \
+    curl -L "https://github.com/vectordotdev/vector/releases/download/v${VECTOR_VERSION}/vector_${VECTOR_VERSION}-1_amd64.deb" -o vector.deb && \
+    dpkg -i vector.deb && \
+    rm vector.deb
 
 # Copy built application
 COPY --from=build /app /app
