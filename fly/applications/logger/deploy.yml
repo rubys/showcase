@@ -62,7 +62,7 @@ volumes:
 accessories:
   vector:
     service: logger-vector
-    image: timberio/vector:latest
+    image: vectordotdev/vector:latest
     host: 65.109.81.136
     volumes:
       - vector-data:/var/lib/vector
