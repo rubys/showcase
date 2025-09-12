@@ -4,9 +4,6 @@ service: showcase-logger
 # Name of the container image.
 image: samruby/showcase-logger
 
-# Repository for the image (overrides any inherited config)
-repository: samruby/showcase-logger
-
 # Deploy to these servers.
 servers:
   web:
