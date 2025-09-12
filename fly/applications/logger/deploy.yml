@@ -84,8 +84,6 @@ accessories:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik-data:/data
-    options:
-      network: kamal
     cmd: >
       --api.dashboard=false
       --entrypoints.vector.address=:9000
