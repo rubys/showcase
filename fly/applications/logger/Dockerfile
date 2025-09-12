@@ -47,14 +47,13 @@ COPY --link . .
 # Final stage for app image
 FROM base
 
-# Install packages needed for deployment and Vector
+# Install packages needed for deployment
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y dnsutils openssh-server procps rsync vim curl ca-certificates gnupg && \
-    curl -1sLf 'https://repositories.timber.io/public/vector/gpg.3543DB2D0A2BC4B8.key' | gpg --dearmor -o /usr/share/keyrings/timber-vector-archive-keyring.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/timber-vector-archive-keyring.gpg] https://repositories.timber.io/public/vector/deb/debian bookworm main" > /etc/apt/sources.list.d/timber-vector.list && \
-    apt-get update && \
-    apt-get install --no-install-recommends -y vector && \
+    apt-get install --no-install-recommends -y dnsutils openssh-server procps rsync vim curl ca-certificates && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Install Vector using official installation script
+RUN bash -c "$(curl -L https://setup.vector.dev)" -- -y --no-modify-path
 
 # Copy built application
 COPY --from=build /app /app
