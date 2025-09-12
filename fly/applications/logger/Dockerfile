@@ -49,11 +49,13 @@ FROM base
 
 # Install packages needed for deployment
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y dnsutils openssh-server procps rsync vim curl ca-certificates && \
+    apt-get install --no-install-recommends -y dnsutils openssh-server procps rsync vim curl ca-certificates gpg && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
-# Install Vector from official Debian package
-RUN curl -1sLf 'https://repositories.timber.io/public/vector/cfg/setup/bash.deb.sh' | bash && \
+# Install Vector from official APT repository
+RUN echo "deb https://apt.vector.dev/ stable vector-0" > /etc/apt/sources.list.d/vector.list && \
+    curl -1sLf 'https://repositories.timber.io/public/vector/gpg.3543DB2D0A2BC4B8.key' | gpg --dearmor > /usr/share/keyrings/timber-vector-archive-keyring.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/timber-vector-archive-keyring.gpg] https://apt.vector.dev/ stable vector-0" > /etc/apt/sources.list.d/vector.list && \
     apt-get update && \
     apt-get install -y vector
 
