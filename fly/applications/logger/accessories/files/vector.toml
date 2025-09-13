@@ -1,15 +1,25 @@
-# Source - Receive via Vector's native protocol v2 (gRPC)
-[sources.vector_receiver]
-type = "vector"
+# Source - Receive logs via HTTP with custom bearer authentication
+[sources.http_logs]
+type = "http_server"
 address = "0.0.0.0:9000"  # Listen directly on port 9000
-version = "2"
+decoding.codec = "json"
+# Custom authentication to check Authorization: Bearer <token>
+auth.strategy = "custom"
+auth.source = '''
+# Check for Authorization header with bearer token
+authorization = to_string(.headers.authorization) ?? ""
+expected_token = "${RAILS_MASTER_KEY}"
+starts_with(authorization, "Bearer ") && 
+slice!(authorization, 7) == expected_token
+'''
 
 # Transform - Extract date from timestamp
 [transforms.add_date]
 type = "remap"
-inputs = ["vector_receiver"]
+inputs = ["http_logs"]
 source = '''
-.date = format_timestamp!(."@timestamp", "%Y-%m-%d")
+# Use current date for file path
+.date = format_timestamp!(now(), "%Y-%m-%d")
 '''
 
 # Sink - Write to daily log file

@@ -2,20 +2,21 @@
 
 ## Overview
 
-This document describes the setup for centralized logging from Fly.io machines running Navigator to a Hetzner aggregation server using Vector's native v2 protocol (gRPC). Vector runs as a Kamal accessory for clean container management.
+This document describes the setup for centralized logging from Fly.io machines running Navigator to a Hetzner aggregation server using Vector's HTTP protocol with bearer token authentication. Vector runs as a Kamal accessory for clean container management.
 
 ## Architecture
 
 ```
-[Fly Machines with Navigator] → [Vector Agent] → gRPC v2 Protocol → [65.109.81.136:9000] → [Vector Accessory] → [Daily Log Files]
+[Fly Machines with Navigator] → [Vector Agent] → HTTP + Bearer Auth → [65.109.81.136:9000] → [Vector Accessory] → [Daily Log Files]
 ```
 
-## Key Benefits of Vector gRPC Protocol
+## Key Benefits of Vector HTTP Protocol
 
-- **High performance**: Binary protocol with compression and multiplexing
+- **Secure authentication**: Bearer token validation using Rails master key
+- **High performance**: HTTP/2 with persistent connections and compression
 - **Reliable delivery**: Built-in acknowledgements and backpressure handling
-- **Efficient**: Lower CPU and bandwidth usage compared to JSON over HTTP
-- **Native streaming**: Bidirectional gRPC streams for optimal throughput
+- **Easy debugging**: Standard HTTP protocol, testable with curl
+- **Battle-tested**: Well-understood HTTP authentication patterns
 - **Container isolation**: Vector runs in its own Docker container via Kamal
 
 ## Prerequisites
@@ -69,13 +70,22 @@ type = "socket"
 mode = "unix"
 path = "/tmp/navigator-vector.sock"
 
-# Sink - Send to Hetzner via gRPC v2
+# Sink - Send to Hetzner via HTTP with bearer authentication
 [sinks.hetzner]
-type = "vector"
+type = "http"
 inputs = ["navigator_socket"]
-address = "65.109.81.136:9000"
-version = "2"
-compression = true
+uri = "http://65.109.81.136:9000/"
+method = "post"
+
+# Bearer token authentication using Rails master key
+auth.strategy = "bearer"
+auth.token = "${RAILS_MASTER_KEY}"
+
+# Encoding and compression
+encoding.codec = "json"
+compression = "gzip"
+
+# Buffer and reliability settings
 buffer.type = "disk"
 buffer.max_size = 268435488  # 256MB
 buffer.when_full = "drop_newest"
@@ -123,18 +133,29 @@ accessories:
 File: `fly/applications/logger/accessories/files/vector.toml`
 
 ```toml
-# Source - Receive via Vector's native protocol v2 (gRPC)
-[sources.vector_receiver]
-type = "vector"
+# Source - Receive logs via HTTP with bearer authentication
+[sources.http_logs]
+type = "http_server"
 address = "0.0.0.0:9000"  # Listen directly on port 9000
-version = "2"
+decoding.codec = "json"
 
-# Transform - Extract date from timestamp
+# Custom authentication to check Authorization: Bearer <token>
+auth.strategy = "custom"
+auth.source = '''
+# Check for Authorization header with bearer token
+authorization = to_string(.headers.authorization) ?? ""
+expected_token = "${RAILS_MASTER_KEY}"
+starts_with(authorization, "Bearer ") && 
+slice!(authorization, 7) == expected_token
+'''
+
+# Transform - Extract date from timestamp for daily file rotation
 [transforms.add_date]
 type = "remap"
-inputs = ["vector_receiver"]
+inputs = ["http_logs"]
 source = '''
-.date = format_timestamp!(."@timestamp", "%Y-%m-%d")
+# Use current date for file path
+.date = format_timestamp!(now(), "%Y-%m-%d")
 '''
 
 # Sink - Write to daily log file
@@ -331,13 +352,22 @@ source = '''
 ."@timestamp" = now()
 '''
 
-# Sink - Send to Hetzner Vector via gRPC
+# Sink - Send to Hetzner Vector via HTTP with authentication
 [sinks.hetzner]
-type = "vector"
+type = "http"
 inputs = ["add_metadata"]
-address = "65.109.81.136:9000"
-version = "2"
-compression = true
+uri = "http://65.109.81.136:9000/"
+method = "post"
+
+# Bearer token authentication
+auth.strategy = "bearer"
+auth.token = "${RAILS_MASTER_KEY}"
+
+# Encoding and compression
+encoding.codec = "json"
+compression = "gzip"
+
+# Buffer configuration for reliability
 buffer.type = "memory"
 buffer.max_events = 500
 buffer.when_full = "block"

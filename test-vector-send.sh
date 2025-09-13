@@ -2,7 +2,7 @@
 
 # Test script to send a custom log entry via Vector to Hetzner
 
-echo "Sending test log to Hetzner via Vector gRPC..."
+echo "Sending test logs to Hetzner via Vector HTTP with authentication..."
 
 # Create a test log entry
 TEST_LOG=$(cat <<EOF
@@ -21,11 +21,12 @@ echo "$TEST_LOG"
 echo
 echo "Starting Vector with test configuration..."
 echo "The demo source will send 10 test events, then exit."
+echo "Using RAILS_MASTER_KEY for authentication..."
 echo
 
-# Run Vector with our test config
+# Run Vector with our test config and RAILS_MASTER_KEY environment variable
 # The demo source will automatically send 10 events and then Vector will exit
-~/.vector/bin/vector --config test-vector-client.toml
+RAILS_MASTER_KEY=$(cat config/master.key) ~/.vector/bin/vector --config test-vector-client.toml
 
 echo
 echo "Test complete! Check logs on Hetzner:"

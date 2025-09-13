@@ -23,13 +23,20 @@ source = '''
 ."@timestamp" = now()
 '''
 
-# Sink - Send to Hetzner Vector via gRPC
+# Sink - Send to Hetzner Vector via HTTP with bearer authentication
 [sinks.hetzner]
-type = "vector"
+type = "http"
 inputs = ["add_metadata"]
-address = "65.109.81.136:9000"
-version = "2"
-compression = true
+uri = "http://65.109.81.136:9000/"
+method = "post"
+
+# Bearer token authentication
+auth.strategy = "bearer"
+auth.token = "${RAILS_MASTER_KEY:-test-token}"
+
+# Encoding and compression
+encoding.codec = "json"
+compression = "gzip"
 
 # Buffer configuration for reliability
 buffer.type = "memory"
