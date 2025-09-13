@@ -400,6 +400,7 @@ type LogEntry struct {
 }
 
 // JSONLogWriter writes structured JSON log entries
+// It can pass through JSON from the application or wrap plain text in JSON
 type JSONLogWriter struct {
 	source string
 	stream string
@@ -414,6 +415,20 @@ func (w *JSONLogWriter) Write(p []byte) (n int, err error) {
 		if len(line) == 0 {
 			continue
 		}
+
+		// Check if the line is already valid JSON from the Rails app
+		// Rails JSON logs should have @timestamp and severity fields
+		if json.Valid(line) {
+			// Check if it contains Rails JSON log markers
+			if bytes.Contains(line, []byte(`"@timestamp"`)) && bytes.Contains(line, []byte(`"severity"`)) {
+				// This looks like Rails JSON output - pass it through directly
+				w.output.Write(line)
+				w.output.Write([]byte("\n"))
+				continue
+			}
+		}
+
+		// Not JSON or not Rails JSON format - wrap it in our JSON structure
 		entry := LogEntry{
 			Timestamp: time.Now().Format(time.RFC3339),
 			Source:    w.source,
@@ -503,7 +518,7 @@ type AccessLogEntry struct {
 	Referer         string `json:"referer"`
 	UserAgent       string `json:"user_agent"`
 	FlyRequestID    string `json:"fly_request_id"`
-	TenantName      string `json:"tenant_name,omitempty"`
+	Tenant          string `json:"tenant,omitempty"`
 }
 
 // logTenantRequest logs a tenant request in JSON format matching nginx log format
@@ -551,7 +566,7 @@ func logTenantRequest(r *http.Request, recorder *responseRecorder, tenantName st
 		Referer:       referer,
 		UserAgent:     userAgent,
 		FlyRequestID:  r.Header.Get("Fly-Request-Id"),
-		TenantName:    tenantName,
+		Tenant:        tenantName,
 	}
 
 	data, _ := json.Marshal(entry)

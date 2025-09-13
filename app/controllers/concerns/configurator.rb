@@ -320,15 +320,18 @@ module Configurator
     storage = ENV['RAILS_STORAGE'] || Rails.root.join('storage').to_s
     dbpath = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
     root = determine_root_path
-    
+
     env = {}
-    
+
     # Global environment variables (no substitution needed)
     if root != ''
       env['RAILS_RELATIVE_URL_ROOT'] = root
     end
     env['RAILS_APP_REDIS'] = 'showcase_production'
-    
+
+    # Enable JSON logging for navigator-managed apps
+    env['RAILS_LOG_JSON'] = 'true'
+
     # Template variables (need substitution)
     env['RAILS_APP_DB'] = '${database}'
     env['RAILS_APP_OWNER'] = '${owner}'
@@ -336,7 +339,7 @@ module Configurator
     env['RAILS_APP_SCOPE'] = '${scope}'
     env['DATABASE_URL'] = "sqlite3://#{dbpath}/${database}.sqlite3"
     env['PIDFILE'] = "#{Rails.root}/tmp/pids/${database}.pid"
-    
+
     env
   end
 

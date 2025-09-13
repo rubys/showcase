@@ -1,4 +1,5 @@
 require "active_support/core_ext/integer/time"
+require_relative "../../lib/json_logger" if ENV["RAILS_LOG_JSON"].present?
 
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
@@ -102,24 +103,49 @@ Rails.application.configure do
   # config.logger = ActiveSupport::TaggedLogging.new(Syslog::Logger.new "app-name")
 
   if ENV["RAILS_LOG_TO_STDOUT"].present?
-    logger           = ActiveSupport::Logger.new(STDOUT)
-    logger.formatter = config.log_formatter
+    # Use JSON logging if environment variable is set
+    if ENV["RAILS_LOG_JSON"].present?
+      logger = ActiveSupport::Logger.new(STDOUT)
 
-    log_volume = ENV['RAILS_LOG_VOLUME']
-    if log_volume and Dir.exist?(log_volume)
-      volume_logger  = ActiveSupport::Logger.new("#{log_volume}/#{ENV['RAILS_APP_DB']}.log", 3)
-      if defined? ActiveSupport::BroadcastLogger
-        logger       = ActiveSupport::BroadcastLogger.new(volume_logger, logger)
-      else
-        logger       = logger.extend ActiveSupport::Logger.broadcast(volume_logger)
+      log_volume = ENV['RAILS_LOG_VOLUME']
+      if log_volume and Dir.exist?(log_volume)
+        volume_logger = ActiveSupport::Logger.new("#{log_volume}/#{ENV['RAILS_APP_DB']}.log", 3)
+        if defined? ActiveSupport::BroadcastLogger
+          logger = ActiveSupport::BroadcastLogger.new(volume_logger, logger)
+        else
+          logger = logger.extend ActiveSupport::Logger.broadcast(volume_logger)
+        end
       end
-    end
 
-    config.logger    = ActiveSupport::TaggedLogging.new(logger)
+      # Use JsonTaggedLogging to include request_id in JSON logs
+      config.logger = JsonTaggedLogging.new(logger)
+    else
+      # Standard logging format
+      logger           = ActiveSupport::Logger.new(STDOUT)
+      logger.formatter = config.log_formatter
+
+      log_volume = ENV['RAILS_LOG_VOLUME']
+      if log_volume and Dir.exist?(log_volume)
+        volume_logger  = ActiveSupport::Logger.new("#{log_volume}/#{ENV['RAILS_APP_DB']}.log", 3)
+        if defined? ActiveSupport::BroadcastLogger
+          logger       = ActiveSupport::BroadcastLogger.new(volume_logger, logger)
+        else
+          logger       = logger.extend ActiveSupport::Logger.broadcast(volume_logger)
+        end
+      end
+
+      config.logger    = ActiveSupport::TaggedLogging.new(logger)
+    end
   elsif ENV["RAILS_APP_DB"].present?
-    logger = ActiveSupport::Logger.new("log/#{ENV['RAILS_APP_DB']}.log")
-    logger.formatter = config.log_formatter
-    config.logger    = ActiveSupport::TaggedLogging.new(logger)
+    # Use JSON logging if environment variable is set
+    if ENV["RAILS_LOG_JSON"].present?
+      logger = ActiveSupport::Logger.new("log/#{ENV['RAILS_APP_DB']}.log")
+      config.logger = JsonTaggedLogging.new(logger)
+    else
+      logger = ActiveSupport::Logger.new("log/#{ENV['RAILS_APP_DB']}.log")
+      logger.formatter = config.log_formatter
+      config.logger    = ActiveSupport::TaggedLogging.new(logger)
+    end
   end
 
   # Do not dump schema after migrations.
