@@ -593,15 +593,39 @@ module Configurator
   end
   
   def build_hooks_config
-    {
+    hooks = {
       'server' => {
         'start' => [],
-        'stop' => []
+        'stop' => [],
+        'idle' => []
       },
       'tenant' => {
         'start' => [],
         'stop' => []
       }
     }
+
+    # Add idle and stop hooks if running on Fly.io
+    if ENV['FLY_REGION']
+      # Navigator idle/stop hook - syncs all databases
+      navigator_hook = {
+        'command' => '/rails/script/hook_navigator_idle.sh',
+        'args' => [],
+        'timeout' => '5m'
+      }
+
+      # Add the same hook for both idle and stop events
+      hooks['server']['idle'] << navigator_hook
+      hooks['server']['stop'] << navigator_hook
+
+      # App idle hook - syncs individual database
+      hooks['tenant']['stop'] << {
+        'command' => '/rails/script/hook_app_idle.sh',
+        'args' => [],
+        'timeout' => '2m'
+      }
+    end
+
+    hooks
   end
 end

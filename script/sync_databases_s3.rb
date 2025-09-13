@@ -18,7 +18,7 @@ if ENV["SENTRY_DSN"]
 end
 
 # Parse command line arguments
-options = { dry_run: false, verbose: false, safe: false, index_only: false, quiet: false, skip_list: [] }
+options = { dry_run: false, verbose: false, safe: false, quiet: false, skip_list: [], only_dbs: [] }
 OptionParser.new do |opts|
   opts.banner = "Usage: #{$0} [options]"
   
@@ -53,7 +53,11 @@ OptionParser.new do |opts|
   end
 
   opts.on("--index-only", "Only sync the index database") do
-    options[:index_only] = true
+    options[:only_dbs] += ["index.sqlite3"]
+  end
+
+  opts.on("--only DB1,DB2,...", Array, "Only sync the specified databases (comma-separated)") do |list|
+    options[:only_dbs] += list.map { |name| File.basename(name.strip, '.sqlite3') + '.sqlite3' }
   end
 
   opts.on("-h", "--help", "Prints this help") do
@@ -142,7 +146,7 @@ end
 
 # Get list of expected database names
 expected_databases = tenants.keys.map { |label| "#{label}.sqlite3" }
-expected_databases = ["index.sqlite3"] if options[:index_only]
+expected_databases = options[:only_dbs] if options[:only_dbs].any?
 
 # Main sync logic wrapped in error handling
 begin
@@ -154,7 +158,7 @@ begin
     puts "Total tenants: #{tenants.size}"
     puts "FLY_REGION: #{ENV['FLY_REGION']}" if ENV['FLY_REGION']
     puts "Dry run: #{options[:dry_run]}" if options[:dry_run]
-    puts "Index only: #{options[:index_only]}" if options[:index_only]
+    puts "Only databases: #{options[:only_dbs].join(', ')}" if options[:only_dbs].any?
     puts "Safe mode: #{options[:safe]} (no downloads to current region)" if options[:safe] && ENV['FLY_REGION']
     puts "Skip list: #{options[:skip_list].size} databases" if options[:skip_list].any?
     puts
