@@ -1,22 +1,15 @@
-# Source - Receive via Vector's native protocol (no TLS - Traefik handles it)
+# Source - Receive via Vector's native protocol v2 (gRPC)
 [sources.vector_receiver]
 type = "vector"
-address = "0.0.0.0:9001"  # Listen inside container, Traefik proxies to this
+address = "0.0.0.0:9000"  # Listen directly on port 9000
 version = "2"
-connection_limit = 200  # Support up to 200 concurrent connections
-keepalive.enabled = true
-keepalive.time_secs = 60
-# No TLS needed - Traefik terminates TLS and forwards plain TCP to Vector
-# Authentication using Rails master key
-auth.strategy = "bearer"
-auth.token = "${RAILS_MASTER_KEY}"
 
 # Transform - Extract date from timestamp
 [transforms.add_date]
 type = "remap"
 inputs = ["vector_receiver"]
 source = '''
-.date = format_timestamp!(.["@timestamp"], "%Y-%m-%d")
+.date = format_timestamp!(."@timestamp", "%Y-%m-%d")
 '''
 
 # Sink - Write to daily log file
@@ -27,10 +20,15 @@ path = "/logs/showcase/{{ date }}.log"  # Container path
 encoding.codec = "json"
 compression = "gzip"
 
-# Optional: Separate error logs
+# Optional: Filter for errors
+[transforms.filter_errors]
+type = "filter"
+inputs = ["add_date"]
+condition = '.stream == "stderr" || .level == "error" || .level == "ERROR"'
+
+# Separate error logs
 [sinks.errors]
 type = "file"
-inputs = ["add_date"]
+inputs = ["filter_errors"]
 path = "/logs/showcase/errors-{{ date }}.log"
 encoding.codec = "json"
-condition = '.stream == "stderr" || .level == "error" || .level == "ERROR"'

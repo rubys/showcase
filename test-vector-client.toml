@@ -1,0 +1,43 @@
+# Local Vector configuration for testing gRPC connection to Hetzner
+
+# Source - Generate test events
+[sources.demo]
+type = "demo_logs"
+format = "json"
+interval = 1.0
+count = 10
+
+# Alternative source - Read from stdin for custom test messages
+[sources.stdin]
+type = "stdin"
+decoding.codec = "json"
+
+# Transform - Add test metadata
+[transforms.add_metadata]
+type = "remap"
+inputs = ["demo", "stdin"]
+source = '''
+.app = "test-vector-client"
+.host = get_hostname!()
+.test = true
+."@timestamp" = now()
+'''
+
+# Sink - Send to Hetzner Vector via gRPC
+[sinks.hetzner]
+type = "vector"
+inputs = ["add_metadata"]
+address = "65.109.81.136:9000"
+version = "2"
+compression = true
+
+# Buffer configuration for reliability
+buffer.type = "memory"
+buffer.max_events = 500
+buffer.when_full = "block"
+
+# Health check
+healthcheck.enabled = true
+
+# Acknowledgements
+acknowledgements.enabled = false

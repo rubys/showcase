@@ -64,6 +64,7 @@ accessories:
     service: logger-vector
     image: timberio/vector:0.49.0-debian
     host: 65.109.81.136
+    port: "9000:9000"
     volumes:
       - vector-data:/var/lib/vector
       - /home/rubys/logs:/logs
@@ -72,25 +73,4 @@ accessories:
         - RAILS_MASTER_KEY
     files:
       - accessories/files/vector.toml:/etc/vector/vector.toml
-
-  traefik:
-    service: logger-traefik
-    image: traefik:v3.0
-    host: 65.109.81.136
-    env:
-      clear:
-        TRAEFIK_DOMAIN: hub.showcase.party
-    port: 9000
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - traefik-data:/data
-    cmd: >
-      --api.dashboard=false
-      --entrypoints.vector.address=:9000
-      --providers.file.filename=/data/traefik.yml
-      --certificatesresolvers.letsencrypt.acme.tlschallenge=true
-      --certificatesresolvers.letsencrypt.acme.email=rubys@intertwingly.net
-      --certificatesresolvers.letsencrypt.acme.storage=/data/acme.json
-      --log.level=INFO
-    files:
-      - accessories/files/traefik.yml:/data/traefik.yml
+    cmd: --config /etc/vector/vector.toml

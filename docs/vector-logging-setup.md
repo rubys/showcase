@@ -2,21 +2,21 @@
 
 ## Overview
 
-This document describes the setup for centralized logging from Fly.io machines running Navigator to a Hetzner aggregation server using Vector's native protocol. Both Vector and Traefik run as Kamal accessories for clean container management.
+This document describes the setup for centralized logging from Fly.io machines running Navigator to a Hetzner aggregation server using Vector's native v2 protocol (gRPC). Vector runs as a Kamal accessory for clean container management.
 
 ## Architecture
 
 ```
-[Fly Machines with Navigator] → [Vector Agent] → Native Protocol → [hub.showcase.party:9000] → [Traefik Accessory] → [Vector Accessory] → [Daily Log Files]
+[Fly Machines with Navigator] → [Vector Agent] → gRPC v2 Protocol → [65.109.81.136:9000] → [Vector Accessory] → [Daily Log Files]
 ```
 
-## Key Benefits of Vector + Traefik Accessories
+## Key Benefits of Vector gRPC Protocol
 
-- **Easy deployments**: Both services managed through Kamal accessories
-- **Automatic certificate handling**: Traefik handles TLS termination and renewal
-- **Container isolation**: Vector runs in its own Docker container
-- **Consistent deployment**: All infrastructure managed through accessories
-- **Simplified architecture**: No system service configuration needed
+- **High performance**: Binary protocol with compression and multiplexing
+- **Reliable delivery**: Built-in acknowledgements and backpressure handling
+- **Efficient**: Lower CPU and bandwidth usage compared to JSON over HTTP
+- **Native streaming**: Bidirectional gRPC streams for optimal throughput
+- **Container isolation**: Vector runs in its own Docker container via Kamal
 
 ## Prerequisites
 
@@ -69,21 +69,17 @@ type = "socket"
 mode = "unix"
 path = "/tmp/navigator-vector.sock"
 
-# Sink - Send to Hetzner with authentication
+# Sink - Send to Hetzner via gRPC v2
 [sinks.hetzner]
 type = "vector"
 inputs = ["navigator_socket"]
-address = "hub.showcase.party:9000"
+address = "65.109.81.136:9000"
 version = "2"
 compression = true
 buffer.type = "disk"
 buffer.max_size = 268435488  # 256MB
 buffer.when_full = "drop_newest"
 healthcheck.enabled = true
-# Authentication using existing Rails master key
-tls.enabled = true
-auth.strategy = "bearer"
-auth.token = "${RAILS_MASTER_KEY}"  # Already set in Fly secrets
 ```
 
 ### Dockerfile Updates
@@ -98,50 +94,47 @@ RUN curl -1sLf 'https://repositories.timber.io/public/vector/cfg/setup/bash.deb.
 COPY navigator-vector.toml /etc/vector/navigator-vector.toml
 ```
 
-## 2. Hetzner Aggregator Setup (Kamal Accessories)
+## 2. Hetzner Aggregator Setup (Kamal Accessory)
 
-Both Vector and Traefik run as Kamal accessories for clean management:
+Vector runs as a Kamal accessory, listening directly on port 9000 for gRPC connections:
 
 ### Vector Accessory Configuration
 
-File: `fly/applications/logger/accessories/vector.yml`
+Configuration in `fly/applications/logger/deploy.yml`:
 
 ```yaml
-service: logger-vector
-image: timberio/vector:latest
-host: 65.109.81.136
-volumes:
-  - vector-data:/var/lib/vector
-  - /home/rubys/logs:/logs
-env:
-  secret:
-    - RAILS_MASTER_KEY
-files:
-  - vector.toml:/etc/vector/vector.toml
+accessories:
+  vector:
+    service: logger-vector
+    image: timberio/vector:0.49.0-debian
+    host: 65.109.81.136
+    port: "9000:9000"
+    volumes:
+      - vector-data:/var/lib/vector
+      - /home/rubys/logs:/logs
+    env:
+      secret:
+        - RAILS_MASTER_KEY
+    files:
+      - accessories/files/vector.toml:/etc/vector/vector.toml
+    cmd: --config /etc/vector/vector.toml
 ```
 
 File: `fly/applications/logger/accessories/files/vector.toml`
 
 ```toml
-# Source - Receive via Vector's native protocol (no TLS - Traefik handles it)
+# Source - Receive via Vector's native protocol v2 (gRPC)
 [sources.vector_receiver]
 type = "vector"
-address = "0.0.0.0:9001"  # Listen inside container, Traefik proxies to this
+address = "0.0.0.0:9000"  # Listen directly on port 9000
 version = "2"
-connection_limit = 200  # Support up to 200 concurrent connections
-keepalive.enabled = true
-keepalive.time_secs = 60
-# No TLS needed - Traefik terminates TLS and forwards plain TCP to Vector
-# Authentication using Rails master key
-auth.strategy = "bearer"
-auth.token = "${RAILS_MASTER_KEY}"
 
 # Transform - Extract date from timestamp
 [transforms.add_date]
 type = "remap"
 inputs = ["vector_receiver"]
 source = '''
-.date = format_timestamp!(.["@timestamp"], "%Y-%m-%d")
+.date = format_timestamp!(."@timestamp", "%Y-%m-%d")
 '''
 
 # Sink - Write to daily log file
@@ -152,90 +145,47 @@ path = "/logs/showcase/{{ date }}.log"  # Container path
 encoding.codec = "json"
 compression = "gzip"
 
-# Optional: Separate error logs
+# Optional: Filter for errors
+[transforms.filter_errors]
+type = "filter"
+inputs = ["add_date"]
+condition = '.stream == "stderr" || .level == "error" || .level == "ERROR"'
+
+# Separate error logs
 [sinks.errors]
 type = "file"
-inputs = ["add_date"]
+inputs = ["filter_errors"]
 path = "/logs/showcase/errors-{{ date }}.log"
 encoding.codec = "json"
-condition = '.stream == "stderr" || .level == "error" || .level == "ERROR"'
 ```
 
-### Traefik Accessory Configuration
-
-File: `fly/applications/logger/accessories/traefik.yml`
-
-```yaml
-service: logger-traefik
-image: traefik:v3.0
-host: 65.109.81.136
-env:
-  clear:
-    TRAEFIK_DOMAIN: hub.showcase.party
-port: 9000
-volumes:
-  - /var/run/docker.sock:/var/run/docker.sock:ro
-  - traefik-data:/data
-options:
-  network: kamal
-cmd: >
-  --api.dashboard=false
-  --entrypoints.vector.address=:9000
-  --providers.file.filename=/data/traefik.yml
-  --certificatesresolvers.letsencrypt.acme.tlschallenge=true
-  --certificatesresolvers.letsencrypt.acme.email=rubys@intertwingly.net
-  --certificatesresolvers.letsencrypt.acme.storage=/data/acme.json
-  --log.level=INFO
-files:
-  - traefik.yml:/data/traefik.yml
-```
-
-File: `fly/applications/logger/accessories/files/traefik.yml`
-
-```yaml
-tcp:
-  routers:
-    vector:
-      rule: "HostSNI(`hub.showcase.party`)"
-      service: vector-service
-      tls:
-        certResolver: letsencrypt
-  services:
-    vector-service:
-      loadBalancer:
-        servers:
-          - address: "logger-vector:9001"  # Vector container listening on port 9001
-```
-
-### Deploy Both Accessories
+### Deploy Vector Accessory
 
 ```bash
-# Deploy both accessories (run from your project directory)
+# Deploy Vector accessory (run from your project directory)
 cd fly/applications/logger
 
-# Deploy Vector first
+# Deploy Vector
 kamal accessory boot vector -c deploy.yml
-
-# Deploy Traefik  
-kamal accessory boot traefik -c deploy.yml
 
 # Check status
 kamal accessory details vector -c deploy.yml
-kamal accessory details traefik -c deploy.yml
 
 # View logs
 kamal accessory logs vector -c deploy.yml
-kamal accessory logs traefik -c deploy.yml
 ```
 
-## 3. Authentication Setup
+## 3. Configuration Setup
 
-The RAILS_MASTER_KEY is automatically sourced from your Rails application:
+### Secrets Configuration
+
+The Vector accessory receives the RAILS_MASTER_KEY from your application:
 
 - **Source**: `config/master.key` (your Rails application's master key)
 - **Configuration**: `.kamal/secrets` extracts it with `$(cat ../../../config/master.key)`
-- **Usage**: Vector accessory receives it as an environment variable
-- **No manual setup needed** - already configured in the accessory files
+- **Usage**: Available to Vector accessory as environment variable
+
+Note: Currently the Vector receiver is configured without authentication for simplicity. For production use, you may want to add authentication or network-level security.
 
 ## 4. System Tuning
 
@@ -318,15 +268,12 @@ echo "=== Vector Connection Status ==="
 echo "Timestamp: $(date)"
 echo
 
-# Count established connections to Traefik (port 9000)
-TRAEFIK_CONNECTIONS=$(netstat -tn | grep :9000 | grep ESTABLISHED | wc -l)
-echo "Active Traefik connections: $TRAEFIK_CONNECTIONS"
-
-# Check Vector container connections (internal to Docker)
-echo "Vector container connections: $(docker exec logger-vector netstat -tn 2>/dev/null | grep :9001 | grep ESTABLISHED | wc -l 2>/dev/null || echo 'N/A')"
+# Count established connections to Vector (port 9000)
+VECTOR_CONNECTIONS=$(netstat -tn | grep :9000 | grep ESTABLISHED | wc -l)
+echo "Active Vector connections: $VECTOR_CONNECTIONS"
 
 # Show connections by source IP
-echo -e "\nTraefik connections by source:"
+echo -e "\nVector connections by source:"
 netstat -tn | grep :9000 | grep ESTABLISHED | \
   awk '{print $5}' | cut -d: -f1 | sort | uniq -c | sort -rn
 
@@ -347,13 +294,55 @@ chmod +x /usr/local/bin/check-vector-connections.sh
 
 ## 7. Testing the Setup
 
-### Basic Connection Test
+### Local Vector Client Test
 
-Use the included test script to verify connectivity:
+Install Vector locally for testing:
 
 ```bash
-# Test Vector connectivity from development machine
-ruby test-vector.rb
+# Install Vector on macOS
+curl --proto '=https' --tlsv1.2 -sSfL https://sh.vector.dev | bash -s -- -y
+```
+
+Use the included test configuration to verify connectivity:
+
+```bash
+# Run test with local Vector client (sends 10 demo events)
+~/.vector/bin/vector --config test-vector-client.toml
+```
+
+Test configuration file (`test-vector-client.toml`):
+
+```toml
+# Source - Generate test events
+[sources.demo]
+type = "demo_logs"
+format = "json"
+interval = 1.0
+count = 10
+
+# Transform - Add test metadata
+[transforms.add_metadata]
+type = "remap"
+inputs = ["demo"]
+source = '''
+.app = "test-vector-client"
+.host = get_hostname!()
+.test = true
+."@timestamp" = now()
+'''
+
+# Sink - Send to Hetzner Vector via gRPC
+[sinks.hetzner]
+type = "vector"
+inputs = ["add_metadata"]
+address = "65.109.81.136:9000"
+version = "2"
+compression = true
+buffer.type = "memory"
+buffer.max_events = 500
+buffer.when_full = "block"
+healthcheck.enabled = true
+acknowledgements.enabled = false
 ```
 
 ### Check Log Files
@@ -362,12 +351,12 @@ ruby test-vector.rb
 # SSH to the Hetzner server and check log files
 ssh root@65.109.81.136
 
-# Check today's log file
+# Check today's log file (compressed)
 today=$(date +%Y-%m-%d)
-ls -la /home/rubys/logs/showcase/${today}.log*
+ls -la /home/rubys/logs/showcase/${today}.log
 
-# View recent log entries
-tail -f /home/rubys/logs/showcase/${today}.log | jq .
+# View recent log entries (decompressed)
+zcat /home/rubys/logs/showcase/${today}.log | tail -10
 ```
 
 ### Monitor Vector Performance
@@ -379,9 +368,6 @@ tail -f /home/rubys/logs/showcase/${today}.log | jq .
 # Check Vector accessory logs
 cd fly/applications/logger
 kamal accessory logs vector -c deploy.yml --lines 100
-
-# Check Traefik accessory logs  
-kamal accessory logs traefik -c deploy.yml --lines 100
 ```
 
 ## 8. Maintenance Commands
@@ -400,15 +386,14 @@ kamal accessory reboot vector -c deploy.yml
 ```bash
 # Restart Vector accessory
 kamal accessory restart vector -c deploy.yml
-
-# Restart Traefik accessory  
-kamal accessory restart traefik -c deploy.yml
 ```
 
 ### Remove Services
 
 ```bash
-# Remove accessories (if needed)
+# Remove Vector accessory (if needed)
 kamal accessory remove vector -c deploy.yml
-kamal accessory remove traefik -c deploy.yml
+
+# Clean up any orphaned resources
+kamal prune all -c deploy.yml
 ```
