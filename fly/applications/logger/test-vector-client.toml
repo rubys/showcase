@@ -23,16 +23,20 @@ source = '''
 ."@timestamp" = now()
 '''
 
-# Sink - Send to Hetzner Vector via HTTP with bearer authentication
+# Sink - Send to Hetzner Vector via HTTPS with bearer authentication
 [sinks.hetzner]
 type = "http"
 inputs = ["add_metadata"]
-uri = "http://65.109.81.136:9000/"
+uri = "https://65.109.81.136:9000/"
 method = "post"
 
 # Bearer token authentication
 auth.strategy = "bearer"
 auth.token = "${RAILS_MASTER_KEY:-test-token}"
+
+# TLS configuration - accept self-signed certificate
+tls.verify_certificate = false
+tls.verify_hostname = false
 
 # Encoding and compression
 encoding.codec = "json"

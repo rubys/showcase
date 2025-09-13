@@ -7,17 +7,19 @@ This document describes the setup for centralized logging from Fly.io machines r
 ## Architecture
 
 ```
-[Fly Machines with Navigator] → [Vector Agent] → HTTP + Bearer Auth → [65.109.81.136:9000] → [Vector Accessory] → [Daily Log Files]
+[Fly Machines with Navigator] → [Vector Agent] → HTTPS + Bearer Auth → [nginx:9000] → HTTP → [Vector:8080] → [Daily Log Files]
 ```
 
-## Key Benefits of Vector HTTP Protocol
+## Key Benefits of Vector HTTPS Protocol with nginx
 
 - **Secure authentication**: Bearer token validation using Rails master key
+- **Encrypted transport**: HTTPS with self-signed certificates prevents MITM attacks
 - **High performance**: HTTP/2 with persistent connections and compression
 - **Reliable delivery**: Built-in acknowledgements and backpressure handling
-- **Easy debugging**: Standard HTTP protocol, testable with curl
-- **Battle-tested**: Well-understood HTTP authentication patterns
-- **Container isolation**: Vector runs in its own Docker container via Kamal
+- **Easy debugging**: Standard HTTPS protocol, testable with curl
+- **Battle-tested**: Well-understood HTTPS authentication patterns
+- **Container isolation**: Vector and nginx run in separate Docker containers via Kamal
+- **Auto-generated certificates**: Self-signed certificates generated automatically on first boot
 
 ## Prerequisites
 
@@ -70,16 +72,20 @@ type = "socket"
 mode = "unix"
 path = "/tmp/navigator-vector.sock"
 
-# Sink - Send to Hetzner via HTTP with bearer authentication
+# Sink - Send to Hetzner via HTTPS with bearer authentication
 [sinks.hetzner]
 type = "http"
 inputs = ["navigator_socket"]
-uri = "http://65.109.81.136:9000/"
+uri = "https://65.109.81.136:9000/"
 method = "post"
 
 # Bearer token authentication using Rails master key
 auth.strategy = "bearer"
 auth.token = "${RAILS_MASTER_KEY}"
+
+# TLS configuration - accept self-signed certificate
+tls.verify_certificate = false
+tls.verify_hostname = false
 
 # Encoding and compression
 encoding.codec = "json"
@@ -114,11 +120,24 @@ Configuration in `fly/applications/logger/deploy.yml`:
 
 ```yaml
 accessories:
+  nginx:
+    service: logger-nginx
+    image: nginx:alpine
+    host: 65.109.81.136
+    port: "9000:9000"  # External HTTPS port
+    volumes:
+      - nginx-certs:/etc/nginx/certs
+    files:
+      - accessories/files/nginx.conf:/etc/nginx/nginx.conf
+      - accessories/files/nginx-entrypoint.sh:/docker-entrypoint.sh
+    cmd: sh /docker-entrypoint.sh
+    network: kamal
+  
   vector:
     service: logger-vector
     image: timberio/vector:0.49.0-debian
     host: 65.109.81.136
-    port: "9000:9000"
+    # No external port - only accessible through nginx
     volumes:
       - vector-data:/var/lib/vector
       - /home/rubys/logs:/logs
@@ -128,6 +147,7 @@ accessories:
     files:
       - accessories/files/vector.toml:/etc/vector/vector.toml
     cmd: --config /etc/vector/vector.toml
+    network: kamal
 ```
 
 File: `fly/applications/logger/accessories/files/vector.toml`
@@ -136,7 +156,7 @@ File: `fly/applications/logger/accessories/files/vector.toml`
 # Source - Receive logs via HTTP with bearer authentication
 [sources.http_logs]
 type = "http_server"
-address = "0.0.0.0:9000"  # Listen directly on port 9000
+address = "0.0.0.0:8080"  # Internal port - nginx proxies to this
 decoding.codec = "json"
 
 # Custom authentication to check Authorization: Bearer <token>
@@ -180,19 +200,69 @@ path = "/logs/showcase/errors-{{ date }}.log"
 encoding.codec = "json"
 ```
 
-### Deploy Vector Accessory
+### nginx Reverse Proxy Configuration
+
+File: `fly/applications/logger/accessories/files/nginx.conf`
+
+```nginx
+events {
+    worker_connections 1024;
+}
+
+http {
+    upstream vector_backend {
+        server logger-vector:8080;
+        keepalive 32;  # Connection pooling
+    }
+
+    server {
+        listen 9000 ssl http2;
+        
+        # Self-signed certificates (generated at startup)
+        ssl_certificate /etc/nginx/certs/self-signed.crt;
+        ssl_certificate_key /etc/nginx/certs/self-signed.key;
+        
+        # Modern SSL configuration
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers HIGH:!aNULL:!MD5;
+        
+        location / {
+            proxy_pass http://vector_backend;
+            proxy_http_version 1.1;
+            
+            # Keep backend connections alive
+            proxy_set_header Connection "";
+            proxy_socket_keepalive on;
+            
+            # Pass through Authorization header for Vector auth
+            proxy_set_header Authorization $http_authorization;
+            
+            # Buffer settings for log data
+            proxy_buffering off;
+            proxy_request_buffering off;
+        }
+    }
+}
+```
+
+### Deploy Accessories
 
 ```bash
-# Deploy Vector accessory (run from your project directory)
+# Deploy accessories (run from your project directory)
 cd fly/applications/logger
+
+# Deploy nginx reverse proxy
+kamal accessory boot nginx -c deploy.yml
 
 # Deploy Vector
 kamal accessory boot vector -c deploy.yml
 
 # Check status
+kamal accessory details nginx -c deploy.yml
 kamal accessory details vector -c deploy.yml
 
 # View logs
+kamal accessory logs nginx -c deploy.yml
 kamal accessory logs vector -c deploy.yml
 ```
 
@@ -317,6 +387,10 @@ chmod +x /usr/local/bin/check-vector-connections.sh
 
 ### Local Vector Client Test
 
+Test files are located in `fly/applications/logger/`:
+- `test-vector-send.sh` - Test script that sends logs via Vector
+- `test-vector-client.toml` - Vector client configuration
+
 Install Vector locally for testing:
 
 ```bash
@@ -328,10 +402,11 @@ Use the included test configuration to verify connectivity:
 
 ```bash
 # Run test with local Vector client (sends 10 demo events)
-~/.vector/bin/vector --config test-vector-client.toml
+cd fly/applications/logger
+./test-vector-send.sh
 ```
 
-Test configuration file (`test-vector-client.toml`):
+Test configuration file (`fly/applications/logger/test-vector-client.toml`):
 
 ```toml
 # Source - Generate test events
@@ -352,16 +427,20 @@ source = '''
 ."@timestamp" = now()
 '''
 
-# Sink - Send to Hetzner Vector via HTTP with authentication
+# Sink - Send to Hetzner Vector via HTTPS with authentication
 [sinks.hetzner]
 type = "http"
 inputs = ["add_metadata"]
-uri = "http://65.109.81.136:9000/"
+uri = "https://65.109.81.136:9000/"
 method = "post"
 
 # Bearer token authentication
 auth.strategy = "bearer"
 auth.token = "${RAILS_MASTER_KEY}"
+
+# TLS configuration - accept self-signed certificate
+tls.verify_certificate = false
+tls.verify_hostname = false
 
 # Encoding and compression
 encoding.codec = "json"

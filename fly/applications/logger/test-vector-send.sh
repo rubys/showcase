@@ -26,7 +26,7 @@ echo
 
 # Run Vector with our test config and RAILS_MASTER_KEY environment variable
 # The demo source will automatically send 10 events and then Vector will exit
-RAILS_MASTER_KEY=$(cat config/master.key) ~/.vector/bin/vector --config test-vector-client.toml
+RAILS_MASTER_KEY=$(cat ../../../config/master.key) ~/.vector/bin/vector --config test-vector-client.toml
 
 echo
 echo "Test complete! Check logs on Hetzner:"

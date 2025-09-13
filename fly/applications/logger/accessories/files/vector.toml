@@ -1,7 +1,7 @@
 # Source - Receive logs via HTTP with custom bearer authentication
 [sources.http_logs]
 type = "http_server"
-address = "0.0.0.0:9000"  # Listen directly on port 9000
+address = "0.0.0.0:8080"  # Internal port - nginx proxies to this
 decoding.codec = "json"
 # Custom authentication to check Authorization: Bearer <token>
 auth.strategy = "custom"
