@@ -9,7 +9,7 @@ import * as bcrypt from "bcrypt"
 
 import { startWs } from './websocket.ts'
 
-import { pattern, filtered, format, highlight, visit, HOST, LOGS, formatJsonLog, filteredJsonLog } from "./view.ts"
+import { pattern, filtered, format, highlight, visit, HOST, LOGS, formatJsonLog, filteredJsonLog, isRailsAppLog } from "./view.ts"
 
 const PORT = 3000
 const { NODE_ENV } = process.env
@@ -262,15 +262,11 @@ app.get("/", async (req, res) => {
           // Handle JSON log filtering and highlighting
           if (demo && !line.includes('demo')) return;
 
-          // Always filter Rails application logs (they're too verbose for main page)
-          if (jsonLog && filteredJsonLog(jsonLog)) return;
+          // Always filter Rails application logs (they're too verbose)
+          if (jsonLog && isRailsAppLog(jsonLog)) return;
 
-          // Apply other filters only if filter is enabled
-          if (filter && jsonLog && jsonLog.uri) {
-            // Additional filtering for access logs when filter is on
-            if (jsonLog.uri.includes("/assets/") || jsonLog.uri.includes("/cable")) return;
-            if (!(jsonLog.remote_user === '-' || jsonLog.remote_user === 'rubys')) return;
-          }
+          // Apply access log filtering only when filter is enabled (matching non-JSON behavior)
+          if (filter && jsonLog && filteredJsonLog(jsonLog)) return;
 
           if (line > lastVisit) {
             logEntry = highlight(logEntry)

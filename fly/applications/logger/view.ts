@@ -129,7 +129,7 @@ function formatAccessJsonLog(log: any, flyData: any) {
   if (path.startsWith("showcase/")) path = path.slice(9);
   let link = query ? `<a href="${HOST}/${path}?${query}" title="${query}">${path}</a>` : `<a href="${HOST}/${path}">${path}</a>`;
 
-  let ip = (log.client_ip || '').split(',')[0].split(':')[0]; // Remove port
+  let ip = (log.client_ip || '').split(',')[0].trim(); // Take first IP if multiple
   let region = flyData.fly.region;
   let regionColor = request_region && request_region === region ? 'green' : 'maroon';
   let title = request_region && request_region !== region ? ` title="${request_region.toUpperCase()}"` : '';
@@ -140,7 +140,7 @@ function formatAccessJsonLog(log: any, flyData: any) {
     status,
     log.request_time,
     `<span style="color: blue">${log.remote_user || '-'}</span>`,
-    `<a href="https://iplocation.com/?ip=${ip}">${ip}</a>`,
+    `<a href="https://iplocation.com/?ip=${ip}">${ip.match(/\w+[.:]+\w+$/)}</a>`,
     log.method,
     link,
   ].join(' ');
@@ -178,20 +178,21 @@ function formatAppJsonLog(log: any, flyData: any, truncate: boolean = true) {
 }
 
 // Filter JSON logs (similar to traditional filtered() function)
+// This is only called when filter checkbox is checked
 export function filteredJsonLog(jsonLog: any) {
   // Access logs - filter assets and cable requests
   if (jsonLog.uri) {
     if (jsonLog.uri.includes("/assets/")) return true;
     if (jsonLog.uri.includes("/cable")) return true;
-    // Only show requests from specific users or anonymous
-    return !(jsonLog.remote_user === '-' || jsonLog.remote_user === 'rubys');
-  }
-
-  // Application logs - filter ALL Rails application logs (they're too verbose for live viewing)
-  if (jsonLog.severity && jsonLog.message) {
-    // Filter all Rails application logs - they clutter the live view
-    return true;
+    // Filter out rubys and anonymous users (matching non-JSON behavior)
+    return jsonLog.remote_user === '-' || jsonLog.remote_user === 'rubys';
   }
 
   return false;
+}
+
+// Check if this is a Rails application log (always filtered regardless of filter setting)
+export function isRailsAppLog(jsonLog: any) {
+  // Application logs have severity and message fields
+  return jsonLog.severity && jsonLog.message;
 }

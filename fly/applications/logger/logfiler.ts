@@ -1,7 +1,7 @@
 import { connect, StringCodec } from "nats";
 import fs from 'node:fs';
 
-import { pattern, highlight, filtered, format, formatJsonLog, filteredJsonLog } from "./view.ts"
+import { pattern, highlight, filtered, format, formatJsonLog, filteredJsonLog, isRailsAppLog } from "./view.ts"
 import { broadcast } from "./websocket.ts"
 import { alert } from "./sentry.ts"
 
@@ -146,8 +146,9 @@ fs.mkdirSync("/logs", { recursive: true });
         if (jsonLog) {
           // Handle JSON formatted logs
           let formattedJson = formatJsonLog(jsonLog, data);
-          if (formattedJson && !filteredJsonLog(jsonLog)) {
-            broadcast(highlight(formattedJson), false);
+          if (formattedJson && !isRailsAppLog(jsonLog)) {
+            // For broadcast, we send the filtered flag to let client decide
+            broadcast(highlight(formattedJson), filteredJsonLog(jsonLog));
           }
         } else {
           // Handle traditional log format

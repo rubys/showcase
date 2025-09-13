@@ -2470,7 +2470,10 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, idleMan
 		}
 
 		// Add headers
-		r.Header.Set("X-Forwarded-For", r.RemoteAddr)
+		// Preserve X-Forwarded-For if it exists (from upstream proxy), otherwise use RemoteAddr
+		if r.Header.Get("X-Forwarded-For") == "" {
+			r.Header.Set("X-Forwarded-For", r.RemoteAddr)
+		}
 		r.Header.Set("X-Forwarded-Host", r.Host)
 		// Preserve X-Forwarded-Proto if it exists (from upstream proxy), otherwise default to http
 		if r.Header.Get("X-Forwarded-Proto") == "" {
