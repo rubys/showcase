@@ -1,7 +1,7 @@
 import { connect, StringCodec } from "nats";
 import fs from 'node:fs';
 
-import { pattern, highlight, filtered, format } from "./view.ts"
+import { pattern, highlight, filtered, format, formatJsonLog, filteredJsonLog } from "./view.ts"
 import { broadcast } from "./websocket.ts"
 import { alert } from "./sentry.ts"
 
@@ -132,8 +132,28 @@ fs.mkdirSync("/logs", { recursive: true });
         fs.write(current.file, log + "\n", reportError);
         current.active = true;
 
-        let match = log.match(pattern)
-        if (match) broadcast(highlight(format(match)), filtered(match))
+        // Try to parse the message as JSON first
+        let jsonLog = null;
+        try {
+          // Check if the message starts with JSON
+          if (data.message.trim().startsWith('{')) {
+            jsonLog = JSON.parse(data.message.trim());
+          }
+        } catch (e) {
+          // Not JSON, continue with traditional parsing
+        }
+
+        if (jsonLog) {
+          // Handle JSON formatted logs
+          let formattedJson = formatJsonLog(jsonLog, data);
+          if (formattedJson && !filteredJsonLog(jsonLog)) {
+            broadcast(highlight(formattedJson), false);
+          }
+        } else {
+          // Handle traditional log format
+          let match = log.match(pattern)
+          if (match) broadcast(highlight(format(match)), filtered(match))
+        }
       }
 
       console.log("log nats subscription closed");

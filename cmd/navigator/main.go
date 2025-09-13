@@ -430,7 +430,7 @@ func (w *JSONLogWriter) Write(p []byte) (n int, err error) {
 
 		// Not JSON or not Rails JSON format - wrap it in our JSON structure
 		entry := LogEntry{
-			Timestamp: time.Now().Format(time.RFC3339),
+			Timestamp: time.Now().Format("2006-01-02T15:04:05.000Z07:00"),
 			Source:    w.source,
 			Stream:    w.stream,
 			Message:   string(line),
@@ -553,7 +553,7 @@ func logTenantRequest(r *http.Request, recorder *responseRecorder, tenantName st
 	}
 
 	entry := AccessLogEntry{
-		Timestamp:     time.Now().Format(time.RFC3339),
+		Timestamp:     time.Now().Format("2006-01-02T15:04:05.000Z07:00"),
 		ClientIP:      clientIP,
 		RemoteUser:    remoteUser,
 		Method:        r.Method,

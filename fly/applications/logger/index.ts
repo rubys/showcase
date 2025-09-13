@@ -9,7 +9,7 @@ import * as bcrypt from "bcrypt"
 
 import { startWs } from './websocket.ts'
 
-import { pattern, filtered, format, highlight, visit, HOST, LOGS } from "./view.ts"
+import { pattern, filtered, format, highlight, visit, HOST, LOGS, formatJsonLog, filteredJsonLog } from "./view.ts"
 
 const PORT = 3000
 const { NODE_ENV } = process.env
@@ -217,21 +217,67 @@ app.get("/", async (req, res) => {
           return
         }
 
-        let match = line.match(pattern)
-        if (!match) return;
-        if (demo && !line.includes('demo')) return;
+        // Try to handle as JSON log first
+        let jsonLog = null;
+        let logEntry = null;
 
-        if (filter && filtered(match)) return
-        let log = format(match)
+        // Extract the message part from the log line (after timestamp, machine, region, level)
+        let messageMatch = line.match(/^\S+\s+\[.*?\]\s+(\w+)\s+\[\w+\]\s+(.*)$/);
+        if (messageMatch) {
+          let region = messageMatch[1];
+          let message = messageMatch[2];
+          if (message.trim().startsWith('{')) {
+            try {
+              jsonLog = JSON.parse(message.trim());
 
-        if (demo) {
-          if (match.includes("POST") && ! match.includes("events/console")) demoVisitors.add(match[2])
-          if (demoVisitors.has(match[2])) log = highlight(log)
-        } else if (line > lastVisit) {
-          log = highlight(log)
+              // Create flyData equivalent for refresh context
+              let flyData = {
+                fly: {
+                  region: region
+                }
+              };
+
+              logEntry = formatJsonLog(jsonLog, flyData);
+            } catch (e) {
+              // Not valid JSON, fall through to traditional parsing
+            }
+          }
         }
 
-        results.push(log)
+        if (!logEntry) {
+          // Handle traditional log format
+          let match = line.match(pattern);
+          if (!match) return;
+          if (demo && !line.includes('demo')) return;
+          if (filter && filtered(match)) return;
+          logEntry = format(match);
+
+          if (demo) {
+            if (line.includes("POST") && !line.includes("events/console")) demoVisitors.add(match[2])
+            if (demoVisitors.has(match[2])) logEntry = highlight(logEntry)
+          } else if (line > lastVisit) {
+            logEntry = highlight(logEntry)
+          }
+        } else {
+          // Handle JSON log filtering and highlighting
+          if (demo && !line.includes('demo')) return;
+
+          // Always filter Rails application logs (they're too verbose for main page)
+          if (jsonLog && filteredJsonLog(jsonLog)) return;
+
+          // Apply other filters only if filter is enabled
+          if (filter && jsonLog && jsonLog.uri) {
+            // Additional filtering for access logs when filter is on
+            if (jsonLog.uri.includes("/assets/") || jsonLog.uri.includes("/cable")) return;
+            if (!(jsonLog.remote_user === '-' || jsonLog.remote_user === 'rubys')) return;
+          }
+
+          if (line > lastVisit) {
+            logEntry = highlight(logEntry)
+          }
+        }
+
+        results.push(logEntry)
       });
 
       rl.on('close', () => {
@@ -323,7 +369,38 @@ app.get("/request/:request_id", async (request, response, next) => {
 
     await new Promise(resolve => {
       rl.on('line', line => {
-        if (line.includes(request_id)) results.push(convert.toHtml(line))
+        if (!line.includes(request_id)) return;
+
+        // Try to handle as JSON log first
+        let messageMatch = line.match(/^\S+\s+\[.*?\]\s+(\w+)\s+\[\w+\]\s+(.*)$/);
+        if (messageMatch) {
+          let region = messageMatch[1];
+          let message = messageMatch[2];
+          if (message.trim().startsWith('{')) {
+            try {
+              let jsonLog = JSON.parse(message.trim());
+
+              // Create flyData equivalent for request context
+              let flyData = {
+                fly: {
+                  region: region
+                }
+              };
+
+              let formattedJson = formatJsonLog(jsonLog, flyData, false); // Don't truncate in request viewer
+              if (formattedJson) {
+                // Apply ANSI conversion to the formatted JSON log
+                results.push(convert.toHtml(formattedJson));
+                return;
+              }
+            } catch (e) {
+              // Not valid JSON, fall through to traditional handling
+            }
+          }
+        }
+
+        // Traditional log format with ANSI conversion
+        results.push(convert.toHtml(line));
       });
 
       rl.on('close', () => {

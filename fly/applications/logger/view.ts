@@ -89,3 +89,109 @@ export function visit() {
 
   return lastVisit
 }
+
+// Handle JSON formatted logs (both Rails app logs and navigator access logs)
+export function formatJsonLog(jsonLog: any, flyData: any, truncate: boolean = true) {
+  // Determine if this is an access log or application log based on fields
+  if (jsonLog.method && jsonLog.status && jsonLog.client_ip) {
+    // This is a navigator access log
+    return formatAccessJsonLog(jsonLog, flyData);
+  } else if (jsonLog.severity && jsonLog.message) {
+    // This is a Rails application log
+    return formatAppJsonLog(jsonLog, flyData, truncate);
+  }
+
+  return null; // Don't format unrecognized JSON structures
+}
+
+// Format navigator access logs in JSON format
+function formatAccessJsonLog(log: any, flyData: any) {
+  let status = log.status.toString();
+  let request_id = (log.request_id || '').replace(/[^\w]/g, '');
+  let fly_request_id = log.fly_request_id || '';
+  let region_match = fly_request_id.match(/-(\w+)$/);
+  let request_region = region_match ? region_match[1] : '';
+
+  // Color code status
+  if (!status.match(/^20[06]|101|30[2347]/)) {
+    if (status === "499" || status == "426") {
+      status = `<a href="request/${request_id}" style="background-color: gold">${status}</a>`;
+    } else if (status === "204") {
+      status = `<a href="request/${request_id}" style="background-color: lightgreen">${status}</a>`;
+    } else {
+      status = `<a href="request/${request_id}" style="background-color: orange">${status}</a>`;
+    }
+  } else {
+    status = `<a href="request/${request_id}">${status}</a>`;
+  }
+
+  let [path, query] = (log.uri || '').split('?', 2);
+  if (path.startsWith("showcase/")) path = path.slice(9);
+  let link = query ? `<a href="${HOST}/${path}?${query}" title="${query}">${path}</a>` : `<a href="${HOST}/${path}">${path}</a>`;
+
+  let ip = (log.client_ip || '').split(',')[0].split(':')[0]; // Remove port
+  let region = flyData.fly.region;
+  let regionColor = request_region && request_region === region ? 'green' : 'maroon';
+  let title = request_region && request_region !== region ? ` title="${request_region.toUpperCase()}"` : '';
+
+  return [
+    `<time>${log['@timestamp'].replace('Z', 'Z')}</time>`,
+    `<a href="${HOST}/regions/${region}/status"><span style="color: ${regionColor}"${title}>${region}</span></a>`,
+    status,
+    log.request_time,
+    `<span style="color: blue">${log.remote_user || '-'}</span>`,
+    `<a href="https://iplocation.com/?ip=${ip}">${ip}</a>`,
+    log.method,
+    link,
+  ].join(' ');
+}
+
+// Format Rails application logs in JSON format
+function formatAppJsonLog(log: any, flyData: any, truncate: boolean = true) {
+  let request_id = (log.request_id || '').replace(/[^\w]/g, '');
+  let severity = log.severity;
+  let severityColor = 'black';
+
+  // Color code severity
+  switch(severity) {
+    case 'ERROR': severityColor = 'red'; break;
+    case 'WARN': severityColor = 'orange'; break;
+    case 'INFO': severityColor = 'blue'; break;
+    case 'DEBUG': severityColor = 'gray'; break;
+  }
+
+  let region = flyData.fly.region;
+  let message = escape(log.message);
+
+  // Only truncate if requested (for live view, but not for individual request viewer)
+  if (truncate && log.message.length > 200) {
+    message = message.substring(0, 200) + '...';
+  }
+
+  return [
+    `<time>${log['@timestamp'].replace('Z', 'Z')}</time>`,
+    `<a href="${HOST}/regions/${region}/status"><span style="color: green">${region}</span></a>`,
+    request_id ? `<a href="request/${request_id}">APP</a>` : 'APP',
+    `<span style="color: ${severityColor}">${severity}</span>`,
+    `<span style="color: #333">${message}</span>`,
+  ].join(' ');
+}
+
+// Filter JSON logs (similar to traditional filtered() function)
+export function filteredJsonLog(jsonLog: any) {
+  // Access logs - filter assets and cable requests
+  if (jsonLog.uri) {
+    if (jsonLog.uri.includes("/assets/")) return true;
+    if (jsonLog.uri.includes("/cable")) return true;
+    // Only show requests from specific users or anonymous
+    return !(jsonLog.remote_user === '-' || jsonLog.remote_user === 'rubys');
+  }
+
+  // Application logs - filter ALL Rails application logs (they're too verbose for live viewing)
+  if (jsonLog.severity && jsonLog.message) {
+    // Filter all Rails application logs - they clutter the live view
+    return true;
+  }
+
+  return false;
+}
