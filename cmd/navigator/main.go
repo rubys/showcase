@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -466,6 +468,144 @@ type VectorWriter struct {
 	conn   net.Conn
 	mutex  sync.Mutex
 }
+
+// ResponseWriter wrapper to capture response status and size
+type responseRecorder struct {
+	http.ResponseWriter
+	statusCode int
+	size       int
+	startTime  time.Time
+}
+
+func (r *responseRecorder) WriteHeader(code int) {
+	r.statusCode = code
+	r.ResponseWriter.WriteHeader(code)
+}
+
+func (r *responseRecorder) Write(data []byte) (int, error) {
+	n, err := r.ResponseWriter.Write(data)
+	r.size += n
+	return n, err
+}
+
+// AccessLogEntry represents a structured access log entry matching nginx format
+type AccessLogEntry struct {
+	Timestamp       string `json:"@timestamp"`
+	ClientIP        string `json:"client_ip"`
+	RemoteUser      string `json:"remote_user"`
+	Method          string `json:"method"`
+	URI             string `json:"uri"`
+	Protocol        string `json:"protocol"`
+	Status          int    `json:"status"`
+	BodyBytesSent   int    `json:"body_bytes_sent"`
+	RequestID       string `json:"request_id"`
+	RequestTime     string `json:"request_time"`
+	Referer         string `json:"referer"`
+	UserAgent       string `json:"user_agent"`
+	FlyRequestID    string `json:"fly_request_id"`
+	TenantName      string `json:"tenant_name,omitempty"`
+}
+
+// logTenantRequest logs a tenant request in JSON format matching nginx log format
+func logTenantRequest(r *http.Request, recorder *responseRecorder, tenantName string) {
+	// Get client IP (prefer X-Forwarded-For if available)
+	clientIP := r.Header.Get("X-Forwarded-For")
+	if clientIP == "" {
+		clientIP = r.RemoteAddr
+		// Remove port if present
+		if host, _, err := net.SplitHostPort(clientIP); err == nil {
+			clientIP = host
+		}
+	}
+
+	// Get remote user from basic auth if available
+	remoteUser := "-"
+	if username, _, ok := r.BasicAuth(); ok {
+		remoteUser = username
+	}
+
+	// Calculate request duration
+	requestTime := fmt.Sprintf("%.3f", time.Since(recorder.startTime).Seconds())
+
+	// Get headers with fallbacks
+	referer := r.Header.Get("Referer")
+	if referer == "" {
+		referer = "-"
+	}
+	userAgent := r.Header.Get("User-Agent")
+	if userAgent == "" {
+		userAgent = "-"
+	}
+
+	entry := AccessLogEntry{
+		Timestamp:     time.Now().Format(time.RFC3339),
+		ClientIP:      clientIP,
+		RemoteUser:    remoteUser,
+		Method:        r.Method,
+		URI:           r.RequestURI,
+		Protocol:      r.Proto,
+		Status:        recorder.statusCode,
+		BodyBytesSent: recorder.size,
+		RequestID:     r.Header.Get("X-Request-Id"),
+		RequestTime:   requestTime,
+		Referer:       referer,
+		UserAgent:     userAgent,
+		FlyRequestID:  r.Header.Get("Fly-Request-Id"),
+		TenantName:    tenantName,
+	}
+
+	data, _ := json.Marshal(entry)
+	fmt.Fprintln(os.Stdout, string(data))
+}
+
+// extractTenantName extracts the tenant name from a URL path
+// Examples: "/showcase/2025/livermore/district-showcase/" -> "livermore-district-showcase"
+//           "/2025/adelaide/adelaide-combined/" -> "adelaide-combined"
+func extractTenantName(path string) string {
+	// Remove leading/trailing slashes and split by '/'
+	path = strings.Trim(path, "/")
+	parts := strings.Split(path, "/")
+
+	// Skip empty parts
+	var validParts []string
+	for _, part := range parts {
+		if part != "" {
+			validParts = append(validParts, part)
+		}
+	}
+
+	if len(validParts) < 2 {
+		return ""
+	}
+
+	// Pattern 1: /showcase/YEAR/TENANT1/TENANT2/...
+	if validParts[0] == "showcase" && len(validParts) >= 4 {
+		// Skip "showcase" and year, join tenant parts
+		return strings.Join(validParts[2:4], "-")
+	}
+
+	// Pattern 2: /YEAR/TENANT1/TENANT2/...
+	if len(validParts) >= 3 {
+		// Skip year, join tenant parts
+		return strings.Join(validParts[1:3], "-")
+	}
+
+	// Pattern 3: /YEAR/TENANT
+	if len(validParts) >= 2 {
+		// Skip year, return tenant
+		return validParts[1]
+	}
+
+	return ""
+}
+
+// generateRequestID generates a random request ID similar to nginx $request_id
+func generateRequestID() string {
+	bytes := make([]byte, 16)
+	rand.Read(bytes)
+	return hex.EncodeToString(bytes)
+}
+
 
 // NewVectorWriter creates a new Vector writer
 func NewVectorWriter(socket string) *VectorWriter {
@@ -2145,7 +2285,24 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, idleMan
 		idleManager.RequestStarted()
 		defer idleManager.RequestFinished()
 
-		slog.Debug("Request received", "method", r.Method, "path", r.URL.Path)
+		// Generate request ID if not already present
+		requestID := r.Header.Get("X-Request-Id")
+		if requestID == "" {
+			requestID = generateRequestID()
+			r.Header.Set("X-Request-Id", requestID)
+		}
+
+		// Wrap response writer to capture response data for access logging
+		recorder := &responseRecorder{
+			ResponseWriter: w,
+			statusCode:     200, // default status code
+			startTime:      time.Now(),
+		}
+
+		// Use recorder for the rest of the request processing
+		w = recorder
+
+		slog.Debug("Request received", "method", r.Method, "path", r.URL.Path, "request_id", requestID)
 		
 		// Handle sticky sessions early (before rewrites/redirects)
 		if handleStickySession(w, r, config) {
@@ -2272,6 +2429,16 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, idleMan
 			http.Error(w, "Failed to start application", http.StatusInternalServerError)
 			return
 		}
+
+		// Extract tenant name from path for access logging
+		tenantName := extractTenantName(r.URL.Path)
+
+		// Schedule tenant access log after request completes
+		defer func() {
+			if tenantName != "" {
+				logTenantRequest(r, recorder, tenantName)
+			}
+		}()
 
 		// Proxy to web app
 		target, _ := url.Parse(fmt.Sprintf("http://localhost:%d", app.Port))
