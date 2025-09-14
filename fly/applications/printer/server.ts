@@ -84,6 +84,7 @@ const server = Bun.serve({
 
     // map URL to original site
     const url = new URL(request.url)
+    if (process.env.BASE_HOSTNAME) url.hostname = process.env.BASE_HOSTNAME
     url.protocol = 'https:'
     url.port = ''
 
