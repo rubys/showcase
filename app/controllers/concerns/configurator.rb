@@ -377,7 +377,7 @@ module Configurator
         },
         'env' => {
           'SHOWCASE_LOGO' => 'intertwingly.png',
-          'DATABASE_URL' => "sqlite3://#{dbpath}/demo.sqlite3",
+          'DATABASE_URL' => "sqlite3:///demo/db/demo.sqlite3",
           'RAILS_STORAGE' => '/demo/storage/demo'
         }
       }

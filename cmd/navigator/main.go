@@ -1678,11 +1678,6 @@ func ParseYAML(content []byte) (*Config, error) {
 			Hooks:            tenant.Hooks, // Copy tenant-specific hooks
 		}
 
-		// Copy tenant environment variables
-		for k, v := range tenant.Env {
-			location.EnvVars[k] = v
-		}
-
 		// Add variables from applications.env that need substitution (unless it's a special tenant)
 		if !tenant.Special {
 			for varName, template := range yamlConfig.Applications.Env {
@@ -1692,6 +1687,11 @@ func ParseYAML(content []byte) (*Config, error) {
 					location.EnvVars[varName] = value
 				}
 			}
+		}
+
+		// Copy tenant environment variables (these should override application env)
+		for k, v := range tenant.Env {
+			location.EnvVars[k] = v
 		}
 
 		if tenant.Root != "" {
