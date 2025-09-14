@@ -15,6 +15,8 @@
 import puppeteer, { PaperFormat, Page } from 'puppeteer-core'
 import chalk from 'chalk'
 import * as XLSX from 'xlsx'
+import { existsSync, readdirSync, statSync, rmSync } from 'fs'
+import { join } from 'path'
 
 // fetch configuration fron environment variables
 const PORT = process.env.PORT || 3000
@@ -34,12 +36,56 @@ let puppeteerOptions : puppeteer.PuppeteerLaunchOptions = {
   headless: "new",
   executablePath: chrome,
   // https://www.browserless.io/blog/puppeteer-print
-  args: ['--font-render-hinting=none', '--disable-gpu']
+  args: [
+    '--font-render-hinting=none',
+    '--disable-gpu',
+    '--disable-dev-shm-usage', // Use /tmp instead of /dev/shm
+    '--no-first-run',
+    '--no-zygote',
+    '--single-process', // Helps reduce resource usage
+    '--disable-extensions'
+  ]
 }
 
 if (!process.env.FLY_REGION) {
   puppeteerOptions.args.push('--no-sandbox', '--disable-setuid-sandbox')
 }
+
+// Clean up old Puppeteer temp directories
+function cleanupTempFiles() {
+  try {
+    const tmpDir = '/tmp'
+    if (existsSync(tmpDir)) {
+      const files = readdirSync(tmpDir)
+      const now = Date.now()
+      const oneHourAgo = now - (60 * 60 * 1000) // 1 hour in milliseconds
+
+      for (const file of files) {
+        if (file.startsWith('puppeteer_')) {
+          const filePath = join(tmpDir, file)
+          try {
+            const stats = statSync(filePath)
+            // Remove directories older than 1 hour
+            if (stats.isDirectory() && stats.mtimeMs < oneHourAgo) {
+              rmSync(filePath, { recursive: true, force: true })
+              console.log(chalk.yellow(`Cleaned up old temp directory: ${file}`))
+            }
+          } catch (err) {
+            // Ignore errors for individual files
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error(chalk.red('Error cleaning temp files:'), error)
+  }
+}
+
+// Run cleanup on startup
+cleanupTempFiles()
+
+// Run cleanup every 30 minutes
+setInterval(cleanupTempFiles, 30 * 60 * 1000)
 
 // launch a single headless Chrome instance to be used by all requests
 try {
@@ -89,6 +135,7 @@ const server = Bun.serve({
     url.port = ''
 
     if (url.pathname == "/up") {
+      deadManSwitch = false
       return new Response("OK")
     }
 
@@ -315,7 +362,7 @@ const server = Bun.serve({
 
     } finally {
       // close tab
-      page.close()
+      await page.close()
 
       // start new timeout
       clearTimeout(timeout)
