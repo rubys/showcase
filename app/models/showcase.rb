@@ -40,7 +40,7 @@ class Showcase < ApplicationRecord
   end
 
   def self.hostname
-    return ENV['SERVER_NAME'] if ENV['FLY_REGION'].present?
+    return "#{ENV['FLY_APP_NAME']}.fly.dev" if ENV['FLY_REGION'].present?
     "smooth.fly.dev"
   end
 end

@@ -151,7 +151,7 @@ module Configurator
     # Add redirects
     if region
       routes['redirects'] << { 'from' => '^/$', 'to' => "#{root}/studios/" }
-      routes['redirects'] << { 'from' => "^#{root}/demo$", 'to' => "#{root}/demo/" }
+      routes['redirects'] << { 'from' => "^#{root}/demo/?$", 'to' => "#{root}/regions/#{region}/demo/" }
     elsif root != ''
       routes['redirects'] << { 'from' => '^/(showcase)?$', 'to' => "#{root}/studios/" }
     else
@@ -369,7 +369,7 @@ module Configurator
     if region || ENV['KAMAL_CONTAINER_NAME']
       dbpath = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
       tenants << {
-        'path' => region ? "/regions/#{region}/demo/" : "/demo/",
+        'path' => region ? "#{root}/regions/#{region}/demo/" : "/demo/",
         'var' => {
           'database' => 'demo',
           'owner' => 'Demo',
