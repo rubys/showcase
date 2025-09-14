@@ -7,6 +7,15 @@ require 'json'
 require 'yaml'
 require 'fileutils'
 
+require 'optparse'
+
+options = {}
+OptionParser.new do |opts|
+  opts.on('--verbose', 'Enable verbose output') do
+    options[:verbose] = true
+  end
+end.parse!(ARGV)
+
 migrations = Dir["db/migrate/2*"].map {|name| name[/\d+/]}
 
 git_path = File.realpath(File.expand_path('..', __dir__))
@@ -72,7 +81,7 @@ ARGV.each do |database|
 
             # avoid throttling
             sleep 1 if ENV['FLY_REGION'] && ARGV.length > 1
-          else
+          elsif options[:verbose]
             puts "Local database #{db_name} is up to date"
           end
           

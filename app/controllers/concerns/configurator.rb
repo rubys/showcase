@@ -361,6 +361,7 @@ module Configurator
         'RAILS_APP_OWNER' => 'Index',
         'RAILS_STORAGE' => File.join(storage, 'index'),
         'PIDFILE' => "#{Rails.root}/tmp/pids/index.pid",
+        'DATABASE_URL' => "sqlite3:///data/db/index.sqlite3",
         'RAILS_SERVE_STATIC_FILES' => 'true'
       }
     }
@@ -370,6 +371,7 @@ module Configurator
       dbpath = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
       tenants << {
         'path' => region ? "#{root}/regions/#{region}/demo/" : "/demo/",
+        'root' => "/rails/public/demo/",
         'var' => {
           'database' => 'demo',
           'owner' => 'Demo',

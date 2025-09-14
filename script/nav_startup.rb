@@ -51,6 +51,8 @@ begin
 
   thread = Thread.new { system 'bin/prerender' }
   system 'bin/rails nav:config'
+  FileUtils.mkdir_p "/demo/db"
+  FileUtils.mkdir_p "/demo/storage/demo"
   Process.kill('HUP', nav_pid)
   thread.join
 
