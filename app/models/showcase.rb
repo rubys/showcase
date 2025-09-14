@@ -39,6 +39,10 @@ class Showcase < ApplicationRecord
     "https://#{hostname}/showcase"
   end
 
+  def self.canonical_url
+    "https://smooth.fly.dev/showcase"
+  end
+
   def self.hostname
     return "#{ENV['FLY_APP_NAME']}.fly.dev" if ENV['FLY_REGION'].present?
     "smooth.fly.dev"

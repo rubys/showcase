@@ -334,9 +334,7 @@ module Configurator
 
     # Template variables (need substitution)
     env['RAILS_APP_DB'] = '${database}'
-    env['RAILS_APP_OWNER'] = '${owner}'
     env['RAILS_STORAGE'] = storage
-    env['RAILS_APP_SCOPE'] = '${scope}'
     env['DATABASE_URL'] = "sqlite3://#{dbpath}/${database}.sqlite3"
     env['PIDFILE'] = "#{Rails.root}/tmp/pids/${database}.pid"
 
@@ -352,16 +350,14 @@ module Configurator
     
     tenants = []
     
-    # Add index tenant (special case - doesn't use standard_vars)
+    # Add index tenant
     tenants << {
       'path' => root.empty? ? '/' : "#{root}/",
-      'special' => true,
+      'var' => {
+        'database' => 'index'
+      },
       'env' => {
-        'RAILS_APP_DB' => 'index',
         'RAILS_APP_OWNER' => 'Index',
-        'RAILS_STORAGE' => File.join(storage, 'index'),
-        'PIDFILE' => "#{Rails.root}/tmp/pids/index.pid",
-        'DATABASE_URL' => "sqlite3:///data/db/index.sqlite3",
         'RAILS_SERVE_STATIC_FILES' => 'true'
       }
     }
@@ -373,11 +369,11 @@ module Configurator
         'path' => region ? "#{root}/regions/#{region}/demo/" : "/demo/",
         'root' => "/rails/public/demo/",
         'var' => {
-          'database' => 'demo',
-          'owner' => 'Demo',
-          'scope' => region ? "regions/#{region}/demo" : "demo"
+          'database' => 'demo'
         },
         'env' => {
+          'RAILS_APP_OWNER' => 'Demo',
+          'RAILS_APP_SCOPE' => region ? "regions/#{region}/demo" : "demo",
           'SHOWCASE_LOGO' => 'intertwingly.png',
           'DATABASE_URL' => "sqlite3:///demo/db/demo.sqlite3",
           'RAILS_STORAGE' => '/demo/storage/demo'
@@ -395,38 +391,38 @@ module Configurator
             tenant = {
               'path' => "#{root}/#{year}/#{token}/#{subtoken}/",
               'var' => {
-                'database' => "#{year}-#{token}-#{subtoken}",
-                'owner' => info[:name],
-                'scope' => "#{year}/#{token}/#{subtoken}"
+                'database' => "#{year}-#{token}-#{subtoken}"
               },
               'env' => {
+                'RAILS_APP_OWNER' => info[:name],
+                'RAILS_APP_SCOPE' => "#{year}/#{token}/#{subtoken}",
                 'SHOWCASE_LOGO' => info[:logo] || 'arthur-murray-logo.gif'
               }
             }
-            
+
             if info[:locale].present?
               tenant['env']['RAILS_LOCALE'] = info[:locale].gsub('-', '_')
             end
-            
+
             tenants << tenant
           end
         else
           tenant = {
             'path' => "#{root}/#{year}/#{token}/",
             'var' => {
-              'database' => "#{year}-#{token}",
-              'owner' => info[:name],
-              'scope' => "#{year}/#{token}"
+              'database' => "#{year}-#{token}"
             },
             'env' => {
+              'RAILS_APP_OWNER' => info[:name],
+              'RAILS_APP_SCOPE' => "#{year}/#{token}",
               'SHOWCASE_LOGO' => info[:logo] || 'arthur-murray-logo.gif'
             }
           }
-          
+
           if info[:locale].present?
             tenant['env']['RAILS_LOCALE'] = info[:locale].gsub('-', '_')
           end
-          
+
           tenants << tenant
         end
       end
