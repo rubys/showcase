@@ -3253,13 +3253,89 @@ func setContentType(w http.ResponseWriter, fsPath string) {
 	}
 }
 
+// retryResponseWriter captures the response for potential retry on 502 errors
+type retryResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+	headers    http.Header
+	buffer     *bytes.Buffer
+	written    bool
+}
+
+func (w *retryResponseWriter) WriteHeader(code int) {
+	if !w.written {
+		w.statusCode = code
+		// Copy headers
+		for k, v := range w.ResponseWriter.Header() {
+			w.headers[k] = v
+		}
+	}
+}
+
+func (w *retryResponseWriter) Write(data []byte) (int, error) {
+	if !w.written {
+		if w.statusCode == 0 {
+			w.statusCode = http.StatusOK
+		}
+		// Buffer the response
+		return w.buffer.Write(data)
+	}
+	return len(data), nil
+}
+
+func (w *retryResponseWriter) WriteResponse() {
+	if !w.written {
+		w.written = true
+		// Copy buffered headers to actual response
+		for k, v := range w.headers {
+			w.ResponseWriter.Header()[k] = v
+		}
+		// Write status code
+		if w.statusCode != 0 {
+			w.ResponseWriter.WriteHeader(w.statusCode)
+		}
+		// Write buffered body
+		if w.buffer.Len() > 0 {
+			w.ResponseWriter.Write(w.buffer.Bytes())
+		}
+	}
+}
+
 // proxyWithRetry handles proxying with automatic retry on 502 errors
 func proxyWithRetry(w http.ResponseWriter, r *http.Request, target *url.URL, maxRetryDuration time.Duration) {
 	startTime := time.Now()
 	retryCount := 0
 	sleepDuration := 100 * time.Millisecond // Start with 100ms
 
+	// Buffer the request body if present for potential retries
+	var bodyBytes []byte
+	if r.Body != nil && r.ContentLength > 0 {
+		// Only buffer for requests we can retry
+		if r.Method == "GET" || r.Method == "HEAD" || r.Method == "POST" || r.Method == "PUT" || r.Method == "PATCH" {
+			var err error
+			bodyBytes, err = io.ReadAll(r.Body)
+			if err != nil {
+				slog.Error("Failed to read request body", "error", err)
+				http.Error(w, "Bad Request", http.StatusBadRequest)
+				return
+			}
+			r.Body.Close()
+		}
+	}
+
 	for {
+		// Restore the request body for retry
+		if bodyBytes != nil {
+			r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+		}
+
+		// Create a custom response writer to capture the status code
+		captureWriter := &retryResponseWriter{
+			ResponseWriter: w,
+			buffer:         &bytes.Buffer{},
+			headers:        make(http.Header),
+		}
+
 		// Create a new proxy for each attempt
 		proxy := httputil.NewSingleHostReverseProxy(target)
 
@@ -3290,21 +3366,43 @@ func proxyWithRetry(w http.ResponseWriter, r *http.Request, target *url.URL, max
 		}
 
 		// Attempt the proxy request
-		proxy.ServeHTTP(w, r)
+		proxy.ServeHTTP(captureWriter, r)
 
-		// If no error occurred, we're done
-		if !errorOccurred {
+		// Check if we got a 502 status code
+		if captureWriter.statusCode == http.StatusBadGateway {
+			errorOccurred = true
+			if retryCount == 0 {
+				slog.Info("Got 502 from upstream, will retry",
+					"target", target.String(),
+					"path", r.URL.Path,
+					"method", r.Method)
+			}
+		}
+
+		// If no error occurred and not a 502, write the response and we're done
+		if !errorOccurred && captureWriter.statusCode != http.StatusBadGateway {
+			captureWriter.WriteResponse()
 			return
 		}
 
 		// Check if we've exceeded max retry duration
 		if time.Since(startTime) >= maxRetryDuration {
 			if !errorHandled {
-				slog.Warn("Proxy retry timeout",
-					"target", target.String(),
-					"retries", retryCount,
-					"duration", time.Since(startTime))
-				http.Error(w, "Bad Gateway", http.StatusBadGateway)
+				if captureWriter.statusCode == http.StatusBadGateway {
+					slog.Warn("502 error persisted after retries",
+						"target", target.String(),
+						"retries", retryCount,
+						"duration", time.Since(startTime),
+						"path", r.URL.Path)
+					// Write the original 502 response
+					captureWriter.WriteResponse()
+				} else {
+					slog.Warn("Proxy retry timeout",
+						"target", target.String(),
+						"retries", retryCount,
+						"duration", time.Since(startTime))
+					http.Error(w, "Bad Gateway", http.StatusBadGateway)
+				}
 			}
 			return
 		}
@@ -3314,24 +3412,19 @@ func proxyWithRetry(w http.ResponseWriter, r *http.Request, target *url.URL, max
 		slog.Debug("Retrying proxy request",
 			"target", target.String(),
 			"retry", retryCount,
-			"sleep", sleepDuration)
+			"sleep", sleepDuration,
+			"reason", func() string {
+				if captureWriter.statusCode == http.StatusBadGateway {
+					return "502 response"
+				}
+				return "connection error"
+			}())
 
 		// Sleep before retry with exponential backoff
 		time.Sleep(sleepDuration)
 		sleepDuration = sleepDuration * 2
 		if sleepDuration > 500*time.Millisecond {
 			sleepDuration = 500 * time.Millisecond // Cap at 500ms
-		}
-
-		// Clone the request for retry (body might have been consumed)
-		if r.Body != nil && r.ContentLength > 0 {
-			// For retries with body, we'd need to buffer the body
-			// For now, we'll only retry GET/HEAD requests without body
-			if r.Method != "GET" && r.Method != "HEAD" {
-				slog.Debug("Not retrying request with body", "method", r.Method)
-				http.Error(w, "Bad Gateway", http.StatusBadGateway)
-				return
-			}
 		}
 	}
 }
