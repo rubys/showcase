@@ -345,12 +345,14 @@ app.get("/request/:request_id", async (request, response, next) => {
   let { request_id } = request.params;
   if (request_id.length < 20 || !request_id.match(/^\w+$/)) return next()
 
+  const isRaw = request.query.raw !== undefined;
   const convert = new Convert();
 
   let logs = await fs.promises.readdir(LOGS);
   logs.sort();
 
   let results: string[] = [];
+  let rawResults: string[] = [];
 
   results.push('<pre>')
 
@@ -367,36 +369,41 @@ app.get("/request/:request_id", async (request, response, next) => {
       rl.on('line', line => {
         if (!line.includes(request_id)) return;
 
-        // Try to handle as JSON log first
-        let messageMatch = line.match(/^\S+\s+\[.*?\]\s+(\w+)\s+\[\w+\]\s+(.*)$/);
-        if (messageMatch) {
-          let region = messageMatch[1];
-          let message = messageMatch[2];
-          if (message.trim().startsWith('{')) {
-            try {
-              let jsonLog = JSON.parse(message.trim());
+        // Always collect raw lines
+        rawResults.push(line);
 
-              // Create flyData equivalent for request context
-              let flyData = {
-                fly: {
-                  region: region
+        if (!isRaw) {
+          // Try to handle as JSON log first
+          let messageMatch = line.match(/^\S+\s+\[.*?\]\s+(\w+)\s+\[\w+\]\s+(.*)$/);
+          if (messageMatch) {
+            let region = messageMatch[1];
+            let message = messageMatch[2];
+            if (message.trim().startsWith('{')) {
+              try {
+                let jsonLog = JSON.parse(message.trim());
+
+                // Create flyData equivalent for request context
+                let flyData = {
+                  fly: {
+                    region: region
+                  }
+                };
+
+                let formattedJson = formatJsonLog(jsonLog, flyData, false); // Don't truncate in request viewer
+                if (formattedJson) {
+                  // Apply ANSI conversion to the formatted JSON log
+                  results.push(convert.toHtml(formattedJson));
+                  return;
                 }
-              };
-
-              let formattedJson = formatJsonLog(jsonLog, flyData, false); // Don't truncate in request viewer
-              if (formattedJson) {
-                // Apply ANSI conversion to the formatted JSON log
-                results.push(convert.toHtml(formattedJson));
-                return;
+              } catch (e) {
+                // Not valid JSON, fall through to traditional handling
               }
-            } catch (e) {
-              // Not valid JSON, fall through to traditional handling
             }
           }
-        }
 
-        // Traditional log format with ANSI conversion
-        results.push(convert.toHtml(line));
+          // Traditional log format with ANSI conversion
+          results.push(convert.toHtml(line));
+        }
       });
 
       rl.on('close', () => {
@@ -404,16 +411,71 @@ app.get("/request/:request_id", async (request, response, next) => {
       });
     });
 
-    if (results.length > 1) break;
+    if (results.length > 1 || rawResults.length > 0) break;
   }
 
   results.push('</pre>')
 
-  response.send(`
-    <!DOCTYPE html>
-    <h1>Request ${request_id}</h1>
-    ${results.join("\n")}
-  `)
+  const buttonStyle = `
+    float: right;
+    padding: 8px 16px;
+    margin-top: 0.67em;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-decoration: none;
+    color: black;
+    font-size: 14px;
+  `;
+
+  if (isRaw) {
+    response.send(`
+      <!DOCTYPE html>
+      <style>
+        .header-container { display: flex; align-items: center; justify-content: space-between; }
+        a.toggle-button {
+          padding: 8px 16px;
+          background-color: #f0f0f0;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          text-decoration: none;
+          color: black;
+          font-size: 14px;
+        }
+        a.toggle-button:hover { background-color: #e0e0e0; }
+        pre { font-family: monospace; white-space: pre-wrap; word-wrap: break-word; }
+        h1 { margin: 0.67em 0; }
+      </style>
+      <div class="header-container">
+        <h1>Request ${request_id} (Raw)</h1>
+        <a href="/request/${request_id}" class="toggle-button">View Formatted</a>
+      </div>
+      <pre>${rawResults.join("\n")}</pre>
+    `)
+  } else {
+    response.send(`
+      <!DOCTYPE html>
+      <style>
+        .header-container { display: flex; align-items: center; justify-content: space-between; }
+        a.toggle-button {
+          padding: 8px 16px;
+          background-color: #f0f0f0;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          text-decoration: none;
+          color: black;
+          font-size: 14px;
+        }
+        a.toggle-button:hover { background-color: #e0e0e0; }
+        h1 { margin: 0.67em 0; }
+      </style>
+      <div class="header-container">
+        <h1>Request ${request_id}</h1>
+        <a href="/request/${request_id}?raw" class="toggle-button">View Raw</a>
+      </div>
+      ${results.join("\n")}
+    `)
+  }
 })
 
 // update lastVisit on all machines
