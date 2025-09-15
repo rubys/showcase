@@ -7,6 +7,8 @@ require 'optparse'
 require 'aws-sdk-s3'
 require 'json'
 require 'sqlite3'
+require 'uri'
+require 'net/http'
 
 # Initialize Sentry if DSN is available
 if ENV["SENTRY_DSN"]
@@ -521,6 +523,34 @@ unless options[:dry_run]
           Sentry.capture_message("Error saving inventory for #{region}: #{e.message}", level: :error)
         end
       end
+    end
+  end
+end
+
+# Call webhook if something was uploaded
+if !options[:dry_run] && uploads.size > 0
+  begin
+    hostenv = `env | grep FLY` if ENV['FLY_REGION']
+
+    uri = URI('https://rubix.intertwingly.net/webhook/showcase')
+    res = Net::HTTP.get_response(uri)
+    if res.is_a?(Net::HTTPSuccess)
+      puts res.body unless options[:quiet]
+    else
+      STDERR.puts res unless options[:quiet]
+      STDERR.puts res.body unless options[:quiet]
+      if ENV["SENTRY_DSN"]
+        Sentry.capture_message("webhook failure:\n\n#{hostenv}\n#{res.body}")
+      end
+    end
+  rescue => e
+    error_msg = "Error calling webhook: #{e.message}"
+    puts error_msg unless options[:quiet]
+    if ENV["SENTRY_DSN"]
+      Sentry.capture_exception(e, extra: {
+        operation: 'webhook',
+        uploads_count: uploads.size
+      })
     end
   end
 end
