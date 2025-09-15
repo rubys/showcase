@@ -595,7 +595,8 @@ module Configurator
       'server' => {
         'start' => [],
         'stop' => [],
-        'idle' => []
+        'idle' => [],
+        'resume' => []
       },
       'tenant' => {
         'start' => [],

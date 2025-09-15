@@ -97,9 +97,10 @@ type HookConfig struct {
 
 // ServerHooks represents server lifecycle hooks
 type ServerHooks struct {
-	Start []HookConfig `yaml:"start"` // Before accepting requests
-	Ready []HookConfig `yaml:"ready"` // Once accepting requests
-	Idle  []HookConfig `yaml:"idle"`  // Before suspend
+	Start  []HookConfig `yaml:"start"`  // Before accepting requests
+	Ready  []HookConfig `yaml:"ready"`  // Once accepting requests
+	Resume []HookConfig `yaml:"resume"` // On first request after suspend
+	Idle   []HookConfig `yaml:"idle"`   // Before suspend
 }
 
 // TenantHooks represents tenant lifecycle hooks
@@ -352,6 +353,9 @@ type IdleManager struct {
 	mutex          sync.RWMutex
 	timer          *time.Timer
 	config         *Config
+	idleActioned   bool          // Track if idle action was performed
+	resuming       bool          // Track if resume hooks are currently running
+	resumeCond     *sync.Cond    // Condition variable to wait for resume completion
 }
 
 // AppManager manages web application processes
@@ -995,16 +999,20 @@ func (pm *ProcessManager) UpdateConfig(processes []ManagedProcessConfig) {
 // NewIdleManager creates a new idle manager
 func NewIdleManager(config *Config) *IdleManager {
 	if config.MachineIdleAction == "" {
-		return &IdleManager{enabled: false, config: config}
+		im := &IdleManager{enabled: false, config: config}
+		im.resumeCond = sync.NewCond(&im.mutex)
+		return im
 	}
 
-	return &IdleManager{
+	im := &IdleManager{
 		enabled:      true,
 		action:       config.MachineIdleAction,
 		idleTimeout:  config.MachineIdleTimeout,
 		lastActivity: time.Now(),
 		config:       config,
 	}
+	im.resumeCond = sync.NewCond(&im.mutex)
+	return im
 }
 
 // RequestStarted increments active request counter and resets idle timer
@@ -1015,6 +1023,36 @@ func (im *IdleManager) RequestStarted() {
 
 	im.mutex.Lock()
 	defer im.mutex.Unlock()
+
+	// Check if we need to run resume hooks
+	needResumeHook := im.idleActioned && !im.resuming
+	if needResumeHook {
+		im.resuming = true
+		im.idleActioned = false
+	}
+
+	// Wait if resume hooks are currently running
+	for im.resuming && !needResumeHook {
+		im.resumeCond.Wait()
+	}
+
+	// If this request is responsible for running resume hooks, do it now
+	if needResumeHook {
+		// Release lock temporarily to run hooks
+		im.mutex.Unlock()
+
+		if im.config != nil && len(im.config.ServerHooks.Resume) > 0 {
+			slog.Info("Executing resume hooks after machine wake")
+			if err := executeServerHooks(im.config.ServerHooks.Resume, "resume"); err != nil {
+				slog.Error("Server resume hooks failed", "error", err)
+			}
+		}
+
+		// Re-acquire lock and signal that resume is complete
+		im.mutex.Lock()
+		im.resuming = false
+		im.resumeCond.Broadcast() // Wake up all waiting requests
+	}
 
 	im.activeRequests++
 	im.lastActivity = time.Now()
@@ -1122,6 +1160,11 @@ func (im *IdleManager) performIdleAction() {
 
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		slog.Info("Machine idle action requested successfully", "action", action, "status", resp.StatusCode, "response", string(body))
+
+		// Mark that idle action was performed
+		im.mutex.Lock()
+		im.idleActioned = true
+		im.mutex.Unlock()
 	} else {
 		slog.Error("Machine idle action failed", "action", action, "status", resp.StatusCode, "response", string(body))
 	}
