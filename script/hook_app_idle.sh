@@ -23,7 +23,11 @@ cd /rails
 
 # Run the sync script for this specific database
 # Using --safe to prevent downloading in the region that owns the DB
-# Using --dry-run for testing (remove when ready for production)
-bundle exec ruby script/sync_databases_s3.rb --safe --only="$RAILS_APP_DB" --dry-run
+# Check if FLY_APP_NAME is smooth to determine dry-run mode
+if [ "$FLY_APP_NAME" = "smooth" ]; then
+    bundle exec ruby script/sync_databases_s3.rb --safe --only="$RAILS_APP_DB"
+else
+    bundle exec ruby script/sync_databases_s3.rb --safe --only="$RAILS_APP_DB" --dry-run
+fi
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] App idle hook completed for database: $RAILS_APP_DB"

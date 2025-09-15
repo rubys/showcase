@@ -15,7 +15,11 @@ cd /rails
 
 # Run the sync script for all databases
 # Using --safe to prevent downloading databases owned by current region
-# Using --dry-run for testing (remove when ready for production)
-bundle exec ruby script/sync_databases_s3.rb --safe --dry-run
+# Check if FLY_APP_NAME is smooth to determine dry-run mode
+if [ "$FLY_APP_NAME" = "smooth" ]; then
+    bundle exec ruby script/sync_databases_s3.rb --safe
+else
+    bundle exec ruby script/sync_databases_s3.rb --safe --dry-run
+fi
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Navigator idle hook completed"
