@@ -126,7 +126,8 @@ function formatAccessJsonLog(log: any, flyData: any) {
   }
 
   let [path, query] = (log.uri || '').split('?', 2);
-  if (path.startsWith("showcase/")) path = path.slice(9);
+  if (path.startsWith("/showcase/")) path = path.slice(10);
+  else if (path.startsWith("showcase/")) path = path.slice(9);
   let link = query ? `<a href="${HOST}/${path}?${query}" title="${query}">${path}</a>` : `<a href="${HOST}/${path}">${path}</a>`;
 
   let ip = (log.client_ip || '').split(',')[0].trim(); // Take first IP if multiple
