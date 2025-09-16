@@ -3,10 +3,9 @@
 
 app = "smooth"
 primary_region = "iad"
-swap_size_mb = 2048
 
-[processes]
-  app = "foreman start --procfile=Procfile.fly"
+[build]
+  dockerfile = "Dockerfile.nav"
 
 [[mounts]]
   source = "smooth_volume"
@@ -23,18 +22,7 @@ swap_size_mb = 2048
   auto_start_machines = true
   min_machines_running = 1
 
-[[services]]
-  processes = ['app']
-  internal_port = 2222
-  protocol = "tcp"
-  [[services.ports]]
-    port = 2222
-
 [[vm]]
   cpu_kind = "shared"
   cpus = 2
   memory_mb = 2048
-
-[[statics]]
-  guest_path = "/rails/public"
-  url_prefix = "/"
