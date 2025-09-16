@@ -42,13 +42,11 @@ let puppeteerOptions : puppeteer.PuppeteerLaunchOptions = {
     '--disable-dev-shm-usage', // Use /tmp instead of /dev/shm
     '--no-first-run',
     '--no-zygote',
+    '--no-sandbox', // Required when using --no-zygote
+    '--disable-setuid-sandbox',
     '--single-process', // Helps reduce resource usage
     '--disable-extensions'
   ]
-}
-
-if (!process.env.FLY_REGION) {
-  puppeteerOptions.args.push('--no-sandbox', '--disable-setuid-sandbox')
 }
 
 // Clean up old Puppeteer temp directories
