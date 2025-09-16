@@ -235,6 +235,24 @@
     <th class="pr-8">Total:
     <td align="right"><%= localized_currency(dances[:cost] + dances[:purchases]) %></td>
   </tr>
+  <% if @payments&.any? %>
+  <tr>
+    <td colspan="2"><hr class="border-gray-300 my-2"></td>
+  </tr>
+  <% @payments.each do |payment| %>
+  <tr>
+    <td class="pr-8"><%= payment.date&.strftime('%b %d, %Y') %> Payment:</td>
+    <td align="right">-<%= localized_currency(payment.amount) %></td>
+  </tr>
+  <% end %>
+  <tr>
+    <td colspan="2"><hr class="border-gray-400 my-2"></td>
+  </tr>
+  <tr>
+    <th class="pr-8">Balance Due:
+    <td align="right"><%= localized_currency((dances[:cost] + dances[:purchases]) - (@total_payments || 0)) %></td>
+  </tr>
+  <% end %>
   </table>
 
    <% unless @event.payment_due.blank? %>

@@ -1,0 +1,12 @@
+<div class="mx-auto md:w-2/3 w-full">
+  <h1 class="text-center font-bold text-4xl mb-8">Edit Payment for <%= @person.name %></h1>
+
+  <%= render "form", payment: @payment %>
+
+  <div class="mx-auto flex justify-center">
+    <button type="submit" class="btn-blue" form="payment-form">Update Payment</button>
+    <%= up_link "Remove Payment", person_payment_path(@person, @payment), class: "btn-grey",
+        method: :delete, form: { data: { turbo_confirm: "Are you sure you want to delete this payment?" } } %>
+    <%= link_to "Back to Payments", person_payments_path(@person), class: "btn-green" %>
+  </div>
+</div>

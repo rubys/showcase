@@ -1,0 +1,47 @@
+<div class="mx-auto">
+  <% if notice.present? %>
+    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+  <% end %>
+
+  <% if @person %>
+    <h1 class="text-center font-bold text-4xl mb-8">Payments for <%= @person.name %></h1>
+  <% else %>
+    <h1 class="text-center font-bold text-4xl mb-8">All Payments</h1>
+  <% end %>
+
+  <% if @payments.any? %>
+    <table class="mx-auto table-fixed">
+      <thead>
+        <tr>
+          <th class="row-head">Date</th>
+          <th class="row-head">Amount</th>
+          <% unless @person %>
+          <th class="row-head">Person</th>
+          <% end %>
+          <th class="row-head">Comment</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @payments.each do |payment| %>
+        <tr class="hover:bg-yellow-200 cursor-pointer" onclick="window.location='<%= edit_person_payment_path(@person, payment) %>'">
+          <td class="row"><%= payment.date&.strftime('%b %d, %Y') %></td>
+          <td class="row text-right"><%= localized_currency(payment.amount) %></td>
+          <% unless @person %>
+          <td class="row"><%= payment.person.name %></td>
+          <% end %>
+          <td class="row"><%= truncate(payment.comment, length: 50) %></td>
+        </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="text-center my-10 text-gray-500">No payments found.</p>
+  <% end %>
+
+  <% if @person %>
+    <div class="flex justify-center gap-4 mt-8">
+      <%= link_to "New Payment", new_person_payment_path(@person), class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium" %>
+      <%= link_to "Back to Person", person_path(@person), class: "rounded-lg py-3 px-5 bg-green-600 text-white inline-block font-medium" %>
+    </div>
+  <% end %>
+</div>

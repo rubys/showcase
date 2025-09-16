@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  person: Arthur
+  amount: 9.99
+  date: 2025-09-16
+  comment: MyText
+
+two:
+  person: Kathryn
+  amount: 9.99
+  date: 2025-09-16
+  comment: MyText

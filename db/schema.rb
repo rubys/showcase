@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_05_233753) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_16_165400) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -293,6 +293,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_05_233753) do
     t.index ["package_id"], name: "index_package_includes_on_package_id"
   end
 
+  create_table "payments", force: :cascade do |t|
+    t.integer "person_id", null: false
+    t.decimal "amount"
+    t.date "date"
+    t.text "comment"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["person_id"], name: "index_payments_on_person_id"
+  end
+
   create_table "people", force: :cascade do |t|
     t.string "name"
     t.integer "studio_id"
@@ -483,6 +493,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_05_233753) do
   add_foreign_key "multis", "dances", column: "parent_id"
   add_foreign_key "package_includes", "billables", column: "option_id"
   add_foreign_key "package_includes", "billables", column: "package_id"
+  add_foreign_key "payments", "people"
   add_foreign_key "people", "ages"
   add_foreign_key "people", "billables", column: "package_id"
   add_foreign_key "people", "levels"

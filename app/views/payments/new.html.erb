@@ -1,0 +1,18 @@
+<div class="mx-auto md:w-2/3 w-full">
+  <% if @person %>
+    <h1 class="text-center font-bold text-4xl mb-8">New Payment for <%= @person.name %></h1>
+  <% else %>
+    <h1 class="text-center font-bold text-4xl mb-8">New Payment</h1>
+  <% end %>
+
+  <%= render "form", payment: @payment %>
+
+  <div class="mx-auto flex justify-center">
+    <button type="submit" class="btn-blue" form="payment-form">Create Payment</button>
+    <% if @person %>
+      <%= link_to "Back to Payments", person_payments_path(@person), class: "btn-grey" %>
+    <% else %>
+      <%= link_to "Back to Payments", payments_path, class: "btn-grey" %>
+    <% end %>
+  </div>
+</div>

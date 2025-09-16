@@ -173,6 +173,8 @@ Rails.application.routes.draw do
       post 'reset_assignments', on: :member
       post 'remove_option', on: :member
       post 'show_assignments', on: :member
+
+      resources :payments
     end
 
     resources :studios do

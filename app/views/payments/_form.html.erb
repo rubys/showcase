@@ -1,0 +1,48 @@
+<%= form_with(model: [@person, payment], class: "contents", id: 'payment-form') do |form| %>
+  <% if payment.errors.any? %>
+    <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-md mt-3">
+      <h2><%= pluralize(payment.errors.count, "error") %> prohibited this payment from being saved:</h2>
+
+      <ul class="list-disc ml-6">
+        <% payment.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="my-5">
+    <%= form.label :person_id, "Person" %>
+    <% if @person %>
+      <%= form.hidden_field :person_id %>
+      <div class="block shadow-sm rounded-md border border-gray-200 bg-gray-100 px-3 py-2 mt-2 w-full">
+        <%= @person.name %>
+      </div>
+    <% else %>
+      <%= form.collection_select :person_id, Person.order(:name), :id, :name,
+          { prompt: "Select a person" },
+          class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full",
+                 {"border-gray-400 focus:outline-blue-600": payment.errors[:person_id].none?,
+                  "border-red-400 focus:outline-red-600": payment.errors[:person_id].any?}] %>
+    <% end %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :amount %>
+    <%= form.number_field :amount, step: 0.01, placeholder: "0.00",
+        class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full",
+               {"border-gray-400 focus:outline-blue-600": payment.errors[:amount].none?,
+                "border-red-400 focus:outline-red-600": payment.errors[:amount].any?}] %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :date %>
+    <%= form.date_field :date, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": payment.errors[:date].none?, "border-red-400 focus:outline-red-600": payment.errors[:date].any?}] %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :comment %>
+    <%= form.textarea :comment, rows: 4, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": payment.errors[:comment].none?, "border-red-400 focus:outline-red-600": payment.errors[:comment].any?}] %>
+  </div>
+
+<% end %>

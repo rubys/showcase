@@ -92,6 +92,10 @@ class PeopleController < ApplicationController
     @solo_cost = @studio.student_solo_cost || @studio.solo_cost || @event.solo_cost || 0
     @multi_cost = @studio.student_multi_cost || @studio.multi_cost || @event.multi_cost || 0
 
+    # Get payments for this person
+    @payments = @person.payments.order(date: :desc)
+    @total_payments = @payments.sum(:amount)
+
     @event ||= Event.current
     @font_size = @event.font_size
 

@@ -44,6 +44,7 @@ class Person < ApplicationRecord
     dependent: :destroy
 
   has_many :scores, dependent: :destroy, foreign_key: :judge_id
+  has_many :payments, dependent: :destroy
 
   # Get people who have access to an option (either directly selected or through package includes)
   scope :with_option, ->(option_id) {
