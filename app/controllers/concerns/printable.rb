@@ -381,6 +381,21 @@ module Printable
           split = 1
         end
 
+        # For student invoices, don't split billing between paired studios
+        if split != 1.0 && student
+          # Check if the professional's studio is paired with the student's studio
+          other_studio = nil
+          if entry.lead.type == "Professional" && entry.lead.studio != studio
+            other_studio = entry.lead.studio
+          elsif entry.follow.type == "Professional" && entry.follow.studio != studio
+            other_studio = entry.follow.studio
+          end
+
+          if other_studio && studio && studio.pairs.include?(other_studio)
+            split = 1.0
+          end
+        end
+
         entry.heats.each do |heat|
           next if heat.number < 0
           category = heat.category
