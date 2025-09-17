@@ -241,8 +241,9 @@ class HeatsController < ApplicationController
       Entry.includes(:heats).where(heats: {id: nil}).each {|entry| entry.destroy}
 
       generate_agenda
-      newnumbers = @agenda.map {|category, heats| heats.map {|heat| heat.first.to_f}}.
-        flatten.select {|number| number > 0}.zip(1..).to_h
+      unique_heat_numbers = @agenda.map {|category, heats| heats.map {|heat| heat.first.to_f}}.
+        flatten.select {|number| number > 0}.uniq.sort
+      newnumbers = unique_heat_numbers.zip(1..).to_h
       count = newnumbers.select {|n, i| n.to_f != i.to_f}.length
 
       Heat.transaction do
