@@ -355,7 +355,15 @@ class SolosController < ApplicationController
         updated_heats = @solos.find { |cat, _| cat == category || (cat && category && cat.id == category.id) }&.last || []
         
         # Determine the DOM ID based on the category
-        id = category ? helpers.dom_id(category) : 'category_0'
+        # Handle both Category instances and the unscheduled Struct
+        id = if category.nil?
+          'category_0'
+        elsif category.is_a?(Category)
+          helpers.dom_id(category)
+        else
+          # This is the unscheduled Struct with id=0
+          "category_#{category.id}"
+        end
 
         render turbo_stream: turbo_stream.replace(id,
           render_to_string(partial: 'cat', layout: false, locals: {heats: updated_heats, id: id})
