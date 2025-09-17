@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -182,14 +183,15 @@ type Location struct {
 
 // WebApp represents a running web application
 type WebApp struct {
-	Location   *Location
-	Process    *exec.Cmd
-	Port       int
-	LastAccess time.Time
-	Starting   bool
-	mutex      sync.RWMutex
-	ctx        context.Context
-	cancel     context.CancelFunc
+	Location         *Location
+	Process          *exec.Cmd
+	Port             int
+	LastAccess       time.Time
+	Starting         bool
+	mutex            sync.RWMutex
+	ctx              context.Context
+	cancel           context.CancelFunc
+	activeWebSockets int32 // Count of active WebSocket connections (atomic)
 }
 
 // FrameworkConfig represents framework-specific configuration
@@ -2357,8 +2359,17 @@ func (m *AppManager) IdleChecker() {
 
 		for path, app := range m.apps {
 			app.mutex.RLock()
-			if now.Sub(app.LastAccess) > m.idleTimeout {
+			activeWebSockets := atomic.LoadInt32(&app.activeWebSockets)
+			isIdle := now.Sub(app.LastAccess) > m.idleTimeout && activeWebSockets == 0
+
+			if isIdle {
 				toStop = append(toStop, path)
+			} else if activeWebSockets > 0 {
+				slog.Debug("App has active WebSocket connections, skipping idle check",
+					"path", path,
+					"activeWebSockets", activeWebSockets,
+					"lastAccess", app.LastAccess,
+					"idleTime", now.Sub(app.LastAccess))
 			}
 			app.mutex.RUnlock()
 		}
@@ -2592,7 +2603,7 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, idleMan
 		slog.Info("Proxying to web app", "path", originalPath, "port", app.Port, "location", bestMatch.Path)
 
 		// Use retry logic for web apps too
-		proxyWithRetry(w, r, target, ProxyRetryTimeout)
+		proxyWithRetryForApp(w, r, target, ProxyRetryTimeout, app)
 	})
 }
 
@@ -3361,15 +3372,94 @@ func (w *retryResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return nil, nil, fmt.Errorf("ResponseWriter does not support hijacking")
 }
 
+// webSocketTracker wraps ResponseWriter to track WebSocket connection lifecycle
+type webSocketTracker struct {
+	http.ResponseWriter
+	app     *WebApp
+	cleaned bool
+	mutex   sync.Mutex
+}
+
+// Hijack implements the http.Hijacker interface and tracks when WebSocket is hijacked
+func (w *webSocketTracker) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	if hijacker, ok := w.ResponseWriter.(http.Hijacker); ok {
+		conn, rw, err := hijacker.Hijack()
+		if err != nil {
+			// If hijack fails, decrement the counter
+			w.cleanup()
+			return nil, nil, err
+		}
+
+		// Wrap the connection to detect when it's closed
+		return &webSocketConn{
+			Conn:    conn,
+			tracker: w,
+		}, rw, nil
+	}
+	w.cleanup()
+	return nil, nil, fmt.Errorf("ResponseWriter does not support hijacking")
+}
+
+// cleanup decrements the WebSocket counter (called only once)
+func (w *webSocketTracker) cleanup() {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
+	if !w.cleaned && w.app != nil {
+		w.cleaned = true
+		count := atomic.AddInt32(&w.app.activeWebSockets, -1)
+		slog.Debug("WebSocket connection ended", "activeWebSockets", count)
+
+		// Update last access time when WebSocket closes
+		w.app.mutex.Lock()
+		w.app.LastAccess = time.Now()
+		w.app.mutex.Unlock()
+	}
+}
+
+// webSocketConn wraps net.Conn to track when WebSocket connections close
+type webSocketConn struct {
+	net.Conn
+	tracker *webSocketTracker
+}
+
+// Close overrides the Close method to track when the connection is closed
+func (c *webSocketConn) Close() error {
+	c.tracker.cleanup()
+	return c.Conn.Close()
+}
+
 // proxyWithRetry handles proxying with automatic retry on 502 errors
 func proxyWithRetry(w http.ResponseWriter, r *http.Request, target *url.URL, maxRetryDuration time.Duration) {
+	proxyWithRetryForApp(w, r, target, maxRetryDuration, nil)
+}
+
+// proxyWithRetryForApp handles proxying with automatic retry on 502 errors and WebSocket tracking
+func proxyWithRetryForApp(w http.ResponseWriter, r *http.Request, target *url.URL, maxRetryDuration time.Duration, app *WebApp) {
 	// Check if this is a WebSocket upgrade request
 	isWebSocket := strings.ToLower(r.Header.Get("Upgrade")) == "websocket" &&
 		strings.Contains(strings.ToLower(r.Header.Get("Connection")), "upgrade")
 
 	// For WebSocket requests, proxy directly without retry logic
 	if isWebSocket {
+		// Track WebSocket connection for the app
+		if app != nil {
+			atomic.AddInt32(&app.activeWebSockets, 1)
+			slog.Debug("WebSocket connection started", "activeWebSockets", atomic.LoadInt32(&app.activeWebSockets))
+		}
+
 		proxy := httputil.NewSingleHostReverseProxy(target)
+
+		// Wrap the response writer to detect when WebSocket closes
+		if app != nil {
+			originalWriter := w
+			w = &webSocketTracker{
+				ResponseWriter: originalWriter,
+				app:           app,
+				cleaned:       false,
+			}
+		}
+
 		proxy.ServeHTTP(w, r)
 		return
 	}
