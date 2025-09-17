@@ -2673,6 +2673,9 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 								statusCode = code
 							}
 
+							// Get current app name to determine if we're replaying to a different app
+							currentAppName := os.Getenv("FLY_APP_NAME")
+
 							// Parse target to determine if it's machine, app, or region
 							var responseMap map[string]interface{}
 							if strings.HasPrefix(target, "machine=") {
@@ -2686,11 +2689,15 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 									responseMap = map[string]interface{}{
 										"app":             appName,
 										"prefer_instance": machineID,
-										"transform": map[string]interface{}{
+									}
+
+									// Only add retry header if staying within the same app
+									if currentAppName == appName {
+										responseMap["transform"] = map[string]interface{}{
 											"set_headers": []map[string]string{
 												{"name": "X-Navigator-Retry", "value": "true"},
 											},
-										},
+										}
 									}
 								}
 							} else if strings.HasPrefix(target, "app=") {
@@ -2699,14 +2706,18 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 
 								responseMap = map[string]interface{}{
 									"app": appName,
-									"transform": map[string]interface{}{
+								}
+
+								// Only add retry header if staying within the same app
+								if currentAppName == appName {
+									responseMap["transform"] = map[string]interface{}{
 										"set_headers": []map[string]string{
 											{"name": "X-Navigator-Retry", "value": "true"},
 										},
-									},
+									}
 								}
 							} else {
-								// Region-based fly-replay
+								// Region-based fly-replay (same app, different region)
 								responseMap = map[string]interface{}{
 									"region": target + ",any",
 									"transform": map[string]interface{}{
