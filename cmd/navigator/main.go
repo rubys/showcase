@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/rand"
@@ -504,6 +505,14 @@ func (r *responseRecorder) Write(data []byte) (int, error) {
 	n, err := r.ResponseWriter.Write(data)
 	r.size += n
 	return n, err
+}
+
+// Hijack implements the http.Hijacker interface for WebSocket support
+func (r *responseRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	if hijacker, ok := r.ResponseWriter.(http.Hijacker); ok {
+		return hijacker.Hijack()
+	}
+	return nil, nil, fmt.Errorf("ResponseWriter does not support hijacking")
 }
 
 // AccessLogEntry represents a structured access log entry matching nginx format
@@ -3344,8 +3353,27 @@ func (w *retryResponseWriter) WriteResponse() {
 	}
 }
 
+// Hijack implements the http.Hijacker interface for WebSocket support
+func (w *retryResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	if hijacker, ok := w.ResponseWriter.(http.Hijacker); ok {
+		return hijacker.Hijack()
+	}
+	return nil, nil, fmt.Errorf("ResponseWriter does not support hijacking")
+}
+
 // proxyWithRetry handles proxying with automatic retry on 502 errors
 func proxyWithRetry(w http.ResponseWriter, r *http.Request, target *url.URL, maxRetryDuration time.Duration) {
+	// Check if this is a WebSocket upgrade request
+	isWebSocket := strings.ToLower(r.Header.Get("Upgrade")) == "websocket" &&
+		strings.Contains(strings.ToLower(r.Header.Get("Connection")), "upgrade")
+
+	// For WebSocket requests, proxy directly without retry logic
+	if isWebSocket {
+		proxy := httputil.NewSingleHostReverseProxy(target)
+		proxy.ServeHTTP(w, r)
+		return
+	}
+
 	startTime := time.Now()
 	retryCount := 0
 	sleepDuration := 100 * time.Millisecond // Start with 100ms
