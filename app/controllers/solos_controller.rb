@@ -99,8 +99,10 @@ class SolosController < ApplicationController
     end
 
     if Event.current.agenda_based_entries?
-      category = (@person.type == 'Professional') ? :pro_solo_category : :solo_category
-      @dances = Dance.where.not(category => nil).by_name.all.map do |dance|
+      # Use solo_category_id for agenda-based entries
+      filtered_dances = Dance.where.not(solo_category_id: nil).by_name
+
+      @dances = filtered_dances.all.map do |dance|
         if dance.order < 0
           id = Dance.where(name: dance.name, order: 0..).first&.id || dance.id
           [dance.name, id]
@@ -131,8 +133,8 @@ class SolosController < ApplicationController
     @number = @solo.heat.number
 
     if event.agenda_based_entries?
-      category = (@person.type == 'Professional' && Person.find(@partner)&.type == 'Professional') ? :pro_solo_category : :solo_category
-      dances = Dance.where(order: 0...).where.not(category => nil).by_name
+      # Use solo_category_id for agenda-based entries
+      dances = Dance.where.not(solo_category_id: nil).by_name
 
       @categories = dance_categories(@solo.heat.dance, true)
 
@@ -142,7 +144,14 @@ class SolosController < ApplicationController
         @dance = dances.find {|dance| dance.name == @solo.heat.dance.name}&.id || @dance
       end
 
-      @dances = dances.map {|dance| [dance.name, dance.id]}
+      @dances = dances.map do |dance|
+        if dance.order < 0
+          id = Dance.where(name: dance.name, order: 0..).first&.id || dance.id
+          [dance.name, id]
+        else
+          [dance.name, dance.id]
+        end
+      end.uniq
     else
       @dances = Dance.by_name.all.pluck(:name, :id)
     end
