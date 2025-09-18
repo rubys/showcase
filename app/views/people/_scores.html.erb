@@ -93,7 +93,7 @@
     <% heat.scores.each do |score| %>
     <% next unless score.comments %>
     <tr class="border-y border-3 border-gray-200 m-2">
-      <td class="text-center py-1"><%= heat.number %></td>
+      <td class="text-center py-1"><%= heat.number %> <%= heat.dance.name %></td>
       <td class="px-2"><%= score.comments %></td>
     </tr>
     <% end %>
