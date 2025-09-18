@@ -3479,7 +3479,17 @@ func proxyWithRetryForApp(w http.ResponseWriter, r *http.Request, target *url.UR
 	retryCount := 0
 	sleepDuration := 100 * time.Millisecond // Start with 100ms
 
-	// Buffer the request body if present for potential retries
+	// For large request bodies (>1MB), skip retry and stream directly to avoid buffering delays
+	if r.ContentLength >= MaxFlyReplaySize {
+		slog.Debug("Streaming large request directly without retry",
+			"method", r.Method,
+			"contentLength", r.ContentLength)
+		proxy := httputil.NewSingleHostReverseProxy(target)
+		proxy.ServeHTTP(w, r)
+		return
+	}
+
+	// Buffer the request body if present for potential retries (only for small requests)
 	var bodyBytes []byte
 	if r.Body != nil && r.ContentLength > 0 {
 		// Only buffer for requests we can retry
