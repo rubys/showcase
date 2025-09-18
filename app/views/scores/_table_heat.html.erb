@@ -46,14 +46,14 @@
       <tr><td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) + (@scores&.length || 0) %>" class="bg-black"></td></tr>
     <% end %>
     <% subjects.each do |subject| %>
-    <% assign = @event.assign_judges > 0 ? subject.scores.any? {|score| score.judge_id == @judge.id} : true %>
+    <% assign = @assign_judges ? subject.scores.any? {|score| score.judge_id == @judge.id} : true %>
     <% next if @show == 'only' and not assign %>
     <% if subject.dance_id != dance %>
     <tr><td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) + (@scores&.length || 0) %>" class="bg-gray-400"></td></tr>
     <% dance = subject.dance_id %>
     <% end %>
     <% subcat = subject.entry.pro ? 'Pro' : "#{subject.entry.subject_category(@track_ages)} - #{subject.entry.level.initials}" %>
-    <% if (@sort == 'level' and lastcat and subcat != lastcat) || (@event.assign_judges > 0 && assign != lastassign && lastcat) %>
+    <% if (@sort == 'level' and lastcat and subcat != lastcat) || (@assign_judges && assign != lastassign && lastcat) %>
     <tr>
       <td class="<% if @event.judge_comments %>h-12<% elsif @sort == 'level' %>h-6<% else %>h-4<% end %>"></td>
     </tr>
@@ -65,7 +65,7 @@
     <% else %>
     <tr class="hover:bg-yellow-200 line-through opacity-50">
     <% end %>
-      <% if @event.assign_judges > 0 && assign && @show != 'only' %>
+      <% if @assign_judges && assign && @show != 'only' %>
       <td class="<% if @sort != 'level' %>py-2 <% end %>font-bold text-xl"><span class="border-2 border-red-600 px-2 rounded-full"><%= subject.lead.back || '&#9733;'.html_safe %></span></td>
       <% else %>
       <td class="<% if @sort != 'level' %>py-2 <% end %>text-xl"><%= subject.lead.back %></td>
@@ -204,7 +204,7 @@
   <% end %>
   <% unless lastassign %>
     <tr>
-      <% if @event.assign_judges > 0 %>
+      <% if @assign_judges %>
       <td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) + (@scores&.length || 0) %>"><p class="m-5">No couples assigned to this judge for this heat.</p></td>
       <% else %>
       <td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) %>"><p class="m-5">No couples on the floor for this heat.</p></td>

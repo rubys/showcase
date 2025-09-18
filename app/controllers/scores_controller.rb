@@ -36,7 +36,7 @@ class ScoresController < ApplicationController
     @style = params[:style]
     @sort = @judge.sort_order
     @show = @judge.show_assignments
-    @assign_judges = event.assign_judges? && Person.where(type: 'Judge').count > 1
+    @assign_judges = event.assign_judges? && params[:style] != 'emcee' && Person.where(type: 'Judge').count > 1
 
     @heats = Heat.all.where(number: 1..).order(:number).group(:number).includes(
       dance: [:open_category, :closed_category, :multi_category, {solo_category: :extensions}],

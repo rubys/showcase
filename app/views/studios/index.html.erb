@@ -16,6 +16,9 @@
         <% if @studio_tables.values.flatten.any? %>
         <td class="row-head">Tables</td>
         <% end %>
+        <% if @event.ballrooms == 4 %>
+        <td class="row-head">Ballroom</td>
+        <% end %>
         <% if @total_invoice > 0 %>
         <td class="row-head">Invoice</td>
         <% end %>
@@ -33,18 +36,24 @@
           <% end %>
         </td>
         <% end %>
+        <% if @event.ballrooms == 4 %>
+        <td class="text-center"><%= studio.ballroom %></td>
+        <% end %>
         <% if @total_invoice > 0 %>
         <td class="text-right">
           <%= number_to_currency @invoices[studio][:total_cost], precision: 2, unit: '' %>
         </td>
         <% end %>
       </tr>
-    <% end %>
+      <% end %>
       <tr>
         <th class="row-foot-right">totals</th>
         <td class="row-foot-right"><%= @total_count %></td>
         <% if @studio_tables.values.flatten.any? %>
         <td class="row-foot-right"><%= @studio_tables.values.flatten.uniq.count %></td>
+        <% end %>
+        <% if @event.ballrooms == 4 %>
+        <td class="row-foot-right"></td>
         <% end %>
         <% if @total_invoice > 0 %>
         <td class="row-foot-right text-right"><%= number_to_currency @total_invoice, precision: 2, unit: '' %></td>

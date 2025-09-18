@@ -8,6 +8,7 @@ class StudiosController < ApplicationController
 
   # GET /studios or /studios.json
   def index
+    @event = Event.current
     @studios = Studio.all.by_name.to_a
     staff = @studios.find {|studio| studio.id == 0}
     @studios.push @studios.delete staff
