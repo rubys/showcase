@@ -1084,11 +1084,6 @@ func NewIdleManager(config *Config) *IdleManager {
 
 // RequestStarted increments active request counter and resets idle timer
 func (im *IdleManager) RequestStarted() {
-	im.RequestStartedConditional(true)
-}
-
-// RequestStartedConditional increments active request counter conditionally
-func (im *IdleManager) RequestStartedConditional(shouldResetIdle bool) {
 	if !im.enabled {
 		return
 	}
@@ -1127,27 +1122,19 @@ func (im *IdleManager) RequestStartedConditional(shouldResetIdle bool) {
 	}
 
 	im.activeRequests++
+	im.lastActivity = time.Now()
 
-	if shouldResetIdle {
-		im.lastActivity = time.Now()
-
-		// Cancel existing timer since we have activity
-		if im.timer != nil {
-			im.timer.Stop()
-			im.timer = nil
-		}
+	// Cancel existing timer since we have activity
+	if im.timer != nil {
+		im.timer.Stop()
+		im.timer = nil
 	}
 
-	slog.Debug("Request started", "activeRequests", im.activeRequests, "resetIdle", shouldResetIdle)
+	slog.Debug("Request started", "activeRequests", im.activeRequests)
 }
 
 // RequestFinished decrements active request counter and starts idle timer if idle
 func (im *IdleManager) RequestFinished() {
-	im.RequestFinishedConditional(true)
-}
-
-// RequestFinishedConditional decrements active request counter conditionally
-func (im *IdleManager) RequestFinishedConditional(shouldResetIdle bool) {
 	if !im.enabled {
 		return
 	}
@@ -1156,12 +1143,9 @@ func (im *IdleManager) RequestFinishedConditional(shouldResetIdle bool) {
 	defer im.mutex.Unlock()
 
 	im.activeRequests--
+	im.lastActivity = time.Now()
 
-	if shouldResetIdle {
-		im.lastActivity = time.Now()
-	}
-
-	slog.Debug("Request finished", "activeRequests", im.activeRequests, "resetIdle", shouldResetIdle)
+	slog.Debug("Request finished", "activeRequests", im.activeRequests)
 
 	// Start idle timer if no active requests
 	if im.activeRequests == 0 {
@@ -2425,7 +2409,6 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, idleMan
 
 	// Health check
 	mux.HandleFunc("/up", func(w http.ResponseWriter, r *http.Request) {
-		slog.Info("Health check request", "path", r.URL.Path, "method", r.Method)
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
@@ -2433,18 +2416,9 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, idleMan
 
 	// Main handler
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Determine if this request should reset idle timeout
-		// Health checks, auth failures, and no location matches don't reset idle
-		shouldResetIdle := true
-		isHealthCheck := r.URL.Path == "/up"
-
-		if isHealthCheck {
-			shouldResetIdle = false
-		}
-
 		// Track request for suspend management
-		idleManager.RequestStartedConditional(shouldResetIdle)
-		defer idleManager.RequestFinishedConditional(shouldResetIdle)
+		idleManager.RequestStarted()
+		defer idleManager.RequestFinished()
 
 		// Generate request ID if not already present
 		requestID := r.Header.Get("X-Request-Id")
@@ -2507,12 +2481,6 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, idleMan
 
 		// Apply basic auth if needed
 		if needsAuth && !checkAuth(r, auth) {
-			// Mark that auth failed and don't reset idle timeout
-			idleManager.RequestFinishedConditional(false)
-			idleManager.RequestStartedConditional(false)
-			defer idleManager.RequestFinishedConditional(false)
-
-			slog.Info("Authentication failed", "path", r.URL.Path, "method", r.Method, "remoteAddr", r.RemoteAddr)
 			w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s"`, auth.Realm))
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
@@ -2573,12 +2541,7 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, idleMan
 				bestMatch = rootLoc
 			} else {
 				// Delegate to health check handler
-				// No location match - don't reset idle timeout
-				idleManager.RequestFinishedConditional(false)
-				idleManager.RequestStartedConditional(false)
-				defer idleManager.RequestFinishedConditional(false)
-
-				slog.Info("No location match found", "path", r.URL.Path, "method", r.Method)
+				slog.Debug("No location match found", "path", r.URL.Path)
 				mux.ServeHTTP(w, r)
 				return
 			}
@@ -2588,7 +2551,6 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, idleMan
 		if bestMatch.StandaloneServer != "" {
 			target, err := url.Parse(fmt.Sprintf("http://%s", bestMatch.StandaloneServer))
 			if err != nil {
-				slog.Info("Invalid standalone server configuration", "server", bestMatch.StandaloneServer, "error", err, "path", r.URL.Path)
 				http.Error(w, "Invalid standalone server configuration", http.StatusInternalServerError)
 				return
 			}
@@ -2599,7 +2561,6 @@ func CreateHandler(config *Config, manager *AppManager, auth *BasicAuth, idleMan
 		// Get or start the web app
 		app, err := manager.GetOrStartApp(bestMatch)
 		if err != nil {
-			slog.Info("Failed to start application", "location", bestMatch.Path, "error", err, "path", r.URL.Path)
 			http.Error(w, "Failed to start application", http.StatusInternalServerError)
 			return
 		}
@@ -2671,7 +2632,6 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 			slog.Debug("Rewrite matched", "originalPath", path, "newPath", newPath, "flag", rule.Flag)
 
 			if rule.Flag == "redirect" {
-				slog.Info("Redirect rewrite rule applied", "originalPath", path, "newPath", newPath, "status", http.StatusFound)
 				http.Redirect(w, r, newPath, http.StatusFound)
 				return true
 			} else if strings.HasPrefix(rule.Flag, "fly-replay:") {
@@ -2792,12 +2752,10 @@ func handleRewrites(w http.ResponseWriter, r *http.Request, config *Config) bool
 				}
 			} else if rule.Flag == "last" {
 				// Internal rewrite, modify the path and continue
-				slog.Info("Internal rewrite rule applied", "originalPath", path, "newPath", newPath, "flag", "last")
 				r.URL.Path = newPath
 				// Don't return true for "last" - continue processing
 			} else {
 				// Default behavior for rewrites without flags
-				slog.Info("Rewrite rule applied", "originalPath", path, "newPath", newPath)
 				r.URL.Path = newPath
 			}
 		}
