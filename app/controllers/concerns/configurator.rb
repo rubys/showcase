@@ -129,11 +129,17 @@ module Configurator
       'pattern' => "^#{root}/index_update$",
       'description' => 'Index database update endpoint'
     }
-    
+
+    # Add cable WebSocket endpoints (matches any path ending with /cable)
+    patterns << {
+      'pattern' => "/cable$",
+      'description' => 'WebSocket cable endpoints'
+    }
+
     # Studio pages are now served as static files from public/studios/
     # No need for exclude patterns since Navigator's try_files
     # will automatically serve the pre-rendered HTML files
-    
+
     patterns
   end
 
