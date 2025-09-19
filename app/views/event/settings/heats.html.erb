@@ -31,6 +31,7 @@
     <li>Open and Closed heats in the same agenda item can be on the floor at the same time.
     </ul>
     </li>
+    <li>Setting a limit on the number of entries per dance per category can also keep the number of heats down. The limit applies to all dances, but can be adjusted for each dance individually.</li>
   </ul>
 </div>
 
@@ -79,6 +80,11 @@
   <% else %>
     <%= form.hidden_field :heat_range_cat, value: 0 %>
   <% end %>
+
+  <div class="my-5">
+    <%= form.text_field :dance_limit, class: 'entry-count' %>
+    <%= form.label :dance_limit, 'Limit # of entries per dance per category' %>
+  </div>
 
   <div class="inline">
     <%= form.button 'Save', name: 'tab', value: 'Heats', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>

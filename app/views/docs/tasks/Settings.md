@@ -44,8 +44,6 @@ number, or feedback on areas that are particularly notable or need improvement (
 * Include independent instructors? - use this if your studio has instructors that are invoiced separately but otherwise participate
 with your studio.
 
-* Limit number of dances per category - prevent any student from having more than this number of entries in any dance.
-
 * Strict scoring - exclude scores for entries when tabulating for a top student 
 
 ## Event Staff
