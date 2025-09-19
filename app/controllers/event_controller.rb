@@ -178,7 +178,7 @@ class EventController < ApplicationController
       name = File.basename(file.original_filename)
       dest = File.join('tmp', 'uploads', name)
       FileUtils.mkdir_p File.dirname(dest)
-      IO.binwrite dest, file.read
+      IO.copy_stream(file.tempfile, dest)
 
       redirect_to root_path, notice: "#{file.original_filename} was successfully uploaded."
     end
