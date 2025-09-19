@@ -53,7 +53,7 @@ module Configurator
     if ENV['FLY_REGION']
       config['idle'] = {
         'action' => 'suspend',
-        'timeout' => '20m'
+        'timeout' => '15m'
       }
     end
     
