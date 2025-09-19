@@ -43,7 +43,7 @@
     </div>
   </form>
 
-  <% if @assign_judges && Person.where(type: 'Judge').count > 1 %>
+  <% if @assign_judges %>
   <h2 class="mt-12 font-bold text-2xl">Show assignments</h2>
   <form method="post" data-controller="auto-submit" action="<%= show_assignments_person_path(@judge) %>">
     <input type="hidden" name="style" value="<%= @style %>">

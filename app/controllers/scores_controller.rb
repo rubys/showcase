@@ -296,7 +296,7 @@ class ScoresController < ApplicationController
     @backnums = @event.backnums
     @track_ages = @event.track_ages
 
-    @assign_judges = false # @event.assign_judges > 0 && @heat.category != 'Solo' && Person.where(type: 'Judge').count > 1
+    @assign_judges = @style != 'emcee' && @event.assign_judges > 0 && @heat.category != 'Solo' && Person.where(type: 'Judge').count > 1
 
     @feedbacks = Feedback.all
   end
