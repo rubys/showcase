@@ -64,8 +64,8 @@ class EventController < ApplicationController
       index = events.find_index {|event| event.scope == scope}
       if index
         @up = File.join(root, 'studios', events[index].studio)
-        @prev = File.join(root, events[index-1].scope) unless index == 0
-        @next = File.join(root, events[index+1].scope) unless index == events.length - 1
+        @prev = File.join(root, events[index-1].scope + '/') unless index == 0
+        @next = File.join(root, events[index+1].scope + '/') unless index == events.length - 1
       end
     end
 

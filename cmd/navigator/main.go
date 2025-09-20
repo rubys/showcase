@@ -1800,8 +1800,14 @@ func ParseYAML(content []byte) (*Config, error) {
 
 	// Convert tenant applications to locations
 	for _, tenant := range yamlConfig.Applications.Tenants {
+		// Ensure tenant path ends with a slash
+		path := tenant.Path
+		if path != "" && !strings.HasSuffix(path, "/") {
+			path = path + "/"
+		}
+
 		location := &Location{
-			Path:             tenant.Path,
+			Path:             path,
 			EnvVars:          make(map[string]string),
 			MatchPattern:     tenant.MatchPattern,
 			StandaloneServer: tenant.StandaloneServer,
@@ -1832,7 +1838,20 @@ func ParseYAML(content []byte) (*Config, error) {
 			location.Root = yamlConfig.Server.PublicDir
 		}
 
-		config.Locations[tenant.Path] = location
+		config.Locations[path] = location
+
+		// Add automatic redirect from non-slash to slash path
+		if path != "" && path != "/" {
+			nonSlashPath := strings.TrimSuffix(path, "/")
+			// Add a rewrite rule to redirect non-slash to slash version
+			if re, err := regexp.Compile("^" + regexp.QuoteMeta(nonSlashPath) + "$"); err == nil {
+				config.RewriteRules = append(config.RewriteRules, &RewriteRule{
+					Pattern:     re,
+					Replacement: path,
+					Flag:        "redirect",
+				})
+			}
+		}
 	}
 
 	// Set app idle timeout from pools config
