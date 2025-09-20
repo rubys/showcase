@@ -2,28 +2,36 @@
   <% heats.each do |heat| %>
     <% next if heat.number < 0 %>
     <tr class="hover:bg-yellow-200" draggable="true" id="<%= dom_id heat.solo %>" data-drag-id="<%= heat.solo.id %>">
-       <td>
-       <% if heat.category == 'Solo' and heat.solo.combo_dance %>
-       <td class="row"><%= link_to heat.dance.name, edit_dance_path(heat.dance) %> / 
-       <%= link_to heat.solo.combo_dance.name, edit_dance_path(heat.solo.combo_dance) %>
-       <% else %>
-       <td class="row"><%= link_to heat.dance.name, edit_dance_path(heat.dance) %>
-       <% end %>
-       <td class="row"><%= link_to heat.lead.display_name, polymorphic_path(heat.lead, anchor: 'heats') %>
-       <% heat.solo.formations.each_with_index do |formation, index| %>
-         <% if index % 2 == 0 and formation.on_floor %>
-         <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
-         <% end %>
-       <% end %>
-       <td class="row"><%= link_to heat.follow.display_name, polymorphic_path(heat.follow, anchor: 'heats') %>
-       <% heat.solo.formations.each_with_index do |formation, index| %>
-         <% if index % 2 == 1 and formation.on_floor %>
-         <br><%= link_to formation.person.display_name, polymorphic_path(formation.person, anchor: 'heats') %>
-         <% end %>
-       <% end %>
-       <td class="row"><%= heat.entry.level.name %>
-       <td class="row text-center"><%= heat.entry.subject_category(@track_ages) %>
-       <td class="row"><%= link_to heat.studio.name, heat.studio %>
+      <td>
+      <% if heat.category == 'Solo' && heat.solo.combo_dance %>
+        <td class="row">
+          <%= link_to heat.dance.name, edit_dance_path(heat.dance) %> / 
+          <%= link_to heat.solo.combo_dance.name, edit_dance_path(heat.solo.combo_dance) %>
+      <% else %>
+        <td class="row">
+          <%= link_to heat.dance.name, edit_dance_path(heat.dance) %>
+      <% end %>
+      <td class="row">
+        <% if heat.lead.id != 0 %>
+          <%= link_to heat.lead.display_name, polymorphic_path(heat.lead, anchor: 'heats') %>
+        <% end %>
+        <% heat.solo.formations.each_with_index do |formation, index| %>
+          <% if index.even? %>
+            <%= link_to_if(formation.on_floor, "<br>#{formation.person.display_name}".html_safe, polymorphic_path(formation.person, anchor: 'heats')) %>
+          <% end %>
+        <% end %>
+      <td class="row">
+        <% if heat.follow.id != 0 %>
+          <%= link_to heat.follow.display_name, polymorphic_path(heat.follow, anchor: 'heats') %>
+        <% end %>
+        <% heat.solo.formations.each_with_index do |formation, index| %>
+          <% if index.odd? %>
+            <%= link_to_if(formation.on_floor, "<br>#{formation.person.display_name}".html_safe, polymorphic_path(formation.person, anchor: 'heats')) %>
+          <% end %>
+        <% end %>
+      <td class="row"><%= heat.entry.level.name %>
+      <td class="row text-center"><%= heat.entry.subject_category(@track_ages) %>
+      <td class="row"><%= link_to heat.studio.name, heat.studio %>
     </tr>
   <% end %>
 </tbody>
