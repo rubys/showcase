@@ -4,6 +4,8 @@
   <div class="relative">
   <% if @person && @person.id > 0 %>
   <h1 class="text-center font-bold text-4xl"><%= @person.display_name %></h1>
+  <% elsif @solo.heat.entry.lead.id == 0 && @solo.heat.entry.follow.id == 0 && @solo.heat.entry.instructor %>
+  <h1 class="text-center font-bold text-4xl"><%= @solo.heat.entry.instructor.studio.name %> Formation</h1>
   <% else %>
   <h1 class="text-center font-bold text-4xl">Edit Formation</h1>
   <% end %>
