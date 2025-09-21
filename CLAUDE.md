@@ -129,7 +129,8 @@ bin/rails assets:clobber
 - Navigator (Go web server) or Phusion Passenger manages multiple instances on a single machine
 - NGINX or Navigator handles routing to the correct instance based on URL patterns
 - Shared Redis instance for Action Cable across all events on a machine
-- See [NAVIGATOR.md](NAVIGATOR.md) for details on the Go-based nginx/Passenger replacement
+- Navigator is included as a git submodule in the `navigator/` directory
+- See [navigator/README.md](navigator/README.md) for details on the Go-based nginx/Passenger replacement
 
 ### Key Components
 
