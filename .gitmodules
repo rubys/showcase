@@ -1,0 +1,3 @@
+[submodule "navigator"]
+	path = navigator
+	url = git@github.com:rubys/navigator.git

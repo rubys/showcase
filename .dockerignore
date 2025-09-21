@@ -62,6 +62,6 @@ public/index.html
 config/storage/production.yml
 flat-storage
 
-# Navigator Go project
+# Navigator generated artifacts (source is in navigator/ submodule)
 /bin/navigator
 /config/navigator.yml

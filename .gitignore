@@ -84,6 +84,6 @@ flat-storage
 *.swo
 *~
 
-# Navigator Go project
+# Navigator Go project (now in submodule)
 /bin/navigator
 /config/navigator.yml

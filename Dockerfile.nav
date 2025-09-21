@@ -51,15 +51,15 @@ RUN SECRET_KEY_BASE=DUMMY ./bin/rails assets:precompile
 # Build Navigator
 FROM golang:bookworm AS build-nav
 
-# Copy Go modules
-COPY go.mod go.sum ./
+# Copy navigator submodule and set working directory
+COPY navigator ./
+WORKDIR /
+
+# Download Go dependencies
 RUN go mod download
 
-# Copy source code
-COPY cmd ./cmd
-
-# Build navigator
-RUN go build -mod=readonly -o /usr/local/bin/navigator ./cmd/navigator
+# Build navigator from main.go
+RUN go build -mod=readonly -o /usr/local/bin/navigator ./main.go
 
 # Nats CLI
 RUN go install github.com/nats-io/natscli/nats@latest
