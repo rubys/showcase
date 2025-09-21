@@ -353,9 +353,26 @@ module Configurator
     dbpath = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
     storage = ENV['RAILS_STORAGE'] || Rails.root.join('storage').to_s
     root = determine_root_path
-    
+
     tenants = []
-    
+
+    # Add cable tenant FIRST (special case - pattern matching priority)
+    # This must come before other tenants so the */cable pattern matches first
+    cable_config = {
+      'path' => "#{root}/cable",
+      'special' => true,
+      'match_pattern' => '*/cable',  # Match any path ending in /cable
+      'force_max_concurrent_requests' => 0
+    }
+
+    # If standalone cable is enabled, add standalone server configuration
+    if ENV['START_CABLE'] == 'true'
+      cable_config['standalone_server'] = "localhost:#{ENV.fetch('CABLE_PORT', '28080')}"
+      cable_config['rewrite_path'] = '/'  # Action Cable server expects requests at root path
+    end
+
+    tenants << cable_config
+
     # Add index tenant
     tenants << {
       'path' => root.empty? ? '/' : "#{root}/",
@@ -443,21 +460,6 @@ module Configurator
     end
     tenant_lists.close
 
-    # Add cable tenant (special case - no standard vars)
-    cable_config = {
-      'path' => "#{root}/cable",
-      'special' => true,
-      'match_pattern' => '*/cable',  # Match any path ending in /cable
-      'force_max_concurrent_requests' => 0
-    }
-    
-    # If standalone cable is enabled, add standalone server configuration
-    if ENV['START_CABLE'] == 'true'
-      cable_config['standalone_server'] = "localhost:#{ENV.fetch('CABLE_PORT', '28080')}"
-    end
-    
-    tenants << cable_config
-    
     # Add publish tenant (special case - no standard vars)
     tenants << {
       'path' => "#{root}/publish",
@@ -538,7 +540,8 @@ module Configurator
         'args' => ['exec', 'puma', '-p', ENV.fetch('CABLE_PORT', '28080'), 'cable/config.ru'],
         'working_dir' => Rails.root.to_s,
         'env' => {
-          'RAILS_ENV' => Rails.env,
+          'RAILS_ENV' => Rails.env.to_s,
+          'RAILS_APP_REDIS' => 'showcase_production',  # Same channel prefix as Rails tenants
           'RAILS_MAX_THREADS' => '10'  # Handle multiple concurrent WebSocket connections
         },
         'auto_restart' => true,
@@ -567,7 +570,7 @@ module Configurator
         'args' => ['exec', 'sidekiq'],
         'working_dir' => Rails.root.to_s,
         'env' => {
-          'RAILS_ENV' => Rails.env
+          'RAILS_ENV' => Rails.env.to_s
         },
         'auto_restart' => true,
         'start_delay' => '2s'  # Wait for cable server to start first
@@ -582,7 +585,7 @@ module Configurator
         'args' => [],
         'working_dir' => Rails.root.to_s,
         'env' => {
-          'RAILS_ENV' => Rails.env,
+          'RAILS_ENV' => Rails.env.to_s,
           'MONITOR_PORT' => '8080'
         },
         'auto_restart' => true,
