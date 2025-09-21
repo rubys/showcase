@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:1
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version and Gemfile
-ARG RUBY_VERSION=3.4.5
+ARG RUBY_VERSION=3.4.6
 FROM ruby:$RUBY_VERSION-slim AS base
 
 # Rails app lives here
@@ -49,17 +49,19 @@ RUN SECRET_KEY_BASE=DUMMY ./bin/rails assets:precompile
 
 
 # Build Navigator
-FROM golang:bookworm AS build-nav
+FROM golang:trixie AS build-nav
 
-# Copy navigator submodule and set working directory
-COPY navigator ./
-WORKDIR /
+# Set working directory for Go build
+WORKDIR /app
+
+# Copy navigator submodule
+COPY navigator .
 
 # Download Go dependencies
 RUN go mod download
 
-# Build navigator from main.go
-RUN go build -mod=readonly -o /usr/local/bin/navigator ./main.go
+# Build navigator using Makefile
+RUN make build && cp bin/navigator /usr/local/bin/navigator
 
 # Nats CLI
 RUN go install github.com/nats-io/natscli/nats@latest
