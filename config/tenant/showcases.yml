@@ -1,4 +1,33 @@
 ---
+2026:
+  clearwater:
+    :name: Clearwater
+    :region: dfw
+    :events:
+      cupid-comp:
+        :name: Cupid Comp
+        :date: 2026-02-06 - 2026-02-06
+      seattle-opener:
+        :name: Seattle Opener
+        :date: 2026-04-04 - 2026-04-04
+      gsg-opener:
+        :name: GSG Opener
+        :date: 2026-06-26 - 2026-06-26
+      glass-slipper-gala:
+        :name: Glass Slipper Gala
+        :date: 2026-07-09 - 2026-07-12
+      beach-ball:
+        :name: Beach Ball
+        :date: 2026-08-14 - 2026-08-15
+      flamingo-opener:
+        :name: Flamingo Opener
+        :date: 2026-09-04 - 2026-09-04
+      flamingo-fright-fest:
+        :name: Flamingo Fright Fest
+        :date: 2026-10-30 - 2026-10-30
+      snowball:
+        :name: Snowball
+        :date: 2026-12-11 - 2026-12-12
 2025:
   abq:
     :name: Albuquerque
