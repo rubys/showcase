@@ -13,6 +13,13 @@ regions:
     map: us
     x: 753.3598022258124
     y: 218.05721663167571
+  bos:
+    name: Boston, Massachusetts (US)
+    lat: 42.366978
+    lon: -71.02236
+    map: us
+    x: 827.1098175107608
+    y: 136.23009703027913
   ord:
     name: Chicago, Illinois (US)
     lat: 41.891544
@@ -27,6 +34,13 @@ regions:
     map: us
     x: 476.1993201496286
     y: 361.5248496538476
+  mia:
+    name: Miami, Florida (US)
+    lat: 25.7877
+    lon: -80.2241
+    map: us
+    x: 755.3064170132483
+    y: 469.82316642663625
   sjc:
     name: San Jose, California (US)
     lat: 37.3516
@@ -34,6 +48,13 @@ regions:
     map: us
     x: 112.63114487340647
     y: 223.9075025700198
+  sea:
+    name: Seattle, Washington (US)
+    lat: 47.6097
+    lon: -122.3331
+    map: us
+    x: 159.108421435958
+    y: 37.01944688208971
   ewr:
     name: Secaucus, NJ (US)
     lat: 40.789543
@@ -124,7 +145,7 @@ studios:
     name: Bellevue
     lat: 47.6144219
     lon: -122.192337
-    region: sjc
+    region: sea
     map: us
     x: 160.84891797792403
     y: 37.4219765697967
@@ -132,7 +153,7 @@ studios:
     name: Boston
     lat: 42.3554334
     lon: -71.060511
-    region: ewr
+    region: bos
     map: us
     x: 826.661092211232
     y: 136.57544481515015
@@ -172,7 +193,7 @@ studios:
     name: Clearwater
     lat: 27.966
     lon: -82.796
-    region: dfw
+    region: mia
     map: us
     x: 706.5473236124388
     y: 436.43303362885484
@@ -188,7 +209,7 @@ studios:
     name: Coquitlam
     lat: 49.2842958
     lon: -122.793281
-    region: sjc
+    region: sea
     map: us
     x: 162.11317965957727
     y: 5.675253914880955
@@ -236,7 +257,7 @@ studios:
     name: Edmonton
     lat: 53.631611
     lon: -113.323975
-    region: sjc
+    region: sea
     map: us
     x: 240.22723932236266
     y: -5.264247432342131
@@ -244,7 +265,7 @@ studios:
     name: Everett
     lat: 47.9793437
     lon: -122.2127011
-    region: sjc
+    region: sea
     map: us
     x: 162.44243958813217
     y: 30.84344800516351
@@ -356,7 +377,7 @@ studios:
     name: Laval
     lat: 45.6066
     lon: -73.707092
-    region: ewr
+    region: bos
     map: us
     x: 777.3324153383578
     y: 86.23752866493703
@@ -380,7 +401,7 @@ studios:
     name: Lakewood Ranch
     lat: 27.409191200000002
     lon: -82.39252437499218
-    region: iad
+    region: mia
     map: us
     x: 714.6376165537483
     y: 445.74101093532545
@@ -388,7 +409,7 @@ studios:
     name: Manchester
     lat: 42.9956
     lon: -71.4548
-    region: ewr
+    region: bos
     map: us
     x: 818.3657544827604
     y: 126.33737918952897
@@ -420,7 +441,7 @@ studios:
     name: Miami
     lat: 25.7741728
     lon: -80.19362
-    region: iad
+    region: mia
     map: us
     x: 755.8582522492002
     y: 469.9842854067238
@@ -468,7 +489,7 @@ studios:
     name: Montreal
     lat: 45.5019
     lon: -73.5674
-    region: ewr
+    region: bos
     map: us
     x: 779.5648385687444
     y: 87.71272338612823
@@ -484,7 +505,7 @@ studios:
     name: Ottawa
     lat: 45.4208777
     lon: -75.6901106
-    region: ewr
+    region: bos
     map: us
     x: 752.8013400154026
     y: 95.38644636060508
@@ -572,7 +593,7 @@ studios:
     name: Salem
     lat: 44.933
     lon: -123.04
-    region: sjc
+    region: sea
     map: us
     x: 136.50150209185773
     y: 82.40005410159029
@@ -588,7 +609,7 @@ studios:
     name: Sarasota
     lat: 27.339
     lon: -82.539
-    region: iad
+    region: mia
     map: us
     x: 712.4055629423673
     y: 447.3783588884137

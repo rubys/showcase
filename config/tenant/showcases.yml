@@ -28,6 +28,19 @@
       snowball:
         :name: Snowball
         :date: 2026-12-11 - 2026-12-12
+  livermore:
+    :name: Livermore
+    :region: sjc
+    :events:
+      love-shack-medal-ball:
+        :name: Love Shack Medal Ball
+        :date: 2026-02-14 - 2026-02-14
+      district-showcase:
+        :name: District Showcase
+        :date: 2026-03-13 - 2026-03-14
+      pep-rally:
+        :name: Pep Rally
+        :date: 2026-06-13 - 2026-06-13
 2025:
   abq:
     :name: Albuquerque

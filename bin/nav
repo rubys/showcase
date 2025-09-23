@@ -3,6 +3,7 @@
 export RAILS_ENV=production
 
 # Parse command line options
+PORT=9999
 USE_REFACTORED=false
 USE_MAINTENANCE=false
 NAVIGATOR_CMD="bin/navigator"
@@ -38,12 +39,13 @@ fi
 # Set config file
 if [ "$USE_MAINTENANCE" = true ]; then
     CONFIG_FILE="config/navigator-maintenance.yml"
+    PORT=3000
 else
     CONFIG_FILE="config/navigator.yml"
 fi
 
-if lsof -i :9999 -t >/dev/null; then
-    lsof -i :9999 -t | xargs -r kill -INT
+if lsof -i :$PORT -t >/dev/null; then
+    lsof -i :$PORT -t | xargs -r kill -INT
     sleep 1
 fi
 
@@ -61,7 +63,7 @@ if [ ! -f "$CONFIG_FILE" ] || [ "db/index.sqlite3" -nt "$CONFIG_FILE" ]; then
     fi
 fi
 
-open -a Firefox http://localhost:3000
+open -a Firefox http://localhost:$PORT
 
 if [ -n "$CONFIG_FILE" ]; then
     $NAVIGATOR_CMD $CONFIG_FILE
