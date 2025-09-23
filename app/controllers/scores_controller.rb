@@ -1057,11 +1057,11 @@ class ScoresController < ApplicationController
         scores = []
 
         if score.heat.entry.lead.type == 'Student'
-          scores << [score.heat.number, score.heat.entry.lead.name, score.heat.entry.follow.name, score.heat.entry.lead.studio.name, score.judge.name, score.comments]
+          scores << [score.heat.number, score.heat.dance.name, score.heat.entry.lead.name, score.heat.entry.follow.name, score.heat.entry.lead.studio.name, score.judge.name, score.comments]
         end
 
         if score.heat.entry.follow.type == 'Student'
-          scores << [score.heat.number, score.heat.entry.follow.name, score.heat.entry.lead.name, score.heat.entry.lead.studio.name, score.judge.name, score.comments]
+          scores << [score.heat.number, score.heat.dance.name, score.heat.entry.follow.name, score.heat.entry.lead.name, score.heat.entry.lead.studio.name, score.judge.name, score.comments]
         end
 
         scores
