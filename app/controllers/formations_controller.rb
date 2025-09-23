@@ -86,6 +86,13 @@ class FormationsController < ApplicationController
     @on_floor = @solo.formations.all? {|formation| formation.on_floor}
     @heat = params[:heat]
     @locked = Event.current.locked?
+
+    @convertable = @solo.heat.entry.lead_id != 0 && @solo.heat.entry.follow_id != 0
+    if @convertable
+      studio = @solo.heat.entry.lead.studio
+      @convertable &&= studio && (studio == @solo.heat.entry.follow.studio)
+      @convertable = false if @solo.formations.any? {|formation| formation.person.studio != studio}
+    end
   end
 
   # POST /formations or /formations.json

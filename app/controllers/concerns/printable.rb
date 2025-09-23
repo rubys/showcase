@@ -468,6 +468,16 @@ module Printable
         person.type == "Professional" and person.studio != studio
       end
 
+      unless student || instructor
+        studio_formations = Heat.joins(entry: :instructor)
+          .where(category: "Solo", entries: { lead_id: 0, follow_id: 0 }, people: { studio_id: studio.id })
+        studio_formations.each do |heat|
+          cost = 60
+          cost = 15 if heat.solo.formations.all? {|formation| formation.person.type == "Professional"}
+          other_charges["#{heat.dance.name} Formation"] ||= {entries: 1, count: 1, cost: cost}
+        end
+      end
+
       total_other_charges = {
         count: other_charges.values.map {|charge| charge[:count]}.sum,
         cost: other_charges.values.map {|charge| charge[:cost]}.sum

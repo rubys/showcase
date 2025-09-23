@@ -51,12 +51,14 @@ class ApplicationRecord < ActiveRecord::Base
 
         logger.info "Uploading #{blob} to tigris"
 
-        s3.put_object(
-          bucket: ENV['BUCKET_NAME'],
-          key: attachment.blob.key,
-          body: File.open(blob),
-          content_type: attachment.blob.content_type,
-        )
+        File.open(blob, 'rb') do |file|
+          s3.put_object(
+            bucket: ENV['BUCKET_NAME'],
+            key: attachment.blob.key,
+            body: file,
+            content_type: attachment.blob.content_type,
+          )
+        end
 
         attachment.blob.update!(service_name: 'tigris')
       end

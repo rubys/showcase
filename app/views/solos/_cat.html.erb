@@ -1,6 +1,7 @@
 <tbody data-controller="drop" data-drop-action="<%= drop_solos_path %>" id="<%= id %>">
   <% heats.each do |heat| %>
     <% next if heat.number < 0 %>
+    <% formations = heat.solo.formations %>
     <tr class="hover:bg-yellow-200" draggable="true" id="<%= dom_id heat.solo %>" data-drag-id="<%= heat.solo.id %>">
       <td>
       <% if heat.category == 'Solo' && heat.solo.combo_dance %>
@@ -12,26 +13,48 @@
           <%= link_to heat.dance.name, edit_dance_path(heat.dance) %>
       <% end %>
       <td class="row">
-        <% if heat.lead.id != 0 %>
-          <%= link_to heat.lead.display_name, polymorphic_path(heat.lead, anchor: 'heats') %>
-        <% end %>
-        <% heat.solo.formations.each_with_index do |formation, index| %>
-          <% if index.even? %>
-            <%= link_to_if(formation.on_floor, "<br>#{formation.person.display_name}".html_safe, polymorphic_path(formation.person, anchor: 'heats')) %>
-          <% end %>
+        <%
+          people = []
+          people << heat.lead if heat.lead.id != 0
+          formations.each_with_index {|formation, index| people << formation.person if index.even?}
+          people.uniq!
+          people.each_with_index do |person, index| 
+        %>
+        <% if index > 0 %><br><% end %><%= link_to person.display_name, polymorphic_path(person, anchor: 'heats') %>
         <% end %>
       <td class="row">
-        <% if heat.follow.id != 0 %>
-          <%= link_to heat.follow.display_name, polymorphic_path(heat.follow, anchor: 'heats') %>
+        <%
+          people = []
+          people << heat.follow if heat.follow.id != 0
+          formations.each_with_index {|formation, index| people << formation.person if index.odd?}
+          people.uniq!
+          people.each_with_index do |person, index|
+        %>
+        <% if index > 0 %><br><% end %><%= link_to person.display_name, polymorphic_path(person, anchor: 'heats') %>
         <% end %>
-        <% heat.solo.formations.each_with_index do |formation, index| %>
-          <% if index.odd? %>
-            <%= link_to_if(formation.on_floor, "<br>#{formation.person.display_name}".html_safe, polymorphic_path(formation.person, anchor: 'heats')) %>
-          <% end %>
+      <% entry = heat.entry; studio = heat.studio.name; title = nil %>
+      <% if formations.any? && entry.lead_id == 0 && entry.follow_id == 0 && entry.instructor %>
+        <td class="row">Studio Formation
+
+      <% elsif entry.lead_id > 0 && entry.lead.type == "Professional" && entry.follow.type == "Professional" %>
+        <% if formations.any? && entry.lead_id > 0 && entry.lead.type == "Professional" && entry.follow.type == "Professional" && formations.all? {|formation| formation.person.type == "Professional"} %>
+        <td class="row">Pro Formation
+        <% 
+          studios = formations.map {|formation| formation.person.studio && formation.person.studio.name} + [entry.lead.studio && entry.lead.studio.name, entry.follow.studio && entry.follow.studio.name]
+          studios = studios.uniq.compact.sort
+          if studios.size > 1
+            studio = "Multiple"
+            title = studios.join(", ")
+          end
+         %>
+        <% else %>
+        <td class="row">Pro Solo</td>
         <% end %>
-      <td class="row"><%= heat.entry.level.name %>
+      <% else %>
+        <td class="row"><%= heat.entry.level.name %>
+      <% end %>
       <td class="row text-center"><%= heat.entry.subject_category(@track_ages) %>
-      <td class="row"><%= link_to heat.studio.name, heat.studio %>
+      <td class="row"><%= link_to studio, heat.studio, title: title %>
     </tr>
   <% end %>
 </tbody>
