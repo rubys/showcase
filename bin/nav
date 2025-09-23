@@ -2,6 +2,46 @@
 
 export RAILS_ENV=production
 
+# Parse command line options
+USE_REFACTORED=false
+USE_MAINTENANCE=false
+NAVIGATOR_CMD="bin/navigator"
+CONFIG_FILE=""
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --refactored|-r) USE_REFACTORED=true ;;
+        --maintenance|-m) USE_MAINTENANCE=true ;;
+        --help|-h)
+            echo "Usage: $0 [options]"
+            echo "Options:"
+            echo "  -r, --refactored    Use navigator-refactored instead of navigator"
+            echo "  -m, --maintenance   Use config/navigator-maintenance.yml"
+            echo "  -h, --help          Show this help message"
+            exit 0
+            ;;
+        *) echo "Unknown option: $1"; exit 1 ;;
+    esac
+    shift
+done
+
+# Set navigator command
+if [ "$USE_REFACTORED" = true ]; then
+    NAVIGATOR_CMD="navigator/bin/navigator-refactored"
+    # Build refactored version if it doesn't exist
+    if [ ! -f "$NAVIGATOR_CMD" ]; then
+        echo "Building navigator-refactored..."
+        (cd navigator && make build-refactored)
+    fi
+fi
+
+# Set config file
+if [ "$USE_MAINTENANCE" = true ]; then
+    CONFIG_FILE="config/navigator-maintenance.yml"
+else
+    CONFIG_FILE="config/navigator.yml"
+fi
+
 if lsof -i :9999 -t >/dev/null; then
     lsof -i :9999 -t | xargs -r kill -INT
     sleep 1
@@ -15,9 +55,16 @@ if [ ! -d "public/docs" ]; then
     bin/prerender
 fi
 
-if [ ! -f "config/navigator.yml" ] || [ "db/index.sqlite3" -nt "config/navigator.yml" ]; then
-    bin/rails nav:config
+if [ ! -f "$CONFIG_FILE" ] || [ "db/index.sqlite3" -nt "$CONFIG_FILE" ]; then
+    if [ "$USE_MAINTENANCE" = false ]; then
+        bin/rails nav:config
+    fi
 fi
 
-open -a Firefox http://localhost:9999
-bin/navigator
+open -a Firefox http://localhost:3000
+
+if [ -n "$CONFIG_FILE" ]; then
+    $NAVIGATOR_CMD $CONFIG_FILE
+else
+    $NAVIGATOR_CMD
+fi

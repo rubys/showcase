@@ -3,9 +3,9 @@
 
 server:
   listen: 3000
-  hostname: smooth-nav.fly.dev
+  hostname: localhost
   root_path: /
-  public_dir: /rails/public
+  public_dir: public
 
 # No authentication needed for maintenance page
 auth:
