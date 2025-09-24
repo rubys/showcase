@@ -32,7 +32,7 @@ if [ "$USE_REFACTORED" = true ]; then
     # Build refactored version if it doesn't exist
     if [ ! -f "$NAVIGATOR_CMD" ]; then
         echo "Building navigator-refactored..."
-        (cd navigator && make build-refactored)
+        (cd navigator && go build -o bin/navigator-refactored cmd/navigator-refactored/main.go)
     fi
 fi
 
