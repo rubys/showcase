@@ -1,72 +1,88 @@
-#!/bin/bash
+#!/usr/bin/env ruby
 
-export RAILS_ENV=production
+require 'optparse'
+require 'fileutils'
+
+ENV['RAILS_ENV'] = 'production'
+
+# Default settings
+port = 9999
+use_maintenance = false
+navigator_cmd = "navigator/bin/navigator-refactored"
+config_file = ""
 
 # Parse command line options
-PORT=9999
-USE_REFACTORED=false
-USE_MAINTENANCE=false
-NAVIGATOR_CMD="bin/navigator"
-CONFIG_FILE=""
+OptionParser.new do |opts|
+  opts.banner = "Usage: nav [options]"
 
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        --refactored|-r) USE_REFACTORED=true ;;
-        --maintenance|-m) USE_MAINTENANCE=true ;;
-        --help|-h)
-            echo "Usage: $0 [options]"
-            echo "Options:"
-            echo "  -r, --refactored    Use navigator-refactored instead of navigator"
-            echo "  -m, --maintenance   Use config/navigator-maintenance.yml"
-            echo "  -h, --help          Show this help message"
-            exit 0
-            ;;
-        *) echo "Unknown option: $1"; exit 1 ;;
-    esac
-    shift
-done
+  opts.on("-l", "--legacy", "Use navigator-legacy instead of navigator-refactored") do
+    navigator_cmd = "navigator/bin/navigator-legacy"
+  end
 
-# Set navigator command
-if [ "$USE_REFACTORED" = true ]; then
-    NAVIGATOR_CMD="navigator/bin/navigator-refactored"
-    # Build refactored version if it doesn't exist
-    if [ ! -f "$NAVIGATOR_CMD" ]; then
-        echo "Building navigator-refactored..."
-        (cd navigator && go build -o bin/navigator-refactored cmd/navigator-refactored/main.go)
-    fi
-fi
+  opts.on("-r", "--refactored", "Use navigator-refactored instead of navigator-legacy") do
+    navigator_cmd = "navigator/bin/navigator-refactored"
+  end
+
+  opts.on("-m", "--maintenance", "Use config/navigator-maintenance.yml") do
+    use_maintenance = true
+  end
+
+  opts.on("-h", "--help", "Show this help message") do
+    puts opts
+    exit
+  end
+end.parse!
+
+# Build navigator if needed
+latest_go_mtime = Dir.glob("navigator/**/*.go").map { |f| File.mtime(f) }.max
+if !File.exist?(navigator_cmd) || File.mtime(navigator_cmd) < latest_go_mtime
+  puts "Building navigator..."
+  Dir.chdir('navigator') do
+      system("make")
+  end
+end
 
 # Set config file
-if [ "$USE_MAINTENANCE" = true ]; then
-    CONFIG_FILE="config/navigator-maintenance.yml"
-    PORT=3000
+if use_maintenance
+  config_file = "config/navigator-maintenance.yml"
+  port = 3000
 else
-    CONFIG_FILE="config/navigator.yml"
-fi
+  config_file = "config/navigator.yml"
+end
 
-if lsof -i :$PORT -t >/dev/null; then
-    lsof -i :$PORT -t | xargs -r kill -INT
-    sleep 1
-fi
+# Kill any existing process on the port
+if system("lsof -i :#{port} -t >/dev/null 2>&1")
+  pids = `lsof -i :#{port} -t`.strip.split("\n")
+  pids.each { |pid| Process.kill("INT", pid.to_i) } unless pids.empty?
+  sleep 1
+end
 
-if [ ! -d "public/assets" ]; then
-    bin/rails assets:precompile
-fi
+# Ensure assets are precompiled
+unless File.directory?("public/assets")
+  system("bin/rails assets:precompile")
+end
 
-if [ ! -d "public/docs" ]; then
-    bin/prerender
-fi
+# Ensure docs are prerendered
+unless File.directory?("public/docs")
+  system("bin/prerender")
+end
 
-if [ ! -f "$CONFIG_FILE" ] || [ "db/index.sqlite3" -nt "$CONFIG_FILE" ]; then
-    if [ "$USE_MAINTENANCE" = false ]; then
-        bin/rails nav:config
-    fi
-fi
+# Generate config if needed or outdated
+if !File.exist?(config_file) || (File.exist?("db/index.sqlite3") && File.mtime("db/index.sqlite3") > File.mtime(config_file))
+  unless use_maintenance
+    system("bin/rails nav:config")
+  end
+end
 
-open -a Firefox http://localhost:$PORT
+# Open browser
+Thread.new do
+  sleep 0.5
+  system("open -a Firefox http://localhost:#{port}")
+end
 
-if [ -n "$CONFIG_FILE" ]; then
-    $NAVIGATOR_CMD $CONFIG_FILE
+# Run navigator
+if File.exist?(config_file)
+  system(navigator_cmd, config_file)
 else
-    $NAVIGATOR_CMD
-fi
+  system(navigator_cmd)
+end

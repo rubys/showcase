@@ -50,6 +50,7 @@ RUN SECRET_KEY_BASE=DUMMY ./bin/rails assets:precompile
 
 # Build Navigator
 FROM golang:trixie AS build-nav
+ARG NAVIGATOR=legacy
 
 # Set working directory for Go build
 WORKDIR /app
@@ -61,7 +62,7 @@ COPY navigator .
 RUN go mod download
 
 # Build navigator using Makefile
-RUN make build && cp bin/navigator /usr/local/bin/navigator
+RUN make && cp bin/navigator-${NAVIGATOR} /usr/local/bin/navigator
 
 # Nats CLI
 RUN go install github.com/nats-io/natscli/nats@latest
