@@ -223,6 +223,7 @@ Rails.application.routes.draw do
       match 'instructor', on: :collection, via: %i(get post)
       post 'reset', on: :collection
       get 'comments', on: :collection
+      get 'unscored', on: :collection
       match 'callbacks', on: :collection, action: :callbacks, via: %i(get post)
 
       match 'details/by-level', on: :collection, action: :by_level, via: %i(get post), defaults: {details: true}

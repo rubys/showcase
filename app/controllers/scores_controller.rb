@@ -1074,6 +1074,35 @@ class ScoresController < ApplicationController
     end
   end
 
+  def unscored
+    # Get heats with no scores at all
+    heats_without_scores = Heat.left_joins(:scores)
+      .where(scores: { id: nil })
+      .where.not(number: nil)
+      .where.not(number: 0)
+
+    # Get heats with scores but all fields are null
+    heats_with_empty_scores = Heat.joins(:scores)
+      .where(scores: { value: nil, comments: nil, good: nil, bad: nil })
+      .where.not(number: nil)
+      .where.not(number: 0)
+
+    # Combine both sets of heats
+    heat_ids = heats_without_scores.pluck(:id) + heats_with_empty_scores.pluck(:id)
+
+    @unscored_heats = Heat.where(id: heat_ids.uniq)
+      .includes(entry: [:lead, :follow], scores: :judge)
+      .order(:number)
+
+    # Get the column order setting from the event
+    @column_order = Event.current.column_order
+
+    respond_to do |format|
+      format.html
+      format.csv
+    end
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_score

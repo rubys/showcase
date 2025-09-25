@@ -1,0 +1,41 @@
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-6 text-center">Unscored Heats</h1>
+
+  <% if @unscored_heats.any? %>
+    <div class="overflow-x-auto">
+      <table class="min-w-full bg-white border border-gray-300">
+        <thead>
+          <tr class="bg-gray-100">
+            <th class="px-4 py-2 border text-left">Heat Number</th>
+            <% if @column_order == 1 %>
+              <th class="px-4 py-2 border text-left">Lead</th>
+              <th class="px-4 py-2 border text-left">Follow</th>
+            <% else %>
+              <th class="px-4 py-2 border text-left">Student</th>
+              <th class="px-4 py-2 border text-left">Instructor</th>
+            <% end %>
+            <th class="px-4 py-2 border text-left">Judge</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @unscored_heats.each do |heat| %>
+            <% judge_info = heat.scores.first&.judge %>
+            <tr class="hover:bg-gray-50">
+              <td class="px-4 py-2 border"><%= heat.number %></td>
+              <% if @column_order == 1 || heat.entry.lead.type == 'Student' %>
+                <td class="px-4 py-2 border"><%= heat.entry.lead&.display_name || "N/A" %></td>
+                <td class="px-4 py-2 border"><%= heat.entry.follow&.display_name || "N/A" %></td>
+              <% else %>
+                <td class="px-4 py-2 border"><%= heat.entry.follow&.display_name || "N/A" %></td>
+                <td class="px-4 py-2 border"><%= heat.entry.lead&.display_name || "N/A" %></td>
+              <% end %>
+              <td class="px-4 py-2 border"><%= judge_info&.display_name || "N/A" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="text-gray-600">All heats have been scored!</p>
+  <% end %>
+</div>

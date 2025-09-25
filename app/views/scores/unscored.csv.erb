@@ -1,0 +1,21 @@
+<%- require 'csv' -%>
+<%- headers = ['Heat Number'] -%>
+<%- if @column_order == 1 -%>
+  <%- headers += ['Lead', 'Follow'] -%>
+<%- else -%>
+  <%- headers += ['Student', 'Instructor'] -%>
+<%- end -%>
+<%- headers << 'Judge' -%>
+<%= CSV.generate_line(headers).strip %>
+<%- @unscored_heats.each do |heat| -%>
+  <%- row = [heat.number] -%>
+  <%- if @column_order == 1 || heat.entry.lead.type == 'Student' -%>
+    <%- row << heat.entry.lead&.display_name -%>
+    <%- row << heat.entry.follow&.display_name -%>
+  <%- else -%>
+    <%- row << heat.entry.follow&.display_name -%>
+    <%- row << heat.entry.lead&.display_name -%>
+  <%- end -%>
+  <%- row << heat.scores.first&.judge&.display_name -%>
+<%= CSV.generate_line(row).strip %>
+<%- end -%>
