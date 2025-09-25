@@ -310,15 +310,13 @@ module Printable
         'Open' => @event.pro_heat_cost || 0.0,
         'Solo' => @event.pro_solo_cost || 0.0,
         'Multi' => @event.pro_multi_cost || 0.0
-    )
+      )
 
       preload = {
         lead: [:studio, {options: :option, package: {package_includes: :option}}],
         follow: [:studio, {options: :option, package: {package_includes: :option}}],
         heats: {dance: [:open_category, :closed_category, :solo_category]}
       }
-      entries = (Entry.joins(:follow).preload(preload).where(people: {type: 'Student', studio: studio}) +
-        Entry.joins(:lead).preload(preload).where(people: {type: 'Student', studio: studio})).uniq
 
       # add professional entries - this one is used to detect pros who are not in the studio
       pentries = (Entry.joins(:follow).preload(preload).where(people: {type: 'Professional', studio: studio}) +
@@ -326,6 +324,13 @@ module Printable
 
       # add professional entries - this one is contains all pro entries
       pro_entries = pentries.select {|entry| entry.lead.type == 'Professional' && entry.follow.type == 'Professional'}
+
+      if @event.proam_studio_invoice == "P"
+        entries = pentries - pro_entries
+      else
+        entries = (Entry.joins(:follow).preload(preload).where(people: {type: 'Student', studio: studio}) +
+          Entry.joins(:lead).preload(preload).where(people: {type: 'Student', studio: studio})).uniq
+      end
 
       pentries -= pro_entries
 
@@ -472,8 +477,8 @@ module Printable
         studio_formations = Heat.joins(entry: :instructor)
           .where(category: "Solo", entries: { lead_id: 0, follow_id: 0 }, people: { studio_id: studio.id })
         studio_formations.each do |heat|
-          cost = 60
-          cost = 15 if heat.solo.formations.all? {|formation| formation.person.type == "Professional"}
+          cost = @event.studio_formation_cost || 0
+          cost = @event.pro_solo_cost || 0 if heat.solo.formations.all? {|formation| formation.person.type == "Professional"}
           other_charges["#{heat.dance.name} Formation"] ||= {entries: 1, count: 1, cost: cost}
         end
       end

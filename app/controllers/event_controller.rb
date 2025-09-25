@@ -205,7 +205,8 @@ class EventController < ApplicationController
       :heat_cost, :solo_cost, :multi_cost, :max_heat_size, :package_required, :student_package_description, :payment_due,
       :counter_art, :judge_comments, :agenda_based_entries, :pro_heats, :assign_judges, :font_family, :font_size, :include_times,
       :include_open, :include_closed, :solo_level_id, :print_studio_heats, :independent_instructors, :closed_scoring, :heat_order, :dance_limit,
-      :counter_color, :pro_heat_cost, :pro_solo_cost, :pro_multi_cost, :strict_scoring, :solo_scoring, :pro_am, :judge_recordings, :table_size, :finalist)
+      :counter_color, :pro_heat_cost, :pro_solo_cost, :pro_multi_cost, :strict_scoring, :solo_scoring, :pro_am, :judge_recordings, :table_size, :finalist,
+      :studio_formation_cost, :proam_studio_invoice)
 
     @event.dance_limit = nil if @event.dance_limit == 0
 

@@ -47,8 +47,19 @@
 
   <div class="my-5">
     <%= form.label :payment_due, 'Payment Due Date' %>
-    <%= form.text_field :payment_due, 
+    <%= form.text_field :payment_due,
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <label>Invoice Pro-Am Couples To:</label>
+    <div class="mt-2">
+      <%= form.radio_button :proam_studio_invoice, 'A', class: 'mr-2' %>
+      <%= form.label :proam_studio_invoice_A, 'Amateur Studio', class: 'mr-6' %>
+
+      <%= form.radio_button :proam_studio_invoice, 'P', class: 'mr-2' %>
+      <%= form.label :proam_studio_invoice_P, 'Professional Studio' %>
+    </div>
   </div>
 
   <h2 class="font-bold text-2xl mt-4">Dances</h2>
@@ -110,4 +121,13 @@
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
   <% end %>
+
+  <h2 class="font-bold text-2xl mt-4">Formations</h2>
+
+  <div class="my-5">
+    <%= form.label :studio_formation_cost, 'Studio Formation' %>
+    <%= form.number_field :studio_formation_cost, step: :any,
+      value: number_to_currency(form.object.studio_formation_cost.to_f, delimiter: '', unit: ''),
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
   <% end %>
