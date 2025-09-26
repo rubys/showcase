@@ -11,6 +11,7 @@ class Studio < ApplicationRecord
   belongs_to :default_guest_package, class_name: 'Billable', optional: true
 
   has_many :people, dependent: :destroy
+  has_many :entries, dependent: :nullify
 
   has_many :studio1_pairs, class_name: "StudioPair", foreign_key: :studio2_id,
     dependent: :destroy

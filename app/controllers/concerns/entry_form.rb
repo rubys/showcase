@@ -84,6 +84,9 @@ module EntryForm
     @columns = Dance.maximum(:col) || 4
 
     @track_ages = event.track_ages
+
+    # Set instructor if we have an existing entry
+    @instructor = entry.instructor_id if entry
   end
 
   def find_or_create_entry(params)
@@ -101,7 +104,7 @@ module EntryForm
     if lead.type == 'Professional' or follow.type == 'Professional'
       instructor = nil
     else
-      instructor = params[:instructor]
+      instructor = params[:instructor_id] || params[:instructor]
     end
 
     level = Level.where(id: params[:level]).first

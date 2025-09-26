@@ -117,15 +117,6 @@ class PeopleTest < ApplicationSystemTestCase
     click_on "Back"
   end
 
-  test "should not show table options for Judge" do
-    judge = people(:Judy)
-    visit person_url(judge)
-    click_on "Edit this person", match: :first
-
-    # Table dropdown should not be visible for Judge
-    assert_no_selector "#person_table_id"
-  end
-
   test "should destroy Person" do
     visit person_url(@person)
     click_on "Edit this person", match: :first

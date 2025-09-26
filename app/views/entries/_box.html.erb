@@ -46,7 +46,7 @@
    <% end %>
    <% end %>
   <% else %>
-  <%= form.select :instructor, @instructors, {selected: @instructor}, data: {target => 'instructor'},
+  <%= form.select :instructor_id, @instructors, {selected: @instructor}, data: {target => 'instructor'},
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64", title: 'instructor' %>
   <% end %>
 
@@ -61,5 +61,10 @@
   <% else %>
   <%= form.hidden_field :level, value: Level.maximum(:id) %>
   <p class ="mt-8"></p></div>
+  <% end %>
+
+  <% if @studios && @studios.length > 1 %>
+    <%= form.select :studio_id, @studios.map {|studio| [studio.name, studio.id]}, {selected: @studio}, title: 'studio',
+      class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %></p>
   <% end %>
 </div>

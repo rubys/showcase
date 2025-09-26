@@ -3,7 +3,8 @@
 
   <% instructor = entries.any? {|partner, entry_list| entry_list.any? {|entry| entry.instructor}} %>
   <% invoice_studios = entries.values.flatten.map(&:invoice_studio).uniq %>
-  <% show_invoice_studio = invoice_studios.length > 1 %>
+  <% event = @event || Event.current %>
+  <% show_invoice_studio = event.heat_cost && event.heat_cost > 0 && invoice_studios.length > 1 %>
 
   <thead>
     <th class="pr-4">heats</th>

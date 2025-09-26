@@ -66,7 +66,8 @@ class EntriesController < ApplicationController
     form_init(params[:primary], @entry)
     agenda_init
 
-    @partner = @entry.partner(@person).id
+    partner = @entry.partner(@person)
+    @partner = partner.id
     @age = @entry.age_id
     @level = @entry.level_id
 
@@ -94,6 +95,9 @@ class EntriesController < ApplicationController
         @instructors[partner.display_name] = @partner
       end
     end
+
+    @studios = [@person.studio, partner.studio, @entry.instructor&.studio].compact.uniq
+    @studio = @studios.find {|studio| studio.name == @entry.invoice_studio}&.id if @studios.length > 1
   end
 
   # POST /entries or /entries.json
@@ -135,6 +139,17 @@ class EntriesController < ApplicationController
     entry = params[:entry]
     replace = find_or_create_entry(entry)
 
+    # Store lead and follow for later use
+    @person = Person.find(entry[:primary] || 0)
+    partner = Person.find(entry[:partner] || 0)
+    if @person.role == "Follower" || partner.role == 'Leader' || entry[:role] == 'Follower'
+      lead = partner
+      follow = @person
+    else
+      lead = @person
+      follow = partner
+    end
+
     event = Event.current
     if event.include_open && !event.include_closed
       params[:entry][:entries]['Closed'] ||= {}
@@ -148,15 +163,43 @@ class EntriesController < ApplicationController
 
     previous = @entry.heats.length
 
-    Entry.transaction do
-      update_heats(entry)
+    begin
+      Entry.transaction do
+        update_heats(entry)
 
-      if @entry.errors.any?
-        entries = @entries
-        edit
-        @entries = entries
-        return render :edit, status: :unprocessable_content
+        if @entry.errors.any?
+          raise ActiveRecord::Rollback
+        end
+
+        # Also validate the replacement entry if it's different
+        if replace && replace != @entry && !replace.valid?
+          # Copy validation errors from replace to @entry so they show in the form
+          replace.errors.each do |error|
+            @entry.errors.add(error.attribute, error.message)
+          end
+          raise ActiveRecord::Rollback
+        end
       end
+    rescue ActiveRecord::Rollback
+      # Transaction rolled back, errors are preserved
+    end
+
+    if @entry.errors.any? || (replace && replace != @entry && !replace.valid?)
+      # Need to set up the form variables without losing errors
+      entries = @entries
+      form_init(params[:entry][:primary], @entry)
+      agenda_init
+
+      partner = @entry.partner(@person)
+      @partner = partner.id
+      @age = @entry.age_id
+      @level = @entry.level_id
+      @next = params[:next]
+
+      # Restore the entries that were tallied during update_heats
+      @entries = entries
+
+      return render :edit, status: :unprocessable_content
     end
 
     if not replace
@@ -271,7 +314,7 @@ class EntriesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def entry_params
-      params.require(:entry).permit(:count, :dance_id, :lead_id, :follow_id)
+      params.require(:entry).permit(:count, :dance_id, :lead_id, :follow_id, :studio_id)
     end
 
     def agenda_init

@@ -4,6 +4,7 @@ class Entry < ApplicationRecord
   belongs_to :lead, class_name: 'Person'
   belongs_to :follow, class_name: 'Person'
   belongs_to :instructor, class_name: 'Person', optional: true
+  belongs_to :studio, optional: true
   belongs_to :age
   belongs_to :level
 
@@ -121,7 +122,9 @@ class Entry < ApplicationRecord
   end
 
   def invoice_studios
-    if lead_id == 0 || follow_id == 0
+    if studio_id
+      {studio => 1}
+    elsif instructor_id
       {instructor.studio => 1}
     elsif lead.type == 'Professional'
       if follow.type == 'Professional' && lead.studio != follow.studio

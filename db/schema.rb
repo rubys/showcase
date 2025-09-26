@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_25_171325) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_26_120648) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -145,11 +145,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_25_171325) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "instructor_id"
+    t.integer "studio_id"
     t.index ["age_id"], name: "index_entries_on_age_id"
     t.index ["follow_id"], name: "index_entries_on_follow_id"
     t.index ["instructor_id"], name: "index_entries_on_instructor_id"
     t.index ["lead_id"], name: "index_entries_on_lead_id"
     t.index ["level_id"], name: "index_entries_on_level_id"
+    t.index ["studio_id"], name: "index_entries_on_studio_id"
   end
 
   create_table "events", force: :cascade do |t|
@@ -484,6 +486,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_25_171325) do
   add_foreign_key "entries", "people", column: "follow_id"
   add_foreign_key "entries", "people", column: "instructor_id"
   add_foreign_key "entries", "people", column: "lead_id"
+  add_foreign_key "entries", "studios"
   add_foreign_key "events", "levels", column: "solo_level_id"
   add_foreign_key "formations", "people"
   add_foreign_key "formations", "solos"
