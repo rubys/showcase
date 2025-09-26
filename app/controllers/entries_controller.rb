@@ -96,8 +96,10 @@ class EntriesController < ApplicationController
       end
     end
 
-    @studios = [@person.studio, partner.studio, @entry.instructor&.studio].compact.uniq
-    @studio = @studios.find {|studio| studio.name == @entry.invoice_studio}&.id if @studios.length > 1
+    if @entry.lead.type != 'Professional' or @entry.follow.type != 'Professional'
+      @studios = [@person.studio, partner.studio, @entry.instructor&.studio].compact.uniq
+      @studio = @studios.find {|studio| studio.name == @entry.invoice_studio}&.id if @studios.length > 1
+    end
   end
 
   # POST /entries or /entries.json
