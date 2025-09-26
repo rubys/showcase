@@ -27,8 +27,8 @@
     <% heat = heats.first
     
        entry = heat.entry
-       if entry.lead.type == 'Student' and entry.follow.type == 'Student' 
-         split = (invoice == :studio and entry.lead.studio_id == entry.follow.studio_id) ? 1 : 2
+       if entry.lead.type == 'Student' and entry.follow.type == 'Student'
+         split = 2
          split = 1 if entry.lead == partner or entry.follow == partner
        else
          split = 1

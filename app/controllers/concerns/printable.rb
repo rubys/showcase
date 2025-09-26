@@ -389,10 +389,6 @@ module Printable
       entries.uniq.each do |entry|
         if entry.lead.type == 'Student' and entry.follow.type == 'Student'
           split = 2.0
-        elsif entry.lead.type == "Professional" and entry.lead.studio != studio
-          split = 2.0
-        elsif entry.follow.type == "Professional" and entry.follow.studio != studio
-          split = 2.0
         else
           split = 1
         end
