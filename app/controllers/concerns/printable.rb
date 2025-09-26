@@ -434,7 +434,7 @@ module Printable
             other_charges[dance_category.name] ||= {entries: 0, count: 0, cost: 0}
             other_charges[dance_category.name] = {
               entries: other_charges[dance_category.name][:entries] + 1,
-              count: other_charges[dance_category.name][:count] + 1 / split,
+              count: other_charges[dance_category.name][:count] + 1.0 / split,
               cost: other_charges[dance_category.name][:cost] + dance_category.studio_cost_override / split
             }
 
@@ -442,20 +442,20 @@ module Printable
           end
 
           if entry.lead.type == 'Student' and @dances[entry.lead]
-            @dances[entry.lead][:dances] += 1 / split
+            @dances[entry.lead][:dances] += 1.0 / split
             @dances[entry.lead][:cost] += base_cost / split
 
             if @student
-              @dances[entry.lead][category] = (@dances[entry.lead][category] || 0) + 1/split
+              @dances[entry.lead][category] = (@dances[entry.lead][category] || 0) + 1.0/split
             end
           end
 
           if entry.follow.type == 'Student' and @dances[entry.follow]
-            @dances[entry.follow][:dances] += 1 / split
+            @dances[entry.follow][:dances] += 1.0 / split
             @dances[entry.follow][:cost] += base_cost / split
 
             if @student
-              @dances[entry.follow][category] = (@dances[entry.follow][category] || 0) + 1/split
+              @dances[entry.follow][category] = (@dances[entry.follow][category] || 0) + 1.0/split
             end
           end
         end
