@@ -354,6 +354,9 @@ module Printable
 
       entries += pentries + pro_entries
 
+      # Pre-load age cost overrides once for efficiency
+      age_cost = AgeCost.all.index_by(&:age_id)
+
       people = entries.map {|entry| [entry.lead, entry.follow]}.flatten
 
       if instructor
@@ -418,6 +421,13 @@ module Printable
           category = dance_category.name if dance_category&.cost_override
           category = heat.dance.name if heat.dance.cost_override
 
+          # Apply age cost overrides (same logic as in _entry.html.erb)
+          base_cost = @cost[category] || 0
+          # Apply the same age cost override logic as the entry view
+          if age_cost[entry.age_id]&.heat_cost
+            base_cost = age_cost[entry.age_id].heat_cost
+          end
+
           if dance_category&.studio_cost_override
             split = 1 if dance_category.cost_override == 0 && entry.lead.studio == entry.follow.studio
 
@@ -433,7 +443,7 @@ module Printable
 
           if entry.lead.type == 'Student' and @dances[entry.lead]
             @dances[entry.lead][:dances] += 1 / split
-            @dances[entry.lead][:cost] += @cost[category] / split
+            @dances[entry.lead][:cost] += base_cost / split
 
             if @student
               @dances[entry.lead][category] = (@dances[entry.lead][category] || 0) + 1/split
@@ -442,7 +452,7 @@ module Printable
 
           if entry.follow.type == 'Student' and @dances[entry.follow]
             @dances[entry.follow][:dances] += 1 / split
-            @dances[entry.follow][:cost] += @cost[category] / split
+            @dances[entry.follow][:cost] += base_cost / split
 
             if @student
               @dances[entry.follow][category] = (@dances[entry.follow][category] || 0) + 1/split
