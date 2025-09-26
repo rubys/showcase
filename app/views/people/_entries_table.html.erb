@@ -2,19 +2,24 @@
   <caption class="text-left font-bold pt-8 text-3xl pb-5">Entries</caption>
 
   <% instructor = entries.any? {|partner, entry_list| entry_list.any? {|entry| entry.instructor}} %>
+  <% invoice_studios = entries.values.flatten.map(&:invoice_studio).uniq %>
+  <% show_invoice_studio = invoice_studios.length > 1 %>
 
   <thead>
-    <th>heats</th>
+    <th class="pr-4">heats</th>
     <% if solos.length > 0 %>
-    <th>solos</th>
+    <th class="pr-4">solos</th>
     <% end %>
-    <th>partner</th>
+    <th class="pr-4">partner</th>
     <% if instructor %>
-    <th>instructor</th>
+    <th class="pr-4">instructor</th>
     <% end %>
-    <th>level</th>
+    <th class="pr-4">level</th>
     <% if track_ages %>
-    <th>age</th>
+    <th class="pr-4">age</th>
+    <% end %>
+    <% if show_invoice_studio %>
+    <th class="pr-4">invoice studio</th>
     <% end %>
   </thead>
 
@@ -41,6 +46,9 @@
           <% if track_ages %>
           <td class="row"><%= entry.age_category %></td>
           <% end %>
+          <% if show_invoice_studio %>
+          <td class="row"><%= entry.invoice_studio %></td>
+          <% end %>
           <td>
           <form method="get" action="<%= edit_entry_path(entry) %>">
           <input type="hidden" name="primary" value="<%= person.id %>">
@@ -55,7 +63,8 @@
       <% if solos.length > 0 %>
       <td class="border-t-2 border-gray-200 row text-right"><%= solos.length %></td>
       <% end %>
-      <th colspan="5" class="border-t-2 border-gray-200 row text-center font-bold">total</th>
+      <% colspan = 3 + (instructor ? 1 : 0) + (track_ages ? 1 : 0) + (show_invoice_studio ? 1 : 0) %>
+      <th colspan="<%= colspan %>" class="border-t-2 border-gray-200 row text-center font-bold">total</th>
     </tr>
   </tbody>
 </table>

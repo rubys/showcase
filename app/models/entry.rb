@@ -111,6 +111,39 @@ class Entry < ApplicationRecord
     (pro || lead_id == 0) ? '-' : age.category
   end
 
+  def invoice_studio
+    studios = invoice_studios
+    if studios.size == 1
+      studios.keys.first.name
+    else
+      'Split'
+    end
+  end
+
+  def invoice_studios
+    if lead_id == 0 || follow_id == 0
+      {instructor.studio => 1}
+    elsif lead.type == 'Professional'
+      if follow.type == 'Professional' && lead.studio != follow.studio
+        {lead.studio => 0.5, follow.studio => 0.5}
+      elsif Event.current.proam_studio_invoice == 'A'
+        {follow.studio => 1}
+      else
+        {lead.studio => 1}
+      end
+    elsif follow.type == 'Professional'
+      if Event.current.proam_studio_invoice == 'A'
+        {lead.studio => 1}
+      else
+        {follow.studio => 1}
+      end
+    elsif lead.studio != follow.studio
+      {lead.studio => 0.5, follow.studio => 0.5}
+    else
+      {lead.studio => 1}
+    end
+  end
+
 private
 
   def has_one_instructor
