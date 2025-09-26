@@ -47,10 +47,10 @@
       <td><div class="mx-4"><%= dance %></div>
       <td><%= level %></td>
       <td class="text-center"><%= subjcat %></td>
-      <td class="text-right"><%= heats.length %></td>
+      <td class="text-right"><%= number_with_precision heats.length.to_f/split, strip_insignificant_zeros: true %></td>
       <td class="text-right"><%= localized_number cost*heats.length/split %></td>
     </tr>
-    <% count += heats.length %>
+    <% count += heats.length.to_f/split %>
     <% total += cost/split * heats.length %>
   <% end %>
     <tr class="text-sm">
