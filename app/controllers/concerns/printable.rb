@@ -318,19 +318,27 @@ module Printable
         heats: {dance: [:open_category, :closed_category, :solo_category]}
       }
 
+      # Get entries where the studio might be involved (via direct assignment, lead, follow, or instructor)
+      # Using a single query with OR conditions to filter at the database level
+      entries = Entry.left_joins(:lead, :follow, :instructor)
+        .where(
+          "entries.studio_id = :studio_id OR " +
+          "people.studio_id = :studio_id OR " +
+          "follows_entries.studio_id = :studio_id OR " +
+          "instructors_entries.studio_id = :studio_id",
+          studio_id: studio.id
+        )
+        .preload(preload)
+        .distinct
+        .to_a
+        .select { |entry| entry.invoice_studios.keys.include?(studio) }
+
       # add professional entries - this one is used to detect pros who are not in the studio
       pentries = (Entry.joins(:follow).preload(preload).where(people: {type: 'Professional', studio: studio}) +
         Entry.joins(:lead).preload(preload).where(people: {type: 'Professional', studio: studio})).uniq
 
       # add professional entries - this one is contains all pro entries
       pro_entries = pentries.select {|entry| entry.lead.type == 'Professional' && entry.follow.type == 'Professional'}
-
-      if @event.proam_studio_invoice == "P"
-        entries = pentries - pro_entries
-      else
-        entries = (Entry.joins(:follow).preload(preload).where(people: {type: 'Student', studio: studio}) +
-          Entry.joins(:lead).preload(preload).where(people: {type: 'Student', studio: studio})).uniq
-      end
 
       pentries -= pro_entries
 
