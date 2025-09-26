@@ -355,7 +355,7 @@ module Printable
       entries += pentries + pro_entries
 
       # Pre-load age cost overrides once for efficiency
-      age_cost = AgeCost.all.index_by(&:age_id)
+      age_cost = @track_ages ? AgeCost.all.index_by(&:age_id) : {}
 
       people = entries.map {|entry| [entry.lead, entry.follow]}.flatten
 
@@ -420,7 +420,7 @@ module Printable
           # Apply age cost overrides (same logic as in _entry.html.erb)
           base_cost = @cost[category] || 0
           # Apply the same age cost override logic as the entry view
-          if age_cost[entry.age_id]&.heat_cost
+          if @track_ages && age_cost[entry.age_id]&.heat_cost
             base_cost = age_cost[entry.age_id].heat_cost
           end
 

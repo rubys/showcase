@@ -19,12 +19,12 @@
 
 <div class="flex">
 <input type="submit" name="commit" value="Update prices" class="btn-blue" form="billable-form" data-disable-with="Update prices">
-<% unless AgeCost.any? %>
+<% if Event.current.track_ages && !AgeCost.any? %>
 <%= button_to 'Age discounts', add_age_costs_billables_path, class: "btn-green" %>
 <% end %>
 </div>
 
-<% if AgeCost.any? %>
+<% if Event.current.track_ages && AgeCost.any? %>
 <h2 id="age-costs" class="font-bold text-2xl mt-8 mb-4">Age Discounts</h2>
 
 <%= form_with url: update_age_costs_billables_path, method: "post", id: 'age-discounts' do |form| %>

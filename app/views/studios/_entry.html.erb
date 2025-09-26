@@ -20,7 +20,7 @@
   </thead>
   <tbody>
   <% total = count = 0 %>
-  <% age_cost = AgeCost.all.index_by(&:age_id) %>
+  <% age_cost = @track_ages ? AgeCost.all.index_by(&:age_id) : {} %>
   <% heats = entries.map(&:heats).flatten %>
   <% heats.sort_by! {|heat| [heat.entry.level_id, heat.entry.age_id, heat.category, heat.dance.name]} %>
   <% heats.group_by {|heat| [heat.category, heat.dance.name, heat.entry.level.name, heat.entry.subject_category(@track_ages)]}.each do |(category, dance, level, subjcat), heats| %>
@@ -40,7 +40,7 @@
 
        cost = @cost[cost_category] || 0
        cost -= 5 if ENV['RAILS_APP_DB'] == '2024-laval' && entry.age.category.start_with?('J')
-       cost = age_cost[entry.age_id].heat_cost || cost if age_cost[entry.age_id]
+       cost = age_cost[entry.age_id].heat_cost || cost if @track_ages && age_cost[entry.age_id]
        %>
     <tr class="text-sm">
       <td><div class="mx-4"><%= category %></div></td>
