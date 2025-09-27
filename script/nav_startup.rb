@@ -50,7 +50,6 @@ begin
   HtpasswdUpdater.update
 
   thread = Thread.new { system 'bin/prerender' }
-  ENV['START_CABLE'] = 'true'
   ENV['CABLE_PORT'] = '28080'
   system 'bin/rails nav:config'
   FileUtils.mkdir_p "/demo/db"

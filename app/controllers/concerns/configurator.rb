@@ -75,7 +75,6 @@ module Configurator
         "#{root}/cable",
         "#{root}/docs/",
         "#{root}/password/",
-        "#{root}/publish/",
         "#{root}/regions/",
         "#{root}/studios/",
         '*.css',
@@ -175,7 +174,7 @@ module Configurator
     end
     
     # Add proxy routes for remote services
-    if ENV['FLY_APP_NAME']
+    if ENV['RAILS_PROXY_HOST'] != 'rubix.intertwingly.net'
       routes['reverse_proxies'] << {
         'path' => '^/showease/password',
         'target' => 'https://rubix.intertwingly.net/showcase/password',
@@ -366,10 +365,8 @@ module Configurator
     }
 
     # If standalone cable is enabled, add standalone server configuration
-    if ENV['START_CABLE'] == 'true'
-      cable_config['standalone_server'] = "localhost:#{ENV.fetch('CABLE_PORT', '28080')}"
-      cable_config['rewrite_path'] = '/'  # Action Cable server expects requests at root path
-    end
+    cable_config['standalone_server'] = "localhost:#{ENV.fetch('CABLE_PORT', '28080')}"
+    cable_config['rewrite_path'] = '/'  # Action Cable server expects requests at root path
 
     tenants << cable_config
 
@@ -459,16 +456,6 @@ module Configurator
       tenant_lists.puts "#{dbpath}/#{db}.sqlite3"
     end
     tenant_lists.close
-
-    # Add publish tenant (special case - no standard vars)
-    tenants << {
-      'path' => "#{root}/publish",
-      'special' => true,
-      'root' => Rails.root.join('fly/applications/publish/public').to_s,
-      'env' => {
-        'SECRET_KEY_BASE' => '1'
-      }
-    }
     
     tenants
   end
@@ -533,21 +520,19 @@ module Configurator
     processes = []
     
     # Add standalone Action Cable server if configured
-    if ENV['START_CABLE'] == 'true'
-      processes << {
-        'name' => 'action-cable',
-        'command' => 'bundle',
-        'args' => ['exec', 'puma', '-p', ENV.fetch('CABLE_PORT', '28080'), 'cable/config.ru'],
-        'working_dir' => Rails.root.to_s,
-        'env' => {
-          'RAILS_ENV' => Rails.env.to_s,
-          'RAILS_APP_REDIS' => 'showcase_production',  # Same channel prefix as Rails tenants
-          'RAILS_MAX_THREADS' => '10'  # Handle multiple concurrent WebSocket connections
-        },
-        'auto_restart' => true,
-        'start_delay' => '2s'  # Wait 2 seconds after Navigator starts
-      }
-    end
+    processes << {
+      'name' => 'action-cable',
+      'command' => 'bundle',
+      'args' => ['exec', 'puma', '-p', ENV.fetch('CABLE_PORT', '28080'), 'cable/config.ru'],
+      'working_dir' => Rails.root.to_s,
+      'env' => {
+        'RAILS_ENV' => Rails.env.to_s,
+        'RAILS_APP_REDIS' => 'showcase_production',  # Same channel prefix as Rails tenants
+        'RAILS_MAX_THREADS' => '10'  # Handle multiple concurrent WebSocket connections
+      },
+      'auto_restart' => true,
+      'start_delay' => '1s'  # Wait 1 second after Navigator starts
+    }
     
     # Add a Redis server if running on Fly.io
     if ENV['FLY_APP_NAME']
