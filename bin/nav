@@ -74,6 +74,14 @@ if !File.exist?(config_file) || (File.exist?("db/index.sqlite3") && File.mtime("
   end
 end
 
+required_env = ["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_ENDPOINT_URL_S3"]
+missing_env = required_env.select { |var| ENV[var].nil? || ENV[var].empty? }
+if missing_env.any?
+  FileUtils.cp 'config/storage/development.yml', 'config/storage/production.yml'
+else
+  FileUtils.rm 'config/storage/production.yml', force: true
+end
+
 # Open browser
 Thread.new do
   sleep 0.5
