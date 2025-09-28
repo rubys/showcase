@@ -36,7 +36,7 @@ module Configurator
       'logging' => build_logging_config,
       'maintenance' => build_maintenance_config
     }
-    
+
     config
   end
 
@@ -129,10 +129,10 @@ module Configurator
       'description' => 'Index database update endpoint'
     }
 
-    # Add cable WebSocket endpoints (matches any path ending with /cable)
+    # Add cable WebSocket endpoint
     patterns << {
-      'pattern' => "/cable$",
-      'description' => 'WebSocket cable endpoints'
+      'pattern' => "#{root}/cable$",
+      'description' => 'WebSocket cable endpoint'
     }
 
     # Studio pages are now served as static files from public/studios/
@@ -145,14 +145,26 @@ module Configurator
   def build_routes_config
     root = determine_root_path
     region = ENV['FLY_REGION']
-    
+
     routes = {
       'redirects' => [],
       'rewrites' => [],
       'reverse_proxies' => [],
       'fly_replay' => []
     }
-    
+
+    # Add WebSocket proxy for Action Cable
+    routes['reverse_proxies'] << {
+      'path' => "^#{root}/cable",
+      'target' => 'http://localhost:28080/cable',
+      'websocket' => true,
+      'headers' => {
+        'X-Forwarded-For' => '$remote_addr',
+        'X-Forwarded-Proto' => '$scheme',
+        'X-Forwarded-Host' => '$host'
+      }
+    }
+
     # Add redirects
     if region
       routes['redirects'] << { 'from' => '^/$', 'to' => "#{root}/studios/" }
@@ -337,6 +349,9 @@ module Configurator
     # Enable JSON logging for navigator-managed apps
     env['RAILS_LOG_JSON'] = 'true'
 
+    # Action Cable configuration
+    env['RAILS_CABLE_PATH'] = '/showcase/cable'
+
     # Template variables (need substitution)
     env['RAILS_APP_DB'] = '${database}'
     env['RAILS_STORAGE'] = storage
@@ -355,21 +370,6 @@ module Configurator
 
     tenants = []
 
-    # Add cable tenant FIRST (special case - pattern matching priority)
-    # This must come before other tenants so the */cable pattern matches first
-    cable_config = {
-      'path' => "#{root}/cable",
-      'special' => true,
-      'match_pattern' => '*/cable',  # Match any path ending in /cable
-      'force_max_concurrent_requests' => 0
-    }
-
-    # If standalone cable is enabled, add standalone server configuration
-    cable_config['standalone_server'] = "localhost:#{ENV.fetch('CABLE_PORT', '28080')}"
-    cable_config['rewrite_path'] = '/'  # Action Cable server expects requests at root path
-
-    tenants << cable_config
-
     # Add index tenant
     tenants << {
       'path' => root.empty? ? '/' : "#{root}/",
@@ -381,6 +381,7 @@ module Configurator
         'RAILS_SERVE_STATIC_FILES' => 'true'
       }
     }
+
     
     # Add demo tenant if in a region
     if region || ENV['KAMAL_CONTAINER_NAME']
@@ -519,16 +520,16 @@ module Configurator
     # This can be customized based on your needs
     processes = []
     
-    # Add standalone Action Cable server if configured
+    # Add standalone Action Cable server
     processes << {
       'name' => 'action-cable',
       'command' => 'bundle',
       'args' => ['exec', 'puma', '-p', ENV.fetch('CABLE_PORT', '28080'), 'cable/config.ru'],
       'working_dir' => Rails.root.to_s,
       'env' => {
-        'RAILS_ENV' => Rails.env.to_s,
+        'RAILS_ENV' => 'production',
         'RAILS_APP_REDIS' => 'showcase_production',  # Same channel prefix as Rails tenants
-        'RAILS_MAX_THREADS' => '10'  # Handle multiple concurrent WebSocket connections
+        'RAILS_APP_DB' => 'action-cable'  # Used for logging
       },
       'auto_restart' => true,
       'start_delay' => '1s'  # Wait 1 second after Navigator starts
@@ -546,40 +547,6 @@ module Configurator
         'start_delay' => '2s'
       }
     end
-    
-    # Example: Add a background worker if configured
-    if ENV['START_WORKER'] == 'true'
-      processes << {
-        'name' => 'sidekiq',
-        'command' => 'bundle',
-        'args' => ['exec', 'sidekiq'],
-        'working_dir' => Rails.root.to_s,
-        'env' => {
-          'RAILS_ENV' => Rails.env.to_s
-        },
-        'auto_restart' => true,
-        'start_delay' => '2s'  # Wait for cable server to start first
-      }
-    end
-    
-    # Example: Add a custom monitoring script
-    if ENV['START_MONITOR'] == 'true'
-      processes << {
-        'name' => 'monitor',
-        'command' => Rails.root.join('bin', 'monitor').to_s,
-        'args' => [],
-        'working_dir' => Rails.root.to_s,
-        'env' => {
-          'RAILS_ENV' => Rails.env.to_s,
-          'MONITOR_PORT' => '8080'
-        },
-        'auto_restart' => true,
-        'start_delay' => '2s'  # Wait 2 seconds after Navigator starts
-      }
-    end
-    
-    # You can add more processes here as needed
-    # They will be started when Navigator starts and stopped when it exits
     
     processes
   end

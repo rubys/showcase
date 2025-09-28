@@ -67,12 +67,8 @@ unless File.directory?("public/docs")
   system("bin/prerender")
 end
 
-# Generate config if needed or outdated
-if !File.exist?(config_file) || (File.exist?("db/index.sqlite3") && File.mtime("db/index.sqlite3") > File.mtime(config_file))
-  unless use_maintenance
-    system("bin/rails nav:config")
-  end
-end
+# Regenerate config (only updates if changed)
+system("bin/rails nav:config")
 
 # Open browser
 Thread.new do

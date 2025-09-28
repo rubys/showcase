@@ -28,7 +28,9 @@ module ApplicationHelper
 
     # Use scope in cable URL when available, not just on Fly
     # This ensures WebSocket connections work correctly with navigator
-    if scope.present?
+    if ENV['RAILS_CABLE_PATH']
+      websocket = "#{scheme.sub('http', 'ws')}://#{host}#{ENV['RAILS_CABLE_PATH']}"
+    elsif scope.present?
       websocket = "#{scheme.sub('http', 'ws')}://#{host}#{root}/#{scope}/cable"
     else
       websocket = "#{scheme.sub('http', 'ws')}://#{host}#{root}/cable"
