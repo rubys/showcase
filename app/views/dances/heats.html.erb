@@ -15,7 +15,7 @@
 
   <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
     <h2 class="text-lg font-medium text-blue-800 mb-2">Dance Information</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-blue-700">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-blue-700">
       <div>
         <strong>Dance:</strong> <%= @dance.name %>
       </div>
@@ -33,7 +33,10 @@
         <% end %>
       </div>
       <div>
-        <strong>Total Heats:</strong> <%= @total_heats %>
+        <strong>Total Heats:</strong> <%= @unique_heats %>
+      </div>
+      <div>
+        <strong>Total Entries:</strong> <%= @total_heats %>
       </div>
     </div>
   </div>
@@ -46,7 +49,7 @@
             <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Rank</th>
             <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Person</th>
             <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Category</th>
-            <th class="px-4 py-2 text-center text-sm font-medium text-gray-700 border-b">Total Heats</th>
+            <th class="px-4 py-2 text-center text-sm font-medium text-gray-700 border-b">Total Entries</th>
             <th class="px-4 py-2 text-center text-sm font-medium text-gray-700 border-b">Lead / Follow</th>
             <th class="px-4 py-2 text-center text-sm font-medium text-gray-700 border-b">% of Limit</th>
           </tr>

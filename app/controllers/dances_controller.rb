@@ -222,7 +222,14 @@ class DancesController < ApplicationController
     @dance_limit = @dance.limit || Event.current.dance_limit
     @overall_limit = Event.current.dance_limit
 
-    # Get total unique heats count for this dance (Closed/Open only)
+    # Get count of unique heat numbers for this dance (Closed/Open only)
+    @unique_heats = Heat.joins(:dance)
+                       .where(dances: { id: @dance.id })
+                       .where(category: ['Closed', 'Open'])
+                       .distinct
+                       .count(:number)
+
+    # Get total entries count for this dance (Closed/Open only)
     @total_heats = Heat.joins(:dance)
                       .where(dances: { id: @dance.id })
                       .where(category: ['Closed', 'Open'])
