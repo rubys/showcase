@@ -459,7 +459,7 @@ module Printable
 
       pro_entries.uniq.each do |entry|
         entry.heats.each do |heat|
-          next if heat.number <= 0
+          next if heat.number < 0
           category = heat.category
 
           dance_category = heat.dance_category
