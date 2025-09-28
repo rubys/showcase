@@ -1,6 +1,6 @@
 class DancesController < ApplicationController
   include EntryForm
-  before_action :set_dance, only: %i[ show edit update destroy agenda ]
+  before_action :set_dance, only: %i[ show edit update destroy agenda heats ]
 
   # GET /dances or /dances.json
   def index
@@ -169,6 +169,64 @@ class DancesController < ApplicationController
         render_to_string(partial: 'categories'))}
       format.html { redirect_to people_certificates_url }
     end
+  end
+
+  def heats
+    @people_with_heats = []
+
+    # Get all people who have heats for this dance
+    people = Person.joins('JOIN entries ON people.id = entries.lead_id OR people.id = entries.follow_id')
+                  .joins('JOIN heats ON entries.id = heats.entry_id')
+                  .joins('JOIN dances ON heats.dance_id = dances.id')
+                  .where(dances: { id: @dance.id })
+                  .distinct
+
+    people.each do |person|
+      # Count heats by category for this person as lead in this dance
+      lead_counts = Heat.joins(:entry, :dance)
+                       .where(entries: { lead_id: person.id }, dances: { id: @dance.id })
+                       .where(category: ['Closed', 'Open'])
+                       .group('heats.category')
+                       .count
+
+      # Count heats by category for this person as follow in this dance
+      follow_counts = Heat.joins(:entry, :dance)
+                         .where(entries: { follow_id: person.id }, dances: { id: @dance.id })
+                         .where(category: ['Closed', 'Open'])
+                         .group('heats.category')
+                         .count
+
+      # Combine counts by category
+      all_categories = (lead_counts.keys + follow_counts.keys).uniq
+      all_categories.each do |category|
+        lead_count = lead_counts[category] || 0
+        follow_count = follow_counts[category] || 0
+        total_count = lead_count + follow_count
+
+        if total_count > 0
+          @people_with_heats << {
+            person: person,
+            category: category,
+            total_count: total_count,
+            lead_count: lead_count,
+            follow_count: follow_count
+          }
+        end
+      end
+    end
+
+    # Sort by total count (descending), then by person name
+    @people_with_heats.sort_by! { |item| [-item[:total_count], item[:person].name] }
+
+    # Get dance limit information
+    @dance_limit = @dance.limit || Event.current.dance_limit
+    @overall_limit = Event.current.dance_limit
+
+    # Get total unique heats count for this dance (Closed/Open only)
+    @total_heats = Heat.joins(:dance)
+                      .where(dances: { id: @dance.id })
+                      .where(category: ['Closed', 'Open'])
+                      .count
   end
 
   private

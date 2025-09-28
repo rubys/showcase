@@ -628,6 +628,74 @@ class HeatsController < ApplicationController
       notice: "#{helpers.pluralize(count, 'heat')} reset to closed."
   end
 
+  def limits
+    @event = Event.current
+    @overall_limit = @event.dance_limit
+    @violations = []
+    @dance_limits = []
+
+    # Get all dances with their limits
+    Dance.all.order(:name).each do |dance|
+      effective_limit = dance.limit || @overall_limit
+      @dance_limits << {
+        name: dance.name,
+        id: dance.id,
+        limit: dance.limit,
+        effective_limit: effective_limit,
+        is_custom: dance.limit.present?
+      }
+
+      # Check for violations for this dance
+      people = Person.joins('JOIN entries ON people.id = entries.lead_id OR people.id = entries.follow_id')
+                    .joins('JOIN heats ON entries.id = heats.entry_id')
+                    .joins('JOIN dances ON heats.dance_id = dances.id')
+                    .where(dances: { id: dance.id })
+                    .distinct
+
+      people.each do |person|
+        # Count heats by category for this person as lead in this dance
+        lead_counts = Heat.joins(:entry, :dance)
+                         .where(entries: { lead_id: person.id }, dances: { id: dance.id })
+                         .where(category: ['Closed', 'Open'])
+                         .group('heats.category')
+                         .count
+
+        # Count heats by category for this person as follow in this dance
+        follow_counts = Heat.joins(:entry, :dance)
+                           .where(entries: { follow_id: person.id }, dances: { id: dance.id })
+                           .where(category: ['Closed', 'Open'])
+                           .group('heats.category')
+                           .count
+
+        # Combine lead and follow counts by category (total heats on floor)
+        all_categories = (lead_counts.keys + follow_counts.keys).uniq
+        all_categories.each do |category|
+          total_count = (lead_counts[category] || 0) + (follow_counts[category] || 0)
+
+          if total_count > effective_limit
+            @violations << {
+              person: person.name,
+              person_id: person.id,
+              role: 'On Floor',
+              dance: dance.name,
+              dance_id: dance.id,
+              category: category,
+              count: total_count,
+              limit: effective_limit,
+              excess: total_count - effective_limit,
+              is_custom_limit: dance.limit.present?,
+              lead_count: lead_counts[category] || 0,
+              follow_count: follow_counts[category] || 0
+            }
+          end
+        end
+      end
+    end
+
+    # Sort violations by excess (highest first), then by count, then by person name
+    @violations.sort_by! { |v| [-v[:excess], -v[:count], v[:person], v[:dance]] }
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_heat

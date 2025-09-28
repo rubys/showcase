@@ -118,6 +118,7 @@ Rails.application.routes.draw do
       get 'book', on: :collection
       get 'mobile', on: :collection
       get 'djlist', on: :collection
+      get 'limits', on: :collection
       post 'reset_open', on: :collection
       post 'reset_closed', on: :collection
     end
@@ -134,6 +135,7 @@ Rails.application.routes.draw do
       get 'form', on: :collection
       post 'form-update', on: :collection, as: 'update_form'
       post 'agenda', on: :collection
+      get 'heats', on: :member
     end
 
     resources :categories do

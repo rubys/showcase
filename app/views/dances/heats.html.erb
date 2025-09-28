@@ -1,0 +1,150 @@
+<div class="mx-auto w-full">
+  <% if notice.present? %>
+    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+  <% end %>
+
+  <div class="flex justify-between items-center mb-8">
+    <div><!-- spacer --></div>
+    <h1 class="font-bold text-4xl text-center">
+      <%= @dance.name %> Heats
+    </h1>
+    <div>
+      <%= link_to 'Back to Limits', limits_heats_path, class: "btn-blue" %>
+    </div>
+  </div>
+
+  <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+    <h2 class="text-lg font-medium text-blue-800 mb-2">Dance Information</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-blue-700">
+      <div>
+        <strong>Dance:</strong> <%= @dance.name %>
+      </div>
+      <div>
+        <strong>Limit:</strong>
+        <%= @dance_limit %> heats
+        <% if @dance.limit %>
+          <span class="inline-block ml-1 px-2 py-1 text-xs bg-orange-100 text-orange-700 rounded">
+            Custom
+          </span>
+        <% else %>
+          <span class="inline-block ml-1 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">
+            Default
+          </span>
+        <% end %>
+      </div>
+      <div>
+        <strong>Total Heats:</strong> <%= @total_heats %>
+      </div>
+    </div>
+  </div>
+
+  <% if @people_with_heats.any? %>
+    <div class="overflow-x-auto">
+      <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Rank</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Person</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Category</th>
+            <th class="px-4 py-2 text-center text-sm font-medium text-gray-700 border-b">Total Heats</th>
+            <th class="px-4 py-2 text-center text-sm font-medium text-gray-700 border-b">Lead / Follow</th>
+            <th class="px-4 py-2 text-center text-sm font-medium text-gray-700 border-b">% of Limit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @people_with_heats.each_with_index do |item, index| %>
+            <%
+              percentage = (item[:total_count].to_f / @dance_limit * 100).round(1)
+              is_at_limit = item[:total_count] >= @dance_limit
+              is_over_limit = item[:total_count] > @dance_limit
+              row_class = if is_over_limit
+                            "bg-red-50 hover:bg-red-100"
+                          elsif is_at_limit
+                            "bg-yellow-50 hover:bg-yellow-100"
+                          elsif index.even?
+                            "bg-white hover:bg-gray-50"
+                          else
+                            "bg-gray-50 hover:bg-gray-100"
+                          end
+            %>
+            <tr class="<%= row_class %>">
+              <td class="px-4 py-2 text-sm border-b text-center">
+                <%= index + 1 %>
+              </td>
+              <td class="px-4 py-2 text-sm border-b">
+                <%= link_to item[:person].name, person_path(item[:person]),
+                    class: "text-blue-600 hover:text-blue-800 underline" %>
+              </td>
+              <td class="px-4 py-2 text-sm border-b">
+                <%= item[:category] %>
+              </td>
+              <td class="px-4 py-2 text-sm text-center border-b">
+                <span class="font-medium <%= is_over_limit ? 'text-red-600' : is_at_limit ? 'text-orange-600' : 'text-gray-900' %>">
+                  <%= item[:total_count] %>
+                </span>
+              </td>
+              <td class="px-4 py-2 text-sm text-center border-b">
+                <span class="text-blue-600"><%= item[:lead_count] %></span>
+                /
+                <span class="text-purple-600"><%= item[:follow_count] %></span>
+              </td>
+              <td class="px-4 py-2 text-sm text-center border-b">
+                <div class="flex items-center justify-center">
+                  <span class="<%= is_over_limit ? 'text-red-600 font-medium' : is_at_limit ? 'text-orange-600 font-medium' : 'text-gray-600' %>">
+                    <%= percentage %>%
+                  </span>
+                  <% if is_over_limit %>
+                    <span class="ml-2 px-2 py-1 bg-red-100 text-red-700 rounded text-xs">
+                      OVER
+                    </span>
+                  <% elsif is_at_limit %>
+                    <span class="ml-2 px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs">
+                      AT LIMIT
+                    </span>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+      <div class="p-3 bg-gray-50 rounded-lg">
+        <h3 class="font-medium text-gray-800 mb-1">Summary</h3>
+        <p class="text-gray-600">
+          <%= pluralize(@people_with_heats.count, 'person/category combination') %> total
+        </p>
+      </div>
+      <div class="p-3 bg-yellow-50 rounded-lg">
+        <h3 class="font-medium text-orange-800 mb-1">At Limit</h3>
+        <p class="text-orange-700">
+          <%= @people_with_heats.count { |item| item[:total_count] == @dance_limit } %> at exactly <%= @dance_limit %> heats
+        </p>
+      </div>
+      <div class="p-3 bg-red-50 rounded-lg">
+        <h3 class="font-medium text-red-800 mb-1">Over Limit</h3>
+        <p class="text-red-700">
+          <%= @people_with_heats.count { |item| item[:total_count] > @dance_limit } %> exceeding <%= @dance_limit %> heats
+        </p>
+      </div>
+    </div>
+  <% else %>
+    <div class="text-center py-12">
+      <div class="text-gray-500 text-lg mb-4">No heats found for <%= @dance.name %></div>
+      <p class="text-gray-400">This dance has no scheduled heats with participants.</p>
+    </div>
+  <% end %>
+
+  <div class="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+    <h3 class="text-lg font-medium text-blue-800 mb-2">How This Works</h3>
+    <ul class="text-sm text-blue-700 space-y-1">
+      <li>• Shows all people who have heats in <strong><%= @dance.name %></strong></li>
+      <li>• Sorted by total heat count (highest first), then by name</li>
+      <li>• Counts combine Lead and Follow heats for each person per category</li>
+      <li>• <span class="text-orange-600 font-medium">Yellow rows</span> indicate people at their limit</li>
+      <li>• <span class="text-red-600 font-medium">Red rows</span> indicate people over their limit (violations)</li>
+    </ul>
+  </div>
+</div>
