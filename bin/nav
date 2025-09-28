@@ -10,17 +10,27 @@ port = 9999
 use_maintenance = false
 navigator_cmd = "navigator/bin/navigator-refactored"
 config_file = ""
+reload = false
+log_level = "info"
 
 # Parse command line options
 OptionParser.new do |opts|
   opts.banner = "Usage: nav [options]"
 
+  opts.on("-d", "--debug", "Set log level to debug") do
+    log_level = "debug"
+  end
+
   opts.on("-l", "--legacy", "Use navigator-legacy instead of navigator-refactored") do
     navigator_cmd = "navigator/bin/navigator-legacy"
   end
 
-  opts.on("-r", "--refactored", "Use navigator-refactored instead of navigator-legacy") do
+  opts.on("--refactored", "Use navigator-refactored instead of navigator-legacy") do
     navigator_cmd = "navigator/bin/navigator-refactored"
+  end
+
+  opts.on("-r", "--reload", "Reload the page after starting") do
+    reload = true
   end
 
   opts.on("-m", "--maintenance", "Use config/navigator-maintenance.yml") do
@@ -50,11 +60,13 @@ else
   config_file = "config/navigator.yml"
 end
 
-# Kill any existing process on the port
-if system("lsof -i :#{port} -t >/dev/null 2>&1")
-  pids = `lsof -i :#{port} -t`.strip.split("\n")
-  pids.each { |pid| Process.kill("INT", pid.to_i) } unless pids.empty?
-  sleep 1
+# Kill any existing process on the ports
+[port, 28080].each do |p|
+  if system("lsof -i :#{p} -t >/dev/null 2>&1")
+    pids = `lsof -i :#{p} -t`.strip.split("\n")
+    pids.each { |pid| Process.kill("INT", pid.to_i) } unless pids.empty?
+    sleep 1
+  end
 end
 
 # Ensure assets are precompiled
@@ -67,9 +79,7 @@ unless File.directory?("public/docs")
   system("bin/prerender")
 end
 
-# Regenerate config (only updates if changed)
-system("bin/rails nav:config")
-
+# Handle storage config based on environment variables
 required_env = ["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_ENDPOINT_URL_S3"]
 missing_env = required_env.select { |var| ENV[var].nil? || ENV[var].empty? }
 if missing_env.any?
@@ -78,15 +88,39 @@ else
   FileUtils.rm 'config/storage/production.yml', force: true
 end
 
-# Open browser
-Thread.new do
-  sleep 0.5
-  system("open -a Firefox http://localhost:#{port}")
+# Regenerate config (only updates if changed)
+if reload
+  FileUtils.cp "config/navigator-maintenance.yml", config_file unless use_maintenance
+  port = 3000
+else
+  system("bin/rails nav:config")
 end
 
-# Run navigator
-if File.exist?(config_file)
-  system(navigator_cmd, config_file)
-else
-  system(navigator_cmd)
+# Spawn navigator process
+navigator_args = [navigator_cmd]
+navigator_args << config_file if File.exist?(config_file)
+navigator_pid = Process.spawn({ "LOG_LEVEL" => log_level }, *navigator_args)
+
+sleep 0.5
+system("open -a Firefox http://localhost:#{port}")
+
+Signal.trap("INT") do
+  Process.kill("INT", navigator_pid)
+  Process.wait(navigator_pid)
+  exit($?.exitstatus)
 end
+
+Signal.trap("TERM") do
+  Process.kill("TERM", navigator_pid)
+  Process.wait(navigator_pid)
+  exit($?.exitstatus)
+end
+
+if reload and !use_maintenance
+  system("bin/rails nav:config")
+  system(navigator_cmd, "-s", "reload")
+end
+
+# Wait for navigator to complete and exit with its status
+Process.wait(navigator_pid)
+exit($?.exitstatus)
