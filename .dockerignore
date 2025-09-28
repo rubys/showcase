@@ -63,5 +63,5 @@ config/storage/production.yml
 flat-storage
 
 # Navigator generated artifacts (source is in navigator/ submodule)
-/bin/navigator
+/navigator/bin
 /config/navigator.yml

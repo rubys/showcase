@@ -51,6 +51,13 @@ module HeatScheduler
       else
         category = heat_categories[heat.category]
         category += 4 if heat.entry.pro
+
+        # When heat_range_cat=1, map Closed(0) to Open(1) for sorting
+        # This allows Open/Closed mixing by treating them as the same category
+        if event.heat_range_cat == 1 && category == 0
+          category = 1
+        end
+
         order = true_order[heat.dance.order]
       end
 
