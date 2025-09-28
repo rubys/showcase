@@ -27,7 +27,6 @@ module Configurator
   def build_navigator_config
     config = {
       'server' => build_server_config,
-      'auth' => build_auth_config,
       'static' => build_static_config,
       'applications' => build_applications_config,
       'managed_processes' => build_managed_processes_config,
@@ -42,35 +41,20 @@ module Configurator
 
   def build_server_config
     host = determine_host
+    htpasswd_path = File.join(DBPATH, 'htpasswd')
+    root = determine_root_path
+
     config = {
       'listen' => determine_listen_port,
       'hostname' => host,
-      'root_path' => determine_root_path,
+      'root_path' => root,
       'public_dir' => Rails.root.join('public').to_s
     }
-    
-    # Add idle configuration for Fly.io deployments
-    if ENV['FLY_REGION']
-      config['idle'] = {
-        'action' => 'suspend',
-        'timeout' => '15m'
-      }
-    end
-    
-    config
-  end
 
-
-  def build_auth_config
-    htpasswd_path = File.join(DBPATH, 'htpasswd')
-    studios = load_studios
-    root = determine_root_path
-    
-    auth = {
-      'enabled' => File.exist?(htpasswd_path),
-      'realm' => 'Showcase',
-      'htpasswd' => htpasswd_path,
-      'public_paths' => [
+    # Add authentication configuration if htpasswd file exists
+    if File.exist?(htpasswd_path)
+      config['authentication'] = htpasswd_path
+      config['auth_exclude'] = [
         "#{root}/assets/",
         "#{root}/cable",
         "#{root}/docs/",
@@ -83,64 +67,20 @@ module Configurator
         '*.jpg',
         '*.gif'
       ]
-    }
-    
-    # Add pattern-based exclusions
-    auth['exclude_patterns'] = build_auth_exclusions(studios)
-    
-    auth
+    end
+
+    # Add idle configuration for Fly.io deployments
+    if ENV['FLY_REGION']
+      config['idle'] = {
+        'action' => 'suspend',
+        'timeout' => '15m'
+      }
+    end
+
+    config
   end
 
-  def build_auth_exclusions(studios)
-    patterns = []
-    root = determine_root_path
-    
-    # Add root showcase path
-    patterns << {
-      'pattern' => "^#{root}/?$",
-      'description' => 'Root showcase path'
-    }
-    
-    # Year-based index pages are now served as static files
-    # No need for complex exclude patterns since Navigator's try_files
-    # will automatically serve the pre-rendered HTML files
-    
-    # Add static file pattern
-    patterns << {
-      'pattern' => "^#{root}/[-\\w]+\\.\\w+$",
-      'description' => 'Static files in root'
-    }
-    
-    # Add public event pages
-    patterns << {
-      'pattern' => "^#{root}/\\d{4}/\\w+/([-\\w]+/)?public/",
-      'description' => 'Public event pages'
-    }
-    
-    # Add event console
-    patterns << {
-      'pattern' => "^#{root}/events/console$",
-      'description' => 'Event console access'
-    }
-    
-    # Add index update endpoint
-    patterns << {
-      'pattern' => "^#{root}/index_update$",
-      'description' => 'Index database update endpoint'
-    }
 
-    # Add cable WebSocket endpoint
-    patterns << {
-      'pattern' => "#{root}/cable$",
-      'description' => 'WebSocket cable endpoint'
-    }
-
-    # Studio pages are now served as static files from public/studios/
-    # No need for exclude patterns since Navigator's try_files
-    # will automatically serve the pre-rendered HTML files
-
-    patterns
-  end
 
   def build_routes_config
     root = determine_root_path
@@ -274,27 +214,27 @@ module Configurator
   def build_static_config
     root = determine_root_path
     directories = [
-      { 'path' => "#{root}/assets/", 'root' => 'assets/', 'cache' => '24h' },
-      { 'path' => "#{root}/docs/", 'root' => 'docs/' },
-      { 'path' => "#{root}/fonts/", 'root' => 'fonts/' },
-      { 'path' => "#{root}/regions/", 'root' => 'regions/' },
-      { 'path' => "#{root}/studios/", 'root' => 'studios/' }
+      { 'path' => "#{root}/assets/", 'dir' => 'assets/', 'cache' => '24h' },
+      { 'path' => "#{root}/docs/", 'dir' => 'docs/' },
+      { 'path' => "#{root}/fonts/", 'dir' => 'fonts/' },
+      { 'path' => "#{root}/regions/", 'dir' => 'regions/' },
+      { 'path' => "#{root}/studios/", 'dir' => 'studios/' }
     ]
-    
+
     # Add year-based directories (2022, 2023, 2024, 2025, etc.)
     showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
     showcases.keys.each do |year|
-      directories << { 'path' => "#{root}/#{year}/", 'root' => "#{year}/" }
+      directories << { 'path' => "#{root}/#{year}/", 'dir' => "#{year}/" }
     end
-    
+
     # Add root path for serving root-level static files (e.g., /arthur-murray-logo.gif)
     # This allows files directly in public/ to be served
     if root != ''
-      directories << { 'path' => "#{root}/", 'root' => '.', 'cache' => '24h' }
+      directories << { 'path' => "#{root}/", 'dir' => '.', 'cache' => '24h' }
     else
-      directories << { 'path' => "/", 'root' => '.', 'cache' => '24h' }
+      directories << { 'path' => "/", 'dir' => '.', 'cache' => '24h' }
     end
-    
+
     {
       'directories' => directories,
       'extensions' => %w[html htm txt xml json css js png jpg gif pdf xlsx],
