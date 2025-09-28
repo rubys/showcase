@@ -50,7 +50,7 @@ RUN SECRET_KEY_BASE=DUMMY ./bin/rails assets:precompile
 
 # Build Navigator
 FROM golang:trixie AS build-nav
-ARG NAVIGATOR=refactored
+ARG NAVIGATOR=legacy
 
 # Set working directory for Go build
 WORKDIR /app
@@ -108,4 +108,4 @@ ENV DATABASE_URL="sqlite3:///data/production.sqlite3" \
 # Start navigator
 EXPOSE 3000
 VOLUME /data
-CMD [ "/rails/script/nav_startup.rb" ]
+CMD [ "/rails/script/nav_startup.rb", "--${NAVIGATOR}" ]
