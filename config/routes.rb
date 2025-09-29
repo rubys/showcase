@@ -55,6 +55,7 @@ Rails.application.routes.draw do
       get "/inventory/functions", to: 'admin#inventory_functions', as: 'inventory_functions'
       match "/upload" => "event#upload", via: [:get, :post]
       post "/index_update" => "event#index_update"
+      get "/index_date" => "event#index_date"
 
       get 'admin/', to: "admin#index"
       get 'admin/regions', to: 'admin#regions',  trailing_slash: true

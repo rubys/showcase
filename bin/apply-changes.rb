@@ -1,14 +1,32 @@
 #!/usr/bin/env ruby
 require 'json'
 require 'tomlrb'
+require 'net/http'
+require 'time'
 
 fly = File.join(Dir.home, '.fly/bin/flyctl')
 
 primary_region = Tomlrb.parse(IO.read 'fly.toml')['primary_region']
 
 # index.sqlite3
-unless `rsync -i --dry-run db/index.sqlite3 smooth:/data/db/`.empty?
-  exit 1 unless system "script/user-update"
+# Check if remote index is older than local index
+local_index_path = 'db/index.sqlite3'
+if File.exist?(local_index_path)
+  local_mtime = File.mtime(local_index_path).utc
+
+  # Get remote index date
+  uri = URI('https://smooth.fly.dev/showcase/index_date')
+  response = Net::HTTP.get_response(uri)
+  remote_date = Time.at(0).utc
+
+  if response.code == '200'
+    remote_date = Time.parse(response.body).utc rescue Time.at(0).utc  
+  end
+
+  # If remote is older than local, update it
+  if remote_date < local_mtime
+    exit 1 unless system "script/user-update"
+  end
 end
 
 # create machine(s)

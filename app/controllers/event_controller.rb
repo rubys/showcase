@@ -10,9 +10,9 @@ class EventController < ApplicationController
   include ActiveStorage::SetCurrent
   include ShowcaseInventory
 
-  skip_before_action :authenticate_user, only: %i[ counter showcases regions console upload navigator_config index_update ]
+  skip_before_action :authenticate_user, only: %i[ counter showcases regions console upload navigator_config index_update index_date ]
   skip_before_action :current_event, only: %i[ navigator_config ]
-  skip_before_action :verify_authenticity_token, only: %i[ console index_update ]
+  skip_before_action :verify_authenticity_token, only: %i[ console index_update index_date ]
 
   permit_site_owners :root, trust_level: 25
 
@@ -770,16 +770,30 @@ class EventController < ApplicationController
     stdout, stderr, status = Open3.capture3('ruby', script_path.to_s, '--index-only')
 
     User.update_htpasswd
-    
+
     # Combine stdout and stderr for complete output
     output = stdout
     output += "\n#{stderr}" unless stderr.empty?
-    
+
     # Return plain text response with appropriate status
     if status.success?
       render plain: output, status: :ok
     else
       render plain: output, status: :internal_server_error
+    end
+  end
+
+  def index_date
+    # Get the path to the index database
+    dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
+    database = "#{dbpath}/index.sqlite3"
+
+    if File.exist?(database)
+      mtime = File.mtime(database).utc.iso8601
+      render plain: mtime, status: :ok
+    else
+      # Return epoch zero date in ISO format
+      render plain: Time.at(0).utc.iso8601, status: :not_found
     end
   end
 
