@@ -265,18 +265,18 @@ class AdminController < ApplicationController
 
     event_map = @events.map {|event| [event[:db], event]}.to_h
     Showcase.joins(:location).pluck(:year, 'location.key', :key, :id).each do |year, loc, show, id|
+      event = event_map["#{year}-#{loc}-#{show}"]
+      if event
+        event[:showcase] = id
+        next
+      end
+
       if show == 'showcase'
         event = event_map["#{year}-#{loc}"]
         if event
           event[:showcase] = id
           next
         end 
-
-        event = event_map["#{year}-#{loc}-#{show}"]
-        if event
-          event[:showcase] = id
-          next
-        end
       end
     end
 

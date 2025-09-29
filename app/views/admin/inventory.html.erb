@@ -51,7 +51,7 @@
     <% if event[:showcase] %>
     <td><%= link_to event[:date], edit_showcase_path(event[:showcase]) %>
     <% else %>
-    <td><%= event[:date] %>
+    <td><span title="<%= event[:db] %>"><%= event[:date] %></span>
     <% end %>
     <td align="right"><%= event[:rows]['people'] || 0 %>
     <td align="right"><%= event[:heats] %>
