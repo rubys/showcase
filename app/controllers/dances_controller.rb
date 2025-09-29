@@ -1,5 +1,6 @@
 class DancesController < ApplicationController
   include EntryForm
+  include DanceLimitCalculator
   before_action :set_dance, only: %i[ show edit update destroy agenda heats ]
 
   # GET /dances or /dances.json
@@ -172,72 +173,14 @@ class DancesController < ApplicationController
   end
 
   def heats
-    @people_with_heats = []
-
-    # Get all people who have heats for this dance
-    people = Person.joins('JOIN entries ON people.id = entries.lead_id OR people.id = entries.follow_id')
-                  .joins('JOIN heats ON entries.id = heats.entry_id')
-                  .joins('JOIN dances ON heats.dance_id = dances.id')
-                  .where(dances: { id: @dance.id })
-                  .distinct
-
-    people.each do |person|
-      # Count heats by category for this person as lead in this dance
-      lead_counts = Heat.joins(:entry, :dance)
-                       .where(entries: { lead_id: person.id }, dances: { id: @dance.id })
-                       .where(category: ['Closed', 'Open'])
-                       .group('heats.category')
-                       .count
-
-      # Count heats by category for this person as follow in this dance
-      follow_counts = Heat.joins(:entry, :dance)
-                         .where(entries: { follow_id: person.id }, dances: { id: @dance.id })
-                         .where(category: ['Closed', 'Open'])
-                         .group('heats.category')
-                         .count
-
-      # Combine counts by category
-      if Event.current.heat_range_cat == 1
-        # When heat_range_cat=1, combine Open and Closed counts
-        combined_lead_count = (lead_counts['Open'] || 0) + (lead_counts['Closed'] || 0)
-        combined_follow_count = (follow_counts['Open'] || 0) + (follow_counts['Closed'] || 0)
-        total_count = combined_lead_count + combined_follow_count
-
-        if total_count > 0
-          @people_with_heats << {
-            person: person,
-            category: 'Open/Closed',
-            total_count: total_count,
-            lead_count: combined_lead_count,
-            follow_count: combined_follow_count
-          }
-        end
-      else
-        # Original logic for separate Open/Closed counting
-        all_categories = (lead_counts.keys + follow_counts.keys).uniq
-        all_categories.each do |category|
-          lead_count = lead_counts[category] || 0
-          follow_count = follow_counts[category] || 0
-          total_count = lead_count + follow_count
-
-          if total_count > 0
-            @people_with_heats << {
-              person: person,
-              category: category,
-              total_count: total_count,
-              lead_count: lead_count,
-              follow_count: follow_count
-            }
-          end
-        end
-      end
-    end
+    # Get all people with heats for this dance using the centralized concern
+    @people_with_heats = self.class.people_with_heats_for_dance(@dance)
 
     # Sort by total count (descending), then by person name
     @people_with_heats.sort_by! { |item| [-item[:total_count], item[:person].name] }
 
     # Get dance limit information
-    @dance_limit = @dance.limit || Event.current.dance_limit
+    @dance_limit = @dance.effective_limit
     @overall_limit = Event.current.dance_limit
 
     # Get count of unique heat numbers for this dance (Closed/Open only)

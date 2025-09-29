@@ -3,6 +3,7 @@ class HeatsController < ApplicationController
   include EntryForm
   include Printable
   include Retriable
+  include DanceLimitCalculator
 
   skip_before_action :authenticate_user, only: %i[ mobile ]
   before_action :set_heat, only: %i[ show edit update destroy ]
@@ -643,94 +644,23 @@ class HeatsController < ApplicationController
   def limits
     @event = Event.current
     @overall_limit = @event.dance_limit
-    @violations = []
-    @dance_limits = []
 
-    # Get all dances with their limits
-    Dance.all.order(:name).each do |dance|
-      effective_limit = dance.limit || @overall_limit
-      @dance_limits << {
-        name: dance.name,
-        id: dance.id,
-        limit: dance.limit,
-        effective_limit: effective_limit,
-        is_custom: dance.limit.present?
-      }
-
-      # Check for violations for this dance
-      people = Person.joins('JOIN entries ON people.id = entries.lead_id OR people.id = entries.follow_id')
-                    .joins('JOIN heats ON entries.id = heats.entry_id')
-                    .joins('JOIN dances ON heats.dance_id = dances.id')
-                    .where(dances: { id: dance.id })
-                    .distinct
-
-      people.each do |person|
-        # Count heats by category for this person as lead in this dance
-        lead_counts = Heat.joins(:entry, :dance)
-                         .where(entries: { lead_id: person.id }, dances: { id: dance.id })
-                         .where(category: ['Closed', 'Open'])
-                         .group('heats.category')
-                         .count
-
-        # Count heats by category for this person as follow in this dance
-        follow_counts = Heat.joins(:entry, :dance)
-                           .where(entries: { follow_id: person.id }, dances: { id: dance.id })
-                           .where(category: ['Closed', 'Open'])
-                           .group('heats.category')
-                           .count
-
-        # Combine lead and follow counts by category (total heats on floor)
-        if @event.heat_range_cat == 1
-          # When heat_range_cat=1, combine Open and Closed counts
-          combined_lead_count = (lead_counts['Open'] || 0) + (lead_counts['Closed'] || 0)
-          combined_follow_count = (follow_counts['Open'] || 0) + (follow_counts['Closed'] || 0)
-          total_count = combined_lead_count + combined_follow_count
-
-          if total_count > effective_limit
-            @violations << {
-              person: person.name,
-              person_id: person.id,
-              role: 'On Floor',
-              dance: dance.name,
-              dance_id: dance.id,
-              category: 'Open/Closed',
-              count: total_count,
-              limit: effective_limit,
-              excess: total_count - effective_limit,
-              is_custom_limit: dance.limit.present?,
-              lead_count: combined_lead_count,
-              follow_count: combined_follow_count
-            }
-          end
-        else
-          # Original logic for separate Open/Closed counting
-          all_categories = (lead_counts.keys + follow_counts.keys).uniq
-          all_categories.each do |category|
-            total_count = (lead_counts[category] || 0) + (follow_counts[category] || 0)
-
-            if total_count > effective_limit
-              @violations << {
-                person: person.name,
-                person_id: person.id,
-                role: 'On Floor',
-                dance: dance.name,
-                dance_id: dance.id,
-                category: category,
-                count: total_count,
-                limit: effective_limit,
-                excess: total_count - effective_limit,
-                is_custom_limit: dance.limit.present?,
-                lead_count: lead_counts[category] || 0,
-                follow_count: follow_counts[category] || 0
-              }
-            end
-          end
-        end
-      end
-    end
+    # Get all violations using the centralized concern
+    @violations = self.class.find_all_violations
 
     # Sort violations by excess (highest first), then by count, then by person name
     @violations.sort_by! { |v| [-v[:excess], -v[:count], v[:person], v[:dance]] }
+
+    # Build dance limits list for display
+    @dance_limits = Dance.all.order(:name).map do |dance|
+      {
+        name: dance.name,
+        id: dance.id,
+        limit: dance.limit,
+        effective_limit: dance.effective_limit,
+        is_custom: dance.limit.present?
+      }
+    end
   end
 
   private

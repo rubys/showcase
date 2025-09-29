@@ -398,6 +398,80 @@ class DanceTest < ActiveSupport::TestCase
     assert_not_equal waltz.closed_category, rumba.closed_category
   end
   
+  # ===== DANCE LIMIT TESTS =====
+
+  test "effective_limit returns dance limit when set" do
+    event = events(:one)
+    event.update!(dance_limit: 5)
+
+    dance = Dance.create!(
+      name: 'Limited Dance Test',
+      order: 200,
+      closed_category: @category_closed,
+      limit: 3
+    )
+
+    assert_equal 3, dance.effective_limit
+  end
+
+  test "effective_limit returns event limit when dance limit not set" do
+    event = events(:one)
+    event.update!(dance_limit: 5)
+
+    dance = Dance.create!(
+      name: 'Event Limited Dance',
+      order: 201,
+      closed_category: @category_closed,
+      limit: nil
+    )
+
+    assert_equal 5, dance.effective_limit
+  end
+
+  test "effective_limit returns nil when neither dance nor event limit set" do
+    event = events(:one)
+    event.update!(dance_limit: nil)
+
+    dance = Dance.create!(
+      name: 'Unlimited Dance',
+      order: 202,
+      closed_category: @category_closed,
+      limit: nil
+    )
+
+    assert_nil dance.effective_limit
+  end
+
+  test "effective_limit returns 1 for semi_finals dances" do
+    event = events(:one)
+    event.update!(dance_limit: 5)
+
+    dance = Dance.create!(
+      name: 'Semi Finals Dance',
+      order: 203,
+      closed_category: @category_closed,
+      limit: 10,
+      semi_finals: true
+    )
+
+    assert_equal 1, dance.effective_limit, "Semi-finals dances should always have limit of 1"
+  end
+
+  test "effective_limit returns 1 for semi_finals even without other limits" do
+    event = events(:one)
+    event.update!(dance_limit: nil)
+
+    dance = Dance.create!(
+      name: 'Semi Finals Only',
+      order: 204,
+      closed_category: @category_closed,
+      limit: nil,
+      semi_finals: true
+    )
+
+    assert_equal 1, dance.effective_limit
+  end
+
   # ===== COMPLEX SCENARIO TESTS =====
   
   test "dance with both amateur and pro categories" do
