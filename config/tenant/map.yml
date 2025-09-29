@@ -136,6 +136,14 @@ studios:
     map: us
     x: 826.661092211232
     y: 136.57544481515015
+  candc:
+    name: C and C
+    lat: 29.4246002
+    lon: -98.4951405
+    region: dfw
+    map: us
+    x: 448.07226019872127
+    y: 423.87130567082215
   carmel:
     name: Carmel
     lat: 39.978

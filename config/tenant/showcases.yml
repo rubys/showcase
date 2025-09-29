@@ -1,5 +1,12 @@
 ---
 2026:
+  candc:
+    :name: C and C
+    :region: dfw
+    :logo: candc.png
+    :events:
+      team-match:
+        :name: Team Match
   clearwater:
     :name: Clearwater
     :region: dfw
