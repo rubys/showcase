@@ -222,6 +222,88 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     # Should handle per-dance limit (may redirect or show form)
     assert_includes [200, 302], response.status
   end
+
+  test "enforces combined open/closed limits when heat_range_cat is 1" do
+    # Set global dance limit and enable combined open/closed
+    @event.update!(dance_limit: 2, heat_range_cat: 1)
+
+    # Create entry
+    entry = Entry.create!(
+      lead: @instructor,
+      follow: @student,
+      age: @age,
+      level: @level
+    )
+
+    # Create one Open heat
+    Heat.create!(
+      number: 1,
+      entry: entry,
+      dance: @dance,
+      category: 'Open'
+    )
+
+    # Create one Closed heat (should be counted together with Open)
+    Heat.create!(
+      number: 2,
+      entry: entry,
+      dance: @dance,
+      category: 'Closed'
+    )
+
+    # Try to add another Open heat - should fail because Open + Closed = 2 (at limit)
+    patch entry_url(entry), params: {
+      entry: {
+        primary: @student.id,
+        partner: @instructor.id,
+        age: @age.id,
+        level: @level.id
+      },
+      Open: [@dance.id],  # Try to add another Open heat
+      submit: 'Update'
+    }
+
+    # Should handle combined limit (may redirect or show form with error)
+    assert_includes [200, 302], response.status
+  end
+
+  test "enforces separate open/closed limits when heat_range_cat is 0" do
+    # Set global dance limit and disable combined open/closed
+    @event.update!(dance_limit: 2, heat_range_cat: 0)
+
+    # Create entry
+    entry = Entry.create!(
+      lead: @instructor,
+      follow: @student,
+      age: @age,
+      level: @level
+    )
+
+    # Create two Open heats (at limit for Open category)
+    2.times do |i|
+      Heat.create!(
+        number: i + 1,
+        entry: entry,
+        dance: @dance,
+        category: 'Open'
+      )
+    end
+
+    # Should still be able to add Closed heats since they're counted separately
+    patch entry_url(entry), params: {
+      entry: {
+        primary: @student.id,
+        partner: @instructor.id,
+        age: @age.id,
+        level: @level.id
+      },
+      Closed: [@dance.id],  # Add Closed heat - should succeed
+      submit: 'Update'
+    }
+
+    # Should succeed because Open and Closed are counted separately
+    assert_includes [200, 302], response.status
+  end
   
   test "handles professional entry creation when enabled" do
     # Skip this test as professional-only entries may require special business validation

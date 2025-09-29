@@ -48,7 +48,9 @@
           <tr>
             <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Rank</th>
             <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Person</th>
-            <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Category</th>
+            <% unless Event.current.heat_range_cat == 1 %>
+              <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Category</th>
+            <% end %>
             <th class="px-4 py-2 text-center text-sm font-medium text-gray-700 border-b">Total Entries</th>
             <th class="px-4 py-2 text-center text-sm font-medium text-gray-700 border-b">Lead / Follow</th>
             <th class="px-4 py-2 text-center text-sm font-medium text-gray-700 border-b">% of Limit</th>
@@ -78,9 +80,11 @@
                 <%= link_to item[:person].name, person_path(item[:person]),
                     class: "text-blue-600 hover:text-blue-800 underline" %>
               </td>
-              <td class="px-4 py-2 text-sm border-b">
-                <%= item[:category] %>
-              </td>
+              <% unless Event.current.heat_range_cat == 1 %>
+                <td class="px-4 py-2 text-sm border-b">
+                  <%= item[:category] %>
+                </td>
+              <% end %>
               <td class="px-4 py-2 text-sm text-center border-b">
                 <span class="font-medium <%= is_over_limit ? 'text-red-600' : is_at_limit ? 'text-orange-600' : 'text-gray-900' %>">
                   <%= item[:total_count] %>

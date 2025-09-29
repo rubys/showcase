@@ -483,16 +483,28 @@ class HeatsController < ApplicationController
         effective_limit = dance&.semi_finals ? 1 : (dance&.limit || dance_limit)
 
         entry = @heat.entry
-      
-        entries = Entry.where(lead_id: entry.follow_id).or(Entry.where(follow_id: entry.follow_id)).pluck(:id)
-        count = Heat.where(entry_id: entries, dance_id: @heat.dance_id, category: @heat.category).count
+        combine_open_closed = Event.current.heat_range_cat == 1
 
-        entries = Entry.where(lead_id: entry.lead_id).or(Entry.where(follow_id: entry.lead_id)).pluck(:id)
-        count = [count, Heat.where(entry_id: entries, dance_id: @heat.dance_id, category: @heat.category).count].max
+        if combine_open_closed && %w(Open Closed).include?(@heat.category)
+          # When combining open/closed, count both categories together
+          entries = Entry.where(lead_id: entry.follow_id).or(Entry.where(follow_id: entry.follow_id)).pluck(:id)
+          count = Heat.where(entry_id: entries, dance_id: @heat.dance_id, category: %w(Open Closed)).count
+
+          entries = Entry.where(lead_id: entry.lead_id).or(Entry.where(follow_id: entry.lead_id)).pluck(:id)
+          count = [count, Heat.where(entry_id: entries, dance_id: @heat.dance_id, category: %w(Open Closed)).count].max
+        else
+          # Original logic for separate counting
+          entries = Entry.where(lead_id: entry.follow_id).or(Entry.where(follow_id: entry.follow_id)).pluck(:id)
+          count = Heat.where(entry_id: entries, dance_id: @heat.dance_id, category: @heat.category).count
+
+          entries = Entry.where(lead_id: entry.lead_id).or(Entry.where(follow_id: entry.lead_id)).pluck(:id)
+          count = [count, Heat.where(entry_id: entries, dance_id: @heat.dance_id, category: @heat.category).count].max
+        end
 
         if count >= effective_limit
           limit_text = dance&.semi_finals ? "1 (scrutineering)" : effective_limit.to_s
-          @heat.errors.add(:dance_id, "limit of #{limit_text} reached for this category.")
+          category_text = combine_open_closed && %w(Open Closed).include?(@heat.category) ? "Open/Closed" : @heat.category
+          @heat.errors.add(:dance_id, "limit of #{limit_text} reached for #{category_text}.")
         end
       end
     end
@@ -668,9 +680,11 @@ class HeatsController < ApplicationController
                            .count
 
         # Combine lead and follow counts by category (total heats on floor)
-        all_categories = (lead_counts.keys + follow_counts.keys).uniq
-        all_categories.each do |category|
-          total_count = (lead_counts[category] || 0) + (follow_counts[category] || 0)
+        if @event.heat_range_cat == 1
+          # When heat_range_cat=1, combine Open and Closed counts
+          combined_lead_count = (lead_counts['Open'] || 0) + (lead_counts['Closed'] || 0)
+          combined_follow_count = (follow_counts['Open'] || 0) + (follow_counts['Closed'] || 0)
+          total_count = combined_lead_count + combined_follow_count
 
           if total_count > effective_limit
             @violations << {
@@ -679,14 +693,37 @@ class HeatsController < ApplicationController
               role: 'On Floor',
               dance: dance.name,
               dance_id: dance.id,
-              category: category,
+              category: 'Open/Closed',
               count: total_count,
               limit: effective_limit,
               excess: total_count - effective_limit,
               is_custom_limit: dance.limit.present?,
-              lead_count: lead_counts[category] || 0,
-              follow_count: follow_counts[category] || 0
+              lead_count: combined_lead_count,
+              follow_count: combined_follow_count
             }
+          end
+        else
+          # Original logic for separate Open/Closed counting
+          all_categories = (lead_counts.keys + follow_counts.keys).uniq
+          all_categories.each do |category|
+            total_count = (lead_counts[category] || 0) + (follow_counts[category] || 0)
+
+            if total_count > effective_limit
+              @violations << {
+                person: person.name,
+                person_id: person.id,
+                role: 'On Floor',
+                dance: dance.name,
+                dance_id: dance.id,
+                category: category,
+                count: total_count,
+                limit: effective_limit,
+                excess: total_count - effective_limit,
+                is_custom_limit: dance.limit.present?,
+                lead_count: lead_counts[category] || 0,
+                follow_count: follow_counts[category] || 0
+              }
+            end
           end
         end
       end

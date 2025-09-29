@@ -197,20 +197,38 @@ class DancesController < ApplicationController
                          .count
 
       # Combine counts by category
-      all_categories = (lead_counts.keys + follow_counts.keys).uniq
-      all_categories.each do |category|
-        lead_count = lead_counts[category] || 0
-        follow_count = follow_counts[category] || 0
-        total_count = lead_count + follow_count
+      if Event.current.heat_range_cat == 1
+        # When heat_range_cat=1, combine Open and Closed counts
+        combined_lead_count = (lead_counts['Open'] || 0) + (lead_counts['Closed'] || 0)
+        combined_follow_count = (follow_counts['Open'] || 0) + (follow_counts['Closed'] || 0)
+        total_count = combined_lead_count + combined_follow_count
 
         if total_count > 0
           @people_with_heats << {
             person: person,
-            category: category,
+            category: 'Open/Closed',
             total_count: total_count,
-            lead_count: lead_count,
-            follow_count: follow_count
+            lead_count: combined_lead_count,
+            follow_count: combined_follow_count
           }
+        end
+      else
+        # Original logic for separate Open/Closed counting
+        all_categories = (lead_counts.keys + follow_counts.keys).uniq
+        all_categories.each do |category|
+          lead_count = lead_counts[category] || 0
+          follow_count = follow_counts[category] || 0
+          total_count = lead_count + follow_count
+
+          if total_count > 0
+            @people_with_heats << {
+              person: person,
+              category: category,
+              total_count: total_count,
+              lead_count: lead_count,
+              follow_count: follow_count
+            }
+          end
         end
       end
     end
