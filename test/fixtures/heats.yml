@@ -36,3 +36,15 @@ zero:
   category: Open
   dance: waltz
 
+student_instructor_heat:
+  number: 6
+  entry: student_instructor_bronze_closed
+  category: Closed
+  dance: rumba
+
+couple_bronze_heat:
+  number: 7
+  entry: couple_bronze_closed
+  category: Closed
+  dance: tango
+

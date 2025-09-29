@@ -9,8 +9,8 @@
   <ul class="info-box">
     <li>Number of heats is largely controlled by the number of entries and number of instructors, but you
     can set some limits on who can be on the floor at the same time which may increase the number of heats.</li>
-    <li>
-    With the sliders all the way to the left:
+    <li>Setting a limit on the number of entries per dance<% unless @event.heat_range_cat == 1 %> per category<% end %> can also keep the number of heats down. The limit applies to all dances, but can be adjusted for each dance individually.</li>
+    <li>With the sliders all the way to the left:
     <ul class="ml-4 list-disc list-outside">
     <li>Full Bronze students can only be on the floor
     with other Full Bronze students.
@@ -18,6 +18,7 @@
     <li>People in age category B1 can only
     be on the floor with others in the same age category.
     <% end %>
+    <li>Open and Closed heats in the same agenda item cannot be on the floor at the same time.
     </ul>
     </li>
     <li>
@@ -31,7 +32,6 @@
     <li>Open and Closed heats in the same agenda item can be on the floor at the same time.
     </ul>
     </li>
-    <li>Setting a limit on the number of entries per dance per category can also keep the number of heats down. The limit applies to all dances, but can be adjusted for each dance individually.</li>
   </ul>
 </div>
 
@@ -49,12 +49,16 @@
     </div>
   <% end %>
 
-
-
 <%= form_with model: @event, local: true do |form| %>
   <div class="my-5">
     <%= form.label :max_heat_size %>
     <%= form.number_field :max_heat_size,
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :dance_limit, 'Limit # of entries per dance' + (@event.heat_range_cat == 1 ? '' : ' per category') %>
+    <%= form.number_field :dance_limit,
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
@@ -81,14 +85,9 @@
     <%= form.hidden_field :heat_range_cat, value: 0 %>
   <% end %>
 
-  <div class="my-5">
-    <%= form.text_field :dance_limit, class: 'entry-count' %>
-    <%= form.label :dance_limit, 'Limit # of entries per dance per category' %>
-  </div>
-
   <div class="inline">
     <%= form.button 'Save', name: 'tab', value: 'Heats', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
-    <% if @event.dance_limit.present? %>
+    <% if @event.dance_limit.present? && Heat.where(number: 0..).any? %>
       <%= link_to 'Check', limits_heats_path, class: "ml-3 rounded-lg py-3 px-5 bg-green-600 text-white inline-block font-medium cursor-pointer" %>
     <% end %>
   </div>

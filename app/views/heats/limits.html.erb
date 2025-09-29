@@ -6,10 +6,14 @@
 <div data-controller="info-box">
 <div class="info-button">&#x24D8;</div>
 <ul class="info-box">
+<% unless Event.current.heat_range_cat == 1 %>
 <li>Each person has a limit per dance per category (e.g., Closed/Waltz, Open/Cha Cha)</li>
+<% else %>
+<li>Each person has a limit per dance (e.g., Waltz, Cha Cha)</li>
+<% end %>
 <li>Limits count total heats on the floor (Lead + Follow combined)</li>
 <li>Some dances have custom limits that override the default of <%= @overall_limit %> heats</li>
-<li>Violations occur when a person's total heats exceed their limit for any dance/category combination</li>
+<li>Violations occur when a person's total heats exceed their limit for any dance<% unless Event.current.heat_range_cat == 1 %>/category combination<% end %></li>
 </ul>
 </div>
 
@@ -46,7 +50,9 @@
             <tr>
               <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Person</th>
               <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Dance</th>
+              <% unless Event.current.heat_range_cat == 1 %>
               <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Category</th>
+              <% end %>
               <th class="px-4 py-2 text-center text-sm font-medium text-gray-700 border-b">Total Heats</th>
               <th class="px-4 py-2 text-center text-sm font-medium text-gray-700 border-b">Lead / Follow</th>
               <th class="px-4 py-2 text-center text-sm font-medium text-gray-700 border-b">Limit</th>
@@ -55,7 +61,7 @@
           </thead>
           <tbody>
             <% @violations.each_with_index do |violation, index| %>
-              <tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %> hover:bg-red-50">
+              <tr class="<%= limit_status_row_class(violation[:count], violation[:limit], index) %>">
                 <td class="px-4 py-2 text-sm border-b">
                   <%= link_to violation[:person], person_path(violation[:person_id]),
                       class: "text-blue-600 hover:text-blue-800 underline" %>
@@ -64,20 +70,18 @@
                   <%= link_to violation[:dance], heats_dance_path(violation[:dance_id]),
                       class: "text-blue-600 hover:text-blue-800 underline" %>
                 </td>
+                <% unless Event.current.heat_range_cat == 1 %>
                 <td class="px-4 py-2 text-sm border-b"><%= violation[:category] %></td>
+                <% end %>
                 <td class="px-4 py-2 text-sm text-center border-b font-medium text-red-600">
                   <%= violation[:count] %>
                 </td>
                 <td class="px-4 py-2 text-sm text-center border-b">
-                  <span class="text-blue-600"><%= violation[:lead_count] %></span>
-                  /
-                  <span class="text-purple-600"><%= violation[:follow_count] %></span>
+                  <%= format_lead_follow_counts(violation[:lead_count], violation[:follow_count]) %>
                 </td>
                 <td class="px-4 py-2 text-sm text-center border-b"><%= violation[:limit] %></td>
                 <td class="px-4 py-2 text-sm text-center border-b">
-                  <span class="px-2 py-1 bg-red-100 text-red-700 rounded font-medium">
-                    +<%= violation[:excess] %>
-                  </span>
+                  <%= format_excess(violation[:excess]) %>
                 </td>
               </tr>
             <% end %>

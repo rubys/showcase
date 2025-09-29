@@ -1,6 +1,7 @@
 class EntriesController < ApplicationController
   before_action :set_entry, only: %i[ show edit update destroy ]
   include EntryForm
+  include DanceLimitCalculator
 
   permit_site_owners :new, :edit, :create, :update, :destroy,
     trust_level: 50
@@ -416,53 +417,6 @@ class EntriesController < ApplicationController
       dance_limit = Event.current.dance_limit
       dance_override = Dance.where.not(limit: nil).any?
 
-      if dance_limit
-        counts = {}
-        combine_open_closed = Event.current.heat_range_cat == 1
-
-        if @entry.follow.type == 'Student' or dance_override
-          entries = Entry.where(lead_id: @entry.follow_id).or(Entry.where(follow_id: @entry.follow_id)).pluck(:id)
-          entries.delete @entry.id
-          raw_counts = Heat.where(entry_id: entries).group(:dance_id, :category).count
-
-          if combine_open_closed
-            # Combine Open and Closed counts for each dance
-            raw_counts.each do |(dance_id, category), count|
-              if %w(Open Closed).include?(category)
-                combined_key = [dance_id, 'Combined']
-                counts[combined_key] = (counts[combined_key] || 0) + count
-              else
-                counts[[dance_id, category]] = count
-              end
-            end
-          else
-            counts = raw_counts
-          end
-        end
-
-        if @entry.lead.type == 'Student' or dance_override
-          entries = Entry.where(lead_id: @entry.lead_id).or(Entry.where(follow_id: @entry.lead_id)).pluck(:id)
-          entries.delete @entry.id
-          raw_counts = Heat.where(entry_id: entries).group(:dance_id, :category).count
-
-          if combine_open_closed
-            # Combine Open and Closed counts for each dance
-            raw_counts.each do |(dance_id, category), count|
-              if %w(Open Closed).include?(category)
-                combined_key = [dance_id, 'Combined']
-                counts[combined_key] = [counts[combined_key] || 0, count].max
-              else
-                counts[[dance_id, category]] = count if (counts[[dance_id, category]] || 0) < count
-              end
-            end
-          else
-            raw_counts.each do |key, count|
-              counts[key] = count if (counts[key] || 0) < count
-            end
-          end
-        end
-      end
-
       @total = 0
       %w(Closed Open Multi Solo).each do |category|
         next unless entry[:entries][category]
@@ -472,20 +426,35 @@ class EntriesController < ApplicationController
           wants = entry[:entries][category][dance.id.to_s].to_i
 
           if wants != was
-            if dance_limit
-              # Override limit to 1 for semi_finals dances
-              effective_limit = dance.semi_finals ? 1 : (dance.limit || dance_limit)
+            # Check for dance limit violations using the new concern
+            if dance_limit || dance_override
+              additional_heats = wants - was
 
-              # Determine which count to check based on heat_range_cat setting
-              count_key = if Event.current.heat_range_cat == 1 && %w(Open Closed).include?(category)
-                            [dance.id, 'Combined']
-                          else
-                            [dance.id, category]
-                          end
+              # Check limit for both lead and follow if they are students
+              violations = []
 
-              if wants > was and (counts[count_key] || 0) + wants > effective_limit
-                limit_text = dance.semi_finals ? "1 (scrutineering)" : effective_limit.to_s
-                category_text = Event.current.heat_range_cat == 1 && %w(Open Closed).include?(category) ? "Open/Closed" : category
+              if @entry.lead.type == 'Student' || dance_override
+                violation = self.class.check_limit_violation(
+                  @entry.lead_id, dance, category,
+                  additional_heats: additional_heats,
+                  exclude_entry_id: @entry.id
+                )
+                violations << violation if violation
+              end
+
+              if @entry.follow.type == 'Student' || dance_override
+                violation = self.class.check_limit_violation(
+                  @entry.follow_id, dance, category,
+                  additional_heats: additional_heats,
+                  exclude_entry_id: @entry.id
+                )
+                violations << violation if violation
+              end
+
+              if violations.any? && wants > was
+                violation = violations.first
+                limit_text = dance.semi_finals? ? "1 (scrutineering)" : violation[:limit].to_s
+                category_text = violation[:category]
                 @entry.errors.add(:base, :dance_limit_exceeded,
                   message: "#{dance.name} #{category_text} heats are limited to #{limit_text}.")
                 @entries[category][dance.id] = [Heat.new(number: 9999)] * wants

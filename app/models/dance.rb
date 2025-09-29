@@ -37,6 +37,12 @@ class Dance < ApplicationRecord
     pro_open_category || pro_closed_category || pro_multi_category
   end
 
+  # Get the effective limit for this dance (considering semi_finals and Event defaults)
+  def effective_limit
+    return 1 if semi_finals?
+    limit || Event.current.dance_limit
+  end
+
   def scrutineering(with_explanations: false)
     # Optimized eager loading to prevent N+1 queries
     entries = heats.includes(entry: [:lead, :follow])

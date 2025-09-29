@@ -163,6 +163,12 @@ another heat is still possible, even when the agenda is locked.</li>
     class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
+  <div class="my-5">
+    <%= form.label :dance_limit, 'Limit # of entries per dance' + (@event.heat_range_cat == 1 ? '' : ' per category') %>
+    <%= form.number_field :dance_limit,
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+
 <div class="my-5">
   <%= form.label :heat_range_level, 'level' %>
   <%= form.range_field :heat_range_level, min: 0, max: @levels.length-1, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
@@ -185,6 +191,9 @@ another heat is still possible, even when the agenda is locked.</li>
 
 <div class="inline">
 <%= form.button 'Save', name: 'tab', value: 'Categories', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
+    <% if @event.dance_limit.present? && Heat.where(number: 0..).any? %>
+      <%= link_to 'Check', limits_heats_path, class: "ml-3 rounded-lg py-3 px-5 bg-green-600 text-white inline-block font-medium cursor-pointer" %>
+    <% end %>
 </div>
 
 <% end %>
