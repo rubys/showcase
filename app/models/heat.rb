@@ -35,7 +35,13 @@ class Heat < ApplicationRecord
     return unless cat
     return cat if cat.split.blank?
 
-    extensions = cat.extensions.order(:start_heat)
+    # Use loaded extensions if available to avoid N+1 queries
+    extensions = if cat.association(:extensions).loaded?
+      cat.extensions.sort_by(&:start_heat)
+    else
+      cat.extensions.order(:start_heat)
+    end
+
     if extensions.empty?
       cat
     elsif extensions.first.start_heat == nil or number == nil

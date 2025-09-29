@@ -203,6 +203,9 @@ class HeatsController < ApplicationController
         mappings += mappings.map {|a, b| [-a, -b]}
         mappings = mappings.to_h
 
+        # preload associations to avoid N+1 queries
+        heats = heats.includes(solo: [], entry: [:lead, :follow])
+
         # determine solo order numbers
         solos = {}
         heats.each do |heat|
@@ -217,20 +220,30 @@ class HeatsController < ApplicationController
           solos = {}
         end
 
-        # apply mapping
+        # apply mapping using bulk updates
         Heat.transaction do
+          # collect heat updates
+          heat_updates = {}
+          solo_updates = {}
+
           heats.each do |heat|
             if mappings[heat.number]
-              heat.number = mappings[heat.number]
-              heat.save(validate: false)
+              heat_updates[heat.id] = mappings[heat.number]
 
               if heat.solo && solos[heat.number]
-                heat.solo.order = solos[heat.number]
-                heat.solo.save(validate: false)
-              else
-                heat.save
+                solo_updates[heat.solo.id] = solos[heat.number]
               end
             end
+          end
+
+          # bulk update heats
+          heat_updates.each do |id, new_number|
+            Heat.where(id: id).update_all(number: new_number, updated_at: Time.current)
+          end
+
+          # bulk update solos
+          solo_updates.each do |id, new_order|
+            Solo.where(id: id).update_all(order: new_order, updated_at: Time.current)
           end
         end
       end
