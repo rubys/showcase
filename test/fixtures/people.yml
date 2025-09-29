@@ -67,3 +67,10 @@ student_two:
   type: Student
   role: Follower
   level: one
+
+bertha_instructor:
+  name: Bertha Instructor
+  studio: one
+  type: Professional
+  role: Follower
+  back: 201

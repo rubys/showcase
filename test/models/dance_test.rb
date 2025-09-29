@@ -417,6 +417,7 @@ class DanceTest < ActiveSupport::TestCase
   test "effective_limit returns event limit when dance limit not set" do
     event = events(:one)
     event.update!(dance_limit: 5)
+    Event.current = event
 
     dance = Dance.create!(
       name: 'Event Limited Dance',
@@ -431,6 +432,7 @@ class DanceTest < ActiveSupport::TestCase
   test "effective_limit returns nil when neither dance nor event limit set" do
     event = events(:one)
     event.update!(dance_limit: nil)
+    Event.current = event
 
     dance = Dance.create!(
       name: 'Unlimited Dance',
@@ -708,7 +710,7 @@ class DanceTest < ActiveSupport::TestCase
         name: "Leader Test #{i}",
         type: "Leader",
         studio: studio,
-        back: 200 + i
+        back: 2000 + i
       )
       
       entry = Entry.create!(

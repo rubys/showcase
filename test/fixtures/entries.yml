@@ -11,3 +11,15 @@ two:
   level: FS
   lead: Arthur
   follow: Kathryn
+
+student_instructor_bronze_closed:
+  age: B
+  level: one
+  lead: student_one
+  follow: instructor_one
+
+couple_bronze_closed:
+  age: B
+  level: one
+  lead: Arthur
+  follow: student_one

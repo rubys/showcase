@@ -1048,13 +1048,13 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
         type: 'Student', 
         studio: studios(:one), 
         level: @level,
-        back: 200 + i
+        back: 1200 + i
       )
       instructor = Person.create!(
         name: "Semi Instructor #{i}", 
         type: 'Professional', 
         studio: studios(:one),
-        back: 300 + i
+        back: 1300 + i
       )
       entry = Entry.create!(lead: instructor, follow: student, age: @age, level: @level)
       entries << entry

@@ -116,28 +116,33 @@ class DanceLimitsHelperTest < ActionView::TestCase
 
   test "combined_categories? returns true when heat_range_cat is 1" do
     @event.update!(heat_range_cat: 1)
+    Event.current = @event
     assert combined_categories?
   end
 
   test "combined_categories? returns false when heat_range_cat is not 1" do
     @event.update!(heat_range_cat: 0)
+    Event.current = @event
     assert_not combined_categories?
   end
 
   test "effective_category_display returns Open/Closed when combined" do
     @event.update!(heat_range_cat: 1)
+    Event.current = @event
     assert_equal "Open/Closed", effective_category_display("Open")
     assert_equal "Open/Closed", effective_category_display("Closed")
   end
 
   test "effective_category_display returns original when not combined" do
     @event.update!(heat_range_cat: 0)
+    Event.current = @event
     assert_equal "Open", effective_category_display("Open")
     assert_equal "Closed", effective_category_display("Closed")
   end
 
   test "effective_category_display preserves non-Open/Closed categories" do
     @event.update!(heat_range_cat: 1)
+    Event.current = @event
     assert_equal "Multi", effective_category_display("Multi")
     assert_equal "Solo", effective_category_display("Solo")
   end

@@ -15,22 +15,26 @@ class DanceLimitCalculatorTest < ActiveSupport::TestCase
 
   test "combined_categories? returns true when heat_range_cat is 1" do
     @event.update!(heat_range_cat: 1)
+    Event.current = @event
     assert @test_class.combined_categories?
   end
 
   test "combined_categories? returns false when heat_range_cat is not 1" do
     @event.update!(heat_range_cat: 0)
+    Event.current = @event
     assert_not @test_class.combined_categories?
   end
 
   test "effective_category returns Open/Closed when combined and category is Open or Closed" do
     @event.update!(heat_range_cat: 1)
+    Event.current = @event
     assert_equal "Open/Closed", @test_class.effective_category("Open")
     assert_equal "Open/Closed", @test_class.effective_category("Closed")
   end
 
   test "effective_category returns original category when not combined" do
     @event.update!(heat_range_cat: 0)
+    Event.current = @event
     assert_equal "Open", @test_class.effective_category("Open")
     assert_equal "Closed", @test_class.effective_category("Closed")
     assert_equal "Multi", @test_class.effective_category("Multi")
@@ -38,6 +42,7 @@ class DanceLimitCalculatorTest < ActiveSupport::TestCase
 
   test "effective_category returns non-Open/Closed categories unchanged even when combined" do
     @event.update!(heat_range_cat: 1)
+    Event.current = @event
     assert_equal "Multi", @test_class.effective_category("Multi")
     assert_equal "Solo", @test_class.effective_category("Solo")
   end
@@ -53,8 +58,8 @@ class DanceLimitCalculatorTest < ActiveSupport::TestCase
     arthur = people(:Arthur)
     counts = @test_class.calculate_heat_counts_for_person(arthur.id, @dance.id)
 
-    assert_equal 2, counts[:lead_counts]["Open"]
-    assert_equal 1, counts[:lead_counts]["Closed"]
+    assert_equal 3, counts[:lead_counts]["Open"]
+    assert_equal 2, counts[:lead_counts]["Closed"]
     assert counts[:follow_counts].empty? || counts[:follow_counts].values.all?(&:zero?)
   end
 
@@ -63,8 +68,8 @@ class DanceLimitCalculatorTest < ActiveSupport::TestCase
     entry2 = Entry.create!(
       lead: @student,
       follow: people(:bertha_instructor),
-      age: ages(:age1),
-      level: levels(:bronze)
+      age: ages(:one),
+      level: levels(:one)
     )
 
     Heat.create!(entry: entry1, dance: @dance, category: "Open", number: 1)
@@ -78,6 +83,7 @@ class DanceLimitCalculatorTest < ActiveSupport::TestCase
 
   test "check_limit_violation returns nil when under limit" do
     @event.update!(dance_limit: 10)
+    Event.current = @event
     @dance.update!(limit: nil)
 
     violation = @test_class.check_limit_violation(@student.id, @dance, "Open", additional_heats: 1)
@@ -86,6 +92,7 @@ class DanceLimitCalculatorTest < ActiveSupport::TestCase
 
   test "check_limit_violation returns violation details when over limit" do
     @event.update!(dance_limit: 2)
+    Event.current = @event
     @dance.update!(limit: nil)
 
     # Create existing heats
@@ -108,6 +115,7 @@ class DanceLimitCalculatorTest < ActiveSupport::TestCase
 
   test "check_limit_violation uses dance-specific limit when available" do
     @event.update!(dance_limit: 5)
+    Event.current = @event
     @dance.update!(limit: 3)
 
     entry = entries(:student_instructor_bronze_closed)
@@ -141,6 +149,7 @@ class DanceLimitCalculatorTest < ActiveSupport::TestCase
 
   test "people_with_heats_for_dance combines Open/Closed when heat_range_cat is 1" do
     @event.update!(heat_range_cat: 1)
+    Event.current = @event
 
     entry = entries(:student_instructor_bronze_closed)
     Heat.create!(entry: entry, dance: @dance, category: "Open", number: 1)
@@ -155,6 +164,7 @@ class DanceLimitCalculatorTest < ActiveSupport::TestCase
 
   test "people_with_heats_for_dance keeps categories separate when heat_range_cat is 0" do
     @event.update!(heat_range_cat: 0)
+    Event.current = @event
 
     entry = entries(:student_instructor_bronze_closed)
     Heat.create!(entry: entry, dance: @dance, category: "Open", number: 1)
@@ -173,6 +183,7 @@ class DanceLimitCalculatorTest < ActiveSupport::TestCase
 
   test "find_all_violations returns empty array when no violations" do
     @event.update!(dance_limit: 100)
+    Event.current = @event
 
     violations = @test_class.find_all_violations
     assert_equal [], violations
@@ -180,6 +191,7 @@ class DanceLimitCalculatorTest < ActiveSupport::TestCase
 
   test "find_all_violations finds violations across all dances" do
     @event.update!(dance_limit: 1)
+    Event.current = @event
 
     entry = entries(:student_instructor_bronze_closed)
     Heat.create!(entry: entry, dance: @dance, category: "Open", number: 1)
