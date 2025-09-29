@@ -1,12 +1,5 @@
 ---
 2026:
-  candc:
-    :name: C and C
-    :region: dfw
-    :logo: candc.png
-    :events:
-      team-match:
-        :name: Team Match
   clearwater:
     :name: Clearwater
     :region: dfw
@@ -159,6 +152,14 @@
         :name: Mini Comp
       october:
         :name: October
+  candc:
+    :name: C and C
+    :region: dfw
+    :logo: candc.png
+    :events:
+      team-match:
+        :name: San Antonio Halloween Team Match
+        :date: 2025-10-25 - 2025-10-25
   carmel:
     :name: Carmel
     :region: ord
