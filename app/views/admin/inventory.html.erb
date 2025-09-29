@@ -48,7 +48,7 @@
     <% year, city, token = event[:db].split('-', 3) %>
     <td><%= link_to event[:studio], studio_events_path(city) %>
     <td><%= link_to event[:name], "#{@scope}/#{year}/#{city}/#{token}/".squeeze('/') %>
-    <td><%= event[:date] %>
+    <td><%= link_to event[:date], edit_showcase_path(event[:event]['id']) %>
     <td align="right"><%= event[:rows]['people'] || 0 %>
     <td align="right"><%= event[:heats] %>
     <td align="right"><%= event[:rows]['entries'] || 0 %>
