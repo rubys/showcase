@@ -195,6 +195,8 @@ class DancesController < ApplicationController
                       .where(dances: { id: @dance.id })
                       .where(category: ['Closed', 'Open'])
                       .count
+
+    @max_heat_sizes = [@dance.closed_category&.max_heat_size, @dance.open_category&.max_heat_size].compact.uniq
   end
 
   private

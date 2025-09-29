@@ -9,8 +9,8 @@
 <li>Shows all people who have heats in <strong><%= @dance.name %></strong></li>
 <li>Sorted by total heat count (highest first), then by name</li>
 <li>Counts combine Lead and Follow heats for each person per category</li>
-<li><span class="text-orange-600 font-medium">Yellow rows</span> indicate people at their limit</li>
-<li><span class="text-red-600 font-medium">Red rows</span> indicate people over their limit (violations)</li>
+<li class="bg-yellow-50">Yellow rows indicate people at their limit</li>
+<li class="bg-red-50">Red rows indicate people over their limit (violations)</li>
 </ul>
 </div>
 
@@ -25,20 +25,24 @@
   </div>
 
   <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-    <h2 class="text-lg font-medium text-blue-800 mb-2">Dance Information</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-blue-700">
-      <div>
-        <strong>Dance:</strong> <%= @dance.name %>
-      </div>
       <div>
         <strong>Limit:</strong>
         <%= @dance_limit %> heats
       </div>
       <div>
-        <strong>Total Heats:</strong> <%= @unique_heats %>
+        <strong>Total Entries:</strong> <%= @total_heats %>
       </div>
       <div>
-        <strong>Total Entries:</strong> <%= @total_heats %>
+        <strong>Max on Floor:</strong>
+        <% if @max_heat_sizes.any? %>
+          <%= @max_heat_sizes.join(' / ') %>
+        <% else %>
+          N/A
+        <% end %>
+      </div>
+      <div>
+        <strong>Total Heats:</strong> <%= @unique_heats %>
       </div>
     </div>
   </div>
