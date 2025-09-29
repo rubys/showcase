@@ -50,7 +50,7 @@ RUN SECRET_KEY_BASE=DUMMY ./bin/rails assets:precompile
 
 # Build Navigator
 FROM golang:trixie AS build-nav
-ARG NAVIGATOR=refactored
+ARG NAVIGATOR=legacy
 
 # Set working directory for Go build
 WORKDIR /app
