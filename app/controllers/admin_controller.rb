@@ -263,6 +263,23 @@ class AdminController < ApplicationController
     @events.sort_by! {|event| -(event[:rows]['people'] || 0)} if params[:sort] == 'people'
     @events.sort_by! {|event| -(event[:rows]['entries'] || 0)} if params[:sort] == 'entries'
 
+    event_map = @events.map {|event| [event[:db], event]}.to_h
+    Showcase.joins(:location).pluck(:year, 'location.key', :key, :id).each do |year, loc, show, id|
+      if show == 'showcase'
+        event = event_map["#{year}-#{loc}"]
+        if event
+          event[:showcase] = id
+          next
+        end 
+
+        event = event_map["#{year}-#{loc}-#{show}"]
+        if event
+          event[:showcase] = id
+          next
+        end
+      end
+    end
+
     set_scope
   end
 
