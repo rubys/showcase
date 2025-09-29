@@ -819,9 +819,6 @@
       adalaide:
         :name: Adalaide
         :date: 23 November 2024
-  alexandria:
-    :name: Alexandria
-    :region: iad
   annapolis:
     :name: Annapolis
     :region: iad
@@ -851,8 +848,6 @@
       october-mini-comp:
         :name: October Mini Comp
         :date: October 6th, 2024
-      spotlight-ball:
-        :name: Spotlight ball
       december-medal-ball:
         :name: December Medal Ball
         :date: December 8th, 2024
@@ -932,9 +927,6 @@
     :name: Glenview
     :region: ord
     :events:
-      chicagoland-feb:
-        :name: Chicagoland Feb
-        :date: '2024'
       chicagoland-sept:
         :name: Chicagoland Sept
         :date: '2024'
@@ -991,10 +983,6 @@
     :region: ewr
     :locale: fr-CA
     :date: March 23, 2024
-  lincolnshire:
-    :name: Lincolnshire
-    :region: ord
-    :date: '2024'
   livermore:
     :name: Livermore
     :region: sjc
@@ -1017,9 +1005,6 @@
       extravaganza:
         :name: Extravaganza
         :date: Saturday November 16th 2024
-  lwr:
-    :name: Lakewood Ranch
-    :region: iad
   manchester:
     :name: Manchester
     :region: ewr
@@ -1047,9 +1032,6 @@
         :date: '2024-06-14'
       graduation-night:
         :name: Graduation Night
-        :date: '2024'
-      newsome-twosome:
-        :name: Newsome Twosome
         :date: '2024'
       snowball-spotlight:
         :name: Snowball Spotlight
@@ -1131,10 +1113,6 @@
       nouveau-duo:
         :name: Nouveau Duo
         :date: December 14th, 2024
-  ridgewood:
-    :name: Ridgewood
-    :region: ewr
-    :date: '2024'
   roanoke:
     :name: Roanoke
     :region: iad
@@ -1174,10 +1152,6 @@
     :name: Sarasota
     :region: iad
     :date: December 7th
-  schaumburg:
-    :name: Schaumburg
-    :region: ord
-    :date: '2024'
   slc:
     :name: Salt Lake City
     :region: sjc
@@ -1188,14 +1162,6 @@
       medal-ball:
         :name: Medal Ball
         :date: August 22nd
-  stockton:
-    :name: Stockton
-    :region: sjc
-    :events:
-      walk-this-way:
-        :name: Walk This Way
-      dance-down-memory-lane:
-        :name: Dance Down Memory Lane
   sugarland:
     :name: Sugar Land
     :region: dfw
@@ -1239,10 +1205,6 @@
       freestyle-showcase-warsaw-2024:
         :name: Freestyle Showcase Warsaw 2024
         :date: '2025-01-12'
-  westchester:
-    :name: West Chester
-    :region: ord
-    :date: '2024'
   woodlands:
     :name: Woodlands
     :region: dfw
