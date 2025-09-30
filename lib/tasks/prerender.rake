@@ -114,13 +114,12 @@ task :prerender => "prerender:env" do
     code, _headers, response = Rails.application.routes.call env
 
     if code == 200
-      dir = File.join(public, File.dirname(path))
-      dir = File.join(public, path.chomp('/')) if path.end_with?('/')
-      mkdir_p dir if not Dir.exist?(dir)
       dest = File.join(public, html)
+      dest_dir = File.dirname(dest)
+      FileUtils.mkdir_p dest_dir unless Dir.exist?(dest_dir)
       body = response.body.force_encoding('utf-8')
       if !File.exist?(dest) || IO.read(dest) != body
-        File.write File.join(public, html), body
+        File.write dest, body
       end
     else
       puts code

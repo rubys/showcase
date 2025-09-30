@@ -1,14 +1,23 @@
 #!/bin/bash
 
-if [ "$1" = "clobber" ]; then
-  bin/bundle exec rake prerender:clobber
-  exit 0
-fi
+SLEEP_MODE=false
 
-if [ "$1" = "nav" ]; then
-  bin/bundle exec rake nav:config
-  bin/bundle exec rake assets:precompile
-fi
+# Parse arguments
+for arg in "$@"; do
+  case "$arg" in
+    clobber)
+      bin/bundle exec rake prerender:clobber
+      exit 0
+      ;;
+    --sleep)
+      SLEEP_MODE=true
+      ;;
+    nav)
+      bin/bundle exec rake nav:config
+      bin/bundle exec rake assets:precompile
+      ;;
+  esac
+done
 
 export RAILS_ENV=production
 bin/bundle exec rake prerender > log/prerender.log
@@ -30,6 +39,7 @@ if [ -f "$input_file" ] && [ -n "$FLY_REGION" ]; then
   fi
 fi
 
-if [ -n "$FLY_REGION" ] && [ "$FLY_APP_NAME" == "smooth" ]; then
+# Sleep infinity when --sleep is passed (for Procfile.fly to keep process running)
+if [ "$SLEEP_MODE" = true ]; then
   sleep infinity
 fi
