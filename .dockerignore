@@ -62,6 +62,10 @@ public/index.html
 config/storage/production.yml
 flat-storage
 
+# Ignore SimpleCov coverage reports
+/coverage/
+
 # Navigator generated artifacts (source is in navigator/ submodule)
+/bin/navigator
 /navigator/bin
 /config/navigator.yml
