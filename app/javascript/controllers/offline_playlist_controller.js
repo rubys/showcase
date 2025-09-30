@@ -3,7 +3,8 @@ import { createConsumer } from "@rails/actioncable"
 
 export default class extends Controller {
   static targets = [ "button", "progress", "message", "progressBar" ]
-  
+  static values = { cleanupUrl: String }
+
   connect() {
     this.consumer = createConsumer()
     this.cacheKey = null
@@ -17,9 +18,9 @@ export default class extends Controller {
       this.consumer.disconnect()
     }
     // Clean up the cache when leaving the page
-    if (this.cacheKey) {
+    if (this.cacheKey && this.hasCleanupUrlValue) {
       try {
-        await fetch(`${window.location.pathname}/cleanup_cache`, {
+        await fetch(this.cleanupUrlValue, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
