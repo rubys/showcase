@@ -54,7 +54,7 @@ can click on it to see helpful hints.</li>
 <% end %>
 
 <% @showcases.each do |year, sites| %>
-  <a href="<%= "#{@scope}/#{year}".squeeze('/') %>/">
+  <a href="<%= "#{@scope}/#{year}/#{@city + '/' if @city}".squeeze('/') %>">
     <% count = sites.map {|token, info| info[:events] ? info[:events].size : 1}.sum %>
     <h2 title="<%= count %> events" class="font-bold text-2xl mt-4 mb-2"><%= year %></h2>
   </a>

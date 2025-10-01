@@ -54,7 +54,7 @@ module Configurator
     # Add authentication configuration if htpasswd file exists
     if File.exist?(htpasswd_path)
       config['authentication'] = htpasswd_path
-      config['auth_exclude'] = [
+      auth_exclude = [
         "#{root}/assets/",
         "#{root}/cable",
         "#{root}/docs/",
@@ -68,6 +68,14 @@ module Configurator
         '*.jpg',
         '*.gif'
       ]
+
+      # Add year paths to auth_exclude for public static showcase pages
+      showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
+      showcases.keys.each do |year|
+        auth_exclude << "#{root}/#{year}/"
+      end
+
+      config['auth_exclude'] = auth_exclude
     end
 
     # Add idle configuration for Fly.io deployments
@@ -214,6 +222,8 @@ module Configurator
 
   def build_static_config
     root = determine_root_path
+    public_dir = Rails.root.join('public').to_s
+
     directories = [
       { 'path' => "#{root}/assets/", 'dir' => 'assets/', 'cache' => '24h' },
       { 'path' => "#{root}/docs/", 'dir' => 'docs/' },
@@ -225,6 +235,7 @@ module Configurator
     # Add year-based directories (2022, 2023, 2024, 2025, etc.)
     showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
     showcases.keys.each do |year|
+      # Match any path under the year directory, including city subdirectories
       directories << { 'path' => "#{root}/#{year}/", 'dir' => "#{year}/" }
     end
 
