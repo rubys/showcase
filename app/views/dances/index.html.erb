@@ -89,13 +89,12 @@ using the Arrange button at the bottom of this page.</li>
     </thead>
     <tbody data-controller="drop" data-drop-action="<%= drop_dances_path %>">
     <% @dances.each do |dance| %>
-      <% next unless dance.heat_length || dance.order < 0 %>
+      <% next unless dance.heat_length && dance.order >= 0 %>
       <tr class="hover:bg-yellow-200" draggable="true" data-drag-id="<%= dance.id %>">
         <td class="row text-black font-medium"><%= link_to dance.name, edit_multi_path(dance.id) %></td>
         <td class="row grid grid-cols-1">
-          <% ([dance] + (@separate[dance.name] || [])).each do |dance| %>
           <%= link_to dance.multi_category&.name, edit_category_path(dance.multi_category) if dance.multi_category %>
-          <% end %>
+          <%= link_to dance.pro_multi_category&.name, edit_category_path(dance.pro_multi_category) if dance.pro_multi_category %>
         </td>
         <td class="row text-right"><%= @entries[dance.id] || 0 %></td>
         <td class="row text-right"><%= @heats[dance.id] || 0 %></td>

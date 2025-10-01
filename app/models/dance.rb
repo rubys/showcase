@@ -19,6 +19,7 @@ class Dance < ApplicationRecord
   has_many :songs, dependent: :destroy
   has_many :multi_children, dependent: :destroy, class_name: 'Multi', foreign_key: :parent_id
   has_many :multi_dances, dependent: :destroy, class_name: 'Multi', foreign_key: :dance_id
+  has_many :multi_levels, dependent: :destroy
 
   validates :name, presence: true # , uniqueness: true
   validates :order, presence: true, uniqueness: true

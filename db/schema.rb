@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_26_120648) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_01_140905) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -278,6 +278,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_26_120648) do
     t.index ["user_id"], name: "index_locations_on_user_id"
   end
 
+  create_table "multi_levels", force: :cascade do |t|
+    t.string "name"
+    t.integer "dance_id", null: false
+    t.integer "start_level"
+    t.integer "stop_level"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["dance_id"], name: "index_multi_levels_on_dance_id"
+  end
+
   create_table "multis", force: :cascade do |t|
     t.integer "parent_id", null: false
     t.integer "dance_id", null: false
@@ -494,6 +504,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_26_120648) do
   add_foreign_key "heats", "entries"
   add_foreign_key "judges", "people"
   add_foreign_key "locations", "users"
+  add_foreign_key "multi_levels", "dances"
   add_foreign_key "multis", "dances"
   add_foreign_key "multis", "dances", column: "parent_id"
   add_foreign_key "package_includes", "billables", column: "option_id"

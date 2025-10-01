@@ -127,6 +127,7 @@ Rails.application.routes.draw do
     resources :entries do
       get 'couples', on: :collection
       post 'reset_ages', on: :collection
+      post 'split_multi', on: :collection
     end
 
     get '/dances/:dance/songs', to: 'songs#dancelist', as: 'dance_songlist'

@@ -28,6 +28,95 @@
   </form>
   </div>
 
+  <% if @is_multi %>
+  <div class="mb-6">
+    <h2 class="font-bold text-2xl text-center mb-3">Level Splits</h2>
+    <table class="mx-auto border border-gray-300">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="px-4 py-2 border">Name</th>
+          <th class="px-4 py-2 border">Start Level</th>
+          <th class="px-4 py-2 border">Stop Level</th>
+          <th class="px-4 py-2 border text-center">Couples</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if @multi_levels.empty? %>
+          <tr>
+            <td class="px-4 py-2 border">All</td>
+            <td class="px-4 py-2 border"><%= Level.find(@min_level).name %></td>
+            <td class="px-4 py-2 border">
+              <%= form_with url: split_multi_entries_path, method: :post, data: { controller: "auto-submit" } do |f| %>
+                <%= f.hidden_field :dance_id, value: @dance %>
+                <%= f.hidden_field :dance, value: @dance %>
+                <%= f.hidden_field :couple, value: @couple %>
+                <%= f.hidden_field :level, value: @level %>
+                <%= f.hidden_field :age, value: @age %>
+                <%= f.hidden_field :sort, value: params[:sort] %>
+                <%= f.select :stop_level,
+                    @levels.select { |name, id| @level_ids.include?(id) && id > @min_level }.map { |name, id| [name, id] },
+                    { selected: @max_level },
+                    class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1" %>
+              <% end %>
+            </td>
+            <td class="px-4 py-2 border text-center"><%= @heats.map(&:entry_id).uniq.count %></td>
+          </tr>
+        <% else %>
+          <% @multi_levels.each_with_index do |ml, index| %>
+            <tr class="<%= index.even? ? 'bg-green-50' : 'bg-yellow-50' %>">
+              <td class="px-4 py-2 border">
+                <%= form_with url: split_multi_entries_path, method: :post, data: { controller: "auto-submit" } do |f| %>
+                  <%= f.hidden_field :multi_level_id, value: ml.id %>
+                  <%= f.hidden_field :dance, value: @dance %>
+                  <%= f.hidden_field :couple, value: @couple %>
+                  <%= f.hidden_field :level, value: @level %>
+                  <%= f.hidden_field :age, value: @age %>
+                  <%= f.hidden_field :sort, value: params[:sort] %>
+                  <%= f.text_field :name, value: ml.name,
+                      class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1 w-full" %>
+                <% end %>
+              </td>
+              <td class="px-4 py-2 border"><%= Level.find(ml.start_level).name %></td>
+              <td class="px-4 py-2 border">
+                <% if index < @multi_levels.length - 1 || ml.start_level != ml.stop_level %>
+                  <%= form_with url: split_multi_entries_path, method: :post, data: { controller: "auto-submit" } do |f| %>
+                    <%= f.hidden_field :multi_level_id, value: ml.id %>
+                    <%= f.hidden_field :dance, value: @dance %>
+                    <%= f.hidden_field :couple, value: @couple %>
+                    <%= f.hidden_field :level, value: @level %>
+                    <%= f.hidden_field :age, value: @age %>
+                    <%= f.hidden_field :sort, value: params[:sort] %>
+                    <%
+                      # For non-last rows, show levels from start to max (to allow expansion)
+                      # For last row with multiple levels, show only levels within this split
+                      if index < @multi_levels.length - 1
+                        # Non-last row: can expand to consume later splits
+                        available_levels = @levels.select { |name, id| @level_ids.include?(id) && id >= ml.start_level && id <= @max_level }
+                      else
+                        # Last row: can only split itself, so show levels from start to stop
+                        available_levels = @levels.select { |name, id| @level_ids.include?(id) && id >= ml.start_level && id <= ml.stop_level }
+                      end
+                    %>
+                    <%= f.select :stop_level,
+                        available_levels.map { |name, id| [name, id] },
+                        { selected: ml.stop_level },
+                        class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1" %>
+                  <% end %>
+                <% else %>
+                  <%= Level.find(ml.stop_level).name %>
+                <% end %>
+              </td>
+              <td class="px-4 py-2 border text-center">
+                <%= @heats.select { |h| h.entry.level_id >= ml.start_level && h.entry.level_id <= ml.stop_level }.map(&:entry_id).uniq.count %>
+              </td>
+            </tr>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <% end %>
+
   <table class="mx-auto">
     <thead>
       <th><%= link_to "lead", entries_path(dance: @dance, couple: @couple, level: @level, age: @age, sort: "lead"), data: { turbo: false } %>
@@ -44,11 +133,28 @@
     <tbody>
       <% @heats.each do |heat| %>
         <% entry = heat.entry %>
-          <% if heat.number < 0 %>
-        <tr class="group line-through opacity-50">
-        <% else %>
-        <tr class="group">
-        <% end %>
+        <%
+          # Determine which split this heat belongs to
+          split_index = nil
+          if @is_multi && @multi_levels.any?
+            @multi_levels.each_with_index do |ml, idx|
+              if entry.level_id >= ml.start_level && entry.level_id <= ml.stop_level
+                split_index = idx
+                break
+              end
+            end
+          end
+
+          # Build CSS classes
+          row_classes = ["group"]
+          if heat.number < 0
+            row_classes << "line-through opacity-50"
+          end
+          if split_index
+            row_classes << (split_index.even? ? "bg-green-50" : "bg-yellow-50")
+          end
+        %>
+        <tr class="<%= row_classes.join(' ') %>">
           <td class="row"><%= link_to entry.lead.display_name, entry.lead %>
           <td class="row"><%= link_to entry.follow.display_name, entry.follow %>
           <% unless @dance_name %>

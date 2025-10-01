@@ -1,6 +1,30 @@
 module HeatScheduler
   include Printable
 
+  def build_true_order
+    true_order = {}
+    dance_orders = Dance.all.group_by(&:name).map {|name, list| [name, list.map(&:order)]}
+    dance_orders.each do |name, orders|
+      max = orders.max
+
+      # Check if this dance has multi-level splits
+      dances_with_name = Dance.where(name: name, order: orders)
+      has_splits = dances_with_name.any? { |d| d.multi_children.any? && MultiLevel.where(dance: dances_with_name).exists? }
+
+      if has_splits
+        # Assign fractional orders to keep splits sorted together but separated during grouping
+        sorted_orders = orders.sort.reverse
+        sorted_orders.each_with_index do |order, index|
+          true_order[order] = max + (index * 0.001)
+        end
+      else
+        # Original behavior for non-split dances
+        orders.each {|order| true_order[order] = max}
+      end
+    end
+    true_order
+  end
+
   def schedule_heats
     event = Event.current
 
@@ -26,12 +50,7 @@ module HeatScheduler
     heat_categories = {'Closed' => 0, 'Open' => 1, 'Solo' => 2, 'Multi' => 3}
     routines = Category.where(routines: true).all.zip(4..).map {|cat, num| [cat.id, num]}.to_h
 
-    true_order = {}
-    dance_orders = Dance.all.group_by(&:name).map {|name, list| [name, list.map(&:order)]}
-    dance_orders.each do |name, orders|
-      max = orders.max
-      orders.each {|order| true_order[order] = max}
-    end
+    true_order = build_true_order
 
     # Calculate availability scores if using availability ordering
     availability_scores = {}
@@ -308,12 +327,7 @@ module HeatScheduler
     new_order = []
     agenda = {}
 
-    true_order = {}
-    dance_orders = Dance.all.group_by(&:name).map {|name, list| [name, list.map(&:order)]}
-    dance_orders.each do |name, orders|
-      max = orders.max
-      orders.each {|order| true_order[order] = max}
-    end
+    true_order = build_true_order
 
     cats.each do |cat, groups|
       if Event.current.intermix
