@@ -26,6 +26,7 @@ module DanceLimitCalculator
                         .where(entry: { lead_id: person_id }, dance_id: dance_id)
                         .where(entry_id: entry_ids)
                         .where(category: ['Closed', 'Open'])
+                        .where('heats.number >= 0')
                         .group(:category)
                         .count
 
@@ -33,6 +34,7 @@ module DanceLimitCalculator
                           .where(entry: { follow_id: person_id }, dance_id: dance_id)
                           .where(entry_id: entry_ids)
                           .where(category: ['Closed', 'Open'])
+                          .where('heats.number >= 0')
                           .group(:category)
                           .count
 
@@ -184,6 +186,7 @@ module DanceLimitCalculator
                         person_ids, person_ids
                       )
                       .where(category: ['Closed', 'Open'])
+                      .where('heats.number >= 0')
                       .group(:dance_id, 'entries.lead_id', 'entries.follow_id', :category)
                       .count
 
