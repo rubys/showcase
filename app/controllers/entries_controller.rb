@@ -42,7 +42,22 @@ class EntriesController < ApplicationController
 
     selected = Heat.where(where)
     selected = selected.or(plus) if plus
-    selected = selected.includes(entry: [:lead, :follow, :level, :age])
+    selected = selected.includes(entry: [:lead, :follow, :level, :age], dance: [])
+
+    # Apply sorting based on the sort parameter
+    case params[:sort]
+    when 'lead'
+      selected = selected.joins(entry: :lead).order('people.name')
+    when 'follow'
+      selected = selected.joins(entry: :follow).order('people.name')
+    when 'dance'
+      selected = selected.joins(:dance).order('dances.name')
+    when 'level'
+      selected = selected.joins(entry: :level).order('levels.id')
+    when 'age'
+      selected = selected.joins(entry: :age).order('ages.id')
+    end
+
     @heats = selected.all
   end
 

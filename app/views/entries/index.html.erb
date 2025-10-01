@@ -30,12 +30,12 @@
 
   <table class="mx-auto">
     <thead>
-      <th>lead
-      <th>follow
-      <th>dance
-      <th>level
+      <th><%= link_to "lead", entries_path(dance: @dance, couple: @couple, level: @level, age: @age, sort: "lead"), data: { turbo: false } %>
+      <th><%= link_to "follow", entries_path(dance: @dance, couple: @couple, level: @level, age: @age, sort: "follow"), data: { turbo: false } %>
+      <th><%= link_to "dance", entries_path(dance: @dance, couple: @couple, level: @level, age: @age, sort: "dance"), data: { turbo: false } %>
+      <th><%= link_to "level", entries_path(dance: @dance, couple: @couple, level: @level, age: @age, sort: "level"), data: { turbo: false } %>
       <% if @track_ages %>
-      <th>age
+      <th><%= link_to "age", entries_path(dance: @dance, couple: @couple, level: @level, age: @age, sort: "age"), data: { turbo: false } %>
       <% end %>
     </thead>
 
