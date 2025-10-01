@@ -4,7 +4,7 @@
   <% end %>
 
   <div>
-    <h1 class="font-bold text-4xl text-center mb-4">Entries</h1>
+    <h1 class="font-bold text-4xl text-center mb-4"><%= @dance_name || "Entries" %></h1>
   </div>
 
   <div class="flex align-center justify-center mb-4">
@@ -32,7 +32,9 @@
     <thead>
       <th><%= link_to "lead", entries_path(dance: @dance, couple: @couple, level: @level, age: @age, sort: "lead"), data: { turbo: false } %>
       <th><%= link_to "follow", entries_path(dance: @dance, couple: @couple, level: @level, age: @age, sort: "follow"), data: { turbo: false } %>
+      <% unless @dance_name %>
       <th><%= link_to "dance", entries_path(dance: @dance, couple: @couple, level: @level, age: @age, sort: "dance"), data: { turbo: false } %>
+      <% end %>
       <th><%= link_to "level", entries_path(dance: @dance, couple: @couple, level: @level, age: @age, sort: "level"), data: { turbo: false } %>
       <% if @track_ages %>
       <th><%= link_to "age", entries_path(dance: @dance, couple: @couple, level: @level, age: @age, sort: "age"), data: { turbo: false } %>
@@ -49,7 +51,9 @@
         <% end %>
           <td class="row"><%= link_to entry.lead.display_name, entry.lead %>
           <td class="row"><%= link_to entry.follow.display_name, entry.follow %>
+          <% unless @dance_name %>
           <td class="row"><%= link_to heat.dance.name, heat.dance %>
+          <% end %>
           <td class="row"><%= entry.level_name %>
           <% if @track_ages %>
           <td class="row"><%= entry.age.description %>

@@ -13,7 +13,17 @@ class EntriesController < ApplicationController
     where = {}
 
     @dance = params[:dance]
-    where[:dance_id] = params[:dance] unless @dance.blank?
+    @dance_name = nil
+    unless @dance.blank?
+      dance = Dance.find_by(id: params[:dance])
+      if dance
+        @dance_name = dance.name
+        dance_ids = Dance.where(name: dance.name).pluck(:id)
+        where[:dance_id] = dance_ids
+      else
+        where[:dance_id] = params[:dance]
+      end
+    end
 
     @age = params[:age]
     where[:age] = {id: params[:age]} unless @age.blank?
