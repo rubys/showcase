@@ -61,6 +61,7 @@ module Configurator
         "#{root}/password/",
         "#{root}/regions/",
         "#{root}/studios/",
+        "#{root}/robots.txt",
         '*.css',
         '*.js',
         '*.png',
@@ -250,10 +251,11 @@ module Configurator
     mem = File.exist?('/proc/meminfo') ?
       IO.read('/proc/meminfo')[/\d+/].to_i : `sysctl -n hw.memsize`.to_i/1024
     pool_size = 6 + mem / 1024 / 1024
-    
+
     {
       'framework' => build_framework_config,
       'env' => build_application_env,
+      'health_check' => '/up',
       'tenants' => tenants,
       'pools' => {
         'max_size' => pool_size,
