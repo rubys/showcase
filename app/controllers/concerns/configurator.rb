@@ -269,6 +269,7 @@ module Configurator
       'framework' => build_framework_config,
       'env' => build_application_env,
       'health_check' => '/up',
+      'startup_timeout' => '5s',
       'track_websockets' => false,  # WebSockets proxied to standalone Action Cable server
       'tenants' => tenants,
       'pools' => {
