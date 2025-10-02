@@ -267,6 +267,7 @@ module Configurator
       'framework' => build_framework_config,
       'env' => build_application_env,
       'health_check' => '/up',
+      'track_websockets' => false,  # WebSockets proxied to standalone Action Cable server
       'tenants' => tenants,
       'pools' => {
         'max_size' => pool_size,
