@@ -62,6 +62,8 @@ module Configurator
         "#{root}/regions/",
         "#{root}/studios/",
         "#{root}/robots.txt",
+        "#{root}/index_update",
+        "#{root}/index_date",
         '*.css',
         '*.js',
         '*.png',
