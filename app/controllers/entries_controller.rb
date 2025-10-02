@@ -88,6 +88,8 @@ class EntriesController < ApplicationController
           @min_level = level_ids.min
           @max_level = level_ids.max
           @level_ids = level_ids
+        else
+          @level_ids = []
         end
       end
     end
