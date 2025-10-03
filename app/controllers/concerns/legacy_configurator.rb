@@ -373,7 +373,7 @@ module LegacyConfigurator
       dbpath = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
       tenants << {
         'path' => region ? "#{root}/regions/#{region}/demo/" : "/demo/",
-        'root' => "/rails/public/demo/",
+        'root' => "/rails/",
         'var' => {
           'database' => 'demo'
         },
