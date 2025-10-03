@@ -61,6 +61,7 @@ module Configurator
         "#{root}/password/",
         "#{root}/regions/",
         "#{root}/studios/",
+        "#{root}/favicon.ico",
         "#{root}/robots.txt",
         "#{root}/index_update",
         "#{root}/index_date",
