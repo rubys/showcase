@@ -235,6 +235,9 @@
       medal-ball:
         :name: Medal Ball
         :date: '2025-10-18'
+      medal-ball-2:
+        :name: Medal Ball 2
+        :date: 2025-10-18 - 2025-10-18
   cranford:
     :name: Cranford
     :region: ewr
