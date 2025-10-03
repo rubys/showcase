@@ -24,10 +24,14 @@ module Configurator
 
   private
 
+  # Cache showcases.yml to avoid repeated file reads
+  def showcases
+    @showcases ||= YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
+  end
+
   def build_navigator_config
     config = {
       'server' => build_server_config,
-      'static' => build_static_config,
       'applications' => build_applications_config,
       'managed_processes' => build_managed_processes_config,
       'routes' => build_routes_config,
@@ -48,7 +52,10 @@ module Configurator
       'listen' => determine_listen_port,
       'hostname' => host,
       'root_path' => root,
-      'public_dir' => Rails.root.join('public').to_s
+      'public_dir' => Rails.root.join('public').to_s,
+      'cache_control' => build_cache_control(root),
+      'allowed_extensions' => %w[html htm txt xml json css js png jpg gif pdf xlsx],
+      'try_files' => %w[index.html .html .htm .txt .xml .json]
     }
 
     # Add authentication configuration if htpasswd file exists
@@ -73,7 +80,6 @@ module Configurator
       ]
 
       # Add year paths to auth_exclude for public static showcase pages
-      showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
       showcases.keys.each do |year|
         auth_exclude << "#{root}/#{year}/"
       end
@@ -90,6 +96,15 @@ module Configurator
     end
 
     config
+  end
+
+  def build_cache_control(root)
+    {
+      'overrides' => [
+        { 'path' => "#{root}/assets/", 'max_age' => '24h' },
+        { 'path' => "#{root}/", 'max_age' => '24h' }
+      ]
+    }
   end
 
 
@@ -184,8 +199,6 @@ module Configurator
   end
 
   def add_cross_region_routing(routes, root, current_region)
-    showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
-    
     # Group sites and years by region (like nginx-config.rb does)
     regions = {}
     showcases.each do |year, sites|
@@ -223,48 +236,8 @@ module Configurator
     end
   end
 
-  def build_static_config
-    root = determine_root_path
-    public_dir = Rails.root.join('public').to_s
-
-    directories = [
-      { 'path' => "#{root}/assets/", 'dir' => 'assets/', 'cache' => '24h' },
-      { 'path' => "#{root}/docs/", 'dir' => 'docs/' },
-      { 'path' => "#{root}/fonts/", 'dir' => 'fonts/' },
-      { 'path' => "#{root}/regions/", 'dir' => 'regions/' },
-      { 'path' => "#{root}/studios/", 'dir' => 'studios/' }
-    ]
-
-    # Add year-based directories (2022, 2023, 2024, 2025, etc.)
-    showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
-    showcases.keys.each do |year|
-      # Match any path under the year directory, including city subdirectories
-      directories << { 'path' => "#{root}/#{year}/", 'dir' => "#{year}/" }
-    end
-
-    # Add root path for serving root-level static files (e.g., /arthur-murray-logo.gif)
-    # This allows files directly in public/ to be served
-    if root != ''
-      directories << { 'path' => "#{root}/", 'dir' => '.', 'cache' => '24h' }
-    else
-      directories << { 'path' => "/", 'dir' => '.', 'cache' => '24h' }
-    end
-
-    {
-      'directories' => directories,
-      'extensions' => %w[html htm txt xml json css js png jpg gif pdf xlsx],
-      'try_files' => {
-        'enabled' => true,
-        'suffixes' => %w[index.html .html .htm .txt .xml .json]
-      }
-    }
-  end
-
   def build_applications_config
     tenants = build_tenants_list
-    mem = File.exist?('/proc/meminfo') ?
-      IO.read('/proc/meminfo')[/\d+/].to_i : `sysctl -n hw.memsize`.to_i/1024
-    pool_size = 6 + mem / 1024 / 1024
 
     {
       'framework' => build_framework_config,
@@ -274,11 +247,23 @@ module Configurator
       'track_websockets' => false,  # WebSockets proxied to standalone Action Cable server
       'tenants' => tenants,
       'pools' => {
-        'max_size' => pool_size,
+        'max_size' => calculate_pool_size,
         'timeout' => '5m',
         'start_port' => 4000
       }
     }
+  end
+
+  def calculate_pool_size
+    mem = if File.exist?('/proc/meminfo')
+            IO.read('/proc/meminfo')[/\d+/].to_i
+          else
+            `sysctl -n hw.memsize`.to_i / 1024
+          end
+    6 + mem / 1024 / 1024
+  rescue StandardError => e
+    Rails.logger.warn("Failed to calculate pool size: #{e.message}, using default of 10")
+    10
   end
   
   def build_framework_config
@@ -323,7 +308,6 @@ module Configurator
   end
 
   def build_tenants_list
-    showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
     region = ENV['FLY_REGION']
     dbpath = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
     storage = ENV['RAILS_STORAGE'] || Rails.root.join('storage').to_s
@@ -472,7 +456,6 @@ module Configurator
   end
 
   def load_studios
-    showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
     showcases.values.map(&:keys).flatten.uniq.sort
   end
 
