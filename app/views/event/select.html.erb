@@ -13,7 +13,7 @@
   </div>
 
   <div class="my-5">
-    <%= form.select :date, @dates, {include_blank: true},
+    <%= form.select :date, [['fetch', 'fetch']] + @dates, {include_blank: true},
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 

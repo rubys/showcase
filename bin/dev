@@ -49,6 +49,19 @@ if [[ $# -gt 0 ]]; then
       gzip -d ~/tmp/$RAILS_APP_DB.sqlite3.in.gz
       mv ~/git/showcase/db/$RAILS_APP_DB.sqlite3 ~/tmp
       sqlite3 ~/git/showcase/db/$RAILS_APP_DB.sqlite3 < ~/tmp/$RAILS_APP_DB.sqlite3.in
+    elif [[ $2 = "fetch" ]]; then
+      # Load region from map.yml and fetch from fly.io
+      SITE=$(echo $RAILS_APP_DB | sed -E 's/^[0-9]+-([^-]+)-.*/\1/')
+      REGION=$(ruby -ryaml -e "puts YAML.load_file('config/tenant/map.yml').dig('studios', '$SITE', 'region')")
+
+      if [[ -n "$REGION" ]]; then
+        echo "Fetching $RAILS_APP_DB.sqlite3 from $REGION..."
+        rm -f $BASE/db/$RAILS_APP_DB.sqlite3
+        fly sftp get /data/db/$RAILS_APP_DB.sqlite3 $BASE/db/$RAILS_APP_DB.sqlite3 --region $REGION
+      else
+        echo "Error: Could not find region for site '$SITE'"
+        exit 1
+      fi
     else
       export HTTP_X_REMOTE_USER=$2
     fi
