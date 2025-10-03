@@ -28,7 +28,10 @@ class OutputChannel < ApplicationCable::Channel
   def subscribed
     @stream = params[:stream]
     @pid = nil
-    stream_from @stream if self.class.registry[@stream]
+
+    # Reload registry from disk to catch recently registered tokens
+    registry = YAML.load_file(REGISTRY) rescue {}
+    stream_from @stream if registry[@stream]
   end
 
   def command(data)
@@ -102,6 +105,7 @@ private
 
     # Then clean up old entries, keeping the most recent 50 (increased to reduce race conditions)
     # This ensures we don't accidentally remove recently created tokens
+    # IMPORTANT: Sort AFTER adding the new token so it's included in the sort
     if registry.length > 50
       # Sort by timestamp (embedded in token) and keep the most recent
       # Parse as integer to ensure consistent sorting
