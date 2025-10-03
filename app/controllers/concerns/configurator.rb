@@ -310,6 +310,9 @@ module Configurator
     # Action Cable configuration
     env['RAILS_CABLE_PATH'] = '/showcase/cable'
 
+    # puma and Active Record pool size
+    env['RAILS_MAX_THREADS'] = '3'
+
     # Template variables (need substitution)
     env['RAILS_APP_DB'] = '${database}'
     env['RAILS_STORAGE'] = storage
