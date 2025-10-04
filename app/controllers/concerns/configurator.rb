@@ -40,52 +40,28 @@ module Configurator
       'maintenance' => build_maintenance_config
     }
 
+    # Add auth section if htpasswd file exists
+    auth_config = build_auth_config
+    config['auth'] = auth_config if auth_config
+
     config
   end
 
   def build_server_config
     host = determine_host
-    htpasswd_path = File.join(DBPATH, 'htpasswd')
     root = determine_root_path
 
     config = {
       'listen' => determine_listen_port,
       'hostname' => host,
       'root_path' => root,
-      'public_dir' => Rails.root.join('public').to_s,
-      'cache_control' => build_cache_control(root),
-      'allowed_extensions' => %w[html htm txt xml json css js png jpg gif pdf xlsx],
-      'try_files' => %w[index.html .html .htm .txt .xml .json]
+      'static' => {
+        'public_dir' => Rails.root.join('public').to_s,
+        'allowed_extensions' => %w[html htm txt xml json css js png jpg gif pdf xlsx],
+        'try_files' => %w[index.html .html .htm .txt .xml .json],
+        'cache_control' => build_cache_control(root)
+      }
     }
-
-    # Add authentication configuration if htpasswd file exists
-    if File.exist?(htpasswd_path)
-      config['authentication'] = htpasswd_path
-      auth_exclude = [
-        "#{root}/assets/",
-        "#{root}/cable",
-        "#{root}/docs/",
-        "#{root}/password/",
-        "#{root}/regions/",
-        "#{root}/studios/",
-        "#{root}/favicon.ico",
-        "#{root}/robots.txt",
-        "#{root}/index_update",
-        "#{root}/index_date",
-        '*.css',
-        '*.js',
-        '*.png',
-        '*.jpg',
-        '*.gif'
-      ]
-
-      # Add year paths to auth_exclude for public static showcase pages
-      showcases.keys.each do |year|
-        auth_exclude << "#{root}/#{year}/"
-      end
-
-      config['auth_exclude'] = auth_exclude
-    end
 
     # Add idle configuration for Fly.io deployments
     if ENV['FLY_REGION']
@@ -96,6 +72,44 @@ module Configurator
     end
 
     config
+  end
+
+  def build_auth_config
+    htpasswd_path = File.join(DBPATH, 'htpasswd')
+    root = determine_root_path
+
+    # Only return auth config if htpasswd file exists
+    return nil unless File.exist?(htpasswd_path)
+
+    public_paths = [
+      "#{root}/assets/",
+      "#{root}/cable",
+      "#{root}/docs/",
+      "#{root}/password/",
+      "#{root}/regions/",
+      "#{root}/studios/",
+      "#{root}/favicon.ico",
+      "#{root}/robots.txt",
+      "#{root}/index_update",
+      "#{root}/index_date",
+      '*.css',
+      '*.js',
+      '*.png',
+      '*.jpg',
+      '*.gif'
+    ]
+
+    # Add year paths to public_paths for public static showcase pages
+    showcases.keys.each do |year|
+      public_paths << "#{root}/#{year}/"
+    end
+
+    {
+      'enabled' => true,
+      'realm' => 'Showcase',
+      'htpasswd' => htpasswd_path,
+      'public_paths' => public_paths
+    }
   end
 
   def build_cache_control(root)
@@ -117,7 +131,9 @@ module Configurator
       'redirects' => [],
       'rewrites' => [],
       'reverse_proxies' => [],
-      'fly_replay' => []
+      'fly' => {
+        'replay' => []
+      }
     }
 
     # Add WebSocket proxy for Action Cable
@@ -177,13 +193,13 @@ module Configurator
     # 2. Machine-based: { 'machine' => 'machine_id', 'app' => 'smooth-pdf' } -> routes to specific machine instance
     # 3. Region-based: { 'region' => 'iad' } -> routes to specific region
     if ENV['FLY_APP_NAME']
-      routes['fly_replay'] << {
+      routes['fly']['replay'] << {
         'path' => "^#{root}/.+\\.pdf$",
         'app' => 'smooth-pdf',
         'status' => 307
       }
-      
-      routes['fly_replay'] << {
+
+      routes['fly']['replay'] << {
         'path' => "^#{root}/.+\\.xlsx$",
         'app' => 'smooth-pdf',
         'status' => 307
@@ -214,21 +230,21 @@ module Configurator
     
     # Add region index fly-replay routes
     regions.keys.each do |target_region|
-      routes['fly_replay'] << {
+      routes['fly']['replay'] << {
         'path' => "#{root}/regions/#{target_region}/",
         'region' => target_region,
         'status' => 307
       }
     end
-    
+
     # Add event-specific routing for each region using only years that actually exist in that region
     regions.each do |target_region, data|
       years = data[:years].to_a.sort.join('|')
       sites = data[:sites].to_a.sort.join('|')
-      
+
       # Fly-replay for all methods - Navigator automatically falls back to reverse proxy
       # when content constraints prevent fly-replay (eliminating need for separate reverse proxy rules)
-      routes['fly_replay'] << {
+      routes['fly']['replay'] << {
         'path' => "^#{root}/(?:#{years})/(?:#{sites})(?:/.*)?$",
         'region' => target_region,
         'status' => 307
