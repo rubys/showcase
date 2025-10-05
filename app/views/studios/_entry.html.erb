@@ -23,7 +23,11 @@
   <% age_cost = @track_ages ? AgeCost.all.index_by(&:age_id) : {} %>
   <% heats = entries.map(&:heats).flatten %>
   <% heats.sort_by! {|heat| [heat.entry.level_id, heat.entry.age_id, heat.category, heat.dance.name]} %>
-  <% heats.group_by {|heat| [heat.category, heat.dance.name, heat.entry.level.name, heat.entry.subject_category(@track_ages)]}.each do |(category, dance, level, subjcat), heats| %>
+  <% heats.group_by {|heat|
+       dance_name = heat.dance.name
+       dance_name += " / #{heat.solo.combo_dance.name}" if heat.category == 'Solo' && heat.solo&.combo_dance
+       [heat.category, dance_name, heat.entry.level.name, heat.entry.subject_category(@track_ages)]
+     }.each do |(category, dance, level, subjcat), heats| %>
     <% heat = heats.first
 
        entry = heat.entry
