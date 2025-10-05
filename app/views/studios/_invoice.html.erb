@@ -26,10 +26,11 @@
   </tr>
   </thead>
   <tbody>
-    <% total_dance_cost = total_purchases = 0 %>
+    <% total_dance_cost = total_purchases = total_dance_count = 0 %>
     <% dances = invoice[:dances] %>
     <% dances.keys.sort_by {|person| person.name.downcase}.each do |person| %>
     <% next if @student and !%w(Student Guest).include? person.type %>
+    <% next if @instructor and person != @instructor and person.invoice_to_id != @instructor.id %>
     <% dance_cost = dances[person][:cost] %>
     <% purchases = dances[person][:purchases] %>
     <% next if purchases == 0 and dances[person][:dances] == 0 %>
@@ -44,6 +45,7 @@
     </tr>
     <% total_dance_cost += dance_cost %>
     <% total_purchases += purchases %>
+    <% total_dance_count += dances[person][:dances] %>
     <% end %>
     <% invoice[:other_charges].sort.each do |name, charge| %>
     <tr>
@@ -53,11 +55,12 @@
       <td class="pr-4 text-right"><%= localized_number 0 %></td>
       <td class="pr-4 text-right"><%= localized_number charge[:cost] %></td>
       <% total_dance_cost += charge[:cost] %>
+      <% total_dance_count += charge[:count] %>
     </tr>
     <% end %>
     <tr class="text-base">
       <th class="row-foot">total</th>
-      <td><div class="row-foot text-right"><%= number_with_precision invoice[:dance_count], strip_insignificant_zeros: true %></div></td>
+      <td><div class="row-foot text-right"><%= number_with_precision total_dance_count, strip_insignificant_zeros: true %></div></td>
       <td class="row-foot text-right"><%= localized_number total_dance_cost %></td>
       <% if invoice[:purchases] > 0 %>
       <td class="row-foot text-right"><%= localized_number total_purchases %></td>
@@ -83,12 +86,12 @@
     
     <% invoice[:dances].keys.sort_by(&:name).each do |person| %>
     <% next if @student and !%w(Student Guest).include? person.type %>
+    <% next if @instructor and person != @instructor and person.invoice_to_id != @instructor.id %>
     <% next unless person.studio == studio %>
     <% purchases = person.selected_options.group_by(&:name) %>
     <% purchases["#{person.type} #{person.package.name}"] = [person.package] if person.package_id %>
     <% next if purchases.empty? %>
     <% next unless person.studio == studio %>
-    <% next if person.type == 'Professional' && @instructor && person != @instructor %>
     <tr>
       <td><div class="mx-4"><%= person.name %></div></td>
       <td><div class="mx-4"><%= purchases.map {|name, list| list.length == 1 ? name : "#{list.length} &#215; #{name}"}.join(' + ').html_safe %></div></td>
@@ -102,6 +105,7 @@
   <% if @student %>
   <% invoice[:dances].keys.sort_by(&:name).each do |person| %>
   <% next if person.type != 'Student' or @couples.values.include? person.id %>
+  <% next if @instructor and person != @instructor and person.invoice_to_id != @instructor.id %>
 
   <%
     dances = invoice[:dances][person]
