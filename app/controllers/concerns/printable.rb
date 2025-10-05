@@ -366,13 +366,13 @@ module Printable
       people = entries.map {|entry| [entry.lead, entry.follow]}.flatten
 
       if instructor
-        people << @person
-        people += @person.responsible_for
-      elsif student && @person
-        people = [@person]
+        people << instructor
+        people += instructor.responsible_for
+      elsif student && instructor
+        people = [instructor]
 
-        entries.reject! {|entry| entry.lead != @person && entry.follow != @person}
-        pentries.reject! {|entry| entry.lead != @person && entry.follow != @person}
+        entries.reject! {|entry| entry.lead != instructor && entry.follow != instructor}
+        pentries.reject! {|entry| entry.lead != instructor && entry.follow != instructor}
       else
         people = (people + studio.people.preload({options: :option, package: {package_includes: :option}})).uniq
 
