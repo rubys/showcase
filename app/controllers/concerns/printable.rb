@@ -346,6 +346,10 @@ module Printable
         people = [instructor] + instructor.responsible_for
         entries.select! {|entry| [entry.lead, entry.follow, entry.instructor].intersect?(people)}
         pentries.select! {|entry| [entry.lead, entry.follow, entry.instructor].intersect?(people)}
+        pro_entries.select! {|entry| [entry.lead, entry.follow, entry.instructor].intersect?(people)}
+        # For instructor invoices, only include pro-pro entries (exclude pro-am and amateur couples)
+        entries.reject! {|entry| entry.lead.type == 'Student' || entry.follow.type == 'Student'}
+        pentries.reject! {|entry| entry.lead.type == 'Student' || entry.follow.type == 'Student'}
       else
         studios = Set.new(studio.pairs + [studio])
         entries.select! {|entry| studios.include?(entry.follow.studio) && studios.include?(entry.lead.studio)}
