@@ -37,7 +37,7 @@ class Heat < ApplicationRecord
 
     # Use loaded extensions if available to avoid N+1 queries
     extensions = if cat.association(:extensions).loaded?
-      cat.extensions.sort_by(&:start_heat)
+      cat.extensions.sort_by { |ext| ext.start_heat || 0 }
     else
       cat.extensions.order(:start_heat)
     end
