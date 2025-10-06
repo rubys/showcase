@@ -43,7 +43,8 @@ class BillablesController < ApplicationController
 
   # POST /billables or /billables.json
   def create
-    @billable = Billable.new(billable_params.except(:options, :packages))
+    params_to_save = process_question_params(billable_params.except(:options, :packages))
+    @billable = Billable.new(params_to_save)
 
     @billable.order = (Billable.maximum(:order) || 0) + 1
 
@@ -64,8 +65,10 @@ class BillablesController < ApplicationController
 
   # PATCH/PUT /billables/1 or /billables/1.json
   def update
+    params_to_save = process_question_params(billable_params.except(:options, :packages))
+
     respond_to do |format|
-      if @billable.update(billable_params.except(:options, :packages))
+      if @billable.update(params_to_save)
         update_includes
 
         # Redirect back to tables page if that's where the request came from
@@ -251,5 +254,19 @@ class BillablesController < ApplicationController
           end
         end
       end
+    end
+
+    def process_question_params(params)
+      return params unless params[:questions_attributes]
+
+      params[:questions_attributes].each do |key, question_attrs|
+        if question_attrs[:choices].is_a?(String)
+          # Convert newline-separated text to array
+          choices_array = question_attrs[:choices].split("\n").map(&:strip).reject(&:blank?)
+          params[:questions_attributes][key][:choices] = choices_array
+        end
+      end
+
+      params
     end
 end
