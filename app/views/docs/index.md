@@ -55,6 +55,7 @@ Some of these features may be partially available on an experimental basis. If y
 * [Compmngr](./experimental/Compmngr) - importing of entries from Compmngr
 * [Feedback](./experimental/Feedback) - customize judge feedback options
 * [Internationalization](./experimental/I18n) - languages, dates, times, and currency
+* [Questions](./tasks/Questions) - collecting custom information like meal choices and preferences
 * [Scrutineering](./experimental/Scrutineering) - multi-heats with callbacks and rankings
 * [Tables](./experimental/Tables) - seating assignments for events and/or meals
 * [Voice](./experimental/Voice) - capturing Judge comments using voice input

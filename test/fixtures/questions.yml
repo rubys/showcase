@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+meal_choice:
+  billable: two  # Lunch option
+  question_text: "What would you like for lunch?"
+  question_type: radio
+  choices: '["Beef", "Chicken", "Fish", "Vegetarian"]'
+  order: 1
+
+dietary_restrictions:
+  billable: two  # Lunch option
+  question_text: "Do you have any dietary restrictions or allergies?"
+  question_type: textarea
+  choices: null
+  order: 2

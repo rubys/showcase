@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+kathryn_meal:
+  person: Kathryn
+  question: meal_choice
+  answer_value: "Chicken"
+
+kathryn_dietary:
+  person: Kathryn
+  question: dietary_restrictions
+  answer_value: "No nuts please"
