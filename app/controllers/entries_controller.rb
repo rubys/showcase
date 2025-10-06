@@ -637,7 +637,7 @@ class EntriesController < ApplicationController
       end
 
       used = []
-      clean = (Category.where(routines: true).count == 0) || event.agenda_based_entries
+      clean = (Category.where(routines: true).count == 0)
       all = dances + multis
       cat_ids.each do |id|
         cats = all.map(&id).compact.uniq
@@ -645,7 +645,7 @@ class EntriesController < ApplicationController
         used += cats
       end
 
-      if clean and (pro or event.agenda_based_entries)
+      if (clean || event.agenda_based_entries) and (pro or event.agenda_based_entries)
         if pro
           dance_ids = {
             pro_open_dances: "Open",

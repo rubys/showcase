@@ -55,9 +55,39 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
   
   test "new entry form loads with person selection" do
     get new_entry_url, params: { primary: @student.id }
-    
+
     assert_response :success
     assert_select 'form'
+  end
+
+  test "new entry form groups by agenda when agenda_based_entries is enabled with category overlap" do
+    # Enable agenda-based entries
+    @event.update!(agenda_based_entries: true)
+
+    # Create overlapping categories (same category used for both open and closed)
+    max_order = Category.maximum(:order) || 0
+    shared_category = Category.create!(name: 'Bronze', order: max_order + 1, pro: false, routines: false)
+    solo_category = Category.create!(name: 'Solo Bronze', order: max_order + 2, pro: false, routines: false)
+
+    # Create dances with overlapping categories
+    max_dance_order = Dance.maximum(:order) || 0
+    waltz = Dance.create!(
+      name: 'Test Waltz',
+      order: max_dance_order + 1,
+      open_category: shared_category,
+      closed_category: shared_category,
+      solo_category: solo_category
+    )
+
+    get new_entry_url, params: { primary: @student.id }
+
+    assert_response :success
+    assert_select 'form'
+
+    # Verify that agenda grouping is used (category names appear as section titles)
+    # instead of generic "CLOSED CATEGORY" and "OPEN CATEGORY"
+    assert_select 'h2', text: 'Bronze'
+    assert_select 'h2', text: 'Solo Bronze'
   end
   
   test "edit entry form loads with heat tallying" do
