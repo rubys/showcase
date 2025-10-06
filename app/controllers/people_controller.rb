@@ -646,10 +646,11 @@ class PeopleController < ApplicationController
     respond_to do |format|
       if @person.update(update)
         update_options
+        update_answers
 
-        format.html { 
+        format.html {
           redirect_url = params[:return_to].presence || person_url(@person)
-          redirect_to redirect_url, notice: "#{@person.display_name} was successfully updated." 
+          redirect_to redirect_url, notice: "#{@person.display_name} was successfully updated."
         }
         format.json { render :show, status: :ok, location: @person }
       else
@@ -881,7 +882,8 @@ class PeopleController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def person_params
-      params.expect(person: [:name, :studio_id, :type, :back, :level_id, :age_id, :category, :role, :exclude_id, :package_id, :independent, :invoice_to_id, :available, :table_id, { options: {} }])
+      params.expect(person: [:name, :studio_id, :type, :back, :level_id, :age_id, :category, :role, :exclude_id, :package_id, :independent, :invoice_to_id, :available, :table_id, { options: {} },
+        { answers_attributes: [:id, :question_id, :answer_value] }])
     end
 
     def filtered_params(person)
@@ -1113,7 +1115,7 @@ class PeopleController < ApplicationController
       desired_options = person_params[:options] || {}
       option_tables = params[:person][:option_tables] || {}
       current_options = @person.options.group_by(&:option_id)
-      
+
       Billable.where(type: 'Option').each do |option|
         got = current_options[option.id]&.length || 0
         want = desired_options[option.id.to_s].to_i
@@ -1130,7 +1132,7 @@ class PeopleController < ApplicationController
           current_options[option.id].pop.destroy
           got -= 1
         end
-        
+
         # Update table assignment for existing PersonOption records
         if got > 0 && current_options[option.id]
           current_options[option.id].each do |person_option|
@@ -1138,6 +1140,27 @@ class PeopleController < ApplicationController
               person_option.update(table_id: table_id)
             end
           end
+        end
+      end
+    end
+
+    def update_answers
+      answers_data = person_params[:answers_attributes] || []
+
+      answers_data.each do |answer_attrs|
+        question_id = answer_attrs[:question_id]
+        answer_value = answer_attrs[:answer_value]
+
+        next unless question_id
+
+        answer = @person.answers.find_or_initialize_by(question_id: question_id)
+
+        if answer_value.present?
+          answer.answer_value = answer_value
+          answer.save
+        elsif answer.persisted?
+          # If value is empty and answer exists, update to nil
+          answer.update(answer_value: nil)
         end
       end
     end

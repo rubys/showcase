@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_01_140905) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_06_000002) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -64,6 +64,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_01_140905) do
     t.string "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "answers", force: :cascade do |t|
+    t.integer "person_id", null: false
+    t.integer "question_id", null: false
+    t.text "answer_value"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["person_id", "question_id"], name: "index_answers_on_person_id_and_question_id", unique: true
+    t.index ["person_id"], name: "index_answers_on_person_id"
+    t.index ["question_id"], name: "index_answers_on_question_id"
   end
 
   create_table "billables", force: :cascade do |t|
@@ -353,6 +364,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_01_140905) do
     t.index ["table_id"], name: "index_person_options_on_table_id"
   end
 
+  create_table "questions", force: :cascade do |t|
+    t.integer "billable_id", null: false
+    t.text "question_text", null: false
+    t.string "question_type", null: false
+    t.text "choices"
+    t.integer "order"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["billable_id", "order"], name: "index_questions_on_billable_id_and_order"
+    t.index ["billable_id"], name: "index_questions_on_billable_id"
+  end
+
   create_table "recordings", force: :cascade do |t|
     t.integer "judge_id", null: false
     t.integer "heat_id", null: false
@@ -482,6 +505,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_01_140905) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "age_costs", "ages"
+  add_foreign_key "answers", "people"
+  add_foreign_key "answers", "questions"
   add_foreign_key "cat_extensions", "categories"
   add_foreign_key "dances", "categories", column: "closed_category_id"
   add_foreign_key "dances", "categories", column: "multi_category_id"
@@ -520,6 +545,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_01_140905) do
   add_foreign_key "person_options", "billables", column: "option_id"
   add_foreign_key "person_options", "people"
   add_foreign_key "person_options", "tables"
+  add_foreign_key "questions", "billables"
   add_foreign_key "recordings", "heats"
   add_foreign_key "recordings", "judges"
   add_foreign_key "scores", "heats"

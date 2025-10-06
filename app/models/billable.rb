@@ -20,6 +20,9 @@ class Billable < ApplicationRecord
   has_many :people_option_link, class_name: 'PersonOption', dependent: :destroy, foreign_key: :option_id
   has_many :people_options, through: :people_option_link, source: :person
   has_many :tables, foreign_key: :option_id, dependent: :destroy
+  has_many :questions, dependent: :destroy
+
+  accepts_nested_attributes_for :questions, allow_destroy: true
 
   def people
     if type == 'Option'

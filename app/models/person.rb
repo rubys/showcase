@@ -42,6 +42,9 @@ class Person < ApplicationRecord
   has_many :formations, dependent: :destroy
   has_many :options, class_name: 'PersonOption', foreign_key: :person_id,
     dependent: :destroy
+  has_many :answers, dependent: :destroy
+
+  accepts_nested_attributes_for :answers
 
   has_many :scores, dependent: :destroy, foreign_key: :judge_id
   has_many :payments, dependent: :destroy
@@ -175,6 +178,25 @@ class Person < ApplicationRecord
     else
       Set.new(start_times.select {|number, time| time && time > avail_time}.map(&:first))
     end
+  end
+
+  # Get all questions for this person based on their package and selected options
+  def applicable_questions
+    question_ids = Set.new
+
+    # Questions from package
+    if package
+      package.package_includes.each do |pi|
+        question_ids.merge(pi.option.questions.pluck(:id))
+      end
+    end
+
+    # Questions from directly selected options
+    options.each do |person_option|
+      question_ids.merge(person_option.option.questions.pluck(:id))
+    end
+
+    Question.where(id: question_ids.to_a).ordered
   end
 
   def self.nobody
