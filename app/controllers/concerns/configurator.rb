@@ -99,6 +99,11 @@ module Configurator
       '*.gif'
     ]
 
+    if ENV['FLY_REGION']
+      public_paths << "#{root}/showcase/regions/#{ENV['FLY_REGION']}/cable"
+      public_paths << "#{root}/regions/#{ENV['FLY_REGION']}/demo/"
+    end
+
     # Add year paths to public_paths for public static showcase pages
     showcases.keys.each do |year|
       public_paths << "#{root}/#{year}/"
@@ -136,9 +141,15 @@ module Configurator
       }
     }
 
+    if ENV['FLY_REGION']
+      cable_path = "^/showcase/regions/#{ENV['FLY_REGION']}/cable"
+    else
+      cable_path = "^#{root}/cable"
+    end
+
     # Add WebSocket proxy for Action Cable
     routes['reverse_proxies'] << {
-      'path' => "^#{root}/cable",
+      'path' => cable_path,
       'target' => 'http://localhost:28080/cable',
       'websocket' => true,
       'headers' => {
@@ -309,7 +320,11 @@ module Configurator
     env['RAILS_LOG_JSON'] = 'true'
 
     # Action Cable configuration
-    env['RAILS_CABLE_PATH'] = '/showcase/cable'
+    if ENV['FLY_REGION']
+      env['RAILS_CABLE_PATH'] = "/showcase/regions/#{ENV['FLY_REGION']}/cable"
+    else
+      env['RAILS_CABLE_PATH'] = '/showcase/cable'
+    end
 
     # puma and Active Record pool size
     env['RAILS_MAX_THREADS'] = '3'
