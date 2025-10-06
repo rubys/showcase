@@ -1,0 +1,49 @@
+<div class="w-full mx-auto print-page">
+  <h1 class="text-center font-bold text-3xl mb-6">Question Answers Report</h1>
+  <p class="text-center text-lg mb-8"><%= @event.name %></p>
+
+  <% if @options_with_questions.empty? %>
+    <p class="text-center mt-8">No questions have been defined.</p>
+  <% else %>
+    <% @answer_data.each do |option, questions_hash| %>
+      <div class="mt-6 mb-8 page-break-inside-avoid">
+        <h2 class="font-bold text-2xl mb-4 border-b-2 border-gray-400 pb-2"><%= option.name %></h2>
+
+        <% questions_hash.each do |question, answers| %>
+          <div class="mb-6">
+            <h3 class="font-semibold text-lg mb-3"><%= question.question_text %></h3>
+
+            <% if answers.any? %>
+              <table class="w-full border-collapse mb-4">
+                <thead>
+                  <tr class="bg-gray-200">
+                    <th class="border border-gray-400 px-3 py-2 text-left font-semibold">Person</th>
+                    <th class="border border-gray-400 px-3 py-2 text-left font-semibold">Studio</th>
+                    <th class="border border-gray-400 px-3 py-2 text-left font-semibold">Answer</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% answers.each do |answer| %>
+                    <tr>
+                      <td class="border border-gray-400 px-3 py-2"><%= answer.person.name %></td>
+                      <td class="border border-gray-400 px-3 py-2"><%= answer.person.studio&.name || 'N/A' %></td>
+                      <td class="border border-gray-400 px-3 py-2">
+                        <% if answer.answer_value.present? %>
+                          <%= answer.answer_value %>
+                        <% else %>
+                          <span class="text-gray-500 italic">No answer</span>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            <% else %>
+              <p class="text-gray-600 italic ml-4 mb-3">No answers for this question.</p>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+</div>

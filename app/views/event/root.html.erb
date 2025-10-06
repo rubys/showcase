@@ -88,6 +88,10 @@
     <% else %>
     <%= link_to "Settings", settings_event_index_path , class: "btn-grey" %>
     <% end %>
+
+    <% if Question.exists? %>
+    <%= link_to "Answers", answers_path, class: "btn-pale-blue" %>
+    <% end %>
   </div>
 
   <p class="mt-4 text-right">

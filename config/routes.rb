@@ -261,6 +261,10 @@ Rails.application.routes.draw do
       post 'update-age-costs', on: :collection
     end
 
+    resources :answers, only: [:index] do
+      get 'report', on: :collection
+    end
+
     match "/password/reset", to: 'users#password_reset', via: %i(get post)
     match "/password/verify", to: 'users#password_verify', via: %i[get patch]
 
