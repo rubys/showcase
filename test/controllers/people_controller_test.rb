@@ -304,9 +304,42 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
     
     # Person should appear in the list since they have access through package
     assert_select "a", text: /Package, Person/
-    
+
     # Person should be struck through since they don't have a PersonOption record (not seated at table)
     # The line-through class is on the td element, not the a element
     assert_select "td.line-through a", text: /Package, Person/
+  end
+
+  test "should delete answers when option is removed" do
+    person = people(:Kathryn)
+    lunch_option = billables(:two)
+    question = questions(:meal_choice)
+
+    # Kathryn already has answers in fixtures, verify they exist
+    initial_answer_count = person.answers.count
+    assert initial_answer_count > 0, "Person should have existing answers"
+    assert person.answers.exists?(question: question), "Person should have answer for meal choice"
+
+    # Verify Kathryn has the lunch option via PersonOption
+    assert person.options.exists?(option_id: lunch_option.id), "Person should have lunch option"
+
+    # Update person, removing all options (by passing empty options hash)
+    patch person_url(person), params: {
+      person: {
+        name: person.name,
+        studio_id: person.studio_id,
+        type: person.type,
+        level_id: person.level_id,
+        age_id: person.age_id,
+        role: person.role,
+        options: {} # Empty options means all options are removed
+      }
+    }
+
+    assert_response :redirect
+
+    # Verify the answer was deleted because the option is no longer selected
+    person.reload
+    assert_equal 0, person.answers.count, "All answers should be deleted when options are removed"
   end
 end

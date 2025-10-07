@@ -136,11 +136,14 @@ class PeopleController < ApplicationController
     end
 
     @person.instance_variable_set(:@calculated_questions, Question.where(id: question_ids.to_a).ordered)
-
-    # Create a form builder-like object for the partial
     @form = ActionView::Helpers::FormBuilder.new(:person, @person, view_context, {})
 
-    render partial: 'people/questions_content', locals: { person: @person, form: @form }, layout: false
+    html = render_to_string(partial: 'people/questions_content', locals: { person: @person, form: @form }, formats: [:html])
+
+    # Remove any escaped HTML tags that fields_for might generate as part of its return value
+    html = html.gsub(/&lt;\/\w+&gt;/, '')
+
+    render html: html.html_safe
   end
 
   def certificates
@@ -1182,6 +1185,16 @@ class PeopleController < ApplicationController
     end
 
     def update_answers
+      # Reload options association to get the updated PersonOption records
+      @person.options.reload
+
+      # Calculate which questions are currently applicable based on package and options
+      applicable_question_ids = @person.applicable_questions.pluck(:id)
+
+      # Delete answers for questions that are no longer applicable
+      @person.answers.where.not(question_id: applicable_question_ids).destroy_all
+
+      # Process submitted answers
       answers_data = person_params[:answers_attributes] || {}
 
       # Handle both array and hash-like formats (fields_for creates hash with string keys)

@@ -4,7 +4,6 @@
 
   <% applicable_questions.each do |question| %>
     <% existing_answer = person.answers.find_by(question_id: question.id) %>
-    <% answer_index = existing_answer&.id || "new_#{question.id}" %>
 
     <div class="my-4">
       <%= form.fields_for :answers, existing_answer || person.answers.build(question: question) do |answer_form| %>
