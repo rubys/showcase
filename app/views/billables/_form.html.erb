@@ -101,10 +101,8 @@
           <div class="mt-3">
             <%= link_to "Remove Question", "#",
               class: "text-red-600 hover:text-red-800",
-              data: { action: "click->questions#removeQuestion" } %>
-            <% if question_form.object.persisted? %>
-              <%= question_form.check_box :_destroy, class: "hidden", data: { questions_target: "destroyField" } %>
-            <% end %>
+              data: { action: "click->questions#removeQuestion",
+                      question_name: (question_form.object.persisted? ? question_form.object_name : nil) } %>
           </div>
         </div>
       <% end %>

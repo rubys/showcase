@@ -30,7 +30,8 @@
     <%= check_box_tag "person[options][#{option.id}]", '1', true, class: "option-checkbox entry-count h-10 opacity-70", disabled: true %>
     <% elsif value <= 1 %>
     <input name="person[options][<%= option.id %>]" type="hidden" value="0" autocomplete="off">
-    <%= check_box_tag "#{field}", '1', value > 0, class: "option-checkbox entry-count h-10" %>
+    <%= check_box_tag "#{field}", '1', value > 0, class: "option-checkbox entry-count h-10",
+        data: { "person-questions-target": "optionCheckbox", action: "change->person-questions#optionChanged" } %>
     <% else %>
     <input type="text" id="<%= field %>" name="<%= field %>" class="entry-count" value=<%= value %>>
     <% end %>

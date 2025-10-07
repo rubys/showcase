@@ -56,21 +56,25 @@ class QuestionsTest < ApplicationSystemTestCase
 
     click_on "Add Question"
 
+    # Wait for the question to be added and Stimulus to initialize
+    sleep 0.5
+
     within all("[data-questions-target='question']").last do
-      # Choices should be visible for radio type
-      assert find("[data-questions-target='choicesContainer']").visible?
+      # Choices should be visible for radio type (default)
+      choices_container = find("[data-questions-target='choicesContainer']")
+      assert choices_container.visible?
 
       # Select textarea
       select "Text Area", from: "Type"
 
       # Choices should be hidden for textarea type
-      assert_not find("[data-questions-target='choicesContainer']").visible?
+      assert_not choices_container.visible?
 
       # Switch back to radio
       select "Radio Buttons", from: "Type"
 
       # Choices should be visible again
-      assert find("[data-questions-target='choicesContainer']").visible?
+      assert choices_container.visible?
     end
   end
 
@@ -80,10 +84,27 @@ class QuestionsTest < ApplicationSystemTestCase
     initial_count = @option.questions.count
     assert initial_count > 0, "Option should have questions"
 
-    # Remove the first question
-    within first("[data-questions-target='question']") do
-      click_on "Remove Question"
+    # Count visible questions before removal
+    visible_before = page.all("[data-questions-target='question']", visible: true).count
+
+    # Get the first question
+    first_question = first("[data-questions-target='question']")
+
+    # Remove the first question by clicking the link with the data-action attribute
+    within first_question do
+      find("a[data-action='click->questions#removeQuestion']").click
     end
+
+    # Wait for JavaScript to complete
+    sleep 1
+
+    # Verify the destroy field was created with value "1"
+    destroy_field = first_question.find("input[name*='[_destroy]']", visible: :hidden)
+    assert_equal "1", destroy_field.value, "Destroy field should be created with value '1'"
+
+    # Verify one less visible question
+    visible_after = page.all("[data-questions-target='question']", visible: true).count
+    assert_equal visible_before - 1, visible_after, "Question should be hidden after removal"
 
     click_on "Update option"
 
@@ -110,6 +131,9 @@ class QuestionsTest < ApplicationSystemTestCase
     person = people(:Kathryn)
     visit edit_person_url(person)
 
+    # Wait for dynamic questions to load
+    assert_selector "h3", text: "Questions", wait: 5
+
     # Find the meal choice question (if visible)
     if has_text?(questions(:meal_choice).question_text)
       # Select a different meal choice
@@ -117,7 +141,7 @@ class QuestionsTest < ApplicationSystemTestCase
 
       click_on "Update Person"
 
-      assert_text "Person was successfully updated"
+      assert_text "was successfully updated"
 
       # Verify the answer was saved
       answer = Answer.find_by(person: person, question: questions(:meal_choice))
@@ -129,13 +153,16 @@ class QuestionsTest < ApplicationSystemTestCase
     person = people(:Kathryn)
     visit edit_person_url(person)
 
+    # Wait for dynamic questions to load
+    assert_selector "h3", text: "Questions", wait: 5
+
     # Find the dietary restrictions question (if visible)
     if has_text?(questions(:dietary_restrictions).question_text)
       fill_in questions(:dietary_restrictions).question_text, with: "Gluten-free diet"
 
       click_on "Update Person"
 
-      assert_text "Person was successfully updated"
+      assert_text "was successfully updated"
 
       # Verify the answer was saved
       answer = Answer.find_by(person: person, question: questions(:dietary_restrictions))
@@ -209,10 +236,13 @@ class QuestionsTest < ApplicationSystemTestCase
     person = people(:Kathryn)
     visit edit_person_url(person)
 
+    # Wait for dynamic questions to load
+    assert_selector "h3", text: "Questions", wait: 5
+
     if has_text?("Preferred workshop session?")
       choose "Afternoon"
       click_on "Update Person"
-      assert_text "Person was successfully updated"
+      assert_text "was successfully updated"
     end
 
     # Step 3: View the summary

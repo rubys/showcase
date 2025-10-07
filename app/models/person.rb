@@ -182,6 +182,9 @@ class Person < ApplicationRecord
 
   # Get all questions for this person based on their package and selected options
   def applicable_questions
+    # Return pre-calculated questions if available (used for dynamic updates)
+    return @calculated_questions if defined?(@calculated_questions)
+
     question_ids = Set.new
 
     # Questions from package

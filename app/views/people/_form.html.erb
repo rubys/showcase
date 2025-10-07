@@ -1,4 +1,9 @@
-<%= form_with(model: person, class: "contents", id: 'person-form', data: {controller: "person", id: JSON.dump(person.id) }) do |form| %>
+<%= form_with(model: person, class: "contents", id: 'person-form', data: {
+  controller: "person person-questions",
+  person_questions_person_id_value: person.id,
+  person_questions_url_value: get_questions_people_path,
+  id: JSON.dump(person.id)
+}) do |form| %>
   <% if person.errors.any? %>
     <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
       <h2><%= pluralize(person.errors.count, "error") %> prohibited this person from being saved:</h2>

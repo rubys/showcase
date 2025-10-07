@@ -62,12 +62,17 @@ export default class extends Controller {
 
   removeQuestion(event) {
     event.preventDefault()
-    const questionDiv = event.target.closest('[data-questions-target="question"]')
-    const destroyField = questionDiv.querySelector('[data-questions-target="destroyField"]')
+    const link = event.target.closest('a')
+    const questionDiv = link.closest('[data-questions-target="question"]')
+    const questionName = link.dataset.questionName
 
-    if (destroyField) {
-      // Question already exists in database, mark for destruction
-      destroyField.value = "1"
+    if (questionName) {
+      // Question already exists in database, create _destroy field and mark for destruction
+      const destroyField = document.createElement('input')
+      destroyField.type = 'hidden'
+      destroyField.name = `${questionName}[_destroy]`
+      destroyField.value = '1'
+      questionDiv.appendChild(destroyField)
       questionDiv.style.display = "none"
     } else {
       // New question, just remove from DOM

@@ -2,7 +2,12 @@
 <% unless @packages.empty? %>
   <%= label_tag :person_package_id, 'Package' %>
   <%= select_tag 'person[package_id]', options_for_select(@packages, @person.package_id || ''), {
-    data: {"person-target" => "package", 'action' => 'person#setPackage', 'url' => package_people_path},
+    data: {
+      "person-target" => "package",
+      "person-questions-target" => "packageSelect",
+      'action' => 'person#setPackage person-questions#packageChanged',
+      'url' => package_people_path
+    },
     class: "mx-auto block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full"} %>
 <% end %>
 </div>

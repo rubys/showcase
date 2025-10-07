@@ -107,6 +107,42 @@ class PeopleController < ApplicationController
     end
   end
 
+  def get_questions
+    person_id = params[:person_id]
+    package_id = params[:package_id]
+    option_ids = params[:option_ids] || []
+
+    # Create a temporary person object to calculate applicable questions
+    @person = if person_id.present? && person_id.to_i != 0
+                Person.find(person_id)
+              else
+                Person.new
+              end
+    @person.package_id = package_id if package_id.present?
+
+    # Calculate applicable questions based on package and selected options
+    question_ids = Set.new
+
+    if package_id.present? && (package = Billable.find_by(id: package_id))
+      package.package_includes.each do |pi|
+        question_ids.merge(pi.option.questions.pluck(:id))
+      end
+    end
+
+    option_ids.each do |option_id|
+      if option = Billable.find_by(id: option_id, type: 'Option')
+        question_ids.merge(option.questions.pluck(:id))
+      end
+    end
+
+    @person.instance_variable_set(:@calculated_questions, Question.where(id: question_ids.to_a).ordered)
+
+    # Create a form builder-like object for the partial
+    @form = ActionView::Helpers::FormBuilder.new(:person, @person, view_context, {})
+
+    render partial: 'people/questions_content', locals: { person: @person, form: @form }, layout: false
+  end
+
   def certificates
     if request.get?
       @studios = [['-- all studios --', nil]] + Studio.by_name.pluck(:name, :id)
@@ -882,8 +918,9 @@ class PeopleController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def person_params
-      params.expect(person: [:name, :studio_id, :type, :back, :level_id, :age_id, :category, :role, :exclude_id, :package_id, :independent, :invoice_to_id, :available, :table_id, { options: {} },
-        { answers_attributes: [:id, :question_id, :answer_value] }])
+      params.require(:person).permit(:name, :studio_id, :type, :back, :level_id, :age_id, :category, :role, :exclude_id, :package_id, :independent, :invoice_to_id, :available, :table_id,
+        options: {},
+        answers_attributes: [:id, :question_id, :answer_value])
     end
 
     def filtered_params(person)
@@ -1145,9 +1182,13 @@ class PeopleController < ApplicationController
     end
 
     def update_answers
-      answers_data = person_params[:answers_attributes] || []
+      answers_data = person_params[:answers_attributes] || {}
 
-      answers_data.each do |answer_attrs|
+      # Handle both array and hash-like formats (fields_for creates hash with string keys)
+      # ActionController::Parameters acts like a hash but isn't one
+      answers_collection = answers_data.respond_to?(:values) ? answers_data.values : answers_data
+
+      answers_collection.each do |answer_attrs|
         question_id = answer_attrs[:question_id]
         answer_value = answer_attrs[:answer_value]
 
