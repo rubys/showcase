@@ -22,7 +22,8 @@ class Billable < ApplicationRecord
   has_many :tables, foreign_key: :option_id, dependent: :destroy
   has_many :questions, dependent: :destroy
 
-  accepts_nested_attributes_for :questions, allow_destroy: true
+  accepts_nested_attributes_for :questions, allow_destroy: true,
+    reject_if: proc { |attributes| attributes['question_text'].blank? }
 
   def people
     if type == 'Option'

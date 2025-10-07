@@ -220,8 +220,9 @@ class BillablesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def billable_params
-      params.expect(billable: [:type, :name, :price, :order, :couples, :table_size, { options: {} }, { packages: {} },
-        { questions_attributes: [:id, :question_text, :question_type, :choices, :order, :_destroy] }])
+      params.require(:billable).permit(:type, :name, :price, :order, :couples, :table_size,
+        options: {}, packages: {},
+        questions_attributes: [:id, :question_text, :question_type, :choices, :order, :_destroy])
     end
 
     def update_includes
@@ -263,7 +264,8 @@ class BillablesController < ApplicationController
         if question_attrs[:choices].is_a?(String)
           # Convert newline-separated text to array
           choices_array = question_attrs[:choices].split("\n").map(&:strip).reject(&:blank?)
-          params[:questions_attributes][key][:choices] = choices_array
+          # Set to nil for textarea types (empty array), otherwise use the array
+          params[:questions_attributes][key][:choices] = choices_array.empty? ? nil : choices_array
         end
       end
 
