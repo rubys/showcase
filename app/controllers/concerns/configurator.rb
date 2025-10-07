@@ -141,20 +141,26 @@ module Configurator
       }
     }
 
+    # Add WebSocket proxy for Action Cable
+    # For FLY_REGION: /showcase/regions/iad/cable -> strip /showcase/regions/iad -> /cable -> proxy to :28080/cable
+    # For local dev: /showcase/cable -> strip /showcase -> /cable -> proxy to :28080/cable
+    # For no root: /cable -> no strip -> proxy to :28080/cable
     if ENV['FLY_REGION']
-      cable_prefix = "/showcase/regions/#{ENV['FLY_REGION']}/cable"
+      cable_prefix = "/showcase/regions/#{ENV['FLY_REGION']}"
+      use_strip = true
+    elsif !root.empty?
+      cable_prefix = root
+      use_strip = true
     else
-      cable_prefix = "#{root}/cable"
+      cable_prefix = '/cable'
+      use_strip = false
     end
 
-    # Add WebSocket proxy for Action Cable
-    # Using prefix instead of path for simple stripping - Navigator's strip_path with prefix
-    # removes the matched prefix and appends remainder to target
     routes['reverse_proxies'] << {
       'prefix' => cable_prefix,
-      'target' => 'http://localhost:28080/cable',
+      'target' => 'http://localhost:28080',
       'websocket' => true,
-      'strip_path' => true,
+      'strip_path' => use_strip,
       'headers' => {
         'X-Forwarded-For' => '$remote_addr',
         'X-Forwarded-Proto' => '$scheme',
