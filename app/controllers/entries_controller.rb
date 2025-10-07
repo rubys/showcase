@@ -648,15 +648,15 @@ class EntriesController < ApplicationController
       if (clean || event.agenda_based_entries) and (pro or event.agenda_based_entries)
         if pro
           dance_ids = {
-            pro_open_dances: "Open",
             pro_closed_dances: "Closed",
+            pro_open_dances: "Open",
             pro_solo_dances: "Solo",
             pro_multi_dances: "Multi"
           }
         else
           dance_ids = {
-            open_dances: "Open",
             closed_dances: "Closed",
+            open_dances: "Open",
             solo_dances: "Solo",
             multi_dances: "Multi"
           }
@@ -666,8 +666,9 @@ class EntriesController < ApplicationController
         reorder = nil
         Category.ordered.each do |cat|
           next if cat.pro ^ pro
-          dances = []
-          category = nil
+
+          # Collect all non-empty dance types for this category
+          category_dances = []
           dance_ids.each do |id, name|
             dances = cat.send(id).ordered
 
@@ -677,12 +678,23 @@ class EntriesController < ApplicationController
                 dances = dances.sort_by {|dance| reorder[dance.name] || dance.order}
               end
 
-              category = name
-              break
+              category_dances << { dances: dances, category: name }
             end
           end
 
-          @agenda.push(title: cat.name, dances: dances, category: category)
+          # If category has both open and closed (or multiple types), add subheaders
+          # If category has only one type, no subheader needed
+          if category_dances.length > 1
+            category_dances.each do |cat_dance|
+              @agenda.push(title: "#{cat.name} - #{cat_dance[:category]}",
+                          dances: cat_dance[:dances],
+                          category: cat_dance[:category])
+            end
+          elsif category_dances.length == 1
+            @agenda.push(title: cat.name,
+                        dances: category_dances.first[:dances],
+                        category: category_dances.first[:category])
+          end
         end
       else
         dances = dances.all.to_a.select {|dance| dance.order > 0} if event.agenda_based_entries and !clean

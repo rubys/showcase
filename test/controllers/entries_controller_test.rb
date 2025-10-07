@@ -84,9 +84,10 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select 'form'
 
-    # Verify that agenda grouping is used (category names appear as section titles)
-    # instead of generic "CLOSED CATEGORY" and "OPEN CATEGORY"
-    assert_select 'h2', text: 'Bronze'
+    # Verify that agenda grouping is used with subheaders for categories with both open and closed
+    # When a category has both open and closed dances, subheaders indicate which are closed and which are open
+    assert_select 'h2', text: 'Bronze - Closed'
+    assert_select 'h2', text: 'Bronze - Open'
     assert_select 'h2', text: 'Solo Bronze'
   end
   
