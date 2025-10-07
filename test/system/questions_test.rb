@@ -170,20 +170,20 @@ class QuestionsTest < ApplicationSystemTestCase
     end
   end
 
-  test "should show Answers button on main index when questions exist" do
-    visit root_url
+  test "should show Answers button on summary page when questions exist" do
+    visit summary_event_index_url
 
     # Should show Answers button since we have questions in fixtures
-    assert_link "Answers", href: answers_path
+    assert_link "View Question Answers", href: answers_path
   end
 
-  test "should not show Answers button when no questions exist" do
+  test "should not show Answers button on summary page when no questions exist" do
     Question.destroy_all
 
-    visit root_url
+    visit summary_event_index_url
 
     # Should not show Answers button
-    assert_no_link "Answers", href: answers_path
+    assert_no_link "View Question Answers", href: answers_path
   end
 
   test "should display answer summary" do

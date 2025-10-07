@@ -44,6 +44,12 @@
       <% end %>
     </ul>
     <% end %>
+
+    <% if Question.exists? %>
+    <div class="mt-6">
+      <%= link_to "View Question Answers", answers_path, class: "btn-pale-blue" %>
+    </div>
+    <% end %>
   </div>
 
   <div>

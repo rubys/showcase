@@ -20,6 +20,7 @@ Two types of questions are supported:
 * **Radio Buttons** - For multiple choice questions (e.g., meal choice: beef, chicken, fish, vegetarian)
   * Enter each choice on a separate line
   * Participants can select one option
+  * Click a selected radio button again to deselect it (return to "no answer")
 
 * **Text Area** - For free-form text responses (e.g., dietary restrictions, special requests)
   * Participants can enter any text
@@ -52,7 +53,7 @@ Once participants have answered questions, you can view and export the results:
 
 ### Web Summary
 
-* From the **main index page**, click the **Answers** button (only visible when questions exist)
+* From the **Summary** page, click the **View Question Answers** button (only visible when questions exist)
 * View all answers grouped by option and question
 * See which participants have answered and which haven't
 * Click on participant names to view their full profile
