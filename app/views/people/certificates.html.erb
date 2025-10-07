@@ -1,67 +1,180 @@
-<div class="mx-auto md:w-2/3 w-full">
+<div class="mx-auto max-w-7xl w-full px-4">
 
 <div data-controller="info-box">
 <div class="info-button">&#x24D8;</div>
 <ul class="info-box">
-<li>This tool can be used to generate certificates for students, using a blank template that you provide and upload.
-<li>Students names will be placed in the area you specify below, using the font-size you provide.
-<li>Results open in a new tab, making it easier for you to experiment with different placements and sizes.
+<li>Upload a certificate template PDF to get started
+<li>Drag the orange box to position where student names should appear
+<li>Resize the box by dragging the bottom-right corner
+<li>Adjust font size and color in real-time
+<li>Preview shows sample text - generate certificates to apply to all students
 </ul>
 </div>
 
 <% if alert.present? %>
   <p class="py-2 px-3 bg-red-50 mb-5 text-red-500 font-medium rounded-lg inline-block" id="alert"><%= alert %></p>
-<% end %> 
-
-<h1 class="font-bold text-4xl w-full text-center mb-8">Generate certificates</h1>
-
-<%= form_tag({action: :certificates}, multipart: true, target: '_blank',
-  data: {turbo: false,  controller: "select-person"}) do %>
-  <div class="mx-auto w-64 text-center">
-  <div class="my-5">
-    <%= select_tag :studio_id, options_for_select(@studios),
-      'data-select-person-target' => 'studio', 'data-url' => studio_list_people_path,
-      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-64" %>
-  </div>
-
-  <div class="my-5" id='select-person'>
-  </div>
-  </div>
-
-  <div class="my-5">
-  <h2 class="font-bold text-2xl w-full mb-8">Template</h1>
-  <label>Upload template</label>
-  <%= file_field_tag 'template', required: true %>
-  </div>
-
-  <div class="grid grid-cols-3 gap-4 my-4">
-  <div>
-  <label>Box placement</label>
-  <span>(X, Y)<span>
-  </div>
-  <%= number_field_tag 'x', 320, class: 'text-right' %>
-  <%= number_field_tag 'y', 222, class: 'text-right' %>
-  </div>
-
-  <div class="grid grid-cols-3 gap-4 my-4">
-  <div>
-  <label>Box size</label>
-  <span>(width, height)
-  </div>
-  <%= number_field_tag 'width', 375, class: 'text-right' %>
-  <%= number_field_tag 'height', 58, class: 'text-right' %>
-  </div>
-
-  <div class="grid grid-cols-3 gap-4 my-4">
-  <label>Font size</label>
-  <%= number_field_tag 'font-size', 32, class: 'text-right' %>
-  </div>
-
-  <div class="grid grid-cols-3 gap-4 my-4">
-  <label>Font color</label>
-  <%= select_tag 'font-color', options_for_select(black: "0 0 0", white: '255 255 255'), class: 'text-right' %>
-  </div>
-
-  <%= submit_tag "Generate Certificates", class: "btn-pale-orange" %>
 <% end %>
+
+<h1 class="font-bold text-4xl w-full text-center mb-8">Generate Certificates</h1>
+
+<div data-controller="certificate-preview select-person">
+  <%= form_tag({action: :certificates}, multipart: true, target: '_blank',
+    data: {turbo: false}) do %>
+
+    <!-- Two column layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+      <!-- Left column: Preview and Generation -->
+      <div>
+        <div class="bg-gray-50 rounded-lg p-6 mb-6">
+          <h2 class="font-bold text-2xl mb-4">Preview</h2>
+          <div class="bg-white rounded-lg shadow-lg p-4 overflow-auto">
+            <canvas
+              data-certificate-preview-target="canvas"
+              class="border border-gray-300 max-w-full mx-auto"
+            ></canvas>
+            <p class="text-sm text-gray-500 text-center mt-4">
+              Upload a PDF template to see preview
+            </p>
+          </div>
+        </div>
+
+        <!-- Studio/Person Selection -->
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+          <label class="block font-semibold mb-2">Generate For</label>
+          <%= select_tag :studio_id, options_for_select(@studios),
+            'data-select-person-target' => 'studio',
+            'data-url' => studio_list_people_path,
+            class: "block w-full shadow rounded-md border border-gray-200 outline-none px-3 py-2"
+          %>
+          <div id='select-person' class="mt-2"></div>
+        </div>
+
+        <!-- Generate Button -->
+        <div>
+          <%= submit_tag "Generate Certificates",
+            class: "w-full btn-pale-orange text-lg py-3 cursor-pointer"
+          %>
+        </div>
+      </div>
+
+      <!-- Right column: Controls -->
+      <div>
+        <h2 class="font-bold text-2xl mb-4">Settings</h2>
+
+        <!-- Template Upload -->
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+          <label class="block font-semibold mb-2">Certificate Template</label>
+          <%= file_field_tag 'template',
+            required: true,
+            accept: 'application/pdf',
+            data: {
+              certificate_preview_target: 'fileInput',
+              action: 'change->certificate-preview#fileSelected'
+            },
+            class: "block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+          %>
+        </div>
+
+        <!-- Sample Name -->
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+          <label class="block font-semibold mb-2">Sample Name (preview only)</label>
+          <%= text_field_tag 'sample_name', 'Student Name',
+            data: {
+              certificate_preview_target: 'sampleName',
+              action: 'input->certificate-preview#updatePreview'
+            },
+            class: "block w-full shadow rounded-md border border-gray-200 outline-none px-3 py-2"
+          %>
+        </div>
+
+        <!-- Position Controls -->
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+          <label class="block font-semibold mb-2">Text Box Position</label>
+          <p class="text-sm text-gray-600 mb-3">Drag the orange box on the preview or enter values manually</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm text-gray-600">X coordinate</label>
+              <%= number_field_tag 'x', 320,
+                data: {
+                  certificate_preview_target: 'x',
+                  action: 'input->certificate-preview#updatePreview'
+                },
+                class: 'block w-full mt-1 shadow rounded-md border border-gray-200 outline-none px-3 py-2'
+              %>
+            </div>
+            <div>
+              <label class="text-sm text-gray-600">Y coordinate</label>
+              <%= number_field_tag 'y', 222,
+                data: {
+                  certificate_preview_target: 'y',
+                  action: 'input->certificate-preview#updatePreview'
+                },
+                class: 'block w-full mt-1 shadow rounded-md border border-gray-200 outline-none px-3 py-2'
+              %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Size Controls -->
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+          <label class="block font-semibold mb-2">Text Box Size</label>
+          <p class="text-sm text-gray-600 mb-3">Resize using the corner handle on the preview or enter values manually</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm text-gray-600">Width</label>
+              <%= number_field_tag 'width', 375,
+                data: {
+                  certificate_preview_target: 'width',
+                  action: 'input->certificate-preview#updatePreview'
+                },
+                class: 'block w-full mt-1 shadow rounded-md border border-gray-200 outline-none px-3 py-2'
+              %>
+            </div>
+            <div>
+              <label class="text-sm text-gray-600">Height</label>
+              <%= number_field_tag 'height', 58,
+                data: {
+                  certificate_preview_target: 'height',
+                  action: 'input->certificate-preview#updatePreview'
+                },
+                class: 'block w-full mt-1 shadow rounded-md border border-gray-200 outline-none px-3 py-2'
+              %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Font Controls -->
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+          <label class="block font-semibold mb-2">Text Appearance</label>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm text-gray-600">Font size</label>
+              <%= number_field_tag 'font-size', 32,
+                data: {
+                  certificate_preview_target: 'fontSize',
+                  action: 'input->certificate-preview#updatePreview'
+                },
+                class: 'block w-full mt-1 shadow rounded-md border border-gray-200 outline-none px-3 py-2'
+              %>
+            </div>
+            <div>
+              <label class="text-sm text-gray-600">Font color</label>
+              <%= select_tag 'font-color',
+                options_for_select([['Black', '0 0 0'], ['White', '255 255 255']]),
+                data: {
+                  certificate_preview_target: 'fontColor',
+                  action: 'change->certificate-preview#updatePreview'
+                },
+                class: 'block w-full mt-1 shadow rounded-md border border-gray-200 outline-none px-3 py-2'
+              %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  <% end %>
+</div>
+
 </div>
