@@ -148,9 +148,10 @@ module Configurator
     end
 
     # Add WebSocket proxy for Action Cable
+    # strip_path removes the matched path, then we append /cable to reach the Rack map mount point
     routes['reverse_proxies'] << {
       'path' => cable_path,
-      'target' => 'http://localhost:28080/cable',
+      'target' => 'http://localhost:28080/cable/',
       'websocket' => true,
       'strip_path' => true,
       'headers' => {
