@@ -142,16 +142,17 @@ module Configurator
     }
 
     if ENV['FLY_REGION']
-      cable_path = "^/showcase/regions/#{ENV['FLY_REGION']}/cable"
+      cable_prefix = "/showcase/regions/#{ENV['FLY_REGION']}/cable"
     else
-      cable_path = "^#{root}/cable"
+      cable_prefix = "#{root}/cable"
     end
 
     # Add WebSocket proxy for Action Cable
-    # strip_path removes the matched path, then we append /cable to reach the Rack map mount point
+    # Using prefix instead of path for simple stripping - Navigator's strip_path with prefix
+    # removes the matched prefix and appends remainder to target
     routes['reverse_proxies'] << {
-      'path' => cable_path,
-      'target' => 'http://localhost:28080/cable/',
+      'prefix' => cable_prefix,
+      'target' => 'http://localhost:28080/cable',
       'websocket' => true,
       'strip_path' => true,
       'headers' => {
