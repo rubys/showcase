@@ -152,6 +152,7 @@ module Configurator
       'path' => cable_path,
       'target' => 'http://localhost:28080/cable',
       'websocket' => true,
+      'strip_path' => true,
       'headers' => {
         'X-Forwarded-For' => '$remote_addr',
         'X-Forwarded-Proto' => '$scheme',
