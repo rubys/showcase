@@ -160,16 +160,25 @@ class PeopleController < ApplicationController
         @people.select! {|person| person.studio_id == studio_id}
       end
 
-      unless params[:template].content_type == 'application/pdf'
-        flash[:alert] = "template must be a PDF file."
+      content_type = params[:template].content_type
+      unless content_type == 'application/pdf' || content_type.start_with?('image/')
+        flash[:alert] = "template must be a PDF or image file."
         @studios = [['-- all studios --', nil]] + Studio.by_name.pluck(:name, :id)
         render :certificates, status: :unprocessable_content
         return
       end
 
+      # Convert image to PDF if needed
+      template_path = params[:template].tempfile.path
+      if content_type.start_with?('image/')
+        pdf_path = "#{template_path}.pdf"
+        system('convert', template_path, pdf_path)
+        template_path = pdf_path
+      end
+
       pdf = CombinePDF.new
       @people.each do |name|
-        pdf << CombinePDF.load(params[:template].tempfile.path)
+        pdf << CombinePDF.load(template_path)
       end
 
       pdf.pages.zip(@people) do |page, person|

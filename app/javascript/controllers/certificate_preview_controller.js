@@ -18,6 +18,8 @@ export default class extends Controller {
       "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs";
 
     this.pdfDoc = null;
+    this.imageData = null;
+    this.isImage = false;
     this.isDragging = false;
     this.isResizing = false;
     this.dragStart = { x: 0, y: 0 };
@@ -32,13 +34,48 @@ export default class extends Controller {
 
   async fileSelected(event) {
     const file = event.target.files[0];
-    if (!file || file.type !== "application/pdf") {
-      return;
+    if (!file) return;
+
+    if (file.type === "application/pdf") {
+      const arrayBuffer = await file.arrayBuffer();
+      this.pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      this.isImage = false;
+      await this.renderPreview();
+    } else if (file.type.startsWith("image/")) {
+      // Handle image files
+      const img = new Image();
+      img.onload = () => {
+        this.imageData = img;
+        this.isImage = true;
+        this.pdfDoc = null;
+        this.renderImagePreview();
+      };
+      img.src = URL.createObjectURL(file);
+    }
+  }
+
+  renderImagePreview() {
+    if (!this.imageData) return;
+
+    const canvas = this.canvasTarget;
+    const context = canvas.getContext("2d");
+
+    // Scale to fit in a reasonable viewport (max 1200px wide)
+    const maxWidth = 1200;
+    let scale = 1;
+    if (this.imageData.width > maxWidth) {
+      scale = maxWidth / this.imageData.width;
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    this.pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    await this.renderPreview();
+    canvas.width = this.imageData.width * scale;
+    canvas.height = this.imageData.height * scale;
+    this.scale = scale;
+
+    // Draw the image
+    context.drawImage(this.imageData, 0, 0, canvas.width, canvas.height);
+
+    // Draw the text box overlay
+    this.drawOverlay();
   }
 
   async renderPreview() {
@@ -71,16 +108,20 @@ export default class extends Controller {
   }
 
   async drawOverlay() {
-    if (!this.page || !this.viewport) return;
-
     const canvas = this.canvasTarget;
     const ctx = canvas.getContext("2d");
 
-    // Re-render the PDF page first to clear previous overlay
-    await this.page.render({
-      canvasContext: ctx,
-      viewport: this.viewport
-    }).promise;
+    // Re-render the base image/PDF first to clear previous overlay
+    if (this.isImage && this.imageData) {
+      ctx.drawImage(this.imageData, 0, 0, canvas.width, canvas.height);
+    } else if (this.page && this.viewport) {
+      await this.page.render({
+        canvasContext: ctx,
+        viewport: this.viewport
+      }).promise;
+    } else {
+      return;
+    }
 
     // Get current values
     const x = parseInt(this.xTarget.value) * this.scale;
@@ -127,11 +168,14 @@ export default class extends Controller {
   }
 
   onMouseDown(event) {
-    if (!this.pdfDoc) return;
+    if (!this.pdfDoc && !this.imageData) return;
 
     const rect = this.canvasTarget.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
+    // Account for CSS scaling - convert from displayed coordinates to canvas coordinates
+    const scaleX = this.canvasTarget.width / rect.width;
+    const scaleY = this.canvasTarget.height / rect.height;
+    const mouseX = (event.clientX - rect.left) * scaleX;
+    const mouseY = (event.clientY - rect.top) * scaleY;
 
     const x = parseInt(this.xTarget.value) * this.scale;
     const y = parseInt(this.yTarget.value) * this.scale;
@@ -168,8 +212,10 @@ export default class extends Controller {
     if (!this.isDragging && !this.isResizing) {
       // Update cursor
       const rect = this.canvasTarget.getBoundingClientRect();
-      const mouseX = event.clientX - rect.left;
-      const mouseY = event.clientY - rect.top;
+      const scaleX = this.canvasTarget.width / rect.width;
+      const scaleY = this.canvasTarget.height / rect.height;
+      const mouseX = (event.clientX - rect.left) * scaleX;
+      const mouseY = (event.clientY - rect.top) * scaleY;
 
       const x = parseInt(this.xTarget.value) * this.scale;
       const y = parseInt(this.yTarget.value) * this.scale;
@@ -198,8 +244,10 @@ export default class extends Controller {
     }
 
     const rect = this.canvasTarget.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
+    const scaleX = this.canvasTarget.width / rect.width;
+    const scaleY = this.canvasTarget.height / rect.height;
+    const mouseX = (event.clientX - rect.left) * scaleX;
+    const mouseY = (event.clientY - rect.top) * scaleY;
 
     if (this.isDragging) {
       const newX = Math.max(0, mouseX - this.dragStart.x);

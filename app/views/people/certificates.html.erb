@@ -3,7 +3,7 @@
 <div data-controller="info-box">
 <div class="info-button">&#x24D8;</div>
 <ul class="info-box">
-<li>Upload a certificate template PDF to get started
+<li>Upload a certificate template (PDF or image) to get started
 <li>Drag the orange box to position where student names should appear
 <li>Resize the box by dragging the bottom-right corner
 <li>Adjust font size and color in real-time
@@ -34,7 +34,7 @@
               class="border border-gray-300 max-w-full mx-auto"
             ></canvas>
             <p class="text-sm text-gray-500 text-center mt-4">
-              Upload a PDF template to see preview
+              Upload a template to see preview
             </p>
           </div>
         </div>
@@ -64,10 +64,10 @@
 
         <!-- Template Upload -->
         <div class="mb-6 p-4 bg-gray-50 rounded-lg">
-          <label class="block font-semibold mb-2">Certificate Template</label>
+          <label class="block font-semibold mb-2">Certificate Template (PDF or Image)</label>
           <%= file_field_tag 'template',
             required: true,
-            accept: 'application/pdf',
+            accept: 'application/pdf,image/*',
             data: {
               certificate_preview_target: 'fileInput',
               action: 'change->certificate-preview#fileSelected'
