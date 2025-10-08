@@ -85,6 +85,7 @@ module Configurator
       "#{root}/assets/",
       "#{root}/cable",
       "#{root}/docs/",
+      "#{root}/events/console",
       "#{root}/password/",
       "#{root}/regions/",
       "#{root}/studios/",
