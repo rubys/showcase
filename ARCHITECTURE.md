@@ -45,7 +45,7 @@ I use a combination of [ENTRYPOINT](https://github.com/rubys/showcase/blob/main/
 
 Given the load for each event is only for one customer, I only need 1 CPU per server. While CPU is not a concern, it still is important to size
 the amount of RAM needed.
-Even with all of the services running, according to [Graftana/Fly Metrics](https://fly-metrics.net/), each instance uses about 220MB of RAM when idle,
+Even with all of the services running, according to [Grafana/Fly Metrics](https://fly-metrics.net/), each instance uses about 220MB of RAM when idle,
 and grows to 450MB when active.  That being said, I have seen machines fail due to [OOM](https://en.wikipedia.org/wiki/Out_of_memory) with only 512MB, so I give
 each machine 1GB.  I also define an additional 2G of [swap](https://fly.io/docs/reference/configuration/#swap_size_mb-option) as
 I would rather the machine run slower under peak load than crash.
