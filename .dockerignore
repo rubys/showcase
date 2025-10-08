@@ -2,6 +2,10 @@
 
 # Ignore git directory.
 /.git/
+# But include navigator submodule metadata for version info (~10KB)
+!/.git/modules/navigator/HEAD
+!/.git/modules/navigator/refs
+!/.git/modules/navigator/packed-refs
 
 # Ignore bundler config.
 /.bundle

@@ -58,11 +58,21 @@ WORKDIR /app
 # Copy navigator submodule
 COPY navigator .
 
+# Copy minimal git metadata (just refs, ~10KB instead of 5MB)
+COPY .git/modules/navigator/HEAD /.git/modules/navigator/HEAD
+COPY .git/modules/navigator/refs /.git/modules/navigator/refs
+COPY .git/modules/navigator/packed-refs /.git/modules/navigator/packed-refs
+
 # Download Go dependencies
 RUN go mod download
 
-# Build navigator using Makefile
-RUN make && cp bin/navigator-${NAVIGATOR} /usr/local/bin/navigator
+# Build navigator with version info extracted from git
+RUN NAV_VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev") && \
+    NAV_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "none") && \
+    NAV_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ) && \
+    echo "Building Navigator ${NAV_VERSION} (${NAV_COMMIT:0:8})" && \
+    go build -ldflags="-X 'main.version=${NAV_VERSION}' -X 'main.commit=${NAV_COMMIT}' -X 'main.buildTime=${NAV_BUILD_TIME}'" \
+        -o /usr/local/bin/navigator cmd/navigator-${NAVIGATOR}/main.go
 
 # Nats CLI
 RUN go install github.com/nats-io/natscli/nats@latest
