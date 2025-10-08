@@ -96,6 +96,11 @@ class User < ApplicationRecord
     HtpasswdUpdater.update
   end
 
+  # Reload authentication cache from database
+  def self.reload_auth
+    load_auth
+  end
+
   private
 
     def self.load_auth

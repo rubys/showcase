@@ -76,7 +76,11 @@ class ApplicationController < ActionController::Base
 
       return if ENV['RAILS_APP_OWNER'] == 'Demo'
 
-      forbidden unless User.authorized?(@authuser)
+      unless User.authorized?(@authuser)
+        # Refresh cache and try one more time before failing
+        User.reload_auth
+        forbidden unless User.authorized?(@authuser)
+      end
     end
 
     def authenticate_site_owner
@@ -90,7 +94,12 @@ class ApplicationController < ActionController::Base
       return if ENV['RAILS_APP_OWNER'] == 'Demo'
       return if User.authorized?(@authuser)
 
-      forbidden unless User.owned?(@authuser, @studio)
+      unless User.owned?(@authuser, @studio)
+        # Refresh cache and try one more time before failing
+        User.reload_auth
+        return if User.authorized?(@authuser)
+        forbidden unless User.owned?(@authuser, @studio)
+      end
     end
 
     def authenticate_event_owner
@@ -105,7 +114,13 @@ class ApplicationController < ActionController::Base
 
       return if User.authorized?(@authuser)
 
-      forbidden(true) unless User.owned?(@authuser, Struct.new(:name).new(ENV['RAILS_APP_OWNER']))
+      owner_struct = Struct.new(:name).new(ENV['RAILS_APP_OWNER'])
+      unless User.owned?(@authuser, owner_struct)
+        # Refresh cache and try one more time before failing
+        User.reload_auth
+        return if User.authorized?(@authuser)
+        forbidden(true) unless User.owned?(@authuser, owner_struct)
+      end
     end
 
     def show_detailed_exceptions?
