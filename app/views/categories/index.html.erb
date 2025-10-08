@@ -62,8 +62,12 @@ another heat is still possible, even when the agenda is locked.</li>
     <% end %>
     <tbody data-controller="drop" data-drop-action="<%= drop_categories_path %>">
     <% @categories.each do |cat| %>
+      <%
+        # Find all agenda entries for this category (including split/continued versions)
+        matching_keys = @agenda.keys.select { |key| key == cat.name || key.start_with?("#{cat.name} (continued") }
+        heats = @agenda[cat.name]
+      %>
       <tr class="hover:bg-yellow-200" draggable="true" data-drag-id="<%= cat.id %><%= cat.part ? "-#{cat.part}" : "" %>">
-        <% heats = @agenda[cat.name] %>
         <td class="row text-black font-medium"><%= link_to cat.name, edit_category_path(cat.id, part: cat.part) %></td>
         <% if heats %>
         <% entry_count += (count = heats.map {|number, ballrooms| ballrooms.values.flatten.length}.sum) %>
@@ -84,6 +88,34 @@ another heat is still possible, even when the agenda is locked.</li>
         <td class="row text-right">0</td>
         <% end %>
       </tr>
+      <%
+        # Show continued ranges as separate rows (indented)
+        continued_keys = matching_keys - [cat.name]
+        continued_keys.each do |continued_name|
+          continued_heats = @agenda[continued_name]
+      %>
+      <tr class="hover:bg-yellow-200" data-drag-id="<%= cat.id %><%= cat.part ? "-#{cat.part}" : "" %>" data-droppable>
+        <td class="row text-black font-medium pl-8"><%= link_to continued_name, edit_category_path(cat.id, part: cat.part) %></td>
+        <% if continued_heats %>
+        <% entry_count += (count = continued_heats.map {|number, ballrooms| ballrooms.values.flatten.length}.sum) %>
+        <% heat_count += continued_heats.length %>
+        <td class="row text-right"><%= count %></td>
+        <td class="row text-right"><%= continued_heats.length %></td>
+        <% if @start and @cat_start[continued_name] %>
+        <% unless @oneday %>
+        <td class="row"><%= Date::DAYNAMES[@cat_start[continued_name]&.wday || 7] %></td>
+        <% end %>
+        <td class="row"><%= localized_time(@cat_start[continued_name], @locale) %></td>
+        <td class="row"><%= localized_time(@cat_finish[continued_name], @locale) %></td>
+        <% elsif not cat&.day.blank? and not @oneday %>
+        <td class="row"><%= cat.day %></td>
+        <% end %>
+        <% else %>
+        <td class="row text-right">0</td>
+        <td class="row text-right">0</td>
+        <% end %>
+      </tr>
+      <% end %>
     <% end %>
     </tbody>
     <% if @agenda['Uncategorized'] %>

@@ -91,7 +91,14 @@ class CategoriesController < ApplicationController
     if @category.instance_of?(Category) && (!params[:category][:split].blank? || @category.extensions.any?)
       @include_times = true  # Override for admin view
       generate_agenda
-      heats = @agenda[@category.name].length + @category.extensions.map {|ext| @agenda[ext.name].length}.sum
+
+      # Collect all agenda entries for this category (including split/continued versions)
+      category_heats = @agenda.select { |key, _| key == @category.name || key.start_with?("#{@category.name} (continued") }.values.flatten(1)
+      extension_heats = @category.extensions.flat_map { |ext|
+        @agenda.select { |key, _| key == ext.name || key.start_with?("#{ext.name} (continued") }.values
+      }.flatten(1)
+
+      heats = category_heats.length + extension_heats.length
       extensions_found = @category.extensions.order(:part).all.to_a
       extensions_needed = 0
       if !params[:category][:split].blank?

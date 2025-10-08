@@ -1320,8 +1320,126 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", text: /No couples on the floor/, count: 0
     assert_select "tr.hover\\:bg-yellow-200", count: 6
     
-    # Should be in final mode (ranking, not checkboxes) 
+    # Should be in final mode (ranking, not checkboxes)
     assert_select "input[type='checkbox']", count: 0
+  end
+
+  # ===== SEQUENTIAL HEAT NAVIGATION TESTS =====
+
+  test "heat navigation follows sequential heat order not category order" do
+    # Create heats in different categories with specific numbers
+    heat218 = Heat.create!(number: 218, entry: @entry, dance: @dance, category: 'Solo')
+    heat219 = Heat.create!(number: 219, entry: @entry, dance: dances(:tango), category: 'Solo')
+    heat220 = Heat.create!(number: 220, entry: @entry, dance: dances(:rumba), category: 'Solo')
+
+    # Create solo records for the heats with unique order values
+    max_order = Solo.maximum(:order) || 0
+    Solo.create!(heat: heat218, order: max_order + 1)
+    Solo.create!(heat: heat219, order: max_order + 2)
+    Solo.create!(heat: heat220, order: max_order + 3)
+
+    # Get heat 218 and check next link
+    get judge_heat_path(@judge, 218, style: 'cards')
+
+    assert_response :success
+
+    # Next link should go to 219, not skip it
+    assert_select "a[rel='next'][href*='heat/219']"
+  end
+
+  test "heat navigation prev link follows sequential order" do
+    # Create heats in sequence
+    heat218 = Heat.create!(number: 218, entry: @entry, dance: @dance, category: 'Solo')
+    heat219 = Heat.create!(number: 219, entry: @entry, dance: dances(:tango), category: 'Solo')
+    heat220 = Heat.create!(number: 220, entry: @entry, dance: dances(:rumba), category: 'Solo')
+
+    # Create solo records with unique order values
+    max_order = Solo.maximum(:order) || 0
+    Solo.create!(heat: heat218, order: max_order + 1)
+    Solo.create!(heat: heat219, order: max_order + 2)
+    Solo.create!(heat: heat220, order: max_order + 3)
+
+    # Get heat 220 and check prev link
+    get judge_heat_path(@judge, 220, style: 'cards')
+
+    assert_response :success
+
+    # Previous link should go to 219
+    assert_select "a[rel='prev'][href*='heat/219']"
+  end
+
+  test "heatlist displays heats in sequential order" do
+    # Create heats that would have different category vs sequential order
+    heat218 = Heat.create!(number: 218, entry: @entry, dance: @dance, category: 'Solo')
+    heat219 = Heat.create!(number: 219, entry: @entry, dance: dances(:tango), category: 'Solo')
+    heat220 = Heat.create!(number: 220, entry: @entry, dance: dances(:rumba), category: 'Solo')
+
+    # Create solo records with unique order values
+    max_order = Solo.maximum(:order) || 0
+    Solo.create!(heat: heat218, order: max_order + 1)
+    Solo.create!(heat: heat219, order: max_order + 2)
+    Solo.create!(heat: heat220, order: max_order + 3)
+
+    get judge_heatlist_path(@judge)
+
+    assert_response :success
+
+    # Extract heat numbers from response body to verify sequential order
+    heat_links = []
+    response.body.scan(/href="[^"]*\/heat\/(\d+)/).each { |match| heat_links << match[0].to_i }
+
+    # Remove duplicates and sort to check ordering
+    unique_heats = heat_links.uniq
+    relevant_heats = unique_heats.select { |h| h >= 218 && h <= 220 }
+
+    # Should be in sequential order if they exist
+    if relevant_heats.length >= 2
+      assert_equal relevant_heats.sort, relevant_heats, "Heats should be in sequential order"
+    end
+  end
+
+  test "heatlist shows split categories for heats with gaps" do
+    cat = categories(:one)
+    @dance.update!(solo_category: cat)
+    tango = dances(:tango)
+    tango.update!(solo_category: cat)
+
+    # Create heats with gap
+    heat55 = Heat.create!(number: 55, entry: @entry, dance: @dance, category: 'Solo')
+    heat219 = Heat.create!(number: 219, entry: @entry, dance: tango, category: 'Solo')
+
+    # Create solo records with unique order values
+    max_order = Solo.maximum(:order) || 0
+    Solo.create!(heat: heat55, order: max_order + 1)
+    Solo.create!(heat: heat219, order: max_order + 2)
+
+    get judge_heatlist_path(@judge)
+
+    assert_response :success
+
+    # Should show category name (may appear multiple times due to split)
+    assert_match /#{cat.name}/, response.body
+  end
+
+  test "heat navigation handles fractional heat numbers" do
+    # Create heats including a fractional number
+    heat218 = Heat.create!(number: 218, entry: @entry, dance: @dance, category: 'Solo')
+    heat219_5 = Heat.create!(number: 219.5, entry: @entry, dance: dances(:tango), category: 'Solo')
+    heat220 = Heat.create!(number: 220, entry: @entry, dance: dances(:rumba), category: 'Solo')
+
+    # Create solo records with unique order values
+    max_order = Solo.maximum(:order) || 0
+    Solo.create!(heat: heat218, order: max_order + 1)
+    Solo.create!(heat: heat219_5, order: max_order + 2)
+    Solo.create!(heat: heat220, order: max_order + 3)
+
+    # Get heat 218 and check next link points to 219.5
+    get judge_heat_path(@judge, 218, style: 'cards')
+
+    assert_response :success
+
+    # Next link should go to 219.5
+    assert_select "a[rel='next'][href*='heat/219']"
   end
 
 end

@@ -1,9 +1,29 @@
 # Reordering
 
-While the redo button is labor savor, you may have unique requirements that can't be handled automatically.  Perhaps you want to order/combine multi events.  Or perhaps an student isn't
+While the redo button is labor saver, you may have unique requirements that can't be handled automatically.  Perhaps you want to order/combine multi events.  Or perhaps an student isn't
 available for a portion of a day.
 
 Note: [solos](./Solos) are handled differently.  Order solos by going to the Heats page, clicking the Solos button, and using drag and drop to rearrange the order.
+
+## How the Agenda is Displayed
+
+The agenda displays heats in **sequential order by heat number**, not by category order. This means heat 219 will always appear after heat 218, even if they're in different categories.
+
+When categories are interrupted by other categories in the heat sequence, the interrupted category will appear multiple times with "(continued)" labels. For example, if the heat sequence is:
+
+- Heat 55: Club and Country Solos
+- Heat 56: Club and Country Solos
+- Heat 57: Smooth Solos
+- Heat 58: Club and Country Solos
+
+The agenda will show:
+- Club and Country Solos (heats 55-56)
+- Smooth Solos (heat 57)
+- Club and Country Solos (continued) (heat 58)
+
+On the Categories/Agenda page, continued sections appear **indented underneath** the main category. These continued sections cannot be dragged, but you can drop other categories onto them (which treats the drop as if it were onto the original category).
+
+## Locking the Agenda
 
 The first thing you will need to do is to either lock the entire agenda or lock an individual agenda item.  This will prevent the redo button from undoing the changes you are about to make.
 
@@ -13,7 +33,7 @@ To lock an individual agenda item, go to the heats page.  Click on the item in t
 
 A few things to note if you lock an individual agenda item and then click redo:
 
-  * Redoing the entire agenda will may result in new heat numbers for this agenda item but the
+  * Redoing the entire agenda may result in new heat numbers for this agenda item but the
     order of heats in the agenda, and the list of couples in each heat will be preserved.
   * If new entries are added for dances in this agenda item, redo will *not* add the new entries
     to existing heats.  See [Scratches and Walk Ons](./Scratches-and-Walk-ons) for information

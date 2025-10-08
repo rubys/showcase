@@ -455,9 +455,163 @@ class PrintableTest < ActiveSupport::TestCase
     )
     
     generate_agenda
-    
+
     # Should use event configuration
     assert_not_nil @oneday
     assert_not_nil @track_ages if defined?(@track_ages)
+  end
+
+  # ===== SEQUENTIAL HEAT ORDERING TESTS =====
+
+  test "generate_agenda orders categories by sequential heat number" do
+    # Clear all heats to avoid fixture interference
+    Heat.destroy_all
+
+    # Create categories with heats in non-sequential category order
+    cat1 = categories(:one)
+    max_order = Category.maximum(:order) || 0
+    cat2 = Category.create!(name: 'Second Category', order: max_order + 1)
+
+    # Cat1 has heat 100, Cat2 has heat 50 (should appear first despite higher order)
+    Heat.create!(number: 100, entry: @entry, dance: @dance, category: 'Closed')
+    Heat.create!(number: 50, entry: @entry, dance: dances(:tango), category: 'Closed')
+
+    # Set up categories on dances
+    @dance.update!(closed_category: cat1)
+    dances(:tango).update!(closed_category: cat2)
+
+    generate_agenda
+
+    # Second Category (heat 50) should appear before First Category (heat 100)
+    category_names = @agenda.keys
+    second_idx = category_names.index('Second Category')
+    first_idx = category_names.index(cat1.name)
+
+    # Both categories should be in the agenda and in the correct order
+    assert_not_nil second_idx, "Second Category should be in agenda"
+    assert_not_nil first_idx, "#{cat1.name} should be in agenda"
+    assert second_idx < first_idx, "Second Category (heat 50) should appear before #{cat1.name} (heat 100)"
+  end
+
+  test "generate_agenda splits categories when different categories interleave" do
+    # Clear existing heats
+    Heat.destroy_all
+
+    cat1 = categories(:one)
+    max_order = Category.maximum(:order) || 0
+    cat2 = Category.create!(name: 'Second Category', order: max_order + 1)
+
+    @dance.update!(solo_category: cat1)
+    dances(:tango).update!(solo_category: cat2)
+    dances(:rumba).update!(solo_category: cat1)
+
+    # Create heats: cat1, cat1, cat2, cat2, cat1 (should split cat1)
+    heat55 = Heat.create!(number: 55, entry: @entry, dance: @dance, category: 'Solo')
+    heat56 = Heat.create!(number: 56, entry: @entry, dance: @dance, category: 'Solo')
+    heat57 = Heat.create!(number: 57, entry: @entry, dance: dances(:tango), category: 'Solo')
+    heat58 = Heat.create!(number: 58, entry: @entry, dance: dances(:tango), category: 'Solo')
+    heat59 = Heat.create!(number: 59, entry: @entry, dance: dances(:rumba), category: 'Solo')
+
+    # Create solo records for the heats with unique order values
+    max_order = Solo.maximum(:order) || 0
+    Solo.create!(heat: heat55, order: max_order + 1)
+    Solo.create!(heat: heat56, order: max_order + 2)
+    Solo.create!(heat: heat57, order: max_order + 3)
+    Solo.create!(heat: heat58, order: max_order + 4)
+    Solo.create!(heat: heat59, order: max_order + 5)
+
+    generate_agenda
+
+    # Cat1 should appear twice (before and after cat2)
+    matching_keys = @agenda.keys.select { |k| k.include?(cat1.name) }
+    assert_equal 2, matching_keys.length, "Category should be split due to interleaving"
+
+    # Second occurrence should have "(continued)" suffix
+    assert_equal cat1.name, matching_keys[0]
+    assert matching_keys[1].include?('(continued)'), "Second occurrence should have (continued)"
+  end
+
+  test "generate_agenda keeps categories together when consecutive" do
+    # Clear existing heats
+    Heat.destroy_all
+
+    cat = categories(:one)
+    @dance.update!(solo_category: cat)
+
+    # Create consecutive heats with gaps in numbering (scratches, etc)
+    heat100 = Heat.create!(number: 100, entry: @entry, dance: @dance, category: 'Solo')
+    heat105 = Heat.create!(number: 105, entry: @entry, dance: @dance, category: 'Solo')
+    heat110 = Heat.create!(number: 110, entry: @entry, dance: @dance, category: 'Solo')
+
+    # Create solo records for the heats with unique order values
+    max_order = Solo.maximum(:order) || 0
+    Solo.create!(heat: heat100, order: max_order + 1)
+    Solo.create!(heat: heat105, order: max_order + 2)
+    Solo.create!(heat: heat110, order: max_order + 3)
+
+    generate_agenda
+
+    # Category should appear only once (all heats are consecutive in the same category)
+    matching_keys = @agenda.keys.select { |k| k == cat.name }
+    assert_equal 1, matching_keys.length, "Category should not be split when heats are consecutive"
+  end
+
+  test "generate_agenda handles multiple interleaved sections of same category" do
+    # Clear all heats to avoid fixture interference
+    Heat.destroy_all
+
+    cat1 = categories(:one)
+    max_order = Category.maximum(:order) || 0
+    cat2 = Category.create!(name: 'Second Category', order: max_order + 1)
+    cat3 = Category.create!(name: 'Third Category', order: max_order + 2)
+
+    waltz = dances(:waltz)
+    tango = dances(:tango)
+    rumba = dances(:rumba)
+    chacha = dances(:chacha)
+
+    waltz.update!(solo_category: cat1)
+    tango.update!(solo_category: cat2)
+    rumba.update!(solo_category: cat3)
+    chacha.update!(solo_category: cat1)
+
+    # Create heats: cat1, cat2, cat1, cat3, cat1 (cat1 appears 3 times)
+    heat10 = Heat.create!(number: 10, entry: @entry, dance: waltz, category: 'Solo')
+    heat20 = Heat.create!(number: 20, entry: @entry, dance: tango, category: 'Solo')
+    heat30 = Heat.create!(number: 30, entry: @entry, dance: waltz, category: 'Solo')
+    heat40 = Heat.create!(number: 40, entry: @entry, dance: rumba, category: 'Solo')
+    heat50 = Heat.create!(number: 50, entry: @entry, dance: chacha, category: 'Solo')
+
+    # Create solo records for the heats with unique order values
+    max_order = Solo.maximum(:order) || 0
+    Solo.create!(heat: heat10, order: max_order + 1)
+    Solo.create!(heat: heat20, order: max_order + 2)
+    Solo.create!(heat: heat30, order: max_order + 3)
+    Solo.create!(heat: heat40, order: max_order + 4)
+    Solo.create!(heat: heat50, order: max_order + 5)
+
+    generate_agenda
+
+    # Should have three occurrences of cat1
+    matching_keys = @agenda.keys.select { |k| k.include?(cat1.name) }
+    assert matching_keys.length >= 3, "Category should appear 3 times due to interleaving"
+  end
+
+  test "generate_agenda maintains Uncategorized and Unscheduled at end" do
+    # Create various heats
+    Heat.create!(number: 1, entry: @entry, dance: @dance, category: 'Closed')
+    Heat.create!(number: 50, entry: @entry, dance: @dance, category: 'Closed')
+    Heat.create!(number: 0, entry: @entry, dance: @dance, category: 'Closed') # Unscheduled
+
+    generate_agenda
+
+    # Uncategorized and Unscheduled should be at the end
+    keys = @agenda.keys
+    last_keys = keys.last(2)
+
+    special_keys = keys.select { |k| k == 'Uncategorized' || k == 'Unscheduled' }
+    special_keys.each do |key|
+      assert last_keys.include?(key), "#{key} should be at the end"
+    end
   end
 end

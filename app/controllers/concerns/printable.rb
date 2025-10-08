@@ -143,6 +143,81 @@ module Printable
     @agenda.delete 'Unscheduled' if @agenda['Unscheduled'].empty?
     @agenda.delete 'Uncategorized' if @agenda['Uncategorized'].empty?
 
+    # Re-order agenda by sequential heat number, splitting categories when they change
+    # This ensures categories appear in the order heats are actually performed
+    special_categories = ['Uncategorized', 'Unscheduled']
+
+    # Flatten all heats with their category names, excluding special categories
+    all_heats_with_cats = []
+    @agenda.each do |cat, heats|
+      next if special_categories.include?(cat)
+      heats.each do |heat_num, rooms|
+        all_heats_with_cats << { cat: cat, num: heat_num, rooms: rooms }
+      end
+    end
+
+    # Sort by heat number
+    all_heats_with_cats.sort_by! { |h| h[:num] }
+
+    # Group consecutive heats by category
+    category_sections = []
+    current_section = nil
+    seen_categories = Hash.new(0)
+
+    all_heats_with_cats.each do |heat_data|
+      if current_section.nil? || current_section[:cat] != heat_data[:cat]
+        # Category changed, start a new section
+        if current_section
+          category_sections << current_section
+        end
+
+        seen_categories[heat_data[:cat]] += 1
+        current_section = {
+          cat: heat_data[:cat],
+          occurrence: seen_categories[heat_data[:cat]],
+          heats: []
+        }
+      end
+
+      current_section[:heats] << [heat_data[:num], heat_data[:rooms]]
+    end
+
+    # Don't forget the last section
+    category_sections << current_section if current_section
+
+    # Build final agenda with appropriate naming
+    final_agenda = {}
+    category_counts = Hash.new(0)
+
+    category_sections.each do |section|
+      cat_name = section[:cat]
+      category_counts[cat_name] += 1
+
+      # Generate display name
+      if category_counts[cat_name] == 1
+        display_name = cat_name
+      else
+        # This is a continuation
+        display_name = "#{cat_name} (continued)"
+        counter = 2
+        while final_agenda.key?(display_name)
+          display_name = "#{cat_name} (continued #{counter})"
+          counter += 1
+        end
+      end
+
+      final_agenda[display_name] = section[:heats]
+    end
+
+    # Add special categories at the end, sorted by heat number
+    special_categories.each do |cat|
+      if @agenda.key?(cat)
+        final_agenda[cat] = @agenda[cat].sort_by { |heat_num, _| heat_num }
+      end
+    end
+
+    @agenda = final_agenda
+
     # assign start and finish times
 
     @include_times = event.include_times if @include_times.nil?
