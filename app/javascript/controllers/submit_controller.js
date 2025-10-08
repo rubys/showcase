@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import consumer from 'channels/consumer'
-import xterm from '@xterm/xterm';
+import { Terminal } from '@xterm/xterm';
 
 // Connects to data-controller="submit"
 export default class extends Controller {
@@ -55,7 +55,7 @@ export default class extends Controller {
 
               // Clear the output area and create a new terminal
               outputTarget.innerHTML = ''
-              this.controller.terminal = new xterm.Terminal()
+              this.controller.terminal = new Terminal()
               this.controller.terminal.open(outputTarget)
             }, 100)
           },
