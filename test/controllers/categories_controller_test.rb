@@ -137,6 +137,46 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal flash[:notice], 'Closed American Smooth was successfully removed.'
   end
 
+  # ===== DRAG AND DROP LOCK TESTS =====
+
+  test "should disable drag and drop when event is locked" do
+    # Lock the event
+    Event.current.update(locked: true)
+
+    get categories_url
+
+    assert_response :success
+
+    # Verify tbody doesn't have drop controller
+    assert_select 'tbody[data-controller="drop"]', count: 0
+
+    # Verify main category rows are not draggable
+    doc = Nokogiri::HTML(response.body)
+    main_rows = doc.css('tbody tr[draggable="true"]')
+    assert_equal 0, main_rows.length, "No rows should be draggable when locked"
+
+    # Verify continued rows don't have data-droppable
+    continued_rows = doc.css('tbody tr[data-droppable]')
+    assert_equal 0, continued_rows.length, "No rows should have data-droppable when locked"
+  end
+
+  test "should enable drag and drop when event is unlocked" do
+    # Ensure event is unlocked
+    Event.current.update(locked: false)
+
+    get categories_url
+
+    assert_response :success
+
+    # Verify tbody has drop controller
+    assert_select 'tbody[data-controller="drop"]', count: 1
+
+    # Verify main category rows are draggable
+    doc = Nokogiri::HTML(response.body)
+    main_rows = doc.css('tbody tr[draggable="true"]')
+    assert main_rows.length > 0, "Some rows should be draggable when unlocked"
+  end
+
   # ===== CONTINUED CATEGORY PLACEMENT TESTS =====
 
   test "should show continued category sections when categories are interleaved" do

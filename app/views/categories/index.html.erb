@@ -60,14 +60,14 @@ another heat is still possible, even when the agenda is locked.</li>
     </tr>
     </tbody>
     <% end %>
-    <tbody data-controller="drop" data-drop-action="<%= drop_categories_path %>">
+    <tbody <%= "data-controller=\"drop\" data-drop-action=\"#{drop_categories_path}\"".html_safe unless @locked %>>
     <% @categories.each do |cat| %>
       <%
         # Find all agenda entries for this category (including split/continued versions)
         matching_keys = @agenda.keys.select { |key| key == cat.name || key.start_with?("#{cat.name} (continued") }
         heats = @agenda[cat.name]
       %>
-      <tr class="hover:bg-yellow-200" draggable="true" data-drag-id="<%= cat.id %><%= cat.part ? "-#{cat.part}" : "" %>">
+      <tr class="hover:bg-yellow-200" <%= "draggable=\"true\" data-drag-id=\"#{cat.id}#{cat.part ? "-#{cat.part}" : ""}\"".html_safe unless @locked %>>
         <td class="row text-black font-medium"><%= link_to cat.name, edit_category_path(cat.id, part: cat.part) %></td>
         <% if heats %>
         <% entry_count += (count = heats.map {|number, ballrooms| ballrooms.values.flatten.length}.sum) %>
@@ -94,7 +94,7 @@ another heat is still possible, even when the agenda is locked.</li>
         continued_keys.each do |continued_name|
           continued_heats = @agenda[continued_name]
       %>
-      <tr class="hover:bg-yellow-200" data-drag-id="<%= cat.id %><%= cat.part ? "-#{cat.part}" : "" %>" data-droppable>
+      <tr class="hover:bg-yellow-200" <%= "data-drag-id=\"#{cat.id}#{cat.part ? "-#{cat.part}" : ""}\" data-droppable".html_safe unless @locked %>>
         <td class="row text-black font-medium pl-8"><%= link_to continued_name, edit_category_path(cat.id, part: cat.part) %></td>
         <% if continued_heats %>
         <% entry_count += (count = continued_heats.map {|number, ballrooms| ballrooms.values.flatten.length}.sum) %>
