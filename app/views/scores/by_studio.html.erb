@@ -4,6 +4,19 @@
       <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
     <% end %>
 
+    <div data-controller="info-box">
+      <div class="info-button">&#x24D8;</div>
+      <ul class="info-box">
+        <li>Studio scores aggregate all results for each participating studio at the event.
+        <li><strong>Total Points</strong>: Sum of all scores from all heats for that studio. Rewards studios with more entries.
+        <li><strong>Average Points</strong>: Total points divided by number of scores, shown as a percentage. Rewards studios with higher individual scores.
+        <li>Both metrics provide different perspectives - total recognizes participation volume, average recognizes quality.
+        <li>Averages may not total to exactly 100% due to rounding to the nearest percentage.
+        <li>Page updates automatically during the event when judges enter new scores (live scoring).
+        <li>This public-facing page is often displayed on screens during the event for studio owners and participants.
+      </ul>
+    </div>
+
     <%= turbo_stream_from "live-scores-#{ENV['RAILS_APP_DB']}" %>
     <%= render partial: "last_update", locals: {action: by_studio_scores_path, timestamp: @last_score_update} %>
 

@@ -4,6 +4,18 @@
       <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
     <% end %>
 
+    <div data-controller="info-box">
+      <div class="info-button">&#x24D8;</div>
+      <ul class="info-box">
+        <li>Professional scores show results for professional-level heats where both partners are professionals.
+        <li>These are typically professional showcases, professional competitions, or professional-amateur partnerships dancing in professional divisions.
+        <li>Scores are organized by couple and may include placement rankings, judge scores, or other metrics based on the scoring system.
+        <li>Page updates automatically during the event when judges enter new scores (live scoring).
+        <li>Final results are available after all professional heats have been completed and scored.
+        <li>This public-facing page can be shared with participants and spectators to view results in real-time.
+      </ul>
+    </div>
+
     <%= turbo_stream_from "live-scores-#{ENV['RAILS_APP_DB']}" %>
     <%= render partial: "last_update", locals: {action: pros_scores_path, timestamp: @last_score_update} %>
 

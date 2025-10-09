@@ -4,6 +4,18 @@
       <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
     <% end %>
 
+    <div data-controller="info-box">
+      <div class="info-button">&#x24D8;</div>
+      <ul class="info-box">
+        <li>Instructor scores show aggregated results for all instructors (Professionals) at the event.
+        <li>Scores are compiled across all heats where the instructor danced with their students.
+        <li>Results may include total points, average scores, placement counts, or other metrics depending on the scoring system used.
+        <li>Page updates automatically during the event when judges enter new scores (live scoring).
+        <li>Final scores are available after all heats have been judged and scores entered.
+        <li>This public-facing page can be shared with instructors and studios to view results in real-time.
+      </ul>
+    </div>
+
     <h1 class="font-bold mt-8 text-4xl pb-5 text-center">Instructor Scores</h1>
 
     <%= turbo_stream_from "live-scores-#{ENV['RAILS_APP_DB']}" %>
