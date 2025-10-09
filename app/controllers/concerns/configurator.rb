@@ -146,17 +146,21 @@ module Configurator
     # For FLY_REGION: /showcase/regions/iad/cable -> proxy to :28080/cable
     # For local dev: /showcase/cable -> proxy to :28080/cable
     # For no root: /cable -> proxy to :28080/cable
+    # Use regex capture groups to strip path prefix and proxy just /cable
     if ENV['FLY_REGION']
-      cable_path = "^#{root}/regions/#{ENV['FLY_REGION']}/cable"
+      cable_path = "^#{root}/regions/#{ENV['FLY_REGION']}(/cable)$"
+      cable_target = 'http://localhost:28080$1'
     elsif !root.empty?
-      cable_path = "^#{root}/cable"
+      cable_path = "^#{root}(/cable)$"
+      cable_target = 'http://localhost:28080$1'
     else
-      cable_path = "^/cable"
+      cable_path = "^/cable$"
+      cable_target = 'http://localhost:28080/cable'
     end
 
     routes['reverse_proxies'] << {
       'path' => cable_path,
-      'target' => 'http://localhost:28080/cable',
+      'target' => cable_target,
       'websocket' => true,
       'headers' => {
         'X-Forwarded-For' => '$remote_addr',
