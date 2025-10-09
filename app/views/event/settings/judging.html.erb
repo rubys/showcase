@@ -7,9 +7,19 @@
 <div data-controller="info-box">
   <div class="info-button">&#x24D8;</div>
   <ul class="info-box">
-  <li>While national events tend to have a predefined set of rules, local and regional events may vary widely in how they are run.
-    Use this page to customize your event.
-  <li>This program has a lot of function, enough so that it could be overwhelming.  To help manage that, many features are hidden away until you need it; usually a checkbox somewhere (either here in the settings or on the individual part being customized) exposes more options.
+  <li>While national events tend to have predefined set of rules, local and regional events may vary widely in how they are run.
+    Use this page to customize your event's scoring system.
+  <li><strong>Scoring systems comparison:</strong>
+    <ul class="ml-4 list-disc">
+      <li><strong>1/2/3/F</strong>: Placement scoring (1st, 2nd, 3rd, 4th/Finalist). Common for competitive heats.</li>
+      <li><strong>GH/G/S/B</strong>: Letter grades (Great Honor, Great, Satisfactory, Bronze). Common for showcase/pro-am events.</li>
+      <li><strong>Number (85, 95, ...)</strong>: Numeric scores 0-100. Provides granular feedback.</li>
+      <li><strong>Feedback</strong>: Qualitative feedback buttons (Needs Work On / Great Job With). For developmental events.</li>
+      <li><strong>Number + Feedback</strong>: Combines 1-5 scoring with feedback buttons.</li>
+      <li><strong>GH/G/S/B + Feedback</strong>: Combines letter grades with feedback buttons.</li>
+    </ul>
+  <li><strong>Solo scoring</strong>: Choose between single number (0-100) or 4-part scoring (Technique, Execution, Poise, Showmanship).
+  <li><strong>Multi scoring</strong>: For multi-dance competitions (All Arounds, Triple Threats, etc.).
   <li>Detailed descriptions of these options can be found in the <a href="<%= File.join(docs_path, "tasks/Settings") %>" class="text-blue-800 underline">documentation</a>.</li>
   </ul>
 </div>

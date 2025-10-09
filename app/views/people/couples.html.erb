@@ -4,6 +4,25 @@
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
+  <div data-controller="info-box">
+    <div class="info-button">&#x24D8;</div>
+    <ul class="info-box">
+      <li>This page lists all couples (dance partnerships) currently entered at the event.
+      <li><strong>Dances column</strong>: Shows the total number of heats for this couple partnership.
+      <li><strong>Level</strong>: Displays the higher level of the two partners (couples dance at the higher partner's level).
+      <li><strong>Category</strong>: Shows the age category (if age tracking is enabled). Uses the younger partner's age category.
+      <li>Click on a person's name to view their full profile and see all their partnerships.
+      <li>Click on studio name to view that studio's details and all participants.
+      <li><strong>Couple types:</strong>
+        <ul class="ml-4 list-disc">
+          <li><strong>Pro-Am</strong>: Professional dancing with a Student</li>
+          <li><strong>Amateur Couple</strong>: Two Students dancing together</li>
+          <li><strong>Pro-Pro</strong>: Two Professionals dancing together</li>
+        </ul>
+      <li>Use "Couple Entries" button to filter entries by couple type and see detailed heat breakdowns.
+    </ul>
+  </div>
+
   <div class="flex justify-between items-center">
   <h1 class="mx-auto font-bold text-4xl mb-4">Couples</h1>
   </div>
