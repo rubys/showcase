@@ -71,21 +71,41 @@ class Entry < ApplicationRecord
   def subject_lvlcat(show_ages = true)
     return '- PRO -' if pro
 
-    if show_ages
-      if follow.type == 'Professional'
-        "G - #{level.initials} - #{age.category}"
-      elsif lead.type == 'Professional'
-        "L - #{level.initials} - #{age.category}"
+    if Event.current.pro_am == 'G'
+      if show_ages
+        if follow.type == 'Professional'
+          "G - #{level.initials} - #{age.category}"
+        elsif lead.type == 'Professional'
+          "L - #{level.initials} - #{age.category}"
+        else
+          "AC - #{level.initials} - #{age.category}"
+        end
       else
-        "AC - #{level.initials} - #{age.category}"
+        if follow.type == 'Professional'
+          "G - #{level.initials}"
+        elsif lead.type == 'Professional'
+          "L - #{level.initials}"
+        else
+          "AC - #{level.initials}"
+        end
       end
     else
-      if follow.type == 'Professional'
-        "G - #{level.initials}"
-      elsif lead.type == 'Professional'
-        "L - #{level.initials}"
+      if show_ages
+        if follow.type == 'Professional'
+          "L - #{level.initials} - #{age.category}"
+        elsif lead.type == 'Professional'
+          "F - #{level.initials} - #{age.category}"
+        else
+          "AC - #{level.initials} - #{age.category}"
+        end
       else
-        "AC - #{level.initials}"
+        if follow.type == 'Professional'
+          "L - #{level.initials}"
+        elsif lead.type == 'Professional'
+          "F - #{level.initials}"
+        else
+          "AC - #{level.initials}"
+        end
       end
     end
   end

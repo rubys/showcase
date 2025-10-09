@@ -413,31 +413,37 @@ class EntryTest < ActiveSupport::TestCase
     assert_equal '- PRO -', entry.subject_lvlcat
   end
 
-  test "subject_lvlcat with professional follow" do
+  test "subject_lvlcat with G pro_am and professional follow" do
+    @event.update!(pro_am: 'G')
+
     entry = Entry.create!(
       lead: @student1,
       follow: @instructor1,
       age: @age,
       level: @level
     )
-    
+
     assert_equal "G - #{@level.initials} - #{@age.category}", entry.subject_lvlcat
     assert_equal "G - #{@level.initials}", entry.subject_lvlcat(false)
   end
 
-  test "subject_lvlcat with professional lead" do
+  test "subject_lvlcat with G pro_am and professional lead" do
+    @event.update!(pro_am: 'G')
+
     entry = Entry.create!(
       lead: @instructor1,
       follow: @student1,
       age: @age,
       level: @level
     )
-    
+
     assert_equal "L - #{@level.initials} - #{@age.category}", entry.subject_lvlcat
     assert_equal "L - #{@level.initials}", entry.subject_lvlcat(false)
   end
 
-  test "subject_lvlcat with amateur couple" do
+  test "subject_lvlcat with G pro_am and amateur couple" do
+    @event.update!(pro_am: 'G')
+
     entry = Entry.create!(
       lead: @student1,
       follow: @student2,
@@ -445,7 +451,50 @@ class EntryTest < ActiveSupport::TestCase
       age: @age,
       level: @level
     )
-    
+
+    assert_equal "AC - #{@level.initials} - #{@age.category}", entry.subject_lvlcat
+    assert_equal "AC - #{@level.initials}", entry.subject_lvlcat(false)
+  end
+
+  test "subject_lvlcat with non-G pro_am and professional follow" do
+    @event.update!(pro_am: 'L')
+
+    entry = Entry.create!(
+      lead: @student1,
+      follow: @instructor1,
+      age: @age,
+      level: @level
+    )
+
+    assert_equal "L - #{@level.initials} - #{@age.category}", entry.subject_lvlcat
+    assert_equal "L - #{@level.initials}", entry.subject_lvlcat(false)
+  end
+
+  test "subject_lvlcat with non-G pro_am and professional lead" do
+    @event.update!(pro_am: 'L')
+
+    entry = Entry.create!(
+      lead: @instructor1,
+      follow: @student1,
+      age: @age,
+      level: @level
+    )
+
+    assert_equal "F - #{@level.initials} - #{@age.category}", entry.subject_lvlcat
+    assert_equal "F - #{@level.initials}", entry.subject_lvlcat(false)
+  end
+
+  test "subject_lvlcat with non-G pro_am and amateur couple" do
+    @event.update!(pro_am: 'L')
+
+    entry = Entry.create!(
+      lead: @student1,
+      follow: @student2,
+      instructor: @instructor1,
+      age: @age,
+      level: @level
+    )
+
     assert_equal "AC - #{@level.initials} - #{@age.category}", entry.subject_lvlcat
     assert_equal "AC - #{@level.initials}", entry.subject_lvlcat(false)
   end
