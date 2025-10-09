@@ -4,6 +4,21 @@
       <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
     <% end %>
 
+    <div data-controller="info-box">
+      <div class="info-button">&#x24D8;</div>
+      <ul class="info-box">
+        <li>Use "Add Person" to add Professionals, Guests, or Students to this studio.
+        <li>Click "Edit this studio" to change name, pair with another studio, or set pricing overrides.
+        <li>"Tables" shows seating assignments for this studio's participants (visible when tables are assigned).
+        <li>"Solos" displays all solos and formations for this studio with song management.
+        <li>"Add formation" creates a group performance with multiple dancers (3 or more people).
+        <li>"Heat sheets" generates printable list of all heats for this studio's students.
+        <li>"Studio Invoice" creates consolidated billing for the entire studio.
+        <li>"Student Invoices" generates individual invoices for each student in this studio.
+        <li>"Scores" produces score summary for all participants from this studio.
+      </ul>
+    </div>
+
     <%= render @studio %>
 
   <div class="mt-8 grid grid-cols-3 gap-1">
