@@ -3,6 +3,20 @@
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
+  <div data-controller="info-box">
+    <div class="info-button">&#x24D8;</div>
+    <ul class="info-box">
+      <li>This page summarizes all responses to custom questions associated with optional packages and add-ons.
+      <li>Questions are organized by the option they're associated with (meals, social events, special packages, etc.).
+      <li>Each question shows a table with person name, studio, and their answer.
+      <li><strong>Gray italicized text</strong>: "No answer provided" means the person selected the option but didn't answer the question.
+      <li>Click on a person's name to view their full profile and edit their information.
+      <li>Questions can be added or edited from the <%= link_to 'Billables/Options page', billables_path, class: "text-blue-600 underline" %> in Settings → Prices.
+      <li>Use "Download PDF Report" to generate a printable version for event planning (e.g., meal counts, T-shirt sizes, dietary restrictions).
+      <li>This helps track participant preferences and logistical needs for your event.
+    </ul>
+  </div>
+
   <h1 class="text-center font-bold text-4xl mb-4">Question Answers Summary</h1>
 
   <% if @options_with_questions.empty? %>

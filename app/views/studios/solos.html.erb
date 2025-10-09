@@ -3,6 +3,21 @@
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
+  <div data-controller="info-box">
+    <div class="info-button">&#x24D8;</div>
+    <ul class="info-box">
+      <li>This page shows all solos and formations for <%= @studios.map(&:name).join(' and ') %>.
+      <li><strong>Heat number</strong>: Shows the assigned heat number in the agenda. Hover over any row and click "Edit" to modify.
+      <li><strong>Dance column</strong>: For combo solos, shows both dances (e.g., Waltz / Foxtrot). Click dance name to edit dance settings.
+      <li><strong>Song information</strong>: Lists song title, artist, and provides audio playback controls if a music file has been uploaded.
+      <li><strong>Audio playback</strong>: Click play button to preview the song. Use this to confirm correct song before the event.
+      <li><strong>Lead/Follow columns</strong>: Shows all participants in the solo or formation. Formations display additional dancers below the main couple.
+      <li>Solos have exactly two people on the floor. Formations have three or more dancers.
+      <li>Song files and metadata are provided to the DJ for playlist preparation.
+      <li>Editing a solo or formation will update all associated information including heat assignments and participant billing.
+    </ul>
+  </div>
+
   <div class="flex justify-between items-center">
     <h1 class="mx-auto font-bold text-4xl">Solos: <%= @studios.map(&:name).join(' and ') %></h1>
   </div>

@@ -1,4 +1,20 @@
 <div class="mx-auto w-full">
+
+<div data-controller="info-box">
+  <div class="info-button">&#x24D8;</div>
+  <ul class="info-box">
+    <li>Use this form to add multiple heats for <%= @person.display_name %> in one operation.
+    <li><strong>Partner</strong>: Select the dance partner. If the partner isn't showing, check that their studio is paired with this person's studio.
+    <li><strong>Age and Level</strong>: Select the age category and dance level for this set of entries. You'll need to create separate entries for different levels or ages.
+    <li><strong>Closed Category</strong>: Heats where couples dance in front of judges but not competing against other couples on the floor simultaneously.
+    <li><strong>Open Category</strong>: Heats where multiple couples dance on the floor at the same time, competing directly against each other.
+    <li>Enter numbers in the dance fields to specify how many heats for each dance (e.g., "1" for one heat, "3" for three heats).
+    <li>On tablets: press and hold on an empty field to bring up the number keyboard.
+    <li>Leave fields empty (or "0") for dances you don't want to include in this entry form.
+    <li>After submitting, return to this form to add entries with different partners, levels, or age categories.
+  </ul>
+</div>
+
 <h1 class="font-bold text-4xl pb-5 text-center"><%= @person.display_name %></h1>
 
 <%= form_with(url: entries_path, class: "contents") do |form| %>

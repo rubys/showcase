@@ -1,4 +1,19 @@
 <div class="mx-auto md:w-2/3 w-full">
+
+  <div data-controller="info-box">
+    <div class="info-button">&#x24D8;</div>
+    <ul class="info-box">
+      <li>This page allows you to select which people should receive the "<%= @billable.name %>" package or option.
+      <li><strong>White rows</strong>: Active people with packages assigned who can receive this package/option.
+      <li><strong>Gray rows</strong>: People without entries defined. They may not be actively participating in the event.
+      <li><strong>Yellow rows</strong>: People without a package selected. Assign them a package before adding options.
+      <li>Check the boxes next to people who should receive this item, then click the submit button to save.
+      <li>Checked items will appear on individual invoices and studio invoices.
+      <li>Use this for optional add-ons like meals, social events, or special packages that don't apply to everyone.
+      <li>Package assignments can also be managed individually from each person's page.
+    </ul>
+  </div>
+
   <h1 class="font-bold text-4xl"><%= @billable.name %></h1>
 
 <%= form_with(class: "contents") do |form| %>
