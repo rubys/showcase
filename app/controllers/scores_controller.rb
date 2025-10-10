@@ -42,52 +42,19 @@ class ScoresController < ApplicationController
       dance: [:open_category, :closed_category, :multi_category, {solo_category: :extensions}],
       entry: %i[lead follow],
       solo: %i[category_override]
-    )
+    ).to_a.sort_by(&:number)
     @combine_open_and_closed = Event.current.heat_range_cat == 1
 
-    # Group heats by category, then split categories with large gaps and reorder sequentially
-    gap_threshold = 10
-    split_categories = []
-
-    @heats.group_by(&:dance_category).each do |category, heats|
-      heat_numbers = heats.map(&:number).sort
-
-      # Group heats into contiguous ranges (no gaps > threshold)
-      ranges = []
-      current_range = [heat_numbers.first]
-
-      heat_numbers.each_cons(2) do |a, b|
-        if (b - a) > gap_threshold
-          ranges << current_range
-          current_range = [b]
-        else
-          current_range << b
-        end
-      end
-      ranges << current_range if current_range.any?
-
-      # Create entries for each range
-      ranges.each do |range|
-        range_heats = heats.select { |heat| range.include?(heat.number) }
-        split_categories << {
-          category: category,
-          heats: range_heats,
-          min: range.min,
-          max: range.max
-        }
-      end
-    end
-
-    # Sort all entries by their minimum heat number
-    split_categories.sort_by! { |entry| entry[:min] }
-
-    # Build @heats array in sequential order and @agenda hash for category headers
-    @heats = split_categories.flat_map { |entry| entry[:heats] }
+    # Build agenda hash for category headers - show category at first occurrence
     @agenda = {}
-    split_categories.each do |entry|
-      cat_name = entry[:category]&.name || 'Uncategorized'
-      # Map the minimum heat number of each range to the category name
-      @agenda[entry[:min]] = cat_name
+    last_category = nil
+    @heats.each do |heat|
+      category = heat.dance_category
+      if category != last_category
+        cat_name = category&.name || 'Uncategorized'
+        @agenda[heat.number] = cat_name
+        last_category = category
+      end
     end
 
     @scored = Score.includes(:heat).where(judge: @judge).
@@ -276,39 +243,7 @@ class ScoresController < ApplicationController
         dance: [:open_category, :closed_category, :multi_category, {solo_category: :extensions}],
         entry: %i[lead follow],
         solo: %i[category_override]
-      )
-
-    # Group heats by category, split categories with large gaps, and order sequentially
-    gap_threshold = 10
-    split_categories = []
-
-    heats.group_by(&:dance_category).each do |category, heats_list|
-      heat_numbers = heats_list.map(&:number).sort
-
-      # Group heats into contiguous ranges (no gaps > threshold)
-      ranges = []
-      current_range = [heat_numbers.first]
-
-      heat_numbers.each_cons(2) do |a, b|
-        if (b - a) > gap_threshold
-          ranges << current_range
-          current_range = [b]
-        else
-          current_range << b
-        end
-      end
-      ranges << current_range if current_range.any?
-
-      # Create entries for each range
-      ranges.each do |range|
-        range_heats = heats_list.select { |heat| range.include?(heat.number) }
-        split_categories << { heats: range_heats, min: range.min }
-      end
-    end
-
-    # Sort by minimum heat number and flatten
-    split_categories.sort_by! { |entry| entry[:min] }
-    heats = split_categories.flat_map { |entry| entry[:heats] }
+      ).to_a.sort_by(&:number)
 
     show_solos = params[:solos] || @judge&.judge&.review_solos&.downcase
     if show_solos == 'none'
