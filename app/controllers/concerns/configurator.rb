@@ -283,12 +283,25 @@ module Configurator
       'startup_timeout' => '5s',
       'track_websockets' => false,  # WebSockets proxied to standalone Action Cable server
       'tenants' => tenants,
-      'pools' => {
-        'max_size' => calculate_pool_size,
-        'timeout' => '5m',
-        'start_port' => 4000
-      }
+      'pools' => build_pools_config
     }
+  end
+
+  def build_pools_config
+    config = {
+      'max_size' => calculate_pool_size,
+      'timeout' => '5m',
+      'start_port' => 4000
+    }
+
+    # Add memory limits and user/group isolation for Fly.io (Linux) deployments
+    if ENV['FLY_REGION']
+      config['default_memory_limit'] = '512M'
+      config['user'] = 'rails'
+      config['group'] = 'rails'
+    end
+
+    config
   end
 
   def calculate_pool_size
