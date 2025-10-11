@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import consumer from 'channels/consumer'
-import * as xterm from '@xterm/xterm';
+import xterm from '@xterm/xterm';
 
 // Connects to data-controller="submit"
 export default class extends Controller {
