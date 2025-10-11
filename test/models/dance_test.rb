@@ -687,22 +687,22 @@ class DanceTest < ActiveSupport::TestCase
       multi_category: @category_multi,
       heat_length: 3
     )
-    
+
     # Create component dances
     waltz = dances(:waltz)
     tango = dances(:tango)
-    
+
     # Link them with slot numbers above heat_length
     Multi.create!(parent: aa_test, dance: waltz, slot: 4)
     Multi.create!(parent: aa_test, dance: tango, slot: 5)
-    
+
     # Create judges
     staff = Studio.find(0)
     judges = []
     3.times do |i|
       judges << Person.create!(name: "Judge #{i}", type: "Judge", studio: staff)
     end
-    
+
     # Create 10 heats to trigger the filtering logic
     studio = studios(:one)
     10.times do |i|
@@ -712,7 +712,7 @@ class DanceTest < ActiveSupport::TestCase
         studio: studio,
         back: 2000 + i
       )
-      
+
       entry = Entry.create!(
         lead: leader,
         follow: people(:student_one),
@@ -720,30 +720,119 @@ class DanceTest < ActiveSupport::TestCase
         age: ages(:one),
         level: levels(:one)
       )
-      
+
       heat = Heat.create!(
         number: 300,
         entry: entry,
         dance: aa_test,
         category: 'Multi'
       )
-      
+
       # Create scores only for slots > heat_length
       judges.each_with_index do |judge, j|
         Score.create!(heat: heat, judge: judge, value: (i + j) % 6 + 1, slot: 4)
         Score.create!(heat: heat, judge: judge, value: (i + j + 1) % 6 + 1, slot: 5)
       end
     end
-    
+
     summary, ranks = aa_test.scrutineering
-    
+
     # Should have results for all 10 leaders
     assert_equal 10, summary.length
     assert_equal 10, ranks.length
-    
+
     # Each leader should have both dances in their summary
     summary.values.each do |dance_results|
       assert_equal %w[Waltz Tango].sort, dance_results.keys.sort
     end
+  end
+
+  # ===== USES_SCRUTINEERING TESTS =====
+
+  test "uses_scrutineering returns true for dance with semi_finals" do
+    dance = Dance.create!(
+      name: 'Scrutineering Test',
+      order: 300,
+      multi_category: @category_multi,
+      semi_finals: true
+    )
+
+    assert dance.uses_scrutineering?
+  end
+
+  test "uses_scrutineering returns true for child dance of scrutineering parent" do
+    parent = Dance.create!(
+      name: 'Parent Multi',
+      order: 301,
+      multi_category: @category_multi,
+      semi_finals: true
+    )
+
+    child = Dance.create!(
+      name: 'Child Dance',
+      order: 302,
+      closed_category: @category_closed
+    )
+
+    Multi.create!(parent: parent, dance: child)
+
+    assert child.uses_scrutineering?, "Child dance should use scrutineering when parent has semi_finals"
+  end
+
+  test "uses_scrutineering returns false for dance without semi_finals or parent" do
+    dance = Dance.create!(
+      name: 'Regular Dance',
+      order: 303,
+      closed_category: @category_closed,
+      semi_finals: false
+    )
+
+    assert_not dance.uses_scrutineering?
+  end
+
+  test "uses_scrutineering returns false for child dance when parent has no semi_finals" do
+    parent = Dance.create!(
+      name: 'Non-Scrutineering Parent',
+      order: 304,
+      multi_category: @category_multi,
+      semi_finals: false
+    )
+
+    child = Dance.create!(
+      name: 'Child of Non-Scrutineering',
+      order: 305,
+      closed_category: @category_closed
+    )
+
+    Multi.create!(parent: parent, dance: child)
+
+    assert_not child.uses_scrutineering?
+  end
+
+  test "uses_scrutineering returns true for child with multiple parents if any parent has semi_finals" do
+    scrutineering_parent = Dance.create!(
+      name: 'Scrutineering Parent',
+      order: 306,
+      multi_category: @category_multi,
+      semi_finals: true
+    )
+
+    regular_parent = Dance.create!(
+      name: 'Regular Parent',
+      order: 307,
+      multi_category: @category_multi,
+      semi_finals: false
+    )
+
+    child = Dance.create!(
+      name: 'Shared Child',
+      order: 308,
+      closed_category: @category_closed
+    )
+
+    Multi.create!(parent: scrutineering_parent, dance: child)
+    Multi.create!(parent: regular_parent, dance: child)
+
+    assert child.uses_scrutineering?, "Child should use scrutineering if any parent has semi_finals"
   end
 end

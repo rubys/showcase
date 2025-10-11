@@ -44,6 +44,19 @@ class Dance < ApplicationRecord
     limit || Event.current.dance_limit
   end
 
+  # Check if this dance or its parent multi uses semi-finals (scrutineering)
+  def uses_scrutineering?
+    # If this dance itself has semi_finals enabled, return true
+    return true if semi_finals?
+
+    # If this dance is part of a multi-dance event, check the parent's semi_finals flag
+    multi_dances.each do |multi|
+      return true if multi.parent.semi_finals?
+    end
+
+    false
+  end
+
   def scrutineering(with_explanations: false)
     # Optimized eager loading to prevent N+1 queries
     entries = heats.includes(entry: [:lead, :follow])

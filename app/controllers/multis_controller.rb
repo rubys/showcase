@@ -62,7 +62,13 @@ class MultisController < ApplicationController
   def update
     respond_to do |format|
       if @dance.update(dance_params.except(:multi))
-        update_multis params[:dance][:multi]
+        update_multis dance_params[:multi]
+
+        # Sync semi_finals flag to split dances (dances with same name and negative order)
+        if dance_params[:semi_finals].present?
+          Dance.where(name: @dance.name, order: ...0).update_all(semi_finals: @dance.semi_finals)
+        end
+
         format.html { redirect_to dances_url, notice: "#{@dance.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @multi }
       else
@@ -96,6 +102,8 @@ class MultisController < ApplicationController
     end
 
     def update_multis dances
+      return if dances.nil?
+
       multis = @dance.multi_children
 
       Dance.all.each do |dance|

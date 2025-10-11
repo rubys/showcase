@@ -108,17 +108,21 @@ class ScoresController < ApplicationController
 
     slots = @slot
 
-    if @heat.dance.semi_finals?
+    if @heat.dance.uses_scrutineering?
       @style = 'radio'
-      
-      @final = @slot > @heat.dance.heat_length || @subjects.length <= 8
+
+      # For multi-dance events, we need to check the parent dance's heat_length
+      parent_dance = @heat.dance.multi_dances.first&.parent || @heat.dance
+      heat_length = parent_dance.heat_length
+
+      @final = @slot > heat_length || @subjects.length <= 8
 
       if @final
         # sort subjects by score
         @subjects = final_scores.map(&:heat).uniq
       else
         @callbacks = 6
-        slots = (1..(@heat.dance.heat_length || 1))
+        slots = (1..(heat_length || 1))
       end
     end
 
@@ -256,14 +260,19 @@ class ScoresController < ApplicationController
 
     index = heats.index {|heat| heat.number == @heat.number}
 
-    max_slots = (@heat.dance.heat_length || 0)
-    max_slots *= 2 if @heat.dance.semi_finals && (!@final || @slot > @heat.dance.heat_length)
-    if @heat.dance.heat_length and (@slot||0) < max_slots
+    # For multi-dance events, use parent dance's heat_length
+    parent_dance = @heat.dance.multi_dances.first&.parent || @heat.dance
+    effective_heat_length = parent_dance.heat_length || 0
+
+    max_slots = effective_heat_length
+    max_slots *= 2 if @heat.dance.uses_scrutineering? && (!@final || @slot > effective_heat_length)
+    if effective_heat_length > 0 and (@slot||0) < max_slots
       @next = judge_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||0)+1, **options)
     else
       @next = index + 1 >= heats.length ? nil : heats[index + 1]
       if @next
-        if @next.dance.heat_length
+        next_parent = @next.dance.multi_dances.first&.parent || @next.dance
+        if next_parent.heat_length
           @next = judge_heat_slot_path(judge: @judge, heat: @next.number, slot: 1, **options)
         else
           @next = judge_heat_path(judge: @judge, heat: @next.number, **options)
@@ -271,14 +280,15 @@ class ScoresController < ApplicationController
       end
     end
 
-    if @heat.dance.heat_length and (@slot||0) > 1
+    if effective_heat_length > 0 and (@slot||0) > 1
       @prev = judge_heat_slot_path(judge: @judge, heat: @number, slot: (@slot||2)-1, style: @style, **options)
     else
       @prev = index > 0 ? heats[index - 1] : nil
       if @prev
-        if @prev.dance.heat_length
-          max_slots = @prev.dance.heat_length || 0
-          max_slots *= 2 if @prev.dance.semi_finals && (Heat.where(number: @prev.number).count > 8)
+        prev_parent = @prev.dance.multi_dances.first&.parent || @prev.dance
+        if prev_parent.heat_length
+          max_slots = prev_parent.heat_length || 0
+          max_slots *= 2 if @prev.dance.uses_scrutineering? && (Heat.where(number: @prev.number).count > 8)
           @prev = judge_heat_slot_path(judge: @judge, heat: @prev.number, slot: max_slots, **options)
         else
           @prev = judge_heat_path(judge: @judge, heat: @prev.number, **options)
@@ -308,9 +318,13 @@ class ScoresController < ApplicationController
     heat = Heat.find(params[:heat].to_i)
     slot = params[:slot]&.to_i
 
-    if heat.dance.semi_finals
+    if heat.dance.uses_scrutineering?
+      # For multi-dance events, use parent dance's heat_length
+      parent_dance = heat.dance.multi_dances.first&.parent || heat.dance
+      heat_length = parent_dance.heat_length
+
       subject_count = Heat.where(number: heat.number).count
-      final = slot > heat.dance.heat_length || subject_count <= 8
+      final = slot > heat_length || subject_count <= 8
       slot = 1 unless final
     end
 
@@ -1316,8 +1330,12 @@ class ScoresController < ApplicationController
     end
 
     def final_scores
+      # For multi-dance events, use parent dance's heat_length
+      parent_dance = @heat.dance.multi_dances.first&.parent || @heat.dance
+      heat_length = parent_dance.heat_length
+
       # select callbacks for finals using shared logic
-      called_back = determine_callbacks(@number, @subjects, ..@heat.dance.heat_length)
+      called_back = determine_callbacks(@number, @subjects, ..heat_length)
       @subjects.select! {|heat| called_back.include? heat.entry_id}
 
       # find scores for finals, or create them in random order if they don't exist

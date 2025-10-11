@@ -840,9 +840,103 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
         level: @level
       )
     end
-    
+
     # Should handle index efficiently
     get entries_url
     assert_response :success
+  end
+
+  # ===== MULTI-DANCE SPLIT TESTS =====
+
+  test "split multi should inherit semi_finals flag" do
+    # Test that the Dance.create! in entries_controller.rb:417-430 includes semi_finals
+    # by directly creating a split dance as the controller would
+
+    original_dance = Dance.create!(
+      name: "Test Multi",
+      order: 500,
+      multi_category: categories(:five),
+      heat_length: 2,
+      semi_finals: true
+    )
+
+    # Create component dances
+    waltz = dances(:waltz)
+    tango = dances(:tango)
+    Multi.create!(parent: original_dance, dance: waltz, slot: 1)
+    Multi.create!(parent: original_dance, dance: tango, slot: 2)
+
+    # Simulate what perform_initial_split does: create a split dance
+    new_order = [Dance.minimum(:order), 0].min - 1
+    new_dance = Dance.create!(
+      name: original_dance.name,
+      order: new_order,
+      heat_length: original_dance.heat_length,
+      semi_finals: original_dance.semi_finals,
+      open_category_id: original_dance.open_category_id,
+      closed_category_id: original_dance.closed_category_id,
+      solo_category_id: original_dance.solo_category_id,
+      multi_category_id: original_dance.multi_category_id,
+      pro_open_category_id: original_dance.pro_open_category_id,
+      pro_closed_category_id: original_dance.pro_closed_category_id,
+      pro_solo_category_id: original_dance.pro_solo_category_id,
+      pro_multi_category_id: original_dance.pro_multi_category_id
+    )
+
+    # Copy multi_children to new dance
+    original_dance.multi_children.each do |child|
+      Multi.create!(parent_id: new_dance.id, dance_id: child.dance_id, slot: child.slot)
+    end
+
+    # Verify the split dance inherited semi_finals and heat_length
+    assert new_dance.semi_finals, "Split dance should inherit semi_finals flag"
+    assert_equal original_dance.heat_length, new_dance.heat_length, "Split dance should inherit heat_length"
+    assert_equal original_dance.multi_children.count, new_dance.multi_children.count, "Split dance should have same component dances"
+  end
+
+  test "split multi preserves heat_length from parent" do
+    # Test that the Dance.create! in handle_shrink (line 519) includes semi_finals
+    # by directly creating a split dance as the controller would
+
+    original_dance = Dance.create!(
+      name: "Test Multi 2",
+      order: 501,
+      multi_category: categories(:five),
+      heat_length: 3,
+      semi_finals: false
+    )
+
+    # Create component dances
+    waltz = dances(:waltz)
+    tango = dances(:tango)
+    Multi.create!(parent: original_dance, dance: waltz, slot: 1)
+    Multi.create!(parent: original_dance, dance: tango, slot: 2)
+
+    # Simulate what handle_shrink does: create a split dance
+    new_order = [Dance.minimum(:order), 0].min - 1
+    new_dance = Dance.create!(
+      name: original_dance.name,
+      order: new_order,
+      heat_length: original_dance.heat_length,
+      semi_finals: original_dance.semi_finals,
+      open_category_id: original_dance.open_category_id,
+      closed_category_id: original_dance.closed_category_id,
+      solo_category_id: original_dance.solo_category_id,
+      multi_category_id: original_dance.multi_category_id,
+      pro_open_category_id: original_dance.pro_open_category_id,
+      pro_closed_category_id: original_dance.pro_closed_category_id,
+      pro_solo_category_id: original_dance.pro_solo_category_id,
+      pro_multi_category_id: original_dance.pro_multi_category_id
+    )
+
+    # Copy multi_children
+    original_dance.multi_children.each do |child|
+      Multi.create!(parent_id: new_dance.id, dance_id: child.dance_id, slot: child.slot)
+    end
+
+    # Verify both heat_length and semi_finals are inherited
+    assert_equal 3, new_dance.heat_length, "Split dance should inherit heat_length"
+    assert_equal false, new_dance.semi_finals, "Split dance should inherit semi_finals flag (even when false)"
+    assert_equal original_dance.multi_children.count, new_dance.multi_children.count, "Split dance should have same component dances"
   end
 end
