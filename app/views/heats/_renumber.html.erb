@@ -1,3 +1,6 @@
+  <% if @has_scratched %>
+  <%= up_link 'Clean', clean_heats_path, class: "btn-orange print:hidden", method: :post, data: { turbo_confirm: 'Remove all scratched heats?' } %>
+  <% end %>
   <% if @renumber %>
   <% if @locked %>
   <%= up_link 'Renumber', renumber_heats_path, class: "btn-blue print:hidden", id: 'renumber', method: :post, data: { turbo_confirm: 'Are you sure?' } %>

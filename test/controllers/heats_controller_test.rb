@@ -305,20 +305,93 @@ class HeatsControllerTest < ActionDispatch::IntegrationTest
       age: @age,
       level: @level
     )
-    
+
     unscheduled_heat = Heat.create!(
       number: 0,
       entry: test_entry,
       dance: @dance,
       category: 'Closed'
     )
-    
+
     assert_difference('Heat.count', -1) do
       delete heat_url(unscheduled_heat)
     end
-    
+
     assert_response 303
     assert_match /Heat was successfully removed/, flash[:notice]
+  end
+
+  test "clean removes all scratched heats" do
+    test_entry = Entry.create!(
+      lead: @instructor,
+      follow: @student,
+      age: @age,
+      level: @level
+    )
+
+    # Create scratched heats
+    scratched1 = Heat.create!(
+      number: -25,
+      entry: test_entry,
+      dance: @dance,
+      category: 'Closed'
+    )
+
+    scratched2 = Heat.create!(
+      number: -30,
+      entry: test_entry,
+      dance: @dance,
+      category: 'Open'
+    )
+
+    # Create a normal heat that should not be deleted
+    normal_heat = Heat.create!(
+      number: 35,
+      entry: test_entry,
+      dance: @dance,
+      category: 'Closed'
+    )
+
+    initial_count = Heat.count
+
+    post clean_heats_url
+
+    assert_redirected_to heats_url
+    assert_match /2 scratched heats removed/, flash[:notice]
+
+    # Verify scratched heats were deleted
+    assert_equal initial_count - 2, Heat.count
+    assert_not Heat.exists?(scratched1.id)
+    assert_not Heat.exists?(scratched2.id)
+
+    # Verify normal heat still exists
+    assert Heat.exists?(normal_heat.id)
+  end
+
+  test "clean removes orphaned entries" do
+    test_entry = Entry.create!(
+      lead: @instructor,
+      follow: @student,
+      age: @age,
+      level: @level
+    )
+
+    # Create scratched heat
+    scratched = Heat.create!(
+      number: -25,
+      entry: test_entry,
+      dance: @dance,
+      category: 'Closed'
+    )
+
+    entry_id = test_entry.id
+
+    post clean_heats_url
+
+    assert_redirected_to heats_url
+
+    # Verify entry was deleted since it has no remaining heats
+    assert_not Entry.exists?(entry_id)
   end
 
   # ===== BALLROOM SUPPORT =====

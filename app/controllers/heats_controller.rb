@@ -42,6 +42,7 @@ class HeatsController < ApplicationController
 
     @undoable = !@locked && undoable
     @renumber = !@locked && renumber_needed
+    @has_scratched = !@locked && Heat.where(number: ...0).any?
 
     # detect if categories were reordered
     first_heats = @agenda.map {|category| category.last.first}.compact.map(&:first)
@@ -166,6 +167,16 @@ class HeatsController < ApplicationController
     count = Heat.where('prev_number != number').update_all 'number = prev_number'
     notice = "#{helpers.pluralize count, 'heat'} undone."
     redirect_to heats_url, notice: notice
+  end
+
+  # POST /heats/clean
+  def clean
+    # Remove all scratched heats (number < 0) and orphaned entries
+    scratched_count = Heat.where(number: ...0).count
+    Heat.where(number: ...0).each {|heat| heat.destroy}
+    Entry.includes(:heats).where(heats: {id: nil}).each {|entry| entry.destroy}
+
+    redirect_to heats_url, notice: "#{helpers.pluralize scratched_count, 'scratched heat'} removed."
   end
 
   def renumber

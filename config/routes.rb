@@ -113,6 +113,7 @@ Rails.application.routes.draw do
     resources :heats do
       post 'redo', on: :collection
       post 'undo', on: :collection
+      post 'clean', on: :collection
       post 'renumber', on: :collection
       post 'schedule', on: :collection, to: 'heats#schedule_unscheduled'
       post 'drop', on: :collection

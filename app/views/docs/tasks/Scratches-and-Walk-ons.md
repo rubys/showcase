@@ -16,3 +16,13 @@ changing the heat number and clicking on Update Heat.  Additional options can be
 
 Judges, Emcees, DJs and participants using the mobile application will see the live version of the schedule.  For example, if there is a scratch the Emcee will see "5 couples on the floor" if there previously were 6.
 
+## Cleaning Scratched Heats
+
+When heats are scratched (removed), they are marked with a negative heat number and kept in the database. This allows them to be restored if needed. If you want to permanently remove all scratched heats without affecting the rest of the schedule, you can use the **Clean** button that appears on the heats page when there are scratched heats present.
+
+The Clean button will only appear when:
+- There is at least one scratched heat (heat number < 0)
+- The event is unlocked
+
+Clicking Clean will permanently delete all scratched heats and any orphaned entries. This action cannot be undone, so you will be prompted to confirm before proceeding.
+
