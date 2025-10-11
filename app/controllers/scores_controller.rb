@@ -115,7 +115,10 @@ class ScoresController < ApplicationController
       parent_dance = @heat.dance.multi_dances.first&.parent || @heat.dance
       heat_length = parent_dance.heat_length
 
-      @final = @slot > heat_length || @subjects.length <= 8
+      # Set default slot if not already set (for multi-dance child heats)
+      @slot ||= 1 if heat_length && heat_length > 0
+
+      @final = (@slot || 0) > heat_length || @subjects.length <= 8
 
       if @final
         # sort subjects by score
