@@ -308,6 +308,14 @@
     :events:
       fall-medal-ball:
         :name: Fall Medal Ball
+  glastonbury:
+    :name: Glastonbury
+    :region: ewr
+    :events:
+      solo:
+        :name: Solo
+      entry:
+        :name: Entry
   glenview:
     :name: Glenview
     :region: ord

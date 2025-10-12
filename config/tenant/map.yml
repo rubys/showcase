@@ -288,6 +288,14 @@ studios:
     map: us
     x: 112.33259789354952
     y: 219.97257053626845
+  glastonbury:
+    name: Glastonbury
+    lat: 41.7123218
+    lon: -72.608146
+    region: ewr
+    map: us
+    x: 809.07284211037
+    y: 153.64287510394968
   glenview:
     name: Glenview
     lat: 42.078
