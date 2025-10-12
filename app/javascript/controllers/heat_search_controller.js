@@ -25,6 +25,10 @@ export default class extends Controller {
 
     this.page = 1;
 
+    // Store the initial last update time
+    let currentHeatElement = document.getElementById("current-heat");
+    this.lastUpdate = currentHeatElement.dataset.lastUpdate;
+
     this.heats = [];
     let rows = null;
     for (let tr of this.element.querySelectorAll("tr")) {
@@ -66,7 +70,16 @@ export default class extends Controller {
   }
 
   seek = () => {
-    let currentHeat = document.getElementById("current-heat").textContent.trim();
+    let currentHeatElement = document.getElementById("current-heat");
+    let currentHeat = currentHeatElement.textContent.trim();
+
+    // Check if the last update time has changed
+    let newLastUpdate = currentHeatElement.dataset.lastUpdate;
+    if (newLastUpdate && this.lastUpdate && newLastUpdate !== this.lastUpdate) {
+      // The underlying heats have been updated, refresh the page
+      window.location.reload();
+      return;
+    }
 
     let heat = this.heats.find(heat => heat.number == currentHeat);
 
