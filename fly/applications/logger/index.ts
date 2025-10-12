@@ -85,21 +85,25 @@ app.use(async (req, res, next) => {
   res.status(401).send('Authentication required.')
 })
 
-app.get("/sentry/link", (_, response) => {
+app.get("/sentry/link", async (_, response) => {
   const { SENTRY_ORG, SENTRY_PROJECT } = process.env
   const link = `https://${SENTRY_ORG}.sentry.io/issues/?project=${SENTRY_PROJECT}`
+
+  const latest = await getLatest()
+  await Bun.write(SEENFILE, latest)
+
   response.redirect(302, link)
 
-  getLatest().then(latest => {
-    Bun.write(SEENFILE, latest)
-    setTimeout(() => fetchOthers("/sentry/link").catch(console.error), 1000)
-  })
+  setTimeout(() => fetchOthers("/sentry/link").catch(console.error), 1000)
 })
 
 app.get("/sentry/seen", async (_, response) => {
   const lastSeen = await getLatest()
   const seen = (await SEENFILE.exists()) ? (await SEENFILE.text()) : "0"
   response.set('Access-Control-Allow-Origin', '*')
+  response.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+  response.set('Pragma', 'no-cache')
+  response.set('Expires', '0')
 
   if (seen === lastSeen || NODE_ENV === "development") {
     response.send("")
