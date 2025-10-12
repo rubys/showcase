@@ -159,6 +159,8 @@ app.get("/", async (req, res) => {
   interface RegionHeartbeats {[key: string]: number}
   let regionHeatbeats : RegionHeartbeats = {}
 
+  let tenant = (req.query.view == 'tenant')
+
   let demo = (req.query.view == 'demo')
   let demoVisitors = new Set()
 
@@ -217,6 +219,68 @@ app.get("/", async (req, res) => {
               results.push(line)
             }
             regionHeatbeats[region] = date
+          }
+          return
+        } else if (tenant) {
+          // Show tenant activity: machine and web app lifecycle events
+          if (line.includes('"msg":"Starting web app"') ||
+              line.includes('"msg":"Stopping web app"') ||
+              line.includes('"msg":"Stopping idle web app"') ||
+              line.includes('"msg":"App shutdown cancelled due to new request"') ||
+              line.includes('"msg":"Web app is ready"') ||
+              line.includes('"msg":"Suspending machine due to inactivity"') ||
+              line.includes('"msg":"Suspended machine"') ||
+              line.includes('"msg":"Executing server resume hooks"') ||
+              line.includes('"msg":"Executing server idle hooks"')) {
+
+            // Parse the JSON part of the log line
+            let messageMatch = line.match(/^\S+\s+\[.*?\]\s+(\w+)\s+\[\w+\]\s+(.*)$/);
+            if (messageMatch) {
+              let timestamp = line.split(' ')[0];
+              let machine = line.match(/\[([^\]]+)\]/)?.[1] || '???';
+              let region = messageMatch[1];
+              let message = messageMatch[2];
+
+              try {
+                let jsonLog = JSON.parse(message.trim());
+                let msg = jsonLog.msg;
+                let tenantName = jsonLog.tenant || '';
+
+                // Color code different types of events
+                let color = 'black';
+                let bgColor = '';
+                if (msg.includes('Starting') || msg.includes('resume') || msg.includes('ready')) {
+                  color = 'green';
+                } else if (msg.includes('Stopping') || msg.includes('idle hooks')) {
+                  color = 'red';
+                } else if (msg.includes('cancelled')) {
+                  color = 'blue';
+                  bgColor = ' style="background-color: yellow"';
+                } else if (msg.includes('Suspending') || msg.includes('Suspended')) {
+                  color = 'orange';
+                }
+
+                let displayMsg = msg;
+                if (tenantName) {
+                  displayMsg = `${msg} - tenant: ${tenantName}`;
+                }
+
+                // Add idle time if present
+                if (jsonLog.idleTime) {
+                  displayMsg += ` (idle: ${jsonLog.idleTime})`;
+                }
+
+                results.push([
+                  `<time>${timestamp}</time>`,
+                  `[${machine}]`,
+                  `<span style="color: maroon">${region}</span>`,
+                  `<span${bgColor} style="color: ${color}">${displayMsg}</span>`
+                ].join(' '));
+              } catch (e) {
+                // If JSON parsing fails, just show the line
+                results.push(line);
+              }
+            }
           }
           return
         }
