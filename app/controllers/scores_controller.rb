@@ -108,8 +108,9 @@ class ScoresController < ApplicationController
 
     slots = @slot
 
-    if @heat.dance.uses_scrutineering?
-      @style = 'radio'
+    # Only apply scrutineering logic for Multi category heats
+    if @heat.category == 'Multi' && @heat.dance.uses_scrutineering?
+      @style = 'radio' if params[:style].blank?
 
       # For multi-dance events, we need to check the parent dance's heat_length
       parent_dance = @heat.dance.multi_dances.first&.parent || @heat.dance
@@ -243,7 +244,9 @@ class ScoresController < ApplicationController
     end
 
     @style = nil if @style == 'radio'
-    options = {style: @style}
+    # Use params[:style] for navigation to preserve user's original style choice
+    # (@style may have been overridden to 'radio' for scrutineering)
+    options = {style: params[:style]}
 
     heats = Heat.all.where(number: 1..).order(:number).group(:number).
       includes(
@@ -264,8 +267,13 @@ class ScoresController < ApplicationController
     index = heats.index {|heat| heat.number == @heat.number}
 
     # For multi-dance events, use parent dance's heat_length
-    parent_dance = @heat.dance.multi_dances.first&.parent || @heat.dance
-    effective_heat_length = parent_dance.heat_length || 0
+    # Only apply slot-based navigation for Multi category heats
+    if @heat.category == 'Multi'
+      parent_dance = @heat.dance.multi_dances.first&.parent || @heat.dance
+      effective_heat_length = parent_dance.heat_length || 0
+    else
+      effective_heat_length = 0
+    end
 
     max_slots = effective_heat_length
     max_slots *= 2 if @heat.dance.uses_scrutineering? && (!@final || @slot > effective_heat_length)
@@ -274,9 +282,14 @@ class ScoresController < ApplicationController
     else
       @next = index + 1 >= heats.length ? nil : heats[index + 1]
       if @next
-        next_parent = @next.dance.multi_dances.first&.parent || @next.dance
-        if next_parent.heat_length
-          @next = judge_heat_slot_path(judge: @judge, heat: @next.number, slot: 1, **options)
+        # Only use slot-based navigation for Multi category heats
+        if @next.category == 'Multi'
+          next_parent = @next.dance.multi_dances.first&.parent || @next.dance
+          if next_parent.heat_length
+            @next = judge_heat_slot_path(judge: @judge, heat: @next.number, slot: 1, **options)
+          else
+            @next = judge_heat_path(judge: @judge, heat: @next.number, **options)
+          end
         else
           @next = judge_heat_path(judge: @judge, heat: @next.number, **options)
         end
@@ -288,11 +301,16 @@ class ScoresController < ApplicationController
     else
       @prev = index > 0 ? heats[index - 1] : nil
       if @prev
-        prev_parent = @prev.dance.multi_dances.first&.parent || @prev.dance
-        if prev_parent.heat_length
-          max_slots = prev_parent.heat_length || 0
-          max_slots *= 2 if @prev.dance.uses_scrutineering? && (Heat.where(number: @prev.number).count > 8)
-          @prev = judge_heat_slot_path(judge: @judge, heat: @prev.number, slot: max_slots, **options)
+        # Only use slot-based navigation for Multi category heats
+        if @prev.category == 'Multi'
+          prev_parent = @prev.dance.multi_dances.first&.parent || @prev.dance
+          if prev_parent.heat_length
+            max_slots = prev_parent.heat_length || 0
+            max_slots *= 2 if @prev.dance.uses_scrutineering? && (Heat.where(number: @prev.number).count > 8)
+            @prev = judge_heat_slot_path(judge: @judge, heat: @prev.number, slot: max_slots, **options)
+          else
+            @prev = judge_heat_path(judge: @judge, heat: @prev.number, **options)
+          end
         else
           @prev = judge_heat_path(judge: @judge, heat: @prev.number, **options)
         end

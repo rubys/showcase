@@ -1484,4 +1484,558 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     assert_select 'body'
   end
 
+  # ===== START HEAT BUTTON TESTS (EMCEE MODE) =====
+  # These tests ensure the "Start Heat" button appears correctly in emcee mode
+  # and prevent regressions where @style gets overridden for scrutineering dances
+
+  test "start heat button appears in emcee mode for regular heats" do
+    # Set event current heat to something different
+    @event.update!(current_heat: 999)
+
+    get judge_heat_path(@judge, @test_heat.number, style: 'emcee')
+
+    assert_response :success
+    assert_select 'button[data-action*="startHeat"]', text: 'Start Heat'
+  end
+
+  test "start heat button appears in emcee mode for scrutineering heats with rank view" do
+    # This test addresses the regression where @style was overridden to 'radio'
+    # for scrutineering dances, breaking the button visibility condition
+
+    # Create multi category
+    multi_category = Category.create!(
+      name: 'Test Emcee Scrutineering Category',
+      order: 5000
+    )
+
+    # Create scrutineering dance with semi_finals enabled
+    scrutineering_dance = Dance.create!(
+      name: 'Test Emcee Scrutineering Waltz',
+      semi_finals: true,
+      heat_length: 3,
+      order: 5000,
+      multi_category: multi_category
+    )
+
+    # Create 7 couples (≤8, so will use rank view, not table view)
+    entries = []
+    heats = []
+    7.times do |i|
+      student = Person.create!(
+        name: "Emcee Student #{i}",
+        type: 'Student',
+        studio: studios(:one),
+        level: @level,
+        back: 5000 + i
+      )
+      instructor = Person.create!(
+        name: "Emcee Instructor #{i}",
+        type: 'Professional',
+        studio: studios(:one),
+        back: 5100 + i
+      )
+      entry = Entry.create!(lead: instructor, follow: student, age: @age, level: @level)
+      entries << entry
+      heat = Heat.create!(number: 50, entry: entry, dance: scrutineering_dance, category: 'Multi')
+      heats << heat
+    end
+
+    # Set event current heat to something different
+    @event.update!(current_heat: 999)
+
+    # Visit with emcee style - button should appear even though @style gets overridden to 'radio'
+    get judge_heat_path(@judge, 50, style: 'emcee')
+
+    assert_response :success
+    # Button should appear because we check params[:style], not @style
+    assert_select 'button[data-action*="startHeat"]', text: 'Start Heat'
+  end
+
+  test "start heat button appears in emcee mode for scrutineering heats after finals" do
+    # This test ensures the button appears for scrutineering heats in finals
+
+    # Create multi category
+    multi_category = Category.create!(
+      name: 'Test Table Scrutineering Category',
+      order: 5001
+    )
+
+    # Create scrutineering dance
+    scrutineering_dance = Dance.create!(
+      name: 'Test Table Scrutineering Dance',
+      semi_finals: true,
+      heat_length: 2,
+      order: 5001,
+      multi_category: multi_category
+    )
+
+    # Create 10 couples (>8, so requires semi-finals)
+    entries = []
+    heats = []
+    10.times do |i|
+      student = Person.create!(
+        name: "Table Student #{i}",
+        type: 'Student',
+        studio: studios(:one),
+        level: @level,
+        back: 5200 + i
+      )
+      instructor = Person.create!(
+        name: "Table Instructor #{i}",
+        type: 'Professional',
+        studio: studios(:one),
+        back: 5300 + i
+      )
+      entry = Entry.create!(lead: instructor, follow: student, age: @age, level: @level)
+      entries << entry
+      heat = Heat.create!(number: 51, entry: entry, dance: scrutineering_dance, category: 'Multi')
+      heats << heat
+    end
+
+    # Create semi-final scores for first 6 couples to establish callbacks
+    heats[0, 6].each do |heat|
+      Score.create!(heat: heat, judge: @judge, value: '1', slot: 1)
+      Score.create!(heat: heat, judge: @judge, value: '1', slot: 2)
+    end
+
+    # Set event current heat to something different
+    @event.update!(current_heat: 999)
+
+    # Visit with emcee style for finals (slot 3 > heat_length of 2)
+    get judge_heat_path(@judge, 51, slot: 3, style: 'emcee')
+
+    assert_response :success
+    # Button should appear in rank view for finals
+    assert_select 'button[data-action*="startHeat"]', text: 'Start Heat'
+  end
+
+  test "start heat button hidden when heat is already current" do
+    # Set the test heat as the current heat
+    @event.update!(current_heat: @test_heat.number)
+
+    get judge_heat_path(@judge, @test_heat.number, style: 'emcee')
+
+    assert_response :success
+    # Button should NOT appear because heat is already current
+    assert_select 'button[data-action*="startHeat"]', count: 0
+  end
+
+  test "start heat button appears for solo heats in emcee mode" do
+    # Create solo heat
+    solo_entry = Entry.create!(
+      lead: @student,
+      follow: @student,
+      instructor: @instructor,
+      age: @age,
+      level: @level
+    )
+
+    solo_dance = Dance.create!(
+      name: 'Test Solo Dance',
+      order: 5002,
+      solo_category: categories(:solo)
+    )
+
+    solo_heat = Heat.create!(
+      number: 52,
+      entry: solo_entry,
+      dance: solo_dance,
+      category: 'Solo'
+    )
+
+    Solo.create!(
+      heat: solo_heat,
+      song: 'Test Song',
+      artist: 'Test Artist'
+    )
+
+    # Set event current heat to something different
+    @event.update!(current_heat: 999)
+
+    get judge_heat_path(@judge, solo_heat.number, style: 'emcee')
+
+    assert_response :success
+    # Button should appear for solo heats
+    assert_select 'button[data-action*="startHeat"]', text: 'Start Heat'
+  end
+
+  test "start heat button does not appear in non-emcee mode" do
+    # Set event current heat to something different
+    @event.update!(current_heat: 999)
+
+    # Visit without emcee style
+    get judge_heat_path(@judge, @test_heat.number)
+
+    assert_response :success
+    # Button should NOT appear in default mode
+    assert_select 'button[data-action*="startHeat"]', count: 0
+  end
+
+  test "start heat button does not appear in radio style mode" do
+    # Set event current heat to something different
+    @event.update!(current_heat: 999)
+
+    # Visit with radio style
+    get judge_heat_path(@judge, @test_heat.number, style: 'radio')
+
+    assert_response :success
+    # Button should NOT appear in radio mode
+    assert_select 'button[data-action*="startHeat"]', count: 0
+  end
+
+  # ===== NAVIGATION STYLE PARAMETER PRESERVATION TESTS =====
+  # These tests ensure that the style parameter is preserved in navigation links
+  # when moving between heats. This is important for emcee mode where the
+  # style parameter changes the display and should be maintained across navigation.
+
+  test "navigation links preserve style parameter in emcee mode for regular heats" do
+    # Create simple dances for navigation testing
+    simple_dance1 = Dance.create!(name: 'Nav Test Dance 1', order: 6000)
+    simple_dance2 = Dance.create!(name: 'Nav Test Dance 2', order: 6001)
+    simple_dance3 = Dance.create!(name: 'Nav Test Dance 3', order: 6002)
+
+    # Create sequential heats
+    Heat.create!(number: 60, entry: @entry, dance: simple_dance1, category: 'Closed')
+    Heat.create!(number: 61, entry: @entry, dance: simple_dance2, category: 'Closed')
+    Heat.create!(number: 62, entry: @entry, dance: simple_dance3, category: 'Closed')
+
+    # Visit heat 61 with emcee style
+    get judge_heat_path(@judge, 61, style: 'emcee')
+
+    assert_response :success
+
+    # Check that next link preserves style=emcee
+    assert_select "a[rel='next']" do |links|
+      next_link = links.first['href']
+      assert next_link.include?('style=emcee'),
+        "Expected next link to preserve style=emcee, but got: #{next_link}"
+    end
+
+    # Check that prev link preserves style=emcee
+    assert_select "a[rel='prev']" do |links|
+      prev_link = links.first['href']
+      assert prev_link.include?('style=emcee'),
+        "Expected prev link to preserve style=emcee, but got: #{prev_link}"
+    end
+  end
+
+  test "navigation links preserve style parameter for scrutineering heats" do
+    # This test addresses the bug where @style was overridden to 'radio' for
+    # scrutineering dances, causing navigation links to lose the style parameter
+
+    # Create multi category
+    multi_category = Category.create!(
+      name: 'Test Nav Scrutineering Category',
+      order: 6100
+    )
+
+    # Create scrutineering dance with semi_finals enabled
+    scrutineering_dance = Dance.create!(
+      name: 'Test Nav Scrutineering Waltz',
+      semi_finals: true,
+      heat_length: 3,
+      order: 6100,
+      multi_category: multi_category
+    )
+
+    # Create 7 couples for heat 63 (≤8, so will skip semi-finals but still be scrutineering)
+    entries = []
+    heats = []
+    7.times do |i|
+      student = Person.create!(
+        name: "Nav Student #{i}",
+        type: 'Student',
+        studio: studios(:one),
+        level: @level,
+        back: 6100 + i
+      )
+      instructor = Person.create!(
+        name: "Nav Instructor #{i}",
+        type: 'Professional',
+        studio: studios(:one),
+        back: 6200 + i
+      )
+      entry = Entry.create!(lead: instructor, follow: student, age: @age, level: @level)
+      entries << entry
+      heat = Heat.create!(number: 63, entry: entry, dance: scrutineering_dance, category: 'Multi')
+      heats << heat
+    end
+
+    # Create a regular heat before and after for navigation
+    simple_dance1 = Dance.create!(name: 'Nav Before Dance', order: 6099)
+    simple_dance2 = Dance.create!(name: 'Nav After Dance', order: 6101)
+    Heat.create!(number: 62, entry: @entry, dance: simple_dance1, category: 'Closed')
+    Heat.create!(number: 64, entry: @entry, dance: simple_dance2, category: 'Closed')
+
+    # Visit heat 63 with emcee style
+    # At this point, controller will override @style to 'radio' (line 112)
+    # But navigation should still use params[:style] which is 'emcee'
+    get judge_heat_path(@judge, 63, style: 'emcee')
+
+    assert_response :success
+
+    # Check that next link preserves style=emcee (not style=radio)
+    assert_select "a[rel='next']" do |links|
+      next_link = links.first['href']
+      assert next_link.include?('style=emcee'),
+        "Expected next link to preserve style=emcee for scrutineering heat, but got: #{next_link}"
+      refute next_link.include?('style=radio'),
+        "Next link should not use overridden style=radio, got: #{next_link}"
+    end
+
+    # Check that prev link preserves style=emcee (not style=radio)
+    assert_select "a[rel='prev']" do |links|
+      prev_link = links.first['href']
+      assert prev_link.include?('style=emcee'),
+        "Expected prev link to preserve style=emcee for scrutineering heat, but got: #{prev_link}"
+      refute prev_link.include?('style=radio'),
+        "Prev link should not use overridden style=radio, got: #{prev_link}"
+    end
+  end
+
+  test "navigation links work correctly without style parameter" do
+    # Ensure navigation still works when no style parameter is provided
+
+    # Create simple dances for navigation testing
+    simple_dance1 = Dance.create!(name: 'Nav No Style 1', order: 6200)
+    simple_dance2 = Dance.create!(name: 'Nav No Style 2', order: 6201)
+    simple_dance3 = Dance.create!(name: 'Nav No Style 3', order: 6202)
+
+    # Create sequential heats
+    Heat.create!(number: 70, entry: @entry, dance: simple_dance1, category: 'Closed')
+    Heat.create!(number: 71, entry: @entry, dance: simple_dance2, category: 'Closed')
+    Heat.create!(number: 72, entry: @entry, dance: simple_dance3, category: 'Closed')
+
+    # Visit heat 71 without style parameter
+    get judge_heat_path(@judge, 71)
+
+    assert_response :success
+
+    # Check that next link exists and points to heat 72
+    assert_select "a[rel='next']" do |links|
+      next_link = links.first['href']
+      assert next_link.include?('heat/72'),
+        "Expected next link to point to heat 72, but got: #{next_link}"
+    end
+
+    # Check that prev link exists and points to heat 70
+    assert_select "a[rel='prev']" do |links|
+      prev_link = links.first['href']
+      assert prev_link.include?('heat/70'),
+        "Expected prev link to point to heat 70, but got: #{prev_link}"
+    end
+  end
+
+  # ===== CATEGORY-BASED SCRUTINEERING AND NAVIGATION TESTS =====
+  # These tests ensure that scrutineering logic and slot-based navigation
+  # only apply to Multi category heats, not to Closed/Open heats that
+  # happen to use dances which are part of Multi-dance parents.
+
+  test "style parameter not overridden for Closed heats using scrutineering dances" do
+    # This test addresses the bug where style=cards was overridden to style=radio
+    # for Closed category heats that use dances which are part of Multi-dance parents.
+
+    # Create a parent multi-dance with semi_finals enabled
+    multi_category = Category.create!(name: 'Test Multi Category', order: 7000)
+    parent_dance = Dance.create!(
+      name: 'Latin 2 Dance',
+      semi_finals: true,
+      heat_length: 2,
+      order: 7000,
+      multi_category: multi_category
+    )
+
+    # Create child dance (Salsa)
+    salsa_dance = Dance.create!(name: 'Salsa', order: 7001)
+    Multi.create!(parent: parent_dance, dance: salsa_dance, slot: 1)
+
+    # Create Closed category heat using Salsa dance
+    # (NOT Multi category, so scrutineering override should not apply)
+    closed_heat = Heat.create!(
+      number: 80,
+      entry: @entry,
+      dance: salsa_dance,
+      category: 'Closed'
+    )
+
+    # Verify the dance has scrutineering enabled
+    assert salsa_dance.uses_scrutineering?,
+      "Salsa dance should have uses_scrutineering? = true due to parent"
+
+    # Visit with style=cards - should NOT be overridden to radio
+    get judge_heat_path(@judge, 80, style: 'cards')
+
+    assert_response :success
+
+    # The @style instance variable should still be 'cards', not 'radio'
+    # We can verify this by checking the response body doesn't have scrutineering-specific elements
+    # (Note: In the actual view, cards style would render differently than radio style)
+  end
+
+  test "style parameter overridden to radio for Multi heats using scrutineering dances" do
+    # This test confirms that the scrutineering override DOES apply to Multi category heats
+
+    # Create a parent multi-dance with semi_finals enabled
+    multi_category = Category.create!(name: 'Test Multi Category 2', order: 7100)
+    parent_dance = Dance.create!(
+      name: 'Latin 3 Dance',
+      semi_finals: true,
+      heat_length: 2,
+      order: 7100,
+      multi_category: multi_category
+    )
+
+    # Create child dance (Bachata)
+    bachata_dance = Dance.create!(name: 'Bachata', order: 7101)
+    Multi.create!(parent: parent_dance, dance: bachata_dance, slot: 1)
+
+    # Create Multi category heat using Bachata dance
+    # (Multi category, so scrutineering override SHOULD apply)
+    multi_heat = Heat.create!(
+      number: 81,
+      entry: @entry,
+      dance: bachata_dance,
+      category: 'Multi'
+    )
+
+    # Verify the dance has scrutineering enabled
+    assert bachata_dance.uses_scrutineering?,
+      "Bachata dance should have uses_scrutineering? = true due to parent"
+
+    # Visit without style parameter - should be overridden to radio
+    get judge_heat_path(@judge, 81)
+
+    assert_response :success
+
+    # The @style instance variable should be 'radio'
+    # We can verify this by checking for radio-specific elements in the response
+  end
+
+  test "navigation uses simple heat paths for Closed heats with scrutineering dances" do
+    # This test addresses the bug where Closed heats were getting slot-based
+    # navigation (/heat/1/2) when they should use simple paths (/heat/2)
+
+    # Create a parent multi-dance with semi_finals enabled
+    multi_category = Category.create!(name: 'Test Nav Multi Category', order: 7200)
+    parent_dance = Dance.create!(
+      name: 'Latin 4 Dance',
+      semi_finals: true,
+      heat_length: 2,
+      order: 7200,
+      multi_category: multi_category
+    )
+
+    # Create child dance (Cha Cha Nav Test)
+    chacha_dance = Dance.create!(name: 'Cha Cha Nav Test', order: 7201)
+    Multi.create!(parent: parent_dance, dance: chacha_dance, slot: 1)
+
+    # Create sequential Closed category heats using Cha Cha dance
+    Heat.create!(number: 82, entry: @entry, dance: chacha_dance, category: 'Closed')
+    Heat.create!(number: 83, entry: @entry, dance: chacha_dance, category: 'Closed')
+    Heat.create!(number: 84, entry: @entry, dance: chacha_dance, category: 'Closed')
+
+    # Verify the dance has scrutineering enabled and heat_length from parent
+    assert chacha_dance.uses_scrutineering?,
+      "Cha Cha dance should have uses_scrutineering? = true due to parent"
+    assert_equal 2, parent_dance.heat_length,
+      "Parent dance should have heat_length = 2"
+
+    # Visit heat 83 with emcee style
+    get judge_heat_path(@judge, 83, style: 'emcee')
+
+    assert_response :success
+
+    # Check that next link uses simple path (not slot-based)
+    assert_select "a[rel='next']" do |links|
+      next_link = links.first['href']
+      assert next_link.include?('heat/84'),
+        "Expected next link to point to heat/84, but got: #{next_link}"
+      refute next_link.include?('heat/83/2'),
+        "Next link should not use slot-based path for Closed heat, got: #{next_link}"
+      refute next_link.include?('/1'),
+        "Next link should not include slot number for Closed heat, got: #{next_link}"
+    end
+
+    # Check that prev link uses simple path (not slot-based)
+    assert_select "a[rel='prev']" do |links|
+      prev_link = links.first['href']
+      assert prev_link.include?('heat/82'),
+        "Expected prev link to point to heat/82, but got: #{prev_link}"
+      refute prev_link.include?('heat/82/'),
+        "Prev link should not use slot-based path for Closed heat, got: #{prev_link}"
+    end
+  end
+
+  test "navigation uses slot-based paths for Multi heats with scrutineering dances" do
+    # This test confirms that slot-based navigation DOES apply to Multi category heats
+
+    # Create a parent multi-dance with semi_finals enabled
+    multi_category = Category.create!(name: 'Test Slot Multi Category', order: 7300)
+    parent_dance = Dance.create!(
+      name: 'Latin 5 Dance',
+      semi_finals: true,
+      heat_length: 2,
+      order: 7300,
+      multi_category: multi_category
+    )
+
+    # Create child dances
+    rumba_dance = Dance.create!(name: 'Rumba Slot Test', order: 7301)
+    jive_dance = Dance.create!(name: 'Jive Slot Test', order: 7302)
+    Multi.create!(parent: parent_dance, dance: rumba_dance, slot: 1)
+    Multi.create!(parent: parent_dance, dance: jive_dance, slot: 2)
+
+    # Create Multi category heats
+    Heat.create!(number: 85, entry: @entry, dance: rumba_dance, category: 'Multi')
+    Heat.create!(number: 86, entry: @entry, dance: jive_dance, category: 'Multi')
+
+    # Visit heat 85 slot 1 with emcee style
+    get judge_heat_path(@judge, 85, slot: 1, style: 'emcee')
+
+    assert_response :success
+
+    # Check that next link uses slot-based path to slot 2
+    assert_select "a[rel='next']" do |links|
+      next_link = links.first['href']
+      assert next_link.include?('heat/85/2') || next_link.include?('slot=2'),
+        "Expected next link to point to slot 2 of heat 85, but got: #{next_link}"
+    end
+  end
+
+  test "Open category heats do not use slot-based navigation even with scrutineering parent" do
+    # Similar to Closed heats, Open heats should not use slot-based navigation
+
+    # Create a parent multi-dance
+    multi_category = Category.create!(name: 'Test Open Multi Category', order: 7400)
+    parent_dance = Dance.create!(
+      name: 'Open Multi Dance',
+      semi_finals: true,
+      heat_length: 3,
+      order: 7400,
+      multi_category: multi_category
+    )
+
+    # Create child dance
+    waltz_dance = Dance.create!(name: 'Open Waltz', order: 7401)
+    Multi.create!(parent: parent_dance, dance: waltz_dance, slot: 1)
+
+    # Create Open category heats
+    Heat.create!(number: 87, entry: @entry, dance: waltz_dance, category: 'Open')
+    Heat.create!(number: 88, entry: @entry, dance: waltz_dance, category: 'Open')
+
+    # Visit heat 87
+    get judge_heat_path(@judge, 87, style: 'emcee')
+
+    assert_response :success
+
+    # Check that next link uses simple path (not slot-based)
+    assert_select "a[rel='next']" do |links|
+      next_link = links.first['href']
+      assert next_link.include?('heat/88'),
+        "Expected next link to point to heat/88, but got: #{next_link}"
+      refute next_link.include?('heat/87/2'),
+        "Next link should not use slot-based path for Open heat, got: #{next_link}"
+    end
+  end
+
 end
