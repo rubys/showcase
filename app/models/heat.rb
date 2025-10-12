@@ -9,6 +9,16 @@ class Heat < ApplicationRecord
 
   attr_accessor :child_dance_name
 
+  after_save :broadcast_counter_update_if_locked
+
+  def broadcast_counter_update_if_locked
+    event = Event.current
+    if event&.locked? && Score.any?
+      event.broadcast_replace_later_to "current-heat-#{ENV['RAILS_APP_DB']}",
+        partial: 'event/heat', target: 'current-heat', locals: {event: event}
+    end
+  end
+
   def number
     return @number if @number
     value = super

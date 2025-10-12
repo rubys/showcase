@@ -43,6 +43,13 @@ export default class extends Controller {
       }
     }
 
+    // Restore query from URL if present
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryParam = urlParams.get('query');
+    if (queryParam) {
+      input.value = queryParam;
+    }
+
     this.search(input.value);
     this.seek();
 
@@ -53,6 +60,7 @@ export default class extends Controller {
 
     input.addEventListener("input", _event => {
       this.search(input.value);
+      this.updateQueryParam(input.value);
     });
 
     this.element.querySelector("div[rel=prev").addEventListener("click", () => {
@@ -62,6 +70,16 @@ export default class extends Controller {
     this.element.querySelector("div[rel=next").addEventListener("click", () => {
       if (this.page < this.totalPages) this.setPage(this.page + 1);
     });
+  }
+
+  updateQueryParam(value) {
+    const url = new URL(window.location);
+    if (value) {
+      url.searchParams.set('query', value);
+    } else {
+      url.searchParams.delete('query');
+    }
+    window.history.replaceState({}, '', url);
   }
 
   setPage(page) {

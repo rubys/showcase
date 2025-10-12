@@ -1,0 +1,17 @@
+{
+  "containers": [
+    {
+      "name": "app",
+      "secrets": [
+        {"name": "AWS_SECRET_ACCESS_KEY", "env_var": "AWS_SECRET_ACCESS_KEY"},
+        {"name": "AWS_ACCESS_KEY_ID", "env_var": "AWS_ACCESS_KEY_ID"},
+        {"name": "AWS_ENDPOINT_URL_S3", "env_var": "AWS_ENDPOINT_URL_S3"},
+        {"name": "BUCKET_NAME", "env_var": "BUCKET_NAME"},
+        {"name": "RAILS_DB_VOLUME", "env_var": "RAILS_DB_VOLUME"},
+        {"name": "RAILS_MASTER_KEY", "env_var": "RAILS_MASTER_KEY"},
+        {"name": "AWS_REGION", "env_var": "AWS_REGION"},
+        {"name": "LOG_LEVEL", "env_var": "LOG_LEVEL"}
+      ]
+    }
+  ]
+}
