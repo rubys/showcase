@@ -278,5 +278,7 @@ class UsersController < ApplicationController
       end
     end
 
-    @@encryptor = ActiveSupport::MessageEncryptor.new(ENV['RAILS_MASTER_KEY'] || IO.read('config/master.key'))
+    @@encryptor = ActiveSupport::MessageEncryptor.new(
+      ENV['RAILS_MASTER_KEY'] || (File.exist?('config/master.key') ? IO.read('config/master.key') : '0' * 32)
+    )
 end
