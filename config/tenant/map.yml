@@ -304,6 +304,14 @@ studios:
     map: us
     x: 625.7519967420483
     y: 292.3296808842899
+  guilford:
+    name: Guilford
+    lat: 41.2827593
+    lon: -72.6816365
+    region: ewr
+    map: us
+    x: 810.0501367199986
+    y: 161.7325765839489
   harrisburg:
     name: Harrisburg
     lat: 40.26

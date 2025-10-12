@@ -325,6 +325,13 @@
       music-city:
         :name: Music City
         :date: '2025-08-15'
+  guilford:
+    :name: Guilford
+    :region: ewr
+    :events:
+      move-for-minutes:
+        :name: Move for Minutes
+        :date: 2025-11-07 - 2025-11-07
   harrisburg:
     :name: Harrisburg
     :region: iad
