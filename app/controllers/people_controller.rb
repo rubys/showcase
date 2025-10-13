@@ -147,9 +147,9 @@ class PeopleController < ApplicationController
   end
 
   def certificates
-    if request.get?
+    if request.get? || request.head?
       @studios = [['-- all studios --', nil]] + Studio.by_name.pluck(:name, :id)
-    else
+    elsif request.post?
       @people = Person.joins(:studio).where(type: 'Student').order('studios.name', :name).to_a
 
       if not params[:person_id].blank?
@@ -158,6 +158,13 @@ class PeopleController < ApplicationController
       elsif not params[:studio_id].blank?
         studio_id = params[:studio_id].to_i
         @people.select! {|person| person.studio_id == studio_id}
+      end
+
+      unless params[:template].present?
+        flash[:alert] = "template file is required."
+        @studios = [['-- all studios --', nil]] + Studio.by_name.pluck(:name, :id)
+        render :certificates, status: :unprocessable_content
+        return
       end
 
       content_type = params[:template].content_type
