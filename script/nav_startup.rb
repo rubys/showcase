@@ -82,6 +82,16 @@ begin
   rake_task = navigator_type == 'legacy' ? 'nav:legacy' : 'nav:config'
   system "bin/rails #{rake_task}"
 
+  # Fix ownership of tmp/inventory.json if it exists and is owned by root
+  inventory_file = "#{git_path}/tmp/inventory.json"
+  if File.exist?(inventory_file)
+    stat = File.stat(inventory_file)
+    if stat.uid == 0  # owned by root
+      puts "Fixing ownership of #{inventory_file} (currently owned by root)"
+      system "chown rails:rails #{inventory_file}"
+    end
+  end
+
   FileUtils.mkdir_p "/demo/db"
   FileUtils.mkdir_p "/demo/storage/demo"
   Process.kill('HUP', nav_pid)
