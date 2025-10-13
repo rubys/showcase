@@ -161,6 +161,8 @@ app.get("/", async (req, res) => {
 
   let tenant = (req.query.view == 'tenant')
 
+  let memory = (req.query.view == 'memory')
+
   let demo = (req.query.view == 'demo')
   let demoVisitors = new Set()
 
@@ -275,6 +277,61 @@ app.get("/", async (req, res) => {
                   `[${machine}]`,
                   `<span style="color: maroon">${region}</span>`,
                   `<span${bgColor} style="color: ${color}">${displayMsg}</span>`
+                ].join(' '));
+              } catch (e) {
+                // If JSON parsing fails, just show the line
+                results.push(line);
+              }
+            }
+          }
+          return
+        } else if (memory) {
+          // Show memory statistics logs
+          if (line.includes('"msg":"Tenant memory statistics"')) {
+            // Parse the JSON part of the log line
+            let messageMatch = line.match(/^\S+\s+\[.*?\]\s+(\w+)\s+\[\w+\]\s+(.*)$/);
+            if (messageMatch) {
+              let timestamp = line.split(' ')[0];
+              let machine = line.match(/\[([^\]]+)\]/)?.[1] || '???';
+              let region = messageMatch[1];
+              let message = messageMatch[2];
+
+              try {
+                let jsonLog = JSON.parse(message.trim());
+                let tenant = jsonLog.tenant || '???';
+                let peakUsage = jsonLog.peak_usage || '???';
+                let currentUsage = jsonLog.current_usage || '???';
+                let limit = jsonLog.limit || '???';
+                let utilizationPct = jsonLog.utilization_pct || '0';
+                let limitHits = jsonLog.limit_hits || 0;
+                let oomKills = jsonLog.oom_kills || 0;
+
+                // Color code based on utilization
+                let color = 'green';
+                let pct = parseFloat(utilizationPct);
+                if (pct > 90) {
+                  color = 'red';
+                } else if (pct > 75) {
+                  color = 'orange';
+                } else if (pct > 50) {
+                  color = 'blue';
+                }
+
+                // Highlight OOM kills in red
+                let oomDisplay = oomKills > 0 ? `<span style="color: red; font-weight: bold">oom_kills: ${oomKills}</span>` : `oom_kills: ${oomKills}`;
+                let limitHitsDisplay = limitHits > 0 ? `<span style="color: orange">limit_hits: ${limitHits}</span>` : `limit_hits: ${limitHits}`;
+
+                results.push([
+                  `<time>${timestamp}</time>`,
+                  `[${machine}]`,
+                  `<span style="color: maroon">${region}</span>`,
+                  `<span style="color: ${color}">tenant: ${tenant}</span>`,
+                  `peak: ${peakUsage}`,
+                  `current: ${currentUsage}`,
+                  `limit: ${limit}`,
+                  `<span style="color: ${color}">util: ${utilizationPct}%</span>`,
+                  limitHitsDisplay,
+                  oomDisplay
                 ].join(' '));
               } catch (e) {
                 // If JSON parsing fails, just show the line
