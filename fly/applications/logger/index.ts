@@ -182,11 +182,16 @@ app.get("/", async (req, res) => {
   results.push('</pre>')
 
   let start = (req.query.start || '') as string
+  let firstTimestamp: Date | null = null;
+  let cutoffDate: string | null = null;
 
   while (logs.length > 0) {
     const log = logs.pop();
     if (!log?.endsWith('.log')) continue;
     if (log.slice(0, start.length) > start) continue;
+
+    // If we have a cutoff date, skip log files older than that
+    if (cutoffDate && log < cutoffDate) continue;
 
     const rl = readline.createInterface({
       input: fs.createReadStream(path.join(LOGS, log)),
@@ -195,6 +200,19 @@ app.get("/", async (req, res) => {
 
     await new Promise(resolve => {
       rl.on('line', line => {
+        // Track first matching entry timestamp to limit scan to 1 day back
+        if (!firstTimestamp && results.length > 1) {
+          const timestamp = line.split(' ')[0];
+          try {
+            firstTimestamp = new Date(timestamp);
+            const cutoff = new Date(firstTimestamp);
+            cutoff.setDate(cutoff.getDate() - 1);
+            cutoffDate = cutoff.toISOString().split('T')[0];
+          } catch (e) {
+            // If timestamp parsing fails, continue without cutoff
+          }
+        }
+
         if (printer) {
           let match = line.match(/\[(\w+)\] .* Preparing to run: .* as chrome/)
           if (match) printerApps.add(match[1])
@@ -298,7 +316,7 @@ app.get("/", async (req, res) => {
 
               try {
                 let jsonLog = JSON.parse(message.trim());
-                let tenant = jsonLog.tenant || '???';
+                let tenant = jsonLog.tenant || 'index';
                 let peakUsage = jsonLog.peak_usage || '???';
                 let currentUsage = jsonLog.current_usage || '???';
                 let limit = jsonLog.limit || '???';
