@@ -55,6 +55,21 @@ begin
   dbpath = ENV.fetch('RAILS_DB_VOLUME') { "#{git_path}/db" }
   FileUtils.mkdir_p dbpath
 
+  # Create log directory if RAILS_LOG_VOLUME is set and fix ownership
+  if ENV['RAILS_LOG_VOLUME']
+    log_volume = ENV['RAILS_LOG_VOLUME']
+    FileUtils.mkdir_p log_volume
+
+    # Fix ownership if directory exists but is owned by root (migration fix)
+    if File.exist?(log_volume)
+      stat = File.stat(log_volume)
+      if stat.uid == 0  # owned by root
+        puts "Fixing ownership of #{log_volume} (currently owned by root)"
+        system "chown -R rails:rails #{log_volume}"
+      end
+    end
+  end
+
   system "ruby #{git_path}/script/sync_databases_s3.rb --index-only --quiet"
 
   # Update htpasswd file

@@ -27,18 +27,32 @@ if ENV['FLY_APP_NAME']
   # start rsync daemon
   system "rsync --daemon"
 
-  # setup volume, .ssh, db, storage directories
+  # setup volume, .ssh, db, storage, log directories
   VOLUME = File.dirname(ENV.fetch('RAILS_DB_VOLUME', '/data/db'))
   FileUtils.chown('rails', 'rails', VOLUME)
   FileUtils.mkdir_p "#{VOLUME}/.ssh"
   FileUtils.mkdir_p ENV['RAILS_DB_VOLUME']
   FileUtils.mkdir_p ENV['RAILS_STORAGE']
 
+  # Create log directory and fix ownership if it exists but is owned by root
+  if ENV['RAILS_LOG_VOLUME']
+    FileUtils.mkdir_p ENV['RAILS_LOG_VOLUME']
+
+    # Fix ownership if directory exists but is owned by root (migration fix)
+    if File.exist?(ENV['RAILS_LOG_VOLUME'])
+      stat = File.stat(ENV['RAILS_LOG_VOLUME'])
+      if stat.uid == 0  # owned by root
+        STDERR.puts "Fixing ownership of #{ENV['RAILS_LOG_VOLUME']} (currently owned by root)"
+      end
+    end
+  end
+
   # change ownership of data files
   FileUtils.chown_R 'rails', 'rails', [
     ENV['RAILS_DB_VOLUME'],
-    ENV['RAILS_STORAGE']
-  ]
+    ENV['RAILS_STORAGE'],
+    ENV['RAILS_LOG_VOLUME']
+  ].compact
 
   # openssh: fly environment variables
   IO.write '/etc/environment',

@@ -294,11 +294,9 @@ module Configurator
       'start_port' => 4000
     }
 
-    # Add memory limits and user/group isolation for Fly.io (Linux) deployments
+    # Add memory limits for Fly.io (Linux) deployments
     if ENV['FLY_REGION']
       config['default_memory_limit'] = '1024M'
-      config['user'] = 'rails'
-      config['group'] = 'rails'
     end
 
     config
