@@ -82,7 +82,13 @@ begin
   rake_task = navigator_type == 'legacy' ? 'nav:legacy' : 'nav:config'
   system "bin/rails #{rake_task}"
 
-  # Fix ownership of tmp/inventory.json if it exists and is owned by root
+  FileUtils.mkdir_p "/demo/db"
+  FileUtils.mkdir_p "/demo/storage/demo"
+  Process.kill('HUP', nav_pid)
+  thread.join
+
+  # Fix ownership of tmp/inventory.json after prerender completes
+  # (prerender runs as root and may create/modify this file)
   inventory_file = "#{git_path}/tmp/inventory.json"
   if File.exist?(inventory_file)
     stat = File.stat(inventory_file)
@@ -91,11 +97,6 @@ begin
       system "chown rails:rails #{inventory_file}"
     end
   end
-
-  FileUtils.mkdir_p "/demo/db"
-  FileUtils.mkdir_p "/demo/storage/demo"
-  Process.kill('HUP', nav_pid)
-  thread.join
 
   # Wait for navigator to exit (which should never happen in normal operation)
   Process.wait(nav_pid)
