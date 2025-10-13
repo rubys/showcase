@@ -71,8 +71,9 @@ class EventController < ApplicationController
 
     @browser_warn = browser_warn
 
-    if @heats == 0 && @unscheduled == 0 && !Studio.where.not(name: 'Event Staff').any? && !ENV['RAILS_APP_OWNER'] == 'Demo'
-      @cloneable = !@sources&.empty?
+    if @heats == 0 && @unscheduled == 0 && !Studio.where.not(name: 'Event Staff').any? && ENV['RAILS_APP_OWNER'] != 'Demo'
+      @sources = build_sources_list
+      @cloneable = !@sources.empty?
     end
 
     ActiveRecord::Base.connection.query_cache.clear unless Rails.env.production?
@@ -1039,22 +1040,7 @@ class EventController < ApplicationController
 
       showcases
 
-      @sources = []
-
-      @showcases.each do |year, sites|
-        sites.each do |token, info|
-          next unless User.authorized?(@authuser, info[:name])
-          if info[:events]
-            info[:events].each do |subtoken, subinfo|
-              @sources << "#{year}-#{token}-#{subtoken}"
-            end
-          else
-            @sources << "#{year}-#{token}"
-          end
-        end
-      end
-
-      @sources.delete ENV["RAILS_APP_DB"]
+      @sources = build_sources_list
 
     end
   end
@@ -1230,6 +1216,27 @@ class EventController < ApplicationController
   end
 
 private
+
+  def build_sources_list
+    sources = []
+    @showcases ||= YAML.load_file('config/tenant/showcases.yml')
+
+    @showcases.each do |year, sites|
+      sites.each do |token, info|
+        next unless User.authorized?(@authuser, info[:name])
+        if info[:events]
+          info[:events].each do |subtoken, subinfo|
+            sources << "#{year}-#{token}-#{subtoken}"
+          end
+        else
+          sources << "#{year}-#{token}"
+        end
+      end
+    end
+
+    sources.delete ENV["RAILS_APP_DB"]
+    sources
+  end
 
   def set_scope
     @scope = ENV.fetch("RAILS_APP_SCOPE", '')

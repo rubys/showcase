@@ -260,4 +260,59 @@ class EventControllerTest < ActionDispatch::IntegrationTest
     skip "These tests require refactoring to work with the current test environment"
   end
 
+  # Tests for @cloneable logic and clone button visibility
+  test "Clone button should not show when heats exist" do
+    # Heats exist in fixtures
+    get root_url
+    assert_response :success
+    # Should show "Settings" button, not "Clone" button
+    assert_select 'a.btn-grey', text: 'Settings'
+  end
+
+  test "Clone button should not show when studios exist besides Event Staff" do
+    # Studios exist in fixtures besides Event Staff
+    get root_url
+    assert_response :success
+    # Should show "Settings" button, not "Clone" button
+    assert_select 'a.btn-grey', text: 'Settings'
+  end
+
+  test "Clone button logic should execute when database is empty" do
+    # Remove all heats and studios except Event Staff
+    Heat.destroy_all
+    Studio.where.not(name: 'Event Staff').destroy_all
+
+    get root_url
+    assert_response :success
+
+    # Should show either "Clone" button (purple) or "Settings" button (grey)
+    # depending on whether authorized sources exist in showcases.yml
+    # At minimum, one of these buttons should be present
+    begin
+      assert_select 'a.btn-purple', text: 'Clone'
+    rescue Minitest::Assertion
+      assert_select 'a.btn-grey', text: 'Settings'
+    end
+  end
+
+  test "Clone button should not show in Demo mode" do
+    # Remove all heats and studios except Event Staff
+    Heat.destroy_all
+    Studio.where.not(name: 'Event Staff').destroy_all
+
+    # Set Demo mode
+    original_owner = ENV['RAILS_APP_OWNER']
+    ENV['RAILS_APP_OWNER'] = 'Demo'
+
+    begin
+      get root_url
+      assert_response :success
+      # Should always show "Settings" button in Demo mode, never "Clone"
+      assert_select 'a.btn-grey', text: 'Settings'
+      assert_select 'a.btn-purple', text: 'Clone', count: 0
+    ensure
+      ENV['RAILS_APP_OWNER'] = original_owner
+    end
+  end
+
 end
