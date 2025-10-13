@@ -6,6 +6,7 @@ require 'aws-sdk-s3'
 require 'json'
 require 'yaml'
 require 'fileutils'
+require 'etc'
 
 require 'optparse'
 
@@ -31,7 +32,7 @@ end
 required_env = ["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_ENDPOINT_URL_S3"]
 missing_env = required_env.select { |var| ENV[var].nil? || ENV[var].empty? }
 s3_client = nil
-if missing_env.empty? && ENV["RAILS_ENV"] == "production" && (ENV['FLY_APP_NAME'] && ENV['FLY_APP_NAME'] != 'smooth')
+if missing_env.empty? && ENV["RAILS_ENV"] == "production" && ENV['FLY_APP_NAME']
   # Initialize S3 client
   s3_client = Aws::S3::Client.new(
     region: ENV['AWS_REGION'] || 'auto',
@@ -42,6 +43,21 @@ if missing_env.empty? && ENV["RAILS_ENV"] == "production" && (ENV['FLY_APP_NAME'
   )
 
   bucket_name = ENV.fetch('BUCKET_NAME', 'showcase')
+end
+
+# Get rails user/group IDs once for file ownership changes
+rails_uid = nil
+rails_gid = nil
+log_volume = nil
+if ENV['FLY_REGION']
+  begin
+    rails_uid = Etc.getpwnam('rails').uid
+    rails_gid = Etc.getgrnam('rails').gid
+    log_volume = ENV['RAILS_LOG_VOLUME'] || '/data/log'
+  rescue ArgumentError => e
+    # rails user/group doesn't exist (e.g., in development)
+    puts "Warning: Could not get rails user/group: #{e.message}"
+  end
 end
 
 ARGV.each do |database|
@@ -119,6 +135,21 @@ ARGV.each do |database|
 
         # avoid throttling
         sleep 1 if ENV['FLY_REGION'] && ARGV.length > 1
+      end
+
+      # Ensure database and log files are owned by rails user
+      if rails_uid && rails_gid
+        log_file = File.join(log_volume, db_name.sub('.sqlite3', '.log'))
+
+        # Change ownership of database file if it exists
+        if File.exist?(database)
+          File.chown(rails_uid, rails_gid, database)
+        end
+
+        # Change ownership of log file if it exists
+        if File.exist?(log_file)
+          File.chown(rails_uid, rails_gid, log_file)
+        end
       end
 
       file.flock(File::LOCK_UN)
