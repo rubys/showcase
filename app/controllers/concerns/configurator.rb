@@ -296,7 +296,7 @@ module Configurator
 
     # Add memory limits and user/group isolation for Fly.io (Linux) deployments
     if ENV['FLY_REGION']
-      config['default_memory_limit'] = '512M'
+      config['default_memory_limit'] = '1024M'
       config['user'] = 'rails'
       config['group'] = 'rails'
     end
