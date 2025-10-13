@@ -577,6 +577,9 @@
       graduation-ball:
         :name: Graduation Ball
         :date: '2025-06-07'
+      november-showcase:
+        :name: November Showcase
+        :date: 2025-11-08 - 2025-11-08
   monza:
     :name: Monza
     :region: ams
