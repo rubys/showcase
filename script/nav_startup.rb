@@ -84,6 +84,16 @@ begin
 
   FileUtils.mkdir_p "/demo/db"
   FileUtils.mkdir_p "/demo/storage/demo"
+
+  # Fix ownership of demo directories (created as root but need to be rails:rails)
+  if rails_uid && rails_gid
+    ["/demo", "/demo/db", "/demo/storage", "/demo/storage/demo"].each do |dir|
+      if File.exist?(dir)
+        File.chown(rails_uid, rails_gid, dir)
+      end
+    end
+  end
+
   Process.kill('HUP', nav_pid)
   thread.join
 
