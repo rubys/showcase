@@ -16,15 +16,19 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <% 
+  <%
   route = ""
+  controllers = ["post-console-log"]
   if ENV['FLY_REGION']
      if ENV['FLY_APP_NAME'] == 'smooth'
-      route = " data-region='#{ENV['FLY_REGION']}' data-controller='region'"
+      route = " data-region='#{ENV['FLY_REGION']}'"
+      controllers << "region"
     else
-      route = " data-machine='#{ENV['FLY_MACHINE_ID']}' data-controller='region'"
+      route = " data-machine='#{ENV['FLY_MACHINE_ID']}'"
+      controllers << "region"
     end
   end
+  route += " data-controller='#{controllers.join(' ')}'" if controllers.any?
   %><body<%= route.html_safe %> data-turbo-prefetch="false" data-locale="<%= (@locale || ENV.fetch("RAILS_LOCALE", "en_US")).gsub('_', '-') %>">
 
     <% unless @nologo %>
