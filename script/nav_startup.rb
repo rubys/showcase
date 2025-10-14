@@ -84,6 +84,8 @@ begin
 
   FileUtils.mkdir_p "/demo/db"
   FileUtils.mkdir_p "/demo/storage/demo"
+  system "chown rails:rails /demo /demo/db /demo/storage/demo"
+
   Process.kill('HUP', nav_pid)
   thread.join
 
