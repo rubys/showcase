@@ -80,7 +80,7 @@ if flyctl_cmd.nil?
   exit 1
 end
 
-machines_output, machines_stderr, machines_status = Open3.capture3(flyctl_cmd, 'machines', 'list', '--quiet')
+machines_output, machines_stderr, machines_status = Open3.capture3(flyctl_cmd, 'machines', 'list', '--json')
 
 unless machines_status.success?
   puts "Error: Failed to get machines list"
@@ -88,18 +88,40 @@ unless machines_status.success?
   exit 1
 end
 
-# Parse machine IDs from the output
-# The --quiet flag should give us just the machine IDs
-# Strip any whitespace/tabs from each ID
-machine_ids = machines_output.strip.split("\n").map(&:strip).reject(&:empty?)
+# Parse JSON output to get machine IDs and states
+begin
+  machines = JSON.parse(machines_output)
+rescue JSON::ParserError => e
+  puts "Error: Failed to parse machines JSON: #{e.message}"
+  exit 1
+end
 
-if machine_ids.empty?
+if machines.empty?
   puts "No machines found"
   exit 0
 end
 
-puts "Found #{machine_ids.length} machines: #{machine_ids.join(', ')}"
+# Filter out stopped and suspended machines
+# Only include machines with state: "started" or "created"
+active_machines = machines.select { |m| ['started', 'created'].include?(m['state']) }
+skipped_machines = machines.reject { |m| ['started', 'created'].include?(m['state']) }
+
+machine_ids = active_machines.map { |m| m['id'] }
+
+puts "Found #{machines.length} total machines"
+if skipped_machines.any?
+  puts "Skipping #{skipped_machines.length} stopped/suspended machines:"
+  skipped_machines.each do |m|
+    puts "  - #{m['id']} (#{m['state']})"
+  end
+end
+puts "Will update #{machine_ids.length} active machines: #{machine_ids.join(', ')}" if machine_ids.any?
 puts "\n"
+
+if machine_ids.empty?
+  puts "No active machines to update"
+  exit 0
+end
 
 # Step 3: Call index_update endpoint on each machine
 puts "Step 3: Triggering index update on each machine..."
@@ -109,37 +131,75 @@ uri = URI.parse('https://smooth.fly.dev/showcase/index_update')
 success_count = 0
 failure_count = 0
 
-machine_ids.each do |machine_id|
-  print "Updating machine #{machine_id}... "
-  
-  if options[:dry_run]
-    puts "(dry run - would POST to #{uri} with Fly-Force-Instance-Id: #{machine_id})"
-    success_count += 1
+# Helper method to attempt updating a machine
+def attempt_update(uri, machine_id, verbose)
+  http = Net::HTTP.new(uri.host, uri.port)
+  http.use_ssl = true
+  http.read_timeout = 30
+  http.open_timeout = 10
+
+  request = Net::HTTP::Post.new(uri.path)
+  request['Fly-Force-Instance-Id'] = machine_id
+
+  response = http.request(request)
+
+  if response.code == '200'
+    puts "  Response: #{response.body}" if verbose && response.body && !response.body.empty?
+    return { success: true }
   else
-    begin
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = true
-      http.read_timeout = 30
-      http.open_timeout = 10
-      
-      request = Net::HTTP::Post.new(uri.path)
-      request['Fly-Force-Instance-Id'] = machine_id
-      
-      response = http.request(request)
-      
-      if response.code == '200'
+    return { success: false, error: "HTTP #{response.code}: #{response.body}" }
+  end
+rescue => e
+  return { success: false, error: e.message }
+end
+
+# Track machines that need retrying
+pending_machines = machine_ids.map { |id| { id: id, attempts: 0 } }
+max_retries = 3
+
+# Process machines in rounds, moving to next machine on failure
+round = 1
+while pending_machines.any? && round <= max_retries
+  puts "\nRound #{round}:" if round > 1
+
+  failed_machines = []
+
+  pending_machines.each do |machine|
+    machine_id = machine[:id]
+    attempt_num = machine[:attempts] + 1
+
+    if options[:dry_run]
+      print "  #{machine_id}... "
+      puts "(dry run - would POST to #{uri} with Fly-Force-Instance-Id: #{machine_id})"
+      success_count += 1
+    else
+      print "  #{machine_id}... "
+      result = attempt_update(uri, machine_id, options[:verbose])
+
+      if result[:success]
         puts "✓ Success"
         success_count += 1
-        puts "  Response: #{response.body}" if options[:verbose] && response.body && !response.body.empty?
       else
-        puts "✗ Failed (HTTP #{response.code})"
-        puts "  Response: #{response.body}" if response.body && !response.body.empty?
-        failure_count += 1
+        if attempt_num < max_retries
+          puts "✗ Error (attempt #{attempt_num}/#{max_retries}): #{result[:error]}"
+          failed_machines << { id: machine_id, attempts: attempt_num }
+        else
+          puts "✗ Failed after #{max_retries} attempts: #{result[:error]}"
+          failure_count += 1
+        end
       end
-    rescue => e
-      puts "✗ Error: #{e.message}"
-      failure_count += 1
     end
+  end
+
+  # Update pending machines for next round
+  pending_machines = failed_machines
+  round += 1
+
+  # Wait between rounds if there are machines to retry
+  if pending_machines.any?
+    wait_time = 5
+    puts "\nWaiting #{wait_time} seconds before retrying #{pending_machines.length} machine(s)..."
+    sleep wait_time
   end
 end
 

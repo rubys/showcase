@@ -563,8 +563,17 @@ module Configurator
       }
     }
 
-    # Add idle and stop hooks if running on Fly.io
+    # Add htpasswd update hook on server start and resume if running on Fly.io
     if ENV['FLY_REGION']
+      htpasswd_hook = {
+        'command' => '/rails/script/update_htpasswd.rb',
+        'args' => [],
+        'timeout' => '30s'
+      }
+
+      hooks['server']['start'] << htpasswd_hook
+      hooks['server']['resume'] << htpasswd_hook
+
       # Navigator idle/stop hook - syncs all databases
       navigator_hook = {
         'command' => '/rails/script/hook_navigator_idle.sh',
