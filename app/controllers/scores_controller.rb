@@ -126,7 +126,9 @@ class ScoresController < ApplicationController
         @subjects = final_scores.map(&:heat).uniq
       else
         @callbacks = 6
-        slots = (1..(heat_length || 1))
+
+        # Removed: Treat all slots in preliminary as slot 1 for scoring purposes
+        # slots = (1..(heat_length || 1))
       end
     end
 
@@ -346,7 +348,9 @@ class ScoresController < ApplicationController
 
       subject_count = Heat.where(number: heat.number).count
       final = slot > heat_length || subject_count <= 8
-      slot = 1 unless final
+
+      # Removed: Treat all slots in preliminary as slot 1 for scoring purposes
+      # slot = 1 unless final
     end
 
     retry_transaction do

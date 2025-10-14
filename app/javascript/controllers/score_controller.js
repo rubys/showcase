@@ -256,10 +256,39 @@ export default class extends Controller {
     });
   }
 
+  checkIncompleteCallbacks = () => {
+    // Check if we have callbacks enabled
+    if (!this.callbacks) return false;
+
+    // Count checked callbacks
+    let checkedCount = this.element.querySelectorAll('input[type="checkbox"]:checked').length;
+
+    // Return true if there are some callbacks checked but not exactly the expected number
+    return checkedCount > 0 && checkedCount !== this.callbacks;
+  };
+
+  beforeUnload = event => {
+    if (this.checkIncompleteCallbacks()) {
+      event.preventDefault();
+      event.returnValue = ''; // Required for Chrome
+      return '';
+    }
+  };
+
+  beforeVisit = event => {
+    if (this.checkIncompleteCallbacks()) {
+      if (!confirm('You have incomplete callbacks. Are you sure you want to leave this page?')) {
+        event.preventDefault();
+      }
+    }
+  };
+
   disconnect() {
     document.body.removeEventListener("keydown", this.keydown);
     document.body.removeEventListener("touchstart", this.touchstart);
     document.body.removeEventListener("touchend", this.touchend);
+    window.removeEventListener("beforeunload", this.beforeUnload);
+    document.documentElement.removeEventListener("turbo:before-visit", this.beforeVisit);
   }
 
   connect() {
@@ -280,6 +309,8 @@ export default class extends Controller {
     document.body.addEventListener("keydown", this.keydown);
     document.body.addEventListener("touchstart", this.touchstart);
     document.body.addEventListener("touchend", this.touchend);
+    window.addEventListener("beforeunload", this.beforeUnload);
+    document.documentElement.addEventListener("turbo:before-visit", this.beforeVisit);
 
     for (let subject of this.subjects.values()) {
       if (!subject.dataset.heat) continue; // only for style="cards"; otherwise conflicts with skating finals
