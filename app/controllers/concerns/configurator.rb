@@ -105,16 +105,54 @@ module Configurator
       public_paths << "#{root}/regions/#{ENV['FLY_REGION']}/demo/"
     end
 
-    # Add year paths to public_paths for public static showcase pages
-    showcases.keys.each do |year|
-      public_paths << "#{root}/#{year}/"
+    # Build auth_patterns for studio index pages and tenant public paths
+    # Use grouped alternations for better performance (fewer regex patterns to check)
+    auth_patterns = []
+
+    # Group studios by year for studio index pages
+    studios_by_year = {}
+    tenant_public_paths_by_year = {}
+
+    showcases.each do |year, sites|
+      sites.each do |token, info|
+        if info[:events]
+          # Collect studio tokens for index pages
+          studios_by_year[year] ||= []
+          studios_by_year[year] << token
+
+          # Collect tenant/event combinations for public paths
+          tenant_public_paths_by_year[year] ||= []
+          info[:events].each do |subtoken, _subinfo|
+            tenant_public_paths_by_year[year] << "#{token}/#{subtoken}"
+          end
+        end
+      end
+    end
+
+    # Create one pattern per year for studio index pages: /showcase/2025/raleigh/?
+    studios_by_year.each do |year, tokens|
+      escaped_tokens = tokens.map { |t| Regexp.escape(t) }.join('|')
+      auth_patterns << {
+        'pattern' => "^#{Regexp.escape(root)}/#{year}/(?:#{escaped_tokens})/?$",
+        'action' => 'off'
+      }
+    end
+
+    # Create one pattern per year for tenant public paths: /showcase/2025/raleigh/disney/public/*
+    tenant_public_paths_by_year.each do |year, tenant_event_combos|
+      escaped_combos = tenant_event_combos.map { |combo| Regexp.escape(combo) }.join('|')
+      auth_patterns << {
+        'pattern' => "^#{Regexp.escape(root)}/#{year}/(?:#{escaped_combos})/public/",
+        'action' => 'off'
+      }
     end
 
     {
       'enabled' => true,
       'realm' => 'Showcase',
       'htpasswd' => htpasswd_path,
-      'public_paths' => public_paths
+      'public_paths' => public_paths,
+      'auth_patterns' => auth_patterns
     }
   end
 
