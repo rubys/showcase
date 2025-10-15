@@ -118,6 +118,7 @@ class HeatsController < ApplicationController
     index
     @font_family = @event.font_family
     @font_size = @event.font_size
+    @layout = 'mx-auto w-full print:w-full'
 
     @assignments = {}
     if @event.assign_judges and @type == 'judge'
