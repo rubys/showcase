@@ -4,8 +4,9 @@ class SolosController < ApplicationController
   include Printable
   include ActiveStorage::SetCurrent
 
-  permit_site_owners(*%i[ show ], trust_level: 25)
-  permit_site_owners(*%i[ new create edit update destroy ], trust_level: 50)
+  permit_site_owners(*%i[ show edit update ], trust_level: 25)
+  permit_site_owners(*%i[ new create destroy ], trust_level: 50)
+  before_action :set_studio_from_solo, only: %i[ edit update ]
 
   # GET /solos or /solos.json
   def index
@@ -554,6 +555,13 @@ class SolosController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_solo
       @solo = Solo.find(params[:id])
+    end
+
+    # Set @studio from the solo's lead or follow for ownership checking
+    # This allows authenticate_site_owner to restrict access to owned studios only
+    def set_studio_from_solo
+      entry = @solo.heat.entry
+      @studio = entry.lead.studio || entry.follow.studio
     end
 
     # Only allow a list of trusted parameters through.
