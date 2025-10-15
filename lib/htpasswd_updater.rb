@@ -21,7 +21,11 @@ class HtpasswdUpdater
     # Only write if contents have changed
     htpasswd_file = "#{dbpath}/htpasswd"
     if contents != (IO.read(htpasswd_file) rescue '')
-      IO.write(htpasswd_file, contents)
+      # Use atomic file write: write to temp file, then rename
+      # This prevents race conditions where Navigator reads a partially-written file
+      temp_file = "#{htpasswd_file}.tmp.#{Process.pid}"
+      IO.write(temp_file, contents)
+      File.rename(temp_file, htpasswd_file)
     end
   end
 end
