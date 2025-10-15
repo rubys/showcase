@@ -456,7 +456,15 @@ module Configurator
       tenant_lists.puts "#{dbpath}/#{db}.sqlite3"
     end
     tenant_lists.close
-    
+
+    # Add frozen string literal flag for staging (smooth-nav)
+    if ENV['FLY_APP_NAME'] == 'smooth-nav'
+      tenants.each do |tenant|
+        tenant['env'] ||= {}
+        tenant['env']['RUBYOPT'] = '--enable-frozen-string-literal'
+      end
+    end
+
     tenants
   end
 
