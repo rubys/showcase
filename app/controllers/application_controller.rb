@@ -134,6 +134,18 @@ class ApplicationController < ActionController::Base
         @authuser = request.headers["HTTP_X_REMOTE_USER"]
         @authuser ||= ENV["HTTP_X_REMOTE_USER"]
       end
+
+      if @authuser
+        authenticate_or_request_with_http_basic do |id, password|
+          if @htpasswd == nil || !@htpasswd.has_entry?(id) || !@htpasswd.authenticated?(id, password)
+            dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
+            htpasswd_file = "#{dbpath}/htpasswd"
+            @htpasswd = HTAuth::PasswdFile.open(htpasswd_file)
+          end
+
+          @htpasswd.has_entry?(id) && @htpasswd.authenticated?(id, password)
+        end
+      end
     end
 
     def forbidden(prompt = false)

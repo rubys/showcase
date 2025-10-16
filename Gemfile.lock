@@ -95,6 +95,7 @@ GEM
     aws-sigv4 (1.12.1)
       aws-eventstream (~> 1, >= 1.0.2)
     base64 (0.3.0)
+    bcrypt (3.1.20)
     bcrypt_pbkdf (1.1.1)
     benchmark (0.4.1)
     bigdecimal (3.2.2)
@@ -151,6 +152,9 @@ GEM
       listen
       rails (>= 7.0.0)
       zeitwerk
+    htauth (2.3.0)
+      base64 (~> 0.2)
+      bcrypt (~> 3.1)
     i18n (1.14.7)
       concurrent-ruby (~> 1.0)
     importmap-rails (2.2.2)
@@ -398,6 +402,7 @@ DEPENDENCIES
   fuzzy_match
   geocoder (~> 1.8)
   hotwire-spark
+  htauth (~> 2.3)
   importmap-rails
   jbuilder
   kamal

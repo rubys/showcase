@@ -54,6 +54,7 @@ begin
   ENV["RAILS_DB_VOLUME"] = "/data/db" if Dir.exist? "/data/db"
   dbpath = ENV.fetch('RAILS_DB_VOLUME') { "#{git_path}/db" }
   FileUtils.mkdir_p dbpath
+  system "chown rails:rails #{dbpath}"
 
   # Create log directory if RAILS_LOG_VOLUME is set and fix ownership
   if ENV['RAILS_LOG_VOLUME']
