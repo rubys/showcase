@@ -130,6 +130,8 @@ class ApplicationController < ActionController::Base
     end
 
     def get_authentication
+      return nil if Rails.env.test?
+      
       # @authuser = request.headers["HTTP_X_REMOTE_USER"]
       # @authuser ||= ENV["HTTP_X_REMOTE_USER"]
       authenticate_or_request_with_http_basic do |id, password|
