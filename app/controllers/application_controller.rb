@@ -3,6 +3,8 @@ class ApplicationController < ActionController::Base
   before_action :current_event
   before_action :set_locale
 
+  @@htpasswd = nil
+
   rescue_from ActiveRecord::ReadOnlyRecord do
     flash[:error] = 'Database is in readonly mode'
     redirect_back fallback_location: root_url,
@@ -128,23 +130,22 @@ class ApplicationController < ActionController::Base
     end
 
     def get_authentication
-      if request.headers['HTTP_AUTHORIZATION']
-        @authuser = Base64.decode64(request.headers['HTTP_AUTHORIZATION'].split(' ')[1]).split(':').first
-      else
-        @authuser = request.headers["HTTP_X_REMOTE_USER"]
-        @authuser ||= ENV["HTTP_X_REMOTE_USER"]
-      end
+      # @authuser = request.headers["HTTP_X_REMOTE_USER"]
+      # @authuser ||= ENV["HTTP_X_REMOTE_USER"]
+      authenticate_or_request_with_http_basic do |id, password|
+        @authuser = id
 
-      if @authuser
-        authenticate_or_request_with_http_basic do |id, password|
-          if @htpasswd == nil || !@htpasswd.has_entry?(id) || !@htpasswd.authenticated?(id, password)
-            dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
-            htpasswd_file = "#{dbpath}/htpasswd"
-            @htpasswd = HTAuth::PasswdFile.open(htpasswd_file)
-          end
+        Rails.logger.info "Auth attempt: id=#{id.inspect}, has_entry=#{@@htpasswd&.has_entry?(id).inspect}, authenticated=#{@@htpasswd&.authenticated?(id, password).inspect}"
 
-          @htpasswd.has_entry?(id) && @htpasswd.authenticated?(id, password)
-        end
+        return true if @@htpasswd&.has_entry?(id) && @@htpasswd.authenticated?(id, password)
+
+        dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
+        htpasswd_file = "#{dbpath}/htpasswd"
+        @@htpasswd = HTAuth::PasswdFile.open(htpasswd_file)
+
+        Rails.logger.info "Auth retry: id=#{id.inspect}, has_entry=#{@@htpasswd&.has_entry?(id).inspect}, authenticated=#{@@htpasswd&.authenticated?(id, password).inspect}"
+
+        @@htpasswd.has_entry?(id) && @@htpasswd.authenticated?(id, password)
       end
     end
 
