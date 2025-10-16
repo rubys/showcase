@@ -308,6 +308,8 @@
     :events:
       fall-medal-ball:
         :name: Fall Medal Ball
+      fall-monster-ball:
+        :name: Fall Monster Ball
   glastonbury:
     :name: Glastonbury
     :region: ewr
