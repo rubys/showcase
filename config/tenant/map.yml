@@ -464,6 +464,14 @@ studios:
     map: us
     x: 106.77652299796523
     y: 217.4079077133133
+  moline:
+    name: Moline
+    lat: 41.5058344
+    lon: -90.5136642
+    region: ord
+    map: us
+    x: 564.7561391229914
+    y: 194.96133866132118
   montclair:
     name: Montclair
     lat: 34.0775104

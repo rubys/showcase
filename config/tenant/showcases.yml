@@ -537,6 +537,13 @@
       halloween-haunt:
         :name: Halloween Haunt
         :date: 2025-10-26 - 2025-10-26
+  moline:
+    :name: Moline
+    :region: ord
+    :events:
+      district-showcase:
+        :name: District Showcase
+        :date: 2025-11-07 - 2025-11-07
   montclair:
     :name: Montclair
     :region: sjc
