@@ -131,23 +131,38 @@ class ApplicationController < ActionController::Base
 
     def get_authentication
       return nil if Rails.env.test?
-      
+
       # @authuser = request.headers["HTTP_X_REMOTE_USER"]
       # @authuser ||= ENV["HTTP_X_REMOTE_USER"]
       authenticate_or_request_with_http_basic do |id, password|
+        # Trim whitespace from username to handle malformed htpasswd entries
+        id = id.strip
         @authuser = id
 
-        Rails.logger.info "Auth attempt: id=#{id.inspect}, has_entry=#{@@htpasswd&.has_entry?(id).inspect}, authenticated=#{@@htpasswd&.authenticated?(id, password).inspect}"
+        # Check if user exists before attempting authentication
+        # This prevents HTAuth::PasswdFileError exceptions for non-existent users
+        if @@htpasswd&.has_entry?(id)
+          authenticated = @@htpasswd.authenticated?(id, password)
+          Rails.logger.info "Auth attempt: id=#{id.inspect}, has_entry=true, authenticated=#{authenticated.inspect}"
+          return true if authenticated
+        else
+          Rails.logger.info "Auth attempt: id=#{id.inspect}, has_entry=false (cache)"
+        end
 
-        return true if @@htpasswd&.has_entry?(id) && @@htpasswd.authenticated?(id, password)
-
+        # Reload htpasswd file and try again
         dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
         htpasswd_file = "#{dbpath}/htpasswd"
         @@htpasswd = HTAuth::PasswdFile.open(htpasswd_file)
 
-        Rails.logger.info "Auth retry: id=#{id.inspect}, has_entry=#{@@htpasswd&.has_entry?(id).inspect}, authenticated=#{@@htpasswd&.authenticated?(id, password).inspect}"
-
-        @@htpasswd.has_entry?(id) && @@htpasswd.authenticated?(id, password)
+        # Check again after reload
+        if @@htpasswd.has_entry?(id)
+          authenticated = @@htpasswd.authenticated?(id, password)
+          Rails.logger.info "Auth retry: id=#{id.inspect}, has_entry=true, authenticated=#{authenticated.inspect}"
+          authenticated
+        else
+          Rails.logger.info "Auth retry: id=#{id.inspect}, has_entry=false (reload)"
+          false
+        end
       end
     end
 
