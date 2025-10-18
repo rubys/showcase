@@ -82,6 +82,7 @@ module Configurator
     return nil unless File.exist?(htpasswd_path)
 
     public_paths = [
+      '/',  # Root path should be public (redirects to /showcase/studios/)
       "#{root}/assets/",
       "#{root}/cable",
       "#{root}/docs/",
@@ -100,14 +101,37 @@ module Configurator
       '*.gif'
     ]
 
-    if ENV['FLY_REGION']
-      public_paths << "#{root}/showcase/regions/#{ENV['FLY_REGION']}/cable"
-      public_paths << "#{root}/regions/#{ENV['FLY_REGION']}/demo/"
-    end
-
     # Build auth_patterns for studio index pages and tenant public paths
     # Use grouped alternations for better performance (fewer regex patterns to check)
     auth_patterns = []
+
+    # Add region-specific public paths that need regex for all regions
+    if ENV['FLY_REGION']
+      # Get list of all regions from map.yml
+      map_file = File.join(Rails.root, 'config/tenant/map.yml')
+      regions = if File.exist?(map_file)
+        YAML.load_file(map_file).dig('regions')&.keys || []
+      else
+        []
+      end
+
+      # Create alternation pattern for all regions
+      regions_pattern = regions.map { |r| Regexp.escape(r) }.join('|')
+
+      if regions_pattern.present?
+        # Allow cable WebSocket connections for all regions: /showcase/regions/(iad|ewr|ord|...)/cable
+        auth_patterns << {
+          'pattern' => "^#{Regexp.escape(root)}/regions/(?:#{regions_pattern})/cable$",
+          'action' => 'off'
+        }
+
+        # Allow demo paths for all regions: /showcase/regions/(iad|ewr|ord|...)/demo/
+        auth_patterns << {
+          'pattern' => "^#{Regexp.escape(root)}/regions/(?:#{regions_pattern})/demo/",
+          'action' => 'off'
+        }
+      end
+    end
 
     # Group studios by year for studio index pages
     studios_by_year = {}
