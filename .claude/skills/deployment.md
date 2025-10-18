@@ -21,6 +21,16 @@
 - Deploy command: `fly deploy --config nav.toml`
 - Uses Fly.io with custom navigator configuration
 
+### Admin/Backup Server (Git Hook)
+- Runs index admin functions (user and location administration)
+- Doubles as backup server of last resort
+- Deploy command: `git push` (triggers post_update hook)
+- Uses git push-based deployment with automatic hook execution
+
+### Production Environment
+- Deploy command: `fly deploy`
+- Uses Fly.io deployment
+
 ## Deployment Architecture
 
 - Runs on Fly.io across multiple regions globally
