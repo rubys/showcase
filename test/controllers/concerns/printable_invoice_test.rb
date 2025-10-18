@@ -495,9 +495,10 @@ class PrintableInvoiceTest < ActiveSupport::TestCase
   end
 
   def create_solo(heat)
+    # Use a unique order value based on the heat ID to avoid collisions
     Solo.create!(
       heat: heat,
-      order: heat.number
+      order: heat.id * 10000 + rand(1000)
     )
   end
 end
