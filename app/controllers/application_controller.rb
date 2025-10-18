@@ -130,7 +130,8 @@ class ApplicationController < ActionController::Base
     end
 
     def get_authentication
-      return nil if Rails.env.test?
+      return nil unless Rails.env.production?
+      return nil if ENV['RAILS_APP_OWNER'] == 'Demo'
 
       # @authuser = request.headers["HTTP_X_REMOTE_USER"]
       # @authuser ||= ENV["HTTP_X_REMOTE_USER"]

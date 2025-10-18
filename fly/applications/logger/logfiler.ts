@@ -68,6 +68,9 @@ fs.mkdirSync("/logs", { recursive: true });
           // skip log entries from builders
           if (data.fly.app.name.match(/^fly-builder-/)) continue;
 
+          // skip staging app
+          if (data.fly.app.name == "smooth-nav") continue;
+
           // skip logs from THIS app
           if (data.fly.app.name === process.env.FLY_APP_NAME) continue;
 
