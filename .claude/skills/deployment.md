@@ -9,6 +9,18 @@
 - Navigator is included as a git submodule in the `navigator/` directory
 - See [navigator/README.md](navigator/README.md) for details on the Go-based nginx/Passenger replacement
 
+## Deployment Environments
+
+### Test Environment (Kamal)
+- URL: https://showcase.party/
+- Deploy command: `bundle exec kamal $* --config-file=deploy.yml`
+- Uses Kamal for deployment orchestration
+
+### Staging Environment (Fly.io)
+- URL: https://smooth-nav.fly.dev/
+- Deploy command: `fly deploy --config nav.toml`
+- Uses Fly.io with custom navigator configuration
+
 ## Deployment Architecture
 
 - Runs on Fly.io across multiple regions globally

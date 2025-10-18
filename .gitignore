@@ -84,6 +84,9 @@ flat-storage
 *.swo
 *~
 
+# Ignore Claude Code local settings
+.claude/settings.local.json
+
 # Navigator Go project (now in submodule)
 /bin/navigator
 /config/navigator.yml
