@@ -92,7 +92,7 @@ class Heat < ApplicationRecord
   end
 
   def studio
-    subject.studio
+    entry.studio || subject.studio
   end
 
   def back
