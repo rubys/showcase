@@ -54,7 +54,7 @@
           <tr>
             <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Rank</th>
             <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Person</th>
-            <% unless Event.current.heat_range_cat == 1 %>
+            <% unless Event.current.heat_range_cat == 1 || !(Event.current.include_open && Event.current.include_closed) %>
               <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Category</th>
             <% end %>
             <th class="px-4 py-2 text-center text-sm font-medium text-gray-700 border-b">Total Entries</th>
@@ -72,7 +72,7 @@
                 <%= link_to item[:person].name, person_path(item[:person]),
                     class: "text-blue-600 hover:text-blue-800 underline" %>
               </td>
-              <% unless Event.current.heat_range_cat == 1 %>
+              <% unless Event.current.heat_range_cat == 1 || !(Event.current.include_open && Event.current.include_closed) %>
                 <td class="px-4 py-2 text-sm border-b">
                   <%= item[:category] %>
                 </td>
