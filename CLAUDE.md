@@ -48,27 +48,14 @@ bin/dev demo
 # Run all tests except system tests
 bin/rails test
 
-# Run with coverage report (SimpleCov generates /coverage/index.html)
-bin/rails test
-
-# Current coverage: ~7.0% (600/8600 lines)
-# Comprehensive test coverage for core ballroom dance competition models:
-# - HeatScheduler concern (heat scheduling algorithm)
-# - Entry model (validation logic, pro-am relationships)  
-# - Heat model (basic functionality + scrutineering rules)
-# - Person model (STI, validations, billing, name parsing)
-# - Score model (judge scoring, JSON handling, scrutineering)
-# - Dance model (dance types, categories, multi-dance events)
-# - Category model (competition categories, extensions, scheduling)
-# - Table model (seating assignments, studio relationships, grid positioning)
-# - TablesController (two-phase assignment algorithm achieving 100% success rate)
-
 # Run system tests
 bin/rails test:system
 
 # Reset database and run tests
 bin/rails test:db
 ```
+
+For detailed testing information including coverage reports and known issues, see the `testing` skill.
 
 ### Database Management
 
@@ -86,128 +73,47 @@ bin/rails db:seed
 bin/rails db:fixtures:load
 ```
 
-### Running Scripts Against Existing Databases
+For information about running scripts against existing databases, see the `database` skill.
 
-```bash
-# Run a script file against a specific database
-bin/run db/2025-boston.sqlite3 path/to/script.rb
+## Key Components
 
-# Evaluate Ruby code directly against a database
-bin/run db/2025-boston.sqlite3 -e "puts Event.current.name"
+### Models Structure
+- `Event` - Singleton configuration for each showcase
+- `Person` - Participants (judges, instructors, students, guests)
+- `Studio` - Dance studios participating
+- `Dance` - Individual dance styles
+- `Category` - Competition categories combining age/level
+- `Heat` - Scheduled dance sessions
+- `Solo` - Individual performances
+- `Formation` - Group performances
+- `Multi` - Multi-dance competitions
+- `Score` - Judge scoring data
+- `Table` - Seating table management with grid positioning
+- `StudioPair` - Paired studio relationships for table proximity
 
-# Run against test database (automatically loads fixtures)
-bin/run test -e "puts Person.count"
+### Heat Scheduling Algorithm (app/controllers/concerns/heat_scheduler.rb)
+- Two-pass scheduling: minimize heat count, then balance heat sizes
+- Interleaves different dance types within agenda categories
+- Manual drag-and-drop ordering for solos
 
-# Examples of common database queries
-bin/run db/2025-boston.sqlite3 -e "Heat.count"
-bin/run db/2025-boston.sqlite3 -e "Person.where(type: 'Student').pluck(:name)"
-bin/run db/2025-boston.sqlite3 -e "Studio.all.map { |s| [s.name, s.people.count] }"
+### Table Assignment Algorithm (app/controllers/tables_controller.rb)
+- **Two-phase algorithm**: Phase 1 groups people into tables, Phase 2 places tables on grid
+- **100% success rate** for large studios (>10 people) and studio pairs
+- **Event Staff isolation**: Event Staff (studio_id = 0) never mixed with other studios
+- **Studio Pair Handling**: Paired studios share tables or are placed adjacent
+- **Optimal table utilization**: Fits small studios into existing tables before creating new ones
+- **Global position reservation**: Priority system (0-3) ensures complex relationships are preserved
+- **Contiguous block placement**: Large studios placed in contiguous blocks for easy identification
+- **Smart consolidation**: Combines tables to minimize total count while preserving relationships
+- **Studio Proximity**: Manhattan distance calculations for optimal positioning
+- Sequential numbering following physical grid layout (row-major order)
+- Drag-and-drop grid interface for manual table arrangement
+- Handles option tables via person_options join table
 
-# The script automatically sets up:
-# - RAILS_APP_DB environment variable from database filename
-# - RAILS_STORAGE path for Active Storage files
-# - For test database: runs db:prepare and loads fixtures
-```
+## Additional Information
 
-### Asset Management
-
-```bash
-# Precompile assets
-bin/rails assets:precompile
-
-# Clean old assets
-bin/rails assets:clean
-
-# Remove all compiled assets
-bin/rails assets:clobber
-```
-
-## Architecture Overview
-
-### Multi-tenancy Design
-- Each event runs as a separate Rails instance with its own SQLite database
-- Navigator (Go web server) or Phusion Passenger manages multiple instances on a single machine
-- NGINX or Navigator handles routing to the correct instance based on URL patterns
-- Shared Redis instance for Action Cable across all events on a machine
-- Navigator is included as a git submodule in the `navigator/` directory
-- See [navigator/README.md](navigator/README.md) for details on the Go-based nginx/Passenger replacement
-
-### Key Components
-
-1. **Models Structure**
-   - `Event` - Singleton configuration for each showcase
-   - `Person` - Participants (judges, instructors, students, guests)
-   - `Studio` - Dance studios participating
-   - `Dance` - Individual dance styles
-   - `Category` - Competition categories combining age/level
-   - `Heat` - Scheduled dance sessions
-   - `Solo` - Individual performances
-   - `Formation` - Group performances
-   - `Multi` - Multi-dance competitions
-   - `Score` - Judge scoring data
-   - `Table` - Seating table management with grid positioning
-   - `StudioPair` - Paired studio relationships for table proximity
-
-2. **Heat Scheduling Algorithm** (app/controllers/concerns/heat_scheduler.rb)
-   - Two-pass scheduling: minimize heat count, then balance heat sizes
-   - Interleaves different dance types within agenda categories
-   - Manual drag-and-drop ordering for solos
-
-3. **Table Assignment Algorithm** (app/controllers/tables_controller.rb)
-   - **Two-phase algorithm**: Phase 1 groups people into tables, Phase 2 places tables on grid
-   - **100% success rate** for large studios (>10 people) and studio pairs
-   - **Event Staff isolation**: Event Staff (studio_id = 0) never mixed with other studios
-   - **Studio Pair Handling**: Paired studios share tables or are placed adjacent
-   - **Optimal table utilization**: Fits small studios into existing tables before creating new ones
-   - **Global position reservation**: Priority system (0-3) ensures complex relationships are preserved
-   - **Contiguous block placement**: Large studios placed in contiguous blocks for easy identification
-   - **Smart consolidation**: Combines tables to minimize total count while preserving relationships
-   - **Studio Proximity**: Manhattan distance calculations for optimal positioning
-   - Sequential numbering following physical grid layout (row-major order)
-   - Drag-and-drop grid interface for manual table arrangement
-   - Handles option tables via person_options join table
-
-4. **Real-time Updates**
-   - Action Cable channels for live score updates
-   - Current heat tracking across all ballrooms
-   - WebSocket connections managed per event
-
-### Deployment Architecture
-- Runs on Fly.io across multiple regions globally
-- Each region contains complete copy of all databases
-- Automatic rsync backup between regions
-- PDF generation runs on separate appliance machines via Fly-Replay routing
-- Navigator supports app-based, machine-based, and region-based request routing
-- Logging aggregated to dedicated logger instances
-
-### Database Schema
-- SQLite databases per event (~1MB typical size)
-- Volumes for persistent storage
-- Automatic backups via rsync to multiple locations
-- Daily snapshot backups maintained indefinitely
-
-### Frontend Stack
-- Rails 8 with Import Maps (no Node.js build step)
-- Stimulus.js for JavaScript behavior
-- Turbo for SPA-like navigation
-- TailwindCSS for styling
-- Custom theme support per event
-
-### Testing Approach
-- Standard Rails minitest for unit/integration tests
-- System tests using Capybara and Selenium
-- Fixtures for test data (test/fixtures/*)
-- No separate linting or code style tools configured
-
-### Known Testing Issues
-- **Intermittent System Test Failures**: There is a known timing issue where system tests may intermittently fail to find an "Edit" button after hovering over a line (particularly in formations_test.rb). This is a race condition in the Capybara/Selenium interaction. When this occurs, rerun the individual failing test to verify it passes:
-  ```bash
-  bin/rails test test/system/formations_test.rb:38  # or the specific failing test line
-  ```
-
-- **System Test Asset Routing Failures**: If system tests fail with "No route matches [GET] '/showcase/assets/...'" errors, this is caused by precompiled assets interfering with the test environment. Clean the assets and rerun:
-  ```bash
-  bin/rails assets:clobber
-  bin/rails test:system
-  ```
+For detailed information about:
+- **Testing procedures and known issues** - use the `testing` skill
+- **Database management and bin/run usage** - use the `database` skill
+- **Deployment architecture and multi-tenancy** - use the `deployment` skill
 
