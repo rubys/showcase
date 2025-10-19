@@ -57,7 +57,7 @@ module Configurator
       'root_path' => root,
       'static' => {
         'public_dir' => Rails.root.join('public').to_s,
-        'allowed_extensions' => %w[html htm txt xml json css js png jpg gif pdf xlsx],
+        'allowed_extensions' => %w[html htm txt xml json css js png jpg gif svg ico pdf xlsx],
         'try_files' => %w[index.html .html .htm .txt .xml .json],
         'cache_control' => build_cache_control(root)
       }
