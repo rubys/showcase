@@ -101,6 +101,12 @@ class ScoresController < ApplicationController
     @combine_open_and_closed = @event.heat_range_cat == 1
     @column_order = @event.column_order
 
+    # Handle case where heat doesn't exist
+    if @subjects.empty?
+      render plain: "Heat #{@number} not found", status: :not_found
+      return
+    end
+
     category = @subjects.first.category
     category = 'Open' if category == 'Closed' and @event.closed_scoring == '='
 
