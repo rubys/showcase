@@ -148,17 +148,19 @@ body {
       <% if @start %>
       <td class="text-right pr-4"><%= localized_time(@start[number], @locale)&.gsub(/ [ap]m$/, '') %></td>
       <% end %>
-      <td class="text-center"><%= heat.number.abs %></td>
-      <% if heat.ballroom %>
-      - <%= heat.ballroom %>
-      <% elsif ballrooms == 2 %>
-      - <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
-      <% elsif ballrooms == 3 %>
-      <% heats.select! {|heat| heat.ballroom.blank?} %>
-      - <%= heats.index(heat) >= heats.length/2 ? 'B' : 'A' %>
-      <% elsif ballrooms == 4 %>
-      - <%= heat.subject.studio.ballroom || "" %>
-      <% end %>
+      <td class="text-center">
+        <%= heat.number.abs %>
+        <% if heat.ballroom %>
+        - <%= heat.ballroom %>
+        <% elsif ballrooms == 2 %>
+        - <%= heat.lead.type == 'Student' ? 'B' : 'A' %>
+        <% elsif ballrooms == 3 %>
+        <% heats.select! {|heat| heat.ballroom.blank?} %>
+        - <%= heats.index(heat) >= heats.length/2 ? 'B' : 'A' %>
+        <% elsif ballrooms == 4 %>
+        - <%= heat.subject.studio.ballroom || "" %>
+        <% end %>
+      </td>
       <td><div class="mx-4"><%= heat.category %></div></td>
       <td><div class="mx-4"><%= heat.dance.name %></div></td>
       <% if person %>
