@@ -8,6 +8,7 @@ class EventController < ApplicationController
   include DbQuery
   include HeatScheduler
   include ActiveStorage::SetCurrent
+  include Retriable
   include ShowcaseInventory
 
   skip_before_action :authenticate_user, only: %i[ counter showcases regions console upload navigator_config index_update index_date ]
@@ -799,11 +800,13 @@ class EventController < ApplicationController
   end
 
   def start_heat
-    event = Event.current
-    event.current_heat = params[:heat]
-    event.save
-    event.broadcast_replace_later_to "current-heat-#{ENV['RAILS_APP_DB']}",
-      partial: 'event/heat', target: 'current-heat', locals: {event: event}
+    retry_on_lock do
+      event = Event.current
+      event.current_heat = params[:heat]
+      event.save
+      event.broadcast_replace_later_to "current-heat-#{ENV['RAILS_APP_DB']}",
+        partial: 'event/heat', target: 'current-heat', locals: {event: event}
+    end
   end
 
   def ages
