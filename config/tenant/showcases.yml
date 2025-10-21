@@ -621,6 +621,14 @@
       december:
         :name: December
         :date: '2025'
+  nashville:
+    :name: Nashville
+    :region: ord
+    :logo: nashville.jpg
+    :events:
+      fall-ball:
+        :name: Fall Ball
+        :date: 2025-11-08 - 2025-11-08
   ottawa:
     :name: Ottawa
     :region: ewr
