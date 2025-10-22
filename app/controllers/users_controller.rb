@@ -140,7 +140,7 @@ class UsersController < ApplicationController
   def password_reset
     if request.get?
       @users = User.order(:userid).pluck(:userid, :id).to_h
-      @user = User.where(userid: @authuser).first.id if @authuser
+      @user = User.find_by(userid: @authuser).id if @authuser
       @user = User.find(params[:user]).id if @user = params[:user]
 
       if @user
@@ -184,7 +184,7 @@ class UsersController < ApplicationController
   end
 
   def password_verify
-    @user = User.where(token: params[:token]).first
+    @user = User.find_by(token: params[:token])
     if request.get?
       @verify= true
       render :reset

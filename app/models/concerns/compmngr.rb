@@ -359,7 +359,7 @@ module Compmngr
       end
 
       if !instructor && lead.type == "Student" && follow.type == "Student"
-        instructor = Person.where(studio: lead.studio, type: "Professional").first
+        instructor = Person.find_by(studio: lead.studio, type: "Professional")
       end
 
       entry = Entry.find_or_create_by!(

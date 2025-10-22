@@ -358,7 +358,7 @@ class CategoriesController < ApplicationController
           end
 
           dupes.each do |dupe|
-            real = Dance.where(name: dupe.name, order: 0...).first
+            real = Dance.find_by(name: dupe.name, order: 0...)
             dupe.heats.each do |heat|
               heat.dance = real
               heat.save!

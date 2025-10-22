@@ -105,7 +105,7 @@ class SolosController < ApplicationController
 
       @dances = filtered_dances.all.map do |dance|
         if dance.order < 0
-          id = Dance.where(name: dance.name, order: 0..).first&.id || dance.id
+          id = Dance.find_by(name: dance.name, order: 0..)&.id || dance.id
           [dance.name, id]
         else
           [dance.name, dance.id]
@@ -147,7 +147,7 @@ class SolosController < ApplicationController
 
       @dances = dances.map do |dance|
         if dance.order < 0
-          id = Dance.where(name: dance.name, order: 0..).first&.id || dance.id
+          id = Dance.find_by(name: dance.name, order: 0..)&.id || dance.id
           [dance.name, id]
         else
           [dance.name, dance.id]

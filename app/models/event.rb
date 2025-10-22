@@ -11,7 +11,7 @@ class Event < ApplicationRecord
 
   @@current = nil
   def self.current
-    @@current ||= Event.first
+    @@current ||= Event.sole
   end
 
   def self.current=(event)

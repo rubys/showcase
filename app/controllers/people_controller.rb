@@ -474,7 +474,7 @@ class PeopleController < ApplicationController
 
     if @person.type == 'Judge'
       @multi = Dance.where.not(multi_category: nil).count
-      @dancing_judge = Person.where(name: @person.name, type: "Professional").pluck(:id).first
+      @dancing_judge = Person.where(name: @person.name, type: "Professional").pick(:id)
     end
 
     @event = Event.current

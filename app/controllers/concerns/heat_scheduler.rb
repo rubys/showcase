@@ -611,7 +611,7 @@ module HeatScheduler
       schedule_heats_orig
 
       solos = Formation.includes(:solo).where(person_id: [8, 36]).map(&:solo).uniq
-      entry = Entry.where(follow_id: 8, lead_id: 36).first
+      entry = Entry.find_by(follow_id: 8, lead_id: 36)
       entry ||= Entry.create!(entry_attributes)
 
       solos.each do |solo|
@@ -956,7 +956,7 @@ module HeatScheduler
   def fixups
     open_orphans = Dance.joins(:open_category).where(order: ...0, open_category: {routines: false})
     open_orphans.each do |dance|
-      base = Dance.where(name: dance.name, order: 1...).first
+      base = Dance.find_by(name: dance.name, order: 1...)
 
       if base
         Heats.where(id: dance.heats.pluck(:id).update_all(dance_id base.id))
@@ -967,7 +967,7 @@ module HeatScheduler
 
     closed_orphans = Dance.joins(:closed_category).where(order: ...0, closed_category: {routines: false})
     closed_orphans.each do |dance|
-      base = Dance.where(name: dance.name, order: 1...).first
+      base = Dance.find_by(name: dance.name, order: 1...)
 
       if base
         Heats.where(id: dance.heats.pluck(:id).update_all(dance_id base.id))

@@ -518,7 +518,7 @@ class EventController < ApplicationController
           end
         end
 
-        @locale = Location.where(key: city).first&.locale
+        @locale = Location.find_by(key: city)&.locale
       end
     end
 
@@ -528,7 +528,7 @@ class EventController < ApplicationController
         sites.select! {|token, info| token == @studio}
       end
 
-      @locale = Location.where(key: @studio).first&.locale
+      @locale = Location.find_by(key: @studio)&.locale
     end
 
     @city = params[:city] || @studio

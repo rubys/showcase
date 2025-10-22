@@ -107,7 +107,7 @@ module EntryForm
       instructor = params[:instructor_id] || params[:instructor]
     end
 
-    level = Level.where(id: params[:level]).first
+    level = Level.find_by(id: params[:level])
     if not level and params[:level] == '0'
       level = Level.create!(id: 0, name: 'All Levels')
     end
@@ -115,7 +115,7 @@ module EntryForm
     if not params[:age]
       age = Age.order(:id).first
     else
-      age = Age.where(id: params[:age]).first
+      age = Age.find_by(id: params[:age])
       if not age and params[:age] == '0'
         age = Age.create!(id: 0, category: '*', description: 'All Ages')
       end

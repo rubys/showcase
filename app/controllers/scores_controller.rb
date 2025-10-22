@@ -245,7 +245,7 @@ class ScoresController < ApplicationController
     @scores << '' unless @scores.length == 0
 
     if @heat.category == 'Solo'
-      @comments = Score.where(judge: @judge, heat: @subjects.first).first&.comments
+      @comments = Score.find_by(judge: @judge, heat: @subjects.first)&.comments
     else
       @comments = Score.where(judge: @judge, heat: @subjects).
         map {|score| [score.heat_id, score.comments]}.to_h

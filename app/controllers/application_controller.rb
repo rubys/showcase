@@ -46,7 +46,7 @@ class ApplicationController < ActionController::Base
 
   private
     def current_event
-      Event.current = Event.first
+      Event.current = Event.sole
     end
 
     def set_locale
