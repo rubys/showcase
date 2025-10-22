@@ -11,6 +11,7 @@
 /db/*.sqlite3
 /db/*.yml
 /db/*.sqlite3-*
+/db/*.sqlite3_*
 /db/htpasswd
 /db/backup/*
 
