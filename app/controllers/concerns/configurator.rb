@@ -82,7 +82,6 @@ module Configurator
     return nil unless File.exist?(htpasswd_path)
 
     public_paths = [
-      '/',  # Root path should be public (redirects to /showcase/studios/)
       "#{root}/assets/",
       "#{root}/cable",
       "#{root}/docs/",
@@ -104,6 +103,12 @@ module Configurator
     # Build auth_patterns for studio index pages and tenant public paths
     # Use grouped alternations for better performance (fewer regex patterns to check)
     auth_patterns = []
+
+    # Add exact match for root path (redirects to /showcase/studios/)
+    auth_patterns << {
+      'pattern' => '^/$',
+      'action' => 'off'
+    }
 
     # Add region-specific public paths that need regex for all regions
     if ENV['FLY_REGION']

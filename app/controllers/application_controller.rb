@@ -81,7 +81,7 @@ class ApplicationController < ActionController::Base
       unless User.authorized?(@authuser)
         # Refresh cache and try one more time before failing
         User.reload_auth
-        forbidden unless User.authorized?(@authuser)
+        return forbidden unless User.authorized?(@authuser)
       end
     end
 
@@ -100,7 +100,7 @@ class ApplicationController < ActionController::Base
         # Refresh cache and try one more time before failing
         User.reload_auth
         return if User.authorized?(@authuser)
-        forbidden unless User.owned?(@authuser, @studio)
+        return forbidden unless User.owned?(@authuser, @studio)
       end
     end
 
@@ -121,7 +121,7 @@ class ApplicationController < ActionController::Base
         # Refresh cache and try one more time before failing
         User.reload_auth
         return if User.authorized?(@authuser)
-        forbidden(true) unless User.owned?(@authuser, owner_struct)
+        return forbidden(true) unless User.owned?(@authuser, owner_struct)
       end
     end
 
