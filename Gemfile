@@ -110,6 +110,6 @@ gem "aws-sdk-s3", "~> 1.176"
 
 gem "geocoder", "~> 1.8"
 
-gem "rubyzip", "~> 2.3"
+gem "rubyzip", "~> 3.0"
 
 gem "htauth", "~> 2.3"
