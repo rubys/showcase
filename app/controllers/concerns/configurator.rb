@@ -307,19 +307,29 @@ module Configurator
   end
 
   def add_cross_region_routing(routes, root, current_region)
-    # Group sites and years by region (like nginx-config.rb does)
+    # Group sites by region and year, separating multi-event from single-tenant studios
+    # Need year-specific grouping because same studio can be multi-event in one year, single-tenant in another
     regions = {}
     showcases.each do |year, sites|
       sites.each do |token, info|
         site_region = info[:region]
         next unless site_region && site_region != current_region
-        
-        regions[site_region] ||= { years: Set.new, sites: Set.new }
-        regions[site_region][:years] << year
-        regions[site_region][:sites] << token
+
+        regions[site_region] ||= {
+          multi_event: {},  # {year => Set[tokens]} - Studios with :events (prerendered indexes)
+          single_tenant: {} # {year => Set[tokens]} - Studios without :events (no prerendered indexes)
+        }
+
+        if info[:events]
+          regions[site_region][:multi_event][year] ||= Set.new
+          regions[site_region][:multi_event][year] << token
+        else
+          regions[site_region][:single_tenant][year] ||= Set.new
+          regions[site_region][:single_tenant][year] << token
+        end
       end
     end
-    
+
     # Add region-specific fly-replay routes (excluding static index pages)
     regions.keys.each do |target_region|
       routes['fly']['replay'] << {
@@ -329,19 +339,29 @@ module Configurator
       }
     end
 
-    # Add event-specific routing for each region using only years that actually exist in that region
+    # Add studio-specific routing for each region
     regions.each do |target_region, data|
-      years = data[:years].to_a.sort.join('|')
-      sites = data[:sites].to_a.sort.join('|')
+      # Multi-event studios (with :events) have prerendered indexes
+      # Pattern excludes /year/studio/ but includes /year/studio/anything
+      data[:multi_event].each do |year, tokens|
+        sites = tokens.to_a.sort.join('|')
+        routes['fly']['replay'] << {
+          'path' => "^#{root}/(?:#{year})/(?:#{sites})/.+$",
+          'region' => target_region,
+          'status' => 307
+        }
+      end
 
-      # Fly-replay for all methods - Navigator automatically falls back to reverse proxy
-      # when content constraints prevent fly-replay (eliminating need for separate reverse proxy rules)
-      # Exclude studio index pages (which are prerendered) by requiring at least one char after studio name
-      routes['fly']['replay'] << {
-        'path' => "^#{root}/(?:#{years})/(?:#{sites})/.+$",
-        'region' => target_region,
-        'status' => 307
-      }
+      # Single-tenant studios (no :events) don't have prerendered indexes
+      # Pattern includes /year/studio/ and /year/studio/anything
+      data[:single_tenant].each do |year, tokens|
+        sites = tokens.to_a.sort.join('|')
+        routes['fly']['replay'] << {
+          'path' => "^#{root}/(?:#{year})/(?:#{sites})(?:/.*)?$",
+          'region' => target_region,
+          'status' => 307
+        }
+      end
     end
   end
 
