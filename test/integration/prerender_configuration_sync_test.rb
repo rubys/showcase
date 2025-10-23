@@ -9,6 +9,9 @@ require "test_helper"
 class PrerenderConfigurationSyncTest < ActiveSupport::TestCase
   include Configurator
 
+  # Ensure tests run in serial to avoid conflicts with shared Configurator::DBPATH
+  parallelize(workers: 1)
+
   setup do
     @showcases = YAML.load_file(Rails.root.join('config/tenant/showcases.yml'))
     @root = '/showcase'
