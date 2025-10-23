@@ -320,10 +320,10 @@ module Configurator
       end
     end
     
-    # Add region index fly-replay routes
+    # Add region-specific fly-replay routes (excluding static index pages)
     regions.keys.each do |target_region|
       routes['fly']['replay'] << {
-        'path' => "#{root}/regions/#{target_region}/",
+        'path' => "^#{root}/regions/#{target_region}/.+$",
         'region' => target_region,
         'status' => 307
       }
@@ -336,8 +336,9 @@ module Configurator
 
       # Fly-replay for all methods - Navigator automatically falls back to reverse proxy
       # when content constraints prevent fly-replay (eliminating need for separate reverse proxy rules)
+      # Exclude studio index pages (which are prerendered) by requiring at least one char after studio name
       routes['fly']['replay'] << {
-        'path' => "^#{root}/(?:#{years})/(?:#{sites})(?:/.*)?$",
+        'path' => "^#{root}/(?:#{years})/(?:#{sites})/.+$",
         'region' => target_region,
         'status' => 307
       }
