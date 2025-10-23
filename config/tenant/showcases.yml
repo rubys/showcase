@@ -621,6 +621,14 @@
       december:
         :name: December
         :date: '2025'
+  nashville:
+    :name: Nashville
+    :region: ord
+    :logo: nashville.jpg
+    :events:
+      fall-ball:
+        :name: Fall Ball
+        :date: 2025-11-08 - 2025-11-08
   ottawa:
     :name: Ottawa
     :region: ewr
@@ -727,6 +735,9 @@
       medal-ball:
         :name: Medal Ball
         :date: '2025-08-06'
+      nov-2025-extravaganza:
+        :name: Nov 2025 Extravaganza
+        :date: 2025-11-12 - 2025-11-12
   sugarland:
     :name: Sugar Land
     :region: dfw
