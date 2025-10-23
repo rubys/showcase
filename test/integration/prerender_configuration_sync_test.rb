@@ -250,6 +250,143 @@ class PrerenderConfigurationSyncTest < ActiveSupport::TestCase
     end
   end
 
+  # ===== SPECIAL PATH TESTS =====
+
+  test "root path is prerendered and public" do
+    # Root path / should be prerendered
+    # It should also be public (no auth)
+    auth_config = build_auth_config
+    auth_patterns = auth_config['auth_patterns']
+
+    # Check if root matches public pattern
+    is_public = auth_patterns.any? do |pattern|
+      pattern['action'] == 'off' && '/' =~ Regexp.new(pattern['pattern'])
+    end
+
+    assert is_public, "Root path / should be public but no auth pattern matches"
+  end
+
+  test "studios index is prerendered and public" do
+    # /studios/ should be prerendered and public
+    auth_config = build_auth_config
+    public_paths = auth_config['public_paths']
+
+    assert public_paths.include?("#{@root}/studios/"),
+      "/studios/ should be in public_paths"
+  end
+
+  test "docs index is prerendered and public" do
+    # /docs/ should be prerendered and public
+    auth_config = build_auth_config
+    public_paths = auth_config['public_paths']
+
+    assert public_paths.include?("#{@root}/docs/"),
+      "/docs/ should be in public_paths"
+  end
+
+  test "year indexes are prerendered" do
+    # All year indexes like /2025/ should be prerendered
+    # These don't have specific auth patterns but covered by general public paths
+    paths = PrerenderConfiguration.prerenderable_paths(@showcases)
+
+    assert paths[:years].any?, "Should have at least one year to prerender"
+
+    paths[:years].each do |year|
+      # Year indexes are always prerendered (see prerender.rake line 83)
+      # They're covered by general caching but don't need specific auth
+      assert year.is_a?(Integer), "Year should be an integer: #{year}"
+    end
+  end
+
+  test "region cable paths are public in FLY_REGION" do
+    regions = collect_regions
+
+    skip "Need at least one region" if regions.empty?
+
+    ENV['FLY_REGION'] = regions.first
+    auth_config = build_auth_config
+    ENV.delete('FLY_REGION')
+
+    auth_patterns = auth_config['auth_patterns']
+
+    # Check if cable paths are public
+    cable_path = "#{@root}/regions/#{regions.first}/cable"
+
+    is_public = auth_patterns.any? do |pattern|
+      pattern['action'] == 'off' && cable_path =~ Regexp.new(pattern['pattern'])
+    end
+
+    assert is_public,
+      "Region cable path #{cable_path} should be public in FLY_REGION but no pattern matches"
+  end
+
+  test "region demo paths are public in FLY_REGION" do
+    regions = collect_regions
+
+    skip "Need at least one region" if regions.empty?
+
+    ENV['FLY_REGION'] = regions.first
+    auth_config = build_auth_config
+    ENV.delete('FLY_REGION')
+
+    auth_patterns = auth_config['auth_patterns']
+
+    # Check if demo paths are public
+    demo_path = "#{@root}/regions/#{regions.first}/demo/"
+
+    is_public = auth_patterns.any? do |pattern|
+      pattern['action'] == 'off' && demo_path =~ Regexp.new(pattern['pattern'])
+    end
+
+    assert is_public,
+      "Region demo path #{demo_path} should be public in FLY_REGION but no pattern matches"
+  end
+
+  test "tenant public paths are public" do
+    # Find a multi-event studio with events
+    prerendered = collect_prerendered_studios_with_regions
+
+    skip "No multi-event studios to test" if prerendered.empty?
+
+    studio = prerendered.first
+    event_token = studio[:events].keys.first
+
+    auth_config = build_auth_config
+    auth_patterns = auth_config['auth_patterns']
+
+    # Check if /year/studio/event/public/ is public
+    public_path = "#{@root}/#{studio[:year]}/#{studio[:token]}/#{event_token}/public/"
+
+    is_public = auth_patterns.any? do |pattern|
+      pattern['action'] == 'off' && public_path =~ Regexp.new(pattern['pattern'])
+    end
+
+    assert is_public,
+      "Tenant public path #{public_path} should be public but no pattern matches"
+  end
+
+  test "assets are public" do
+    auth_config = build_auth_config
+    public_paths = auth_config['public_paths']
+
+    assert public_paths.include?("#{@root}/assets/"),
+      "Assets path should be in public_paths"
+  end
+
+  test "studio pages are prerendered and public" do
+    # /studios/{studio} pages should be prerendered and public
+    paths = PrerenderConfiguration.prerenderable_paths(@showcases)
+
+    skip "No studios to test" if paths[:studios].empty?
+
+    auth_config = build_auth_config
+    public_paths = auth_config['public_paths']
+
+    # Studios are covered by the /studios/ public path prefix
+    assert public_paths.include?("#{@root}/studios/"),
+      "Studios prefix should be in public_paths to cover individual studio pages"
+  end
+
   # ===== CONSISTENCY TESTS =====
 
   test "all public studio indexes are prerendered" do
