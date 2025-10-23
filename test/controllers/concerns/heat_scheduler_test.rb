@@ -240,34 +240,40 @@ class HeatSchedulerTest < ActiveSupport::TestCase
   end
   
   test "schedule_heats respects category order" do
-    # Create heats in different categories
+    # Set category orders to ensure predictable sorting
     @category_open.update!(order: 20)
     @category_closed.update!(order: 10)
-    
+
+    # Use fixture entries
     entry1 = entries(:one)
     entry2 = entries(:two)
-    
+
+    # Mark all existing heats as scratched (negative numbers) to exclude them
+    Heat.update_all(number: -1)
+
+    # Create new heats for testing
     heat_closed = Heat.create!(
       dance: @dance_waltz,
       entry: entry1,
       category: 'Closed',
       number: 0
     )
-    
+
     heat_open = Heat.create!(
       dance: @dance_waltz,
       entry: entry2,
       category: 'Open',
       number: 0
     )
-    
+
     @scheduler.schedule_heats
-    
+
     heat_closed.reload
     heat_open.reload
-    
-    # Closed category (order 1) should come before Open (order 2)
-    assert heat_closed.number < heat_open.number
+
+    # Closed category (order 10) should come before Open (order 20)
+    assert heat_closed.number < heat_open.number,
+      "Expected Closed heat (#{heat_closed.number}) < Open heat (#{heat_open.number})"
   end
   
   test "rebalance distributes heats evenly" do
