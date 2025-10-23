@@ -12,6 +12,27 @@ class PrerenderConfigurationSyncTest < ActiveSupport::TestCase
   setup do
     @showcases = YAML.load_file(Rails.root.join('config/tenant/showcases.yml'))
     @root = '/showcase'
+
+    # Create a mock htpasswd file for testing
+    @test_htpasswd_path = Rails.root.join('tmp', 'test_htpasswd')
+    FileUtils.mkdir_p(File.dirname(@test_htpasswd_path))
+    # Create a simple htpasswd file (username: test, password: test)
+    # Using bcrypt format: $2y$05$... is bcrypt hash for "test"
+    File.write(@test_htpasswd_path, "test:$2y$05$CCCCCCCCCCCCCCCCCCCCC.eJ8bJ/qJW/m0l2mZz0V3lN5VK7xQKuq\n")
+
+    # Mock DBPATH to point to tmp directory so build_auth_config finds our test htpasswd
+    @original_dbpath = defined?(DBPATH) ? DBPATH : nil
+    silence_warnings { Object.const_set(:DBPATH, Rails.root.join('tmp').to_s) }
+  end
+
+  teardown do
+    # Clean up mock htpasswd file
+    File.delete(@test_htpasswd_path) if File.exist?(@test_htpasswd_path)
+
+    # Restore original DBPATH
+    if @original_dbpath
+      silence_warnings { Object.const_set(:DBPATH, @original_dbpath) }
+    end
   end
 
   # ===== STUDIO INDEX PAGE TESTS =====
