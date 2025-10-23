@@ -512,14 +512,6 @@ studios:
     map: eu
     x: 353.62379883480446
     y: 348.1190555647173
-  nashville:
-    name: Nashville
-    lat: 36.1622767
-    lon: -86.7742984
-    region: ord
-    map: us
-    x: 626.2529538991158
-    y: 291.1962896784788
   ottawa:
     name: Ottawa
     lat: 45.4208777

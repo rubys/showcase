@@ -84,20 +84,24 @@ module Configurator
     public_paths = [
       "#{root}/assets/",
       "#{root}/cable",
+      "#{root}/demo/",
       "#{root}/docs/",
       "#{root}/events/console",
       "#{root}/password/",
       "#{root}/regions/",
       "#{root}/studios/",
-      "#{root}/favicon.ico",
-      "#{root}/robots.txt",
       "#{root}/index_update",
       "#{root}/index_date",
+      '/favicon.ico',
+      '/robots.txt',
       '*.css',
+      '*.gif',
+      '*.ico',
+      '*.jpg',
       '*.js',
       '*.png',
-      '*.jpg',
-      '*.gif'
+      '*.svg',
+      '*.webp'
     ]
 
     # Build auth_patterns for studio index pages and tenant public paths
