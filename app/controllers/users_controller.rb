@@ -5,7 +5,7 @@ class UsersController < ApplicationController
   include ActionView::RecordIdentifier
 
   skip_before_action :authenticate_user
-  before_action :get_authentication
+  before_action :get_authentication, except: %i[ password_verify ]
   before_action :authenticate_index, except: %i[ password_reset password_verify ]
   before_action :set_user, only: %i[ show edit auth update destroy ]
   before_action :admin_home
