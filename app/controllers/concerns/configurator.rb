@@ -142,28 +142,12 @@ module Configurator
       end
     end
 
-    # Group studios by year for studio index pages
-    studios_by_year = {}
-    tenant_public_paths_by_year = {}
-
-    showcases.each do |year, sites|
-      sites.each do |token, info|
-        if info[:events]
-          # Collect studio tokens for index pages
-          studios_by_year[year] ||= []
-          studios_by_year[year] << token
-
-          # Collect tenant/event combinations for public paths
-          tenant_public_paths_by_year[year] ||= []
-          info[:events].each do |subtoken, _subinfo|
-            tenant_public_paths_by_year[year] << "#{token}/#{subtoken}"
-          end
-        end
-      end
-    end
+    # Use shared module to get prerenderable paths
+    # Only multi-event studios (with :events) have prerendered public indexes
+    paths = PrerenderConfiguration.prerenderable_paths(showcases)
 
     # Create one pattern per year for studio index pages: /showcase/2025/raleigh/?
-    studios_by_year.each do |year, tokens|
+    paths[:multi_event_studios].each do |year, tokens|
       escaped_tokens = tokens.map { |t| Regexp.escape(t) }.join('|')
       auth_patterns << {
         'pattern' => "^#{Regexp.escape(root)}/#{year}/(?:#{escaped_tokens})/?$",
@@ -172,6 +156,18 @@ module Configurator
     end
 
     # Create one pattern per year for tenant public paths: /showcase/2025/raleigh/disney/public/*
+    tenant_public_paths_by_year = {}
+    showcases.each do |year, sites|
+      sites.each do |token, info|
+        if info[:events]
+          tenant_public_paths_by_year[year] ||= []
+          info[:events].each do |subtoken, _subinfo|
+            tenant_public_paths_by_year[year] << "#{token}/#{subtoken}"
+          end
+        end
+      end
+    end
+
     tenant_public_paths_by_year.each do |year, tenant_event_combos|
       escaped_combos = tenant_event_combos.map { |combo| Regexp.escape(combo) }.join('|')
       auth_patterns << {
@@ -307,28 +303,9 @@ module Configurator
   end
 
   def add_cross_region_routing(routes, root, current_region)
-    # Group sites by region and year, separating multi-event from single-tenant studios
+    # Use shared module to group studios by region and type
     # Need year-specific grouping because same studio can be multi-event in one year, single-tenant in another
-    regions = {}
-    showcases.each do |year, sites|
-      sites.each do |token, info|
-        site_region = info[:region]
-        next unless site_region && site_region != current_region
-
-        regions[site_region] ||= {
-          multi_event: {},  # {year => Set[tokens]} - Studios with :events (prerendered indexes)
-          single_tenant: {} # {year => Set[tokens]} - Studios without :events (no prerendered indexes)
-        }
-
-        if info[:events]
-          regions[site_region][:multi_event][year] ||= Set.new
-          regions[site_region][:multi_event][year] << token
-        else
-          regions[site_region][:single_tenant][year] ||= Set.new
-          regions[site_region][:single_tenant][year] << token
-        end
-      end
-    end
+    regions = PrerenderConfiguration.studios_by_region_and_type(showcases, current_region)
 
     # Add region-specific fly-replay routes (excluding static index pages)
     regions.keys.each do |target_region|
@@ -344,7 +321,7 @@ module Configurator
       # Multi-event studios (with :events) have prerendered indexes
       # Pattern excludes /year/studio/ but includes /year/studio/anything
       data[:multi_event].each do |year, tokens|
-        sites = tokens.to_a.sort.join('|')
+        sites = tokens.sort.join('|')
         routes['fly']['replay'] << {
           'path' => "^#{root}/(?:#{year})/(?:#{sites})/.+$",
           'region' => target_region,
@@ -355,7 +332,7 @@ module Configurator
       # Single-tenant studios (no :events) don't have prerendered indexes
       # Pattern includes /year/studio/ and /year/studio/anything
       data[:single_tenant].each do |year, tokens|
-        sites = tokens.to_a.sort.join('|')
+        sites = tokens.sort.join('|')
         routes['fly']['replay'] << {
           'path' => "^#{root}/(?:#{year})/(?:#{sites})(?:/.*)?$",
           'region' => target_region,

@@ -51,47 +51,43 @@ task :prerender => "prerender:env" do
   public = File.join(Rails.application.root, 'public')
   Rails.application.config.assets.prefix = '/showcase/assets/'
 
-  # get a list of all the regions and studios from the showcases.yml file
-  regions = Set.new
-  studios = {}
-  years = {}
-  showcases = YAML.load_file(File.join(Rails.application.root, 'config/tenant/showcases.yml'))
-  showcases.each do |year, cities|
-    years[year] = cities.keys if cities.is_a?(Hash)
-    cities.each do |city, data|
-      regions << data[:region] if data[:region]
-      studios[city] = data[:region] if data[:region]
-    end if cities.is_a?(Hash)
-  end
+  # Load showcases and get prerenderable paths using shared module
+  require_relative '../prerender_configuration'
 
-  # add studios without events
+  showcases = YAML.load_file(File.join(Rails.application.root, 'config/tenant/showcases.yml'))
+  paths = PrerenderConfiguration.prerenderable_paths(showcases)
+
+  # Add studios from map.yml that don't have events
   map_file = File.join(Rails.application.root, 'config/tenant/map.yml')
   if File.exist?(map_file)
     map_data = YAML.load_file(map_file)
     map_data["studios"].each do |studio, info|
-      studios[studio] ||= info["region"]
+      paths[:studios] << studio unless paths[:studios].include?(studio)
     end
+    paths[:studios].sort!
   end
 
-  # start with the index.html and regions/index.html files
+  # Start with the index.html and regions/index.html files
   files = [
     ['/', 'index.html'],
     ['regions/', 'regions/index.html'],
   ]
 
-  # add the region and studio index.html files
-  files += regions.map {|region| ['regions/' + region, 'regions/' + region + '.html']}
-  files += studios.keys.map {|studio| ['studios/' + studio, 'studios/' + studio + '.html']}
-  
-  # add year-based index files (e.g., /2025/, /2025/boston/)
-  years.each do |year, cities|
+  # Add the region and studio index.html files
+  files += paths[:regions].map { |region| ["regions/#{region}", "regions/#{region}.html"] }
+  files += paths[:studios].map { |studio| ["studios/#{studio}", "studios/#{studio}.html"] }
+
+  # Add year-based index files (e.g., /2025/, /2025/boston/)
+  paths[:years].each do |year|
     # Add the year index (e.g., /2025/)
     files << ["#{year}/", "#{year}/index.html"]
-    
+
     # Add each city index within the year (e.g., /2025/boston/)
-    cities.each do |city|
-      next unless showcases.dig(year, city, :events)
-      files << ["#{year}/#{city}/", "#{year}/#{city}/index.html"]
+    # Only multi-event studios (those with :events) get prerendered indexes
+    if paths[:multi_event_studios][year]
+      paths[:multi_event_studios][year].each do |city|
+        files << ["#{year}/#{city}/", "#{year}/#{city}/index.html"]
+      end
     end
   end
 
@@ -134,16 +130,30 @@ task :prerender => "prerender:env" do
     Dir['*.*'].map {|file| [file, file]}
   end
 
+  # Build studios hash for JavaScript (map studio to region)
+  studios = {}
+  showcases.each do |_year, sites|
+    sites.each do |token, info|
+      studios[token] = info[:region] if info[:region]
+    end
+  end
+
+  # Build years hash for JavaScript (map year to list of cities)
+  years = {}
+  showcases.each do |year, sites|
+    years[year] = sites.keys if sites.is_a?(Hash)
+  end
+
   script = <<~JS
     // Showcase worker
 
     const files = #{files.sort.to_h.to_json};
 
-    const regions = #{regions.to_a.sort.to_json()};
+    const regions = #{paths[:regions].to_json};
 
-    const studios = #{studios.sort.to_h.to_json()};
-    
-    const years = #{years.to_json()};
+    const studios = #{studios.sort.to_h.to_json};
+
+    const years = #{years.to_json};
 
     async function fly(request, path) {
       if (!request.headers.get("Authorization") && !path.startsWith("demo/")) {
