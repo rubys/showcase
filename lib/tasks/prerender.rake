@@ -74,8 +74,9 @@ task :prerender => "prerender:env" do
   ]
 
   # Add the region and studio index.html files
-  files += paths[:regions].map { |region| ["regions/#{region}", "regions/#{region}.html"] }
-  files += paths[:studios].map { |studio| ["studios/#{studio}", "studios/#{studio}.html"] }
+  # Use directory structure with index.html for consistent Navigator try_files behavior
+  files += paths[:regions].map { |region| ["regions/#{region}/", "regions/#{region}/index.html"] }
+  files += paths[:studios].map { |studio| ["studios/#{studio}/", "studios/#{studio}/index.html"] }
 
   # Add year-based index files (e.g., /2025/, /2025/boston/)
   paths[:years].each do |year|
