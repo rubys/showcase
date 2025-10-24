@@ -22,12 +22,22 @@ class ApplicationController < ActionController::Base
   end
 
   # https://github.com/rails/rails/blob/main/actionpack/lib/action_controller/metal/allow_browser.rb
+  # Minimum versions supporting ES2020 (esbuild target) + WebSockets
+  # Import maps are polyfilled via es-module-shims for browsers in NEEDS_IMPORTMAP_SHIM range
   MODERN_BROWSER = {
-    "Chrome" => 119,
-    "Safari" => 17.2,
-    "Firefox" => 121,
+    "Chrome" => 80,      # ES2020 support (February 2020)
+    "Safari" => 13.1,    # ES2020 support (March 2020)
+    "Firefox" => 74,     # ES2020 support (March 2020)
     "Internet Explorer" => false,
-    "Opera" => 104
+    "Opera" => 67        # ES2020 support (based on Chromium 80)
+  }
+
+  # Browsers that support ES2020 but need es-module-shims for import maps
+  NEEDS_IMPORTMAP_SHIM = {
+    "Chrome" => [80, 89],    # Chrome 80-88 need shim (89+ has native import maps)
+    "Firefox" => [74, 108],  # Firefox 74-107 need shim (108+ has native import maps)
+    "Safari" => [13.1, 16.4], # Safari 13.1-16.3 need shim (16.4+ has native import maps)
+    "Opera" => [67, 76]      # Opera 67-75 need shim (76+ has native import maps)
   }
 
   def browser_warn
@@ -43,6 +53,19 @@ class ApplicationController < ActionController::Base
       end
     end
   end
+
+  def needs_importmap_shim?
+    user_agent = UserAgent.parse(request.user_agent)
+    range = NEEDS_IMPORTMAP_SHIM[user_agent.browser]
+    return false if range.nil?
+
+    version = user_agent.version
+    min_version = UserAgent::Version.new(range[0].to_s)
+    max_version = UserAgent::Version.new(range[1].to_s)
+
+    version >= min_version && version < max_version
+  end
+  helper_method :needs_importmap_shim?
 
   private
     def current_event
