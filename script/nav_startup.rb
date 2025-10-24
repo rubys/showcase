@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'bundler/setup'
-require 'aws-sdk-s3'
+# Note: aws-sdk-s3 is loaded by sync_databases_s3.rb when needed, not here
 require 'fileutils'
 require_relative '../lib/htpasswd_updater'
 

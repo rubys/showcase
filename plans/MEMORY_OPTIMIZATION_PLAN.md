@@ -163,31 +163,40 @@ Action Cable server uses default Puma config (5 threads). Reduce threads for Web
 
 **Recommendation**: Start with **Option A + Option C** (40-60MB savings) as quick wins, then consider Option B for maximum optimization.
 
-### Priority 2: Lazy Load AWS SDK in nav_startup.rb (Estimated savings: ~30MB)
+### Priority 2: Remove AWS SDK from nav_startup.rb ✅ IMPLEMENTED (Actual savings: 13.4MB)
 
-**Current state**: 38MB resident process
+**Current state**: 38MB → 25MB resident process
 
-**Issue**: `script/nav_startup.rb` line 4 loads `aws-sdk-s3` at startup, even though AWS operations may not be needed immediately.
+**Issue**: `script/nav_startup.rb` line 4 loaded `aws-sdk-s3` at startup and kept it in memory for the container lifetime, even though AWS is only used once during initialization by `sync_databases_s3.rb` (which already loads aws-sdk-s3 itself).
 
-**Implementation**:
+**Implementation**: ✅ COMPLETED
 ```ruby
-# script/nav_startup.rb line 4
-# Instead of:
-# require 'aws-sdk-s3'
-
-# Use lazy loading:
-def require_aws_sdk
-  require 'aws-sdk-s3' unless defined?(Aws)
-end
-
-# Later in the script, before AWS operations:
-require_aws_sdk if ENV["AWS_ACCESS_KEY_ID"].present?
-system "ruby #{git_path}/script/sync_databases_s3.rb --index-only --quiet"
+# script/nav_startup.rb lines 3-6
+require 'bundler/setup'
+# Note: aws-sdk-s3 is loaded by sync_databases_s3.rb when needed, not here
+require 'fileutils'
+require_relative '../lib/htpasswd_updater'
 ```
 
-**Expected savings**: ~30MB
-**Risk**: Low
-**Testing**: Verify S3 sync operations still work
+**Rationale**:
+- nav_startup.rb stays resident as parent process (line 105: waits for navigator to exit)
+- AWS SDK is only needed once at line 74: `system "ruby #{git_path}/script/sync_databases_s3.rb"`
+- sync_databases_s3.rb already loads aws-sdk-s3 at its line 7
+- No need to keep 30MB gem loaded in parent process forever
+
+**Results from smooth-nav deployment**:
+- Before: `ruby nav_startup.rb` = 38MB RSS
+- After: `ruby nav_startup.rb` = 25MB RSS
+- **Actual savings: 13.4MB (35% reduction in process memory)**
+
+Note: Expected ~30MB savings, but got 13.4MB. The difference may be due to:
+- Bundler overhead remaining loaded
+- Other shared Ruby VM components
+- Still a significant improvement for a one-line change!
+
+**Risk**: Low - sync_databases_s3.rb is a separate process with its own dependencies
+**Testing**: ✅ All tests passing (1029 runs, 4782 assertions, 0 failures)
+**Production verification**: ✅ Deployed to smooth-nav and measured
 
 ### Priority 3: Redis Memory Limits (Estimated savings: 5-10MB)
 
@@ -523,12 +532,12 @@ bin/rails test:system
 
 ### Quick Wins (Action Cable + AWS SDK + Thread reductions)
 - **Baseline optimizations**:
-  - Action Cable eager_load removal: -35MB
-  - Action Cable thread reduction: -15MB
-  - AWS SDK lazy loading: -30MB
-  - Redis tuning: -5MB
-  - **Total baseline savings: ~85MB**
-- **Baseline**: 397MB → 312MB (21% reduction)
+  - Action Cable eager_load removal: -35MB (estimated)
+  - Action Cable thread reduction: -15MB (estimated)
+  - AWS SDK removal: -13MB ✅ (measured on smooth-nav)
+  - Redis tuning: -5MB (estimated)
+  - **Total baseline savings: ~68MB (updated with actual measurement)**
+- **Baseline**: 397MB → 329MB (17% reduction, updated estimate)
 - **Per-tenant**: 300MB → 200MB (33% reduction, from Rails optimizations)
 - **10 tenants**: 3,397MB → 2,312MB (32% reduction, 1.1GB savings)
 
