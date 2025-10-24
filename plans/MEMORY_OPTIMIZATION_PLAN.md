@@ -1,26 +1,53 @@
 # Memory Optimization Plan for Navigator Multi-Tenant Deployment
 
 ## Current State
-- **Baseline memory (0 tenants)**: ~350MB on Debian
+- **Baseline memory (0 tenants)**: ~397MB on Fly.io (measured on smooth-nav)
 - **Per-tenant memory**: ~250-350MB per Rails process (estimated)
 - **Architecture**: Navigator spawns one Rails process per active tenant
 - **Current optimizations**: jemalloc enabled via `LD_PRELOAD`
 
 ## Goals
-- Reduce baseline memory usage to ~200-250MB (30-40% reduction)
+- Reduce baseline memory usage to ~200-250MB (35-50% reduction)
 - Reduce per-tenant memory to ~150-200MB (30-50% reduction)
 - Maintain application functionality and performance
 - Optimize for the multi-tenant process model
 
 ## Memory Architecture Understanding
 
-### Baseline (0 tenants) - ~350MB
-1. **Navigator Go binary** - ~20-40MB
-2. **Redis server** - ~10-30MB
-3. **NATS server** - ~10-30MB
-4. **Ruby startup script** (nav_startup.rb) - ~50-80MB (stays resident)
-5. **Vector** (if enabled) - ~10-30MB
-6. **System overhead** - remaining
+### Baseline (0 tenants) - 397MB ✅ MEASURED on smooth-nav
+
+**Actual memory usage from `fly ssh console -a smooth-nav`:**
+
+```
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root       695  0.3  7.8 915504 158756 ?       Sl   16:31   0:02 puma 7.1.0 (tcp://0.0.0.0:28080) [rails]
+root       659  0.0  1.9 502476 38360 ?        Sl   16:31   0:00 ruby /rails/script/nav_startup.rb
+root       658  0.0  0.9 1244844 20120 ?       Sl   16:31   0:00 /.fly/hallpass
+root       670  0.0  0.9 1393532 19688 ?       Sl   16:31   0:00 navigator
+root       696  0.2  0.6  69256 13568 ?        Sl   16:31   0:02 redis-server *:6379
+```
+
+**Breakdown:**
+1. **Action Cable Puma server** - **159MB (40% of baseline!)** ⭐ HIGHEST IMPACT
+   - Standalone Action Cable server shared by all tenants
+   - Loads entire Rails environment + eager_load!
+   - Runs on port 28080
+2. **Ruby startup script** (nav_startup.rb) - **38MB (10%)**
+   - Stays resident as parent process
+   - Loads aws-sdk-s3 at startup (~30MB of this)
+3. **Fly.io hallpass** - **20MB (5%)**
+   - Fly.io authentication/proxy (not present in local deployments)
+4. **Navigator Go binary** - **20MB (5%)**
+   - Very efficient!
+5. **Redis server** - **14MB (3.5%)**
+   - Already quite small
+6. **System overhead** - **~146MB (37%)**
+   - Init process, kernel threads, etc.
+
+**Key findings:**
+- 74 tenant databases available in `/data/db/`
+- 0 active tenant Rails processes running
+- Total container memory: 1.9GB, used: 397MB, available: 1.5GB
 
 ### Per-Tenant (each Rails process) - ~250-350MB
 1. **Ruby VM** - ~20-40MB
@@ -35,9 +62,136 @@
 
 ## Section 1: Baseline Memory Optimization
 
-### Priority 1: Redis Memory Limits (Estimated savings: 10-20MB)
+### Priority 1: Optimize Action Cable Server ⭐ HIGHEST IMPACT (Estimated savings: 30-100MB)
 
-**Rationale**: Redis is running in same container and may be over-allocating memory.
+**Current state**: 159MB (40% of baseline memory!)
+
+**Issue**: The standalone Action Cable server loads the entire Rails application unnecessarily.
+
+**Location**: `cable/config.ru` lines 4-5:
+```ruby
+require_relative "../config/environment"
+Rails.application.eager_load!
+```
+
+This loads:
+- All models, controllers, helpers, concerns
+- All gems from Gemfile (ActiveRecord, ActiveStorage, ActionMailer, etc.)
+- Full Rails framework
+- Application code that Action Cable doesn't need
+
+**Action Cable only needs**:
+- ActionCable framework itself
+- Redis connection
+- Channel classes (app/channels/)
+- Connection authentication logic
+
+#### Option A: Remove Eager Loading (EASY, LOW RISK, 30-40MB savings)
+
+Simply remove the eager loading to let classes load on-demand:
+
+```ruby
+# cable/config.ru
+require_relative "../config/environment"
+# Rails.application.eager_load!  ← REMOVE THIS LINE
+```
+
+**Expected savings**: 30-40MB
+**Risk**: Low - classes load on-demand when needed
+**Testing**: Verify WebSocket connections work for all channels
+
+#### Option B: Selective Loading (ADVANCED, HIGH RISK, 80-100MB savings)
+
+Create minimal boot environment that only loads what Action Cable needs:
+
+```ruby
+# cable/config.ru - REPLACE ENTIRE FILE
+ENV['RAILS_ENV'] ||= 'production'
+
+# Load only what Action Cable needs
+require 'bundler/setup'
+require 'rails'
+require 'action_cable'
+require 'redis'
+
+# Minimal Rails setup
+module ShowcaseApp
+  class Application < Rails::Application
+    config.load_defaults 8.0
+    config.eager_load = false
+  end
+end
+
+# Initialize just Action Cable
+ActionCable.server.config.cable = {
+  adapter: 'redis',
+  url: ENV.fetch('REDIS_URL', 'redis://localhost:6379/1'),
+  channel_prefix: ENV.fetch('RAILS_APP_REDIS', 'showcase_production')
+}
+
+# Load only channel classes
+Dir[File.expand_path('../app/channels/**/*.rb', __dir__)].each { |f| require f }
+
+# Allow all origins (Navigator handles security)
+ActionCable.server.config.allowed_request_origins = [/.*/]
+
+map "/cable" do
+  run ActionCable.server
+end
+```
+
+**Expected savings**: 80-100MB
+**Risk**: High - need to ensure all dependencies are loaded
+**Testing**: Thorough testing of all WebSocket features
+
+#### Option C: Reduce Thread Count (EASY, LOW RISK, 10-20MB savings)
+
+Action Cable server uses default Puma config (5 threads). Reduce threads for WebSocket handling:
+
+```ruby
+# In app/controllers/concerns/configurator.rb line 592
+# Change from:
+'args' => ['exec', 'puma', '-p', ENV.fetch('CABLE_PORT', '28080'), 'cable/config.ru'],
+
+# To:
+'args' => ['exec', 'puma', '-t', '1:2', '-p', ENV.fetch('CABLE_PORT', '28080'), 'cable/config.ru'],
+```
+
+**Expected savings**: 10-20MB
+**Risk**: Low - WebSocket connections are long-lived, don't need many threads
+**Testing**: Load test with multiple concurrent WebSocket connections
+
+**Recommendation**: Start with **Option A + Option C** (40-60MB savings) as quick wins, then consider Option B for maximum optimization.
+
+### Priority 2: Lazy Load AWS SDK in nav_startup.rb (Estimated savings: ~30MB)
+
+**Current state**: 38MB resident process
+
+**Issue**: `script/nav_startup.rb` line 4 loads `aws-sdk-s3` at startup, even though AWS operations may not be needed immediately.
+
+**Implementation**:
+```ruby
+# script/nav_startup.rb line 4
+# Instead of:
+# require 'aws-sdk-s3'
+
+# Use lazy loading:
+def require_aws_sdk
+  require 'aws-sdk-s3' unless defined?(Aws)
+end
+
+# Later in the script, before AWS operations:
+require_aws_sdk if ENV["AWS_ACCESS_KEY_ID"].present?
+system "ruby #{git_path}/script/sync_databases_s3.rb --index-only --quiet"
+```
+
+**Expected savings**: ~30MB
+**Risk**: Low
+**Testing**: Verify S3 sync operations still work
+
+### Priority 3: Redis Memory Limits (Estimated savings: 5-10MB)
+
+**Current state**: 14MB (already quite small)
 
 **Implementation**:
 ```dockerfile
@@ -57,7 +211,7 @@ RUN sed -i 's/^daemonize yes/daemonize no/' /etc/redis/redis.conf &&\
 redis-cli info memory | grep used_memory_human
 ```
 
-### Priority 2: Aggressive jemalloc Tuning (Estimated savings: 10-30MB)
+### Priority 4: Aggressive jemalloc Tuning (Estimated savings: 10-30MB)
 
 **Rationale**: More aggressive memory return to OS for idle processes.
 
@@ -89,12 +243,14 @@ ldd $(which ruby) | grep jemalloc
 watch -n 5 'ps aux | grep -E "(redis|navigator|ruby)" | grep -v grep'
 ```
 
-### Priority 3: Disable Vector if Not Needed (Estimated savings: 10-30MB)
+### Priority 5: Disable Vector if Not Needed (Estimated savings: 10-30MB)
+
+**Current state**: Not visible in process list on smooth-nav (may not be running)
 
 **Rationale**: Vector log aggregation may not be needed for all deployments.
 
-**Investigation**:
-- Check if Vector is actually being used for log aggregation
+**Investigation needed**:
+- Check if Vector process is actually running: `pgrep -a vector`
 - Determine if standard logging is sufficient
 - Consider making Vector optional via environment variable
 
@@ -109,30 +265,6 @@ RUN if [ "$ENABLE_VECTOR" = "true" ]; then \
       apt-get install --no-install-recommends -y vector; \
     fi && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
-```
-
-### Priority 4: Optimize Ruby Startup Script (Estimated savings: 20-40MB)
-
-**Rationale**: `script/nav_startup.rb` stays resident and loads AWS SDK.
-
-**Investigation needed**:
-- Profile memory usage of nav_startup.rb
-- Determine if it needs to stay resident after initialization
-- Consider moving AWS operations to separate process
-
-**Implementation** (lazy AWS loading):
-```ruby
-# In script/nav_startup.rb, line 4 - lazy load AWS SDK
-# Instead of:
-# require 'aws-sdk-s3'
-
-# Load only when needed:
-def load_aws_sdk
-  require 'aws-sdk-s3'
-end
-
-# Only load if AWS operations are needed
-load_aws_sdk if ENV["AWS_ACCESS_KEY_ID"].present?
 ```
 
 ---
@@ -387,15 +519,37 @@ bin/rails test:system
 
 ## Expected Results
 
-### Conservative Estimate (Phases 1-2)
-- **Baseline**: 350MB → 280MB (20% reduction)
-- **Per-tenant**: 300MB → 200MB (33% reduction)
-- **10 tenants**: 3,350MB → 2,280MB (32% reduction, 1GB savings)
+### Based on Actual Measurements (smooth-nav baseline: 397MB)
 
-### Aggressive Estimate (All Phases)
-- **Baseline**: 350MB → 220MB (37% reduction)
-- **Per-tenant**: 300MB → 150MB (50% reduction)
-- **10 tenants**: 3,350MB → 1,720MB (49% reduction, 1.6GB savings)
+### Quick Wins (Action Cable + AWS SDK + Thread reductions)
+- **Baseline optimizations**:
+  - Action Cable eager_load removal: -35MB
+  - Action Cable thread reduction: -15MB
+  - AWS SDK lazy loading: -30MB
+  - Redis tuning: -5MB
+  - **Total baseline savings: ~85MB**
+- **Baseline**: 397MB → 312MB (21% reduction)
+- **Per-tenant**: 300MB → 200MB (33% reduction, from Rails optimizations)
+- **10 tenants**: 3,397MB → 2,312MB (32% reduction, 1.1GB savings)
+
+### Aggressive Optimizations (Including selective Action Cable loading)
+- **Baseline optimizations**:
+  - Action Cable selective loading: -90MB
+  - Action Cable thread reduction: -15MB
+  - AWS SDK lazy loading: -30MB
+  - Redis tuning: -5MB
+  - jemalloc aggressive tuning: -20MB
+  - **Total baseline savings: ~160MB**
+- **Baseline**: 397MB → 237MB (40% reduction)
+- **Per-tenant**: 300MB → 150MB (50% reduction, from full Rails optimizations)
+- **10 tenants**: 3,397MB → 1,737MB (49% reduction, 1.66GB savings)
+
+### Priority Order by Impact:
+1. **Action Cable optimization** (35-90MB baseline) ⭐ Highest ROI
+2. **Per-tenant Rails optimizations** (100-150MB × tenant count)
+3. **AWS SDK lazy loading** (30MB baseline)
+4. **Thread reductions** (15MB baseline + 20-30MB × tenant count)
+5. **Redis/jemalloc tuning** (5-25MB baseline)
 
 ---
 
