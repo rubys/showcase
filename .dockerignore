@@ -29,6 +29,7 @@
 # Ignore databases
 /db/*.sqlite3*
 /db/*.yml
+/db/htpasswd
 
 # Ignore storage (uploaded files in development and any SQLite databases).
 /storage/*
