@@ -86,7 +86,7 @@ This loads:
 - Channel classes (app/channels/)
 - Connection authentication logic
 
-#### Option A: Remove Eager Loading (EASY, LOW RISK, 30-40MB savings)
+#### Option A: Remove Eager Loading (EASY, MEDIUM RISK, 30-40MB savings)
 
 Simply remove the eager loading to let classes load on-demand:
 
@@ -97,40 +97,40 @@ require_relative "../config/environment"
 ```
 
 **Expected savings**: 30-40MB
-**Risk**: Low - classes load on-demand when needed
-**Testing**: Verify WebSocket connections work for all channels
 
-#### Option B: Selective Loading (ADVANCED, HIGH RISK, 80-100MB savings)
+**Risk: MEDIUM** - Potential threading issues:
+- **Concern**: In multi-threaded environments, lazy loading can cause race conditions
+- **Issue**: Two threads simultaneously autoloading same constant → NameError or deadlock
+- **Rails 7+ mitigation**: Zeitwerk autoloader is more thread-safe, but not perfect
+- **Your channels**: Very simple - just stream subscriptions, no model access in channels themselves
+- **Broadcasts**: Originate from tenant Rails apps, not the Action Cable server
 
-Create minimal boot environment that only loads what Action Cable needs:
+**Risk mitigation**:
+1. Action Cable uses persistent connections (less constant loading than typical web requests)
+2. Your channels don't directly reference models
+3. Most autoloading happens during subscription (single-threaded per connection)
+
+**Recommendation**: Test thoroughly under load with concurrent WebSocket connections
+
+**Testing**:
+- Load test with 50+ concurrent WebSocket connections
+- Verify all channel subscriptions work
+- Monitor for NameError or constant loading issues in logs
+- Test all channels: scores, current_heat, output, offline_playlist
+
+#### Option B: Selective Loading with Eager Channels (ADVANCED, LOW-MEDIUM RISK, 50-80MB savings)
+
+Keep full Rails environment but only eager-load channels (not models/controllers):
 
 ```ruby
-# cable/config.ru - REPLACE ENTIRE FILE
-ENV['RAILS_ENV'] ||= 'production'
+# cable/config.ru
+require_relative "../config/environment"
 
-# Load only what Action Cable needs
-require 'bundler/setup'
-require 'rails'
-require 'action_cable'
-require 'redis'
+# Don't eager load everything
+# Rails.application.eager_load!  ← REMOVE THIS
 
-# Minimal Rails setup
-module ShowcaseApp
-  class Application < Rails::Application
-    config.load_defaults 8.0
-    config.eager_load = false
-  end
-end
-
-# Initialize just Action Cable
-ActionCable.server.config.cable = {
-  adapter: 'redis',
-  url: ENV.fetch('REDIS_URL', 'redis://localhost:6379/1'),
-  channel_prefix: ENV.fetch('RAILS_APP_REDIS', 'showcase_production')
-}
-
-# Load only channel classes
-Dir[File.expand_path('../app/channels/**/*.rb', __dir__)].each { |f| require f }
+# Instead, explicitly eager load just channels (thread-safe)
+Dir[Rails.root.join('app/channels/**/*.rb')].sort.each { |f| require f }
 
 # Allow all origins (Navigator handles security)
 ActionCable.server.config.allowed_request_origins = [/.*/]
@@ -140,11 +140,73 @@ map "/cable" do
 end
 ```
 
-**Expected savings**: 80-100MB
-**Risk**: High - need to ensure all dependencies are loaded
-**Testing**: Thorough testing of all WebSocket features
+**Expected savings**: 50-80MB (loads Rails but not models/controllers/helpers/concerns)
 
-#### Option C: Reduce Thread Count (EASY, LOW RISK, 10-20MB savings)
+**Risk: LOW-MEDIUM** - Much safer than Option A:
+- ✅ Channels are explicitly loaded (no threading issues)
+- ✅ Rails environment available if needed
+- ✅ Any dependencies channels need will autoload safely (one at a time)
+- ⚠️  Models/controllers not preloaded (but your channels don't use them)
+
+**Testing**:
+- Test all WebSocket channel subscriptions
+- Monitor memory usage (should be 110-130MB vs 160MB)
+- Load test with concurrent connections
+
+#### Option C: Minimal Action Cable Server (ADVANCED, HIGHEST RISK, 100-120MB savings)
+
+**DO NOT IMPLEMENT WITHOUT EXTENSIVE TESTING** - For reference only:
+
+Create completely standalone Action Cable server without Rails:
+
+```ruby
+# cable/config.ru - MINIMAL VERSION (NOT RECOMMENDED)
+ENV['RAILS_ENV'] ||= 'production'
+
+require 'bundler/setup'
+require 'action_cable'
+require 'redis'
+
+# Just Action Cable, no Rails
+ActionCable.server.config.cable = {
+  adapter: 'redis',
+  url: ENV.fetch('REDIS_URL', 'redis://localhost:6379/1'),
+  channel_prefix: ENV.fetch('RAILS_APP_REDIS', 'showcase_production')
+}
+
+# Manually define channels inline (since no Rails autoloading)
+class ApplicationCable::Channel < ActionCable::Channel::Base
+end
+
+class ApplicationCable::Connection < ActionCable::Connection::Base
+end
+
+class ScoresChannel < ApplicationCable::Channel
+  def subscribed
+    stream_from "live-scores-#{ENV['RAILS_APP_DB']}"
+  end
+end
+
+class CurrentHeatChannel < ApplicationCable::Channel
+  def subscribed
+    stream_from "current-heat-#{ENV['RAILS_APP_DB']}"
+  end
+end
+
+# ... define other channels ...
+
+ActionCable.server.config.allowed_request_origins = [/.*/]
+
+map "/cable" do
+  run ActionCable.server
+end
+```
+
+**Expected savings**: 100-120MB
+**Risk**: VERY HIGH - Breaks autoloading, requires manual channel management
+**Not recommended** unless memory is absolutely critical
+
+#### Option D: Reduce Thread Count (EASY, LOW RISK, 10-20MB savings)
 
 Action Cable server uses default Puma config (5 threads). Reduce threads for WebSocket handling:
 
@@ -161,7 +223,10 @@ Action Cable server uses default Puma config (5 threads). Reduce threads for Web
 **Risk**: Low - WebSocket connections are long-lived, don't need many threads
 **Testing**: Load test with multiple concurrent WebSocket connections
 
-**Recommendation**: Start with **Option A + Option C** (40-60MB savings) as quick wins, then consider Option B for maximum optimization.
+**Recommendation**:
+- **Safest**: Start with **Option B + Option D** (60-100MB savings) - Explicitly eager-load channels only
+- **More aggressive**: Try **Option A + Option D** (40-60MB savings) - Remove eager loading entirely
+- **Not recommended**: Option C is too risky unless memory is absolutely critical
 
 ### Priority 2: Remove AWS SDK from nav_startup.rb ✅ IMPLEMENTED (Actual savings: 13.4MB)
 
