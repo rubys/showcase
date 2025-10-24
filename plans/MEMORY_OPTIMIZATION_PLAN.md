@@ -84,9 +84,19 @@ This loads:
 - ActionCable framework itself
 - Redis connection
 - Channel classes (app/channels/)
-- Connection authentication logic
+- Rails.root, Rails.logger, ENV access
+- YAML, PTY, SecureRandom (for OutputChannel)
 
-#### Option A: Remove Eager Loading (EASY, MEDIUM RISK, 30-40MB savings)
+**CRITICAL FINDING**: ✅ Analysis of all channels confirms:
+- **NO channels access models** (Person, Studio, Heat, Score, etc.)
+- **NO database queries** in any channel code
+- Channels are **pure relay/subscription** - they just forward messages
+- Model access happens in **tenant Rails apps** which broadcast to streams
+- The standalone Action Cable server is a **message router**, not a data accessor
+
+This dramatically reduces risk for memory optimizations!
+
+#### Option A: Remove Eager Loading (EASY, LOW RISK, 30-40MB savings)
 
 Simply remove the eager loading to let classes load on-demand:
 
@@ -98,29 +108,37 @@ require_relative "../config/environment"
 
 **Expected savings**: 30-40MB
 
-**Risk: MEDIUM** - Potential threading issues:
-- **Concern**: In multi-threaded environments, lazy loading can cause race conditions
-- **Issue**: Two threads simultaneously autoloading same constant → NameError or deadlock
-- **Rails 7+ mitigation**: Zeitwerk autoloader is more thread-safe, but not perfect
-- **Your channels**: Very simple - just stream subscriptions, no model access in channels themselves
-- **Broadcasts**: Originate from tenant Rails apps, not the Action Cable server
+**Risk: LOW** - Much safer than originally thought:
+- ✅ **Channels don't access models** - No Person, Studio, Heat, Score queries
+- ✅ **No database operations** in channel code
+- ✅ **Channels are pure relays** - Just subscribe to Redis streams and forward messages
+- ✅ **Model loading happens elsewhere** - In tenant Rails apps that broadcast
+- ⚠️ **Still multi-threaded** - But only loading Rails helpers/utilities, not models
+
+**Channel dependencies actually used**:
+- `Rails.root`, `Rails.logger` - Safe, simple methods
+- `ENV['RAILS_APP_DB']` - Environment variable access
+- `YAML`, `PTY`, `SecureRandom` - Ruby stdlib, no autoloading
+- `ApplicationCable::Channel` - Loaded at boot
 
 **Risk mitigation**:
-1. Action Cable uses persistent connections (less constant loading than typical web requests)
-2. Your channels don't directly reference models
-3. Most autoloading happens during subscription (single-threaded per connection)
+1. Channels load minimal dependencies (mostly already loaded)
+2. No complex model hierarchies to autoload
+3. Action Cable uses persistent connections (one-time subscription setup)
 
-**Recommendation**: Test thoroughly under load with concurrent WebSocket connections
+**Recommendation**: Safe to implement with basic testing
 
 **Testing**:
-- Load test with 50+ concurrent WebSocket connections
-- Verify all channel subscriptions work
-- Monitor for NameError or constant loading issues in logs
-- Test all channels: scores, current_heat, output, offline_playlist
+- Test all 4 channels with concurrent connections
+- Verify WebSocket subscriptions and message forwarding
+- Monitor logs for any NameError (unlikely given channel simplicity)
+- Test channels: scores, current_heat, output, offline_playlist
 
-#### Option B: Selective Loading with Eager Channels (ADVANCED, LOW-MEDIUM RISK, 50-80MB savings)
+#### Option B: Selective Loading with Eager Channels (REDUNDANT - Use Option A Instead)
 
-Keep full Rails environment but only eager-load channels (not models/controllers):
+**Note**: Given that channels don't access models, this approach offers minimal benefit over Option A while adding complexity. Option A (just removing eager_load) is simpler and equally safe.
+
+~~Keep full Rails environment but only eager-load channels (not models/controllers):~~
 
 ```ruby
 # cable/config.ru
@@ -131,80 +149,95 @@ require_relative "../config/environment"
 
 # Instead, explicitly eager load just channels (thread-safe)
 Dir[Rails.root.join('app/channels/**/*.rb')].sort.each { |f| require f }
-
-# Allow all origins (Navigator handles security)
-ActionCable.server.config.allowed_request_origins = [/.*/]
-
-map "/cable" do
-  run ActionCable.server
-end
 ```
 
-**Expected savings**: 50-80MB (loads Rails but not models/controllers/helpers/concerns)
+**Why this isn't necessary**:
+- Channels already autoload safely (they're the first thing accessed on subscription)
+- No models to worry about
+- Added complexity without significant benefit
 
-**Risk: LOW-MEDIUM** - Much safer than Option A:
-- ✅ Channels are explicitly loaded (no threading issues)
-- ✅ Rails environment available if needed
-- ✅ Any dependencies channels need will autoload safely (one at a time)
-- ⚠️  Models/controllers not preloaded (but your channels don't use them)
+**Recommendation**: Just use Option A instead
 
-**Testing**:
-- Test all WebSocket channel subscriptions
-- Monitor memory usage (should be 110-130MB vs 160MB)
-- Load test with concurrent connections
+#### Option C: Minimal Action Cable Server (ADVANCED, MEDIUM RISK, 100-120MB savings)
 
-#### Option C: Minimal Action Cable Server (ADVANCED, HIGHEST RISK, 100-120MB savings)
+**NOW MORE VIABLE** given that channels don't access models:
 
-**DO NOT IMPLEMENT WITHOUT EXTENSIVE TESTING** - For reference only:
-
-Create completely standalone Action Cable server without Rails:
+Create standalone Action Cable server with minimal Rails dependencies:
 
 ```ruby
-# cable/config.ru - MINIMAL VERSION (NOT RECOMMENDED)
+# cable/config.ru - MINIMAL VERSION
 ENV['RAILS_ENV'] ||= 'production'
 
 require 'bundler/setup'
 require 'action_cable'
 require 'redis'
+require 'yaml'
+require 'pty'
+require 'securerandom'
 
-# Just Action Cable, no Rails
+# Minimal Rails stub for channels that use Rails.root, Rails.logger
+module Rails
+  def self.root
+    Pathname.new(File.expand_path('..', __dir__))
+  end
+
+  def self.logger
+    @logger ||= Logger.new(STDOUT)
+  end
+
+  def self.env
+    ActiveSupport::StringInquirer.new(ENV['RAILS_ENV'] || 'production')
+  end
+end
+
+# Action Cable configuration
 ActionCable.server.config.cable = {
   adapter: 'redis',
   url: ENV.fetch('REDIS_URL', 'redis://localhost:6379/1'),
   channel_prefix: ENV.fetch('RAILS_APP_REDIS', 'showcase_production')
 }
 
-# Manually define channels inline (since no Rails autoloading)
-class ApplicationCable::Channel < ActionCable::Channel::Base
-end
-
-class ApplicationCable::Connection < ActionCable::Connection::Base
-end
-
-class ScoresChannel < ApplicationCable::Channel
-  def subscribed
-    stream_from "live-scores-#{ENV['RAILS_APP_DB']}"
-  end
-end
-
-class CurrentHeatChannel < ApplicationCable::Channel
-  def subscribed
-    stream_from "current-heat-#{ENV['RAILS_APP_DB']}"
-  end
-end
-
-# ... define other channels ...
-
 ActionCable.server.config.allowed_request_origins = [/.*/]
+
+# Load channel classes (they'll work with minimal Rails stub)
+Dir[File.expand_path('../app/channels/**/*.rb', __dir__)].sort.each { |f| require f }
 
 map "/cable" do
   run ActionCable.server
 end
 ```
 
-**Expected savings**: 100-120MB
-**Risk**: VERY HIGH - Breaks autoloading, requires manual channel management
-**Not recommended** unless memory is absolutely critical
+**Expected savings**: 100-120MB (no ActiveRecord, no models, minimal Rails)
+
+**Risk: MEDIUM** - Much more viable now:
+- ✅ Channels don't need models or database
+- ✅ Simple Rails stub provides what channels actually use
+- ✅ All channel code loads normally
+- ⚠️ Need to test OutputChannel's PTY/YAML operations work
+- ⚠️ No Rails helpers available (but channels don't use them)
+
+**What's removed**:
+- ActiveRecord (all models)
+- ActiveStorage
+- ActionMailer
+- All controllers, helpers, concerns
+- Most of Rails framework
+
+**What's kept**:
+- ActionCable
+- Redis adapter
+- Rails.root, Rails.logger, Rails.env (stubbed)
+- All channel code
+- Ruby stdlib (YAML, PTY, SecureRandom)
+
+**Testing required**:
+- Test all 4 channels thoroughly
+- Test OutputChannel command execution
+- Test token registry read/write
+- Load test concurrent connections
+- Verify broadcasts from tenant apps still work
+
+**Recommendation**: Consider this if Option A + D doesn't provide enough savings
 
 #### Option D: Reduce Thread Count (EASY, LOW RISK, 10-20MB savings)
 
@@ -223,10 +256,16 @@ Action Cable server uses default Puma config (5 threads). Reduce threads for Web
 **Risk**: Low - WebSocket connections are long-lived, don't need many threads
 **Testing**: Load test with multiple concurrent WebSocket connections
 
-**Recommendation**:
-- **Safest**: Start with **Option B + Option D** (60-100MB savings) - Explicitly eager-load channels only
-- **More aggressive**: Try **Option A + Option D** (40-60MB savings) - Remove eager loading entirely
-- **Not recommended**: Option C is too risky unless memory is absolutely critical
+**Recommendation** (Updated based on channel analysis):
+- **Start here**: **Option A + Option D** (40-60MB savings) - Remove eager loading + reduce threads
+  - LOW RISK: Channels don't access models, just relay messages
+  - Simple one-line change + thread config
+  - Good savings for minimal effort
+- **If more savings needed**: **Option C + Option D** (110-140MB savings) - Minimal Rails stub
+  - MEDIUM RISK: More complex but viable since channels are simple
+  - Substantial memory reduction
+  - Requires thorough testing
+- **Skip**: Option B is redundant - no benefit over Option A
 
 ### Priority 2: Remove AWS SDK from nav_startup.rb ✅ IMPLEMENTED (Actual savings: 13.4MB)
 
