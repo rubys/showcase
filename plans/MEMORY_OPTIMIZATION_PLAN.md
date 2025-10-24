@@ -198,6 +198,156 @@ Note: Expected ~30MB savings, but got 13.4MB. The difference may be due to:
 **Testing**: ✅ All tests passing (1029 runs, 4782 assertions, 0 failures)
 **Production verification**: ✅ Deployed to smooth-nav and measured
 
+**Further optimization possible**: See Priority 2B below for replacing entire Ruby script with shell script.
+
+### Priority 2B: Replace nav_startup.rb with Shell Script (Estimated savings: ~22MB additional)
+
+**Current state**: 25MB resident process (after AWS SDK removal)
+
+**Issue**: The nav_startup.rb script stays resident for the container lifetime, keeping the Ruby VM and bundler loaded in memory (~25MB). The script only needs to:
+1. Spawn navigator process
+2. Run several Ruby scripts (which can exit after running)
+3. Wait for navigator process to exit
+4. Handle signals to forward to navigator
+
+**Proposal**: Replace Ruby script with lightweight bash script that calls Ruby scripts as needed.
+
+**Memory comparison**:
+- Current Ruby approach: **~25MB** (Ruby VM + bundler + libraries stay resident)
+- Shell script approach: **~2-3MB** (bash is minimal, Ruby scripts run and exit)
+- **Savings: ~22-23MB (90% reduction in nav_startup process)**
+
+**Implementation**:
+
+Create `script/nav_startup.sh`:
+```bash
+#!/bin/bash
+set -e  # Exit on error
+
+# PIDs to track
+NAV_PID=""
+PRERENDER_PID=""
+
+# Cleanup function for signal handling
+cleanup() {
+  echo "Cleaning up processes..."
+  if [ -n "$PRERENDER_PID" ]; then
+    kill -TERM "$PRERENDER_PID" 2>/dev/null || true
+    wait "$PRERENDER_PID" 2>/dev/null || true
+  fi
+  if [ -n "$NAV_PID" ]; then
+    kill -TERM "$NAV_PID" 2>/dev/null || true
+    wait "$NAV_PID" 2>/dev/null || true
+  fi
+  exit 0
+}
+
+# Set trap before starting processes
+trap cleanup TERM INT EXIT
+
+# Start navigator with maintenance config
+cp config/navigator-maintenance.yml config/navigator.yml
+navigator &
+NAV_PID=$!
+
+# Check for required AWS environment variables
+if [ -z "$AWS_SECRET_ACCESS_KEY" ] || [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_ENDPOINT_URL_S3" ]; then
+  echo "Error: Missing required AWS environment variables"
+  exit 1
+fi
+
+# Setup directories
+git_path="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+[ -d "/data/db" ] && export RAILS_DB_VOLUME="/data/db"
+dbpath="${RAILS_DB_VOLUME:-$git_path/db}"
+mkdir -p "$dbpath"
+chown rails:rails "$dbpath" 2>/dev/null || true
+
+# Create log directory if needed
+if [ -n "$RAILS_LOG_VOLUME" ]; then
+  mkdir -p "$RAILS_LOG_VOLUME"
+  # Fix ownership if owned by root
+  if [ "$(stat -c %u "$RAILS_LOG_VOLUME" 2>/dev/null)" = "0" ]; then
+    echo "Fixing ownership of $RAILS_LOG_VOLUME"
+    chown -R rails:rails "$RAILS_LOG_VOLUME"
+  fi
+fi
+
+# Run database sync (Ruby script runs and exits)
+ruby "$git_path/script/sync_databases_s3.rb" --index-only --quiet
+
+# Update htpasswd (Ruby script runs and exits)
+ruby -r "$git_path/lib/htpasswd_updater.rb" -e "HtpasswdUpdater.update"
+
+# Start prerender in background
+bin/prerender &
+PRERENDER_PID=$!
+
+# Set cable port for navigator config
+export CABLE_PORT=28080
+
+# Generate navigator configuration (Rails task runs and exits)
+bin/rails nav:config
+
+# Setup demo directories
+mkdir -p /demo/db /demo/storage/demo
+chown rails:rails /demo /demo/db /demo/storage/demo 2>/dev/null || true
+
+# Signal navigator to reload with new config
+kill -HUP "$NAV_PID"
+
+# Wait for prerender to complete
+wait "$PRERENDER_PID"
+PRERENDER_PID=""  # Clear so cleanup doesn't try to kill it again
+
+# Fix ownership of inventory.json if needed
+inventory_file="$git_path/tmp/inventory.json"
+if [ -f "$inventory_file" ] && [ "$(stat -c %u "$inventory_file" 2>/dev/null)" = "0" ]; then
+  echo "Fixing ownership of $inventory_file"
+  chown rails:rails "$inventory_file"
+fi
+
+# Wait for navigator (should never exit in normal operation)
+wait "$NAV_PID"
+exit $?
+```
+
+Update `Dockerfile.nav` CMD to use shell script:
+```dockerfile
+CMD ["/rails/script/nav_startup.sh"]
+```
+
+**Advantages**:
+- **~22MB memory savings** (90% reduction in startup script overhead)
+- Shell script stays resident at only ~2-3MB instead of 25MB
+- Ruby scripts still used for complex logic, but they exit after running
+- No Ruby VM stays loaded unnecessarily
+
+**Disadvantages**:
+- More verbose signal handling (~15 more lines vs Ruby)
+- Need to handle shell script edge cases (error suppression, variable quoting)
+- Slightly harder to debug than Ruby (though still straightforward bash)
+
+**Signal Handling Complexity**:
+The main difference is that shell scripts require:
+- Explicit cleanup function with PID tracking
+- Setting trap before spawning processes
+- Error suppression (`2>/dev/null || true`) for robustness
+- Careful quoting and variable checks
+
+Ruby's signal handling is more elegant but costs 22MB of resident memory.
+
+**Expected savings**: ~22MB baseline reduction
+**Risk**: Low-Medium - shell scripting is well-understood, but needs thorough testing
+**Testing required**:
+- Test signal handling (SIGTERM, SIGINT)
+- Test all file ownership operations work
+- Test AWS sync and htpasswd update
+- Test navigator config generation
+- Verify prerender completes successfully
+
+**Recommendation**: Consider this optimization after Action Cable optimizations, as Action Cable has higher ROI (35-100MB potential savings).
+
 ### Priority 3: Redis Memory Limits (Estimated savings: 5-10MB)
 
 **Current state**: 14MB (already quite small)
