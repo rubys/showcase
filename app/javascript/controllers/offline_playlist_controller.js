@@ -53,9 +53,9 @@ export default class extends Controller {
       }
       
       const data = await response.json()
-      
+
       this.subscription = this.consumer.subscriptions.create(
-        { channel: "OfflinePlaylistChannel", user_id: data.user_id },
+        { channel: "OfflinePlaylistChannel", user_id: data.user_id, database: data.database },
         {
           received: (data) => {
             this.handleProgressUpdate(data)

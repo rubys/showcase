@@ -38,7 +38,7 @@ class SolosController < ApplicationController
       format.json {
         user_id = SecureRandom.hex(8)
         OfflinePlaylistJob.perform_later(Event.current.id, user_id)
-        render json: { user_id: user_id, status: 'initiated' }
+        render json: { user_id: user_id, database: ENV['RAILS_APP_DB'], status: 'initiated' }
       }
       format.zip { 
         cache_key = params[:cache_key]

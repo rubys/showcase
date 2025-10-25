@@ -4,14 +4,15 @@ class OfflinePlaylistJob < ApplicationJob
   def perform(event_id, user_id)
     event = Event.find(event_id)
     Event.current = event
-    
+
     filename = "dj-playlist-#{event.name.parameterize}.zip"
     cache_key = "offline_playlist_#{event_id}"
-    
+    database = ENV['RAILS_APP_DB']
+
     Rails.cache.delete(cache_key)
-    
+
     ActionCable.server.broadcast(
-      "offline_playlist_#{user_id}",
+      "offline_playlist_#{database}_#{user_id}",
       { status: 'processing', progress: 0, message: 'Starting playlist generation...' }
     )
     
@@ -20,7 +21,7 @@ class OfflinePlaylistJob < ApplicationJob
       
       if total_heats == 0
         ActionCable.server.broadcast(
-          "offline_playlist_#{user_id}",
+          "offline_playlist_#{database}_#{user_id}",
           { status: 'error', message: 'No solos found' }
         )
         return
@@ -28,47 +29,47 @@ class OfflinePlaylistJob < ApplicationJob
       
       # Notify user we're finalizing the download file
       ActionCable.server.broadcast(
-        "offline_playlist_#{user_id}",
-        { 
-          status: 'processing', 
-          progress: 100, 
+        "offline_playlist_#{database}_#{user_id}",
+        {
+          status: 'processing',
+          progress: 100,
           message: "Finalizing download..."
         }
       )
-      
-      zip_path = generate_zip_file(event, user_id, total_heats)
-      
+
+      zip_path = generate_zip_file(event, user_id, total_heats, database)
+
       # Store just the path in cache, not the entire file
       cache_data = {
         filename: filename,
         file_path: zip_path,
         generated_at: Time.current
       }
-      
+
       Rails.cache.write(cache_key, cache_data, expires_in: 1.hour)
-      
+
       ActionCable.server.broadcast(
-        "offline_playlist_#{user_id}",
-        { 
-          status: 'completed', 
-          progress: 100, 
+        "offline_playlist_#{database}_#{user_id}",
+        {
+          status: 'completed',
+          progress: 100,
           message: 'Playlist ready for download',
           download_key: cache_key
         }
       )
     rescue => e
       Rails.logger.error "OfflinePlaylistJob failed: #{e.message}\n#{e.backtrace.join("\n")}"
-      
+
       ActionCable.server.broadcast(
-        "offline_playlist_#{user_id}",
+        "offline_playlist_#{database}_#{user_id}",
         { status: 'error', message: "Failed to generate playlist: #{e.message}" }
       )
     end
   end
-  
+
   private
-  
-  def generate_zip_file(event, user_id, total_heats)
+
+  def generate_zip_file(event, user_id, total_heats, database)
     require 'zip'
     require 'fileutils'
     
@@ -82,9 +83,9 @@ class OfflinePlaylistJob < ApplicationJob
     
     Zip::OutputStream.open(zip_path) do |zip|
       zip.put_next_entry("dj-playlist.html")
-      
+
       # Stream HTML content directly to ZIP (no memory accumulation)
-      generate_html_content(zip, event, user_id, total_heats)
+      generate_html_content(zip, event, user_id, total_heats, database)
       
       zip.put_next_entry("README.txt")
       zip.write(generate_readme_content(event))
@@ -100,41 +101,41 @@ class OfflinePlaylistJob < ApplicationJob
     zip_path.to_s
   end
   
-  def generate_html_content(zip_stream, event, user_id, total_heats)
+  def generate_html_content(zip_stream, event, user_id, total_heats, database)
     solos_controller = SolosController.new
     solos_controller.index
     heats = solos_controller.instance_variable_get(:@solos).map { |solo| solo.last }.flatten.sort_by { |heat| heat.number }
-    
+
     # Write header directly to ZIP
     zip_stream.write(render_partial('solos/offline_header', event: event))
-    
+
     processed = 0
     last_broadcast_time = Time.current
-    
+
     heats.each do |heat|
       next if heat.number <= 0
-      
+
       # Write each heat row directly to ZIP as we process it
       zip_stream.write(render_partial('solos/offline_heat_row', heat: heat))
-      
+
       processed += 1
       progress = (processed.to_f / total_heats * 100).to_i
-      
+
       # Broadcast if a second or more has elapsed since last broadcast, or if we're done
       current_time = Time.current
       if (current_time - last_broadcast_time) >= 1.0 || processed == total_heats
         ActionCable.server.broadcast(
-          "offline_playlist_#{user_id}",
-          { 
-            status: 'processing', 
-            progress: progress, 
+          "offline_playlist_#{database}_#{user_id}",
+          {
+            status: 'processing',
+            progress: progress,
             message: "Processing heat #{processed} of #{total_heats}..."
           }
         )
         last_broadcast_time = current_time
       end
     end
-    
+
     # Write footer directly to ZIP
     zip_stream.write(render_partial('solos/offline_footer'))
   end
