@@ -1,3 +1,8 @@
+---
+name: prerendering
+description: Techniques for rendering Rails pages without starting a server using the internal routing system. Use when the user needs to test page rendering, debug views, verify page correctness, or analyze rendering performance without HTTP overhead.
+---
+
 # Rendering Pages Without Starting a Server
 
 You can render any page in the application without starting a Rails server. This is useful for testing page rendering, debugging views, or verifying that pages work correctly.

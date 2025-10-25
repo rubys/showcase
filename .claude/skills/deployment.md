@@ -1,3 +1,8 @@
+---
+name: deployment
+description: Deployment architecture, multi-tenancy design, and environment-specific deployment commands. Use when the user asks about how the application is deployed, multi-tenant architecture with Navigator, Fly.io deployment, or frontend stack details.
+---
+
 # Deployment and Architecture
 
 ## Multi-tenancy Design

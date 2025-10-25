@@ -1,3 +1,8 @@
+---
+name: database
+description: Database management commands and the bin/run utility for executing Ruby scripts against specific event databases. Use when the user needs to query, manipulate, or run scripts against existing databases without starting a Rails server.
+---
+
 # Database Management
 
 ## Standard Database Commands

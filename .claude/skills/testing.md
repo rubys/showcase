@@ -1,3 +1,8 @@
+---
+name: testing
+description: Information about running tests, test coverage, and known testing issues in the Rails application. Use when the user asks about testing procedures, encounters test failures, wants to know about coverage, or needs to troubleshoot intermittent system test issues.
+---
+
 # Testing
 
 ## Running Tests
