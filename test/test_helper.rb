@@ -37,6 +37,9 @@ end
 require_relative "../config/environment"
 require "rails/test_help"
 
+# Clean up static files that might interfere with routing
+File.delete('public/index.html') if File.exist?('public/index.html')
+
 class ActiveSupport::TestCase
   # Run tests in parallel with specified workers
   parallelize(workers: :number_of_processors)
