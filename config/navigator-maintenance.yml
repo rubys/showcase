@@ -1,57 +1,32 @@
-# Navigator configuration for maintenance mode
-# Serves static 503.html for all requests
+# Navigator Maintenance Mode Configuration
+# This configuration is used during container startup while initialization runs.
+# Navigator shows a maintenance page until initialization completes and generates
+# the full configuration in config/navigator.yml.
 
 server:
   listen: 3000
   hostname: localhost
-  root_path: /
-  public_dir: public
 
-# No authentication needed for maintenance page
-auth:
-  enabled: false
+  # Static file serving for maintenance page
+  static:
+    public_dir: public
+    allowed_extensions: [html, css, js, png, jpg, svg, ico]
 
-# No Rails applications - everything is static
-applications:
-  tenants: []
+# Maintenance page configuration
+maintenance:
+  page: /503.html
 
-# Serve static files directly from public directory
-static:
-  directories:
-    - path: /
-      root: .  # Relative to PublicDir (/rails/public)
-      cache: 0  # No caching for maintenance page
-  
-  extensions:
-    - html
-    - css
-    - js
-    - png
-    - jpg
-    - svg
-    - ico
-  
-  # Try files configuration
-  try_files:
-    enabled: true
-    suffixes: []
-    fallback: /503.html
+# Server ready hook: runs initialization scripts
+# After successful hook execution, Navigator will reload with config/navigator.yml
+hooks:
+  server:
+    ready:
+      - command: ruby
+        args:
+          - script/nav_initialization.rb
+        timeout: 5m  # Allow up to 5 minutes for initialization (S3 sync, etc.)
+        reload_config: config/navigator.yml  # Switch to this config file after hook succeeds
 
-# Rewrite all requests to 503.html
-routes:
-  rewrites:
-    - from: "^.*$"
-      to: /503.html
-
-# Minimal pool configuration (not used but required)
-pools:
-  max_size: 1
-  idle_timeout: 60
-  start_port: 4000
-
-# Logging
+# Logging configuration
 logging:
-  access_log: /dev/stdout
-  error_log: /dev/stderr
-  level: info
-  format: json  # Use JSON format for structured logging
+  format: text  # Use text format for easier debugging during startup

@@ -109,7 +109,13 @@ ENV DATABASE_URL="sqlite3:///data/production.sqlite3" \
     RAILS_STORAGE="/data/storage" \
     LD_PRELOAD="/usr/lib/x86_64-linux-gnu/libjemalloc.so.2"
 
-# Start navigator
+# Start navigator with maintenance config
+# Navigator will execute the ready hook (script/nav_initialization.rb) which:
+# - Syncs databases from S3
+# - Updates htpasswd
+# - Runs prerender
+# - Generates full navigator config
+# - Returns, triggering navigator config reload
 EXPOSE 3000
 VOLUME /data
-CMD [ "/rails/script/nav_startup.rb", "--${NAVIGATOR}" ]
+CMD [ "navigator", "config/navigator-maintenance.yml" ]
