@@ -68,7 +68,7 @@ All machines updated (zero downtime)
 
 ### ✅ Required (Completed)
 
-2. **Navigator Ready Hook Extension** (commit c73d1c9)
+2. **Navigator Ready Hook Extension** (commit e3fee85)
    - Extend `ready` hook to run **both** on initial start AND after config reloads
    - Currently `ready` only runs after initial start
    - After change, `ready` runs: initial start, CGI reload, resume reload, SIGHUP reload
@@ -132,9 +132,9 @@ All machines updated (zero downtime)
      - Update lifecycle hooks section with new ready hook behavior
      - Add to "Configuration Reload" section about ready hooks running
 
-   **Status:** ✅ Implemented in Navigator (commit c73d1c9)
+   **Status:** ✅ Implemented in Navigator (commit e3fee85)
 
-   **Commit:** https://github.com/rubys/navigator/commit/c73d1c9
+   **Commit:** https://github.com/rubys/navigator/commit/e3fee85
 
 ---
 
@@ -929,7 +929,7 @@ end
   - `stop` = shutting down
 
 **2025-10-26 (Implementation complete):**
-- ✅ **Navigator ready hook extension implemented** (commit c73d1c9)
+- ✅ **Navigator ready hook extension implemented** (commit e3fee85)
   - Modified `handleReload()` to execute ready hooks asynchronously after reload
   - Added comprehensive tests (TestReadyHookExecutesAfterReload, TestReadyHookExecutesOnInitialStart)
   - Updated all documentation (lifecycle-hooks.md, yaml-reference.md, CLAUDE.md)
