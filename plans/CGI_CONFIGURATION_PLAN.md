@@ -66,9 +66,9 @@ All machines updated (zero downtime)
    - Timeout support for long-running operations
    - Standard CGI/1.1 protocol implementation
 
-### ⏳ Required (Not Yet Implemented)
+### ✅ Required (Completed)
 
-2. **Navigator Ready Hook Extension** (v0.17.0 or later)
+2. **Navigator Ready Hook Extension** (commit c73d1c9)
    - Extend `ready` hook to run **both** on initial start AND after config reloads
    - Currently `ready` only runs after initial start
    - After change, `ready` runs: initial start, CGI reload, resume reload, SIGHUP reload
@@ -132,9 +132,9 @@ All machines updated (zero downtime)
      - Update lifecycle hooks section with new ready hook behavior
      - Add to "Configuration Reload" section about ready hooks running
 
-   **Status:** ⏳ Needs to be implemented in Navigator
+   **Status:** ✅ Implemented in Navigator (commit c73d1c9)
 
-   **Issue:** Track at https://github.com/rubys/navigator/issues/
+   **Commit:** https://github.com/rubys/navigator/commit/c73d1c9
 
 ---
 
@@ -927,6 +927,17 @@ end
   - `idle` = about to suspend/stop
   - `resume` = resuming from suspend
   - `stop` = shutting down
+
+**2025-10-26 (Implementation complete):**
+- ✅ **Navigator ready hook extension implemented** (commit c73d1c9)
+  - Modified `handleReload()` to execute ready hooks asynchronously after reload
+  - Added comprehensive tests (TestReadyHookExecutesAfterReload, TestReadyHookExecutesOnInitialStart)
+  - Updated all documentation (lifecycle-hooks.md, yaml-reference.md, CLAUDE.md)
+  - All tests pass with race detection
+- ✅ **Ready for Phase 1: CGI Script Foundation**
+  - Prerequisites complete
+  - Can now implement CGI script and ready hook script
+  - Ready hook will run prerender after CGI triggers config reload
 
 ---
 
