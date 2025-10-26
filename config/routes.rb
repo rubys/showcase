@@ -20,7 +20,7 @@ Rails.application.routes.draw do
       get "/regions/:region", to: 'event#showcases', as: 'region'
       get "/studios/", to: "event#regions", trailing_slash: true, defaults: { list: 'studios' }
       get "/events/", to: "event#showcases", trailing_slash: true
-      get "/studios/:studio", to: 'event#showcases', as: 'studio_events'
+      get "/studios/:studio/", to: 'event#showcases', as: 'studio_events', trailing_slash: true
 
       get "logs", to: 'event#logs'
 
