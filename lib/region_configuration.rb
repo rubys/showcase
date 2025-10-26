@@ -34,8 +34,14 @@ module RegionConfiguration
   # Get path to index database
   # Uses Rails conventions if available, otherwise falls back to environment or default
   def index_db_path
-    dbpath = ENV.fetch('RAILS_DB_VOLUME') { File.join(git_root, 'db') }
-    File.join(dbpath, 'index.sqlite3')
+    if defined?(Rails) && Rails.env.test?
+      # In test mode, use the test database where test data is created
+      Rails.configuration.database_configuration[Rails.env]['database']
+    else
+      # Production/development: use index.sqlite3
+      dbpath = ENV.fetch('RAILS_DB_VOLUME') { File.join(git_root, 'db') }
+      File.join(dbpath, 'index.sqlite3')
+    end
   end
 
   # Calculate haversine distance between two geographic points
@@ -279,10 +285,17 @@ module RegionConfiguration
       }]
     end.to_h
 
-    # Query locations directly from SQLite
-    db = SQLite3::Database.new(index_db_path, results_as_hash: true)
-    locations = db.execute("SELECT key, name, latitude, longitude, region FROM locations ORDER BY key")
-    db.close
+    # Query locations - use ActiveRecord in test mode to see uncommitted transactions
+    if defined?(Rails) && Rails.env.test?
+      locations = Location.select(:key, :name, :latitude, :longitude, :region)
+        .order(:key)
+        .map { |loc| { 'key' => loc.key, 'name' => loc.name, 'latitude' => loc.latitude, 'longitude' => loc.longitude, 'region' => loc.region } }
+    else
+      # Production: direct SQLite query for performance
+      db = SQLite3::Database.new(index_db_path, results_as_hash: true)
+      locations = db.execute("SELECT key, name, latitude, longitude, region FROM locations ORDER BY key")
+      db.close
+    end
 
     studios_data = locations.map do |loc|
       # Build location-like struct for select_region_for_location
@@ -311,19 +324,43 @@ module RegionConfiguration
   def generate_showcases_data
     available_regions = load_available_regions
 
-    # Query showcases with location data directly from SQLite
-    db = SQLite3::Database.new(index_db_path, results_as_hash: true)
-    rows = db.execute(<<~SQL)
-      SELECT
-        s.year, s.key AS showcase_key, s.name AS showcase_name,
-        s.date, s."order" AS showcase_order,
-        l.key AS location_key, l.name AS location_name,
-        l.latitude, l.longitude, l.region, l.locale, l.logo
-      FROM showcases s
-      JOIN locations l ON s.location_id = l.id
-      ORDER BY s.year DESC, s."order" DESC
-    SQL
-    db.close
+    # Query showcases with location data - use ActiveRecord in test mode
+    if defined?(Rails) && Rails.env.test?
+      rows = Showcase.joins(:location)
+        .select('showcases.year, showcases.key AS showcase_key, showcases.name AS showcase_name',
+                'showcases.date, showcases."order" AS showcase_order',
+                'locations.key AS location_key, locations.name AS location_name',
+                'locations.latitude, locations.longitude, locations.region, locations.locale, locations.logo')
+        .order('showcases.year DESC, showcases."order" DESC')
+        .map { |s| {
+          'year' => s.year,
+          'showcase_key' => s.showcase_key,
+          'showcase_name' => s.showcase_name,
+          'date' => s.date,
+          'showcase_order' => s.showcase_order,
+          'location_key' => s.location_key,
+          'location_name' => s.location_name,
+          'latitude' => s.latitude,
+          'longitude' => s.longitude,
+          'region' => s.region,
+          'locale' => s.locale,
+          'logo' => s.logo
+        } }
+    else
+      # Production: direct SQLite query for performance
+      db = SQLite3::Database.new(index_db_path, results_as_hash: true)
+      rows = db.execute(<<~SQL)
+        SELECT
+          s.year, s.key AS showcase_key, s.name AS showcase_name,
+          s.date, s."order" AS showcase_order,
+          l.key AS location_key, l.name AS location_name,
+          l.latitude, l.longitude, l.region, l.locale, l.logo
+        FROM showcases s
+        JOIN locations l ON s.location_id = l.id
+        ORDER BY s.year DESC, s."order" DESC
+      SQL
+      db.close
+    end
 
     # Group by year, then by location
     by_year = rows.group_by { |row| row['year'] }
