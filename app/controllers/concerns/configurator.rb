@@ -71,6 +71,9 @@ module Configurator
       }
     end
 
+    # Add CGI scripts configuration
+    config['cgi_scripts'] = build_cgi_scripts_config(root)
+
     config
   end
 
@@ -192,6 +195,28 @@ module Configurator
         { 'path' => "#{root}/", 'max_age' => '24h' }
       ]
     }
+  end
+
+  def build_cgi_scripts_config(root)
+    scripts = []
+
+    # Add configuration update CGI script for authenticated admin users
+    scripts << {
+      'path' => "#{root}/update_config",
+      'script' => '/rails/script/update_configuration.rb',
+      'method' => 'POST',
+      'user' => 'rails',
+      'group' => 'rails',
+      'allowed_users' => ['admin'],
+      'timeout' => '5m',
+      'reload_config' => 'config/navigator.yml',
+      'env' => {
+        'RAILS_DB_VOLUME' => ENV['RAILS_DB_VOLUME'] || '/data/db',
+        'RAILS_ENV' => 'production'
+      }
+    }
+
+    scripts
   end
 
 
@@ -620,6 +645,7 @@ module Configurator
     hooks = {
       'server' => {
         'start' => [],
+        'ready' => [],
         'stop' => [],
         'idle' => [],
         'resume' => []
@@ -640,6 +666,15 @@ module Configurator
 
       hooks['server']['start'] << htpasswd_hook
       hooks['server']['resume'] << htpasswd_hook
+
+      # Add ready hook for optimizations (runs after initial start and config reloads)
+      # This hook handles slow operations like prerendering and event database downloads
+      # that should run asynchronously while Navigator serves requests
+      hooks['server']['ready'] << {
+        'command' => '/rails/script/ready.sh',
+        'args' => [],
+        'timeout' => '10m'
+      }
 
       # Navigator idle/stop hook - syncs all databases
       navigator_hook = {

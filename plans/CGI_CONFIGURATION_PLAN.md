@@ -138,46 +138,27 @@ All machines updated (zero downtime)
 
 ---
 
-## Phase 1: CGI Script Foundation
+## Phase 1: CGI Script Foundation ✅
 
-### 1.1 Create Smart Configuration Script
+### 1.1 Create Smart Configuration Script ✅
 
 **File:** `script/update_configuration.rb`
 
-**Requirements:**
-```ruby
-#!/usr/bin/env ruby
-# CGI script for intelligent configuration updates
-# Fetches index DB from S3, detects changes, performs necessary operations
-
-require 'bundler/setup'
-require 'fileutils'
-require 'json'
-require 'yaml'
-require_relative '../lib/htpasswd_updater'
-
-# CGI response helpers
-def cgi_header(content_type = 'text/plain')
-  puts "Content-Type: #{content_type}"
-  puts ""
-end
-
-def log(message)
-  puts "[#{Time.now.iso8601}] #{message}"
-  STDOUT.flush
-end
-
-# Main execution
-cgi_header
-log "Starting configuration update..."
-```
+**Implementation:**
+- ✅ Created full CGI script with proper error handling
+- ✅ Fetches index.sqlite3 from S3 via `script/sync_databases_s3.rb --index-only`
+- ✅ Updates htpasswd via `HtpasswdUpdater.update`
+- ✅ Generates region maps via `Configurator#generate_map` and `generate_showcases`
+- ✅ Generates navigator config via `Configurator#generate_navigator_config`
+- ✅ Returns detailed timestamped logs for monitoring
+- ✅ Exits with proper status codes (0 = success, 1 = failure)
 
 **Core Functionality:**
 - Fetch index.sqlite3 from Tigris/S3
 - Always regenerate fast configurations (htpasswd, maps, navigator config)
 - Return detailed status report in <5 seconds
 - Trigger Navigator config reload
-- Navigator runs post-reload hook for optimizations (prerender, event DB downloads)
+- Navigator runs ready hook for optimizations (prerender, event DB downloads)
 
 **CGI Operations (fast, synchronous):**
 1. **Database sync** - Always fetch latest index from S3
@@ -186,14 +167,35 @@ log "Starting configuration update..."
 4. **Navigator config** - Always regenerate (fast, ~1 sec)
 5. **Return success** - CGI completes, Navigator will reload config
 
-**Post-Reload Operations (slow, asynchronous via hook):**
+**Ready Hook Operations (slow, asynchronous):**
 6. **Prerender** - Regenerate all static HTML (10-30 seconds)
 7. **Event databases** - Download/migrate event databases (varies)
 
-### 1.2 Add Navigator CGI Configuration
+### 1.2 Create Ready Hook Script ✅
 
-**File:** Update `config/navigator.yml` (or via nav:config task)
+**File:** `script/ready.sh`
 
+**Implementation:**
+- ✅ Created bash script with timestamp logging
+- ✅ Runs prerender via `bin/prerender`
+- ✅ Updates event databases via `bin/prepare.rb` (reads tmp/tenants.list)
+- ✅ Handles errors gracefully (continues on failure)
+- ✅ Provides detailed logging for monitoring
+
+### 1.3 Add Navigator Configuration ✅
+
+**File:** `app/controllers/concerns/configurator.rb`
+
+**Implementation:**
+- ✅ Added `build_cgi_scripts_config()` method
+- ✅ CGI endpoint: `/showcase/update_config` (POST only, admin-only)
+- ✅ Timeout: 5 minutes (fast operations only)
+- ✅ Auto-reload: `reload_config: config/navigator.yml`
+- ✅ Added `build_hooks_config()` ready hook support
+- ✅ Ready hook: `/rails/script/ready.sh` (10m timeout)
+- ✅ Runs on initial start AND after config reloads
+
+**Generated configuration:**
 ```yaml
 server:
   cgi_scripts:
@@ -204,7 +206,7 @@ server:
       group: rails
       allowed_users:
         - admin
-      timeout: 5m  # Fast timeout (just config updates, not prerender)
+      timeout: 5m
       reload_config: config/navigator.yml
       env:
         RAILS_DB_VOLUME: /data/db
@@ -213,14 +215,14 @@ server:
 hooks:
   server:
     ready:
-      - command: /rails/script/post_reload.sh
+      - command: /rails/script/ready.sh
         timeout: 10m
         # Runs on initial start AND after config reloads
 ```
 
-**Status:** ⏳ Not started
+**Status:** ✅ Complete
 
-**Dependencies:** Navigator ready hook extension (see Prerequisites)
+**Dependencies:** Navigator ready hook extension (✅ Complete - commit e3fee85)
 
 ---
 
@@ -811,18 +813,18 @@ end
 
 ## Timeline
 
-**Phase 0: Navigator Prerequisites** (2-4 hours)
-- Extend ready hook to run on config reloads (not just initial start)
-- Test ready hook executes after CGI reload, SIGHUP reload, resume reload
-- Verify hook runs while Navigator serves requests (non-blocking)
-- Update Navigator documentation (lifecycle-hooks.md, yaml-reference.md, CLAUDE.md)
-- Release Navigator v0.17.0 or later
+**Phase 0: Navigator Prerequisites** ✅ Complete (2-4 hours)
+- ✅ Extend ready hook to run on config reloads (not just initial start)
+- ✅ Test ready hook executes after CGI reload, SIGHUP reload, resume reload
+- ✅ Verify hook runs while Navigator serves requests (non-blocking)
+- ✅ Update Navigator documentation (lifecycle-hooks.md, yaml-reference.md, CLAUDE.md)
+- ✅ Navigator commit e3fee85 (ready for v0.17.0 release)
 
-**Phase 1: Foundation** (2-3 hours)
-- Create update_configuration.rb CGI script
-- Create post_reload.sh ready hook script
-- Add navigator CGI config and ready hook config
-- Test basic CGI execution and ready hook triggering
+**Phase 1: Foundation** ✅ Complete (2-3 hours)
+- ✅ Create update_configuration.rb CGI script
+- ✅ Create ready.sh ready hook script (renamed from post_reload.sh)
+- ✅ Add navigator CGI config and ready hook config
+- ⏳ Test basic CGI execution and ready hook triggering (next step)
 
 **Phase 2: Operations Integration** (3-4 hours)
 - Integrate database sync operation
@@ -928,7 +930,7 @@ end
   - `resume` = resuming from suspend
   - `stop` = shutting down
 
-**2025-10-26 (Implementation complete):**
+**2025-10-26 (Navigator ready hook extension complete):**
 - ✅ **Navigator ready hook extension implemented** (commit e3fee85)
   - Modified `handleReload()` to execute ready hooks asynchronously after reload
   - Added comprehensive tests (TestReadyHookExecutesAfterReload, TestReadyHookExecutesOnInitialStart)
@@ -938,6 +940,27 @@ end
   - Prerequisites complete
   - Can now implement CGI script and ready hook script
   - Ready hook will run prerender after CGI triggers config reload
+
+**2025-10-26 (Phase 1: CGI Script Foundation complete):**
+- ✅ **Created `script/update_configuration.rb`** - CGI script for fast config updates
+  - Fetches index.sqlite3 from S3
+  - Updates htpasswd, region maps, showcases.yml, navigator.yml
+  - Proper error handling and exit codes
+  - Detailed timestamped logging
+- ✅ **Created `script/ready.sh`** - Ready hook for optimizations
+  - Renamed from `post_reload.sh` for better semantics
+  - Runs prerender asynchronously
+  - Downloads/migrates event databases
+  - Executes when Navigator is ready (initial + reloads)
+- ✅ **Updated `Configurator` module** - Navigator config generation
+  - Added `build_cgi_scripts_config()` method
+  - Added ready hook to `build_hooks_config()`
+  - CGI endpoint: `/showcase/update_config` (admin-only, 5m timeout)
+  - Ready hook: `/rails/script/ready.sh` (10m timeout)
+- ✅ **Ready for Phase 2: Operations Integration**
+  - All scripts created and configured
+  - Need to test end-to-end in development
+  - Need to verify all operations work correctly
 
 ---
 
