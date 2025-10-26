@@ -13,9 +13,44 @@ Replace heavyweight redeployment process with intelligent CGI script for configu
 **Target State:**
 - Single CGI script handles all configuration updates
 - Fetches index.sqlite3 from Tigris/S3
-- Detects what changed and performs only necessary operations
-- Updates complete in 10-30 seconds with zero downtime
-- Navigator auto-reloads configuration when needed
+- Always regenerates all configurations (htpasswd, maps, nav config)
+- CGI completes in <5 seconds with zero downtime
+- Navigator auto-reloads when navigator.yml changes
+- Post-reload hook runs optimizations (prerender, database downloads) asynchronously
+
+**Update Flow (Multi-Machine):**
+```
+User clicks "Update Configuration" (on any machine)
+  ↓
+Rails admin controller:
+  1. Sync index.sqlite3 to S3 (if changed)
+  2. Get list of ALL active Fly machines
+  3. POST to /showcase/update_config on EACH machine
+     (with Fly-Force-Instance-Id header to target specific machine)
+  ↓
+Each machine's CGI script executes (in parallel):
+  1. Fetch index.sqlite3 from S3
+  2. Update htpasswd
+  3. Update region maps
+  4. Update navigator.yml
+  5. Return success (<5 sec per machine)
+  ↓
+Each machine's Navigator detects navigator.yml changed
+  ↓
+Each Navigator reloads configuration (new config active on all machines)
+  ↓
+Each Navigator runs post_reload_hook in background:
+  1. Prerender static HTML (10-30 sec)
+  2. Download/migrate event databases
+  ↓
+All machines updated (zero downtime)
+```
+
+**Key Pattern:**
+- **One machine** uploads index.sqlite3 to S3
+- **All active machines** fetch from S3 and update their configs
+- Uses existing `Fly-Force-Instance-Id` header for targeting
+- Parallel execution across all machines (faster than serial)
 
 ---
 
@@ -30,6 +65,41 @@ Replace heavyweight redeployment process with intelligent CGI script for configu
    - Environment variable inheritance (AWS credentials available)
    - Timeout support for long-running operations
    - Standard CGI/1.1 protocol implementation
+
+### ⏳ Required (Not Yet Implemented)
+
+2. **Navigator Post-Reload Hook** (v0.17.0 or later)
+   - Hook script that runs **after** configuration reload completes
+   - Runs while Navigator continues serving requests (non-blocking)
+   - Used for optimizations that don't affect correctness (prerender, DB downloads)
+   - Separates critical config updates from optional optimizations
+
+   **Configuration format:**
+   ```yaml
+   server:
+     cgi_scripts:
+       - path: /showcase/update_config
+         script: /rails/script/update_configuration.rb
+         reload_config: config/navigator.yml
+         post_reload_hook: script/post_reload.sh  # NEW: runs after reload
+   ```
+
+   **Why this is required:**
+   - Prerender can take 10-30 seconds or more
+   - CGI timeout is 10 minutes, but we want fast feedback
+   - Config updates should complete in seconds, not wait for prerender
+   - Prerender is optimization only (pages work without it)
+
+   **Execution flow with hook:**
+   1. CGI script updates config files (htpasswd, maps, navigator.yml)
+   2. CGI script returns success response (fast, <5 seconds)
+   3. Navigator detects navigator.yml changed → reloads config
+   4. Navigator runs post_reload_hook in background
+   5. Hook runs prerender, downloads event databases
+
+   **Status:** ⏳ Needs to be implemented in Navigator
+
+   **Issue:** Track at https://github.com/rubys/navigator/issues/
 
 ---
 
@@ -69,22 +139,21 @@ log "Starting configuration update..."
 
 **Core Functionality:**
 - Fetch index.sqlite3 from Tigris/S3
-- Compare with current index (if exists)
-- Detect changes:
-  - New/removed studio locations
-  - New/removed events
-  - Password changes (user table)
-  - Region assignments
-- Perform only necessary operations
-- Generate new navigator config if needed
-- Return detailed status report
+- Always regenerate fast configurations (htpasswd, maps, navigator config)
+- Return detailed status report in <5 seconds
+- Trigger Navigator config reload
+- Navigator runs post-reload hook for optimizations (prerender, event DB downloads)
 
-**Operations to support:**
-1. **Database sync** - Always fetch latest index
-2. **htpasswd update** - If users changed
-3. **Region map generation** - If studios/regions changed
-4. **Index prerender** - If events added/changed
-5. **Navigator config** - If showcases.yml needs updates
+**CGI Operations (fast, synchronous):**
+1. **Database sync** - Always fetch latest index from S3
+2. **htpasswd update** - Always regenerate (fast, ~1 sec)
+3. **Region map generation** - Always regenerate (fast, ~1 sec)
+4. **Navigator config** - Always regenerate (fast, ~1 sec)
+5. **Return success** - CGI completes, Navigator will reload config
+
+**Post-Reload Operations (slow, asynchronous via hook):**
+6. **Prerender** - Regenerate all static HTML (10-30 seconds)
+7. **Event databases** - Download/migrate event databases (varies)
 
 ### 1.2 Add Navigator CGI Configuration
 
@@ -100,8 +169,9 @@ server:
       group: rails
       allowed_users:
         - admin
-      timeout: 10m
+      timeout: 5m  # Fast timeout (just config updates, not prerender)
       reload_config: config/navigator.yml
+      post_reload_hook: script/post_reload.sh  # Runs after config reloads
       env:
         RAILS_DB_VOLUME: /data/db
         RAILS_ENV: production
@@ -109,105 +179,89 @@ server:
 
 **Status:** ⏳ Not started
 
-**Dependencies:** None (Navigator v0.16.0 already deployed)
+**Dependencies:** Navigator post-reload hook feature (see Prerequisites)
 
 ---
 
-## Phase 2: Change Detection Logic
+## Phase 2: Always-Generate Strategy
 
-### 2.1 Implement Database Comparison
+### 2.1 All Operations Always Run
 
-**Module:** `lib/configuration_detector.rb`
+**Rationale:**
+- Prerender is an **optimization**, not required for correctness
+- Without it, pages would be served dynamically by index tenant
+- Detection logic adds complexity and risk of false negatives
+- All operations are fast enough to always run
+- File system/Navigator handles actual change detection
 
-**Key Methods:**
-```ruby
-class ConfigurationDetector
-  def initialize(current_db_path, new_db_path)
-    @current_db = current_db_path
-    @new_db = new_db_path
-  end
+**CGI Operations (Always Run, Fast <5 seconds):**
+1. **Database sync** - Always fetch latest index.sqlite3 from S3
+2. **htpasswd update** (~1 second) - Always regenerate from index database
+3. **Navigator config** (~1 second) - Always regenerate from index database
+4. **Region maps** (~1 second) - Always regenerate from index database
 
-  def detect_changes
-    {
-      studios_changed: studios_changed?,
-      events_changed: events_changed?,
-      passwords_changed: passwords_changed?,
-      regions_changed: regions_changed?,
-      showcases_changed: showcases_changed?
-    }
-  end
+**Post-Reload Hook Operations (Run after Navigator reloads):**
+5. **Prerender** - Regenerate static HTML from index database
+6. **Event databases** - Download/update event databases via bin/prepare.rb
 
-  private
-
-  def studios_changed?
-    # Compare studio records between databases
-  end
-
-  def events_changed?
-    # Compare showcase/event records
-  end
-
-  def passwords_changed?
-    # Compare user table hashes
-  end
-
-  def regions_changed?
-    # Compare region assignments in showcases.yml
-  end
-end
-```
+**Separation Rationale:**
+- CGI completes fast (<5 sec) → fast user feedback
+- Navigator reloads config immediately → new config active
+- Post-reload hook runs optimizations in background → zero downtime
+- Prerender based on index.sqlite3 directly (migrate away from showcases.yml/tenants.list)
 
 **Status:** ⏳ Not started
 
-**Testing Requirements:**
-- Unit tests for each change detection method
-- Integration tests with sample database changes
-- Edge cases: first run (no current DB), empty databases
+### 2.2 Architectural Direction: Index Database as Source of Truth
 
-### 2.2 Operation Mapping
+**Current State:**
+- `showcases.yml` generated from index database (intermediate file)
+- `tenants.list` generated from showcases.yml (another intermediate)
+- Prerender reads showcases.yml to determine what to render
+- Navigator config generated from showcases.yml
 
-**Map changes to required operations:**
+**Target State:**
+- Prerender reads index.sqlite3 directly
+- Navigator config generated from index.sqlite3 directly
+- Retire showcases.yml and tenants.list
+- Index database is single source of truth
 
-```ruby
-OPERATION_MAP = {
-  studios_changed: [:update_htpasswd, :regenerate_maps, :regenerate_nav_config],
-  events_changed: [:prerender_indexes, :regenerate_nav_config],
-  passwords_changed: [:update_htpasswd],
-  regions_changed: [:regenerate_maps, :regenerate_nav_config],
-  showcases_changed: [:regenerate_nav_config]
-}
-```
+**Benefits:**
+- Fewer intermediate files to maintain
+- No sync issues between index DB and derived files
+- Simpler architecture
+- Easier to understand data flow
 
-**Status:** ⏳ Not started
+**Status:** ⏳ Future enhancement (post-MVP)
 
 ---
 
 ## Phase 3: Operation Implementations
 
-### 3.1 Extract Reusable Operations
+### 3.1 CGI Script Operations (Fast)
 
-**From existing scripts:**
+**Operations to integrate into update_configuration.rb:**
 
 1. **Database sync** - `script/sync_databases_s3.rb --index-only`
    - Already works, use as-is
+   - Downloads index.sqlite3 from S3
    - Returns status and output
 
 2. **htpasswd update** - `User.update_htpasswd` (from event#index_update)
    - Already works, use as-is
    - Fast operation (~1 second)
+   - Generates htpasswd from index database users table
 
-3. **Map generation** - Extract from `admin#destroy_region`, `admin#create_region`
+3. **Navigator config** - `bin/rails nav:config`
+   - Already works, use as-is
+   - Currently generates from showcases.yml
+   - Future: generate from index.sqlite3 directly
+   - Generates config/navigator.yml
+
+4. **Map generation** - Extract from `admin#destroy_region`, `admin#create_region`
    - Current: `generate_map` method
    - Make standalone/callable
-
-4. **Prerender** - `bin/prerender`
-   - Currently runs all events
-   - Add selective prerender (specific events only)
-   - Most time-consuming operation
-
-5. **Navigator config** - `bin/rails nav:config`
-   - Already works, use as-is
-   - Generates full config from showcases.yml
+   - Generates config/tenant/map.yml
 
 **Status:** ⏳ Not started
 
@@ -215,33 +269,51 @@ OPERATION_MAP = {
 1. Database sync (already works)
 2. htpasswd update (already works)
 3. Navigator config generation (already works)
-4. Map generation (needs extraction)
-5. Selective prerender (needs implementation)
+4. Map generation (needs extraction - may already be callable)
 
-### 3.2 Selective Prerender
+### 3.2 Post-Reload Hook Script
 
-**Enhancement to `bin/prerender`:**
+**File:** `script/post_reload.sh`
 
-```ruby
-# Current: Prerender all events
-# New: Accept optional event list
+Once Navigator implements the post-reload hook feature (see Prerequisites), this script will be called after configuration reloads.
 
-if ARGV.empty?
-  # Prerender all events (current behavior)
-  events = Event.all
-else
-  # Prerender specific events by database name
-  db_names = ARGV
-  events = Event.where(database: db_names)
-end
+**Script responsibilities:**
+```bash
+#!/bin/bash
+# Post-reload optimization script
+# Runs AFTER Navigator has reloaded config and is serving requests
+
+set -e
+
+log() {
+  echo "[$(date -Iseconds)] $@"
+}
+
+log "Starting post-reload optimizations..."
+
+# 1. Run prerender (regenerate static HTML)
+log "Running prerender..."
+cd /rails
+RAILS_ENV=production bin/prerender
+
+# 2. Download/update event databases
+log "Updating event databases..."
+if [ -f "tmp/tenants.list" ]; then
+  while IFS= read -r db_path; do
+    ruby bin/prepare.rb "$db_path"
+  done < tmp/tenants.list
+fi
+
+log "Post-reload optimizations complete"
 ```
 
-**Status:** ⏳ Not started
-
 **Benefits:**
-- Faster updates when only one event changed
-- Reduces update time from minutes to seconds
-- Backwards compatible (no args = all events)
+- CGI script completes in <5 seconds (just config updates)
+- Prerender runs in background (zero perceived downtime)
+- Event databases download while Navigator serves with new config
+- Clean separation of concerns (critical vs optimization)
+
+**Status:** ⏳ Blocked on Navigator post-reload hook feature
 
 ---
 
@@ -340,43 +412,129 @@ def trigger_config_update
   # Set up streaming output
   @stream = OutputChannel.register(:config_update)
 
-  # Call CGI endpoint via HTTP (authenticated request)
-  OutputChannel.send(@stream, "Triggering configuration update via CGI...\n")
+  Thread.new do
+    begin
+      OutputChannel.send(@stream, "Starting configuration update...\n\n")
 
-  begin
-    uri = URI("https://#{request.host}/showcase/update_config")
-    req = Net::HTTP::Post.new(uri)
+      # Step 1: Sync index.sqlite3 to S3 (if changed)
+      OutputChannel.send(@stream, "Step 1: Syncing index database to S3...\n")
+      OutputChannel.send(@stream, "=" * 50 + "\n")
 
-    # Pass through authentication
-    if request.authorization
-      req['Authorization'] = request.authorization
-    elsif current_user
-      req.basic_auth(current_user.username, session[:password])
+      script_path = Rails.root.join('script', 'sync_databases_s3.rb')
+      stdout, stderr, status = Open3.capture3('ruby', script_path.to_s, '--index-only')
+
+      OutputChannel.send(@stream, stdout)
+      OutputChannel.send(@stream, stderr) unless stderr.empty?
+
+      unless status.success?
+        OutputChannel.send(@stream, "\n❌ Index sync failed\n")
+        OutputChannel.send(@stream, "\u0004")
+        next
+      end
+
+      OutputChannel.send(@stream, "\n")
+
+      # Step 2: Get list of active Fly machines
+      OutputChannel.send(@stream, "Step 2: Getting list of active Fly machines...\n")
+      OutputChannel.send(@stream, "=" * 50 + "\n")
+
+      flyctl = ENV['FLY_CLI_PATH'] || File.expand_path('~/bin/flyctl')
+      machines_output, _, status = Open3.capture3(flyctl, 'machines', 'list', '--json')
+
+      unless status.success?
+        OutputChannel.send(@stream, "❌ Failed to get machines list\n")
+        OutputChannel.send(@stream, "\u0004")
+        next
+      end
+
+      machines = JSON.parse(machines_output)
+      active_machines = machines.select { |m| ['started', 'created'].include?(m['state']) }
+      machine_ids = active_machines.map { |m| m['id'] }
+
+      OutputChannel.send(@stream, "Found #{machines.length} total machines\n")
+      OutputChannel.send(@stream, "Will update #{machine_ids.length} active machines\n\n")
+
+      if machine_ids.empty?
+        OutputChannel.send(@stream, "No active machines to update\n")
+        OutputChannel.send(@stream, "\u0004")
+        next
+      end
+
+      # Step 3: Call CGI endpoint on each machine
+      OutputChannel.send(@stream, "Step 3: Updating configuration on each machine...\n")
+      OutputChannel.send(@stream, "=" * 50 + "\n")
+
+      success_count = 0
+      failure_count = 0
+
+      machine_ids.each do |machine_id|
+        OutputChannel.send(@stream, "  #{machine_id}... ")
+
+        begin
+          uri = URI("https://#{request.host}/showcase/update_config")
+
+          http = Net::HTTP.new(uri.host, uri.port)
+          http.use_ssl = true
+          http.read_timeout = 300  # 5 minute timeout for CGI
+          http.open_timeout = 10
+
+          req = Net::HTTP::Post.new(uri.path)
+          req['Fly-Force-Instance-Id'] = machine_id  # Target specific machine
+
+          # Pass through authentication
+          if request.authorization
+            req['Authorization'] = request.authorization
+          elsif current_user
+            req.basic_auth(current_user.username, session[:password])
+          end
+
+          response = http.request(req)
+
+          if response.code == '200'
+            OutputChannel.send(@stream, "✓ Success\n")
+            success_count += 1
+          else
+            OutputChannel.send(@stream, "✗ Failed (HTTP #{response.code})\n")
+            failure_count += 1
+          end
+
+        rescue => e
+          OutputChannel.send(@stream, "✗ Error: #{e.message}\n")
+          failure_count += 1
+        end
+      end
+
+      # Summary
+      OutputChannel.send(@stream, "\n")
+      OutputChannel.send(@stream, "Summary:\n")
+      OutputChannel.send(@stream, "=" * 50 + "\n")
+      OutputChannel.send(@stream, "Successfully updated: #{success_count} machines\n")
+      OutputChannel.send(@stream, "Failed updates: #{failure_count} machines\n") if failure_count > 0
+
+      if failure_count > 0
+        OutputChannel.send(@stream, "\n❌ Configuration update completed with errors\n")
+      else
+        OutputChannel.send(@stream, "\n✅ Configuration update completed successfully\n")
+      end
+
+    rescue => e
+      OutputChannel.send(@stream, "\n❌ Error: #{e.message}\n")
+      OutputChannel.send(@stream, e.backtrace.join("\n") + "\n")
+    ensure
+      OutputChannel.send(@stream, "\u0004") # Send EOT
     end
-
-    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
-      http.read_timeout = 600 # 10 minute timeout
-      http.request(req)
-    end
-
-    # Stream the response
-    OutputChannel.send(@stream, response.body)
-
-    if response.code.to_i == 200
-      OutputChannel.send(@stream, "\n✅ Configuration update completed successfully\n")
-    else
-      OutputChannel.send(@stream, "\n❌ Configuration update failed (HTTP #{response.code})\n")
-    end
-
-  rescue => e
-    OutputChannel.send(@stream, "\n❌ Error: #{e.message}\n")
-  ensure
-    OutputChannel.send(@stream, "\u0004") # Send EOT
   end
 
   head :ok
 end
 ```
+
+**Implementation Notes:**
+- Similar pattern to `script/user-update` (broadcast to all machines)
+- Uses `Fly-Force-Instance-Id` header to target each machine
+- Syncs index.sqlite3 to S3 once, then each machine fetches it
+- Real-time streaming output via OutputChannel
+- Runs in background thread to not block response
 
 **Status:** ⏳ Not started
 
@@ -461,13 +619,26 @@ Instead of proxying through Rails controller, could use EventSource or WebSocket
 
 ### Performance Targets
 
-| Operation | Current | Target | Actual |
-|-----------|---------|--------|--------|
-| Full deployment | 3-5 min | N/A | - |
-| Password update | 3-5 min | 5-10 sec | - |
-| New event | 3-5 min | 20-30 sec | - |
-| New studio | 3-5 min | 30-60 sec | - |
-| Config only | 3-5 min | 5-10 sec | - |
+| Operation | Current | Target (Total) | Per-Machine CGI | Background (Post-Reload) | Actual |
+|-----------|---------|----------------|-----------------|--------------------------|--------|
+| Full deployment | 3-5 min | N/A | N/A | N/A | - |
+| Password update | 3-5 min | <30 sec | <5 sec | +10-30 sec (prerender) | - |
+| New event | 3-5 min | <30 sec | <5 sec | +10-30 sec (prerender) | - |
+| New studio | 3-5 min | <30 sec | <5 sec | +10-30 sec (prerender) | - |
+| Config only | 3-5 min | <30 sec | <5 sec | +10-30 sec (prerender) | - |
+
+**Total Time Breakdown (for 8 active machines):**
+- Upload index.sqlite3 to S3: ~5 sec
+- Get machine list: ~2 sec
+- Update all machines (parallel): ~5-10 sec (each machine fetches S3, updates configs)
+- Background prerender on each machine: +10-30 sec (async, doesn't block)
+- **Total user-facing time: ~15-20 seconds** (vs 3-5 minutes currently)
+
+**Key Improvement:**
+- All machines updated in parallel using `Fly-Force-Instance-Id` targeting
+- CGI completes in <5 sec per machine (fast operations only)
+- Prerender runs asynchronously via post-reload hook (zero perceived downtime)
+- **10-15x faster** than current deployment-based approach
 
 ### Quality Targets
 
@@ -486,53 +657,68 @@ Instead of proxying through Rails controller, could use EventSource or WebSocket
 1. **CGI script fails mid-operation**
    - Mitigation: Atomic operations, backup current state
    - Recovery: Manual fix, then re-run script
+   - Impact: Config may be partially updated, but Navigator still running
 
 2. **Navigator config reload doesn't trigger**
-   - Mitigation: Log reload decision clearly
+   - Mitigation: Log reload decision clearly in Navigator
    - Recovery: Manual SIGHUP to navigator
+   - Impact: Old config still active until reload
 
-3. **Prerender takes too long**
-   - Mitigation: 10-minute timeout configured
-   - Recovery: Run prerender manually if needed
+3. **Post-reload hook fails**
+   - Mitigation: Hook failures don't affect Navigator operation
+   - Recovery: Run prerender manually (bin/prerender)
+   - Impact: Missing prerendered content, pages served dynamically (slower but functional)
 
 4. **S3 fetch fails**
    - Mitigation: Keep current index, return error
    - Recovery: Retry when S3 is available
+   - Impact: Configuration not updated
 
 5. **Concurrent updates**
-   - Mitigation: Single-threaded script execution
-   - Impact: Second request waits for first to complete
+   - Mitigation: Single-threaded CGI script execution
+   - Impact: Second request waits for first to complete (Navigator queues CGI requests)
+
+6. **Post-reload hook still running when next update triggers**
+   - Mitigation: Hook should check for lock file before running
+   - Impact: May skip prerender if previous one still running
+   - Acceptable: Prerender is optimization only
 
 ---
 
 ## Timeline
 
+**Phase 0: Navigator Prerequisites** (4-6 hours)
+- Implement post-reload hook feature in Navigator
+- Test hook execution after config reload
+- Verify hook runs while Navigator serves requests
+- Release Navigator v0.17.0 or later
+
 **Phase 1: Foundation** (2-3 hours)
-- Create update_configuration.rb skeleton
-- Add navigator CGI config
-- Test basic CGI execution
+- Create update_configuration.rb CGI script
+- Create post_reload.sh hook script
+- Add navigator CGI config with post_reload_hook
+- Test basic CGI execution and hook triggering
 
-**Phase 2: Detection** (3-4 hours)
-- Implement ConfigurationDetector
-- Write unit tests
-- Test with sample databases
+**Phase 2: Operations Integration** (3-4 hours)
+- Integrate database sync operation
+- Integrate htpasswd update operation
+- Integrate navigator config generation
+- Extract/call map generation operation
+- Test each operation independently
 
-**Phase 3: Operations** (4-6 hours)
-- Extract map generation
-- Implement selective prerender
-- Integrate existing operations
+**Phase 3: UI Integration** (2-3 hours)
+- Update admin#apply page to use CGI
+- Add trigger_config_update controller action
+- Implement real-time output display
+- Test end-to-end from admin UI
 
-**Phase 4: UI Integration** (2-3 hours)
-- Add admin button
-- Create controller action
-- Implement output display
-
-**Phase 5: Testing & Deployment** (2-3 hours)
+**Phase 4: Testing & Deployment** (2-3 hours)
 - End-to-end testing
 - Production deployment
+- Monitor first production run
 - Documentation
 
-**Total estimated time:** 13-19 hours
+**Total estimated time:** 13-19 hours (excluding Navigator prerequisite work)
 
 ---
 
@@ -540,40 +726,62 @@ Instead of proxying through Rails controller, could use EventSource or WebSocket
 
 ### Post-MVP Features
 
-1. **Incremental Updates**
-   - Track last sync timestamp
-   - Only process changes since last sync
-   - Faster updates for frequent operations
-
-2. **Change Preview**
+1. **Change Preview**
    - Show what will change before executing
    - Require confirmation for destructive changes
    - "Dry run" mode
 
-3. **Operation History**
+2. **Operation History**
    - Log all configuration updates
    - Track what changed and when
    - Enable audit trail
 
-4. **Webhook Support**
+3. **Webhook Support**
    - Trigger updates via webhook (GitHub, CI/CD)
    - Automatic updates on index database changes
    - Integration with external systems
 
-5. **Parallel Operations**
-   - Run independent operations concurrently
-   - Faster updates when multiple changes detected
-   - Careful coordination required
+4. **Index Database as Direct Source**
+   - Prerender reads from index.sqlite3 directly (no showcases.yml)
+   - Navigator config generated from index.sqlite3 directly
+   - Retire showcases.yml and tenants.list intermediate files
+   - Simpler architecture, fewer sync issues
 
 ---
 
 ## Decision Log
 
-**2025-10-26:**
+**2025-10-26 (Initial):**
 - ✅ Decided to use CGI instead of Rails route for better isolation
-- ✅ Chose smart detection over always-execute-all approach
-- ✅ Prioritized selective prerender for performance
 - ✅ Selected 10-minute timeout as safe for longest operations
+
+**2025-10-26 (Revised after discussion - always-generate approach):**
+- ✅ **Changed to always-generate approach** instead of change detection
+  - Rationale: Prerender is optimization, not required for correctness
+  - Simpler code, less risk of false negatives
+  - File system/Navigator handles actual change detection
+- ✅ **Always run prerender** (don't skip based on detection)
+  - Prerender already runs in script/nav_initialization.rb
+  - Should be part of every config update
+  - Moved to Navigator post-reload hook (prerequisite)
+- ✅ **Architectural direction: index.sqlite3 as source of truth**
+  - Migrate prerender to read from index database directly
+  - Retire showcases.yml and tenants.list intermediate files
+  - Simplifies data flow and reduces sync issues
+
+**2025-10-26 (After reviewing admin#apply - multi-machine architecture):**
+- ✅ **Multi-machine broadcast pattern identified**
+  - Current: `script/user-update` broadcasts to all active machines via `Fly-Force-Instance-Id`
+  - Each machine runs `index_update` endpoint to fetch S3 and update htpasswd
+  - Pattern: One machine uploads to S3, all machines fetch and update
+- ✅ **CGI must run on each active machine**
+  - Admin controller syncs to S3, then POSTs to each machine's CGI endpoint
+  - Similar to current `script/user-update` → `index_update` flow
+  - Parallel execution across all machines (not just one)
+- ✅ **Post-reload hook is prerequisite, not future**
+  - Without it, CGI blocks on prerender (30+ seconds × N machines)
+  - With it, CGI completes in <5 sec, prerender runs async
+  - Essential for performance target (<30 sec total)
 
 ---
 
