@@ -837,6 +837,28 @@ Instead of creating a new job/service, simply update `script/user-update` to cal
    - Retire showcases.yml and tenants.list intermediate files
    - Simpler architecture, fewer sync issues
 
+5. **Admin Server Map Generation and S3 Upload**
+   - **Problem:** map.yml needs makemaps.js (node) to add projection coordinates
+   - **Current limitation:** Node not available in production containers
+   - **Current workaround:** Using pre-built map.yml from Docker image
+   - **Proposed solution:**
+     - Admin server (which has node available) generates map.yml with projections
+     - On deployment and/or when locations change, upload map.yml to S3/Tigris
+     - Production containers download map.yml from S3 (like index.sqlite3)
+     - Prerender task fetches fresh map.yml from S3 instead of using local file
+   - **Benefits:**
+     - Production containers stay lightweight (no node dependency)
+     - Map updates without requiring new Docker image build
+     - Consistent with S3-as-authoritative-source pattern
+     - Location changes reflected immediately across all machines
+   - **Implementation considerations:**
+     - Admin server runs makemaps.js on location changes
+     - Upload map.yml to S3 alongside index.sqlite3
+     - Update nav_initialization.rb to download map.yml from S3
+     - Update update_configuration.rb to download map.yml from S3
+     - Add map.yml to sync_databases_s3.rb (similar to index.sqlite3)
+   - **Status:** ⏳ To be explored later
+
 ---
 
 ## Decision Log
