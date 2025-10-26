@@ -665,7 +665,15 @@ module Configurator
       }
 
       hooks['server']['start'] << htpasswd_hook
-      hooks['server']['resume'] << htpasswd_hook
+
+      # Full initialization on resume (sync from S3, update htpasswd, regen config)
+      # Uses --safe mode to prevent stale machines from uploading outdated data
+      hooks['server']['resume'] << {
+        'command' => 'ruby',
+        'args' => ['script/nav_initialization.rb'],
+        'timeout' => '5m',
+        'reload_config' => 'config/navigator.yml'
+      }
 
       # Add ready hook for optimizations (runs after initial start and config reloads)
       # This hook handles slow operations like prerendering and event database downloads

@@ -960,6 +960,26 @@ Instead of creating a new job/service, simply update `script/user-update` to cal
   - Location trust_level changes via locations_controller.rb (safe to test)
   - Full deployment via bin/apply-changes.rb (requires S3-safe time)
 
+**2025-10-26 (Hook consolidation with --safe mode):**
+- ✅ **Consolidated initialization with --safe mode**
+  - Added --safe flag to nav_initialization.rb's sync_databases_s3.rb call
+  - --safe allows downloads but blocks uploads for region-owned databases
+  - Prevents suspended/stale machines from overwriting newer S3 data
+- ✅ **Resume hook now uses full initialization**
+  - Changed resume hook from `/rails/script/update_htpasswd.rb` (htpasswd only)
+  - To `ruby script/nav_initialization.rb` with reload_config (full sync + config regen)
+  - Resume hook now does: S3 sync, htpasswd update, nav config, prerender
+  - Prevents configuration drift when machines resume from suspension
+- ✅ **Architecture benefits:**
+  - S3 is authoritative source for all machines (no divergent local state)
+  - Machines always sync from S3 on startup/resume (consistent state)
+  - Uploads only via controlled processes (script/user-update, deployments, admin UI)
+  - Simpler: same initialization script for both initial start and resume
+- ✅ **Why --safe for both hooks:**
+  - **Resume hook**: Critical - prevents stale machines from corrupting S3
+  - **Initial start**: Safe default - new containers shouldn't have local data to push
+  - Controlled uploads happen via admin operations, not individual machines
+
 ---
 
 ## References

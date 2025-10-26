@@ -36,9 +36,9 @@ if ENV['RAILS_LOG_VOLUME']
   end
 end
 
-# Sync databases from S3
+# Sync databases from S3 (--safe prevents uploads, allows downloads)
 puts "Syncing databases from S3..."
-system "ruby #{git_path}/script/sync_databases_s3.rb --index-only --quiet"
+system "ruby #{git_path}/script/sync_databases_s3.rb --index-only --safe --quiet"
 
 # Update htpasswd file
 puts "Updating htpasswd file..."
