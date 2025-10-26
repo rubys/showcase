@@ -39,7 +39,7 @@ Each machine's Navigator detects navigator.yml changed
   ↓
 Each Navigator reloads configuration (new config active on all machines)
   ↓
-Each Navigator runs post_reload_hook in background:
+Each Navigator runs ready hooks in background:
   1. Prerender static HTML (10-30 sec)
   2. Download/migrate event databases
   ↓
@@ -68,20 +68,32 @@ All machines updated (zero downtime)
 
 ### ⏳ Required (Not Yet Implemented)
 
-2. **Navigator Post-Reload Hook** (v0.17.0 or later)
-   - Hook script that runs **after** configuration reload completes
+2. **Navigator Ready Hook Extension** (v0.17.0 or later)
+   - Extend `ready` hook to run **both** on initial start AND after config reloads
+   - Currently `ready` only runs after initial start
+   - After change, `ready` runs: initial start, CGI reload, resume reload, SIGHUP reload
    - Runs while Navigator continues serving requests (non-blocking)
    - Used for optimizations that don't affect correctness (prerender, DB downloads)
-   - Separates critical config updates from optional optimizations
 
-   **Configuration format:**
+   **Current behavior:**
+   ```
+   start hook → Navigator starts → ready hook (once)
+   ```
+
+   **New behavior:**
+   ```
+   start hook → Navigator starts → ready hook (initial)
+
+   Config reload (CGI/SIGHUP/resume) → ready hook (again)
+   ```
+
+   **Configuration format (no changes needed):**
    ```yaml
-   server:
-     cgi_scripts:
-       - path: /showcase/update_config
-         script: /rails/script/update_configuration.rb
-         reload_config: config/navigator.yml
-         post_reload_hook: script/post_reload.sh  # NEW: runs after reload
+   hooks:
+     server:
+       ready:
+         - command: /rails/script/post_reload.sh
+           timeout: 10m
    ```
 
    **Why this is required:**
@@ -90,12 +102,35 @@ All machines updated (zero downtime)
    - Config updates should complete in seconds, not wait for prerender
    - Prerender is optimization only (pages work without it)
 
-   **Execution flow with hook:**
+   **Execution flow:**
    1. CGI script updates config files (htpasswd, maps, navigator.yml)
    2. CGI script returns success response (fast, <5 seconds)
    3. Navigator detects navigator.yml changed → reloads config
-   4. Navigator runs post_reload_hook in background
-   5. Hook runs prerender, downloads event databases
+   4. **Navigator runs ready hooks** (same as initial start)
+   5. Ready hook runs prerender, downloads event databases
+
+   **Semantics clarification:**
+   - `start` = Navigator is starting up (before listening)
+   - `ready` = Navigator is ready to serve (initial OR after reload)
+   - `idle` = About to suspend/stop
+   - `resume` = Resuming from suspend
+   - `stop` = Shutting down
+
+   **Implementation:**
+   - Modify reload logic in Navigator to execute ready hooks
+   - No new hook type needed
+   - Cleaner semantics ("ready to serve" = initial + reloads)
+
+   **Documentation updates needed:**
+   - `navigator/docs/features/lifecycle-hooks.md`:
+     - Update `ready` hook description: "After Navigator starts listening **or after configuration reload**"
+     - Add to "When Executed" column: "initial start, config reload (CGI, SIGHUP, resume)"
+     - Add example: Using ready hook for cache warming after config updates
+   - `navigator/docs/configuration/yaml-reference.md`:
+     - Update `hooks.server.ready` description to include reload behavior
+   - `navigator/CLAUDE.md`:
+     - Update lifecycle hooks section with new ready hook behavior
+     - Add to "Configuration Reload" section about ready hooks running
 
    **Status:** ⏳ Needs to be implemented in Navigator
 
@@ -171,15 +206,21 @@ server:
         - admin
       timeout: 5m  # Fast timeout (just config updates, not prerender)
       reload_config: config/navigator.yml
-      post_reload_hook: script/post_reload.sh  # Runs after config reloads
       env:
         RAILS_DB_VOLUME: /data/db
         RAILS_ENV: production
+
+hooks:
+  server:
+    ready:
+      - command: /rails/script/post_reload.sh
+        timeout: 10m
+        # Runs on initial start AND after config reloads
 ```
 
 **Status:** ⏳ Not started
 
-**Dependencies:** Navigator post-reload hook feature (see Prerequisites)
+**Dependencies:** Navigator ready hook extension (see Prerequisites)
 
 ---
 
@@ -271,11 +312,11 @@ server:
 3. Navigator config generation (already works)
 4. Map generation (needs extraction - may already be callable)
 
-### 3.2 Post-Reload Hook Script
+### 3.2 Ready Hook Script (Post-Reload Operations)
 
 **File:** `script/post_reload.sh`
 
-Once Navigator implements the post-reload hook feature (see Prerequisites), this script will be called after configuration reloads.
+Once Navigator extends the ready hook to run on config reloads (see Prerequisites), this script will be called after initial start AND after configuration reloads.
 
 **Script responsibilities:**
 ```bash
@@ -312,8 +353,9 @@ log "Post-reload optimizations complete"
 - Prerender runs in background (zero perceived downtime)
 - Event databases download while Navigator serves with new config
 - Clean separation of concerns (critical vs optimization)
+- Same script runs on initial start AND reloads (consistent behavior)
 
-**Status:** ⏳ Blocked on Navigator post-reload hook feature
+**Status:** ⏳ Blocked on Navigator ready hook extension
 
 ---
 
@@ -769,17 +811,18 @@ end
 
 ## Timeline
 
-**Phase 0: Navigator Prerequisites** (4-6 hours)
-- Implement post-reload hook feature in Navigator
-- Test hook execution after config reload
-- Verify hook runs while Navigator serves requests
+**Phase 0: Navigator Prerequisites** (2-4 hours)
+- Extend ready hook to run on config reloads (not just initial start)
+- Test ready hook executes after CGI reload, SIGHUP reload, resume reload
+- Verify hook runs while Navigator serves requests (non-blocking)
+- Update Navigator documentation (lifecycle-hooks.md, yaml-reference.md, CLAUDE.md)
 - Release Navigator v0.17.0 or later
 
 **Phase 1: Foundation** (2-3 hours)
 - Create update_configuration.rb CGI script
-- Create post_reload.sh hook script
-- Add navigator CGI config with post_reload_hook
-- Test basic CGI execution and hook triggering
+- Create post_reload.sh ready hook script
+- Add navigator CGI config and ready hook config
+- Test basic CGI execution and ready hook triggering
 
 **Phase 2: Operations Integration** (3-4 hours)
 - Integrate database sync operation
@@ -860,9 +903,9 @@ end
   - Admin controller syncs to S3, then POSTs to each machine's CGI endpoint
   - Similar to current `script/user-update` → `index_update` flow
   - Parallel execution across all machines (not just one)
-- ✅ **Post-reload hook is prerequisite, not future**
+- ✅ **Ready hook extension is prerequisite, not future**
   - Without it, CGI blocks on prerender (30+ seconds × N machines)
-  - With it, CGI completes in <5 sec, prerender runs async
+  - With it, CGI completes in <5 sec, prerender runs async via ready hook
   - Essential for performance target (<30 sec total)
 - ✅ **script/user-update can be replaced entirely**
   - Currently used in 3 places: bin/apply-changes.rb, users_controller.rb, locations_controller.rb
@@ -870,6 +913,20 @@ end
   - CGI approach is superset: sync index + htpasswd + maps + navigator config + prerender
   - Replace with ConfigUpdateJob.perform_later for cleaner, unified approach
   - Single code path eliminates maintenance of two broadcast mechanisms
+
+**2025-10-26 (Simplified hook approach):**
+- ✅ **Use ready hook instead of new reload hook**
+  - Initial plan: Add new `reload` hook type that runs after config reloads
+  - Simpler approach: Extend existing `ready` hook to run on reloads too
+  - Cleaner semantics: "ready to serve" = initial start OR after reload
+  - No new hook type needed in Navigator
+  - Works for: initial start, CGI reload, SIGHUP reload, resume reload
+- ✅ **Ready hook naturally fits "ready to serve" semantics**
+  - `start` = before listening (setup tasks)
+  - `ready` = ready to serve (initial + reloads)
+  - `idle` = about to suspend/stop
+  - `resume` = resuming from suspend
+  - `stop` = shutting down
 
 ---
 
