@@ -88,23 +88,31 @@ begin
     exit 1
   end
 
-  # Operation 3: Region map generation
+  # Operation 3: Showcases generation
   log ""
-  log "Operation 3/4: Generating region maps"
+  log "Operation 3/4: Generating showcases configuration"
   log "-" * 70
 
   begin
-    # AdminController includes the Configurator module
-    configurator = AdminController.new
-    configurator.generate_map
-    configurator.generate_showcases
-    log "SUCCESS: Region maps generated"
+    require Rails.root.join('lib/region_configuration').to_s
+
+    dbpath = ENV.fetch('RAILS_DB_VOLUME') { Rails.root.join('db').to_s }
+
+    # Generate showcases.yml
+    showcases_data = RegionConfiguration.generate_showcases_data
+    showcases_file = File.join(dbpath, 'showcases.yml')
+    File.write(showcases_file, YAML.dump(showcases_data))
+
+    # Note: Not regenerating map.yml here - using pre-built one from Docker image
+    # (would need node/makemaps.js to add projection coordinates)
+
+    log "SUCCESS: Showcases configuration generated"
   rescue => e
-    log "ERROR: Map generation failed: #{e.message}"
+    log "ERROR: Showcases generation failed: #{e.message}"
     log e.backtrace.first(5).join("\n")
     log ""
     log "=" * 70
-    log "Configuration update FAILED (map generation failed)"
+    log "Configuration update FAILED (showcases generation failed)"
     log "Total time: #{(Time.now - start_time).round(2)}s"
     exit 1
   end

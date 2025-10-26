@@ -54,7 +54,7 @@ class AdminController < ApplicationController
     fly = File.join(Dir.home, '.fly/bin/flyctl')
 
     thread1 = Thread.new do
-      original = IO.read RegionConfiguration::DEPLOYED_JSON_PATH rescue '{}'
+      original = IO.read RegionConfiguration.deployed_json_path rescue '{}'
       pending = JSON.parse(original)["pending"]
       stdout, status = Open3.capture2(fly, 'regions', 'list', '--json')
 
@@ -77,14 +77,14 @@ class AdminController < ApplicationController
       end
 
       if status.success? and stdout != original
-        IO.write RegionConfiguration::DEPLOYED_JSON_PATH, stdout
+        IO.write RegionConfiguration.deployed_json_path, stdout
       end
     end
 
     thread2 = Thread.new do
       stdout, status = Open3.capture2(fly, 'platform', 'regions', '--json')
-      if status.success? and stdout != (IO.read RegionConfiguration::REGIONS_JSON_PATH rescue nil)
-        IO.write RegionConfiguration::REGIONS_JSON_PATH, stdout
+      if status.success? and stdout != (IO.read RegionConfiguration.regions_json_path rescue nil)
+        IO.write RegionConfiguration.regions_json_path, stdout
       end
     end
 

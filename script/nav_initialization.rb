@@ -44,6 +44,22 @@ system "ruby #{git_path}/script/sync_databases_s3.rb --index-only --safe --quiet
 puts "Updating htpasswd file..."
 HtpasswdUpdater.update
 
+# Regenerate showcases.yml from fresh index.sqlite3
+# This is critical: prerender and navigator config both read this file
+# Note: We don't regenerate map.yml here - using the pre-built one from Docker image
+# (would need node/makemaps.js to add projection coordinates, addressing that separately)
+puts "Generating showcases configuration..."
+require_relative '../lib/region_configuration'
+require 'yaml'
+
+dbpath = ENV.fetch('RAILS_DB_VOLUME') { "#{git_path}/db" }
+
+# Generate showcases.yml
+showcases_data = RegionConfiguration.generate_showcases_data
+showcases_file = File.join(dbpath, 'showcases.yml')
+File.write(showcases_file, YAML.dump(showcases_data))
+puts "  ✓ Generated #{showcases_file}"
+
 # Run prerender in background
 puts "Starting prerender..."
 prerender_thread = Thread.new { system 'bin/prerender' }

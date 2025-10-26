@@ -980,6 +980,77 @@ Instead of creating a new job/service, simply update `script/user-update` to cal
   - **Initial start**: Safe default - new containers shouldn't have local data to push
   - Controlled uploads happen via admin operations, not individual machines
 
+**2025-10-26 (Performance optimization: Direct SQLite queries):**
+- ✅ **Problem identified:**
+  - RegionConfiguration used ActiveRecord queries (Showcase.preload, Location.order)
+  - Required full Rails environment loaded (5-15 second startup time)
+  - Both nav_initialization.rb and update_configuration.rb paid this cost
+  - nav_initialization.rb runs on every container start and machine resume
+  - update_configuration.rb is CGI script that should complete in <5 seconds
+- ✅ **Solution: Direct SQLite queries**
+  - Rewrote generate_showcases_data to use SQLite3 gem directly
+  - Rewrote generate_map_data to use SQLite3 gem directly
+  - No ActiveRecord dependency - just raw SQL queries with JOIN
+  - Works standalone (without Rails) or within Rails (controllers)
+- ✅ **Implementation details:**
+  - Added `require 'sqlite3'` to region_configuration.rb
+  - Added `index_db_path` helper method (works with/without Rails)
+  - Replaced Rails.root constants with methods (git_root, deployed_json_path, etc.)
+  - Replaced `location.region.present?` with Ruby equivalent
+  - Quoted SQL reserved word "order" in queries
+  - Used `results_as_hash: true` for easy column access
+- ✅ **Files updated:**
+  - lib/region_configuration.rb: Rewrote both methods with SQL
+  - script/nav_initialization.rb: Direct calls, no bin/rails runner needed
+  - script/update_configuration.rb: Direct RegionConfiguration calls, no AdminController
+- ✅ **Performance impact:**
+  - nav_initialization.rb: No longer needs to load Rails (saves 5-15 seconds)
+  - update_configuration.rb: Still loads Rails (needs Navigator config), but faster queries
+  - Controllers: No change in behavior, but potentially faster queries
+- ✅ **Testing:**
+  - Standalone test (no Rails): generate_map_data → 8 regions, 84 studios ✓
+  - Standalone test (no Rails): generate_showcases_data → 5 years, 139 locations ✓
+  - Both methods work identically in Rails and standalone contexts
+- ✅ **Critical fix: Optional JSON files**
+  - deployed.json and regions.json don't exist in production (only test fixtures)
+  - Added database fallbacks to load_deployed_regions and load_regions_data
+  - Falls back to querying regions table from index.sqlite3 if files missing
+  - Config generation now works whether JSON files exist or not
+  - Tested with files removed: ✓ All generation works via database fallback
+
+**2025-10-26 (Critical bug fix: data inconsistency on resume):**
+- ✅ **Problem identified:**
+  - nav_initialization.rb downloads fresh index.sqlite3 from S3
+  - But showcases.yml remains stale (from before suspend/start)
+  - Prerender reads stale showcases.yml → generates outdated static HTML
+  - Navigator config reads stale showcases.yml → incorrect routing configuration
+  - **Impact:** Machines resume with fresh database but stale derived configuration
+- ✅ **Root cause:**
+  - showcases.yml is an intermediate file generated from index.sqlite3
+  - Must be regenerated whenever index.sqlite3 changes
+  - nav_initialization.rb was missing this regeneration step
+- ✅ **Fix applied:**
+  - Added showcases.yml generation to nav_initialization.rb
+  - Now runs after downloading fresh index.sqlite3, before prerender
+  - Ensures showcases.yml is consistent with database
+- ✅ **Flow after fix:**
+  1. Download fresh index.sqlite3 from S3
+  2. Update htpasswd from database
+  3. **Regenerate showcases.yml from database** (NEW)
+  4. Run prerender (reads fresh showcases.yml)
+  5. Generate navigator config (reads fresh showcases.yml)
+- ⏳ **Map generation deferred:**
+  - map.yml needs map projection coordinates (x/y) added via makemaps.js (requires node)
+  - Node not available in production containers
+  - Current approach: Use pre-built map.yml from Docker image (built at deploy time)
+  - map.yml doesn't change as frequently as showcases.yml (only when locations added/removed)
+  - Future: Either install node in containers or create Ruby version of map projection
+- ⏳ **Phase 2.2 remains valuable:**
+  - Current fix: Regenerate intermediate files to keep them consistent
+  - Phase 2.2: Eliminate intermediate files entirely (read from index.sqlite3 directly)
+  - Benefits: Fewer files to maintain, impossible to get out of sync
+  - Status: Still post-MVP, but validates the architectural direction
+
 ---
 
 ## References

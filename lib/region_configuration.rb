@@ -1,15 +1,42 @@
 # frozen_string_literal: true
 
+require 'sqlite3'
+require 'json'
+
 # Shared module for region configuration logic used by:
-# - script/reconfig 
+# - script/reconfig
 # - app/controllers/concerns/configurator.rb
 # - app/controllers/admin_controller.rb
+#
+# Uses direct SQLite queries for performance - no ActiveRecord overhead.
+# Can run standalone (scripts) or within Rails (controllers).
 module RegionConfiguration
   extend self
 
-  # File path constants
-  DEPLOYED_JSON_PATH = File.join(Rails.root, 'tmp', 'deployed.json')
-  REGIONS_JSON_PATH = File.join(Rails.root, 'tmp', 'regions.json')
+  # Get git root path
+  def git_root
+    if defined?(Rails)
+      Rails.root.to_s
+    else
+      File.realpath(File.expand_path('../../', __FILE__))
+    end
+  end
+
+  # File path helper methods (not constants since Rails may not be loaded)
+  def deployed_json_path
+    File.join(git_root, 'tmp', 'deployed.json')
+  end
+
+  def regions_json_path
+    File.join(git_root, 'tmp', 'regions.json')
+  end
+
+  # Get path to index database
+  # Uses Rails conventions if available, otherwise falls back to environment or default
+  def index_db_path
+    dbpath = ENV.fetch('RAILS_DB_VOLUME') { File.join(git_root, 'db') }
+    File.join(dbpath, 'index.sqlite3')
+  end
 
   # Calculate haversine distance between two geographic points
   def haversine_distance(geo_a, geo_b, miles = false)
@@ -30,41 +57,62 @@ module RegionConfiguration
   end
 
   # Load deployed regions from JSON file
+  # Falls back to querying Region model from index database if file doesn't exist
   def load_deployed_regions(file_path = nil)
-    file_path ||= Rails.env.test? ? 'test/fixtures/files/deployed.json' : DEPLOYED_JSON_PATH
-    deployed = JSON.parse(File.read(file_path))
-    pending = deployed['pending'] || {}
-    
-    regions = deployed['ProcessGroupRegions']
-      .find { |process| process['Name'] == 'app' }['Regions']
+    file_path ||= defined?(Rails) && Rails.env.test? ? 'test/fixtures/files/deployed.json' : deployed_json_path
 
-    # Apply pending changes
-    (pending['add'] || []).each do |region|
-      regions.push(region) unless regions.include?(region)
+    begin
+      deployed = JSON.parse(File.read(file_path))
+      pending = deployed['pending'] || {}
+
+      regions = deployed['ProcessGroupRegions']
+        .find { |process| process['Name'] == 'app' }['Regions']
+
+      # Apply pending changes
+      (pending['add'] || []).each do |region|
+        regions.push(region) unless regions.include?(region)
+      end
+
+      (pending['delete'] || []).each do |region|
+        regions.delete(region)
+      end
+
+      regions
+    rescue Errno::ENOENT, JSON::ParserError
+      # Fallback: Query Region model from index database
+      db = SQLite3::Database.new(index_db_path, results_as_hash: true)
+      regions = db.execute("SELECT DISTINCT code FROM regions WHERE type = 'fly' ORDER BY code")
+        .map { |row| row['code'] }
+      db.close
+      regions
     end
-
-    (pending['delete'] || []).each do |region|
-      regions.delete(region)
-    end
-
-    regions
   end
 
   # Load deployed regions data with pending changes
   def load_deployed_data(file_path = nil)
-    file_path ||= Rails.env.test? ? 'test/fixtures/files/deployed.json' : DEPLOYED_JSON_PATH
+    file_path ||= defined?(Rails) && Rails.env.test? ? 'test/fixtures/files/deployed.json' : deployed_json_path
     JSON.parse(File.read(file_path))
   end
 
   # Load all regions data from regions.json
+  # Falls back to querying regions table from index database if file doesn't exist
   def load_regions_data(file_path = nil)
-    file_path ||= Rails.env.test? ? 'test/fixtures/files/regions.json' : REGIONS_JSON_PATH
-    JSON.parse(File.read(file_path))
+    file_path ||= defined?(Rails) && Rails.env.test? ? 'test/fixtures/files/regions.json' : regions_json_path
+
+    begin
+      JSON.parse(File.read(file_path))
+    rescue Errno::ENOENT, JSON::ParserError
+      # Fallback: Query regions table from index database
+      db = SQLite3::Database.new(index_db_path, results_as_hash: true)
+      regions = db.execute("SELECT code, location AS name, latitude, longitude FROM regions WHERE type = 'fly' ORDER BY code")
+      db.close
+      regions
+    end
   end
 
   # Update pending changes in deployed.json
   def update_pending_changes(changes, file_path = nil)
-    file_path ||= Rails.env.test? ? 'test/fixtures/files/deployed.json' : DEPLOYED_JSON_PATH
+    file_path ||= defined?(Rails) && Rails.env.test? ? 'test/fixtures/files/deployed.json' : deployed_json_path
     deployed = load_deployed_data(file_path)
     deployed['pending'] ||= {}
     deployed['pending'].merge!(changes)
@@ -78,7 +126,7 @@ module RegionConfiguration
 
   # Add region to pending additions
   def add_pending_region(code, file_path = nil)
-    file_path ||= Rails.env.test? ? 'test/fixtures/files/deployed.json' : DEPLOYED_JSON_PATH
+    file_path ||= defined?(Rails) && Rails.env.test? ? 'test/fixtures/files/deployed.json' : deployed_json_path
     deployed = load_deployed_data(file_path)
     deployed['pending'] ||= {}
     deployed['pending']['add'] ||= []
@@ -105,7 +153,7 @@ module RegionConfiguration
 
   # Remove region from pending additions or add to pending deletions
   def remove_pending_region(code, file_path = nil)
-    file_path ||= Rails.env.test? ? 'test/fixtures/files/deployed.json' : DEPLOYED_JSON_PATH
+    file_path ||= defined?(Rails) && Rails.env.test? ? 'test/fixtures/files/deployed.json' : deployed_json_path
     deployed = load_deployed_data(file_path)
     deployed['pending'] ||= {}
     deployed['pending']['add'] ||= []
@@ -188,7 +236,7 @@ module RegionConfiguration
     available_regions ||= load_available_regions
 
     # First try explicit region from location database column
-    if location.region.present? && available_regions.keys.include?(location.region)
+    if location.region && !location.region.empty? && available_regions.keys.include?(location.region)
       return location.region
     end
 
@@ -220,10 +268,10 @@ module RegionConfiguration
   def generate_map_data
     available_regions = load_available_regions
     regions_data_all = load_regions_data
-    
+
     regions_data = available_regions.map do |code, (lat, lon)|
       region_info = regions_data_all.find { |r| r['code'] == code }
-      
+
       [code, {
         'name' => region_info['name'],
         'lat' => lat,
@@ -231,12 +279,25 @@ module RegionConfiguration
       }]
     end.to_h
 
-    studios_data = Location.order(:key).map do |location|
-      [location.key, {
-        'name' => location.name,
-        'lat' => location.latitude,
-        'lon' => location.longitude,
-        'region' => select_region_for_location(location, available_regions),
+    # Query locations directly from SQLite
+    db = SQLite3::Database.new(index_db_path, results_as_hash: true)
+    locations = db.execute("SELECT key, name, latitude, longitude, region FROM locations ORDER BY key")
+    db.close
+
+    studios_data = locations.map do |loc|
+      # Build location-like struct for select_region_for_location
+      location_struct = Struct.new(:key, :region, :latitude, :longitude).new(
+        loc['key'],
+        loc['region'],
+        loc['latitude'],
+        loc['longitude']
+      )
+
+      [loc['key'], {
+        'name' => loc['name'],
+        'lat' => loc['latitude'],
+        'lon' => loc['longitude'],
+        'region' => select_region_for_location(location_struct, available_regions),
       }]
     end.to_h
 
@@ -249,40 +310,65 @@ module RegionConfiguration
   # Generate showcases YAML structure
   def generate_showcases_data
     available_regions = load_available_regions
-    
-    showcases = Showcase.preload(:location).order(:year, :order).reverse
-      .group_by(&:year).to_a
 
-    showcases.map do |year, year_showcases|
-      events = year_showcases.group_by { |showcase| showcase.location.key }
+    # Query showcases with location data directly from SQLite
+    db = SQLite3::Database.new(index_db_path, results_as_hash: true)
+    rows = db.execute(<<~SQL)
+      SELECT
+        s.year, s.key AS showcase_key, s.name AS showcase_name,
+        s.date, s."order" AS showcase_order,
+        l.key AS location_key, l.name AS location_name,
+        l.latitude, l.longitude, l.region, l.locale, l.logo
+      FROM showcases s
+      JOIN locations l ON s.location_id = l.id
+      ORDER BY s.year DESC, s."order" DESC
+    SQL
+    db.close
+
+    # Group by year, then by location
+    by_year = rows.group_by { |row| row['year'] }
+
+    by_year.map do |year, year_rows|
+      by_location = year_rows.group_by { |row| row['location_key'] }
         .to_a.sort
 
-      events_data = events.map do |location_key, location_events|
-        location = location_events.first.location
-        
+      events_data = by_location.map do |location_key, location_rows|
+        # All rows have same location data, use first
+        first_row = location_rows.first
+
+        # Build location-like struct for select_region_for_location
+        location_struct = Struct.new(:key, :region, :latitude, :longitude).new(
+          first_row['location_key'],
+          first_row['region'],
+          first_row['latitude'],
+          first_row['longitude']
+        )
+
         entry = {
-          name: location.name,
-          region: select_region_for_location(location, available_regions)
+          name: first_row['location_name'],
+          region: select_region_for_location(location_struct, available_regions)
         }
 
         # Only include non-default values (normalize underscores first)
-        normalized_locale = location.locale&.gsub('_', '-')
-        if normalized_locale.present? && normalized_locale != 'en-US'
+        normalized_locale = first_row['locale']&.gsub('_', '-')
+        if normalized_locale && !normalized_locale.empty? && normalized_locale != 'en-US'
           entry[:locale] = normalized_locale
         end
 
-        if location.logo.present? && location.logo != 'arthur-murray-logo.gif'
-          entry[:logo] = location.logo
+        if first_row['logo'] && !first_row['logo'].empty? && first_row['logo'] != 'arthur-murray-logo.gif'
+          entry[:logo] = first_row['logo']
         end
 
-        if location_events.length == 1 && location_events.first.key == 'showcase'
-          showcase = location_events.first
-          entry[:date] = showcase.date if showcase.date.present?
-        elsif location_events.length > 0
-          entry[:events] = location_events.reverse.map do |event|
-            event_data = { name: event.name }
-            event_data[:date] = event.date if event.date.present?
-            [event.key, event_data]
+        # Single event with key='showcase' vs multiple events
+        if location_rows.length == 1 && location_rows.first['showcase_key'] == 'showcase'
+          showcase = location_rows.first
+          entry[:date] = showcase['date'] if showcase['date'] && !showcase['date'].empty?
+        elsif location_rows.length > 0
+          # Multiple events - reverse order for events hash
+          entry[:events] = location_rows.reverse.map do |event_row|
+            event_data = { name: event_row['showcase_name'] }
+            event_data[:date] = event_row['date'] if event_row['date'] && !event_row['date'].empty?
+            [event_row['showcase_key'], event_data]
           end.to_h
         end
 
