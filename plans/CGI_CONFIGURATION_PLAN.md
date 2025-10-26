@@ -647,7 +647,7 @@ Instead of proxying through Rails controller, could use EventSource or WebSocket
 
 **Status:** ⏳ Not started
 
-### 5.3 Replace script/user-update
+### 5.3 Replace script/user-update ✅
 
 **Current usage of script/user-update:**
 
@@ -658,75 +658,39 @@ The script is called from 3 locations:
 
 **What script/user-update does:**
 ```ruby
-# Old approach (script/user-update calls script/sync_databases_s3.rb):
+# Old approach:
 1. Sync index.sqlite3 to S3
 2. Get list of ALL active Fly machines (via flyctl)
 3. POST to /showcase/index_update on each machine
 4. Each machine downloads index and updates htpasswd
 ```
 
-**Replacement strategy:**
+**Replacement strategy (simplified):**
 
-Create a unified helper method in ApplicationController:
+Instead of creating a new job/service, simply update `script/user-update` to call the new CGI endpoint:
 
-```ruby
-def trigger_config_update_async
-  return unless Rails.env.production?
+1. ✅ Change endpoint from `/showcase/index_update` → `/showcase/update_config`
+2. ✅ Add `/showcase/update_config` to public_paths (same security as index_update)
+3. ✅ Remove `allowed_users` restriction from CGI config
 
-  ConfigUpdateJob.perform_later
-end
-```
+**Implementation:**
+- Modified `script/user-update` to call `/showcase/update_config` instead of `/showcase/index_update`
+- Added `/showcase/update_config` to public_paths in configurator.rb
+- Removed `allowed_users` from CGI config (publicly accessible like index_update)
 
-**Replace the 3 call sites:**
+**Benefits:**
+- ✅ Minimal code changes (just change endpoint URL)
+- ✅ More complete updates (htpasswd + maps + navigator config + prerender)
+- ✅ Backward compatible (existing spawn calls still work)
+- ✅ Same security model as old endpoint (public access)
+- ✅ First testable component (user updates can be tested safely)
 
-```ruby
-# users_controller.rb
-def update_htpasswd_everywhere
-  User.update_htpasswd
-  trigger_config_update_async if Rails.env.production?
-end
+**Testing:**
+- User updates via users_controller.rb (no S3 testing needed)
+- Location trust_level changes via locations_controller.rb (no S3 testing needed)
+- Full deployment via bin/apply-changes.rb (requires S3-safe time)
 
-# locations_controller.rb
-def update
-  if @location.update(location_params)
-    generate_showcases
-    generate_map
-    trigger_config_update_async if trust_level_changed?
-  end
-end
-
-# bin/apply-changes.rb
-# Call admin#trigger_config_update instead of script/user-update
-```
-
-**ConfigUpdateJob implementation:**
-
-```ruby
-class ConfigUpdateJob < ApplicationJob
-  def perform
-    # Same logic as admin#trigger_config_update
-    # 1. Sync to S3
-    # 2. Get machines
-    # 3. Broadcast to CGI endpoints
-  end
-end
-```
-
-**Benefits of replacing:**
-- ✅ Single code path (don't maintain two broadcast mechanisms)
-- ✅ More complete (updates maps, navigator config, prerender)
-- ✅ Faster (parallel CGI with async prerender)
-- ✅ Cleaner (no script spawning, proper error handling)
-- ✅ Consistent (same mechanism for all config updates)
-
-**Migration steps:**
-1. Implement ConfigUpdateJob with same broadcast logic
-2. Replace spawn calls with ConfigUpdateJob.perform_later
-3. Test each call site (users, locations, apply-changes)
-4. Deprecate script/user-update with warning
-5. Remove script/user-update after stable period
-
-**Status:** ⏳ Not started (do after CGI implementation proven)
+**Status:** ✅ Complete
 
 ### 5.4 Deprecate Old Routes
 
@@ -977,6 +941,24 @@ end
   - All UI and controller code complete
   - Testing deferred until S3-safe time
   - Staging environment shares S3 with production
+
+**2025-10-26 (Phase 5.3: Replace script/user-update complete):**
+- ✅ **Updated script/user-update** - Now calls /showcase/update_config
+  - Changed endpoint from /showcase/index_update → /showcase/update_config
+  - No other changes needed (script continues to work)
+- ✅ **Made CGI endpoint publicly accessible** - Same security as old endpoint
+  - Added /showcase/update_config to public_paths in configurator.rb
+  - Removed allowed_users restriction from CGI config
+  - Matches security model of /showcase/index_update
+- ✅ **Benefits achieved:**
+  - More complete updates (htpasswd + maps + navigator config + prerender)
+  - Minimal code changes (just endpoint URL)
+  - Backward compatible (existing spawn calls work)
+  - First testable component ready (user updates don't require S3 testing)
+- ⏳ **Ready for first test:**
+  - User updates via users_controller.rb (safe to test)
+  - Location trust_level changes via locations_controller.rb (safe to test)
+  - Full deployment via bin/apply-changes.rb (requires S3-safe time)
 
 ---
 

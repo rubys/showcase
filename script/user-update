@@ -123,11 +123,11 @@ if machine_ids.empty?
   exit 0
 end
 
-# Step 3: Call index_update endpoint on each machine
-puts "Step 3: Triggering index update on each machine..."
+# Step 3: Call update_config CGI endpoint on each machine
+puts "Step 3: Triggering configuration update on each machine..."
 puts "=" * 50
 
-uri = URI.parse('https://smooth.fly.dev/showcase/index_update')
+uri = URI.parse('https://smooth.fly.dev/showcase/update_config')
 success_count = 0
 failure_count = 0
 

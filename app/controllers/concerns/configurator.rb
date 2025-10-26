@@ -95,6 +95,7 @@ module Configurator
       "#{root}/studios/",
       "#{root}/index_update",
       "#{root}/index_date",
+      "#{root}/update_config",  # CGI endpoint for configuration updates (replaces index_update)
       '/favicon.ico',
       '/robots.txt',
       '*.css',
@@ -200,14 +201,13 @@ module Configurator
   def build_cgi_scripts_config(root)
     scripts = []
 
-    # Add configuration update CGI script for authenticated admin users
+    # Add configuration update CGI script (publicly accessible like index_update)
     scripts << {
       'path' => "#{root}/update_config",
       'script' => '/rails/script/update_configuration.rb',
       'method' => 'POST',
       'user' => 'rails',
       'group' => 'rails',
-      'allowed_users' => ['admin'],
       'timeout' => '5m',
       'reload_config' => 'config/navigator.yml',
       'env' => {
