@@ -826,18 +826,17 @@ end
 - ✅ Add navigator CGI config and ready hook config
 - ⏳ Test basic CGI execution and ready hook triggering (next step)
 
-**Phase 2: Operations Integration** (3-4 hours)
-- Integrate database sync operation
-- Integrate htpasswd update operation
-- Integrate navigator config generation
-- Extract/call map generation operation
-- Test each operation independently
+**Phase 2: Operations Integration** (3-4 hours) - SKIPPED
+- Integration complete (scripts already use existing operations)
+- Testing deferred until S3-safe time
+- All operations implemented in update_configuration.rb
 
-**Phase 3: UI Integration** (2-3 hours)
-- Update admin#apply page to use CGI
-- Add trigger_config_update controller action
-- Implement real-time output display
-- Test end-to-end from admin UI
+**Phase 3: UI Integration** ✅ Complete (2-3 hours)
+- ✅ Update admin#apply page to show CGI vs Deploy button
+- ✅ Add trigger_config_update controller action
+- ✅ Add OutputChannel.send class method for streaming
+- ✅ Add route for trigger_config_update
+- ⏳ Test end-to-end from admin UI (requires S3-safe time)
 
 **Phase 4: Testing & Deployment** (2-3 hours)
 - End-to-end testing
@@ -957,10 +956,27 @@ end
   - Added ready hook to `build_hooks_config()`
   - CGI endpoint: `/showcase/update_config` (admin-only, 5m timeout)
   - Ready hook: `/rails/script/ready.sh` (10m timeout)
-- ✅ **Ready for Phase 2: Operations Integration**
-  - All scripts created and configured
-  - Need to test end-to-end in development
-  - Need to verify all operations work correctly
+
+**2025-10-26 (Phase 3: UI Integration complete):**
+- ✅ **Updated admin#apply view** - Conditional UI for CGI vs Deploy
+  - Shows "Deploy Changes" button for region/code changes
+  - Shows "Update Configuration" button for config-only changes
+  - Detects code changes via `git status`
+  - Green button styling for CGI updates vs blue for deployments
+- ✅ **Added trigger_config_update action** - Multi-machine broadcast controller
+  - Syncs index.sqlite3 to S3 (one upload)
+  - Gets list of active Fly machines
+  - POSTs to /showcase/update_config on each machine
+  - Uses Fly-Force-Instance-Id header to target specific machines
+  - Real-time streaming output via OutputChannel
+- ✅ **Added OutputChannel.send class method** - Broadcast helper
+  - Wraps ActionCable.server.broadcast for cleaner API
+  - Used by trigger_config_update for streaming output
+- ✅ **Added route** - POST /showcase/admin/trigger_config_update
+- ⏳ **Ready for Phase 4: Testing & Deployment**
+  - All UI and controller code complete
+  - Testing deferred until S3-safe time
+  - Staging environment shares S3 with production
 
 ---
 

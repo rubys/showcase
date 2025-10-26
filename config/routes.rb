@@ -64,6 +64,7 @@ Rails.application.routes.draw do
       delete 'admin/regions/:code', to: 'admin#destroy_region', as: 'destroy_region'
       get 'admin/new-region', to: 'admin#new_region'
       get 'admin/apply', to: 'admin#apply'
+      post 'admin/trigger_config_update', to: 'admin#trigger_config_update', as: 'trigger_config_update_admin'
     end
 
     get '/env', to: 'event#env'

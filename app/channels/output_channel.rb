@@ -118,6 +118,11 @@ private
     token
   end
 
+  def self.send(stream, message)
+    # Broadcast message to a specific stream (used by trigger_config_update)
+    ActionCable.server.broadcast(stream, message)
+  end
+
   def html(string)
     Ansi::To::Html.new(string).to_html
   end

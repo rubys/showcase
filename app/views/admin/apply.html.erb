@@ -119,8 +119,27 @@
 
 </div>
 
-<button data-submit-target="submit" data-stream="<%= @stream %>"
-  class="flex mx-auto bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border-2 rounded-xl my-4 disabled:opacity-50 disabled:cursor-not-allowed">submit</button>
+<% if changes %>
+  <% if @pending['add'].present? || @pending['delete'].present? || @code_changes %>
+    <!-- Original deployment flow for region/code changes -->
+    <h3 class="text-xl font-bold mt-6 text-center">Full Deployment Required</h3>
+    <p class="text-sm text-gray-600 mb-2 text-center">Region or code changes require deployment</p>
+
+    <button data-submit-target="submit" data-stream="<%= @stream %>"
+      class="flex mx-auto bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border-2 rounded-xl my-4 disabled:opacity-50 disabled:cursor-not-allowed">
+      Deploy Changes
+    </button>
+  <% else %>
+    <!-- New CGI-based configuration update -->
+    <h3 class="text-xl font-bold mt-6 text-center">Configuration Update</h3>
+    <p class="text-sm text-gray-600 mb-2 text-center">Fast update via CGI (no deployment needed)</p>
+
+    <%= button_to "Update Configuration",
+                  trigger_config_update_admin_path,
+                  method: :post,
+                  class: "flex mx-auto bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 border-2 rounded-xl my-4" %>
+  <% end %>
+<% end %>
 
 <div class="hidden p-4 bg-black rounded-xl">
 <div data-submit-target="output" data-stream="<%= @stream %>"
