@@ -36,15 +36,27 @@ if ENV['RAILS_LOG_VOLUME']
   end
 end
 
-# Sync databases from S3 (--safe prevents uploads, allows downloads)
-puts "Syncing databases from S3..."
-system "ruby #{git_path}/script/sync_databases_s3.rb --index-only --safe --quiet"
+# Run independent operations in parallel for faster startup
+threads = []
 
-# Update htpasswd file
-puts "Updating htpasswd file..."
-HtpasswdUpdater.update
+# Thread 1: S3 sync (slowest operation, ~3s)
+threads << Thread.new do
+  puts "Syncing databases from S3..."
+  system "ruby #{git_path}/script/sync_databases_s3.rb --index-only --safe --quiet"
+  puts "  ✓ S3 sync complete"
+end
 
-# Regenerate showcases.yml from fresh index.sqlite3
+# Thread 2: Update htpasswd file (fast, but independent)
+threads << Thread.new do
+  puts "Updating htpasswd file..."
+  HtpasswdUpdater.update
+  puts "  ✓ htpasswd updated"
+end
+
+# Wait for parallel operations to complete
+threads.each(&:join)
+
+# Generate showcases.yml (depends on S3 sync completing)
 # This is critical: prerender and navigator config both read this file
 # Note: We don't regenerate map.yml here - using the pre-built one from Docker image
 # (would need node/makemaps.js to add projection coordinates, addressing that separately)
@@ -67,9 +79,9 @@ prerender_thread = Thread.new { system 'bin/prerender' }
 # Set cable port for navigator config
 ENV['CABLE_PORT'] = '28080'
 
-# Generate full navigator configuration
+# Generate full navigator configuration (using fast standalone script)
 puts "Generating navigator configuration..."
-system "bin/rails nav:config"
+system "ruby #{git_path}/script/generate_navigator_config.rb"
 
 # Setup demo directories
 FileUtils.mkdir_p "/demo/db"
