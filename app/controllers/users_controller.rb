@@ -274,7 +274,7 @@ class UsersController < ApplicationController
       User.update_htpasswd
 
       if Rails.env.production?
-        spawn RbConfig.ruby, Rails.root.join('script/user-update').to_s
+        ConfigUpdateJob.perform_later
       end
     end
 

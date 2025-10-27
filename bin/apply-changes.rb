@@ -25,7 +25,7 @@ if File.exist?(local_index_path)
 
   # If remote is older than local, update it
   if remote_date < local_mtime
-    exit 1 unless system "script/user-update"
+    exit 1 unless system "script/config-update"
   end
 end
 

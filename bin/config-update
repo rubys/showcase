@@ -30,5 +30,5 @@ else
     smooth:///data/db
   ])
 
-  system "ssh smooth /rails/bin/user-update"
+  system "ssh smooth /rails/bin/config-update"
 end
