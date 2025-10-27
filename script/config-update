@@ -38,7 +38,9 @@ script_path = File.expand_path('sync_databases_s3.rb', __dir__)
 if options[:dry_run]
   puts "Would run: ruby #{script_path} --index-only"
 else
-  cmd_args = ['ruby', script_path, '--index-only']
+  # Use RbConfig.ruby to ensure we use the same Ruby version as the parent process
+  ruby_path = RbConfig.ruby
+  cmd_args = [ruby_path, script_path, '--index-only']
   cmd_args << '--verbose' if options[:verbose]
   stdout, stderr, status = Open3.capture3(*cmd_args)
 
