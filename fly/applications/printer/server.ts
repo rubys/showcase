@@ -294,8 +294,9 @@ const server = Bun.serve({
       await page.setExtraHTTPHeaders(headers)
 
       // fetch page to be printed
+      let response: any
       try {
-        await page.goto(url.href, {
+        response = await page.goto(url.href, {
           waitUntil: JAVASCRIPT ? 'networkidle2' : 'load',
           timeout: FETCH_TIMEOUT
         })
@@ -304,12 +305,38 @@ const server = Bun.serve({
           await new Promise((resolve) => setTimeout(resolve, 100));
 
           console.log(`${chalk.yellow.bold('Retrying')} ${chalk.black(url.href)}`)
-          await page.goto(url.href, {
+          response = await page.goto(url.href, {
             waitUntil: JAVASCRIPT ? 'networkidle2' : 'load',
             timeout: FETCH_TIMEOUT * 4
           })
         } else {
           throw error
+        }
+      }
+
+      // Retry on 503 responses (deployment updates)
+      if (response && response.status() === 503) {
+        const maxRetries = 10
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          console.log(`${chalk.yellow.bold('503 detected, retry')} ${attempt}/${maxRetries} ${chalk.black(url.href)}`)
+          await new Promise((resolve) => setTimeout(resolve, 1000))
+
+          try {
+            response = await page.goto(url.href, {
+              waitUntil: JAVASCRIPT ? 'networkidle2' : 'load',
+              timeout: FETCH_TIMEOUT
+            })
+
+            if (response && response.status() !== 503) {
+              console.log(`${chalk.green.bold('Retry successful')} ${chalk.black(url.href)}`)
+              break
+            }
+          } catch (error: any) {
+            if (attempt === maxRetries) {
+              throw error
+            }
+            console.log(`${chalk.yellow.bold('Retry attempt failed')} ${attempt}/${maxRetries}`)
+          }
         }
       }
 
