@@ -12,8 +12,11 @@ server:
     public_dir: public
     allowed_extensions: [html, css, js, png, jpg, svg, ico]
 
-# Maintenance page configuration
+# Maintenance mode configuration
+# While enabled=true, all requests receive the maintenance page (except /up health check)
+# This allows the server to listen immediately while initialization runs in background
 maintenance:
+  enabled: true
   page: /503.html
 
 # Server ready hook: runs initialization scripts
