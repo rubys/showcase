@@ -1,0 +1,63 @@
+G025-10-27T13:40:22Z proxy[80e074c62dd228] ord [info]Starting machine
+2025-10-27T13:40:22Z app[80e074c62dd228] ord [info]2025-10-27T13:40:22.947919203 [01K8JY8XRDXZWN0NBJAWAKWG1A:main] Running Firecracker v1.12.1
+2025-10-27T13:40:22Z app[80e074c62dd228] ord [info]2025-10-27T13:40:22.948065375 [01K8JY8XRDXZWN0NBJAWAKWG1A:main] Listening on API socket ("/fc.sock").
+2025-10-27T13:40:23Z app[80e074c62dd228] ord [info] INFO Starting init (commit: fad6f82)...
+2025-10-27T13:40:23Z app[80e074c62dd228] ord [info] INFO Checking filesystem on /data
+2025-10-27T13:40:23Z app[80e074c62dd228] ord [info]/dev/vdc: recovering journal
+2025-10-27T13:40:23Z app[80e074c62dd228] ord [info]/dev/vdc: clean, 90/64512 files, 18276/258048 blocks
+2025-10-27T13:40:23Z app[80e074c62dd228] ord [info] INFO Mounting /dev/vdc at /data w/ uid: 0, gid: 0 and chmod 0755
+2025-10-27T13:40:23Z app[80e074c62dd228] ord [info] INFO Resized /data to 1056964608 bytes
+2025-10-27T13:40:23Z app[80e074c62dd228] ord [info] INFO Preparing to run: `navigator config/navigator-maintenance.yml` as root
+2025-10-27T13:40:23Z app[80e074c62dd228] ord [info] INFO [fly api proxy] listening at /.fly/api
+2025-10-27T13:40:23Z app[80e074c62dd228] ord [info]time=2025-10-27T13:40:23.866Z level=DEBUG msg="Loading YAML configuration"
+2025-10-27T13:40:23Z app[80e074c62dd228] ord [info]time=2025-10-27T13:40:23.869Z level=INFO msg="Loaded configuration" tenants=0 reverseProxies=0
+2025-10-27T13:40:23Z app[80e074c62dd228] ord [info]time=2025-10-27T13:40:23.871Z level=INFO msg="Navigator starting" version=dev address=:3000
+2025-10-27T13:40:23Z app[80e074c62dd228] ord [info]time=2025-10-27T13:40:23.872Z level=INFO msg="Executing hook" type=server.ready command=ruby args=[script/nav_initialization.rb] timeout=5m0s
+2025-10-27T13:40:23Z runner[80e074c62dd228] ord [info]Machine started in 1.052s
+2025-10-27T13:40:23Z proxy[80e074c62dd228] ord [info]machine started in 1.081217089s
+2025-10-27T13:40:24Z app[80e074c62dd228] ord [info]2025/10/27 13:40:24 INFO SSH listening listen_address=[fdaa:0:cfd4:a7b:194:1b48:7dc9:2]:22
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info]time=2025-10-27T13:40:26.814Z level=DEBUG msg="Hook output" type=server.ready command=ruby output="Syncing databases from S3...\nUpdating htpasswd file...\nGenerating showcases configuration...\n  ✓ Generated /data/db/showcases.yml\nStarting prerender...\nGenerating navigator configuration...\nGenerating image variants require the image_processing gem. Please add `gem \"image_processing\", \"~> 1.2\"` to your Gemfile or set `config.active_storage.variant_processor = :disabled`.\nNavigator configuration generated at config/navigator.yml\nFound 161 objects in S3 and 161 local files\nAssets bridge synchronization complete\nWaiting for prerender to complete...\nInitialization complete - navigator will auto-reload config/navigator.yml\n"
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info]time=2025-10-27T13:40:26.814Z level=INFO msg="Reload config specifies different config file" current=config/navigator-maintenance.yml new=config/navigator.yml
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info]time=2025-10-27T13:40:26.814Z level=INFO msg="Ready hook triggered config reload" reason="different config file" configFile=config/navigator.yml
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info]time=2025-10-27T13:40:26.815Z level=INFO msg="Received SIGHUP, reloading configuration"
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info]time=2025-10-27T13:40:26.815Z level=DEBUG msg="Loading YAML configuration"
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info]time=2025-10-27T13:40:26.820Z level=INFO msg="Updated AppManager configuration" idleTimeout=5m0s portRange=4000-4100
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info]time=2025-10-27T13:40:26.820Z level=INFO msg="Starting new managed process" name=redis
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info]time=2025-10-27T13:40:26.823Z level=INFO msg="Starting managed process" name=redis command=redis-server args=[/etc/redis/redis.conf]
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info]time=2025-10-27T13:40:26.823Z level=INFO msg="Starting new managed process" name=action-cable
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info]time=2025-10-27T13:40:26.824Z level=INFO msg="Starting managed process" name=action-cable command=bundle args="[exec puma -p 28080 cable/config.ru]"
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info]time=2025-10-27T13:40:26.824Z level=DEBUG msg="Updated idle manager configuration" action=suspend timeout=15m0s
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info]time=2025-10-27T13:40:26.824Z level=INFO msg="Started idle timer after config reload" timeout=15m0s action=suspend
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info]{"time":"2025-10-27T13:40:26.824159379Z","level":"INFO","msg":"Switched to JSON logging format"}
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info]{"time":"2025-10-27T13:40:26.824173019Z","level":"INFO","msg":"Executing hook","type":"server.start","command":"/rails/script/update_htpasswd.rb","args":[],"timeout":30000000000}
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info][redis.stdout] 702:C 27 Oct 2025 13:40:26.856 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info][redis.stdout] 702:C 27 Oct 2025 13:40:26.856 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info][redis.stdout] 702:C 27 Oct 2025 13:40:26.856 * Redis version=8.0.2, bits=64, commit=00000000, modified=0, pid=702, just started
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info][redis.stdout] 702:C 27 Oct 2025 13:40:26.856 * Configuration loaded
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info][redis.stdout] 702:M 27 Oct 2025 13:40:26.860 * monotonic clock: POSIX clock_gettime
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info][redis.stdout] 702:M 27 Oct 2025 13:40:26.861 # Failed to write PID file: No such file or directory
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info][redis.stdout] 702:M 27 Oct 2025 13:40:26.861 * Running mode=standalone, port=6379.
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info][redis.stdout] 702:M 27 Oct 2025 13:40:26.862 * Server initialized
+2025-10-27T13:40:26Z app[0806d49b9d1798] ewr [info][redis.stdout] 702:M 27 Oct 2025 13:40:26.863 * Ready to accept connections tcp
+2025-10-27T13:40:27Z app[0806d49b9d1798] ewr [info]{"time":"2025-10-27T13:40:27.083100855Z","level":"INFO","msg":"Reloaded authentication","file":"/data/db/htpasswd"}
+2025-10-27T13:40:27Z app[0806d49b9d1798] ewr [info]{"time":"2025-10-27T13:40:27.083198005Z","level":"INFO","msg":"Configuration reloaded successfully"}
+2025-10-27T13:40:27Z app[0806d49b9d1798] ewr [info]{"time":"2025-10-27T13:40:27.083353975Z","level":"INFO","msg":"Executing hook","type":"server.ready","command":"/rails/script/ready.sh","args":[],"timeout":600000000000}
+2025-10-27T13:40:27Z app[0806d49b9d1798] ewr [info][action-cable.stdout] Puma starting in single mode...
+2025-10-27T13:40:27Z app[0806d49b9d1798] ewr [info][action-cable.stdout] * Puma version: 7.1.0 ("Neon Witch")
+2025-10-27T13:40:27Z app[0806d49b9d1798] ewr [info][action-cable.stdout] * Ruby version: ruby 3.4.7 (2025-10-08 revision 7a5688e2a2) +PRISM [x86_64-linux]
+2025-10-27T13:40:27Z app[0806d49b9d1798] ewr [info][action-cable.stdout] *  Min threads: 5
+2025-10-27T13:40:27Z app[0806d49b9d1798] ewr [info][action-cable.stdout] *  Max threads: 5
+2025-10-27T13:40:27Z app[0806d49b9d1798] ewr [info][action-cable.stdout] *  Environment: production
+2025-10-27T13:40:27Z app[0806d49b9d1798] ewr [info][action-cable.stdout] *          PID: 703
+2025-10-27T13:40:29Z proxy[80e074c62dd228] ord [info]waiting for machine to be reachable on 0.0.0.0:3000 (waited 5.46461939s so far)
+2025-10-27T13:40:30Z app[0806d49b9d1798] ewr [info][action-cable.stdout] Generating image variants require the image_processing gem. Please add `gem "image_processing", "~> 1.2"` to your Gemfile or set `config.active_storage.variant_processor = :disabled`.
+2025-10-27T13:40:30Z app[0806d49b9d1798] ewr [info][action-cable.stdout] * Listening on http://0.0.0.0:28080
+2025-10-27T13:40:30Z app[0806d49b9d1798] ewr [info][action-cable.stdout] Use Ctrl-C to stop
+2025-10-27T13:40:32Z proxy[80e074c62dd228] ord [error][PM05] failed to connect to machine: gave up after 15 attempts (in 8.469129078s)
+2025-10-27T13:40:32Z proxy[80e074c62dd228] ord [error][PR03] could not find a good candidate within 1 attempts at load balancing. last error: [PC01] instance refused connection. is your app listening on 0.0.0.0:3000? make sure it is not only listening on 127.0.0.1 (hint: look at your startup logs, servers often print the address they are listening on)
+2025-10-27T13:40:34Z app[286e340f991548] iad [info]{"time":"2025-10-27T13:40:34.32122727Z","level":"DEBUG","msg":"Request started","activeRequests":1,"enabled":true}
+2025-10-27T13:40:34Z app[286e340f991548] iad [info]{"time":"2025-10-27T13:40:34.32128304Z","level":"DEBUG","msg":"Request received","method":"HEAD","path":"/","request_id":"490f8d408b9a17e6677b028008430632"}
+2025-10-27T13:40:34Z app[286e340f991548] iad [info]{"time":"2025-10-27T13:40:34.32129616Z","level":"DEBUG","msg":"Auth exclusion: regex pattern match","path":"/","pattern":"^/$","action":"off"}
+2025-10-27T13:40:34Z app[286e340f991548] iad [info]{"time":"2025-10-27T13:40:34.32130953Z","level":"DEBUG","msg":"Request finished","activeRequests":0,"enabled":true}
+2025-10-27T13:40:34Z app[286e340f991548] iad [info]{"time":"2025-10-27T13:40:34.32131398Z","level":"DEBUG","msg":"Started idle timer","timeout":900000000000,"action":"suspend"}
+2025-10-27T13:40:34Z app[286e340f991548] iad [info]{"@timestamp":"2025-10-27T13:40:34.321Z","client_ip":"2603:6080:f00:12:17a:7a91:812d:2f5f, 2a09:8280:1::91:5d7c:0","remote_user":"-","method":"HEAD","uri":"/","protocol":"HTTP/1.1","status":302,"body_bytes_sent":0,"request_id":"490f8d408b9a17e6677b028008430632","request_time":"0.000","referer":"","user_agent":"curl/8.7.1","fly_request_id":"01K8JYBEA1MZY9JGW72VZH742G-iad"}

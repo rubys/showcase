@@ -26,8 +26,9 @@
 /tmp/pids/*
 !/tmp/pids/.keep
 
-# Ignore databases
+# Ignore databases (except index.sqlite3 needed for prerender during build)
 /db/*.sqlite3*
+!/db/index.sqlite3
 /db/*.yml
 /db/htpasswd
 

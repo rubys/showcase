@@ -47,6 +47,14 @@ RUN ls /usr/local/bin && bundle exec bootsnap precompile app/ lib/
 # Precompiling assets for production without requiring secret RAILS_MASTER_KEY
 RUN SECRET_KEY_BASE=DUMMY ./bin/rails assets:precompile
 
+# Prerender static HTML pages (requires showcases.yml, map.yml, and index.sqlite3)
+# This runs during build so static pages are baked into the image
+# Eliminates need to start index tenant on first request
+# Note: index.sqlite3 is included via .dockerignore exception
+RUN SECRET_KEY_BASE=DUMMY RAILS_ENV=production RAILS_APP_DB=index \
+    bundle exec rake prerender && \
+    rm -f db/index.sqlite3*
+
 
 # Build Navigator
 FROM golang:trixie AS build-nav
@@ -113,9 +121,9 @@ ENV DATABASE_URL="sqlite3:///data/production.sqlite3" \
 # Navigator will execute the ready hook (script/nav_initialization.rb) which:
 # - Syncs databases from S3
 # - Updates htpasswd
-# - Runs prerender
 # - Generates full navigator config
 # - Returns, triggering navigator config reload
+# After reload, ready hook (script/ready.sh) updates prerendered content
 EXPOSE 3000
 VOLUME /data
 CMD [ "navigator", "config/navigator-maintenance.yml" ]

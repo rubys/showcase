@@ -57,7 +57,7 @@ end
 threads.each(&:join)
 
 # Generate showcases.yml (depends on S3 sync completing)
-# This is critical: prerender and navigator config both read this file
+# This is critical: navigator config needs this file
 # Note: We don't regenerate map.yml here - using the pre-built one from Docker image
 # (would need node/makemaps.js to add projection coordinates, addressing that separately)
 puts "Generating showcases configuration..."
@@ -72,10 +72,6 @@ showcases_file = File.join(dbpath, 'showcases.yml')
 File.write(showcases_file, YAML.dump(showcases_data))
 puts "  ✓ Generated #{showcases_file}"
 
-# Run prerender in background
-puts "Starting prerender..."
-prerender_thread = Thread.new { system 'bin/prerender' }
-
 # Set cable port for navigator config
 ENV['CABLE_PORT'] = '28080'
 
@@ -88,19 +84,6 @@ FileUtils.mkdir_p "/demo/db"
 FileUtils.mkdir_p "/demo/storage/demo"
 system "chown rails:rails /demo /demo/db /demo/storage/demo"
 
-# Wait for prerender to complete
-puts "Waiting for prerender to complete..."
-prerender_thread.join
-
-# Fix ownership of inventory.json if needed
-inventory_file = "#{git_path}/tmp/inventory.json"
-if File.exist?(inventory_file)
-  stat = File.stat(inventory_file)
-  if stat.uid == 0
-    puts "Fixing ownership of #{inventory_file}"
-    system "chown rails:rails #{inventory_file}"
-  end
-end
-
 puts "Initialization complete - navigator will auto-reload config/navigator.yml"
+puts "Note: Prerender will run after config reload via ready hook"
 exit 0
