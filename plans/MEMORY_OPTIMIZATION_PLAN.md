@@ -2,17 +2,17 @@
 
 ## Overview - Current State (After Completed Optimizations)
 
-**Measured on smooth-nav with 1 active tenant:**
-- **Baseline memory (0 tenants)**: ~372MB (down from initial 397MB)
+**Measured on smooth-nav:**
+- **Baseline memory (0 tenants)**: ~169MB (down from initial 372MB)
 - **Per-tenant memory**: ~250-350MB per Rails process (estimated, needs measurement)
 - **Architecture**: Navigator spawns one Rails process per active tenant
-- **Optimizations enabled**: jemalloc via `LD_PRELOAD`
+- **Optimizations enabled**: jemalloc via `LD_PRELOAD`, Docker prerendering
 
-**Baseline breakdown (372MB total):**
-1. **Action Cable Puma server** - 152MB (41%) - Primary optimization target
-2. **Navigator Go binary** - 17MB (4.5%)
-3. **Redis server** - 14MB (3.8%)
-4. **System overhead** - ~189MB (51%) - Fly.io hallpass, kernel, etc.
+**Baseline breakdown (169MB total):**
+1. **Navigator Go binary** - 17MB (10%)
+2. **Redis server** - 14MB (8.3%)
+3. **System overhead** - ~138MB (82%) - Fly.io hallpass, kernel, etc.
+4. **Action Cable Puma server** - 0MB (disabled by default, see ACTION_CABLE_ON_DEMAND.md)
 
 **Per-tenant breakdown (estimated ~250-350MB each):**
 1. Ruby VM - ~20-40MB
@@ -26,47 +26,47 @@
 
 ## Completed Optimizations
 
-### 1. AWS SDK Removal from nav_startup.rb (Actual: 13MB savings)
+### 1. AWS SDK Removal from nav_startup.rb (13MB savings)
 
 **Problem**: `script/nav_startup.rb` loaded `aws-sdk-s3` at startup and kept it resident, even though AWS is only needed once during initialization.
 
 **Solution**: Removed `require 'aws-sdk-s3'` from nav_startup.rb. The sync_databases_s3.rb script already loads it when needed.
 
-**Results**:
-- Before: ruby nav_startup.rb = 38MB RSS
-- After: ruby nav_startup.rb = 25MB RSS
-- **Savings: 13MB (35% reduction in process memory)**
+**Results**: 13MB saved (35% reduction in startup script memory)
 
-**Status**: ✅ Deployed to production, measured on smooth-nav
+**Status**: ✅ Deployed to production
 
-### 2. Navigator Hook-Based Startup (Actual: 26MB savings)
+### 2. Navigator Hook-Based Startup (26MB savings)
 
 **Problem**: nav_startup.rb stayed resident for container lifetime (25MB) just to spawn navigator and run initialization.
 
-**Solution**: Made Navigator the main process using ready hooks for initialization:
-- Navigator starts with maintenance config (shows 503.html during init)
-- Ready hook executes `script/nav_initialization.rb` with 5-minute timeout
-- After successful hook, Navigator auto-reloads with full config
-- Initialization script runs once and exits (no persistent process)
+**Solution**: Made Navigator the main process (PID 1) using ready hooks for initialization. Initialization script runs once and exits.
 
-**Implementation**:
-- Created `config/navigator-maintenance.yml` with ready hook
-- Created `script/nav_initialization.rb` (extracted from nav_startup.rb)
-- Updated Dockerfile.nav CMD to run Navigator directly
-- Enhanced Navigator to support `reload_config` field in hooks
+**Results**: 26MB saved (eliminated 25MB wrapper process + 1MB navigator efficiency)
 
-**Results** (measured with 1 active tenant):
-- Before: nav_startup.rb = 25MB, navigator = 18MB
-- After: nav_startup.rb = 0MB (eliminated), navigator = 17MB
-- **Savings: 26MB total (25MB wrapper elimination + 1MB navigator efficiency)**
+**Status**: ✅ Deployed to production
 
-**Architecture benefits**:
-- Cleaner: Navigator is now PID 1 (main process)
-- Better signal handling: No signal forwarding needed
-- User-friendly: Maintenance page during initialization
-- Memory efficient: Ruby initialization runs once and exits
+### 3. Docker Build-Time Prerendering (7.1s cold start improvement)
 
-**Status**: ✅ Deployed to production, verified on smooth-nav
+**Problem**: First request required starting index tenant to render static HTML (5+ seconds delay).
+
+**Solution**: Run prerender during Docker build, bake static HTML into image.
+
+**Results**: Cold start improved from 9.2s to 2.1s (7.1s faster, 77% improvement)
+
+**Status**: ✅ Deployed to production
+
+### 4. Action Cable Optional Startup (138MB savings when disabled)
+
+**Problem**: Action Cable always running, consuming 152MB even when not needed.
+
+**Solution**: Made Action Cable optional via `ENABLE_ACTION_CABLE` environment variable.
+
+**Results**: 138MB saved when disabled (see ACTION_CABLE_ON_DEMAND.md for details)
+
+**Status**: ✅ Plan created, ready to implement
+
+**Total Completed Savings**: 39MB baseline + 7.1s cold start improvement
 
 ---
 
@@ -102,57 +102,17 @@
 
 ### Baseline Optimizations
 
-#### Priority 1: Action Cable Eager Loading (Estimated: 30-40MB)
+See **ACTION_CABLE_ON_DEMAND.md** for comprehensive Action Cable optimization plan:
+- Phase 1: Optional startup (138MB saved when disabled)
+- Phase 2: Memory optimizations when enabled (45-70MB saved)
+  - Remove eager loading (30-40MB)
+  - Reduce threads (10-20MB)
+  - Redis memory limits (5-10MB)
+- Phase 3: Navigator automatic on-demand (future)
 
-**Current**: Action Cable server loads entire Rails environment via `Rails.application.eager_load!`
+**Additional baseline opportunities:**
 
-**Opportunity**: Remove eager loading - channels are pure message relays with no model access.
-
-**Implementation** (cable/config.ru):
-```ruby
-require_relative "../config/environment"
-# Rails.application.eager_load!  ← REMOVE THIS LINE
-```
-
-**Risk**: LOW - Channels don't access models, just relay messages
-- ScoresChannel, CurrentHeatChannel, OfflinePlaylistChannel: Just `stream_from`
-- OutputChannel: Uses Rails.root, Rails.logger, PTY, YAML (all safe)
-
-**Testing**: Test all 4 channels with concurrent WebSocket connections
-
-#### Priority 2: Action Cable Thread Reduction (Estimated: 10-20MB)
-
-**Current**: Action Cable Puma uses default 5 threads
-
-**Opportunity**: Reduce to 1-2 threads (WebSocket connections are long-lived)
-
-**Implementation** (app/controllers/concerns/configurator.rb line 592):
-```ruby
-'args' => ['exec', 'puma', '-t', '1:2', '-p', ENV.fetch('CABLE_PORT', '28080'), 'cable/config.ru']
-```
-
-**Risk**: LOW - Load test with multiple concurrent connections
-
-**Combined savings**: 40-60MB baseline reduction (Options 1+2)
-
-#### Priority 3: Minimal Action Cable Server (Estimated: 100-120MB, ADVANCED)
-
-**Current**: Action Cable loads full Rails (ActiveRecord, ActionView, etc.)
-
-**Opportunity**: Create standalone server with minimal Rails stub
-
-**Implementation**: Replace `cable/config.ru` with minimal dependencies:
-- Load only: ActionCable, Redis adapter, channel classes
-- Stub: Rails.root, Rails.logger, Rails.env
-- Remove: ActiveRecord, ActiveStorage, ActionMailer, all controllers/models
-
-**Risk**: MEDIUM - More complex but viable since channels are simple
-- Requires thorough testing of all channels
-- OutputChannel PTY/YAML operations need validation
-
-**Consider if**: Options 1+2 don't provide enough savings
-
-#### Priority 4: Aggressive jemalloc Tuning (Estimated: 10-30MB)
+#### Aggressive jemalloc Tuning (Estimated: 10-30MB)
 
 **Current**: Conservative jemalloc settings
 
@@ -165,104 +125,24 @@ MALLOC_CONF="dirty_decay_ms:1000,muzzy_decay_ms:1000,narenas:2"
 
 **Risk**: LOW-MEDIUM - May impact performance under heavy load
 
-#### Priority 5: Redis Memory Limits (Estimated: 5-10MB)
-
-**Current**: Redis at 14MB (already small)
-
-**Opportunity**: Set maxmemory limits
-
-**Implementation** (Dockerfile.nav):
-```dockerfile
-echo "maxmemory 50mb" >> /etc/redis/redis.conf
-echo "maxmemory-policy allkeys-lru" >> /etc/redis/redis.conf
-```
-
 ### Per-Tenant Optimizations
 
 **CRITICAL**: These multiply by tenant count!
-- 5 tenants × 100MB savings = 500MB total
-- 10 tenants × 100MB savings = 1GB total
 
-#### Priority 1: Disable Unused Rails Components (Estimated: 50-100MB per tenant)
+See **PER_TENANT_OPTIMIZATION.md** for comprehensive per-tenant optimization plan:
+- Phase 1: Low-risk quick wins (30-50MB per tenant)
+  - Reduce thread counts (20-30MB)
+  - Optimize connection pool (5-10MB)
+  - Reduce log level (5-10MB)
+- Phase 2: Gem audit and removal (30-60MB per tenant)
+- Phase 3: Advanced optimizations (70-140MB per tenant)
+  - Disable unused Rails components (50-100MB)
+  - Disable eager loading (20-40MB)
 
-**Current**: Loading full Rails stack with `require "rails/all"`
-
-**Opportunity**: Selectively require only needed components
-
-**Implementation** (config/application.rb):
-```ruby
-# Instead of: require "rails/all"
-require "rails"
-%w(
-  active_record/railtie
-  action_controller/railtie
-  action_view/railtie
-  action_cable/engine
-).each do |railtie|
-  require railtie
-end
-```
-
-**Investigation needed**: Determine if Active Storage is used (10-20MB potential savings)
-
-#### Priority 2: Reduce Thread Count (Estimated: 20-30MB per tenant)
-
-**Current**: 5 threads per tenant Rails process
-
-**Opportunity**: Reduce to 2 threads (Navigator handles concurrency across processes)
-
-**Implementation** (config/puma.rb or via Navigator config):
-```ruby
-max_threads_count = ENV.fetch("RAILS_MAX_THREADS") { 2 }
-```
-
-**Trade-off**: Lower per-process concurrency (mitigated by Navigator spawning multiple processes)
-
-#### Priority 3: Disable Eager Loading (Estimated: 20-40MB per tenant)
-
-**Current**: `config.eager_load = true` loads all classes upfront
-
-**Opportunity**: Use lazy loading - trades slightly slower first request for lower memory
-
-**Implementation** (config/environments/production.rb):
-```ruby
-config.eager_load = false
-```
-
-**Trade-off**: First request to each controller ~50-100ms slower as classes load on demand
-
-#### Priority 4: Remove Unused Gems (Estimated: 30-60MB per tenant)
-
-**Investigation needed** - determine if these gems are used:
-- **geocoder** (~5-10MB) - geolocation needed?
-- **combine_pdf** (~10MB) - PDF generation used?
-- **fast_excel** (~5-10MB) - Excel export used?
-- **sentry-ruby/sentry-rails** (~10MB) - error tracking worth the memory cost?
-
-**Method**: `grep -r "GemName" app/ lib/` to check usage
-
-#### Priority 5: Reduce Log Level (Estimated: 5-10MB per tenant)
-
-**Current**: Debug logging
-
-**Opportunity**: Use :info or :warn level
-
-**Implementation** (config/environments/production.rb):
-```ruby
-config.log_level = :info  # or :warn
-```
-
-#### Priority 6: Optimize Connection Pool (Estimated: 5-10MB per tenant)
-
-**Current**: Pool size may not match thread count
-
-**Opportunity**: Match pool to threads
-
-**Implementation** (config/database.yml):
-```yaml
-production:
-  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 2 } %>
-```
+**Expected Results**:
+- Conservative: 300MB → 200MB per tenant (33% reduction)
+- Aggressive: 300MB → 150MB per tenant (50% reduction)
+- 10 tenants: 1-1.5GB total savings
 
 ---
 
@@ -270,60 +150,54 @@ production:
 
 ### Recommended Approach
 
-**Phase 1: Quick Baseline Wins (This Week)**
-1. Action Cable eager loading removal (30-40MB)
-2. Action Cable thread reduction (10-20MB)
-3. Redis memory limits (5-10MB)
-4. **Total: ~45-70MB baseline savings**
+**Next: Action Cable On-Demand (See ACTION_CABLE_ON_DEMAND.md)**
+1. Phase 1: Make Action Cable optional (138MB saved when disabled)
+2. Phase 2: Optimize when enabled (45-70MB saved when running)
+3. **Total: 138MB baseline savings OR 36-61MB when enabled**
 
-**Phase 2: Per-Tenant Optimizations (Next Sprint)**
-1. Disable unused Rails components (50-100MB × tenant count)
-2. Reduce thread counts (20-30MB × tenant count)
-3. Audit and remove unused gems (30-60MB × tenant count)
-4. **Total: ~100-190MB per tenant savings**
+**After: Per-Tenant Optimizations (See PER_TENANT_OPTIMIZATION.md)**
+1. Phase 1: Low-risk quick wins (30-50MB per tenant)
+2. Phase 2: Gem audit and removal (30-60MB per tenant)
+3. Phase 3: Advanced optimizations (70-140MB per tenant)
+4. **Total: 100-150MB per tenant savings (multiplies!)**
 
-**Phase 3: Advanced Baseline (If Needed)**
-1. Minimal Action Cable server (additional 60-80MB baseline)
-2. Aggressive jemalloc tuning (10-30MB baseline)
-3. **Total: additional 70-110MB baseline savings**
+**Future: Advanced Baseline (If Needed)**
+1. Aggressive jemalloc tuning (10-30MB baseline)
 
 ### Priority Order by Impact
 
-1. **Per-tenant Rails optimizations** - HIGHEST IMPACT (multiplies by tenant count!)
-2. **Action Cable eager loading removal** - Easy, low-risk, immediate 30-40MB
-3. **Thread reductions** - Both baseline and per-tenant benefits
-4. **Gem audit and removal** - Significant per-tenant savings
-5. **Advanced optimizations** - Only if quick wins insufficient
+1. **Action Cable on-demand** - IMMEDIATE IMPACT (138MB or 36-61MB baseline)
+2. **Per-tenant Rails optimizations** - HIGHEST IMPACT (multiplies by tenant count!)
+3. **Advanced optimizations** - Only if quick wins insufficient
 
 ---
 
 ## Expected Results
 
-### Conservative Estimate (Phase 1 + Phase 2 easy wins)
+### Conservative Estimate (Action Cable disabled + Per-tenant Phase 1+2)
 
-**Baseline**: 372MB → 317MB (15% reduction, 55MB saved)
-- Action Cable optimizations: -50MB
-- Redis tuning: -5MB
+**Baseline**: 169MB → 31MB (82% reduction, 138MB saved via Action Cable disabled)
 
 **Per-tenant**: 300MB → 200MB (33% reduction, 100MB saved per tenant)
-- Rails component optimization: -60MB
 - Thread reduction: -25MB
-- Log level reduction: -5MB
 - Connection pool optimization: -10MB
+- Log level reduction: -5MB
+- Gem removal: -60MB
 
-**10 tenants total**: 3,372MB → 2,317MB (31% reduction, 1,055MB saved)
+**10 tenants total**: 169MB + 3,000MB = 3,169MB → 31MB + 2,000MB = 2,031MB (36% reduction, 1,138MB saved)
 
-### Aggressive Estimate (All phases)
+### Aggressive Estimate (Action Cable enabled+optimized + Per-tenant all phases)
 
-**Baseline**: 372MB → 257MB (31% reduction, 115MB saved)
-- Action Cable optimizations: -50MB
-- Minimal Action Cable server: -60MB (if Phase 1 not enough)
-- Redis tuning: -5MB
+**Baseline**: 169MB → 108MB (36% reduction, 61MB saved via Action Cable optimizations)
+- Action Cable optimized: -50MB
+- Redis tuning: -11MB
 
 **Per-tenant**: 300MB → 150MB (50% reduction, 150MB saved per tenant)
-- Full Rails optimization: -150MB
+- Phase 1+2: -100MB
+- Rails component optimization: -30MB
+- Eager loading disabled: -20MB
 
-**10 tenants total**: 3,372MB → 1,757MB (48% reduction, 1,615MB saved)
+**10 tenants total**: 169MB + 3,000MB = 3,169MB → 108MB + 1,500MB = 1,608MB (49% reduction, 1,561MB saved)
 
 ---
 
@@ -367,20 +241,22 @@ bin/rails test:system
 
 ## Success Criteria
 
-### Phase 1 Complete When:
-- [ ] Baseline memory < 320MB
-- [ ] All tests passing
-- [ ] WebSocket functionality verified
-- [ ] No performance degradation
+### Action Cable Optimization Complete When:
+- [ ] Action Cable optional (ENV var control working)
+- [ ] Baseline memory < 35MB when disabled
+- [ ] Baseline memory < 110MB when enabled + optimized
+- [ ] All WebSocket channels tested
+- [ ] Production stable for 1 week
 
-### Phase 2 Complete When:
-- [ ] Per-tenant memory < 200MB
+### Per-Tenant Optimization Complete When:
+- [ ] Per-tenant memory < 200MB (conservative target)
+- [ ] All tests passing
 - [ ] All features tested
 - [ ] Production smoke test successful
 - [ ] 10-tenant scenario measured
 
-### Phase 3 Complete When:
-- [ ] Baseline memory < 260MB
+### Stretch Goal Complete When:
+- [ ] Baseline memory < 110MB (Action Cable enabled)
 - [ ] Per-tenant memory < 150MB
 - [ ] System stable under load
 - [ ] Memory usage predictable
@@ -402,7 +278,8 @@ Each optimization:
 - **Trade-offs**: Some optimizations (lazy loading, fewer threads) may slightly impact performance
 - **Testing critical**: Each change validated with full test suite
 - **Incremental approach**: Start conservative, measure, then optimize further
-- **Already completed**: 39MB baseline savings (AWS SDK + Navigator hook startup)
+- **Completed optimizations**: 39MB baseline + 7.1s cold start improvement + Action Cable made optional
+- **See separate plans**: ACTION_CABLE_ON_DEMAND.md, PER_TENANT_OPTIMIZATION.md
 
 ---
 

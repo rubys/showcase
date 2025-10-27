@@ -387,65 +387,258 @@ if proxyConfig.OnDemand != nil && proxyConfig.OnDemand.Enabled {
 - Immediate 138MB savings for most machines
 - Low risk, easy to test and revert
 
-**Phase 2 (Future)**: Implement **Approach 2** after Phase 1 proves successful
+**Phase 2 (Next)**: Optimize Action Cable memory usage when enabled
+- Remove eager loading (30-40MB savings)
+- Reduce thread count (10-20MB savings)
+- Add Redis memory limits (5-10MB savings)
+- **Total: 45-70MB savings when Action Cable is enabled**
+- Low risk, complements Phase 1
+
+**Phase 3 (Future)**: Implement **Approach 2** - Automatic on-demand startup
 - Truly automatic on-demand startup
 - Best user experience (transparent, no manual intervention)
 - Requires Navigator enhancement
 
 ---
 
-## Testing Plan
+## Phase 2 Implementation: Action Cable Memory Optimization
 
-### Phase 1 Testing (Optional Action Cable)
+When Action Cable is enabled, optimize its memory footprint from 152MB to ~82-107MB.
 
-1. **Verify Action Cable disabled by default**:
-```bash
-fly ssh console -a smooth-nav -C "ps auxww | grep puma"
-# Should show: Navigator, no Action Cable
+### Optimization 1: Remove Eager Loading (30-40MB savings)
+
+**Problem**: Action Cable loads entire Rails environment via `Rails.application.eager_load!`
+
+**Analysis**: Our Action Cable channels are pure message relays:
+- `ScoresChannel`, `CurrentHeatChannel`, `OfflinePlaylistChannel`: Just `stream_from`
+- `OutputChannel`: Uses Rails.root, Rails.logger, PTY, YAML (all safe)
+- **No model access required**
+
+**Implementation**:
+
+**File**: `cable/config.ru`
+
+```ruby
+require_relative "../config/environment"
+# Rails.application.eager_load!  ← REMOVE THIS LINE
 ```
 
-2. **Enable Action Cable**:
+**Risk**: LOW - Channels don't access models or require eager-loaded classes
+
+**Testing**:
+- Test all 4 channels with concurrent WebSocket connections
+- Verify real-time score updates work
+- Verify console output streaming works
+- Verify current heat updates work
+
+---
+
+### Optimization 2: Reduce Thread Count (10-20MB savings)
+
+**Problem**: Action Cable Puma uses default 5 threads, but WebSocket connections are long-lived and don't need many threads.
+
+**Implementation**:
+
+**File**: `app/controllers/concerns/configurator.rb` (around line 614)
+
+**Before**:
+```ruby
+processes << {
+  'name' => 'action-cable',
+  'command' => 'bundle',
+  'args' => ['exec', 'puma', '-p', ENV.fetch('CABLE_PORT', '28080'), 'cable/config.ru'],
+  # ...
+}
+```
+
+**After**:
+```ruby
+processes << {
+  'name' => 'action-cable',
+  'command' => 'bundle',
+  'args' => ['exec', 'puma', '-t', '1:2', '-p', ENV.fetch('CABLE_PORT', '28080'), 'cable/config.ru'],
+  # ...
+}
+```
+
+**Risk**: LOW - WebSocket connections are long-lived, minimal concurrency needed
+
+**Testing**: Load test with multiple concurrent WebSocket connections (10-20 clients)
+
+---
+
+### Optimization 3: Redis Memory Limits (5-10MB savings)
+
+**Problem**: Redis at 14MB with no memory limits
+
+**Implementation**:
+
+**File**: `Dockerfile.nav` (after line 106)
+
+**Add**:
+```dockerfile
+# configure redis
+RUN sed -i 's/^daemonize yes/daemonize no/' /etc/redis/redis.conf &&\
+  sed -i 's/^bind/# bind/' /etc/redis/redis.conf &&\
+  sed -i 's/^protected-mode yes/protected-mode no/' /etc/redis/redis.conf &&\
+  sed -i 's/^logfile/# logfile/' /etc/redis/redis.conf &&\
+  echo "vm.overcommit_memory = 1" >> /etc/sysctl.conf &&\
+  echo "maxmemory 50mb" >> /etc/redis/redis.conf &&\
+  echo "maxmemory-policy allkeys-lru" >> /etc/redis/redis.conf
+```
+
+**Risk**: LOW - 50MB is sufficient for Action Cable message queueing
+
+**Testing**:
+- Monitor Redis memory usage under load
+- Verify no eviction warnings in Redis logs
+
+---
+
+### Combined Phase 2 Benefits
+
+**Before (Phase 1 only)**:
+- Action Cable disabled: 0MB (169MB baseline - 138MB savings)
+- Action Cable enabled: 152MB
+
+**After (Phase 1 + Phase 2)**:
+- Action Cable disabled: 0MB
+- Action Cable enabled: 82-107MB (45-70MB savings)
+
+**Total optimization**:
+- When disabled: 138MB saved (vs always-on baseline)
+- When enabled: 45-70MB saved (vs original enabled state)
+
+---
+
+## Testing Plan
+
+### Combined Phase 1 + Phase 2 Testing
+
+Test both optional startup AND optimizations together in a single cycle.
+
+#### Step 1: Verify Action Cable Disabled by Default
+
+```bash
+# Wake the machine
+curl -I https://smooth-nav.fly.dev/
+
+# Check processes (Action Cable should NOT be running)
+fly ssh console -a smooth-nav -C "ps auxww"
+```
+
+**Expected**: Navigator + Redis only, no Action Cable process
+
+#### Step 2: Measure Baseline Memory (No Action Cable)
+
+```bash
+fly ssh console -a smooth-nav -C "ps auxww" > /tmp/phase1-disabled.txt
+grep -E 'navigator|redis' /tmp/phase1-disabled.txt
+```
+
+**Expected**: ~31MB total (Navigator 17MB + Redis 14MB)
+
+#### Step 3: Enable Action Cable with Optimizations
+
 ```bash
 fly secrets set ENABLE_ACTION_CABLE=true -a smooth-nav
 fly deploy -a smooth-nav
 ```
 
-3. **Verify Action Cable starts**:
+**Note**: This deployment includes Phase 2 optimizations (eager loading removed, threads reduced, Redis limits).
+
+#### Step 4: Verify Optimized Action Cable Starts
+
 ```bash
-fly ssh console -a smooth-nav -C "ps auxww | grep puma"
-# Should show: Navigator + Action Cable on port 28080
+# Wake the machine
+curl -I https://smooth-nav.fly.dev/
+
+# Check processes
+fly ssh console -a smooth-nav -C "ps auxww"
 ```
 
-4. **Test WebSocket functionality**:
-- Navigate to live scoring interface
-- Verify scores update in real-time
-- Check console output streaming
-- Test current heat updates
+**Expected**: Navigator + Redis + Action Cable (optimized)
 
-5. **Measure memory savings**:
+#### Step 5: Measure Memory with Optimized Action Cable
+
 ```bash
-# With Action Cable disabled
-fly ssh console -a smooth-nav -C "ps auxww" | grep -E 'navigator|puma|redis'
-
-# With Action Cable enabled
-fly ssh console -a smooth-nav -C "ps auxww" | grep -E 'navigator|puma|redis'
+fly ssh console -a smooth-nav -C "ps auxww" > /tmp/phase2-enabled-optimized.txt
+grep -E 'navigator|puma|redis' /tmp/phase2-enabled-optimized.txt
 ```
+
+**Expected**:
+- Navigator: ~17MB
+- Redis: ~9MB (with 50MB limit, down from 14MB)
+- Action Cable: ~82-107MB (down from 152MB)
+- **Total: ~108-133MB** (vs 169MB baseline before Phase 1+2)
+
+#### Step 6: Test WebSocket Functionality
+
+1. **Scores Channel** (live scoring):
+   - Navigate to event with active scoring
+   - Open scoring interface
+   - Verify scores update in real-time as entered
+   - Check browser console for WebSocket connection
+
+2. **Current Heat Channel** (display boards):
+   - Navigate to event schedule
+   - Verify current heat updates automatically
+   - Check multiple concurrent connections
+
+3. **Output Channel** (console streaming):
+   - Navigate to admin console interface
+   - Run a command
+   - Verify output streams to browser in real-time
+
+4. **Concurrent Load Test**:
+   - Open 10-20 browser tabs to WebSocket features
+   - Verify all connections stable
+   - Check Action Cable memory doesn't balloon
+
+#### Step 7: Compare Memory Savings
+
+```bash
+# Compare the files
+echo "=== Baseline (Phase 1+2 disabled) ==="
+grep -E 'navigator|redis' /tmp/phase1-disabled.txt | awk '{sum+=$6} END {print "Total: " sum/1024 " MB"}'
+
+echo "=== With optimized Action Cable (Phase 1+2 enabled) ==="
+grep -E 'navigator|puma|redis' /tmp/phase2-enabled-optimized.txt | awk '{sum+=$6} END {print "Total: " sum/1024 " MB"}'
+```
+
+**Expected Savings**:
+- Phase 1 (disabled): 138MB saved vs original baseline
+- Phase 2 (enabled + optimized): 45-70MB saved vs original enabled state
 
 ### Success Criteria
 
+**Phase 1 (Optional Startup)**:
 - ✅ Action Cable doesn't start when `ENABLE_ACTION_CABLE` is unset or false
 - ✅ Action Cable starts successfully when `ENABLE_ACTION_CABLE=true`
-- ✅ WebSocket connections work correctly when enabled
 - ✅ Memory savings of ~138MB verified when disabled
+
+**Phase 2 (Optimizations)**:
+- ✅ Action Cable memory reduced from 152MB to 82-107MB when enabled
+- ✅ Redis memory reduced from 14MB to ~9MB
+- ✅ All 4 WebSocket channels work correctly
 - ✅ No errors in Navigator logs
+- ✅ Concurrent connections stable (10-20 clients)
+
+**Combined**:
+- ✅ Total baseline memory: 169MB → 31MB when disabled (138MB saved)
+- ✅ Total baseline memory: 169MB → 108-133MB when enabled (36-61MB saved)
 
 ---
 
-## Implementation Steps (Phase 1)
+## Implementation Steps (Phase 1 + Phase 2 Combined)
 
-### Step 1: Update Configurator (5 minutes)
+### Step 1: Update Configurator for Optional + Optimized Action Cable (5 minutes)
 
 **File**: `app/controllers/concerns/configurator.rb`
+
+**Changes**:
+1. Wrap Action Cable in `ENV['ENABLE_ACTION_CABLE'] == 'true'` check (Phase 1)
+2. Add `-t 1:2` thread reduction to puma args (Phase 2)
 
 ```ruby
 def build_managed_processes_config
@@ -455,11 +648,12 @@ def build_managed_processes_config
 
   # Add standalone Action Cable server (optional)
   # Set ENABLE_ACTION_CABLE=true to enable WebSocket features
+  # When enabled, uses optimized settings for memory efficiency
   if ENV['ENABLE_ACTION_CABLE'] == 'true'
     processes << {
       'name' => 'action-cable',
       'command' => 'bundle',
-      'args' => ['exec', 'puma', '-p', ENV.fetch('CABLE_PORT', '28080'), 'cable/config.ru'],
+      'args' => ['exec', 'puma', '-t', '1:2', '-p', ENV.fetch('CABLE_PORT', '28080'), 'cable/config.ru'],
       'working_dir' => Rails.root.to_s,
       'env' => {
         'RAILS_ENV' => 'production',
@@ -547,6 +741,35 @@ Expected output with Action Cable enabled:
 
 Expected output with Action Cable disabled:
 - No cable/config.ru process
+```
+
+### Step 2.5: Remove Action Cable Eager Loading (2 minutes) - Phase 2
+
+**File**: `cable/config.ru`
+
+Comment out the eager loading line:
+
+```ruby
+require_relative "../config/environment"
+# Rails.application.eager_load!  ← REMOVE or COMMENT THIS LINE
+run ActionCable.server
+```
+
+### Step 2.6: Add Redis Memory Limits (2 minutes) - Phase 2
+
+**File**: `Dockerfile.nav` (around line 102-106)
+
+Update the Redis configuration section:
+
+```dockerfile
+# configure redis
+RUN sed -i 's/^daemonize yes/daemonize no/' /etc/redis/redis.conf &&\
+  sed -i 's/^bind/# bind/' /etc/redis/redis.conf &&\
+  sed -i 's/^protected-mode yes/protected-mode no/' /etc/redis/redis.conf &&\
+  sed -i 's/^logfile/# logfile/' /etc/redis/redis.conf &&\
+  echo "vm.overcommit_memory = 1" >> /etc/sysctl.conf &&\
+  echo "maxmemory 50mb" >> /etc/redis/redis.conf &&\
+  echo "maxmemory-policy allkeys-lru" >> /etc/redis/redis.conf
 ```
 
 ### Step 3: Test Locally (15 minutes)
@@ -644,30 +867,34 @@ fly deploy -a smooth-nav
 
 ---
 
-## Future Enhancements (Phase 2+)
+## Future Enhancements (Phase 3+)
 
-After Phase 1 is successful and stable:
+After Phase 1+2 are successful and stable:
 
-1. **Automatic enablement** - Implement Approach 2 or 3
+1. **Automatic on-demand startup** - Implement Approach 2 (Navigator enhancement)
 2. **Action Cable pooling** - Share one Action Cable across multiple regions
 3. **WebSocket health checks** - Monitor connection counts
 4. **Graceful degradation** - Fallback to polling if WebSockets unavailable
-5. **Action Cable optimization** - Reduce memory of Action Cable itself (see MEMORY_OPTIMIZATION_PLAN.md)
+5. **Further Action Cable optimization** - Minimal server approach (see MEMORY_OPTIMIZATION_PLAN.md)
 
 ---
 
 ## Success Metrics
 
-**Memory Savings**:
-- Baseline (no tenants): 169MB → 31MB (138MB saved, 82% reduction)
-- Per-region savings: 138MB × 8 regions = 1.1GB total potential savings
+**Phase 1+2 Memory Savings**:
+- Baseline (no tenants, disabled): 169MB → 31MB (138MB saved, 82% reduction)
+- Baseline (no tenants, enabled + optimized): 169MB → 108-133MB (36-61MB saved, 21-36% reduction)
+- Per-region savings (disabled): 138MB × 8 regions = 1.1GB total
+- Per-region savings (enabled): 45-70MB × 8 regions = 360-560MB total
 
 **Performance Impact**:
 - Static page load: No change (Action Cable not involved)
 - WebSocket connection (when disabled): Not available
-- WebSocket connection (when enabled): No change
+- WebSocket connection (when enabled + optimized): No change expected
+- Cold start with Action Cable: Slightly faster (less memory to allocate)
 
 **Operational Impact**:
 - Deployment complexity: Minimal (1 environment variable)
 - Event preparation: Add "enable Action Cable" to checklist
-- Memory budget: 138MB per region becomes available for tenant Rails apps
+- Memory budget: 138MB per region becomes available for tenant Rails apps (when disabled)
+- Memory budget: 45-70MB per region becomes available even when enabled (Phase 2 optimizations)
