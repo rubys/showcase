@@ -105,7 +105,8 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     # Create pro-pro entry
     propro_entry = create_entry(instructor, other_pro)
     propro_heat = create_heat(propro_entry, 'Solo')
-    Solo.create!(heat: propro_heat, order: propro_heat.number)
+    # Use high order number to avoid collision with fixture solos (orders 1, 2)
+    Solo.create!(heat: propro_heat, order: 9999)
 
     # Create pro-am entry (should be excluded from display)
     proam_entry = create_entry(student, instructor)
