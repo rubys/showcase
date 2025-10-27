@@ -1,5 +1,5 @@
 ---
-name: prerendering
+name: render-page
 description: Techniques for rendering Rails pages without starting a server using the internal routing system. Use when the user needs to test page rendering, debug views, verify page correctness, or analyze rendering performance without HTTP overhead.
 ---
 

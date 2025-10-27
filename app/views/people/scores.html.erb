@@ -27,7 +27,28 @@
   
   <% @people.each do |person| %>
     <% next unless @heats.any? {|heat| [heat.entry.lead, heat.entry.follow].include? person} or @formations.any? {|id, number| id == person.id} %>
-    <%= render "people/scores", person: person %>
+    <%
+    # Determine if we should use landscape mode
+    # Use landscape when there are multiple information sections (comments or feedback) for the same heats
+    person_heats = @heats.select { |heat|
+      [heat.entry.lead, heat.entry.follow].include?(person) or
+      @formations.any? {|id, number| id == person.id && number == heat.number}
+    }
+
+    has_comments = person_heats.any? { |heat|
+      heat.scores.any? { |score| score.comments && !score.comments.blank? }
+    }
+
+    has_feedback = %w(+ & @).include?(@event.open_scoring) &&
+                   person_heats.any? { |heat|
+                     heat.category == 'Open' ||
+                     (heat.category == 'Closed' && (@event.heat_range_cat > 0 || @event.closed_scoring == '='))
+                   }
+
+    # Use landscape if we have comments OR feedback (creating multiple tables for same heats)
+    use_landscape = has_comments || has_feedback
+    %>
+    <%= render "people/scores#{use_landscape ? '_landscape' : ''}", person: person %>
     <% found = true %>
   <% end %>
 
