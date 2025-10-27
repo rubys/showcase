@@ -284,8 +284,8 @@ module Configurator
     # Add proxy routes for remote services
     if ENV['RAILS_PROXY_HOST'] != 'rubix.intertwingly.net'
       routes['reverse_proxies'] << {
-        'path' => '^/showease/password',
-        'target' => 'https://rubix.intertwingly.net/showcase/password',
+        'path' => '^/showcase/password(/.*)',
+        'target' => 'https://rubix.intertwingly.net/showcase/password$1',
         'headers' => {
           'X-Forwarded-Host' => '$host'
         }
