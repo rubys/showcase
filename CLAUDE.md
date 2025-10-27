@@ -2,6 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Claude Code Skills
+
+This project includes custom skills in `.claude/skills/` that provide specialized guidance:
+
+- **fly-ssh.md** - Best practices for using `fly ssh console` (no pipes, Debian syntax, direct commands only)
+- **database.md** - Database management and `bin/run` usage patterns
+- **deployment.md** - Deployment architecture and multi-tenancy patterns
+- **testing.md** - Testing procedures, coverage, and known issues
+- **render-page.md** - Page rendering and view testing guidance
+
+**Note:** Skills may not be automatically loaded in all Claude Code sessions. If the `<available_skills>` section is empty, read skill files directly for guidance rather than attempting to invoke them as tools.
+
 ## Rails Configuration
 
 The application runs on Rails 8.0.2 with full Rails 8.0 configuration defaults (`config.load_defaults 8.0`).
