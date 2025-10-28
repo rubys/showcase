@@ -1073,6 +1073,25 @@ Instead of creating a new job/service, simply update `script/user-update` to cal
   - Benefits: Fewer files to maintain, impossible to get out of sync
   - Status: Still post-MVP, but validates the architectural direction
 
+**2025-10-27 (Production deployment and CGI verification):**
+- ✅ **Navigator CGI bug discovered and fixed:**
+  - CGI scripts configured via YAML weren't being registered after config reload
+  - Root cause: `parseServerConfig()` in parser.go didn't copy CGIScripts field from YAML
+  - Added `CGIScripts []CGIScriptConfig` to YAMLConfig.Server struct (types.go:280)
+  - Added copy code in parseServerConfig() (parser.go:110-111)
+  - Added regression test `TestCGIScriptsReload` to prevent future issues
+  - Navigator commit: 4f441cf ("Fix CGI scripts not being copied during config reload")
+- ✅ **CGI script permissions updated:**
+  - Changed update_config CGI script to run as root user/group (was rails/rails)
+  - Allows rsync and config reload operations that require elevated privileges
+  - Updated in configurator.rb (lines 210-211)
+- ✅ **Production verification:**
+  - Deployed navigator fix to smooth-nav.fly.dev
+  - Deployed showcase changes (updated navigator submodule + configurator)
+  - CGI scripts confirmed working (verified via fly logs)
+  - All tests passing (1029 tests, 0 failures, 49.65% coverage)
+- ✅ **Status:** CGI configuration system is now fully deployed and verified in production
+
 ---
 
 ## References
