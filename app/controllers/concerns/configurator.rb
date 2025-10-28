@@ -97,7 +97,25 @@ module Configurator
     # Add CGI scripts configuration
     config['cgi_scripts'] = build_cgi_scripts_config(root)
 
+    # Add synthetic health check configuration
+    config['health_check'] = build_health_check_config
+
     config
+  end
+
+  def build_health_check_config
+    # Synthetic health check configuration
+    # Returns a 200 OK response without proxying to Rails applications
+    {
+      'path' => '/up',
+      'response' => {
+        'status' => 200,
+        'body' => 'OK',
+        'headers' => {
+          'Content-Type' => 'text/plain'
+        }
+      }
+    }
   end
 
   def build_server_config_for_maintenance
@@ -717,18 +735,8 @@ module Configurator
   end
 
   def build_health_check_config_for_maintenance
-    # Simple health check configuration for maintenance mode
-    # Returns a synthetic 200 OK response without proxying to Rails
-    {
-      'path' => '/up',
-      'response' => {
-        'status' => 200,
-        'body' => 'OK',
-        'headers' => {
-          'Content-Type' => 'text/plain'
-        }
-      }
-    }
+    # Use the same synthetic health check as the full config
+    build_health_check_config
   end
 
   def build_routes_config_for_maintenance
