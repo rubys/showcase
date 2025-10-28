@@ -1,4 +1,4 @@
-<% if (not ENV['FLY_REGION'] or (ENV['FLY_APP_NAME'] && ENV['FLY_APP_NAME'] != 'smooth')) and not Rails.env.development? and (local_assigns[:show_backup_warning] != false) %>
+<% if (not ENV['FLY_REGION'] or (ENV['FLY_APP_NAME'] && ENV['FLY_APP_NAME'] != 'smooth')) and not Rails.env.development? and (local_assigns[:show_backup_warning] != false) and not ENV['PRERENDERING'] %>
   <% if ENV['RAILS_APP_DB'] == "demo" %>
     <%# Skip backup warning for demo %>
   <% else %>

@@ -51,7 +51,7 @@ RUN SECRET_KEY_BASE=DUMMY ./bin/rails assets:precompile
 # This runs during build so static pages are baked into the image
 # Eliminates need to start index tenant on first request
 # Note: index.sqlite3 is included via .dockerignore exception
-RUN SECRET_KEY_BASE=DUMMY RAILS_ENV=production RAILS_APP_DB=index \
+RUN SECRET_KEY_BASE=DUMMY RAILS_ENV=production RAILS_APP_DB=index PRERENDERING=true \
     bundle exec rake prerender && \
     rm -f db/index.sqlite3*
 
