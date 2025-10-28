@@ -68,7 +68,9 @@ class UsersController < ApplicationController
       link = @user.link
 
       if @user.update(user_params)
-        update_htpasswd_everywhere
+        # Pass user_id only for password resets (non-admin updates with token)
+        user_id_for_progress = (not @user.token.blank? and not admin) ? @user.id : nil
+        update_htpasswd_everywhere(user_id_for_progress)
 
         if not @user.token.blank? and not admin
           @user.link = ""
@@ -269,12 +271,12 @@ class UsersController < ApplicationController
       @studios.unshift 'index'
     end
 
-    def update_htpasswd_everywhere
+    def update_htpasswd_everywhere(user_id = nil)
       return if Rails.env.test?
       User.update_htpasswd
 
       if Rails.env.production?
-        ConfigUpdateJob.perform_later
+        ConfigUpdateJob.perform_later(user_id)
       end
     end
 
