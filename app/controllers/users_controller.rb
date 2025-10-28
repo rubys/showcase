@@ -77,9 +77,9 @@ class UsersController < ApplicationController
           @user.token = ""
           @user.save!
 
-          format.html { redirect_to link || root_path,
-            notice: "#{@user.userid} was successfully updated.",
-            status: 303, allow_other_host: true }
+          # Return success without redirect - let JavaScript handle progress tracking and redirect
+          format.html { head :ok }
+          format.json { render json: { status: 'success', redirect_url: link || root_path } }
         else
           format.html { redirect_to users_url, notice: "#{@user.userid} was successfully updated." }
           format.json { render :show, status: :ok, location: @user }

@@ -22,8 +22,9 @@ export default class extends Controller {
   async submit(event) {
     event.preventDefault()
 
-    // Show progress indicator
+    // Show progress indicator immediately
     this.progressTarget.classList.remove("hidden")
+    this.updateProgress(0, "Connecting...")
 
     // Disable form
     if (this.hasFormTarget) {
@@ -32,7 +33,7 @@ export default class extends Controller {
       })
     }
 
-    // Subscribe to progress updates
+    // Subscribe to progress updates BEFORE submitting
     this.subscription = this.consumer.subscriptions.create(
       {
         channel: "ConfigUpdateChannel",
@@ -40,17 +41,23 @@ export default class extends Controller {
         database: this.databaseValue
       },
       {
+        connected: () => {
+          console.log("WebSocket connected, now submitting form")
+          this.updateProgress(0, "Submitting...")
+          this.submitForm(event.target)
+        },
         received: (data) => {
           this.handleProgressUpdate(data)
         }
       }
     )
+  }
 
-    // Submit the form
+  async submitForm(form) {
     try {
-      const formData = new FormData(event.target)
-      const response = await fetch(event.target.action, {
-        method: event.target.method,
+      const formData = new FormData(form)
+      const response = await fetch(form.action, {
+        method: form.method,
         body: formData,
         headers: {
           "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
