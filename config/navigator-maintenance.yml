@@ -1,20 +1,100 @@
 # Navigator Maintenance Mode Configuration
 # This configuration is used during container startup while initialization runs.
-# Navigator shows a maintenance page until initialization completes and generates
-# the full configuration in config/navigator.yml.
+# Navigator shows a maintenance page for dynamic requests while keeping infrastructure operational.
+# After initialization completes, it reloads config/navigator.yml for full application access.
 
 server:
   listen: 3000
   hostname: localhost
+  root_path: /showcase
 
-  # Static file serving for maintenance page
+  # Static file serving for maintenance page and assets
   static:
     public_dir: public
-    allowed_extensions: [html, css, js, png, jpg, svg, ico]
+    allowed_extensions: [html, htm, txt, xml, json, css, js, png, jpg, gif, svg, ico, pdf, xlsx]
+    try_files: [index.html, .html, .htm, .txt, .xml, .json]
+    cache_control:
+      overrides:
+        - path: /showcase/assets/
+          max_age: 24h
+        - path: /showcase/
+          max_age: 24h
+
+# Managed processes - keep Action Cable server running during maintenance
+managed_processes:
+  - name: action-cable
+    command: bundle
+    args: [exec, puma, "-p", "28080", cable/config.ru]
+    working_dir: /rails
+    env:
+      RAILS_ENV: production
+      RAILS_APP_REDIS: showcase_production
+      RAILS_APP_DB: action-cable
+    auto_restart: true
+    start_delay: 1s
+
+# Routes - keep infrastructure working during maintenance
+routes:
+  # Redirects for user-friendly navigation
+  redirects:
+    - from: "^/(showcase)?$"
+      to: /showcase/studios/
+
+  # Rewrites for asset path normalization
+  rewrites:
+    - from: "^/assets/(.*)"
+      to: /showcase/assets/$1
+    - from: "^/([^/]+\\.(gif|png|jpg|jpeg|ico|pdf|svg|webp|txt))$"
+      to: /showcase/$1
+
+  # Reverse proxies for standalone services
+  reverse_proxies:
+    # Action Cable WebSocket proxy
+    - path: "^/showcase(/cable)$"
+      target: http://localhost:28080$1
+      websocket: true
+      headers:
+        X-Forwarded-For: "$remote_addr"
+        X-Forwarded-Proto: "$scheme"
+        X-Forwarded-Host: "$host"
+
+  fly:
+    replay: []
+
+# Authentication - maintain security during maintenance
+auth:
+  enabled: true
+  realm: Showcase
+  htpasswd: /data/db/htpasswd
+  public_paths:
+    - /showcase/assets/
+    - /showcase/cable
+    - /showcase/demo/
+    - /showcase/docs/
+    - /showcase/events/console
+    - /showcase/password/
+    - /showcase/regions/
+    - /showcase/studios/
+    - /showcase/index_update
+    - /showcase/index_date
+    - /favicon.ico
+    - /robots.txt
+    - "*.css"
+    - "*.gif"
+    - "*.ico"
+    - "*.jpg"
+    - "*.js"
+    - "*.png"
+    - "*.svg"
+    - "*.webp"
+  auth_patterns:
+    # Allow root path so redirect can work
+    - pattern: "^/$"
+      action: 'off'
 
 # Maintenance mode configuration
-# While enabled=true, all requests receive the maintenance page (except /up health check)
-# This allows the server to listen immediately while initialization runs in background
+# While enabled=true, static files and infrastructure work normally,
+# but dynamic application requests receive the maintenance page
 maintenance:
   enabled: true
   page: /503.html
