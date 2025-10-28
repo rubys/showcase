@@ -10,6 +10,14 @@ export default class extends Controller {
     this.subscription = null
   }
 
+  submitViaButton(event) {
+    // Programmatically trigger form submit when button is clicked
+    if (this.hasFormTarget) {
+      const submitEvent = new Event('submit', { bubbles: true, cancelable: true })
+      this.formTarget.dispatchEvent(submitEvent)
+    }
+  }
+
   disconnect() {
     if (this.subscription) {
       this.subscription.unsubscribe()

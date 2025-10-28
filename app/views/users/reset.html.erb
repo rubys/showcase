@@ -36,7 +36,11 @@
   <% end %>
 
   <div class="mt-8 grid grid-cols-3 gap-1">
+    <% if @verify %>
+    <button type="button" class="btn-blue" data-action="click->config-update#submitViaButton">Update User</button>
+    <% else %>
     <input type="submit" class="btn-blue" form="user-form" value="Update User">
+    <% end %>
     <%= link_to "Back to Index", root_path, class: "btn-grey" %>
   </div>
 </div>
