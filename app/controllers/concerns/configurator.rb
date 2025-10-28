@@ -202,12 +202,13 @@ module Configurator
     scripts = []
 
     # Add configuration update CGI script (publicly accessible like index_update)
+    # Runs as root to allow rsync and config reload operations
     scripts << {
       'path' => "#{root}/update_config",
       'script' => '/rails/script/update_configuration.rb',
       'method' => 'POST',
-      'user' => 'rails',
-      'group' => 'rails',
+      'user' => 'root',
+      'group' => 'root',
       'timeout' => '5m',
       'reload_config' => 'config/navigator.yml',
       'env' => {
