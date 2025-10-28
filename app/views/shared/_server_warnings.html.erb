@@ -1,4 +1,5 @@
-<% if (not ENV['FLY_REGION'] or (ENV['FLY_APP_NAME'] && ENV['FLY_APP_NAME'] != 'smooth')) and not Rails.env.development? and (local_assigns[:show_backup_warning] != false) %>
+<% canonical_host = URI.parse(Showcase.canonical_url).host %>
+<% if ENV['RAILS_PROXY_HOST'].present? && ENV['RAILS_PROXY_HOST'] != canonical_host && !Rails.env.development? && local_assigns[:show_backup_warning] != false %>
   <% if ENV['RAILS_APP_DB'] == "demo" %>
     <%# Skip backup warning for demo %>
   <% else %>
@@ -11,9 +12,9 @@
       <% else %>
         <p>This server is intended for backup use only.  Unless there are problems, the link you should be using is:
           <%
-            path = request.original_fullpath
-            path = path[1..] if request.local? or ENV['RAILS_PROXY_HOST']&.include?('hetzner')
-            link = URI::join("#{Showcase.canonical_url}/", path).to_s
+            # Strip /showcase prefix if present, then build canonical URL
+            path = request.original_fullpath.sub(/^\/showcase/, '')
+            link = "#{Showcase.canonical_url}#{path}"
           %>
           <a class="underline" href="<%= link %>"><%= link %></a>.
       <% end %>

@@ -37,11 +37,8 @@ builder:
   arch: amd64
   remote: ssh://root@65.109.81.136
   local: false
-  # Build args for deployment target (controls server warnings in pre-rendered pages)
-  # Hetzner uses RAILS_PROXY_HOST for both build and runtime
+  # Build arg for deployment target (controls server warnings in pre-rendered pages)
   args:
-    FLY_APP_NAME: ""
-    FLY_REGION: ""
     RAILS_PROXY_HOST: "hetzner.intertwingly.net"
 
 # Inject ENV variables into containers (secrets come from .kamal/secrets).

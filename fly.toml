@@ -7,8 +7,10 @@ primary_region = "iad"
 [build]
   dockerfile = "Dockerfile.nav"
   [build.args]
-    FLY_APP_NAME = "smooth"
-    FLY_REGION = "iad"
+    RAILS_PROXY_HOST = "smooth.fly.dev"
+
+[env]
+  RAILS_PROXY_HOST = "smooth.fly.dev"
 
 [[mounts]]
   source = "smooth_volume"
