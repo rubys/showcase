@@ -25,6 +25,11 @@ RUN apt-get update -qq && \
 # Throw-away build stage to reduce size of final image
 FROM base AS build
 
+# Build arguments for deployment target (used during prerendering)
+ARG FLY_APP_NAME
+ARG FLY_REGION
+ARG RAILS_PROXY_HOST
+
 # Install packages needed to build gems
 RUN apt-get install --no-install-recommends -y build-essential libyaml-dev pkg-config zlib1g-dev
 
@@ -51,7 +56,12 @@ RUN SECRET_KEY_BASE=DUMMY ./bin/rails assets:precompile
 # This runs during build so static pages are baked into the image
 # Eliminates need to start index tenant on first request
 # Note: index.sqlite3 is included via .dockerignore exception
-RUN SECRET_KEY_BASE=DUMMY RAILS_ENV=production RAILS_APP_DB=index PRERENDERING=true \
+# Build args control server warnings and banners in pre-rendered pages:
+#   FLY_APP_NAME, FLY_REGION - For Fly.io deployments
+#   RAILS_PROXY_HOST - For Kamal/Hetzner deployments
+RUN SECRET_KEY_BASE=DUMMY RAILS_ENV=production RAILS_APP_DB=index \
+    FLY_APP_NAME=${FLY_APP_NAME} FLY_REGION=${FLY_REGION} \
+    RAILS_PROXY_HOST=${RAILS_PROXY_HOST} \
     bundle exec rake prerender && \
     rm -f db/index.sqlite3*
 

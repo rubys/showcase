@@ -6,6 +6,9 @@ primary_region = "iad"
 
 [build]
   dockerfile = "Dockerfile.nav"
+  [build.args]
+    FLY_APP_NAME = "smooth-nav"
+    FLY_REGION = "iad"
 
 [[mounts]]
   source = "smooth_nav_volume"
