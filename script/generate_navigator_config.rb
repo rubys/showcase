@@ -1,13 +1,29 @@
 #!/usr/bin/env ruby
 # Standalone navigator config generator - minimal Rails loading
-# Usage: ruby script/generate_navigator_config.rb
+# Usage: ruby script/generate_navigator_config.rb [--maintenance]
 
 require 'bundler/setup'
 require 'yaml'
 require 'fileutils'
 require 'pathname'
+require 'optparse'
 require 'active_support/core_ext/object/blank'  # For present? method
 require 'active_support/string_inquirer'  # For Rails.env
+
+# Parse command-line options
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: generate_navigator_config.rb [options]"
+
+  opts.on("--maintenance", "Generate maintenance mode config") do
+    options[:maintenance] = true
+  end
+
+  opts.on("-h", "--help", "Show this help message") do
+    puts opts
+    exit
+  end
+end.parse!
 
 # Setup minimal Rails-like environment
 module Rails
@@ -44,6 +60,11 @@ end
 
 # Generate config
 generator = ConfigGenerator.new
-generator.generate_navigator_config
 
-puts "Generated config/navigator.yml"
+if options[:maintenance]
+  generator.generate_navigator_maintenance_config
+  puts "Generated config/navigator-maintenance.yml"
+else
+  generator.generate_navigator_config
+  puts "Generated config/navigator.yml"
+end

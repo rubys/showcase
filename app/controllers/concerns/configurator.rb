@@ -22,6 +22,12 @@ module Configurator
     RegionConfiguration.write_yaml_if_changed(file, config)
   end
 
+  def generate_navigator_maintenance_config
+    config = build_navigator_maintenance_config
+    file = File.join(Rails.root, 'config', 'navigator-maintenance.yml')
+    RegionConfiguration.write_yaml_if_changed(file, config)
+  end
+
   private
 
   # Cache showcases.yml to avoid repeated file reads
@@ -42,6 +48,23 @@ module Configurator
 
     # Add auth section if htpasswd file exists
     auth_config = build_auth_config
+    config['auth'] = auth_config if auth_config
+
+    config
+  end
+
+  def build_navigator_maintenance_config
+    config = {
+      'server' => build_server_config_for_maintenance,
+      'managed_processes' => build_managed_processes_config_for_maintenance,
+      'routes' => build_routes_config_for_maintenance,
+      'maintenance' => { 'enabled' => true, 'page' => '/503.html' },
+      'hooks' => build_hooks_config_for_maintenance,
+      'logging' => { 'format' => 'text' }
+    }
+
+    # Add auth section if it has content
+    auth_config = build_auth_config_for_maintenance
     config['auth'] = auth_config if auth_config
 
     config
@@ -73,6 +96,28 @@ module Configurator
 
     # Add CGI scripts configuration
     config['cgi_scripts'] = build_cgi_scripts_config(root)
+
+    config
+  end
+
+  def build_server_config_for_maintenance
+    # Hardcode production/container values for maintenance config
+    # This is only used during Fly.io startup, so we don't need environment detection
+    root = '/showcase'
+
+    config = {
+      'listen' => 3000,
+      'hostname' => 'localhost',
+      'root_path' => root,
+      'static' => {
+        'public_dir' => 'public',
+        'allowed_extensions' => %w[html htm txt xml json css js png jpg gif svg ico pdf xlsx],
+        'try_files' => %w[index.html .html .htm .txt .xml .json],
+        'cache_control' => build_cache_control(root)
+      },
+      'cgi_scripts' => build_cgi_scripts_config_for_maintenance(root),
+      'health_check' => build_health_check_config_for_maintenance
+    }
 
     config
   end
@@ -641,7 +686,92 @@ module Configurator
     
     processes
   end
-  
+
+  def build_managed_processes_config_for_maintenance
+    # No managed processes needed during maintenance mode
+    # Action Cable not required since dynamic requests are blocked
+    []
+  end
+
+  def build_cgi_scripts_config_for_maintenance(root)
+    # CGI scripts configuration for maintenance mode with production paths
+    scripts = []
+
+    # Add configuration update CGI script
+    # Runs as root to allow rsync and config reload operations
+    scripts << {
+      'path' => "#{root}/update_config",
+      'script' => '/rails/script/update_configuration.rb',
+      'method' => 'POST',
+      'user' => 'root',
+      'group' => 'root',
+      'timeout' => '5m',
+      'reload_config' => 'config/navigator.yml',  # Reload to full config after update
+      'env' => {
+        'RAILS_DB_VOLUME' => '/data/db',
+        'RAILS_ENV' => 'production'
+      }
+    }
+
+    scripts
+  end
+
+  def build_health_check_config_for_maintenance
+    # Simple health check configuration for maintenance mode
+    # Returns a synthetic 200 OK response without proxying to Rails
+    {
+      'path' => '/up',
+      'response' => {
+        'status' => 200,
+        'body' => 'OK',
+        'headers' => {
+          'Content-Type' => 'text/plain'
+        }
+      }
+    }
+  end
+
+  def build_routes_config_for_maintenance
+    # Routes for maintenance config - excludes Action Cable
+    # since WebSocket connections are not needed during maintenance
+    root = '/showcase'
+
+    routes = {
+      'redirects' => [],
+      'rewrites' => [],
+      'reverse_proxies' => [],
+      'fly' => {
+        'replay' => []
+      }
+    }
+
+    # Add redirects
+    routes['redirects'] << { 'from' => '^/(showcase)?$', 'to' => "#{root}/studios/" }
+
+    # Add rewrites
+    routes['rewrites'] << { 'from' => '^/assets/(.*)', 'to' => "#{root}/assets/$1" }
+    routes['rewrites'] << { 'from' => '^/([^/]+\.(gif|png|jpg|jpeg|ico|pdf|svg|webp|txt))$', 'to' => "#{root}/$1" }
+
+    # Add proxy routes for remote services (excluding Action Cable)
+    routes['reverse_proxies'] << {
+      'path' => '^/showcase/password(/.*)',
+      'target' => 'https://rubix.intertwingly.net/showcase/password$1',
+      'headers' => {
+        'X-Forwarded-Host' => '$host'
+      }
+    }
+
+    routes['reverse_proxies'] << {
+      'path' => '^/showcase/studios/([a-z]*)/request$',
+      'target' => 'https://rubix.intertwingly.net/showcase/studios/$1/request',
+      'headers' => {
+        'X-Forwarded-Host' => '$host'
+      }
+    }
+
+    routes
+  end
+
   def build_hooks_config
     hooks = {
       'server' => {
@@ -703,6 +833,66 @@ module Configurator
         'timeout' => '2m'
       }
     end
+
+    hooks
+  end
+
+  def build_auth_config_for_maintenance
+    # Build auth config with hardcoded production paths for maintenance config
+    # This is critical for redirects to work during maintenance mode
+    root = '/showcase'
+    htpasswd_path = '/data/db/htpasswd'
+
+    public_paths = [
+      "#{root}/assets/",
+      "#{root}/cable",
+      "#{root}/demo/",
+      "#{root}/docs/",
+      "#{root}/events/console",
+      "#{root}/password/",
+      "#{root}/regions/",
+      "#{root}/studios/",
+      "#{root}/index_update",
+      "#{root}/index_date",
+      '/favicon.ico',
+      '/robots.txt',
+      '*.css',
+      '*.gif',
+      '*.ico',
+      '*.jpg',
+      '*.js',
+      '*.png',
+      '*.svg',
+      '*.webp'
+    ]
+
+    {
+      'enabled' => true,
+      'realm' => 'Showcase',
+      'htpasswd' => htpasswd_path,
+      'public_paths' => public_paths,
+      'auth_patterns' => [
+        # CRITICAL: Allow root path so redirect can work
+        # Without this, auth blocks request before redirect handler runs
+        { 'pattern' => '^/$', 'action' => 'off' }
+      ]
+    }
+  end
+
+  def build_hooks_config_for_maintenance
+    # Minimal hooks for maintenance mode - only ready hook for initialization
+    hooks = {
+      'server' => {
+        'ready' => [
+          {
+            'command' => 'ruby',
+            'args' => ['script/nav_initialization.rb'],
+            'timeout' => '5m',
+            'reload_config' => 'config/navigator.yml'
+          }
+        ]
+      }
+    }
 
     hooks
   end

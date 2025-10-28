@@ -71,3 +71,4 @@ flat-storage
 /bin/navigator
 /navigator/bin
 /config/navigator.yml
+/config/navigator-maintenance.yml

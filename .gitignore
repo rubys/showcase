@@ -91,3 +91,4 @@ flat-storage
 # Navigator Go project (now in submodule)
 /bin/navigator
 /config/navigator.yml
+/config/navigator-maintenance.yml

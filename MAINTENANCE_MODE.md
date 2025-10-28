@@ -12,53 +12,67 @@ When maintenance mode is enabled (`maintenance.enabled: true`), the following co
 
 ### Infrastructure Components
 
-1. **Health Checks** (`/up`)
-   - Load balancers and monitoring systems continue working
-   - Ensures container orchestration doesn't terminate instances
-
-2. **Authentication**
+1. **Authentication**
    - htpasswd authentication remains active
    - Public paths configured in `auth.public_paths` remain accessible
    - Protected resources still require credentials
 
-3. **Static Files**
+2. **Static Files**
    - All files matching `allowed_extensions` are served directly
    - Extensions: `html, htm, txt, xml, json, css, js, png, jpg, gif, svg, ico, pdf, xlsx`
    - Includes pre-rendered studio pages, documentation, and assets
 
-4. **Try Files**
+3. **Try Files**
    - Extensionless URLs resolved with try_files extensions
    - Examples: `/studios/raleigh` → `/studios/raleigh.html`
    - Configured extensions: `index.html, .html, .htm, .txt, .xml, .json`
 
 ### Routing & Proxying
 
-5. **Redirects**
+4. **Redirects**
    - All configured redirects continue working
    - Example: `/` → `/showcase/studios/`
    - Users get consistent navigation experience
 
-6. **URL Rewrites**
+5. **URL Rewrites**
    - Asset path normalization continues
    - Example: `/assets/*` → `/showcase/assets/*`
    - Ensures static assets load correctly
 
-7. **Fly-Replay Routes**
-   - PDF generation routed to `smooth-pdf` app
-   - XLSX generation routed to `smooth-pdf` app
-   - Cross-region routing to other Fly.io regions
-   - Document generation remains available
+6. **Reverse Proxies**
+   - Password management proxy to rubix
+   - Studio request proxy to rubix
+   - Remote services remain operational
 
-8. **CGI Scripts**
+7. **CGI Scripts**
    - Configuration update endpoint (`/showcase/update_config`)
    - Allows remote configuration updates during maintenance
    - Can reload configuration without container restart
+   - Useful for exiting maintenance mode remotely
 
-9. **Reverse Proxies**
-   - Action Cable WebSocket connections to standalone server
-   - Password management proxy to rubix
-   - Studio request proxy to rubix
-   - Standalone services remain operational
+8. **Health Checks** (`/up`)
+   - Synthetic health check returns 200 OK
+   - No Rails application required
+   - Keeps containers healthy during maintenance
+   - Load balancers continue routing
+
+## What Doesn't Work During Maintenance
+
+The following features are intentionally disabled during maintenance mode:
+
+1. **Action Cable WebSocket Connections**
+   - Real-time updates not available
+   - No managed Action Cable process running
+   - No WebSocket proxy configured
+
+2. **Dynamic Rails Application Requests**
+   - All tenant application routes blocked
+   - Only static pre-rendered content accessible
+
+3. **Fly-Replay Routes**
+   - PDF generation not available
+   - XLSX generation not available
+   - Cross-region routing disabled
 
 ## What Shows Maintenance Page
 
@@ -73,65 +87,86 @@ When a request reaches the web application proxy phase (after all static/infrast
 - `/showcase/studios/raleigh.html` - Pre-rendered studio page
 - `/showcase/assets/application.css` - Static assets
 - `/showcase/docs/` - Static documentation
-- `/showcase/2025/boston/invoice.pdf` - PDF generation (via Fly-Replay)
-- `/showcase/update_config` - CGI configuration endpoint
-- `/up` - Health check
+- `/up` - Health check (synthetic 200 OK response)
+- `/showcase/update_config` - CGI configuration endpoint (POST)
 
 ❌ **Shows maintenance page:**
 - `/showcase/2025/boston/` - Dynamic Rails tenant request
 - `/showcase/2025/boston/heats` - Dynamic Rails tenant request
 - `/showcase/2025/boston/scores` - Dynamic Rails tenant request
 
-## Configuration Requirements
+❌ **Not available (disabled during maintenance):**
+- `/showcase/cable` - Action Cable WebSocket connections
+- `/showcase/2025/boston/invoice.pdf` - PDF generation (Fly-Replay routes not configured)
 
-**IMPORTANT**: The maintenance configuration file (`config/navigator-maintenance.yml`) must include all infrastructure components to ensure they continue working during maintenance mode:
+## Configuration Generation
 
-### Required Sections
+**IMPORTANT**: The maintenance configuration file (`config/navigator-maintenance.yml`) is **automatically generated** from the same `Configurator` module that builds the full navigator config. This ensures it always stays in sync with your infrastructure.
 
-1. **server.root_path** - URL path prefix (e.g., `/showcase`)
-2. **server.static** - Static file configuration with `allowed_extensions` and `try_files`
-3. **routes** - Redirects, rewrites, and reverse proxies
-4. **managed_processes** - Standalone services like Action Cable
-5. **auth** - Authentication configuration with public paths
-6. **maintenance.enabled: true** - Enable maintenance mode
+### How Generation Works
 
-Without these sections in the maintenance config, the corresponding features won't work during the maintenance window.
+The maintenance config is generated using:
 
-### Infrastructure Components to Include
+```bash
+# Manually generate (for testing)
+bundle exec rake nav:maintenance
 
-```yaml
-# Example: Key infrastructure sections needed
-routes:
-  redirects:
-    - from: "^/(showcase)?$"
-      to: /showcase/studios/
-  rewrites:
-    - from: "^/assets/(.*)"
-      to: /showcase/assets/$1
-  reverse_proxies:
-    - path: "^/showcase(/cable)$"
-      target: http://localhost:28080$1
-      websocket: true
-
-managed_processes:
-  - name: action-cable
-    command: bundle
-    args: [exec, puma, "-p", "28080", cable/config.ru]
-
-auth:
-  enabled: true
-  public_paths:
-    - /showcase/assets/
-    - /showcase/studios/
-  auth_patterns:
-    # CRITICAL: Allow root path so redirects work
-    - pattern: "^/$"
-      action: 'off'
+# Or directly via script
+ruby script/generate_navigator_config.rb --maintenance
 ```
 
-**IMPORTANT**: The `auth_patterns` must include an exemption for the root path (`^/$`) to allow redirects to work. Without this, authentication blocks the request before it reaches the redirect handler, and users see a 401 Unauthorized instead of being redirected.
+**During Docker build**, the maintenance config is automatically generated and baked into the image:
 
-See `config/navigator-maintenance.yml` for the complete example configuration.
+```dockerfile
+# From Dockerfile.nav
+RUN SECRET_KEY_BASE=DUMMY RAILS_ENV=production \
+    bundle exec rake nav:maintenance
+```
+
+### What Gets Generated
+
+The maintenance config includes essential infrastructure from `Configurator` module:
+
+1. **server** - Full server config:
+   - root_path, static files, cache_control
+   - **CGI scripts** - Configuration update endpoint (`/showcase/update_config`)
+   - **health_check** - Synthetic health check at `/up` (returns 200 OK)
+2. **managed_processes** - Empty array (no processes started during maintenance)
+3. **routes** - Infrastructure routes only:
+   - Redirects for user-friendly navigation
+   - Rewrites for asset path normalization
+   - Remote service reverse proxies (password, studios request)
+   - **Excludes**: Action Cable WebSocket proxy (not needed during maintenance)
+4. **auth** - Authentication with public paths and **critical root path exemption** (`^/$`)
+5. **maintenance.enabled: true** - Enables maintenance mode
+6. **hooks** - Only ready hook for initialization (runs `script/nav_initialization.rb`)
+7. **logging** - Text format for easier debugging during startup
+
+**Key differences from full config**:
+- No `applications` or `tenants` sections
+- No managed processes (no Action Cable, no Redis)
+- No Action Cable WebSocket proxy
+- No Fly-Replay routes
+- Synthetic health check instead of Rails health endpoint
+
+### Critical Auth Pattern
+
+The generated config automatically includes this critical auth pattern:
+
+```yaml
+auth_patterns:
+  - pattern: "^/$"
+    action: 'off'
+```
+
+**Why this matters**: Authentication happens BEFORE redirects in Navigator's request flow. Without this exemption, the root path requires authentication and users get `401 Unauthorized` instead of being redirected to `/showcase/studios/`.
+
+### Benefits of Auto-Generation
+
+✅ **Always in sync** - Changes to `Configurator` automatically flow to maintenance config
+✅ **No manual maintenance** - Config is generated during build
+✅ **Single source of truth** - All config logic in one place
+✅ **No git tracking** - `config/navigator-maintenance.yml` is in `.gitignore`
 
 ## Enabling Maintenance Mode
 
@@ -257,10 +292,12 @@ kill -HUP $(cat /tmp/navigator.pid)
 
 ### 4. Monitor During Maintenance
 
-Health checks continue working, so monitoring systems won't alert:
-- `/up` returns 200 OK during maintenance
+Health checks continue working during maintenance:
+- `/up` returns synthetic 200 OK response
+- No Rails application required
 - Containers stay healthy
 - Load balancers continue routing
+- Monitoring systems don't alert during maintenance
 
 ## Troubleshooting
 
@@ -317,19 +354,22 @@ With the pattern:
 2. Auth check passes (exempted by pattern) ✅
 3. Redirect executes → `/showcase/studios/`
 
-### CGI Endpoint Not Working
-
-CGI scripts continue during maintenance, but check:
-1. Path matches configuration: `/showcase/update_config`
-2. Method is POST (not GET)
-3. Script has execute permissions
-
 ## Summary
 
-Navigator's maintenance mode provides the optimal balance:
-- ✅ Infrastructure remains operational
-- ✅ Static content accessible
-- ✅ Routing and proxying continue
-- ❌ Only dynamic app requests blocked
+Navigator's maintenance mode provides an operational infrastructure environment:
 
-This design ensures the best user experience during maintenance periods while protecting the application during updates.
+**What continues:**
+- ✅ Static file serving (pre-rendered pages, assets, documentation)
+- ✅ Basic routing (redirects, rewrites)
+- ✅ Remote service proxies (password, studios request)
+- ✅ Authentication
+- ✅ Health checks (synthetic 200 OK at `/up`)
+- ✅ CGI scripts (configuration updates)
+
+**What's disabled:**
+- ❌ Dynamic application requests (show maintenance page)
+- ❌ Action Cable WebSocket connections
+- ❌ Managed processes (no Action Cable server, no Redis)
+- ❌ Fly-Replay routes (no PDF/XLSX generation)
+
+This design ensures fast startup during maintenance while keeping infrastructure operational. Users can access pre-rendered content, administrators can update configuration remotely, and monitoring systems stay healthy.

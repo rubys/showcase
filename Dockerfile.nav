@@ -55,6 +55,12 @@ RUN SECRET_KEY_BASE=DUMMY RAILS_ENV=production RAILS_APP_DB=index \
     bundle exec rake prerender && \
     rm -f db/index.sqlite3*
 
+# Generate maintenance mode configuration
+# This config is used during startup before full config generation
+# Includes all infrastructure (routes, auth, managed processes) but no tenants
+RUN SECRET_KEY_BASE=DUMMY RAILS_ENV=production \
+    bundle exec rake nav:maintenance
+
 
 # Build Navigator
 FROM golang:trixie AS build-nav

@@ -6,6 +6,13 @@ namespace :nav do
     system "ruby script/generate_navigator_config.rb"
   end
 
+  desc "Generate Navigator maintenance mode configuration"
+  task :maintenance do
+    # Generate minimal maintenance config with infrastructure but no tenants
+    # Used during container startup before full config is generated
+    system "ruby script/generate_navigator_config.rb --maintenance"
+  end
+
   desc "Generate Navigator YAML configuration (legacy)"
   task legacy: :environment do
     # Create a temporary class that includes the LegacyConfigurator
