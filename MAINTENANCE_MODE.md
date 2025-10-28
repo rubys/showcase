@@ -167,6 +167,26 @@ auth_patterns:
 ✅ **No manual maintenance** - Config is generated during build
 ✅ **Single source of truth** - All config logic in one place
 ✅ **No git tracking** - `config/navigator-maintenance.yml` is in `.gitignore`
+✅ **DRY principles** - Shared methods eliminate duplication between full and maintenance configs
+
+### Implementation Details
+
+The `Configurator` module uses shared builder methods to ensure consistency:
+
+- **`build_server_config_base`**: Core server configuration (listen, hostname, static files, health check)
+- **`build_static_config`**: Static file configuration (extensions, try_files, cache control)
+- **`build_public_paths`**: Public paths list for authentication
+- **`build_health_check_config`**: Synthetic health check response
+
+Both full and maintenance configs use these shared methods with different parameters:
+- Full config: Environment-detected values (hostname, port, paths)
+- Maintenance config: Hardcoded production values (localhost:3000, /showcase, /rails)
+
+This approach discovered during refactoring ensures:
+- Consistent behavior between configs
+- Easier maintenance and updates
+- Reduced code duplication
+- Clear separation between environment-specific and shared configuration
 
 ## Enabling Maintenance Mode
 

@@ -74,17 +74,12 @@ module Configurator
     host = determine_host
     root = determine_root_path
 
-    config = {
-      'listen' => determine_listen_port,
-      'hostname' => host,
-      'root_path' => root,
-      'static' => {
-        'public_dir' => Rails.root.join('public').to_s,
-        'allowed_extensions' => %w[html htm txt xml json css js png jpg gif svg ico pdf xlsx],
-        'try_files' => %w[index.html .html .htm .txt .xml .json],
-        'cache_control' => build_cache_control(root)
-      }
-    }
+    config = build_server_config_base(
+      listen: determine_listen_port,
+      hostname: host,
+      root_path: root,
+      public_dir: Rails.root.join('public').to_s
+    )
 
     # Add idle configuration for Fly.io deployments
     if ENV['FLY_REGION']
@@ -97,10 +92,28 @@ module Configurator
     # Add CGI scripts configuration
     config['cgi_scripts'] = build_cgi_scripts_config(root)
 
-    # Add synthetic health check configuration
-    config['health_check'] = build_health_check_config
-
     config
+  end
+
+  def build_server_config_base(listen:, hostname:, root_path:, public_dir:)
+    # Core server configuration shared by both full and maintenance configs
+    {
+      'listen' => listen,
+      'hostname' => hostname,
+      'root_path' => root_path,
+      'static' => build_static_config(public_dir, root_path),
+      'health_check' => build_health_check_config
+    }
+  end
+
+  def build_static_config(public_dir, root)
+    # Static file configuration shared by both full and maintenance configs
+    {
+      'public_dir' => public_dir,
+      'allowed_extensions' => %w[html htm txt xml json css js png jpg gif svg ico pdf xlsx],
+      'try_files' => %w[index.html .html .htm .txt .xml .json],
+      'cache_control' => build_cache_control(root)
+    }
   end
 
   def build_health_check_config
@@ -123,31 +136,23 @@ module Configurator
     # This is only used during Fly.io startup, so we don't need environment detection
     root = '/showcase'
 
-    config = {
-      'listen' => 3000,
-      'hostname' => 'localhost',
-      'root_path' => root,
-      'static' => {
-        'public_dir' => 'public',
-        'allowed_extensions' => %w[html htm txt xml json css js png jpg gif svg ico pdf xlsx],
-        'try_files' => %w[index.html .html .htm .txt .xml .json],
-        'cache_control' => build_cache_control(root)
-      },
-      'cgi_scripts' => build_cgi_scripts_config_for_maintenance(root),
-      'health_check' => build_health_check_config_for_maintenance
-    }
+    config = build_server_config_base(
+      listen: 3000,
+      hostname: 'localhost',
+      root_path: root,
+      public_dir: 'public'
+    )
+
+    # Add CGI scripts configuration
+    config['cgi_scripts'] = build_cgi_scripts_config_for_maintenance(root)
 
     config
   end
 
-  def build_auth_config
-    htpasswd_path = File.join(DBPATH, 'htpasswd')
-    root = determine_root_path
-
-    # Only return auth config if htpasswd file exists
-    return nil unless File.exist?(htpasswd_path)
-
-    public_paths = [
+  def build_public_paths(root)
+    # Public paths that don't require authentication
+    # Used by both full and maintenance auth configs
+    [
       "#{root}/assets/",
       "#{root}/cable",
       "#{root}/demo/",
@@ -158,7 +163,7 @@ module Configurator
       "#{root}/studios/",
       "#{root}/index_update",
       "#{root}/index_date",
-      "#{root}/update_config",  # CGI endpoint for configuration updates (replaces index_update)
+      "#{root}/update_config",  # CGI endpoint for configuration updates
       '/favicon.ico',
       '/robots.txt',
       '*.css',
@@ -170,6 +175,16 @@ module Configurator
       '*.svg',
       '*.webp'
     ]
+  end
+
+  def build_auth_config
+    htpasswd_path = File.join(DBPATH, 'htpasswd')
+    root = determine_root_path
+
+    # Only return auth config if htpasswd file exists
+    return nil unless File.exist?(htpasswd_path)
+
+    public_paths = build_public_paths(root)
 
     # Build auth_patterns for studio index pages and tenant public paths
     # Use grouped alternations for better performance (fewer regex patterns to check)
@@ -734,11 +749,6 @@ module Configurator
     scripts
   end
 
-  def build_health_check_config_for_maintenance
-    # Use the same synthetic health check as the full config
-    build_health_check_config
-  end
-
   def build_routes_config_for_maintenance
     # Routes for maintenance config - excludes Action Cable
     # since WebSocket connections are not needed during maintenance
@@ -851,34 +861,11 @@ module Configurator
     root = '/showcase'
     htpasswd_path = '/data/db/htpasswd'
 
-    public_paths = [
-      "#{root}/assets/",
-      "#{root}/cable",
-      "#{root}/demo/",
-      "#{root}/docs/",
-      "#{root}/events/console",
-      "#{root}/password/",
-      "#{root}/regions/",
-      "#{root}/studios/",
-      "#{root}/index_update",
-      "#{root}/index_date",
-      '/favicon.ico',
-      '/robots.txt',
-      '*.css',
-      '*.gif',
-      '*.ico',
-      '*.jpg',
-      '*.js',
-      '*.png',
-      '*.svg',
-      '*.webp'
-    ]
-
     {
       'enabled' => true,
       'realm' => 'Showcase',
       'htpasswd' => htpasswd_path,
-      'public_paths' => public_paths,
+      'public_paths' => build_public_paths(root),
       'auth_patterns' => [
         # CRITICAL: Allow root path so redirect can work
         # Without this, auth blocks request before redirect handler runs
