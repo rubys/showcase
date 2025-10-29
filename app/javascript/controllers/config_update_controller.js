@@ -68,6 +68,9 @@ export default class extends Controller {
       // Rails uses a hidden _method field for PATCH/PUT/DELETE
       // Extract the actual method from the form data
       const method = formData.get('_method') || form.method || 'POST'
+      console.log("FormData _method:", formData.get('_method'))
+      console.log("Form method:", form.method)
+      console.log("Using HTTP method:", method)
 
       // Remove _method from FormData since we're using it as the actual HTTP method
       formData.delete('_method')
@@ -82,6 +85,9 @@ export default class extends Controller {
         }
         params.append(key, value)
       }
+
+      console.log("Request body:", params.toString())
+      console.log("Sending", method.toUpperCase(), "to", form.action)
 
       const response = await fetch(form.action, {
         method: method.toUpperCase(),
