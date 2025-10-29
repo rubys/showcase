@@ -1,4 +1,5 @@
-<%= form_with(model: user, url: @studios ? nil : password_verify_url(token: @user.token), class: "contents", id: "user-form", data: {turbo: false, controller: @studios ? nil : 'logout', config_update_target: @studios ? nil : 'form', action: @studios ? nil : 'submit->config-update#submit'}) do |form| %>
+<% form_data_attrs = @studios ? {turbo: false, controller: 'logout'} : {turbo: false, controller: 'logout', config_update_target: 'form', action: 'submit->config-update#submit'} %>
+<%= form_with(model: user, url: @studios ? nil : password_verify_url(token: @user.token), method: @studios ? nil : :patch, class: "contents", id: "user-form", data: form_data_attrs) do |form| %>
   <% if user.errors.any? %>
     <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
       <h2><%= pluralize(user.errors.count, "error") %> prohibited this user from being saved:</h2>
