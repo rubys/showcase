@@ -493,7 +493,7 @@ class EventController < ApplicationController
 
     # Load base data
     @inventory = JSON.parse(File.read('tmp/inventory.json')) rescue []
-    @showcases = YAML.load_file('config/tenant/showcases.yml')
+    @showcases = ShowcasesLoader.load
     logos = Set.new
 
     regions = {}
@@ -593,7 +593,7 @@ class EventController < ApplicationController
       @next = region_path(regions[index+1]) if index < regions.length-1
     elsif params[:year]
       @up = '..'
-      showcases = YAML.load_file('config/tenant/showcases.yml')
+      showcases = ShowcasesLoader.load
       years = showcases.keys.map(&:to_s).reverse
       index = years.find_index(params[:year])
       @prev = year_path(years[index-1]) if index > 0
@@ -610,7 +610,7 @@ class EventController < ApplicationController
     @list ||= 'regions' if ENV['FLY_REGION']
     @list ||= 'studios'
 
-    showcases = YAML.load_file('config/tenant/showcases.yml')
+    showcases = ShowcasesLoader.load
     @map = YAML.load_file('config/tenant/map.yml')
 
     @regions = {}
@@ -1222,7 +1222,7 @@ private
 
   def build_sources_list
     sources = []
-    @showcases ||= YAML.load_file('config/tenant/showcases.yml')
+    @showcases ||= ShowcasesLoader.load
 
     @showcases.each do |year, sites|
       sites.each do |token, info|

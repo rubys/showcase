@@ -19,7 +19,7 @@ class Event < ApplicationRecord
   end
 
   def self.list
-    showcases = YAML.load_file("#{__dir__}/../../config/tenant/showcases.yml")
+    showcases = ShowcasesLoader.load
 
     results = []
 

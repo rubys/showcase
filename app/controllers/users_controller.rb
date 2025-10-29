@@ -257,7 +257,7 @@ class UsersController < ApplicationController
 
       # @studios = studios
       @studios = studios.map {|name| {name: name}}
-      @studios += YAML.load_file('config/tenant/showcases.yml').values.
+      @studios += ShowcasesLoader.load.values.
         map {|hash| hash.values}.flatten
 
       if site

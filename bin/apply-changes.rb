@@ -69,9 +69,15 @@ if File.exist? 'db/map.yml'
 end
 
 if File.exist? 'db/showcases.yml'
-  new_map = IO.read('db/showcases.yml')
-  if new_map != IO.read('config/tenant/showcases.yml')
-    IO.write('config/tenant/showcases.yml', new_map)
+  new_showcases = IO.read('db/showcases.yml')
+  # Update deployed state snapshot (used for change detection)
+  deployed_file = 'db/deployed-showcases.yml'
+  if !File.exist?(deployed_file) || new_showcases != IO.read(deployed_file)
+    IO.write(deployed_file, new_showcases)
+  end
+  # Also update git-tracked file for now (will be removed in Phase 3)
+  if new_showcases != IO.read('config/tenant/showcases.yml')
+    IO.write('config/tenant/showcases.yml', new_showcases)
   end
 end
 

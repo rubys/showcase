@@ -210,44 +210,37 @@ When an admin creates a showcase:
    end
    ```
 
-**Status:** ⏳ Not started
+**Status:** ✅ Complete
 
-### Phase 2: Migrate Application Code to db/showcases.yml
+### Phase 2: Migrate Application Code to Use ShowcasesLoader
 
-**Goal:** Stop reading from `config/tenant/showcases.yml` in application code
+**Goal:** Stop reading from `config/tenant/showcases.yml` directly in application code
 
-**Create helper method:**
-```ruby
-# lib/showcases_loader.rb
-module ShowcasesLoader
-  def self.load
-    # Always read from db/showcases.yml (generated from current DB state)
-    YAML.load_file(Rails.root.join('db/showcases.yml'))
-  rescue Errno::ENOENT
-    # Fallback for tests or initial setup
-    {}
-  end
-end
-```
+**Completed Changes:**
 
-**Update each file to use helper:**
+All application code now uses `ShowcasesLoader.load` instead of directly reading `config/tenant/showcases.yml`:
 
-1. Event.rb - Replace `YAML.load_file("#{__dir__}/../../config/tenant/showcases.yml")` with `ShowcasesLoader.load`
-2. User.rb - Same replacement
-3. ApplicationController - Same replacement
-4. UsersController - Same replacement
-5. EventController - Same replacement
-6. Configurator - Update `showcases` method to use helper
-7. ShowcaseInventory - Same replacement
-8. LegacyConfigurator - Same replacement
-9. bin/apply-changes.rb - Copy to `db/deployed-showcases.yml` instead of `config/tenant/showcases.yml`
-10. script/orphan_databases.rb - Same replacement
-11. script/sync_databases_s3.rb - Same replacement
-12. config/environments/development.rb - Same replacement
-13. Test files - Same replacement
-14. db/seeds/generic.rb - Same replacement
+1. ✅ Event.rb (app/models/event.rb:22)
+2. ✅ User.rb (app/models/user.rb:69)
+3. ✅ ApplicationController (app/controllers/application_controller.rb:82)
+4. ✅ UsersController (app/controllers/users_controller.rb:260)
+5. ✅ EventController (app/controllers/event_controller.rb:496, 596, 613, 1225)
+6. ✅ Configurator (app/controllers/concerns/configurator.rb:35)
+7. ✅ ShowcaseInventory (app/controllers/concerns/showcase_inventory.rb:10)
+8. ✅ LegacyConfigurator (app/controllers/concerns/legacy_configurator.rb:224, 274, 351, 524)
+9. ✅ bin/apply-changes.rb - Now copies to both `db/deployed-showcases.yml` (for change detection) and `config/tenant/showcases.yml` (git-tracked, will be removed in Phase 3)
+10. ✅ script/orphan_databases.rb (script/orphan_databases.rb:35)
+11. ✅ script/sync_databases_s3.rb (script/sync_databases_s3.rb:119)
+12. ✅ config/environments/development.rb (config/environments/development.rb:87)
+13. ✅ test/integration/prerender_configuration_sync_test.rb (line 16)
+14. ✅ test/tasks/prerender_test.rb (lines 11, 48)
+15. ✅ db/seeds/generic.rb (db/seeds/generic.rb:33)
 
-**Status:** ⏳ Not started (blocked by Phase 1)
+**Test Results:**
+- All tests pass: 1029 runs, 4782 assertions, 0 failures, 0 errors
+- Code coverage: 49.67% (5518/11110)
+
+**Status:** ✅ Complete
 
 ### Phase 3: Remove config/tenant/showcases.yml from Git
 

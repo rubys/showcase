@@ -79,7 +79,7 @@ class ApplicationController < ActionController::Base
         begin
           year = $1.to_i
           site = $2
-          showcases = YAML.load_file('config/tenant/showcases.yml')
+          showcases = ShowcasesLoader.load
           showcases.dig(year, site, :locale) || ENV.fetch("RAILS_LOCALE", "en_US")
         rescue => e
           ENV.fetch("RAILS_LOCALE", "en_US")

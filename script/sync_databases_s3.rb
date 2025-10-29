@@ -115,7 +115,8 @@ end
 git_path = File.realpath(File.expand_path('..', __dir__))
 ENV["RAILS_DB_VOLUME"] = "/data/db" if Dir.exist? "/data/db"
 dbpath = ENV.fetch('RAILS_DB_VOLUME') { "#{git_path}/db" }
-showcases = YAML.load_file("#{git_path}/config/tenant/showcases.yml")
+require_relative "#{git_path}/lib/showcases_loader"
+showcases = ShowcasesLoader.load
 
 # Build tenant hash from nginx-config.rb logic
 # Also track regions for each tenant

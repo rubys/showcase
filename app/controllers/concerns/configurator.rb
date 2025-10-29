@@ -32,7 +32,7 @@ module Configurator
 
   # Cache showcases.yml to avoid repeated file reads
   def showcases
-    @showcases ||= YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
+    @showcases ||= ShowcasesLoader.load
   end
 
   def build_navigator_config

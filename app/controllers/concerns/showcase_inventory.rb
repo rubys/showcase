@@ -7,8 +7,8 @@ module ShowcaseInventory
 
   def build_inventory(full_inventory: true, showcases: nil)
     @inventory ||= JSON.parse(File.read('tmp/inventory.json')) rescue []
-    showcases_to_process = showcases || (@showcases ||= YAML.load_file('config/tenant/showcases.yml'))
-    
+    showcases_to_process = showcases || (@showcases ||= ShowcasesLoader.load)
+
     events = []
     
     # Extract events from showcases structure

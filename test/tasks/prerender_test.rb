@@ -8,7 +8,7 @@ class PrerenderTaskTest < ActiveSupport::TestCase
     # This ensures Navigator can serve them correctly with trailing slashes
 
     # Get expected paths from PrerenderConfiguration
-    showcases = YAML.load_file(Rails.root.join('config/tenant/showcases.yml'))
+    showcases = ShowcasesLoader.load
     paths = PrerenderConfiguration.prerenderable_paths(showcases)
 
     # Check at least a few regions exist (we don't need to check all in tests)
@@ -45,7 +45,7 @@ class PrerenderTaskTest < ActiveSupport::TestCase
 
   test "multi-event studio indexes use directory structure" do
     # Verify multi-event studios also use directory/index.html structure
-    showcases = YAML.load_file(Rails.root.join('config/tenant/showcases.yml'))
+    showcases = ShowcasesLoader.load
     paths = PrerenderConfiguration.prerenderable_paths(showcases)
 
     # Find a multi-event studio

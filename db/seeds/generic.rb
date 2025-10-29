@@ -19,19 +19,18 @@ if db_basename.blank? && ENV['DATABASE_URL']
 end
 
 # Check for showcases.yml and update event with date/name if available
-showcases_file = Rails.root.join('config/tenant/showcases.yml')
-if File.exist?(showcases_file) && db_basename.present?
+if db_basename.present?
   # Parse database URL to extract year, location, and optional event key
   # Expected format: .../YEAR-LOCATION.sqlite3 or .../YEAR-LOCATION-EVENT.sqlite3
   parts = db_basename.split('-')
-  
+
   if parts.length >= 2
     year = parts[0].to_i
     location_key = parts[1]
     event_key = parts.length > 2 ? parts[2..-1].join('-') : nil
-    
+
     # Load showcases data
-    showcases_data = YAML.load_file(showcases_file)
+    showcases_data = ShowcasesLoader.load
     
     # Find the location data for this year
     location_data = showcases_data.dig(year, location_key)

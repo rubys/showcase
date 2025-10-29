@@ -221,8 +221,8 @@ module LegacyConfigurator
   end
 
   def add_cross_region_routing(routes, root, current_region)
-    showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
-    
+    showcases = ShowcasesLoader.load
+
     # Group sites and years by region (like nginx-config.rb does)
     regions = {}
     showcases.each do |year, sites|
@@ -271,7 +271,7 @@ module LegacyConfigurator
     ]
     
     # Add year-based directories (2022, 2023, 2024, 2025, etc.)
-    showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
+    showcases = ShowcasesLoader.load
     showcases.keys.each do |year|
       directories << { 'path' => "#{root}/#{year}/", 'root' => "#{year}/" }
     end
@@ -348,7 +348,7 @@ module LegacyConfigurator
   end
 
   def build_tenants_list
-    showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
+    showcases = ShowcasesLoader.load
     region = ENV['FLY_REGION']
     dbpath = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
     storage = ENV['RAILS_STORAGE'] || Rails.root.join('storage').to_s
@@ -521,7 +521,7 @@ module LegacyConfigurator
   end
 
   def load_studios
-    showcases = YAML.load_file(File.join(Rails.root, 'config/tenant/showcases.yml'))
+    showcases = ShowcasesLoader.load
     showcases.values.map(&:keys).flatten.uniq.sort
   end
 

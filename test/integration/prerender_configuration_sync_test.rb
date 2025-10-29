@@ -13,7 +13,7 @@ class PrerenderConfigurationSyncTest < ActiveSupport::TestCase
   parallelize(workers: 1)
 
   setup do
-    @showcases = YAML.load_file(Rails.root.join('config/tenant/showcases.yml'))
+    @showcases = ShowcasesLoader.load
     @root = '/showcase'
 
     # Create a mock htpasswd file for testing
