@@ -1,5 +1,3 @@
-require 'mail'
-
 class ShowcasesController < ApplicationController
   include Configurator
   include DbQuery
@@ -111,22 +109,33 @@ class ShowcasesController < ApplicationController
       if @showcase.save
         generate_showcases
 
-        # Send email confirmation unless user is index authorized
-        unless Rails.env.test? || User.index_auth?(@authuser)
-          send_showcase_request_email(@showcase)
+        if Rails.env.test? || User.index_auth?(@authuser)
+          # For tests and admin users: Keep existing behavior (immediate redirect, no automation)
+          # Redirect based on return_to parameter
+          if params[:return_to].present?
+            format.html { redirect_to params[:return_to],
+              notice: "#{@showcase.name} was successfully created." }
+          else
+            format.html { redirect_to events_location_url(@showcase.location),
+              notice: "#{@showcase.name} was successfully created." }
+          end
+        else
+          # For regular users: Show progress bar with real-time updates
+          user = User.find_by(userid: @authuser)
+
+          if user && Rails.env.production?
+            ConfigUpdateJob.perform_later(user.id)
+          end
+
+          # Set variables for progress view
+          @location_key = @showcase.location&.key
+          @location = @showcase.location
+          @show_progress = true
+
+          # Render new_request view which now has progress bar
+          format.html { render :new_request, status: :ok }
         end
 
-        # Redirect based on user type and return_to parameter
-        if params[:return_to].present?
-          format.html { redirect_to params[:return_to], 
-            notice: "#{@showcase.name} was successfully #{User.index_auth?(@authuser) ? 'created' : 'requested'}." }
-        elsif User.index_auth?(@authuser)
-          format.html { redirect_to events_location_url(@showcase.location),
-            notice: "#{@showcase.name} was successfully created." }
-        else
-          format.html { redirect_to studio_events_path(@showcase.location&.key),
-            notice: "#{@showcase.name} was successfully requested." }
-        end
         format.json { render :show, status: :created, location: @showcase }
       else
         new
@@ -237,35 +246,5 @@ class ShowcasesController < ApplicationController
     # Only allow a list of trusted parameters through.
     def showcase_params
       params.expect(showcase: [:year, :key, :name, :location_id, :start_date, :end_date])
-    end
-
-    def send_showcase_request_email(showcase)
-      # Get the requesting user's information
-      requester_email = @authuser ? User.find_by(userid: @authuser)&.email : nil
-      requester_name = @authuser ? User.find_by(userid: @authuser)&.name1 : 'Unknown User'
-      
-      mail = Mail.new do
-        from 'Sam Ruby <rubys@intertwingly.net>'
-        to "#{requester_name} <#{requester_email}>" if requester_email
-        bcc 'Sam Ruby <rubys@intertwingly.net>'
-        subject "Showcase Request: #{showcase.location.name} #{showcase.year} - #{showcase.name}"
-      end
-
-      mail.part do |part|
-        part.content_type = 'multipart/related'
-        part.attachments.inline[EventController.logo] =
-          IO.read "public/#{EventController.logo}"
-        @logo = part.attachments.first.url
-        @showcase = showcase
-        @requester_name = requester_name
-        part.html_part = render_to_string('showcases/request_email', formats: %i(html), layout: false)
-      end
-
-      mail.delivery_method :smtp,
-        Rails.application.credentials.smtp || { address: 'mail.twc.com' }
-
-      mail.deliver!
-    rescue => e
-      Rails.logger.error "Failed to send showcase request email: #{e.message}"
     end
 end

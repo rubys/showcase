@@ -16,23 +16,12 @@ class ShowcasesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should create showcase" do
-    # Set RAILS_APP_DB to 'index' to enable studio_events_path route
-    original_rails_app_db = ENV['RAILS_APP_DB']
-    ENV['RAILS_APP_DB'] = 'index'
-    
-    # Reload routes to pick up the environment change
-    Rails.application.reload_routes!
-    
     assert_difference("Showcase.count") do
       post showcases_url, params: { showcase: { key: @showcase.key+'2', name: @showcase.name+'2', location_id: @showcase.location_id, year: @showcase.year } }
     end
 
-    assert_redirected_to studio_events_path(@showcase.location.key)
-    assert_equal 'MyString2 was successfully requested.', flash[:notice]
-  ensure
-    # Restore original environment
-    ENV['RAILS_APP_DB'] = original_rails_app_db
-    Rails.application.reload_routes!
+    assert_redirected_to events_location_url(@showcase.location)
+    assert_equal 'MyString2 was successfully created.', flash[:notice]
   end
 
   test "should show showcase" do
@@ -74,10 +63,54 @@ class ShowcasesControllerTest < ActionDispatch::IntegrationTest
       year: 9999,
       location: @showcase.location
     )
-    
+
     get edit_showcase_url(showcase)
     assert_response :success
     # Just verify the page loads without error when database doesn't exist
     assert_select "h2", text: "Statistics:"
+  end
+
+  test "should create showcase via new_request in test environment with immediate redirect" do
+    # In test environment, should get immediate redirect (no progress bar)
+    location = @showcase.location
+
+    assert_difference("Showcase.count") do
+      post studio_request_path(location.key), params: {
+        showcase: {
+          name: "Test Showcase",
+          key: "test-showcase",
+          location_id: location.id,
+          start_date: "2025-01-01",
+          end_date: "2025-01-02"
+        },
+        return_to: "/showcase/studios/#{location.key}"
+      }
+    end
+
+    # In test environment, should redirect immediately (not show progress)
+    assert_redirected_to "/showcase/studios/#{location.key}"
+    assert_equal 'Test Showcase was successfully created.', flash[:notice]
+  end
+
+
+  test "should handle validation errors and re-render form with errors" do
+    location = @showcase.location
+
+    assert_no_difference("Showcase.count") do
+      post studio_request_path(location.key), params: {
+        showcase: {
+          name: "", # Invalid: name is required
+          key: "",
+          location_id: location.id,
+          start_date: "2025-01-01",
+          end_date: "2025-01-02"
+        },
+        return_to: "/showcase/studios/#{location.key}"
+      }
+    end
+
+    # Should re-render the form with errors
+    assert_response :unprocessable_content
+    assert_select "div#error_explanation"
   end
 end

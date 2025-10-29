@@ -1,16 +1,35 @@
-<div class="mx-auto md:w-2/3 w-full">
-  <h1 class="font-bold text-4xl">Request new showcase</h1>
+<% user = User.find_by(userid: @authuser) %>
 
-  <div data-controller="info-box">
-    <div class="info-button">&#x24D8;</div>
-    <ul class="info-box">
-      <li>Requests can only be made by studio owners.</li>
-      <li>Requests generally will be processed on the same day.</li>
-      <li>Contact Sam Ruby directly if you have special requirements.</li>
-    </ul>
-  </div>
+<div class="mx-auto md:w-2/3 w-full"
+     data-controller="config-update"
+     data-config-update-user-id-value="<%= user&.id %>"
+     data-config-update-database-value="<%= ENV['RAILS_APP_DB'] %>"
+     data-config-update-redirect-url-value="<%= @return_to %>">
+  <h1 class="font-bold text-4xl"><%= @show_progress ? 'Creating Showcase' : 'Request new showcase' %></h1>
 
-  <%= form_with(model: @showcase, url: studio_request_path(@location_key), class: "contents", id: 'showcase-form', data: {controller: 'name-to-token'}) do |form| %>
+  <% if @show_progress %>
+    <div class="content my-8">
+      <p class="text-lg mb-4">Your showcase request is being processed:</p>
+
+      <ul class="list-disc ml-6 mb-6">
+        <li><strong>Event:</strong> <%= @showcase.name %></li>
+        <li><strong>Location:</strong> <%= @showcase.location.name %></li>
+        <li><strong>Year:</strong> <%= @showcase.year %></li>
+      </ul>
+
+      <p class="text-gray-600">This will take approximately 30 seconds...</p>
+    </div>
+  <% else %>
+    <div data-controller="info-box">
+      <div class="info-button">&#x24D8;</div>
+      <ul class="info-box">
+        <li>Requests can only be made by studio owners.</li>
+        <li>Requests generally will be processed on the same day.</li>
+        <li>Contact Sam Ruby directly if you have special requirements.</li>
+      </ul>
+    </div>
+
+    <%= form_with(model: @showcase, url: studio_request_path(@location_key), class: "contents", id: 'showcase-form', data: {controller: 'name-to-token'}) do |form| %>
     <% if @showcase.errors.any? %>
       <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
         <h2><%= pluralize(@showcase.errors.count, "error") %> prohibited this showcase from being saved:</h2>
@@ -54,10 +73,29 @@
           class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
       </div>
     </div>
+    <% end %>
   <% end %>
 
-  <div class="mx-auto flex">
-    <input type="submit" class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" form="showcase-form" value="Request Showcase">
-    <%= link_to "Back to studio", "/showcase/studios/#{@location_key}", class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+  <!-- Progress indicator (hidden initially) -->
+  <div data-config-update-target="progress" class="hidden my-8">
+    <div class="mb-2">
+      <div class="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
+        <div data-config-update-target="progressBar"
+             class="bg-blue-500 h-full text-xs font-medium text-white text-center p-0.5 leading-5 transition-all duration-300"
+             style="width: 0%">
+          0%
+        </div>
+      </div>
+    </div>
+    <p data-config-update-target="message" class="text-sm text-gray-600">
+      Creating showcase and updating configuration...
+    </p>
   </div>
+
+  <% if !@show_progress %>
+    <div class="mx-auto flex">
+      <input type="submit" class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" form="showcase-form" value="Request Showcase">
+      <%= link_to "Back to studio", "/showcase/studios/#{@location_key}", class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+    </div>
+  <% end %>
 </div>
