@@ -2,18 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Claude Code Skills
-
-This project includes custom skills in `.claude/skills/` that provide specialized guidance:
-
-- **fly-ssh.md** - Best practices for using `fly ssh console` (no pipes, Debian syntax, direct commands only)
-- **database.md** - Database management and `bin/run` usage patterns
-- **deployment.md** - Deployment architecture and multi-tenancy patterns
-- **testing.md** - Testing procedures, coverage, and known issues
-- **render-page.md** - Page rendering and view testing guidance
-
-**Note:** Skills may not be automatically loaded in all Claude Code sessions. If the `<available_skills>` section is empty, read skill files directly for guidance rather than attempting to invoke them as tools.
-
 ## Rails Configuration
 
 The application runs on Rails 8.0.2 with full Rails 8.0 configuration defaults (`config.load_defaults 8.0`).
@@ -67,7 +55,7 @@ bin/rails test:system
 bin/rails test:db
 ```
 
-For detailed testing information including coverage reports and known issues, see the `testing` skill.
+For detailed testing information including coverage reports and known issues, ask "What skills are available?" to access the `testing` skill.
 
 ### Database Management
 
@@ -85,7 +73,7 @@ bin/rails db:seed
 bin/rails db:fixtures:load
 ```
 
-For information about running scripts against existing databases, see the `database` skill.
+For information about running scripts against existing databases, ask "What skills are available?" to access the `database` skill.
 
 ## Key Components
 
@@ -124,8 +112,5 @@ For information about running scripts against existing databases, see the `datab
 
 ## Additional Information
 
-For detailed information about:
-- **Testing procedures and known issues** - use the `testing` skill
-- **Database management and bin/run usage** - use the `database` skill
-- **Deployment architecture and multi-tenancy** - use the `deployment` skill
+This project includes custom Claude Code skills for specialized guidance. Ask "What skills are available?" to see all available skills including `testing`, `database`, `deployment`, `fly-ssh`, and `render-page`.
 
