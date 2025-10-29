@@ -69,11 +69,26 @@ export default class extends Controller {
       // Extract the actual method from the form data
       const method = formData.get('_method') || form.method || 'POST'
 
+      // Remove _method from FormData since we're using it as the actual HTTP method
+      formData.delete('_method')
+
+      // Convert FormData to URLSearchParams for non-multipart encoding
+      // This allows PATCH/PUT/DELETE to work properly
+      const params = new URLSearchParams()
+      for (const [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          // Skip file uploads for now
+          continue
+        }
+        params.append(key, value)
+      }
+
       const response = await fetch(form.action, {
         method: method.toUpperCase(),
-        body: formData,
+        body: params,
         headers: {
-          "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+          "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content,
+          "Content-Type": "application/x-www-form-urlencoded"
         }
       })
 
