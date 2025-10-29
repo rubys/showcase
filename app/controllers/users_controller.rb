@@ -68,16 +68,18 @@ class UsersController < ApplicationController
       link = @user.link
 
       if @user.update(user_params)
-        update_htpasswd_everywhere
+        # Pass user_id only for password resets (non-admin updates with token)
+        user_id_for_progress = (not @user.token.blank? and not admin) ? @user.id : nil
+        update_htpasswd_everywhere(user_id_for_progress)
 
         if not @user.token.blank? and not admin
           @user.link = ""
           @user.token = ""
           @user.save!
 
-          format.html { redirect_to link || root_path,
-            notice: "#{@user.userid} was successfully updated.",
-            status: 303, allow_other_host: true }
+          # Return success without redirect - let JavaScript handle progress tracking and redirect
+          format.html { head :ok }
+          format.json { render json: { status: 'success', redirect_url: link || root_path } }
         else
           format.html { redirect_to users_url, notice: "#{@user.userid} was successfully updated." }
           format.json { render :show, status: :ok, location: @user }
@@ -269,12 +271,12 @@ class UsersController < ApplicationController
       @studios.unshift 'index'
     end
 
-    def update_htpasswd_everywhere
+    def update_htpasswd_everywhere(user_id = nil)
       return if Rails.env.test?
       User.update_htpasswd
 
       if Rails.env.production?
-        ConfigUpdateJob.perform_later
+        ConfigUpdateJob.perform_later(user_id)
       end
     end
 

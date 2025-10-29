@@ -1,8 +1,29 @@
-<div class="mx-auto md:w-2/3 w-full">
+<div class="mx-auto md:w-2/3 w-full"
+     data-controller="config-update"
+     data-config-update-user-id-value="<%= @user&.id %>"
+     data-config-update-database-value="<%= ENV['RAILS_APP_DB'] %>"
+     data-config-update-redirect-url-value="<%= @user&.link %>">
+
   <h1 class="font-bold text-4xl">User Reset</h1>
 
   <% if @user %>
   <%= render "form", user: @user %>
+
+  <!-- Progress indicator (hidden initially) -->
+  <div data-config-update-target="progress" class="hidden my-8">
+    <div class="mb-2">
+      <div class="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
+        <div data-config-update-target="progressBar"
+             class="bg-blue-500 h-full text-xs font-medium text-white text-center p-0.5 leading-5 transition-all duration-300"
+             style="width: 0%">
+          0%
+        </div>
+      </div>
+    </div>
+    <p data-config-update-target="message" class="text-sm text-gray-600">
+      Updating configuration...
+    </p>
+  </div>
   <% else %>
   <div role="alert" class="my-8">
     <div class="bg-red-500 text-white font-bold rounded-t px-4 py-2">
@@ -13,9 +34,13 @@
     </div>
   </div>
   <% end %>
-    
+
   <div class="mt-8 grid grid-cols-3 gap-1">
+    <% if @verify %>
+    <button type="button" class="btn-blue" data-action="click->config-update#submitViaButton">Update User</button>
+    <% else %>
     <input type="submit" class="btn-blue" form="user-form" value="Update User">
+    <% end %>
     <%= link_to "Back to Index", root_path, class: "btn-grey" %>
   </div>
 </div>
