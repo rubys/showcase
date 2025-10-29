@@ -185,8 +185,6 @@ class UsersController < ApplicationController
       set_password
       set_sites
 
-      link = @user.link
-
       if @user.update(user_params)
         update_htpasswd_everywhere(@user.id)
 

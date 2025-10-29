@@ -107,9 +107,12 @@ export default class extends Controller {
             this.formTarget.outerHTML = newForm.outerHTML
           }
 
-          // Hide progress bar and re-enable form
+          // Hide progress bar and unsubscribe
           this.progressTarget.classList.add("hidden")
-          this.resetForm()
+          if (this.subscription) {
+            this.subscription.unsubscribe()
+            this.subscription = null
+          }
         } else {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
