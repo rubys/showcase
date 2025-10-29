@@ -34,6 +34,10 @@ export default class extends Controller {
     this.progressTarget.classList.remove("hidden")
     this.updateProgress(0, "Connecting...")
 
+    // Capture form data BEFORE disabling inputs (disabled inputs aren't included in FormData!)
+    const form = event.target
+    const formData = new FormData(form)
+
     // Disable form
     if (this.hasFormTarget) {
       this.formTarget.querySelectorAll('input, button').forEach(el => {
@@ -52,7 +56,7 @@ export default class extends Controller {
         connected: () => {
           console.log("WebSocket connected, now submitting form")
           this.updateProgress(0, "Submitting...")
-          this.submitForm(event.target)
+          this.submitForm(form, formData)
         },
         received: (data) => {
           this.handleProgressUpdate(data)
@@ -61,10 +65,8 @@ export default class extends Controller {
     )
   }
 
-  async submitForm(form) {
+  async submitForm(form, formData) {
     try {
-      const formData = new FormData(form)
-
       // Rails uses a hidden _method field for PATCH/PUT/DELETE
       // Extract the actual method from the form data
       const method = formData.get('_method') || form.method || 'POST'
