@@ -52,11 +52,11 @@ export default class extends Controller {
 
           // Trigger the ConfigUpdateJob
           try {
-            const response = await fetch('/admin/trigger_config_update', {
+            // Use relative path which will include RAILS_RELATIVE_URL_ROOT automatically
+            const response = await fetch(window.location.pathname.replace('/apply', '/trigger_config_update'), {
               method: 'POST',
               headers: {
-                "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content,
-                "Content-Type": "application/json"
+                "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
               }
             })
 
