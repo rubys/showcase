@@ -40,7 +40,7 @@ class Showcase < ApplicationRecord
   end
 
   def self.canonical_url
-    "https://smooth.fly.dev/showcase"
+    "https://smooth.fly.dev/showcase/studios/"
   end
 
   def self.hostname

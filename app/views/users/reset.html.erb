@@ -2,7 +2,7 @@
      data-controller="config-update"
      data-config-update-user-id-value="<%= @user&.id %>"
      data-config-update-database-value="<%= ENV['RAILS_APP_DB'] %>"
-     data-config-update-redirect-url-value="<%= @user&.link %>">
+     data-config-update-redirect-url-value="<%= @user&.link.presence || Showcase.canonical_url %>">
 
   <h1 class="font-bold text-4xl">User Reset</h1>
 
