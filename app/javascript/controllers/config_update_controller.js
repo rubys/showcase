@@ -8,11 +8,6 @@ export default class extends Controller {
   connect() {
     this.consumer = createConsumer()
     this.subscription = null
-
-    // Auto-start progress tracking if this is a progress page (not a form page)
-    if (!this.hasFormTarget && this.hasUserIdValue) {
-      this.startProgressTracking()
-    }
   }
 
   startProgressTracking() {
