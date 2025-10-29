@@ -54,7 +54,6 @@ export default class extends Controller {
       },
       {
         connected: () => {
-          console.log("WebSocket connected, now submitting form")
           this.updateProgress(0, "Submitting...")
           this.submitForm(form, formData)
         },
@@ -70,9 +69,6 @@ export default class extends Controller {
       // Rails uses a hidden _method field for PATCH/PUT/DELETE
       // Extract the actual method from the form data
       const method = formData.get('_method') || form.method || 'POST'
-      console.log("FormData _method:", formData.get('_method'))
-      console.log("Form method:", form.method)
-      console.log("Using HTTP method:", method)
 
       // Remove _method from FormData since we're using it as the actual HTTP method
       formData.delete('_method')
@@ -88,9 +84,6 @@ export default class extends Controller {
         params.append(key, value)
       }
 
-      console.log("Request body:", params.toString())
-      console.log("Sending", method.toUpperCase(), "to", form.action)
-
       const response = await fetch(form.action, {
         method: method.toUpperCase(),
         body: params,
@@ -101,7 +94,12 @@ export default class extends Controller {
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        if (response.status === 422) {
+          // Validation error - reload the page to show error messages
+          window.location.reload()
+        } else {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
       }
     } catch (error) {
       console.error("Error submitting form:", error)
