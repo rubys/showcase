@@ -201,6 +201,7 @@ class UsersController < ApplicationController
         render :reset, status: :unprocessable_content
       end
     else
+      @user.errors.add(:password, "can't be blank") if params[:user] && params[:user][:password].blank?
       render :reset, status: :unprocessable_content
     end
   end
