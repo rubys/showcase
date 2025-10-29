@@ -80,8 +80,7 @@ def create
       generate_showcases
 
       if Rails.env.test? || User.index_auth?(@authuser)
-        # For tests and admin users: Send email immediately (old behavior)
-        send_showcase_request_email(@showcase) unless Rails.env.test?
+        # For tests and admin users: Keep existing behavior (immediate redirect, no automation)
 
         # Redirect with created message
         if params[:return_to].present?
@@ -92,8 +91,12 @@ def create
             notice: "#{@showcase.name} was successfully created." }
         end
       else
-        # For regular users: Enqueue config update job with progress tracking
-        ConfigUpdateJob.perform_later(@authuser.id) if Rails.env.production?
+        # For regular users: Show progress bar with real-time updates
+        user = User.find_by(userid: @authuser)
+
+        if user && Rails.env.production?
+          ConfigUpdateJob.perform_later(user.id)
+        end
 
         # Render progress page (instead of redirect)
         format.html { render :create_progress, status: :ok }
@@ -108,14 +111,22 @@ end
 ```
 
 **Key Changes:**
-1. **Admin users (index_auth)**: Keep existing behavior (immediate email, no automation)
+1. **Admin/test users (index_auth or test mode)**: Keep existing behavior
+   - Immediate redirect (no progress page)
+   - No ConfigUpdateJob triggered
    - Allows admins to manually create showcases without triggering automation
    - Useful for testing and edge cases
-2. **Regular users**: Enqueue `ConfigUpdateJob` with user_id for WebSocket broadcasting
+2. **Regular users**: Replace email notification with progress bar
+   - Currently: Send email, redirect immediately
+   - New: Show progress bar with real-time updates, automatic redirect
+   - Enqueue `ConfigUpdateJob` with user_id for WebSocket broadcasting
    - Render progress page instead of immediate redirect
-   - User sees real-time progress bar
+   - User sees real-time progress bar (0% → 100%)
    - Automatic redirect on completion
-3. **Remove email notification** - Progress bar + redirect provides better UX
+3. **Remove email notification code**
+   - Delete `send_showcase_request_email` method call
+   - Remove email template (app/views/showcases/request_email.html.erb)
+   - Better UX: immediate visual feedback vs waiting for email
 
 **Status:** ⏳ Not started
 
@@ -298,7 +309,25 @@ end
 
 **Status:** ⏳ Not started
 
-### Phase 6: Deployment & Monitoring
+### Phase 6: Clean Up Old Email Code
+
+**Files to modify/remove:**
+
+1. **Remove email template**
+   - Delete `app/views/showcases/request_email.html.erb`
+
+2. **Update ShowcasesController**
+   - Remove `send_showcase_request_email` method call from `create` action
+   - Consider removing `send_showcase_request_email` method definition if no longer used elsewhere
+
+3. **Verify no other dependencies**
+   - Search codebase for references to `send_showcase_request_email`
+   - Search for references to `request_email.html.erb`
+   - Ensure no other code depends on showcase request emails
+
+**Status:** ⏳ Not started
+
+### Phase 7: Deployment & Monitoring
 
 **Deployment Steps:**
 
@@ -369,11 +398,6 @@ end
    - Pre-configure common showcase settings
    - Faster setup for recurring events
    - Less manual data entry
-
-5. **Email Notification (Optional)**
-   - Send email in addition to progress bar
-   - Useful for users who close the browser
-   - Include link to newly created showcase
 
 ---
 
