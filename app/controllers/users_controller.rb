@@ -85,7 +85,9 @@ class UsersController < ApplicationController
           format.json { render :show, status: :ok, location: @user }
         end
       else
-        format.html { render :edit, status: :unprocessable_content }
+        # If called from password_verify, render reset view instead of edit
+        view = @verify ? :reset : :edit
+        format.html { render view, status: :unprocessable_content }
         format.json { render json: @user.errors, status: :unprocessable_content }
       end
     end
@@ -193,9 +195,11 @@ class UsersController < ApplicationController
     elsif @user and not params[:user][:password].blank?
       # note: packet sniffers could pick up the token from the url and get past this
       # point, but will be blocked by the authenticity token later in the processing.
+      @verify = true
       update
     else
-      render file: 'public/422.html', status: :unprocessable_content, layout: false
+      @verify = true
+      render :reset, status: :unprocessable_content
     end
   end
 
