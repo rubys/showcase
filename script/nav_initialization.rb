@@ -72,6 +72,22 @@ showcases_file = File.join(dbpath, 'showcases.yml')
 File.write(showcases_file, YAML.dump(showcases_data))
 puts "  ✓ Generated #{showcases_file}"
 
+# Bootstrap deployed state snapshot if it doesn't exist
+# This provides the initial baseline for tracking what's actually deployed
+deployed_file = File.join(git_path, 'db/deployed-showcases.yml')
+unless File.exist?(deployed_file)
+  # On admin machine: copy from git-tracked file if available
+  git_file = File.join(git_path, 'config/tenant/showcases.yml')
+  if File.exist?(git_file)
+    FileUtils.cp(git_file, deployed_file)
+    puts "  ✓ Bootstrapped #{deployed_file} from git-tracked file"
+  else
+    # On production machine: use the just-generated showcases.yml
+    FileUtils.cp(showcases_file, deployed_file)
+    puts "  ✓ Bootstrapped #{deployed_file} from generated showcases.yml"
+  end
+end
+
 # Set cable port for navigator config
 ENV['CABLE_PORT'] = '28080'
 

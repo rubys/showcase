@@ -155,8 +155,16 @@ class AdminController < ApplicationController
     @stream = OutputChannel.register(:apply)
 
     generate_showcases
-    before = YAML.load_file('config/tenant/showcases.yml').values.reduce {|a, b| a.merge(b)}
-    after = YAML.load_file('db/showcases.yml').values.reduce {|a, b| a.merge(b)}
+
+    # Use helper methods for safe loading
+    before = ShowcasesLoader.load_deployed.values.reduce {|a, b| a.merge(b)}
+    after = ShowcasesLoader.load.values.reduce {|a, b| a.merge(b)}
+
+    # Detect drift between deployed snapshot and git-tracked file
+    if File.exist?('db/deployed-showcases.yml')
+      git_showcases = YAML.load_file('config/tenant/showcases.yml').values.reduce {|a, b| a.merge(b)}
+      @showcases_drift = (before != git_showcases)
+    end
 
     @move = {}
     after.to_a.sort.each do |site, info|
@@ -166,7 +174,11 @@ class AdminController < ApplicationController
       @move[site] = {from: was[:region], to: info[:region]}
     end
 
-    previous = parse_showcases('config/tenant/showcases.yml')
+    # Determine which file to use for previous state
+    previous_file = File.exist?('db/deployed-showcases.yml') ?
+      'db/deployed-showcases.yml' : 'config/tenant/showcases.yml'
+
+    previous = parse_showcases(previous_file)
     showcases = parse_showcases('db/showcases.yml')
     @showcases_modified = showcases - previous
     @showcases_removed = previous - showcases - @showcases_modified

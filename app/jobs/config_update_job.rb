@@ -50,6 +50,13 @@ class ConfigUpdateJob < ApplicationJob
       Rails.logger.warn "ConfigUpdateJob stderr:\n#{stderr_output}" unless stderr_output.empty?
 
       if status.success?
+        # Copy current state to deployed state after successful update
+        dbpath = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
+        current_file = File.join(dbpath, 'showcases.yml')
+        deployed_file = Rails.root.join('db/deployed-showcases.yml')
+        FileUtils.cp(current_file, deployed_file) if File.exist?(current_file)
+
+        Rails.logger.info "ConfigUpdateJob: Updated deployed state snapshot"
         Rails.logger.info "ConfigUpdateJob: Completed successfully"
         broadcast(user_id, database, 'completed', 100, 'Configuration update complete!')
       else

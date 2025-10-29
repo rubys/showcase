@@ -15,6 +15,15 @@
 
 <% changes = false %>
 
+<% if @showcases_drift %>
+<h2 class="font-bold text-2xl mt-4 mb-2 text-orange-600">⚠️ Git Drift Detected</h2>
+<p class="text-sm text-gray-600 mb-2">
+  config/tenant/showcases.yml is out of sync with deployed state.
+  Full deployment recommended to update git-tracked file.
+</p>
+<% changes = true %>
+<% end %>
+
 <% unless `rsync -i --dry-run db/index.sqlite3 smooth:/data/db/`.empty? %>
 <h2 class="font-bold text-2xl mt-4 mb-2">Sync databases</h2>
 <ul class="ml-8 list-disc list-outside">
