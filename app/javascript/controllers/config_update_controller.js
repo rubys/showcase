@@ -95,8 +95,21 @@ export default class extends Controller {
 
       if (!response.ok) {
         if (response.status === 422) {
-          // Validation error - reload the page to show error messages
-          window.location.reload()
+          // Validation error - get the HTML response and update the page
+          const html = await response.text()
+          const parser = new DOMParser()
+          const doc = parser.parseFromString(html, 'text/html')
+
+          // Extract the form with errors from the response
+          const newForm = doc.querySelector('#user-form')
+          if (newForm && this.hasFormTarget) {
+            // Replace the current form with the one containing error messages
+            this.formTarget.outerHTML = newForm.outerHTML
+          }
+
+          // Hide progress bar and re-enable form
+          this.progressTarget.classList.add("hidden")
+          this.resetForm()
         } else {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
