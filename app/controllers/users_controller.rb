@@ -192,8 +192,9 @@ class UsersController < ApplicationController
         @user.token = ""
         @user.save!
 
-        # Return success without redirect - let JavaScript handle progress tracking and redirect
-        head :ok
+        # Show progress bar with real-time updates
+        @show_progress = true
+        render :reset, status: :ok
       else
         # Validation failed - render reset view with errors
         render :reset, status: :unprocessable_content
