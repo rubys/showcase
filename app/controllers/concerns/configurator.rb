@@ -805,8 +805,16 @@ module Configurator
       }
     }
 
-    # Add htpasswd update hook on server start and resume if running on Fly.io
+    # Add system configuration and htpasswd update hooks on server start if running on Fly.io
     if ENV['FLY_REGION']
+      # System configuration (Redis memory overcommit, etc.)
+      hooks['server']['start'] << {
+        'command' => '/rails/script/hook_navigator_start.sh',
+        'args' => [],
+        'timeout' => '10s'
+      }
+
+      # Update htpasswd from index database
       htpasswd_hook = {
         'command' => '/rails/script/update_htpasswd.rb',
         'args' => [],
