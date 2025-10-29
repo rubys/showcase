@@ -26,134 +26,36 @@ Automate the new event request workflow to eliminate manual admin intervention. 
 **User Flow:**
 1. Studio submits new showcase request form (routed to rubix)
 2. `showcases#create` saves showcase to index database
-3. **Enqueues background job** to complete the request
-4. Background job:
+3. **Shows real-time progress bar via WebSocket** while configuration updates
+4. Background job (ConfigUpdateJob):
    - Syncs index.sqlite3 to S3
    - Updates all active Fly machines (via CGI endpoint)
    - Each machine regenerates configs and triggers prerender
-   - **Sends email notification once showcase is ready**
-5. User receives confirmation email within ~30 seconds
+   - **Broadcasts progress updates (0% → 100%) via ActionCable**
+5. **User sees progress complete and is redirected to their showcase** within ~30 seconds
 6. No admin intervention required
 
 **Benefits:**
 - Zero manual intervention for new showcase requests
 - Fast turnaround (~30 seconds vs hours/days)
-- Consistent, reliable process
-- Immediate feedback to requesters
-- Leverages existing CGI infrastructure
+- Real-time progress feedback (no waiting/wondering)
+- Immediate visual confirmation of completion
+- Leverages existing ConfigUpdateJob and WebSocket infrastructure
+- No email delays or deliverability issues
 
 ## Implementation Plan
 
-### Phase 1: Create NewShowcaseJob
+### Phase 1: No Separate Job Needed
 
-**File:** `app/jobs/new_showcase_job.rb`
+**Decision:** Reuse existing `ConfigUpdateJob` directly instead of creating a wrapper job.
 
-**Responsibilities:**
-1. Run configuration update (reuses ConfigUpdateJob)
-2. Send email notification after successful update
-3. Handle errors gracefully with proper logging
+**Rationale:**
+- ConfigUpdateJob already supports user_id parameter for WebSocket broadcasting
+- ConfigUpdateJob already has progress tracking built-in
+- No need for email notifications (progress bar + redirect provides immediate feedback)
+- Simpler architecture with fewer moving parts
 
-**Job Parameters:**
-- `showcase_id` - The showcase that was created
-- `requester_userid` - The user who submitted the request (for email)
-- `return_url` - Optional URL to include in email for user to view their showcase
-
-**Implementation:**
-```ruby
-class NewShowcaseJob < ApplicationJob
-  queue_as :default
-
-  def perform(showcase_id, requester_userid, return_url: nil)
-    @showcase = Showcase.find(showcase_id)
-    @requester = User.find_by(userid: requester_userid)
-
-    Rails.logger.info "NewShowcaseJob: Processing showcase request for #{@showcase.name}"
-
-    # Run configuration update (reuse existing ConfigUpdateJob)
-    ConfigUpdateJob.perform_now
-
-    # Send email notification
-    send_confirmation_email(return_url)
-
-    Rails.logger.info "NewShowcaseJob: Completed successfully for #{@showcase.name}"
-  rescue => e
-    Rails.logger.error "NewShowcaseJob failed: #{e.message}"
-    Rails.logger.error e.backtrace.join("\n")
-
-    # Send failure notification email
-    send_failure_email(e.message) if @requester&.email
-
-    raise # Re-raise to mark job as failed
-  end
-
-  private
-
-  def send_confirmation_email(return_url)
-    mail = Mail.new do
-      from 'Sam Ruby <rubys@intertwingly.net>'
-      to "#{@requester.name1} <#{@requester.email}>" if @requester&.email
-      bcc 'Sam Ruby <rubys@intertwingly.net>'
-      subject "Showcase Ready: #{@showcase.location.name} #{@showcase.year} - #{@showcase.name}"
-    end
-
-    mail.part do |part|
-      part.content_type = 'multipart/related'
-      part.attachments.inline[EventController.logo] =
-        IO.read "public/#{EventController.logo}"
-      @logo = part.attachments.first.url
-      @return_url = return_url
-      part.html_part = ApplicationController.render(
-        template: 'showcases/confirmation_email',
-        formats: [:html],
-        layout: false,
-        locals: {
-          showcase: @showcase,
-          requester_name: @requester&.name1 || 'Unknown User',
-          logo: @logo,
-          return_url: @return_url
-        }
-      )
-    end
-
-    mail.delivery_method :smtp,
-      Rails.application.credentials.smtp || { address: 'mail.twc.com' }
-
-    mail.deliver!
-  rescue => e
-    Rails.logger.error "Failed to send confirmation email: #{e.message}"
-    # Don't raise - email failure shouldn't fail the entire job
-  end
-
-  def send_failure_email(error_message)
-    mail = Mail.new do
-      from 'Sam Ruby <rubys@intertwingly.net>'
-      to "#{@requester.name1} <#{@requester.email}>" if @requester&.email
-      bcc 'Sam Ruby <rubys@intertwingly.net>'
-      subject "Showcase Request Failed: #{@showcase.location.name} #{@showcase.year} - #{@showcase.name}"
-      body <<~EMAIL
-        The automated processing of your showcase request has failed.
-
-        Showcase: #{@showcase.name}
-        Location: #{@showcase.location.name}
-        Year: #{@showcase.year}
-
-        Error: #{error_message}
-
-        An administrator has been notified and will process your request manually.
-      EMAIL
-    end
-
-    mail.delivery_method :smtp,
-      Rails.application.credentials.smtp || { address: 'mail.twc.com' }
-
-    mail.deliver!
-  rescue => e
-    Rails.logger.error "Failed to send failure notification email: #{e.message}"
-  end
-end
-```
-
-**Status:** ⏳ Not started
+**Status:** ✅ Already implemented (ConfigUpdateJob exists with WebSocket support)
 
 ### Phase 2: Update ShowcasesController
 
@@ -190,17 +92,11 @@ def create
             notice: "#{@showcase.name} was successfully created." }
         end
       else
-        # For regular users: Enqueue background job (new behavior)
-        return_url = params[:return_to] || studio_events_url(@showcase.location&.key)
-        NewShowcaseJob.perform_later(
-          @showcase.id,
-          @authuser,
-          return_url: return_url
-        )
+        # For regular users: Enqueue config update job with progress tracking
+        ConfigUpdateJob.perform_later(@authuser.id) if Rails.env.production?
 
-        # Redirect with processing message
-        format.html { redirect_to params[:return_to] || studio_events_path(@showcase.location&.key),
-          notice: "#{@showcase.name} request is being processed. You will receive an email confirmation shortly." }
+        # Render progress page (instead of redirect)
+        format.html { render :create_progress, status: :ok }
       end
 
       format.json { render :show, status: :created, location: @showcase }
@@ -212,168 +108,211 @@ end
 ```
 
 **Key Changes:**
-1. **Admin users (index_auth)**: Keep existing behavior (immediate email, no job)
+1. **Admin users (index_auth)**: Keep existing behavior (immediate email, no automation)
    - Allows admins to manually create showcases without triggering automation
    - Useful for testing and edge cases
-2. **Regular users**: Enqueue `NewShowcaseJob` instead of sending email
-   - Job handles config update + email
-   - User sees "processing" message immediately
-3. **Remove old `send_showcase_request_email` call** for regular users
-   - Email now sent by job after config update completes
+2. **Regular users**: Enqueue `ConfigUpdateJob` with user_id for WebSocket broadcasting
+   - Render progress page instead of immediate redirect
+   - User sees real-time progress bar
+   - Automatic redirect on completion
+3. **Remove email notification** - Progress bar + redirect provides better UX
 
 **Status:** ⏳ Not started
 
-### Phase 3: Create Email Templates
+### Phase 3: Create Progress View
 
-**File:** `app/views/showcases/confirmation_email.html.erb`
+**File:** `app/views/showcases/create_progress.html.erb`
 
-**Purpose:** Email sent after successful automation (replaces `request_email.html.erb` for automated flow)
+**Purpose:** Show real-time progress during showcase creation and config update
 
 **Template:**
 ```erb
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { text-align: center; margin-bottom: 30px; }
-    .logo { max-width: 200px; }
-    .content { background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-    .button { display: inline-block; padding: 12px 24px; background: #3b82f6; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-    .footer { color: #6b7280; font-size: 14px; text-align: center; margin-top: 30px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <img src="<%= @logo %>" alt="Logo" class="logo">
-    </div>
+<div class="mx-auto md:w-2/3 w-full"
+     data-controller="config-update"
+     data-config-update-user-id-value="<%= @authuser.id %>"
+     data-config-update-database-value="<%= ENV['RAILS_APP_DB'] %>"
+     data-config-update-redirect-url-value="<%= params[:return_to] || studio_events_url(@showcase.location&.key) %>">
 
-    <h2>Your Showcase is Ready!</h2>
+  <h1 class="font-bold text-4xl">Creating Showcase</h1>
 
-    <div class="content">
-      <p>Hello <%= local_assigns[:requester_name] %>,</p>
+  <div class="content my-8">
+    <p class="text-lg mb-4">Your showcase request is being processed:</p>
 
-      <p>Your showcase request has been successfully processed and is now live:</p>
+    <ul class="list-disc ml-6 mb-6">
+      <li><strong>Event:</strong> <%= @showcase.name %></li>
+      <li><strong>Location:</strong> <%= @showcase.location.name %></li>
+      <li><strong>Year:</strong> <%= @showcase.year %></li>
+    </ul>
 
-      <ul>
-        <li><strong>Event:</strong> <%= local_assigns[:showcase].name %></li>
-        <li><strong>Location:</strong> <%= local_assigns[:showcase].location.name %></li>
-        <li><strong>Year:</strong> <%= local_assigns[:showcase].year %></li>
-        <% if local_assigns[:showcase].start_date %>
-          <li><strong>Start Date:</strong> <%= local_assigns[:showcase].start_date.strftime('%B %d, %Y') %></li>
-        <% end %>
-      </ul>
-
-      <% if local_assigns[:return_url] %>
-        <p style="text-align: center;">
-          <a href="<%= local_assigns[:return_url] %>" class="button">View Your Showcase</a>
-        </p>
-      <% end %>
-
-      <p>You can now begin entering participants, heats, and other event details.</p>
-    </div>
-
-    <div class="footer">
-      <p>This is an automated notification. If you have questions, please contact the administrator.</p>
-    </div>
+    <p class="text-gray-600">This will take approximately 30 seconds...</p>
   </div>
-</body>
-</html>
+
+  <!-- Progress indicator -->
+  <div data-config-update-target="progress" class="my-8">
+    <div class="mb-2">
+      <div class="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
+        <div data-config-update-target="progressBar"
+             class="bg-blue-500 h-full text-xs font-medium text-white text-center p-0.5 leading-5 transition-all duration-300"
+             style="width: 0%">
+          0%
+        </div>
+      </div>
+    </div>
+    <p data-config-update-target="message" class="text-sm text-gray-600">
+      Starting configuration update...
+    </p>
+  </div>
+</div>
+
+<script>
+  // Auto-connect to WebSocket and start progress tracking
+  // The config-update controller will handle everything automatically
+</script>
 ```
 
 **Status:** ⏳ Not started
 
 **Note:** Keep existing `request_email.html.erb` for admin-created showcases (those that bypass automation).
 
-### Phase 4: Testing
+### Phase 4: Update Stimulus Controller (Optional)
+
+**File:** `app/javascript/controllers/config_update_controller.js`
+
+**Current Implementation:** Already supports progress tracking and auto-redirect
+
+**Potential Enhancement:** Add auto-connect on page load for progress pages (not form submissions)
+
+```javascript
+connect() {
+  this.consumer = createConsumer()
+  this.subscription = null
+
+  // Auto-start progress tracking if this is a progress page (not a form page)
+  if (!this.hasFormTarget && this.hasUserIdValue) {
+    this.startProgressTracking()
+  }
+}
+
+startProgressTracking() {
+  this.progressTarget.classList.remove("hidden")
+  this.updateProgress(0, "Connecting...")
+
+  this.subscription = this.consumer.subscriptions.create(
+    {
+      channel: "ConfigUpdateChannel",
+      user_id: this.userIdValue,
+      database: this.databaseValue
+    },
+    {
+      connected: () => {
+        this.updateProgress(0, "Starting...")
+      },
+      received: (data) => {
+        this.handleProgressUpdate(data)
+      }
+    }
+  )
+}
+```
+
+**Status:** ⏳ Optional - current controller may work as-is
+
+### Phase 5: Testing
 
 **Test Scenarios:**
 
 1. **Regular User Creates Showcase (Primary Flow)**
    - User submits new showcase request
-   - Verify job is enqueued
-   - Verify user sees "processing" message
-   - Verify config update runs successfully
-   - Verify email is sent after completion
+   - Verify progress page is rendered (not redirect)
+   - Verify WebSocket connection established
+   - Verify progress bar updates (0% → 100%)
+   - Verify automatic redirect to showcase on completion
    - Verify showcase is accessible on production
 
 2. **Admin User Creates Showcase**
    - Admin submits new showcase
    - Verify NO job is enqueued (immediate email)
+   - Verify immediate redirect (no progress page)
    - Verify old behavior is preserved
 
 3. **Job Failure Handling**
    - Simulate config update failure
-   - Verify failure email is sent
+   - Verify error message displayed
    - Verify error is logged
    - Verify job is marked as failed (for retry)
 
-4. **Email Delivery Failure**
-   - Simulate email delivery failure
-   - Verify job completes successfully (email failure doesn't fail job)
+4. **WebSocket Connection Failure**
+   - Simulate WebSocket connection failure
+   - Verify graceful fallback or error message
    - Verify error is logged
 
 5. **Concurrent Requests**
    - Submit multiple showcase requests quickly
    - Verify all jobs execute successfully
+   - Verify correct progress tracking per user (no cross-contamination)
    - Verify no race conditions
 
 **Test Implementation:**
 ```ruby
-# test/jobs/new_showcase_job_test.rb
+# test/controllers/showcases_controller_test.rb
 require "test_helper"
 
-class NewShowcaseJobTest < ActiveJob::TestCase
-  test "successfully processes showcase request" do
-    showcase = showcases(:pending_request)
-    user = users(:studio_owner)
+class ShowcasesControllerTest < ActionDispatch::IntegrationTest
+  test "regular user sees progress page on showcase creation" do
+    sign_in_as users(:studio_owner)
 
-    assert_enqueued_with(job: NewShowcaseJob) do
-      NewShowcaseJob.perform_later(showcase.id, user.userid)
+    assert_difference("Showcase.count") do
+      post showcases_url, params: {
+        showcase: {
+          name: "New Event",
+          location_id: locations(:boston).id,
+          year: 2025
+        }
+      }
     end
 
-    perform_enqueued_jobs
-
-    # Verify email was sent
-    assert_emails 1
+    assert_response :ok
+    assert_select "div[data-controller='config-update']"
+    assert_select "div[data-config-update-target='progress']"
   end
 
-  test "handles config update failure gracefully" do
-    showcase = showcases(:pending_request)
-    user = users(:studio_owner)
+  test "admin user gets immediate redirect (no progress page)" do
+    sign_in_as users(:admin)
 
-    # Mock config update to fail
-    Open3.stub :capture3, ['', 'error', Object.new.tap { |s| s.define_singleton_method(:success?) { false } }] do
-      assert_raises(RuntimeError) do
-        NewShowcaseJob.perform_now(showcase.id, user.userid)
-      end
+    assert_difference("Showcase.count") do
+      post showcases_url, params: {
+        showcase: {
+          name: "Admin Event",
+          location_id: locations(:boston).id,
+          year: 2025
+        }
+      }
     end
 
-    # Verify failure email was sent
-    assert_emails 1
+    assert_redirected_to events_location_url(locations(:boston))
+    follow_redirect!
+    assert_match /successfully created/, flash[:notice]
   end
 end
 ```
 
 **Status:** ⏳ Not started
 
-### Phase 5: Deployment & Monitoring
+### Phase 6: Deployment & Monitoring
 
 **Deployment Steps:**
 
 1. **Deploy to Production**
-   - Deploy updated code with NewShowcaseJob
-   - Verify job queue is configured (Solid Queue or Sidekiq)
-   - Verify SMTP credentials are configured
+   - Deploy updated code with progress view
+   - Verify ConfigUpdateJob is working with user_id parameter
+   - Verify ActionCable/WebSocket is configured and working
+   - Verify ConfigUpdateChannel is available
 
 2. **Monitor First Production Use**
    - Watch logs for job execution
-   - Verify config update completes successfully
-   - Verify email is delivered
+   - Verify WebSocket connection established
+   - Verify progress updates broadcast correctly
+   - Verify automatic redirect works
    - Time the end-to-end process
 
 3. **Update Documentation**
@@ -382,12 +321,15 @@ end
    - Note that admin users still bypass automation
 
 **Monitoring Checklist:**
+- [ ] Progress page renders correctly
+- [ ] WebSocket connection established
 - [ ] Job enqueued successfully
 - [ ] Config update script runs
 - [ ] S3 sync completes
 - [ ] All machines updated
 - [ ] Prerender triggered
-- [ ] Email delivered
+- [ ] Progress updates broadcast (0% → 100%)
+- [ ] Automatic redirect works
 - [ ] Total time < 60 seconds
 
 **Status:** ⏳ Not started
@@ -400,38 +342,47 @@ end
 |--------|---------|--------|
 | Time to showcase availability | Hours to days (manual) | <60 seconds (automated) |
 | Admin intervention required | Yes (every request) | No (fully automated) |
-| User feedback | Email on request submission | Email on completion (with link) |
+| User feedback | Email on request submission | Real-time progress bar + auto-redirect |
 | Reliability | Dependent on admin availability | Automated, consistent |
+| User experience | Submit and wait (no visibility) | Real-time progress visibility |
 
 ---
 
 ## Future Enhancements
 
-1. **Showcase Status Dashboard**
-   - Show pending/processing/completed showcases
-   - Real-time status updates for users
-   - Admin view to monitor automation
+1. **Enhanced Error Handling**
+   - Better error messages in progress bar
+   - Retry button on failure
+   - Admin notification on persistent failures
 
 2. **Retry Logic**
    - Automatic retry on transient failures
    - Exponential backoff
    - Max retry limit with manual fallback
 
-3. **Webhook Integration**
-   - Trigger external systems when showcase is ready
-   - Integration with calendar systems
-   - Slack/Discord notifications
+3. **Progress Granularity**
+   - More detailed progress messages (e.g., "Syncing to S3...", "Updating machine 1 of 3...")
+   - Estimated time remaining
+   - Breakdown of each step
 
 4. **Showcase Templates**
    - Pre-configure common showcase settings
    - Faster setup for recurring events
    - Less manual data entry
 
+5. **Email Notification (Optional)**
+   - Send email in addition to progress bar
+   - Useful for users who close the browser
+   - Include link to newly created showcase
+
 ---
 
 ## References
 
 - Related: `plans/CGI_CONFIGURATION_PLAN.md` (completed CGI infrastructure)
-- Job: `app/jobs/config_update_job.rb` (reference implementation)
+- Job: `app/jobs/config_update_job.rb` (ConfigUpdateJob with WebSocket support)
+- Channel: `app/channels/config_update_channel.rb` (ActionCable channel for progress updates)
+- Stimulus: `app/javascript/controllers/config_update_controller.js` (frontend progress tracking)
 - Script: `script/config-update` (config update logic)
 - Controller: `app/controllers/showcases_controller.rb#create` (current implementation)
+- Reference Implementation: `app/controllers/users_controller.rb#password_verify` (password reset with progress bar)
