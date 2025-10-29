@@ -300,6 +300,72 @@ If issues arise after Phase 1:
 
 **Total:** 6-8 hours + waiting for Kamal migration
 
+## Possible Follow-On: Direct Database Access vs YAML Cache
+
+### Current Architecture (Post Phase 2)
+
+**Application Code Flow:**
+1. `index.sqlite3` is the source of truth
+2. `RegionConfiguration.generate_showcases_data` reads from `index.sqlite3` and generates showcases hash
+3. Result is written to `/data/db/showcases.yml` (production) or `db/showcases.yml` (dev)
+4. Application code calls `ShowcasesLoader.load` which reads the YAML file
+
+**YAML Regeneration Points:**
+- Production machines: `script/nav_initialization.rb` (on startup/resume) and CGI endpoint `/update_config`
+- Admin machine: `generate_showcases` (called before deployments and after index.sqlite3 changes)
+- Navigator: Needs YAML file for config generation (not Ruby code)
+
+### Alternative Approach: Direct Database Access
+
+Replace `ShowcasesLoader.load` with direct calls to `RegionConfiguration.generate_showcases_data` in application code.
+
+**Advantages:**
+1. **Always fresh data** - No cache invalidation concerns, always reads latest from index.sqlite3
+2. **Simpler architecture** - Eliminate intermediate YAML file from application code path
+3. **No staleness risk** - If admin modifies index.sqlite3 without calling `generate_showcases`, data is still current
+4. **Fewer moving parts** - One less file to track and maintain
+5. **Easier reasoning** - Direct path from database to application
+
+**Disadvantages:**
+1. **Performance** - Database query vs file read on every request (likely negligible given caching at model level)
+2. **Navigator still needs YAML** - Can't eliminate the file entirely since Navigator config generation requires it
+3. **Different paths on different machines** - Production uses YAML (Navigator), app code uses DB (creates asymmetry)
+4. **Caching complexity** - Would need to implement caching in `RegionConfiguration` or at call sites
+5. **Database locking** - More concurrent SQLite reads (though index.sqlite3 is read-mostly)
+
+### Hybrid Approach: Cache at Model Level
+
+Keep YAML file for Navigator, but have `RegionConfiguration.generate_showcases_data` cache its result in memory with TTL or invalidation.
+
+**Advantages:**
+- Best of both worlds: fresh data with good performance
+- Single code path for all callers
+- Still maintains YAML for Navigator
+
+**Disadvantages:**
+- Caching complexity (TTL, invalidation strategy)
+- Memory usage for cached data structure
+- Still need to track when to invalidate
+
+### Current Status
+
+**Decision:** Keep current approach for now (ShowcasesLoader.load reading YAML cache)
+
+**Rationale:**
+- Phases 1 & 2 are complete and working well
+- No identified problems with current approach
+- Performance is acceptable
+- YAML file is needed for Navigator anyway
+
+**Future Consideration:**
+This change could be made incrementally (one file at a time), wholesale (all at once), or not at all depending on operational experience. Monitor for:
+- Stale data issues
+- Performance bottlenecks
+- Cache invalidation bugs
+- Complexity in understanding data flow
+
+If problems arise, revisit this decision.
+
 ## References
 
 - Related: `plans/KAMAL_MIGRATION_PLAN.md` (nginx dependency blocker)
