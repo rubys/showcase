@@ -8,6 +8,78 @@ export default class extends Controller {
   connect() {
     this.consumer = createConsumer()
     this.subscription = null
+
+    // Auto-start progress tracking if this is a progress page (not a form page)
+    if (!this.hasFormTarget && this.hasUserIdValue) {
+      this.startProgressTracking()
+    }
+  }
+
+  startProgressTracking() {
+    this.progressTarget.classList.remove("hidden")
+    this.updateProgress(0, "Connecting...")
+
+    this.subscription = this.consumer.subscriptions.create(
+      {
+        channel: "ConfigUpdateChannel",
+        user_id: this.userIdValue,
+        database: this.databaseValue
+      },
+      {
+        connected: () => {
+          this.updateProgress(0, "Starting...")
+        },
+        received: (data) => {
+          this.handleProgressUpdate(data)
+        }
+      }
+    )
+  }
+
+  async triggerUpdate(event) {
+    // Show progress indicator immediately
+    this.progressTarget.classList.remove("hidden")
+    this.updateProgress(0, "Connecting...")
+
+    // Disable button
+    event.target.disabled = true
+
+    // Subscribe to progress updates BEFORE triggering the job
+    this.subscription = this.consumer.subscriptions.create(
+      {
+        channel: "ConfigUpdateChannel",
+        user_id: this.userIdValue,
+        database: this.databaseValue
+      },
+      {
+        connected: async () => {
+          this.updateProgress(0, "Triggering update...")
+
+          // Trigger the ConfigUpdateJob
+          try {
+            const response = await fetch('/admin/trigger_config_update', {
+              method: 'POST',
+              headers: {
+                "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content,
+                "Content-Type": "application/json"
+              }
+            })
+
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`)
+            }
+          } catch (error) {
+            console.error("Error triggering update:", error)
+            this.messageTarget.textContent = "Failed to start update"
+            this.messageTarget.classList.add("text-red-600")
+            event.target.disabled = false
+          }
+        },
+        received: (data) => {
+          this.handleProgressUpdate(data)
+        }
+      }
+    )
   }
 
   submitViaButton(event) {

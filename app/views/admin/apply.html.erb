@@ -2,7 +2,12 @@
   <%= stylesheet_link_tag "xterm", "data-turbo-track": "reload" %>
 <% end %>
 
-<div class="mx-auto md:w-2/3 w-full" data-controller="submit">
+<% user = User.find_by(userid: @authuser) %>
+
+<div class="mx-auto md:w-2/3 w-full" data-controller="submit config-update"
+     data-config-update-user-id-value="<%= user&.id %>"
+     data-config-update-database-value="<%= ENV['RAILS_APP_DB'] %>"
+     data-config-update-redirect-url-value="<%= admin_path %>">
 
 <h1 class="text-4xl font-extrabold text-center">Apply Changes</h1>
 
@@ -130,14 +135,31 @@
       Deploy Changes
     </button>
   <% else %>
-    <!-- New CGI-based configuration update -->
+    <!-- New CGI-based configuration update with progress bar -->
     <h3 class="text-xl font-bold mt-6 text-center">Configuration Update</h3>
-    <p class="text-sm text-gray-600 mb-2 text-center">Fast update via CGI (no deployment needed)</p>
+    <p class="text-sm text-gray-600 mb-2 text-center">Fast update with real-time progress (no deployment needed)</p>
 
-    <%= button_to "Update Configuration",
-                  trigger_config_update_admin_path,
-                  method: :post,
-                  class: "flex mx-auto bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 border-2 rounded-xl my-4" %>
+    <button type="button"
+            data-action="click->config-update#triggerUpdate"
+            class="flex mx-auto bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 border-2 rounded-xl my-4">
+      Update Configuration
+    </button>
+
+    <!-- Progress indicator (hidden initially) -->
+    <div data-config-update-target="progress" class="hidden my-8">
+      <div class="mb-2">
+        <div class="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
+          <div data-config-update-target="progressBar"
+               class="bg-blue-500 h-full text-xs font-medium text-white text-center p-0.5 leading-5 transition-all duration-300"
+               style="width: 0%">
+            0%
+          </div>
+        </div>
+      </div>
+      <p data-config-update-target="message" class="text-sm text-gray-600">
+        Starting configuration update...
+      </p>
+    </div>
   <% end %>
 <% end %>
 

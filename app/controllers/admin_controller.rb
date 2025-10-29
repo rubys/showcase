@@ -184,122 +184,15 @@ class AdminController < ApplicationController
   end
 
   def trigger_config_update
-    # Set up streaming output
-    @stream = OutputChannel.register(:config_update)
+    # Find the current user's ID for WebSocket broadcasting
+    user = User.find_by(userid: @authuser)
 
-    Thread.new do
-      begin
-        OutputChannel.send(@stream, "Starting configuration update...\n\n")
-
-        # Step 1: Sync index.sqlite3 to S3 (if changed)
-        OutputChannel.send(@stream, "Step 1: Syncing index database to S3...\n")
-        OutputChannel.send(@stream, "=" * 50 + "\n")
-
-        script_path = Rails.root.join('script', 'sync_databases_s3.rb')
-        stdout, stderr, status = Open3.capture3('ruby', script_path.to_s, '--index-only')
-
-        OutputChannel.send(@stream, stdout)
-        OutputChannel.send(@stream, stderr) unless stderr.empty?
-
-        unless status.success?
-          OutputChannel.send(@stream, "\n❌ Index sync failed\n")
-          OutputChannel.send(@stream, "\u0004")
-          next
-        end
-
-        OutputChannel.send(@stream, "\n")
-
-        # Step 2: Get list of active Fly machines
-        OutputChannel.send(@stream, "Step 2: Getting list of active Fly machines...\n")
-        OutputChannel.send(@stream, "=" * 50 + "\n")
-
-        flyctl = ENV['FLY_CLI_PATH'] || File.expand_path('~/bin/flyctl')
-        machines_output, _, status = Open3.capture3(flyctl, 'machines', 'list', '--json')
-
-        unless status.success?
-          OutputChannel.send(@stream, "❌ Failed to get machines list\n")
-          OutputChannel.send(@stream, "\u0004")
-          next
-        end
-
-        machines = JSON.parse(machines_output)
-        active_machines = machines.select { |m| ['started', 'created'].include?(m['state']) }
-        machine_ids = active_machines.map { |m| m['id'] }
-
-        OutputChannel.send(@stream, "Found #{machines.length} total machines\n")
-        OutputChannel.send(@stream, "Will update #{machine_ids.length} active machines\n\n")
-
-        if machine_ids.empty?
-          OutputChannel.send(@stream, "No active machines to update\n")
-          OutputChannel.send(@stream, "\u0004")
-          next
-        end
-
-        # Step 3: Call CGI endpoint on each machine
-        OutputChannel.send(@stream, "Step 3: Updating configuration on each machine...\n")
-        OutputChannel.send(@stream, "=" * 50 + "\n")
-
-        success_count = 0
-        failure_count = 0
-
-        machine_ids.each do |machine_id|
-          OutputChannel.send(@stream, "  #{machine_id}... ")
-
-          begin
-            uri = URI("https://#{request.host}/showcase/update_config")
-
-            http = Net::HTTP.new(uri.host, uri.port)
-            http.use_ssl = true
-            http.read_timeout = 300  # 5 minute timeout for CGI
-            http.open_timeout = 10
-
-            req = Net::HTTP::Post.new(uri.path)
-            req['Fly-Force-Instance-Id'] = machine_id  # Target specific machine
-
-            # Pass through authentication
-            if request.authorization
-              req['Authorization'] = request.authorization
-            elsif current_user
-              req.basic_auth(current_user.username, session[:password])
-            end
-
-            response = http.request(req)
-
-            if response.code == '200'
-              OutputChannel.send(@stream, "✓ Success\n")
-              success_count += 1
-            else
-              OutputChannel.send(@stream, "✗ Failed (HTTP #{response.code})\n")
-              failure_count += 1
-            end
-
-          rescue => e
-            OutputChannel.send(@stream, "✗ Error: #{e.message}\n")
-            failure_count += 1
-          end
-        end
-
-        # Summary
-        OutputChannel.send(@stream, "\n")
-        OutputChannel.send(@stream, "Summary:\n")
-        OutputChannel.send(@stream, "=" * 50 + "\n")
-        OutputChannel.send(@stream, "Successfully updated: #{success_count} machines\n")
-        OutputChannel.send(@stream, "Failed updates: #{failure_count} machines\n") if failure_count > 0
-
-        if failure_count > 0
-          OutputChannel.send(@stream, "\n❌ Configuration update completed with errors\n")
-        else
-          OutputChannel.send(@stream, "\n✅ Configuration update completed successfully\n")
-        end
-
-      rescue => e
-        OutputChannel.send(@stream, "\n❌ Error: #{e.message}\n")
-        OutputChannel.send(@stream, e.backtrace.join("\n") + "\n")
-      ensure
-        OutputChannel.send(@stream, "\u0004") # Send EOT
-      end
+    if user && Rails.env.production?
+      # Enqueue ConfigUpdateJob with user_id for progress tracking
+      ConfigUpdateJob.perform_later(user.id)
     end
 
+    # Return OK - progress will be tracked via WebSocket
     head :ok
   end
 
