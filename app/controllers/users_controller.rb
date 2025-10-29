@@ -68,26 +68,12 @@ class UsersController < ApplicationController
       link = @user.link
 
       if @user.update(user_params)
-        # Pass user_id only for password resets (non-admin updates with token)
-        user_id_for_progress = (not @user.token.blank? and not admin) ? @user.id : nil
-        update_htpasswd_everywhere(user_id_for_progress)
+        update_htpasswd_everywhere
 
-        if not @user.token.blank? and not admin
-          @user.link = ""
-          @user.token = ""
-          @user.save!
-
-          # Return success without redirect - let JavaScript handle progress tracking and redirect
-          format.html { head :ok }
-          format.json { render json: { status: 'success', redirect_url: link || root_path } }
-        else
-          format.html { redirect_to users_url, notice: "#{@user.userid} was successfully updated." }
-          format.json { render :show, status: :ok, location: @user }
-        end
+        format.html { redirect_to users_url, notice: "#{@user.userid} was successfully updated." }
+        format.json { render :show, status: :ok, location: @user }
       else
-        # If called from password_verify, render reset view instead of edit
-        view = @verify ? :reset : :edit
-        format.html { render view, status: :unprocessable_content }
+        format.html { render :edit, status: :unprocessable_content }
         format.json { render json: @user.errors, status: :unprocessable_content }
       end
     end
@@ -189,16 +175,32 @@ class UsersController < ApplicationController
 
   def password_verify
     @user = User.find_by(token: params[:token])
+    @verify = true
+
     if request.get?
-      @verify= true
       render :reset
     elsif @user and not params[:user][:password].blank?
       # note: packet sniffers could pick up the token from the url and get past this
       # point, but will be blocked by the authenticity token later in the processing.
-      @verify = true
-      update
+      set_password
+      set_sites
+
+      link = @user.link
+
+      if @user.update(user_params)
+        update_htpasswd_everywhere(@user.id)
+
+        @user.link = ""
+        @user.token = ""
+        @user.save!
+
+        # Return success without redirect - let JavaScript handle progress tracking and redirect
+        head :ok
+      else
+        # Validation failed - render reset view with errors
+        render :reset, status: :unprocessable_content
+      end
     else
-      @verify = true
       render :reset, status: :unprocessable_content
     end
   end
