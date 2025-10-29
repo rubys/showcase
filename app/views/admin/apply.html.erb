@@ -125,27 +125,37 @@
 </div>
 
 <% if changes %>
-  <% if @pending['add'].present? || @pending['delete'].present? || @code_changes %>
-    <!-- Original deployment flow for region/code changes -->
-    <h3 class="text-xl font-bold mt-6 text-center">Full Deployment Required</h3>
-    <p class="text-sm text-gray-600 mb-2 text-center">Region or code changes require deployment</p>
+  <div class="mt-6">
+    <% if @pending['add'].present? || @pending['delete'].present? || @code_changes %>
+      <h3 class="text-xl font-bold text-center text-red-600">⚠️ Full Deployment Recommended</h3>
+      <p class="text-sm text-gray-600 mb-4 text-center">Region or code changes detected</p>
+    <% else %>
+      <h3 class="text-xl font-bold text-center">Choose Update Method</h3>
+      <p class="text-sm text-gray-600 mb-4 text-center">Configuration changes only - fast update recommended</p>
+    <% end %>
 
-    <button data-submit-target="submit" data-stream="<%= @stream %>"
-      class="flex mx-auto bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border-2 rounded-xl my-4 disabled:opacity-50 disabled:cursor-not-allowed">
-      Deploy Changes
-    </button>
-  <% else %>
-    <!-- New CGI-based configuration update with progress bar -->
-    <h3 class="text-xl font-bold mt-6 text-center">Configuration Update</h3>
-    <p class="text-sm text-gray-600 mb-2 text-center">Fast update with real-time progress (no deployment needed)</p>
+    <div class="flex flex-col md:flex-row gap-4 justify-center items-center my-4">
+      <!-- Fast configuration update (always available) -->
+      <div class="flex flex-col items-center">
+        <button type="button"
+                data-action="click->config-update#triggerUpdate"
+                class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 border-2 rounded-xl">
+          Update Configuration
+        </button>
+        <p class="text-xs text-gray-500 mt-1">Fast (~30 seconds)</p>
+      </div>
 
-    <button type="button"
-            data-action="click->config-update#triggerUpdate"
-            class="flex mx-auto bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 border-2 rounded-xl my-4">
-      Update Configuration
-    </button>
+      <!-- Full deployment (always available if changes exist) -->
+      <div class="flex flex-col items-center">
+        <button data-submit-target="submit" data-stream="<%= @stream %>"
+          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">
+          Full Deployment
+        </button>
+        <p class="text-xs text-gray-500 mt-1">Complete (~2-3 minutes)</p>
+      </div>
+    </div>
 
-    <!-- Progress indicator (hidden initially) -->
+    <!-- Progress indicator for configuration update (hidden initially) -->
     <div data-config-update-target="progress" class="hidden my-8">
       <div class="mb-2">
         <div class="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
@@ -160,7 +170,7 @@
         Starting configuration update...
       </p>
     </div>
-  <% end %>
+  </div>
 <% end %>
 
 <div class="hidden p-4 bg-black rounded-xl">
