@@ -64,8 +64,13 @@ export default class extends Controller {
   async submitForm(form) {
     try {
       const formData = new FormData(form)
+
+      // Rails uses a hidden _method field for PATCH/PUT/DELETE
+      // Extract the actual method from the form data
+      const method = formData.get('_method') || form.method || 'POST'
+
       const response = await fetch(form.action, {
-        method: form.method,
+        method: method.toUpperCase(),
         body: formData,
         headers: {
           "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
