@@ -49,6 +49,7 @@ end
 # Load dependencies
 require_relative '../lib/region_configuration'
 require_relative '../lib/prerender_configuration'
+require_relative '../lib/showcases_loader'
 
 # Load Configurator
 require_relative '../app/controllers/concerns/configurator'
