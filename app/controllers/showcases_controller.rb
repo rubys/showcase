@@ -66,31 +66,23 @@ class ShowcasesController < ApplicationController
     if ENV['FLY_REGION']
       # Build the return URL for the studios page
       return_url = url_for(controller: 'event', action: 'showcases', only_path: false).sub('/showcase/events/', '/studios/') + params[:location_key]
-      
+
       # Build the rubix URL preserving the current path and query parameters
       rubix_url = "https://rubix.intertwingly.net#{request.path}"
-      
+
       # Add query parameters including return_to and submitted
       query_params = request.query_parameters.merge(return_to: return_url, submitted: true)
       rubix_url += "?#{query_params.to_query}" unless query_params.empty?
-      
+
       redirect_to rubix_url, allow_other_host: true
       return
     end
-    
+
     @showcase = Showcase.new
     @showcase.location_id = @location.id
-    # Don't set default name/key - let the form handle it via JavaScript
-    # unless Showcase.where(location_id: @location.id, year: Time.now.year).exists?
-    #   @showcase.name = 'Showcase'
-    #   @showcase.key = 'showcase'
-    # end
-    
+
     @locations = [[@location.name, @location.id]]
     @location_key = params[:location_key]
-    
-    # Set return_to URL from params or default to studios page
-    @return_to = params[:return_to] || "/showcase/studios/#{params[:location_key]}"
   end
 
   # POST /showcases or /showcases.json
@@ -131,6 +123,22 @@ class ShowcasesController < ApplicationController
           @location_key = @showcase.location&.key
           @location = @showcase.location
           @show_progress = true
+
+          # Redirect to the new showcase page after progress completes
+          # Better UX than studio list (which is prerendered and won't show new event yet)
+          # URL pattern depends on whether this is the only event this year
+          events_this_year = Showcase.where(
+            location_id: @showcase.location_id,
+            year: @showcase.year
+          ).count
+
+          @return_to = if events_this_year == 1
+            # Single event: /showcase/:year/:location_key
+            "/showcase/#{@showcase.year}/#{@location_key}"
+          else
+            # Multiple events: /showcase/:year/:location_key/:event_key
+            "/showcase/#{@showcase.year}/#{@location_key}/#{@showcase.key}"
+          end
 
           # Render new_request view which now has progress bar
           format.html { render :new_request, status: :ok }
