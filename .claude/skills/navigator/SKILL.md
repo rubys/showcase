@@ -287,9 +287,22 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 ## Deployment Workflow
 
-1. **Work in Navigator submodule**:
+1. **Rebase submodule on main before making changes**:
 ```bash
 cd navigator
+
+# Fetch latest from remote
+git fetch origin
+
+# Rebase on main (creates a clean linear history)
+git rebase origin/main
+
+# If conflicts, resolve them and continue
+# git rebase --continue
+```
+
+2. **Work in Navigator submodule**:
+```bash
 # Make changes, run tests
 go test ./...
 golangci-lint run
@@ -297,13 +310,13 @@ git add -A
 git commit -m "Fix: health check parsing"
 ```
 
-2. **Test in showcase context**:
+3. **Test in showcase context**:
 ```bash
 cd ..  # Back to showcase root
 # Test Navigator fix with showcase deployment
 ```
 
-3. **Push to both repos**:
+4. **Push to both repos**:
 ```bash
 # Push Navigator changes
 cd navigator
@@ -315,6 +328,8 @@ git add navigator
 git commit -m "Update navigator: fix health check parsing"
 git push
 ```
+
+**Note**: If submodule is in detached HEAD state (common after `git submodule update`), the rebase step ensures you're building on the latest main branch before making changes.
 
 ## Quick Reference Commands
 
