@@ -3,17 +3,33 @@
 # This runs once as a Navigator ready hook during container startup.
 # It performs all initialization tasks and generates the full navigator configuration.
 
-require 'bundler/setup'
-require 'fileutils'
-require_relative '../lib/htpasswd_updater'
+# Wrap entire script in error handler to show failures
+begin
+  require 'bundler/setup'
+  require 'fileutils'
+  require_relative '../lib/htpasswd_updater'
 
-# Check for required environment variables
-required_env = ["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_ENDPOINT_URL_S3"]
-missing_env = required_env.select { |var| ENV[var].nil? || ENV[var].empty? }
-if !missing_env.empty?
-  puts "Error: Missing required environment variables:"
-  missing_env.each { |var| puts "  - #{var}" }
-  exit 1
+# Environment detection
+def fly_io?
+  ENV['FLY_APP_NAME']
+end
+
+def kamal?
+  ENV['KAMAL_CONTAINER_NAME'] && !fly_io?
+end
+
+# Check for required environment variables (Fly.io only)
+if fly_io?
+  require 'aws-sdk-s3'
+
+  required_env = ["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_ENDPOINT_URL_S3"]
+  missing_env = required_env.select { |var| ENV[var].nil? || ENV[var].empty? }
+
+  if !missing_env.empty?
+    puts "Error: Missing required environment variables:"
+    missing_env.each { |var| puts "  - #{var}" }
+    exit 1
+  end
 end
 
 # Setup directories
@@ -21,7 +37,8 @@ git_path = File.realpath(File.expand_path('..', __dir__))
 ENV["RAILS_DB_VOLUME"] = "/data/db" if Dir.exist? "/data/db"
 dbpath = ENV.fetch('RAILS_DB_VOLUME') { "#{git_path}/db" }
 FileUtils.mkdir_p dbpath
-system "chown rails:rails #{dbpath}"
+# Ensure proper ownership for both Fly.io and Kamal deployments
+system "chown rails:rails #{dbpath}" if fly_io? || kamal?
 
 # Create and fix log directory ownership if needed
 if ENV['RAILS_LOG_VOLUME']
@@ -39,11 +56,13 @@ end
 # Run independent operations in parallel for faster startup
 threads = []
 
-# Thread 1: S3 sync (slowest operation, ~3s)
-threads << Thread.new do
-  puts "Syncing databases from S3..."
-  system "ruby #{git_path}/script/sync_databases_s3.rb --index-only --safe --quiet"
-  puts "  ✓ S3 sync complete"
+# Thread 1: S3 sync (slowest operation, ~3s) - Fly.io only
+if fly_io?
+  threads << Thread.new do
+    puts "Syncing databases from S3..."
+    system "ruby #{git_path}/script/sync_databases_s3.rb --index-only --safe --quiet"
+    puts "  ✓ S3 sync complete"
+  end
 end
 
 # Thread 2: Update htpasswd file (fast, but independent)
@@ -93,13 +112,29 @@ ENV['CABLE_PORT'] = '28080'
 
 # Generate full navigator configuration (using fast standalone script)
 puts "Generating navigator configuration..."
-system "ruby #{git_path}/script/generate_navigator_config.rb"
+output = `ruby #{git_path}/script/generate_navigator_config.rb 2>&1`
+result = $?.success?
 
-# Setup demo directories
-FileUtils.mkdir_p "/demo/db"
-FileUtils.mkdir_p "/demo/storage/demo"
-system "chown rails:rails /demo /demo/db /demo/storage/demo"
+puts output unless output.strip.empty?
+
+unless result
+  STDERR.puts "ERROR: Failed to generate navigator configuration (exit status: #{$?.exitstatus})"
+  STDERR.puts "Output: #{output}" unless output.strip.empty?
+  STDERR.puts "Config file may not have been created"
+  exit 1
+end
 
 puts "Initialization complete - navigator will auto-reload config/navigator.yml"
 puts "Note: Prerender will run after config reload via ready hook"
 exit 0
+
+rescue => e
+  STDERR.puts "\n" + "="*70
+  STDERR.puts "FATAL ERROR in nav_initialization.rb:"
+  STDERR.puts "="*70
+  STDERR.puts "#{e.class}: #{e.message}"
+  STDERR.puts "\nBacktrace:"
+  STDERR.puts e.backtrace.join("\n")
+  STDERR.puts "="*70
+  exit 1
+end

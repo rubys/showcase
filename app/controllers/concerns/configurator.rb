@@ -166,6 +166,7 @@ module Configurator
       "#{root}/update_config",  # CGI endpoint for configuration updates
       '/favicon.ico',
       '/robots.txt',
+      '/up',  # Health check endpoint for Kamal
       '*.css',
       '*.gif',
       '*.ico',
@@ -467,8 +468,8 @@ module Configurator
       'start_port' => 4000
     }
 
-    # Add memory limits and user/group isolation for Fly.io (Linux) deployments
-    if ENV['FLY_REGION']
+    # Add memory limits and user/group isolation for Fly.io and Kamal (Linux) deployments
+    if ENV['FLY_REGION'] || ENV['KAMAL_CONTAINER_NAME']
       config['default_memory_limit'] = '768M'
       config['user'] = 'rails'
       config['group'] = 'rails'

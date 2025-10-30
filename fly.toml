@@ -5,7 +5,7 @@ app = "smooth"
 primary_region = "iad"
 
 [build]
-  dockerfile = "Dockerfile.nav"
+  dockerfile = "Dockerfile"
   [build.args]
     RAILS_PROXY_HOST = "smooth.fly.dev"
 
