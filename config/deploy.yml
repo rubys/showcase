@@ -7,7 +7,11 @@ image: samruby/showcase
 # Deploy to these servers.
 servers:
   web:
-    - 65.109.81.136
+    hosts:
+      - 65.109.81.136
+    options:
+      privileged: true        # Required for cgroup access
+      cgroupns: host          # Use host cgroup namespace
   # job:
   #   hosts:
   #     - 192.168.0.1

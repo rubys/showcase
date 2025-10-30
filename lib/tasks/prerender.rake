@@ -5,7 +5,16 @@ namespace :prerender do
     # configure the Rails environment
     ENV['RAILS_ENV'] = 'production'
     ENV['RAILS_APP_DB'] = 'index'
-    ENV['RAILS_APP_SCOPE'] = '/showcase'
+
+    # Set RAILS_APP_SCOPE based on deployment target
+    # Kamal deployments (hetzner.intertwingly.net) don't use scope
+    # Fly.io deployments use /showcase scope
+    if ENV['RAILS_PROXY_HOST'] == 'hetzner.intertwingly.net'
+      ENV['RAILS_APP_SCOPE'] = ''
+    else
+      ENV['RAILS_APP_SCOPE'] = '/showcase'
+    end
+
     ENV['RAILS_PROXY_HOST'] ||= `hostname`
     ENV.delete('DATABASE_URL')
     Rake::Task['environment'].invoke
@@ -49,7 +58,13 @@ end
 # Description: Prerender all the markdown files in the app/views/docs directory
 task :prerender => "prerender:env" do
   public = File.join(Rails.application.root, 'public')
-  Rails.application.config.assets.prefix = '/showcase/assets/'
+
+  # Set assets prefix based on RAILS_APP_SCOPE
+  if ENV['RAILS_APP_SCOPE'].present?
+    Rails.application.config.assets.prefix = "#{ENV['RAILS_APP_SCOPE']}/assets/"
+  else
+    Rails.application.config.assets.prefix = '/assets/'
+  end
 
   # Load showcases and get prerenderable paths using shared module
   require_relative '../prerender_configuration'
@@ -103,8 +118,15 @@ task :prerender => "prerender:env" do
 
   # prerender the files
   files.each do |path, html|
+    # Build PATH_INFO with scope prefix if set
+    path_info = if ENV['RAILS_APP_SCOPE'].present?
+      ENV['RAILS_APP_SCOPE'] + '/' + path
+    else
+      '/' + path
+    end
+
     env = {
-      "PATH_INFO" => '/showcase/' + path,
+      "PATH_INFO" => path_info,
       "REQUEST_METHOD" =>"GET"
     }
 
