@@ -62,20 +62,36 @@ Visit http://localhost:9999/showcase/ to see the list of events.
 # Implementation overview
 
 This is pretty much a standard
-[CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) Rails 8
+[CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) Rails 8.0.2
 application using import maps for JavaScript and
-[TailwindCSS](https://tailwindcss.com/) for CSS. 
+[TailwindCSS](https://tailwindcss.com/) for CSS. The application uses Rails 8.0
+configuration defaults and has been fully migrated to be compatible with SQL
+reserved word quoting requirements. 
 
 Models are split into two categories:
 
-**Base models** support ballroom dance event management: ages (with costs), 
-billables (packages and options), categories (with extensions), dances, entries, 
-events, feedbacks, formations, heats, judges, levels, multi-dances, package 
-includes, people (students, instructors, guests, etc.), person options, 
-recordings, scores, solos, songs, studios (with studio pairs), and tables.
+**Base models** support ballroom dance event management:
+- Core competition: Event (singleton config), Person (all participants, STI disabled),
+  Studio (with pairs), Dance (with scrutineering), Category (with extensions),
+  Age, Level
+- Heat & performance: Heat (numbered sessions), Entry (connects lead/follow/instructor),
+  Solo (routines with optional formations), Formation (individual participants),
+  Multi, MultiLevel
+- **Heats are numbered** - all Heat records with the same number are on the floor
+  simultaneously. Heats with `number >= 1` are scheduled; `number < 0` indicates
+  scratched (withdrawn) heats that can be restored or permanently deleted
+- **Split dances** - when a dance appears in multiple categories, there are multiple
+  Dance records with the same name: one with positive order (canonical), others with
+  `order < 0` that sync properties from the canonical dance
+- Judging & scoring: Judge, Score (live updates via ActionCable), Recording
+- Financial: Billable (packages/options, STI disabled), PackageInclude, PersonOption,
+  Payment
+- Seating: Table (grid positioning), StudioPair
+- Music & questionnaires: Song, Question, Answer, Feedback
 
-**Admin models** support system administration and multi-tenancy: locales, 
-locations, regions, showcases, and users.
+**Admin models** support system administration and multi-tenancy: Locale (service class),
+Location, Showcase, User, Region, ApplicationRecord (base class with Tigris storage
+integration).
 
 The heat scheduler in
 [app/controllers/concerns/heat_scheduler.rb](./app/controllers/concerns/heat_scheduler.rb)
@@ -85,10 +101,21 @@ appends manually-ordered solos.
 
 The table assignment system in
 [app/controllers/concerns/table_assigner.rb](./app/controllers/concerns/table_assigner.rb)
-offers two algorithms: **Regular Assignment** prioritizes keeping studios 
-together, while **Pack Assignment** maximizes table utilization. Both support 
-locked tables for special requirements and achieve near 100% success rate 
-using intelligent grid placement for complex seating scenarios.
+and [app/controllers/tables_controller.rb](./app/controllers/tables_controller.rb)
+offers two algorithms: **Regular Assignment** prioritizes keeping studios
+together, while **Pack Assignment** maximizes table utilization. Both use a
+two-phase algorithm (Phase 1 groups people into tables, Phase 2 places tables
+on grid) and achieve 100% success rate for large studios (>10 people) and studio
+pairs. Key features include:
+- Event Staff isolation (studio_id = 0 never mixed with other studios)
+- Studio Pair Handling (paired studios share tables or are placed adjacent)
+- Optimal table utilization (fits small studios into existing tables first)
+- Global position reservation with priority system (0-3)
+- Contiguous block placement for large studios
+- Smart consolidation to minimize total table count
+- Sequential numbering following physical grid layout (row-major order)
+- Drag-and-drop grid interface for manual arrangement
+- Handles option tables via person_options join table
 
 The initial configuration had a 8 year old i3
 Linux box running Apache httpd handing SSL and reverse proxying the application

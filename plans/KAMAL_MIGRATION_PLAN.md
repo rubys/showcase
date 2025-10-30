@@ -18,6 +18,34 @@
 
 ---
 
+## Docker Cgroup Requirements ⚠️ CRITICAL
+
+**For Navigator's per-tenant memory limits to work in Kamal containers:**
+
+Navigator uses Linux cgroups to enforce memory limits for each tenant. Since Kamal runs Navigator in a Docker container, the container needs special access to the host's cgroup filesystem.
+
+**Required Docker options in `config/deploy.yml`:**
+```yaml
+servers:
+  web:
+    options:
+      privileged: true        # Grants CAP_SYS_ADMIN for cgroup creation
+      cgroupns: host          # Use host cgroup namespace instead of private
+```
+
+**Why these are needed:**
+- `privileged: true` - Allows Navigator (running as root in container) to create and manage cgroups under `/sys/fs/cgroup/navigator/`
+- `cgroupns: host` - Container sees the host's cgroup filesystem directly, enabling cgroup creation and process assignment
+
+**Without these settings:**
+- Memory limits will be silently ignored
+- All tenants share container's memory without isolation
+- No protection against memory-hungry tenants impacting others
+
+**Current status on showcase.party:** ❌ Missing (currently `Privileged: false`, `CgroupnsMode: private`)
+
+---
+
 ## Phase 1: Get Kamal Working with Navigator
 
 ### Step 1: Update `script/nav_startup.rb`
@@ -152,6 +180,19 @@ CMD ["/rails/script/nav_startup.rb"]
 
 ### Step 5: Update `config/deploy.yml`
 
+**Add Docker options for cgroup support:**
+
+Add this section after the `servers:` section:
+
+```yaml
+servers:
+  web:
+    - 65.109.81.136
+    options:
+      privileged: true        # Required for cgroup access
+      cgroupns: host          # Use host cgroup namespace
+```
+
 **Remove AWS credentials, add KAMAL_CONTAINER_NAME if needed:**
 
 ```yaml
@@ -174,12 +215,18 @@ kamal deploy
 
 **Verify:**
 1. Deployment succeeds
-2. Tenant processes run as `rails` user
-3. Files are accessible (UID 1000 alignment working)
-4. Navigator is serving requests
+2. Container runs with privileged mode and host cgroupns
+3. Tenant processes run as `rails` user
+4. Files are accessible (UID 1000 alignment working)
+5. Navigator is serving requests
+6. Cgroups are created and functional
 
 **Troubleshooting commands:**
 ```bash
+# Check container cgroup settings (run on host)
+ssh showcase.party "docker inspect showcase-web-\$(docker ps --filter name=showcase-web --format '{{.Names}}' | head -1 | cut -d- -f3-) | grep -i 'privileged\|cgroupns' -A1"
+# Should show: "Privileged": true, "CgroupnsMode": "host"
+
 # Check rails user UID
 kamal app exec "id rails"
 # Should show: uid=1000(rails) gid=1000(rails)
@@ -191,6 +238,10 @@ kamal app exec "ls -ln /data/db"
 # Check navigator config
 kamal app exec "cat /rails/config/navigator.yml | grep -A3 pools"
 # Should show user: rails, group: rails
+
+# Check cgroup creation (after accessing a tenant)
+kamal app exec "ls -la /sys/fs/cgroup/navigator/"
+# Should show tenant cgroups
 
 # Check logs
 kamal app logs
@@ -287,7 +338,7 @@ git commit -m "Converge Kamal and Fly.io to unified Dockerfile with navigator"
 - ✏️ `script/nav_startup.rb` - Add Kamal support, remove legacy navigator
 - ✏️ `app/controllers/concerns/configurator.rb` - Enable rails user for Kamal
 - ✏️ `Dockerfile` - Replace with simplified Dockerfile.nav
-- ✏️ `config/deploy.yml` - Remove AWS credentials
+- ✏️ `config/deploy.yml` - Remove AWS credentials, add cgroup support (privileged + cgroupns: host)
 - ✏️ `fly.toml` - Point to unified Dockerfile
 
 ### Files Deleted
@@ -300,6 +351,7 @@ git commit -m "Converge Kamal and Fly.io to unified Dockerfile with navigator"
 | Feature | Fly.io | Kamal | Notes |
 |---------|--------|-------|-------|
 | Tenant user/group | ✅ rails:rails | ✅ rails:rails | Updated in configurator.rb |
+| Cgroup memory limits | ✅ | ✅ | Requires privileged + cgroupns: host on Kamal |
 | AWS S3 sync | ✅ | ❌ | Fly.io only |
 | `chown` commands | ✅ | ❌ | Kamal: UID 1000 alignment makes unnecessary |
 | Demo setup (runtime) | ✅ | ❌ | Phase 1-2 |
@@ -316,6 +368,7 @@ git commit -m "Converge Kamal and Fly.io to unified Dockerfile with navigator"
 ✅ Both platforms use the same navigator (refactored)
 ✅ Clean conditional logic (`if fly_io?` vs `if kamal?`)
 ✅ Proper user isolation (tenant processes run as `rails` user)
+✅ Per-tenant memory limits via cgroups (both platforms)
 ✅ UID alignment on Kamal (1000=1000) avoids permission issues
 ✅ Demo setup at build time (faster startup, simpler runtime)
 ✅ Easier maintenance going forward
