@@ -5,7 +5,7 @@
      data-config-update-user-id-value="<%= @show_progress ? user&.id : '' %>"
      data-config-update-database-value="<%= @show_progress ? ENV['RAILS_APP_DB'] : '' %>"
      data-config-update-redirect-url-value="<%= @show_progress ? @return_to : '' %>">
-  <h1 class="font-bold text-4xl"><%= @show_progress ? 'Creating Showcase' : 'Request new showcase' %></h1>
+  <h1 class="font-bold text-4xl"><%= @show_progress ? 'Creating Showcase' : 'Create a Showcase Event' %></h1>
 
   <% if @show_progress %>
     <div class="content my-8">
@@ -17,7 +17,7 @@
         <li><strong>Year:</strong> <%= @showcase.year %></li>
       </ul>
 
-      <p class="text-gray-600">This will take approximately 30 seconds...</p>
+      <p class="text-gray-600">This will take approximately 2 minutes...</p>
     </div>
   <% else %>
     <div data-controller="info-box">
@@ -94,7 +94,7 @@
 
   <% if !@show_progress %>
     <div class="mx-auto flex">
-      <input type="submit" class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" form="showcase-form" value="Request Showcase">
+      <input type="submit" class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" form="showcase-form" value="Create Event">
       <%= link_to "Back to studio", "/showcase/studios/#{@location_key}", class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
     </div>
   <% end %>
