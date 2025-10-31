@@ -3,22 +3,26 @@ require 'open3'
 class ConfigUpdateJob < ApplicationJob
   queue_as :default
 
-  def perform(user_id = nil)
-    Rails.logger.info "ConfigUpdateJob: Starting configuration update"
+  def perform(user_id = nil, target: 'fly')
+    Rails.logger.info "ConfigUpdateJob: Starting configuration update (target: #{target})"
     database = ENV['RAILS_APP_DB']
 
     # This job runs script/config-update which:
-    # 1. Syncs index.sqlite3 to S3
-    # 2. Gets list of all active Fly machines
-    # 3. POSTs to /showcase/update_config on each machine
-    # 4. Each machine updates htpasswd, maps, navigator config, and triggers prerender
+    # 1. Syncs index.sqlite3 to S3 (or skips if Kamal target without S3 credentials)
+    # 2. Gets list of deployment targets (Fly machines or Kamal server)
+    # 3. POSTs to update_config endpoint on each target
+    # 4. Each target updates htpasswd, maps, navigator config, and triggers prerender
 
     broadcast(user_id, database, 'processing', 0, 'Starting configuration update...')
 
     script_path = Rails.root.join('script/config-update').to_s
 
+    # Build command with target flag
+    cmd_args = [RbConfig.ruby, script_path]
+    cmd_args += ['--target', target.to_s] if target != 'fly'
+
     # Stream the output and parse it for progress
-    Open3.popen3(RbConfig.ruby, script_path) do |stdin, stdout, stderr, wait_thr|
+    Open3.popen3(*cmd_args) do |stdin, stdout, stderr, wait_thr|
       stdin.close
 
       machine_count = 0

@@ -6,23 +6,30 @@ require 'json'
 require 'open3'
 require 'optparse'
 
+# Disable output buffering for real-time progress updates
+$stdout.sync = true
+
 # Parse command line options
-options = { verbose: false, dry_run: false }
+options = { verbose: false, dry_run: false, target: 'fly' }
 OptionParser.new do |opts|
   opts.banner = "Usage: #{$0} [options]"
   opts.separator ""
-  opts.separator "Updates the index database and triggers updates on all Fly machines"
+  opts.separator "Updates the index database and triggers updates on deployment servers"
   opts.separator ""
   opts.separator "Options:"
-  
+
   opts.on("-v", "--verbose", "Verbose output") do
     options[:verbose] = true
   end
-  
+
   opts.on("--dry-run", "Show what would be done without making changes") do
     options[:dry_run] = true
   end
-  
+
+  opts.on("-t", "--target TARGET", [:fly, :kamal], "Target platform (fly, kamal). Default: fly") do |t|
+    options[:target] = t
+  end
+
   opts.on("-h", "--help", "Show this help message") do
     puts opts
     exit 0
@@ -55,93 +62,112 @@ end
 
 puts "\n"
 
-# Step 2: Get list of Fly machines
-puts "Step 2: Getting list of Fly machines..."
+# Step 2: Get list of deployment targets
+if options[:target] == :kamal
+  puts "Step 2: Target platform - Kamal"
+else
+  puts "Step 2: Getting list of Fly machines..."
+end
 puts "=" * 50
 
-# Check if flyctl CLI is available
-# First check for ~/bin/flyctl, then check system PATH
-flyctl_cmd = nil
-home_flyctl = File.expand_path('~/bin/flyctl')
-
-if File.exist?(home_flyctl) && File.executable?(home_flyctl)
-  flyctl_cmd = home_flyctl
-  puts "Using flyctl from: #{flyctl_cmd}" if options[:verbose]
+if options[:target] == :kamal
+  # Kamal target: single server
+  machine_ids = ['showcase.party']
+  puts "Will update Kamal server: showcase.party"
+  puts "\n"
 else
-  flyctl_check, _, _ = Open3.capture3('which', 'flyctl')
-  if !flyctl_check.empty?
-    flyctl_cmd = 'flyctl'
-    puts "Using system flyctl" if options[:verbose]
+  # Fly.io target: discover active machines
+  # Check if flyctl CLI is available
+  # First check for ~/bin/flyctl, then check system PATH
+  flyctl_cmd = nil
+  home_flyctl = File.expand_path('~/bin/flyctl')
+
+  if File.exist?(home_flyctl) && File.executable?(home_flyctl)
+    flyctl_cmd = home_flyctl
+    puts "Using flyctl from: #{flyctl_cmd}" if options[:verbose]
+  else
+    flyctl_check, _, _ = Open3.capture3('which', 'flyctl')
+    if !flyctl_check.empty?
+      flyctl_cmd = 'flyctl'
+      puts "Using system flyctl" if options[:verbose]
+    end
   end
-end
 
-if flyctl_cmd.nil?
-  puts "Error: 'flyctl' CLI not found. Please install the Fly CLI first."
-  puts "Visit: https://fly.io/docs/flyctl/install/"
-  puts "Or place flyctl in ~/bin/flyctl"
-  exit 1
-end
-
-machines_output, machines_stderr, machines_status = Open3.capture3(flyctl_cmd, 'machines', 'list', '--json')
-
-unless machines_status.success?
-  puts "Error: Failed to get machines list"
-  puts machines_stderr unless machines_stderr.empty?
-  exit 1
-end
-
-# Parse JSON output to get machine IDs and states
-begin
-  machines = JSON.parse(machines_output)
-rescue JSON::ParserError => e
-  puts "Error: Failed to parse machines JSON: #{e.message}"
-  exit 1
-end
-
-if machines.empty?
-  puts "No machines found"
-  exit 0
-end
-
-# Filter out stopped and suspended machines
-# Only include machines with state: "started" or "created"
-active_machines = machines.select { |m| ['started', 'created'].include?(m['state']) }
-skipped_machines = machines.reject { |m| ['started', 'created'].include?(m['state']) }
-
-machine_ids = active_machines.map { |m| m['id'] }
-
-puts "Found #{machines.length} total machines"
-if skipped_machines.any?
-  puts "Skipping #{skipped_machines.length} stopped/suspended machines:"
-  skipped_machines.each do |m|
-    puts "  - #{m['id']} (#{m['state']})"
+  if flyctl_cmd.nil?
+    puts "Error: 'flyctl' CLI not found. Please install the Fly CLI first."
+    puts "Visit: https://fly.io/docs/flyctl/install/"
+    puts "Or place flyctl in ~/bin/flyctl"
+    exit 1
   end
-end
-puts "Will update #{machine_ids.length} active machines: #{machine_ids.join(', ')}" if machine_ids.any?
-puts "\n"
 
-if machine_ids.empty?
-  puts "No active machines to update"
-  exit 0
+  machines_output, machines_stderr, machines_status = Open3.capture3(flyctl_cmd, 'machines', 'list', '--json')
+
+  unless machines_status.success?
+    puts "Error: Failed to get machines list"
+    puts machines_stderr unless machines_stderr.empty?
+    exit 1
+  end
+
+  # Parse JSON output to get machine IDs and states
+  begin
+    machines = JSON.parse(machines_output)
+  rescue JSON::ParserError => e
+    puts "Error: Failed to parse machines JSON: #{e.message}"
+    exit 1
+  end
+
+  if machines.empty?
+    puts "No machines found"
+    exit 0
+  end
+
+  # Filter out stopped and suspended machines
+  # Only include machines with state: "started" or "created"
+  active_machines = machines.select { |m| ['started', 'created'].include?(m['state']) }
+  skipped_machines = machines.reject { |m| ['started', 'created'].include?(m['state']) }
+
+  machine_ids = active_machines.map { |m| m['id'] }
+
+  puts "Found #{machines.length} total machines"
+  if skipped_machines.any?
+    puts "Skipping #{skipped_machines.length} stopped/suspended machines:"
+    skipped_machines.each do |m|
+      puts "  - #{m['id']} (#{m['state']})"
+    end
+  end
+  puts "Will update #{machine_ids.length} active machines: #{machine_ids.join(', ')}" if machine_ids.any?
+  puts "\n"
+
+  if machine_ids.empty?
+    puts "No active machines to update"
+    exit 0
+  end
 end
 
 # Step 3: Call update_config CGI endpoint on each machine
 puts "Step 3: Triggering configuration update on each machine..."
 puts "=" * 50
 
-uri = URI.parse('https://smooth.fly.dev/showcase/update_config')
+# Set URI based on target platform
+uri = if options[:target] == :kamal
+  URI.parse('https://showcase.party/update_config')
+else
+  URI.parse('https://smooth.fly.dev/showcase/update_config')
+end
+
 success_count = 0
 failure_count = 0
 
 # Helper method to attempt updating a machine
-def attempt_update(uri, machine_id, verbose)
+def attempt_update(uri, machine_id, verbose, target)
   http = Net::HTTP.new(uri.host, uri.port)
   http.use_ssl = true
   http.read_timeout = 30
   http.open_timeout = 10
 
   request = Net::HTTP::Post.new(uri.path)
-  request['Fly-Force-Instance-Id'] = machine_id
+  # Only set Fly-Force-Instance-Id header for Fly.io targets
+  request['Fly-Force-Instance-Id'] = machine_id if target == :fly
 
   response = http.request(request)
 
@@ -176,7 +202,7 @@ while pending_machines.any? && round <= max_retries
       success_count += 1
     else
       print "  #{machine_id}... "
-      result = attempt_update(uri, machine_id, options[:verbose])
+      result = attempt_update(uri, machine_id, options[:verbose], options[:target])
 
       if result[:success]
         puts "✓ Success"

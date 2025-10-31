@@ -115,8 +115,10 @@ class ShowcasesController < ApplicationController
           # For regular users: Show progress bar with real-time updates
           user = User.find_by(userid: @authuser)
 
-          if user && Rails.env.production?
-            ConfigUpdateJob.perform_later(user.id)
+          if user
+            # Determine target based on environment
+            target = Rails.env.development? ? 'kamal' : 'fly'
+            ConfigUpdateJob.perform_later(user.id, target: target) if Rails.env.production? || Rails.env.development?
           end
 
           # Set variables for progress view
@@ -132,12 +134,21 @@ class ShowcasesController < ApplicationController
             year: @showcase.year
           ).count
 
+          # Determine base URL based on environment
+          # Development: redirect to showcase.party (Kamal server)
+          # Production: redirect within same app (Fly.io)
+          base_url = if Rails.env.development?
+            "https://showcase.party"
+          else
+            "/showcase"  # Relative URL for production (stays on smooth.fly.dev)
+          end
+
           @return_to = if events_this_year == 1
-            # Single event: /showcase/:year/:location_key
-            "/showcase/#{@showcase.year}/#{@location_key}"
+            # Single event: /showcase/:year/:location_key (Fly) or /:year/:location_key (Kamal)
+            "#{base_url}/#{@showcase.year}/#{@location_key}"
           else
             # Multiple events: /showcase/:year/:location_key/:event_key
-            "/showcase/#{@showcase.year}/#{@location_key}/#{@showcase.key}"
+            "#{base_url}/#{@showcase.year}/#{@location_key}/#{@showcase.key}"
           end
 
           # Render new_request view which now has progress bar
