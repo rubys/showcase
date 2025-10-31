@@ -32,7 +32,7 @@ end
 required_env = ["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_ENDPOINT_URL_S3"]
 missing_env = required_env.select { |var| ENV[var].nil? || ENV[var].empty? }
 s3_client = nil
-if missing_env.empty? && ENV["RAILS_ENV"] == "production" && ENV['FLY_APP_NAME']
+if missing_env.empty?
   # Initialize S3 client
   s3_client = Aws::S3::Client.new(
     region: ENV['AWS_REGION'] || 'auto',

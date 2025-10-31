@@ -101,14 +101,13 @@ if File.exist?(rclone_config_path)
   end
 end
 
-# Check for required environment variables
+# Check for S3 environment variables
 required_env = ["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_ENDPOINT_URL_S3"]
 missing_env = required_env.select { |var| ENV[var].nil? || ENV[var].empty? }
 
 if !missing_env.empty?
-  puts "Error: Missing required environment variables:"
-  missing_env.each { |var| puts "  - #{var}" }
-  exit 1
+  puts "S3 environment variables not configured, skipping S3 sync" unless options[:quiet]
+  exit 0
 end
 
 # Load configurations
