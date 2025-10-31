@@ -172,7 +172,11 @@ def attempt_update(uri, machine_id, verbose, target)
   response = http.request(request)
 
   if response.code == '200'
-    puts "  Response: #{response.body}" if verbose && response.body && !response.body.empty?
+    # Always print response body to see CGI script output/errors
+    if response.body && !response.body.empty?
+      puts "  Response body:"
+      puts response.body
+    end
     return { success: true }
   else
     return { success: false, error: "HTTP #{response.code}: #{response.body}" }
