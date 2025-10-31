@@ -623,7 +623,7 @@ module Configurator
     end
 
     # Write out a list of database files for bin/prerender
-    tenant_lists = File.open('tmp/tenants.list', 'w')
+    tenant_lists = File.open(Rails.root.join('tmp/tenants.list'), 'w')
     tenants.each do |t|
       db = t.dig('var', 'database') || t.dig('env', 'RAILS_APP_DB')
       next unless db
