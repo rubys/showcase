@@ -123,12 +123,6 @@ module LegacyConfigurator
       'pattern' => "^#{root}/events/console$",
       'description' => 'Event console access'
     }
-    
-    # Add index update endpoint
-    patterns << {
-      'pattern' => "^#{root}/index_update$",
-      'description' => 'Index database update endpoint'
-    }
 
     # Add cable WebSocket endpoints (matches any path ending with /cable)
     patterns << {

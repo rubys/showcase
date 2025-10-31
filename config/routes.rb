@@ -54,7 +54,6 @@ Rails.application.routes.draw do
       get "/inventory/tables", to: 'admin#inventory_tables', as: 'inventory_tables'
       get "/inventory/functions", to: 'admin#inventory_functions', as: 'inventory_functions'
       match "/upload" => "event#upload", via: [:get, :post]
-      post "/index_update" => "event#index_update"
       get "/index_date" => "event#index_date"
 
       get 'admin/', to: "admin#index"

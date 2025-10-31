@@ -161,7 +161,6 @@ module Configurator
       "#{root}/password/",
       "#{root}/regions/",
       "#{root}/studios/",
-      "#{root}/index_update",
       "#{root}/index_date",
       "#{root}/update_config",  # CGI endpoint for configuration updates
       '/favicon.ico',
@@ -280,7 +279,7 @@ module Configurator
   def build_cgi_scripts_config(root)
     scripts = []
 
-    # Add configuration update CGI script (publicly accessible like index_update)
+    # Add configuration update CGI script (publicly accessible)
     # Runs as root to allow rsync and config reload operations
     scripts << {
       'path' => "#{root}/update_config",

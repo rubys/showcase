@@ -277,6 +277,42 @@ All application code now uses `ShowcasesLoader.load` instead of directly reading
 
 **Status:** ⏳ Not started (blocked by Phases 1, 2, and Kamal migration)
 
+### Phase 4: Admin Server Map Generation and S3 Upload
+
+**Goal:** Enable map.yml updates without Docker rebuilds
+
+**Problem:**
+- map.yml needs makemaps.js (Node.js) to add projection coordinates
+- Node.js is not available in production containers (to keep them lightweight)
+- Currently, map updates require Docker rebuild on admin server
+
+**Solution:**
+Admin server generates map.yml with projections and uploads to S3, allowing production containers to fetch without needing Node.js
+
+**Steps:**
+
+1. **Create map generation script** (script/generate_map.rb)
+   - Read locations from index.sqlite3
+   - Call makemaps.js (Node.js) to add projection coordinates
+   - Generate map.yml with projections
+   - Upload to S3 at same path as index.sqlite3
+
+2. **Update production startup**
+   - Download map.yml from S3 (alongside index.sqlite3)
+   - Fall back to local map.yml if S3 fetch fails
+
+3. **Update admin workflow**
+   - Integrate map generation into "Update Configuration" flow
+   - Automatically generate and upload map.yml when locations change
+
+**Benefits:**
+- Production containers remain lightweight (no Node.js required)
+- Map updates without Docker rebuild
+- Consistent with S3-as-source-of-truth pattern
+- Admin server has all necessary tools (Node.js, Ruby, S3 access)
+
+**Status:** ⏳ Not started
+
 ## Benefits After Migration
 
 1. **No git commits needed** - Admin can create showcases without git changes

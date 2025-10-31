@@ -321,7 +321,6 @@ server {
   if ($request_uri ~ "^<%= ROOT %>/[-\w]+\.\w+$") { set $realm off; }
   if ($request_uri ~ "^<%= ROOT %>/\d+/\w+/([-\w]+/)?public/") { set $realm off; }
   if ($request_uri ~ "^<%= ROOT %>/events/console$") { set $realm off; }
-  if ($request_uri ~ "^<%= ROOT %>/index_update$") { set $realm off; }
   auth_basic $realm;
   auth_basic_user_file <%= @dbpath %>/htpasswd;
 <% else -%>
