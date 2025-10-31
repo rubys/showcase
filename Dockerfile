@@ -134,8 +134,6 @@ ENV DATABASE_URL="sqlite3:///data/production.sqlite3" \
 # - Generates full navigator config
 # - Returns, triggering navigator config reload
 # After reload, ready hook (script/ready.sh) updates prerendered content
-HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=3 \
-  CMD curl -f http://localhost:3000/ || exit 1
 EXPOSE 3000
 VOLUME /data
 CMD [ "navigator", "config/navigator-maintenance.yml" ]

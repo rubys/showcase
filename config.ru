@@ -2,9 +2,12 @@
 
 require_relative "config/environment"
 
-if ENV['FLY_REGION']
+if ENV['DATABASE_URL']
   database = URI.parse(ENV['DATABASE_URL']).path
-  system "ruby bin/prepare.rb #{database}"
+  # Run prepare if database doesn't exist or has zero size
+  if !File.exist?(database) || File.size(database) == 0
+    system "ruby bin/prepare.rb #{database}"
+  end
 end
 
 map ENV.fetch 'RAILS_RELATIVE_URL_ROOT', '/' do
