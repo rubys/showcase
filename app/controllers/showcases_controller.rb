@@ -128,7 +128,9 @@ class ShowcasesController < ApplicationController
 
           # Redirect to the new showcase page after progress completes
           # Better UX than studio list (which is prerendered and won't show new event yet)
-          # URL pattern depends on whether this is the only event this year
+          # URL pattern matches logic from create_db action:
+          # - If key == 'showcase' AND only one event this year: /:year/:location
+          # - Otherwise: /:year/:location/:event_key
           events_this_year = Showcase.where(
             location_id: @showcase.location_id,
             year: @showcase.year
@@ -143,11 +145,12 @@ class ShowcasesController < ApplicationController
             "/showcase"  # Relative URL for production (stays on smooth.fly.dev)
           end
 
-          @return_to = if events_this_year == 1
-            # Single event: /showcase/:year/:location_key (Fly) or /:year/:location_key (Kamal)
+          # Match URL structure from create_db action (lines 42-46)
+          @return_to = if @showcase.key == 'showcase' && events_this_year == 1
+            # Single 'showcase' event: /:year/:location_key
             "#{base_url}/#{@showcase.year}/#{@location_key}"
           else
-            # Multiple events: /showcase/:year/:location_key/:event_key
+            # Multiple events OR non-'showcase' key: /:year/:location_key/:event_key
             "#{base_url}/#{@showcase.year}/#{@location_key}/#{@showcase.key}"
           end
 

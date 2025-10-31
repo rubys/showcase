@@ -153,11 +153,16 @@ class ApplicationController < ActionController::Base
     end
 
     def get_authentication
+      # In development, allow HTTP_X_REMOTE_USER to simulate authentication
+      if Rails.env.development?
+        @authuser = request.headers["HTTP_X_REMOTE_USER"]
+        @authuser ||= ENV["HTTP_X_REMOTE_USER"]
+        return nil
+      end
+
       return nil unless Rails.env.production?
       return nil if ENV['RAILS_APP_OWNER'] == 'Demo'
 
-      # @authuser = request.headers["HTTP_X_REMOTE_USER"]
-      # @authuser ||= ENV["HTTP_X_REMOTE_USER"]
       authenticate_or_request_with_http_basic do |id, password|
         # Trim whitespace from username to handle malformed htpasswd entries
         id = id.strip

@@ -10,7 +10,8 @@ export default class extends Controller {
     this.subscription = null
 
     // Auto-start progress tracking if user ID is set (indicates a progress page after form submission)
-    if (this.hasUserIdValue) {
+    // Check that userId is not just present but also not empty
+    if (this.hasUserIdValue && this.userIdValue) {
       this.startProgressTracking()
     }
   }
