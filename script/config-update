@@ -36,27 +36,59 @@ OptionParser.new do |opts|
   end
 end.parse!
 
-# Step 1: Run sync_databases_s3.rb with --index-only
+# Step 1: Sync index database
 puts "Step 1: Syncing index database..."
 puts "=" * 50
 
-script_path = File.expand_path('sync_databases_s3.rb', __dir__)
+if options[:target] == :kamal
+  # Kamal target: Direct rsync to showcase.party (skip S3 and webhook)
+  git_path = File.realpath(File.expand_path('..', __dir__))
+  dbpath = ENV.fetch('RAILS_DB_VOLUME') { "#{git_path}/db" }
+  index_db = File.join(dbpath, 'index.sqlite3')
 
-if options[:dry_run]
-  puts "Would run: ruby #{script_path} --index-only"
-else
-  # Use RbConfig.ruby to ensure we use the same Ruby version as the parent process
-  ruby_path = RbConfig.ruby
-  cmd_args = [ruby_path, script_path, '--index-only']
-  cmd_args << '--verbose' if options[:verbose]
-  stdout, stderr, status = Open3.capture3(*cmd_args)
-
-  puts stdout
-  puts stderr unless stderr.empty?
-
-  unless status.success?
-    puts "Error: Index sync failed with exit code #{status.exitstatus}"
+  unless File.exist?(index_db)
+    puts "Error: index.sqlite3 not found at #{index_db}"
     exit 1
+  end
+
+  rsync_cmd = "rsync -av --update #{dbpath}/index.sqlite3 showcase.party:db/"
+
+  if options[:dry_run]
+    puts "Would run: #{rsync_cmd}"
+  else
+    puts "$ #{rsync_cmd}"
+    stdout, stderr, status = Open3.capture3(rsync_cmd)
+
+    puts stdout unless stdout.empty?
+    puts stderr unless stderr.empty?
+
+    unless status.success?
+      puts "Error: rsync to showcase.party failed with exit code #{status.exitstatus}"
+      exit 1
+    end
+
+    puts "Successfully synced index.sqlite3 to showcase.party"
+  end
+else
+  # Fly target: Use S3 sync with webhook
+  script_path = File.expand_path('sync_databases_s3.rb', __dir__)
+
+  if options[:dry_run]
+    puts "Would run: ruby #{script_path} --index-only"
+  else
+    # Use RbConfig.ruby to ensure we use the same Ruby version as the parent process
+    ruby_path = RbConfig.ruby
+    cmd_args = [ruby_path, script_path, '--index-only']
+    cmd_args << '--verbose' if options[:verbose]
+    stdout, stderr, status = Open3.capture3(*cmd_args)
+
+    puts stdout
+    puts stderr unless stderr.empty?
+
+    unless status.success?
+      puts "Error: Index sync failed with exit code #{status.exitstatus}"
+      exit 1
+    end
   end
 end
 
