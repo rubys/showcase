@@ -8,7 +8,7 @@ ENV['RAILS_ENV'] = 'production'
 # Default settings
 port = 9999
 use_maintenance = false
-navigator_cmd = "navigator/bin/navigator-refactored"
+navigator_cmd = "navigator/bin/navigator"
 config_file = ""
 reload = false
 log_level = "info"
@@ -19,14 +19,6 @@ OptionParser.new do |opts|
 
   opts.on("-d", "--debug", "Set log level to debug") do
     log_level = "debug"
-  end
-
-  opts.on("-l", "--legacy", "Use navigator-legacy instead of navigator-refactored") do
-    navigator_cmd = "navigator/bin/navigator-legacy"
-  end
-
-  opts.on("--refactored", "Use navigator-refactored instead of navigator-legacy") do
-    navigator_cmd = "navigator/bin/navigator-refactored"
   end
 
   opts.on("-r", "--reload", "Reload the page after starting") do

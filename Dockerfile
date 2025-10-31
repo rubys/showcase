@@ -83,7 +83,7 @@ RUN go mod download
 RUN NAV_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ); \
     echo "Building Navigator" && \
     go build -ldflags="-X 'main.buildTime=${NAV_BUILD_TIME}'" \
-        -o /usr/local/bin/navigator cmd/navigator-refactored/main.go
+        -o /usr/local/bin/navigator cmd/navigator/main.go
 
 # Nats CLI
 RUN go install github.com/nats-io/natscli/nats@latest

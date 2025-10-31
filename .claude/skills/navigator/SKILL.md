@@ -17,8 +17,7 @@ Navigator is included as a Git submodule because showcase routinely needs Naviga
 
 ```
 navigator/
-├── cmd/navigator-refactored/  # ✅ PRODUCTION - all development here
-├── cmd/navigator-legacy/      # 🔒 REFERENCE ONLY - DO NOT MODIFY
+├── cmd/navigator/            # Production Navigator implementation
 ├── internal/                  # Modular packages
 │   ├── config/               # Configuration loading and parsing
 │   ├── server/               # HTTP handling, routing, static files
@@ -336,7 +335,10 @@ git push
 ```bash
 # Build Navigator
 cd navigator
-go build -o bin/navigator cmd/navigator-refactored
+go build -o bin/navigator cmd/navigator
+
+# Or use make
+make build
 
 # Run with config
 ./bin/navigator config/navigator.yml
