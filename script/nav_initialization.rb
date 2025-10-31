@@ -53,6 +53,13 @@ if ENV['RAILS_LOG_VOLUME']
   end
 end
 
+# Setup demo tenant directories (ephemeral, not on volume)
+if fly_io? || kamal?
+  FileUtils.mkdir_p "/demo/db"
+  FileUtils.mkdir_p "/demo/storage/demo"
+  system "chown -R rails:rails /demo"
+end
+
 # Run independent operations in parallel for faster startup
 threads = []
 
