@@ -80,6 +80,27 @@ Navigator handles:
 
 This approach allows one machine to efficiently serve dozens of past, present, and future events with minimal overhead when idle.
 
+### Action Cable architecture
+
+Following [Rails best practices](https://guides.rubyonrails.org/action_cable_overview.html#running-standalone-cable-servers), the application runs Action Cable servers as standalone servers. However, the multi-tenant architecture requires a specialized approach:
+
+**One cable server per machine, shared between all tenants**. Using Fly-Replay and reverse proxy routing via Navigator, each machine runs a single Action Cable server that handles WebSocket connections for all events on that machine. This design has important implications:
+
+1. **Stream naming**: Cable stream names must be either unique to the tenant (include event identifier) or unique to the request (include session/user identifier). This prevents cross-tenant data leakage.
+
+2. **Limited database access**: The Action Cable server does not have access to tenant databases. It operates independently of the Rails tenant processes.
+
+3. **Broadcast-only communication**: All data flows one direction: server to client. The cable server can broadcast:
+   - Progress updates (file uploads, batch operations)
+   - Data change notifications (triggering client-side reloads)
+   - Specific real-time information (current heat number, live scores)
+
+4. **Request/response via HTTP**: If a client needs to update the server, it uses standard HTTP requests. Updates are processed in two ways:
+   - **Synchronous processing**: Happens within the controller action (immediate response)
+   - **Asynchronous processing**: Happens in background jobs (with progress broadcasts via cable)
+
+This architecture enables real-time updates during live events (judges entering scores, heat progression) while maintaining tenant isolation and keeping the cable server simple and stateless.
+
 ### Global distribution
 
 Events are distributed across multiple regions (currently 8 Fly.io regions across US, Europe, Asia, and Australia). Each region runs an identical machine, all accessing the same Tigris storage.
