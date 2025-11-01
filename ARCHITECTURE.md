@@ -1,354 +1,248 @@
-The Showcase application is in its third year of production use.  Over time, I've adapted it to take advantage
-of a number of unique features that [Fly.io](https://fly.io/) has to offer.  The description below describes this journey, and
-closes with an itemized set of costs to run this application.
+The Showcase application has evolved over several years of production use to support 75+ dance studios across 350+ events in 8 countries on 4 continents. This document describes the current architecture and some possibilities for future improvements.
 
-Feel free to start by skimming only the Notes, reading into only the sections that are of interest, and ultimately following the links to find out more.
+## Architecture overview
 
-## Shared-nothing architecures
+The system consists of four independent but coordinated components:
 
-> [!NOTE]
-> A shared-nothing architecture is a distributed computing architecture in which each update request is satisfied by a single node (processor/memory/storage unit) in a computer cluster.
+### 1. Showcase (the Rails application)
 
-As you might expect, a Showcase competition happens live and in a single location. Very few people need access to the system, and they’re often all in the same room; picture a few judges entering scores at the end of a number—that’s your peak simultaneous users. Data’s not shared between events–they don’t want or need to share a database and Redis cache.
+A typical Rails 8.0 application managing a single event—completely unaware of other tenants or deployment topology. Each instance runs with:
+- Its own SQLite database (e.g., `2025-boston.sqlite3`)
+- Environment variables defining database location and scope (`RAILS_APP_DB`, `RAILS_APP_SCOPE`)
+- Standard Rails models split into **base models** (Event, Person, Studio, Dance, Heat, Entry, etc.) and **admin models** (Location, Showcase, User, Region)
 
-Shared-nothing architectures are nothing new.  An excerpt from [Wikipedia](https://en.wikipedia.org/wiki/Shared-nothing_architecture):
+Running `bin/dev db/2025-boston.sqlite3` starts a single-tenant instance. The application knows nothing about multi-tenancy.
 
-> The intent is to eliminate contention among nodes. Nodes do not share (independently access) the same memory or storage. One alternative architecture is shared everything, in which requests are satisfied by arbitrary combinations of nodes. This may introduce contention, as multiple nodes may seek to update the same data at the same time. 
+### 2. Administration (the index application)
 
-While serverless is one kind of a shared-nothing architecture - this page explores another variation.  One where servers are explicitly deployed,
-users are assigned to servers, and users have databases that aren't shared. 
+A smaller Rails application sharing the same codebase but running with a different database (`index.sqlite3`). It provides:
+- Event and region management UI
+- User authentication and authorization
+- Studio request forms
+- The [Configurator](https://github.com/rubys/showcase/blob/main/app/controllers/concerns/configurator.rb) concern that generates Navigator configuration
 
-This application started, like most applications, small.  And that's where the story begins.
+Routes for administration (like `/studios/:location/request`) are only active when `RAILS_APP_DB=index`. Running `bin/dev` without arguments starts the index application.
 
-## A single event
+### 3. Navigator (the reverse proxy)
 
-> [!NOTE]
-> A Fly.io machine is not merely a Docker container, but rather a <a href="https://fly.io/blog/docker-without-docker/" title="">full VM</a>.  Treat it as such: run as many services as you like on a single machine.
+An independent Go-based server that knows nothing about Rails. It:
+- Reads `config/navigator.yml` for routing and tenant definitions
+- Starts Rails processes on-demand with appropriate environment variables
+- Routes requests based on URL paths to the correct tenant
+- Serves static assets directly without Rails
+- Executes lifecycle hooks at key events
+- Manages machine idle/suspend behavior
 
-My first showcase was in Harrisburg, Pennsylvania.  The app I developed initially supported only that one event, and all of the services needed to support the event ran on a single machine.  Like most Rails applications,
-this consisted of a Rails application, a database, and (eventually) Redis.  Over time a number of supporting services were added (NGINX, opensshd, rsyncd, and a small log "heartbeat" script).
-Today, these all happily run on a single Fly.io machine.
+Navigator runs as a separate process and communicates with Rails only via HTTP.
 
-Conventional wisdom is that as you grow you put each type of service into a separate set of machines.  That isn't always the right approach.
+### 4. Scripts and configuration
 
-An excerpt from DHH's [Majestic Monolith](https://signalvnoise.com/svn3/the-majestic-monolith/):
+Glue code that connects the index database to Navigator:
+- [Configurator concern](https://github.com/rubys/showcase/blob/main/app/controllers/concerns/configurator.rb) reads from index database and generates `navigator.yml`
+- [update_configuration.rb](https://github.com/rubys/showcase/blob/main/script/update_configuration.rb) CGI script triggered by HTTP POST
+- [ready.sh](https://github.com/rubys/showcase/blob/main/script/ready.sh) Navigator hook that runs after config reloads
+- [RegionConfiguration](https://github.com/rubys/showcase/blob/main/lib/region_configuration.rb) library generates YAML files
 
-> Every time you extract a collaboration between objects to a collaboration between systems, you’re accepting a world of hurt with a myriad of liabilities and failure states. What to do when services are down, how to migrate in concert, and all the pain of running many services in the first place.
+When an admin creates a new event, the index database is updated, scripts regenerate `navigator.yml`, and Navigator reloads—all without redeploying the application.
 
-Another way to look at this is: as needs grow, do you really want to share a database and redis instances between customers?  (Or, in this case, between events?)
-If "no" turns out to be a viable answer: go with it.  Put all of the services needed to support one customer in one Docker image and then repeat that set as often
-as needed.  Eliminating the need for a network in producing a response to a request both increases throughput and reliability.
+## Shared-nothing architecture
 
-There are a lot of [options for running multiple processes inside a Fly.io App](https://fly.io/docs/app-guides/multiple-processes/).
-I use a combination of [ENTRYPOINT](https://github.com/rubys/showcase/blob/main/bin/docker-entrypoint) running a
-[deploy](https://github.com/rubys/showcase/blob/main/bin/deploy) script and a [procfile](https://github.com/rubys/showcase/blob/main/Procfile.fly).
+Showcase competitions happen live at single locations with small, focused user groups—typically a few judges entering scores during an event. Each event is completely independent: separate database, separate Rails instance, no shared state. This shared-nothing pattern eliminates contention and allows horizontal scaling by simply adding machines.
 
-Given the load for each event is only for one customer, I only need 1 CPU per server. While CPU is not a concern, it still is important to size
-the amount of RAM needed.
-Even with all of the services running, according to [Grafana/Fly Metrics](https://fly-metrics.net/), each instance uses about 220MB of RAM when idle,
-and grows to 450MB when active.  That being said, I have seen machines fail due to [OOM](https://en.wikipedia.org/wiki/Out_of_memory) with only 512MB, so I give
-each machine 1GB.  I also define an additional 2G of [swap](https://fly.io/docs/reference/configuration/#swap_size_mb-option) as
-I would rather the machine run slower under peak load than crash.
+The architecture leverages [Fly.io](https://fly.io/) for global distribution and [Navigator](https://github.com/rubys/showcase/tree/main/navigator) (a custom Go reverse proxy) for multi-tenancy and intelligent routing.
 
-Finally, invest the time to set up a [wireguard network](https://fly.io/docs/networking/private-networking/) that lets you VPN into your own private network of machines.
+## Deployment model
 
-## Multi-tenancy
+### Running everything on one machine
 
-> [!NOTE]
-> The code base supports only a single event.  Running multiple events on a single machine is the next step before jumping into multiple machines.
+Each Fly.io machine is a complete VM, not just a container, so all services for an event run together: Rails, SQLite, Redis, Navigator, Action Cable, and supporting scripts. This keeps latency low and reliability high by eliminating network calls.
 
-There are a number of blog posts out there on how to do
-[multi-tenancy](https://blog.arkency.com/comparison-of-approaches-to-multitenancy-in-rails-apps/)
-with Rails.  [Phusion Passenger](https://www.phusionpassenger.com/) provides a [different
-approach](https://stackoverflow.com/questions/48669947/multitenancy-passenger-rails-multiple-apps-different-versions-same-domain).
+Current resource usage per machine:
+- **CPU**: 2 shared vCPUs (modest, primarily for quick deployments)
+- **Memory**: 2GB (handles peak loads during live events)
+- **Storage**: 1GB volume with auto-extension
 
-For this use case, the Phusion Passenger approach is the best match.  The
-database for a mid-size local event is about a megabyte in size (about the size
-of a single camera image), and can be kept in SQLite.  Passenger provides a
-[`passenger_min_instances`](https://www.phusionpassenger.com/library/config/nginx/reference/#passenger_min_instances)
-`0` option that allow a reasonable number of past, present, and future events
-to be hosted essentially without any overhead when not in use.  This does mean
-that you have to accept the cold start times of the first access, but that
-appears to be two seconds or less on modern hardware, which is acceptable.
+Multiple processes run via [Procfile.fly](https://github.com/rubys/showcase/blob/main/Procfile.fly) started by the [docker-entrypoint](https://github.com/rubys/showcase/blob/main/bin/docker-entrypoint) script.
 
-The NGINX configuration file defines a set of environment variables for each tenant to control
-the name of such things as the database, the log file, base URL, and pidfile.
+### Multi-tenancy with Navigator
 
-For web sockets (Action Cable), NGINX is [preferred over Apache
-httpd](https://www.phusionpassenger.com/library/config/apache/action_cable_integration/).
-The [documentation for Deploying multiple apps on a single server
-(multitenancy)](https://www.phusionpassenger.com/library/deploy/nginx/) is
-still listed as todo, but the following is what I have been able to figure out:
+Each machine hosts multiple events using [Navigator](https://rubys.github.io/navigator/), a Go-based reverse proxy that manages separate Rails instances for each tenant. Each event gets:
 
-- One action cable process is allocated per server (i.e., listen port).
-- In order to share the action cable process, all apps on the same server will
-  need to share the same redis URL and channel prefix.  The [Rails
-  documentation](https://guides.rubyonrails.org/action_cable_overview.html#redis-adapter)
-  suggests that you use a different channel prefix for different applications
-  on the same server -- **IGNORE THAT**.
-- Instead, use environment variables to stream from, and broadcast to, different
-  action cable channels.
+- Its own SQLite database (~1MB per event)
+- Its own Rails process (spawned on-demand)
+- Its own environment variables (configured via [navigator.yml](https://github.com/rubys/showcase/blob/main/config/navigator.yml))
+- Shared Action Cable server and Redis instance
 
-The end result is what outwardly appears to be a single Rails app, with a
-single set of assets and a single cable.  One additional rails instance
-serves the index and provides a global administration interface.
+Navigator handles:
+- **Process management**: Starts Rails instances on first request, terminates after 5 minutes of inactivity
+- **Routing**: URL path-based routing to correct tenant (e.g., `/showcase/2025/boston/` → boston database)
+- **WebSockets**: Routes `/cable` connections to shared Action Cable server
+- **Static assets**: Serves files directly without Rails overhead
+- **Authentication**: htpasswd-based auth with per-path exclusions
+- **Health checks**: `/up` endpoint for monitoring
 
-Recapping: a single server can host multiple events, each event is a separate instance of the same Rails application with a separate SQLite database placed on a volume.  The server is always on (`auto_stop_machines = false`), but the Rails apps are spun up when needed and spin down when idle (using [`passenger_pool_idle_time`](https://www.phusionpassenger.com/library/config/nginx/reference/#passenger_pool_idle_time))
+This approach allows one machine to efficiently serve dozens of past, present, and future events with minimal overhead when idle.
 
-## Multiple regions
+### Global distribution
 
-> [!NOTE]
-> Distributing an app across multiple regions not only lets you service requests close
-to your users, it enables horizontal scalability and isolation.
+Events are distributed across multiple regions (currently 8 Fly.io regions across US, Europe, Asia, and Australia). Each region runs an identical machine, all accessing the same Tigris storage.
 
-While most of my users are US based, my showcase app now has a second user in Australia, and now one in Warsaw, Poland.
-Sending requests and replies half way around the world unnecessarily adds latency.
+Request routing happens at three levels:
 
-As each machine is monolithic and self-contained, replicating service into a new region is
-a matter of creating the new machine and routing requests to the correct machine.
-This application use three separate techniques to route requests.
+1. **Client-side routing**: JavaScript [region_controller.js](https://github.com/rubys/showcase/blob/main/app/javascript/controllers/region_controller.js) adds `fly-prefer-region` headers to Turbo requests, leveraging [Turbo Drive](https://turbo.hotwired.dev/handbook/introduction#turbo-drive%3A-navigate-within-a-persistent-process) to intercept navigation.
 
-The first technique is to [listen](https://github.com/rubys/showcase/blob/main/app/javascript/controllers/region_controller.js) for
-[turbo:before-fetch-requests](https://turbo.hotwired.dev/reference/events#http-requests) events and
-insert a [fly-prefer-region header](https://fly.io/docs/networking/dynamic-request-routing/#the-fly-prefer-region-request-header).
-The region is extracted from a data attribute added to the [body](https://github.com/rubys/showcase/blob/aae08a6d57f92335b2cdbb94756e5416b7b50f83/app/views/layouts/application.html.erb#L16) tag.
+2. **Navigator routing**: The [navigator.yml](https://github.com/rubys/showcase/blob/main/config/navigator.yml) configuration defines regional routing rules using Fly.io's internal networking for cross-region requests.
 
-This all made possible by how [Turbo works](https://turbo.hotwired.dev/handbook/introduction#turbo-drive%3A-navigate-within-a-persistent-process):
+3. **Fly-Replay**: For requests >1MB (like audio file uploads), Navigator uses [reverse proxy](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/) to bypass the [1MB Fly-Replay limit](https://fly.io/docs/networking/dynamic-request-routing/#limitations).
 
-> This happens by intercepting all clicks on `<a href>` links to the same domain. When you click an eligible link, Turbo Drive prevents the browser from following it, changes the browser’s URL using the History API, requests the new page using fetch, and then renders the HTML response.
+This enables low-latency access for customers worldwide. Tigris provides globally distributed object storage with automatic replication.
 
-The same source above also defines a `window.inject_region` function to inject the header in other places in the code that may issue fetch requests.
+### PDF generation appliance
 
-The next (and final) two approaches are done in the NGINX configuration itself.  This configuration is defined at startup on
-each machine.  Here is an example of the definition for `raleigh` on machines in regions other than `iad`:
+PDF generation uses [puppeteer](https://pptr.dev/) and Chrome, which requires significantly more memory than the main app. These run on separate on-demand machines that spin up when needed and stop when idle.
 
-```
-## Raleigh
-location /showcase/2024/raleigh/cable {
-  add_header Fly-Replay region=iad;
-  return 307;
-}
-location /showcase/2024/raleigh {
-  proxy_set_header X-Forwarded-Host $host;
-  proxy_pass http://iad.smooth.internal:3000/showcase/2024/raleigh;
-}
+Navigator configuration uses Fly-Replay to route PDF requests to the dedicated appliance:
+
+```yaml
+routes:
+  fly:
+    replay:
+      - path: "^/showcase/.+\\.pdf$"
+        target: "app=smooth-pdf"
 ```
 
-This replays action cable (web socket) requests to the correct region, and
-[reverse proxies](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/)
-all other requests to the correct machine using its [`.internal` address](https://fly.io/docs/networking/private-networking/#fly-io-internal-addresses).  The latter is done because [fly-replay](https://fly.io/docs/networking/dynamic-request-routing/#limitations)
-is limited to 1MB requests, and uploading audio files may exceed this limit.
+This pattern can apply to any resource-intensive operations: video encoding, audio transcription, large batch processing, etc. See [Print on Demand](https://fly.io/blog/print-on-demand/) for details.
 
-## Appliances
+## Key architectural patterns
 
-> [!NOTE]
-> For larger tasks, try
-> decomposing parts of your applications into event handlers, starting up Machines to handle requests when needed, and stopping them when the requests are done.
+### Auto-scaling at multiple levels
 
-While above I've sung the praises of a Majestic Monolith, there are limits.  Usage of this application
-is largely split into two phases: a lengthy period of data entry, followed by a brief period of report generation.
-This pattern then repeats a second time as scores are entered and then distributed.
+The architecture implements auto-scaling at three levels to minimize compute costs:
 
-Report generation is done using [puppeteer](https://pptr.dev/) and [Google Chrome](https://www.google.com/chrome/).
-While this app runs comfortably with 1MB of RAM, I've had Google Chrome crash machines that have 2MB.
+1. **Machine-level**: Fly.io suspends machines after 30 minutes of inactivity (configured in Navigator). Suspended machines consume no compute or memory resources. Fly.io automatically resumes machines on incoming requests.
 
-Generating a PDF from a web page (including authentication) is something that can be run independently of
-all of the other services of your application.  By making use of [`auto_stop_machines` and `auto_start_machines`](https://fly.io/docs/reference/configuration/#the-http_service-section),
-a machine dedicated to this task can be spun up in seconds and perform this function.
+2. **Tenant-level**: Navigator starts Rails processes on-demand when requests arrive and stops them after 5 minutes of inactivity. This allows dozens of events to coexist on one machine with minimal resource usage.
 
-In my case, no changes to the application itself is needed, just a few lines of NGINX configuration:
+3. **Appliance-level**: PDF generation machines spin up only when needed and stop when idle, keeping costs negligible despite having 5 machines available.
 
-```
-## PDF generation
-location ~ /showcase/.+\.pdf$ {
-  add_header Fly-Replay app=smooth-pdf;
-  return 307;
-}
-```
+This multi-level approach means most of the 350+ events are idle most of the time, consuming zero compute resources until accessed. Storage costs (volumes and Tigris S3) remain constant regardless of activity level.
 
-This was originally published as [Print on Demand](https://fly.io/blog/print-on-demand/),
-and the code for that article can be found on [GitHub as fly-apps/pdf-appliance](https://github.com/fly-apps/pdf-appliance).
+### Local-first data access
 
-This architectural pattern can be applied whenever there is a minority of requests that require an outsized amount
-of resources.  A second example that comes to mind: I've had requests for audio capture and transcription.
-Setting up a machine that [runs Whisper with Fly GPUs](https://news.ycombinator.com/item?id=39417197) is
-something I plan to explore.
+The architecture eliminates network latency through aggressive local-first design:
 
-## Backups
+**Static assets** (CSS, JavaScript, images, HTML index pages) are stored on every machine and served directly by Navigator without requiring a Rails tenant. This means assets are always local to the requestor, even for remote events—no CDN needed.
 
-> [!NOTE]
-> Running databases on a single volume attached to a single machine is a single
-> point of failure.  It is imperative that you have recent backups in case of failure.
+**Databases** are stored on local volumes and only synced to Tigris when applications go idle:
+- **Zero network latency** for database operations during active use
+- **Databases download from Tigris** on first access after machine resume
+- **Automatic backup to Tigris** when tenant Rails processes shut down after inactivity
 
-At this point, databases are small, and can be moved between servers with a simple configuration change.
-For that reason, for the moment I've elected to have each machine contain a complete copy of all of the databases.
+Each database resides on only one machine, and dynamic requests are routed to the correct machine via Fly-Replay or reverse proxy. Even for remote requests, only the HTTP request and response travel the globe—all database access is local and managed by Rails's existing connection pooling. No additional database connection pooling layer is needed.
 
-To make that work, I
-[install](https://github.com/rubys/showcase/blob/aae08a6d57f92335b2cdbb94756e5416b7b50f83/Dockerfile#L67),
-[configure](https://github.com/rubys/showcase/blob/main/Dockerfile#L114-L137), and
-[start](https://github.com/rubys/showcase/blob/aae08a6d57f92335b2cdbb94756e5416b7b50f83/bin/deploy#L26-L27)
-[rsync](https://rsync.samba.org/).
+The only network-dependent operations are Active Storage accesses for uploaded files (songs, audio recordings). Even here, DJs can download complete playlists for offline use via the [OfflinePlaylistJob](https://github.com/rubys/showcase/blob/main/app/jobs/offline_playlist_job.rb), which packages all songs into a downloadable ZIP file.
 
-With Passenger, I set [`passenger_min_instances`](https://www.phusionpassenger.com/library/config/nginx/reference/#passenger_max_pool_size) to zero, allowing
-each application to completely shutdown after five minutes of inactivity.  I define a
-[`detached_process`](https://www.phusionpassenger.com/library/indepth/hooks.html#detached_process) hook to run
-a [script](https://github.com/rubys/showcase/blob/main/bin/passenger-hook).
+## Operations
 
-As that hook will be run after each process exits, what it does first is query the number of running processes.  If
-there are none (not counting websockets), it begins the backup to each Fly.io machine
-using `rsync --update` to only replace the newer files.  After that completes, a webhook
-is run on an offsite machine (a mac mini in my attic) to rsync all files there.  In order for that to work, I run
-[an ssh server](https://fly.io/docs/app-guides/opensshd/) on each Fly.io machine.
+### Administration and provisioning
 
-And I don't stop there:
-  * My home machine runs the same passenger application configured to serve all of the events.
-    This can be used as a hot backup.  I've never needed it, but it comforting to have.
-  * I also rsync all of the data to a [Hetzner](https://www.hetzner.com/) which
-    runs the same application.
-  * Finally, I have a cron job on my home machine that makes a daily backup of all of the databases.  A new directory
-    is created per day, and [hard links](https://en.wikipedia.org/wiki/Hard_link) are used to link to the same file
-    in the all too common case where a database hasn't changed during the course of the day.  As this is in a terabyte
-    drive, I haven't bothered to prune, so at this point, I have daily backups going back years.
+Event provisioning uses a live configuration update system that completes in ~30 seconds:
 
-While this may seem like massive overkill, always having a local copy of all of the databases to use to reproduce problems
-and test fixes, as well as having a complete instance that I can effectively use as a staging server alone makes all this
-worth it.
+**When a user requests a new event** (via `/studios/:location/request`):
+1. Form submission creates Showcase record in index database
+2. Background job ([ConfigUpdateJob](https://github.com/rubys/showcase/blob/main/app/jobs/config_update_job.rb)) starts:
+   - Syncs index.sqlite3 to Tigris (S3)
+   - Discovers active Fly.io machines (skips suspended ones)
+   - POSTs to `/showcase/update_config` on each machine using `Fly-Force-Instance-Id` header
 
-Finally, since each region contains a copy of all databases, I use [`auto_extend_size_threshold`](https://fly.io/docs/reference/configuration/#auto_extend_size_threshold) and
-[`auto_extend_size_increment`](https://fly.io/docs/reference/configuration/#auto_extend_size_increment) to ensure that I never run out of space.
+**Each machine's CGI script** ([update_configuration.rb](https://github.com/rubys/showcase/blob/main/script/update_configuration.rb)) runs:
+1. Fetches updated index.sqlite3 from Tigris
+2. Regenerates htpasswd file (authentication)
+3. Regenerates showcases.yml (event metadata)
+4. Regenerates navigator.yml (tenant routing)
 
-## Logging
+**Navigator detects config changes** and reloads via SIGHUP, triggering the ready hook ([ready.sh](https://github.com/rubys/showcase/blob/main/script/ready.sh)):
+1. Regenerates pre-rendered static HTML pages
+2. Downloads/updates event databases from Tigris
+3. Continues serving requests while optimizations run in background
 
-> [!NOTE]
-> It is important that logs are there when you need them.  For this reason, logs need both monitoring and redundancy.
+**Real-time progress**: User sees live updates via ActionCable as machines are updated, then automatically redirects to their new event.
 
-Equally as important as backups are logs.  Over the course of the life of this application I've had two cases where
-I've lost data due to errors on my part and was able to reconstruct that data by re-applying POST requests extracted
-from logs.
+The admin UI also provides:
+- Event and region management
+- Log viewer for all servers
+- Sentry integration for error monitoring
 
-The biggest problem with logs is that you take them for granted.  You see that they work and forget about them, and
-there always is the possibility that they are not working when you need them.
+This approach eliminates the need for `fly deploy` when adding events, reducing provisioning time from minutes to seconds.
 
-I've written about my approach in [Multiple Logs for Resiliency](https://fly.io/blog/redundant-logs/), but a summary here:
+### Zero-downtime deployments
 
-  * Since I have volumes already, I [instruct Rails to broadcast logs there](https://github.com/rubys/showcase/blob/aae08a6d57f92335b2cdbb94756e5416b7b50f83/config/environments/production.rb#L102-L110) in addition to stdout.
-    The API to do this changed in Rails 7.1, and the code I linked to does this both ways.  This data isn't replicated to other volumes and
-    only contains Rails logs, as it really is only intended for when all else fails.
-  * I have a [logger](https://github.com/rubys/showcase/tree/main/fly/applications/logger) app that I run in two regions.
-    This writes log entries to volumes, and runs a small web server that I can use to browse and navigate the log entries.
-    This data too is backed up (forever) to my home server, and is only kept for seven days on the log server.
+Deployments must take machines offline to replace images and restart services. To minimize user impact:
 
-Two major additions since I wrote up that blog entry:
-  * I have each machine [create a heartbeat log entry every 30 minutes](https://github.com/rubys/showcase/blob/main/bin/log-heartbeat.sh), and each log server runs a
-    [monitor](https://github.com/rubys/showcase/blob/main/fly/applications/logger/monitor.ts) once an hour to
-    ensure that every machine has checked in.  If a machine doesn't check in, a [Sentry](https://sentry.io/)
-    alert is generated.
-  * I have my log tracker query Sentry whenever I visit the web page to see if there are new events.  This
-    serves as an additional reminder to go check for errors.
+1. **Navigator starts immediately** with a [maintenance page](https://showcase.party/503.html) that auto-refreshes every 5 seconds
+2. **Startup scripts** run in parallel: database migrations (from Tigris), Navigator config generation
+3. **Navigator reloads** via SIGHUP when ready, switching from maintenance mode to normal operation
 
-I strongly encourage people to look into [Sentry](https://community.fly.io/t/integrated-sentry-error-tracking/15278).
+Migration lists are compared directly without starting Rails, and the demo database is prepared at build time. Databases are accessed from Tigris on-demand. Result: typically ~2 second delay when Rails instances restart on first request after deployment.
 
-## Applying updates
+### Backups
 
-> [!NOTE]
-> While Fly.io will start machines fast, you have to do your part.
-> If your app doesn't start fast, start something else that starts quickly first
-> so your users see something while they are waiting.
+Databases are small (~1MB each), stored in [Tigris](https://www.tigrisdata.com/) (S3-compatible object storage on Fly.io):
 
-If you go to https://smooth.fly.dev/ the server nearest to you will need to spin up the index application. And if, from there, you click on demo, a second application will be started.  While you might get lucky and somebody else (or a bot) may have already started these for you, the normal case is that you will have to wait.
+1. **Cloud storage**: All databases and uploaded files stored in Tigris, accessible from any region
+2. **Volume auto-extension**: Fly.io volumes automatically grow when 80% full for local caching
+3. **Off-site backups**: Home server (Mac mini) and [Hetzner](https://www.hetzner.com/) VPS maintain complete copies
+4. **Daily snapshots**: Automated daily backups using hard links for unchanged files (years of history retained)
 
-Since all the services that are needed to support this application are on one machine,  `fly deploy` can't simply start a new machine, wait for it to start, direct traffic to it, and only then start dismantling the previous machine.  Instead, each machine needs to be taken offline, have the rootfs replaced with a new image, and all of its services restarted.  Once that is complete, migrations need to be run on that machine; and in my case I may have several SQLite databases that need to be upgraded.  I also have each machine that comes up rsync with the primary region.  And finally, I generate an operational NGINX configuration and run [nginx reload](https://docs.nginx.com/nginx/admin-guide/basic-functionality/runtime-control/).
+Having local copies makes reproducing bugs and testing fixes straightforward. The home server doubles as a staging environment.
 
-While this overall process may take some time, NGINX starts fast so I start it first with a [configuration](https://github.com/rubys/showcase/blob/main/config/nginx.startup) that directs everything to a [Installing updates..](https://showcase.party/503.html) page that auto refreshes every 15 seconds which normally is ample time for all this to occur.  Worst case, this page simply refreshes again until the server is ready.
+### Logging
 
-Even with this in place, it still is worthwhile to make the application boot fast.  Measuring the times of the various components of startup, in my case Rails startup time dominates, and it turns out that effectively `bin/rails db:prepare` starts Rails once for each database.
-I found that I can avoid that by [getting a list of migrations](https://github.com/rubys/showcase/blob/cb3a05fd48c22a140effcf03ccfa9bd038a0df30/config/tenant/nginx-config.rb#L186),
-and then [comparing that list to the list of migrations already deployed](https://github.com/rubys/showcase/blob/cb3a05fd48c22a140effcf03ccfa9bd038a0df30/config/tenant/nginx-config.rb#L207-L215).
-I also moved preparation of my demo database to [build time](https://github.com/rubys/showcase/blob/cb3a05fd48c22a140effcf03ccfa9bd038a0df30/Dockerfile#L139-L140).  In most cases, this means that my users
-see no down time at all, just an approximately two second delay on their next request as Rails restarts.
+Multiple redundant logging systems ensure logs are available when needed (they've been used to reconstruct lost data from POST requests):
 
-## Administration
+1. **Volume logs**: Rails broadcasts to local volume in addition to stdout
+2. **Centralized logging**: Dedicated [logger app](https://github.com/rubys/showcase/tree/main/fly/applications/logger) stores logs on volumes (7 day retention) with a web UI for browsing
+3. **Off-site archive**: All logs backed up to home server indefinitely
+4. **Error monitoring**: [Sentry](https://sentry.io/) integration for real-time error tracking and alerts
 
-> [!NOTE]
-> While Fly.io provides a <a href="https://fly.io/docs/machines/working-with-machines/" title="">Machines API</a>,
-> you can go a long way with old-fashioned scripting using the <a href="https://fly.io/docs/flyctl/" title="">flyctl</a>
-> command.
+See [Multiple Logs for Resiliency](https://fly.io/blog/redundant-logs/) for details.
 
-Now lets look at what happens when I create a new event, in a new region.  I (a human) get an email, I bring up my admin UI (on an instance of the index app I mentioned above).  I fill out a form for the new event.  I go to a separate page and add a new region.  I then go to a third form where I can review and apply the changes.  This involves regenerating my map, and I need to update the NGINX configuration in every existing region.  There are shortcuts I can utilize which will update files on each machine and reload the NGINX configuration, but I went that way I would need to ensure that the end result exactly matches the reproducible result that a subsequent `fly deploy` would produce.  I don't need that headache, so I'm actually using `fly deploy` which can add tens of seconds to the actual deploy time.
+## Operating costs
 
-I started out running the various commands manually, but that grew old fast.  So eventually
-I invested in creating an admin UI.
+Current infrastructure (8 regions, 350+ events):
 
-Here's what the front page of the admin UI looks like:
+- **Compute**: 8 machines × 2 vCPU shared × 2GB RAM
+- **Volumes**: 8 × 1GB with auto-extension
+- **Appliances**: 5 on-demand PDF generation machines (minimal cost)
+- **Logging**: 1 dedicated log server machine
 
-<img alt="Showcase Administration" src="./adminui-cover.webp" style="width: 400px; margin-left: 5vw">
-
-From there, I can add, remove, and reconfigure my events, and apply changes.  I can also visit
-this app on three different servers, and see the logs from each.  Finally, I have links to handy
-tools.  The Sentry link that is current gray turns red when there are new events.
-
-I'm actually very happy with the result.  The fact that I could get an email and add an event and have everything up and running on a server half a world away in less than five minutes is frankly amazing to me.
-And to be honest, most of that is waiting on the human (me), followed by the amount of time it takes to build and deploy a
-new image in nine regions.
-
-And in most cases, I can now make and deploy changes from my smartphone rather than requiring
-my laptop.
-
-For those who are curious, here's the [deployment script](https://github.com/rubys/showcase/blob/main/bin/apply-changes.rb).
-
-## Costs
-
-> [!NOTE]
-> This is a decent sized personal project, deployed across three continents.  Even with a
-> significant amount of over-provisioning, the costs per month are around $60, before taking
-> into account plans and allowances.
-
-I'm currently running this app in nine regions.  I have two machine running a log server.
-I have two machines that will run puppeteer and Chrome on demand.
-
-[Fly.io pricing](https://fly.io/docs/about/pricing/) includes a number of plans which include a number of allowances.  To
-keep things simple, I'm going to ignore all of that and just look at the total costs.
-From there, add your plan and subtract your allowances to see what this would cost for you.
-
-And be aware that things may change, the below numbers are current as of early March, 2024.
-
-Let's start with compute.  9 shared-cpu-1x machines with 1GB each at $5.70 per month total $51.30.
-Two shared-cpu-1x machines with 512MB each at $3.19 per month total $6.38.
-The print on demand machines are on bigger machines, but are only run when requested.
-I've configured them to stay up for 15 minutes when summoned.  Despite all of this the
-costs for a typical month are around $0.03.  So we are up to $57.71.
-
-Next up volumes.  I have 9 machines with 3GB disks, and 2 machines that only need 1G each.
-29GB at $0.15 per month is $1.35.
-
-I have a dedicated IPv4 address in order to use ssh.  This adds $2.00 per month.
-
-Outbound transfer is well under the free allowance, but for completeness I'm seeing about 16GB in North America and Europe,
-which at $0.02 per GB amounts to $0.32.  And about 0.1GB in Asia Pacific, which at $0.04 per GB adds less than a cent,
-but to be generous, let's accept a total of $0.33.
-
-Adding up everything, this would be 57.71 + 1.35 + 2.00 + 0.33 for a total of $61.39 per month.
-
-Again, this is before factoring in plans and allowances, and reflects the current pricing in March of 2023.
-
-For my needs to date, I'm clearly over-provisioning, but it is nice to have a picture of what
-a fully fleshed out system would cost per month to operate.
+Estimated monthly cost before Fly.io plan allowances: ~$60-80. Actual cost varies with usage patterns and current Fly.io pricing.
 
 ## Summary
 
-> [!NOTE]
-> Shared Nothing architectures are a great way to scale up applications where the data involved is easily partitionable.
+Showcase demonstrates that shared-nothing architectures work well when data naturally partitions (one database per customer/event):
 
-Key points (none of these should be a surprise, they were highlighted
-in the text above):
+**Key patterns:**
+- Co-locate services on single machines for simplicity and performance
+- Use Navigator for multi-tenancy with on-demand Rails process management
+- Auto-scale at multiple levels (machine, tenant, appliance) to minimize costs
+- Store data locally with Tigris backup, eliminating network latency
+- Route requests intelligently across regions while keeping data access local
+- Offload resource-intensive operations to on-demand appliance machines
+- Maintain multiple backup and logging systems with active monitoring
+- Provide smooth deployments with maintenance pages and fast startup
+- Automate administration via live configuration updates
 
-* Run as many services as you like on a single machine; this both increases throughput and reliability.
-* You can even run multiple instances of the same app on a machine.
-* Distributing your apps across multiple regions lets you service requests close to your users.
-* For larger tasks, start up machines on demand.
-* Every backup plan should have a backup plan.
-* Not only should you have logs, logs should be monitored and have redundancy.
-* Make sure that you start something quickly -- even if it is only a "please wait" placeholder -- to make sure that your app is always servicing requests.
-* Create an administration UI and write scripts you can use to change your configuration.
+Currently serving 75+ dance studios across 350+ events in 8 countries on 4 continents from 8 regions at modest cost.
 
-And finally, this app currently supports 77 events in 36 cities with 9 servers for less than you probably pay for a dinner out a month or a smart phone plan.
+## Possible improvements
+
+This architecture works well but has room for enhancement:
+
+1. **Multi-cloud federation**: The [Hetzner deployment](config/deploy.yml) demonstrates Kamal deployment to non-Fly.io providers. The showcase.party domain uses Cloudflare's anycast network, which could route requests via Cloudflare Workers to machines across multiple cloud providers (Fly.io, Hetzner, AWS, etc.) based on DNS names. This would provide vendor independence and geographic optimization.
+
+2. **Metrics and observability**: Add Prometheus/OpenTelemetry integration to better understand usage patterns and optimize resource allocation
+
+3. **Progressive Web App**: Enable offline capabilities for judges to enter scores without reliable connectivity during events
+
+The current architecture prioritizes simplicity and reliability over optimization, which has proven effective for the workload. Future improvements should maintain these priorities while addressing specific pain points as they emerge.
