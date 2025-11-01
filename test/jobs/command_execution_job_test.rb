@@ -25,15 +25,4 @@ class CommandExecutionJobTest < ActiveJob::TestCase
       assert block.arity == 1, "Command #{command_type} should accept one parameter"
     end
   end
-
-  test "job broadcasts to correct stream" do
-    user = users(:one)
-
-    # Mock ActionCable.server.broadcast to verify stream name
-    broadcasts = []
-    ActionCable.server.stub :broadcast, ->(stream, data) { broadcasts << [stream, data] } do
-      # Note: This will actually try to execute the command, so we need to be careful
-      # In a real test environment, you might want to stub PTY.spawn as well
-    end
-  end
 end
