@@ -1,4 +1,6 @@
-The Showcase application has evolved over several years of production use to support 75+ dance studios across 350+ events in 8 countries on 4 continents. This document describes the current architecture and some possibilities for future improvements.
+Showcase competitions happen live at single locations with small, focused user groups—typically a few judges entering scores during an event. Each event is completely independent: separate database, separate Rails instance, no shared state. This [shared-nothing](https://en.wikipedia.org/wiki/Shared-nothing_architecture) pattern eliminates contention and allows horizontal scaling by simply adding machines.
+
+The Showcase application has evolved over several years of production use to support 75+ dance studios across 350+ events in 8 countries on 4 continents. This document describes the current architecture and some possibilities for future improvements. The architecture leverages [Fly.io](https://fly.io/) for global distribution and [Navigator](https://github.com/rubys/showcase/tree/main/navigator) (a custom Go reverse proxy) for multi-tenancy and intelligent routing.
 
 ## Architecture overview
 
@@ -11,7 +13,7 @@ A typical Rails 8.0 application managing a single event—completely unaware of 
 - Environment variables defining database location and scope (`RAILS_APP_DB`, `RAILS_APP_SCOPE`)
 - Standard Rails models split into **base models** (Event, Person, Studio, Dance, Heat, Entry, etc.) and **admin models** (Location, Showcase, User, Region)
 
-Running `bin/dev db/2025-boston.sqlite3` starts a single-tenant instance. The application knows nothing about multi-tenancy.
+Running `bin/dev db/2025-boston.sqlite3` starts a single-tenant instance. The application itself knows nothing about multi-tenancy.
 
 ### 2. Administration (the index application)
 
@@ -21,7 +23,7 @@ A smaller Rails application sharing the same codebase but running with a differe
 - Studio request forms
 - The [Configurator](https://github.com/rubys/showcase/blob/main/app/controllers/concerns/configurator.rb) concern that generates Navigator configuration
 
-Routes for administration (like `/studios/:location/request`) are only active when `RAILS_APP_DB=index`. Running `bin/dev` without arguments starts the index application.
+Routes for administration (like `/studios/:location/request`) are only active when `RAILS_APP_DB=index`. Running `bin/dev index` starts the index application.
 
 ### 3. Navigator (the reverse proxy)
 
@@ -38,18 +40,13 @@ Navigator runs as a separate process and communicates with Rails only via HTTP.
 ### 4. Scripts and configuration
 
 Glue code that connects the index database to Navigator:
-- [Configurator concern](https://github.com/rubys/showcase/blob/main/app/controllers/concerns/configurator.rb) reads from index database and generates `navigator.yml`
+- [Config update job](https://github.com/rubys/showcase/blob/main/app/jobs/config_update_job.rb) coordinates updates across machines and provides progress updates
 - [update_configuration.rb](https://github.com/rubys/showcase/blob/main/script/update_configuration.rb) CGI script triggered by HTTP POST
-- [ready.sh](https://github.com/rubys/showcase/blob/main/script/ready.sh) Navigator hook that runs after config reloads
 - [RegionConfiguration](https://github.com/rubys/showcase/blob/main/lib/region_configuration.rb) library generates YAML files
+- [Configurator concern](https://github.com/rubys/showcase/blob/main/app/controllers/concerns/configurator.rb) reads from index database and generates `navigator.yml`
+- [ready.sh](https://github.com/rubys/showcase/blob/main/script/ready.sh) Navigator hook that runs after config reloads
 
 When an admin creates a new event, the index database is updated, scripts regenerate `navigator.yml`, and Navigator reloads—all without redeploying the application.
-
-## Shared-nothing architecture
-
-Showcase competitions happen live at single locations with small, focused user groups—typically a few judges entering scores during an event. Each event is completely independent: separate database, separate Rails instance, no shared state. This shared-nothing pattern eliminates contention and allows horizontal scaling by simply adding machines.
-
-The architecture leverages [Fly.io](https://fly.io/) for global distribution and [Navigator](https://github.com/rubys/showcase/tree/main/navigator) (a custom Go reverse proxy) for multi-tenancy and intelligent routing.
 
 ## Deployment model
 
