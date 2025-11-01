@@ -111,7 +111,8 @@ module Configurator
     {
       'public_dir' => public_dir,
       'allowed_extensions' => %w[html htm txt xml json css js png jpg gif svg ico pdf xlsx],
-      'try_files' => %w[index.html .html .htm .txt .xml .json],
+      'try_files' => %w[index.html .html .htm],
+      'normalize_trailing_slashes' => true,
       'cache_control' => build_cache_control(root)
     }
   end
