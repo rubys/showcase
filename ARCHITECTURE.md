@@ -185,6 +185,30 @@ Deployments must take machines offline to replace images and restart services. T
 
 Migration lists are compared directly without starting Rails, and the demo database is prepared at build time. Databases are accessed from Tigris on-demand. Result: typically ~2 second delay when Rails instances restart on first request after deployment.
 
+### Maintenance mode
+
+Navigator supports maintenance mode that keeps infrastructure operational while blocking dynamic application requests:
+
+**What continues during maintenance:**
+- Static file serving (pre-rendered pages, assets, documentation)
+- Basic routing (redirects, rewrites)
+- Remote service proxies
+- Authentication (htpasswd with public paths)
+- Synthetic health check at `/up` (no Rails required)
+- CGI scripts including `/showcase/update_config` for remote configuration updates
+
+**What's disabled:**
+- Dynamic Rails tenant requests (show maintenance page)
+- Action Cable WebSocket connections
+- Managed processes (Action Cable server, Redis)
+- Fly-Replay routes (PDF/XLSX generation)
+
+The maintenance configuration (`config/navigator-maintenance.yml`) is automatically generated during Docker build from the same [Configurator](https://github.com/rubys/showcase/blob/main/app/controllers/concerns/configurator.rb) module that builds the full Navigator config, ensuring consistency. Shared builder methods (`build_server_config_base`, `build_static_config`, `build_public_paths`, `build_health_check_config`) eliminate duplication.
+
+Critical pattern: Authentication patterns must exempt the root path (`^/$`) to allow redirects to execute before auth checks, preventing `401 Unauthorized` responses.
+
+Maintenance mode enables zero-downtime updates by switching configuration via the ready hook or CGI endpoint without container restarts.
+
 ### Backups
 
 Databases are small (~1MB each), stored in [Tigris](https://www.tigrisdata.com/) (S3-compatible object storage on Fly.io):
