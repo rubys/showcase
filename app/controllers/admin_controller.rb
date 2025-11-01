@@ -152,8 +152,6 @@ class AdminController < ApplicationController
   end
 
   def apply
-    @stream = OutputChannel.register(:apply)
-
     generate_showcases
 
     # Use helper methods for safe loading

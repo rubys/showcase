@@ -98,6 +98,7 @@ Rails.application.routes.draw do
       get 'settings', on: :collection
       get 'summary', on: :collection
       post 'start_heat', on: :collection
+      post 'execute_command/:command_type', to: 'event#execute_command', on: :collection, as: 'execute_command'
       get 'ages', on: :collection
       post 'ages', on: :collection
       get 'levels', on: :collection

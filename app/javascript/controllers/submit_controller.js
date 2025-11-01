@@ -22,60 +22,88 @@ export default class extends Controller {
     
     // Handle multiple submit buttons
     this.submitTargets.forEach(submitTarget => {
-      submitTarget.addEventListener('click', event => {
+      submitTarget.addEventListener('click', async (event) => {
         event.preventDefault()
 
         // Clean up any existing connection first
         this.cleanup()
 
         const { outputTarget } = this
-        const stream = submitTarget.dataset.stream
+        const commandType = submitTarget.dataset.commandType
 
-        if (!stream) {
-          console.error('No stream found for button:', submitTarget.textContent)
+        if (!commandType) {
+          console.error('No command type found for button:', submitTarget.textContent)
           return
         }
 
+        submitTarget.disabled = true
+
+        // Collect parameters
         const params = {}
         for (const input of this.inputTargets) {
           params[input.name] = input.value
         }
 
-        // Store the subscription so we can clean it up later
-        this.activeSubscription = consumer.subscriptions.create({
-          channel: "OutputChannel",
-          stream: stream
-        }, {
-          connected() {
-            // Add a small delay to ensure WebSocket is fully ready
-            setTimeout(() => {
-              this.perform("command", params)
-              submitTarget.disabled=true
-              outputTarget.parentNode.classList.remove("hidden")
+        try {
+          // POST to start job
+          const response = await fetch(`/event/execute_command/${commandType}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
+            },
+            body: JSON.stringify({ params })
+          })
 
-              // Clear the output area and create a new terminal
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`)
+          }
+
+          const { stream } = await response.json()
+
+          // Parse stream name to get components
+          const match = stream.match(/command_output_(.+)_(\d+)_(.+)/)
+          if (!match) {
+            throw new Error('Invalid stream format')
+          }
+
+          const [, database, userId, jobId] = match
+
+          // Subscribe to output stream
+          this.activeSubscription = consumer.subscriptions.create({
+            channel: "CommandOutputChannel",
+            database: database,
+            user_id: userId,
+            job_id: jobId
+          }, {
+            connected() {
+              outputTarget.parentNode.classList.remove("hidden")
               outputTarget.innerHTML = ''
               this.controller.terminal = new xterm.Terminal()
               this.controller.terminal.open(outputTarget)
-            }, 100)
-          },
+            },
 
-          received(data) {
-            if (data === "\u0004") {
-              this.disconnected()
-            } else {
-              this.controller.terminal?.write(data)
+            received(data) {
+              if (data === "\u0004") {
+                // Completion marker
+                this.disconnected()
+              } else {
+                this.controller.terminal?.write(data)
+              }
+            },
+
+            disconnected() {
+              submitTarget.disabled = false
             }
-          },
+          })
 
-          disconnected() {
-            submitTarget.disabled = false
-            // Clean up will be handled by the controller
-          }
-        })
-        
-        // Store reference to controller in subscription for access in callbacks
-        this.activeSubscription.controller = this
+          this.activeSubscription.controller = this
+
+        } catch (error) {
+          console.error('Failed to start command:', error)
+          submitTarget.disabled = false
+          alert(`Failed to start command: ${error.message}`)
+        }
       })
     })
   }
@@ -87,13 +115,14 @@ export default class extends Controller {
       this.activeSubscription = null
     }
     
-    // More aggressive cleanup - unsubscribe from all OutputChannel subscriptions
+    // More aggressive cleanup - unsubscribe from all CommandOutputChannel subscriptions
     // This helps with stale connections in production
     if (consumer && consumer.subscriptions) {
-      const outputChannelSubscriptions = consumer.subscriptions.subscriptions.filter(
-        subscription => subscription.identifier && JSON.parse(subscription.identifier).channel === 'OutputChannel'
+      const commandSubscriptions = consumer.subscriptions.subscriptions.filter(
+        subscription => subscription.identifier &&
+          JSON.parse(subscription.identifier).channel === 'CommandOutputChannel'
       )
-      outputChannelSubscriptions.forEach(subscription => {
+      commandSubscriptions.forEach(subscription => {
         subscription.unsubscribe()
       })
     }

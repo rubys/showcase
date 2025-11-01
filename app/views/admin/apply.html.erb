@@ -157,7 +157,7 @@
     <!-- Full deployment (only show if changes exist) -->
     <% if changes %>
       <div class="flex flex-col items-center">
-        <button data-submit-target="submit" data-stream="<%= @stream %>"
+        <button data-submit-target="submit" data-command-type="apply"
           class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">
           Full Deployment
         </button>
@@ -184,7 +184,7 @@
 </div>
 
 <div class="hidden p-4 bg-black rounded-xl">
-<div data-submit-target="output" data-stream="<%= @stream %>"
+<div data-submit-target="output"
   class="w-full mx-auto overflow-y-auto h-auto font-mono text-sm max-h-[25rem] min-h-[25rem]">
 </div>
 </div>

@@ -1107,12 +1107,6 @@ class EventController < ApplicationController
       FileUtils.rm "tmp/reload.txt"
       redirect_to root_path
     else
-      @scopy_stream = OutputChannel.register(:scopy)
-      @hetzner_stream = OutputChannel.register(:hetzner)
-      @flyio_stream = OutputChannel.register(:flyio)
-      @vscode_stream = OutputChannel.register(:vscode)
-      @db_browser_stream = OutputChannel.register(:db_browser)
-      
       @dbs = Dir["db/2*.sqlite3"].
         sort_by {|name| File.mtime(name)}[-20..].
         map {|name| File.basename(name, '.sqlite3')}.
@@ -1120,6 +1114,46 @@ class EventController < ApplicationController
 
       @dates = (0..19).map {|i| (Date.today-i).iso8601}
     end
+  end
+
+  def execute_command
+    # Find user or create a development user
+    user = User.find_by(userid: @authuser)
+
+    # In development without authentication, create a temporary user
+    unless user
+      if Rails.env.development? && !@authuser
+        user = User.find_or_create_by(userid: 'dev') do |u|
+          u.email = 'dev@localhost'
+        end
+      else
+        render json: { error: 'User not found' }, status: :unauthorized
+        return
+      end
+    end
+
+    command_type = params[:command_type]
+    unless CommandExecutionJob::COMMANDS.key?(command_type.to_sym)
+      render json: { error: 'Invalid command' }, status: :bad_request
+      return
+    end
+
+    database = ENV['RAILS_APP_DB']
+
+    # Convert params to hash (params[:params] is ActionController::Parameters)
+    job_params = params[:params].present? ? params[:params].to_unsafe_h : {}
+
+    # Start job and get job_id for stream name
+    job = CommandExecutionJob.perform_later(
+      command_type,
+      user.id,
+      database,
+      job_params
+    )
+
+    stream = "command_output_#{database}_#{user.id}_#{job.job_id}"
+
+    render json: { stream: stream }
   end
 
   def songs
