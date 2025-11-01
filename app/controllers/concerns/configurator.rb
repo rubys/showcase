@@ -2,7 +2,17 @@
 require 'set'
 
 module Configurator
+  # Path constants
   DBPATH = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
+
+  # Timeout and memory constants
+  IDLE_TIMEOUT = '15m'
+  STARTUP_TIMEOUT = '5s'
+  DEFAULT_MEMORY_LIMIT = '768M'
+  POOL_TIMEOUT = '5m'
+
+  # Port constants
+  CABLE_PORT = '28080'
 
   def generate_map
     map_data = RegionConfiguration.generate_map_data
@@ -33,6 +43,33 @@ module Configurator
   # Cache showcases.yml to avoid repeated file reads
   def showcases
     @showcases ||= ShowcasesLoader.load
+  end
+
+  # Add locale to tenant environment if present
+  def add_locale_if_present(tenant, locale)
+    tenant['env']['RAILS_LOCALE'] = locale.gsub('-', '_') if locale.present?
+  end
+
+  # Build remote proxy routes for password and studio request endpoints
+  def build_remote_proxy_routes
+    return [] if ENV['RAILS_PROXY_HOST'] == 'rubix.intertwingly.net'
+
+    [
+      {
+        'path' => '^/showcase/password(/.*)',
+        'target' => 'https://rubix.intertwingly.net/showcase/password$1',
+        'headers' => {
+          'X-Forwarded-Host' => '$host'
+        }
+      },
+      {
+        'path' => '^/showcase/studios/([a-z]*)/request$',
+        'target' => 'https://rubix.intertwingly.net/showcase/studios/$1/request',
+        'headers' => {
+          'X-Forwarded-Host' => '$host'
+        }
+      }
+    ]
   end
 
   def build_navigator_config
@@ -85,7 +122,7 @@ module Configurator
     if ENV['FLY_REGION']
       config['idle'] = {
         'action' => 'suspend',
-        'timeout' => '15m'
+        'timeout' => IDLE_TIMEOUT
       }
     end
 
@@ -151,7 +188,7 @@ module Configurator
     )
 
     # Add CGI scripts configuration
-    config['cgi_scripts'] = build_cgi_scripts_config_for_maintenance(root)
+    config['cgi_scripts'] = build_cgi_scripts_config(root, production: true)
 
     config
   end
@@ -207,11 +244,7 @@ module Configurator
     if ENV['FLY_REGION']
       # Get list of all regions from map.yml
       map_file = File.join(Rails.root, 'config/tenant/map.yml')
-      regions = if File.exist?(map_file)
-        YAML.load_file(map_file).dig('regions')&.keys || []
-      else
-        []
-      end
+      regions = File.exist?(map_file) ? (YAML.load_file(map_file).dig('regions')&.keys || []) : []
 
       # Create alternation pattern for all regions
       regions_pattern = regions.map { |r| Regexp.escape(r) }.join('|')
@@ -283,8 +316,12 @@ module Configurator
     }
   end
 
-  def build_cgi_scripts_config(root)
+  def build_cgi_scripts_config(root, production: false)
     scripts = []
+
+    # Determine paths based on environment
+    db_volume = production ? '/data/db' : (ENV['RAILS_DB_VOLUME'] || '/data/db')
+    reload_target = production ? 'config/navigator.yml' : 'config/navigator.yml'
 
     # Add configuration update CGI script (publicly accessible)
     # Runs as root to allow rsync and config reload operations
@@ -295,9 +332,9 @@ module Configurator
       'user' => 'root',
       'group' => 'root',
       'timeout' => '5m',
-      'reload_config' => 'config/navigator.yml',
+      'reload_config' => reload_target,
       'env' => {
-        'RAILS_DB_VOLUME' => ENV['RAILS_DB_VOLUME'] || '/data/db',
+        'RAILS_DB_VOLUME' => db_volume,
         'RAILS_ENV' => 'production'
       }
     }
@@ -327,13 +364,13 @@ module Configurator
     # Use regex capture groups to strip path prefix and proxy just /cable
     if ENV['FLY_REGION']
       cable_path = "^#{root}/regions/#{ENV['FLY_REGION']}(/cable)$"
-      cable_target = 'http://localhost:28080$1'
+      cable_target = "http://localhost:#{CABLE_PORT}$1"
     elsif !root.empty?
       cable_path = "^#{root}(/cable)$"
-      cable_target = 'http://localhost:28080$1'
+      cable_target = "http://localhost:#{CABLE_PORT}$1"
     else
       cable_path = "^/cable$"
-      cable_target = 'http://localhost:28080/cable'
+      cable_target = "http://localhost:#{CABLE_PORT}/cable"
     end
 
     routes['reverse_proxies'] << {
@@ -368,23 +405,7 @@ module Configurator
     end
     
     # Add proxy routes for remote services
-    if ENV['RAILS_PROXY_HOST'] != 'rubix.intertwingly.net'
-      routes['reverse_proxies'] << {
-        'path' => '^/showcase/password(/.*)',
-        'target' => 'https://rubix.intertwingly.net/showcase/password$1',
-        'headers' => {
-          'X-Forwarded-Host' => '$host'
-        }
-      }
-
-      routes['reverse_proxies'] << {
-        'path' => '^/showcase/studios/([a-z]*)/request$',
-        'target' => 'https://rubix.intertwingly.net/showcase/studios/$1/request',
-        'headers' => {
-          'X-Forwarded-Host' => '$host'
-        }
-      }
-    end
+    routes['reverse_proxies'].concat(build_remote_proxy_routes)
     
     # Add PDF and XLSX generation routing to smooth-pdf app
     # Navigator supports three types of fly-replay routing:
@@ -460,7 +481,7 @@ module Configurator
       'framework' => build_framework_config,
       'env' => build_application_env,
       'health_check' => '/up',
-      'startup_timeout' => '5s',
+      'startup_timeout' => STARTUP_TIMEOUT,
       'track_websockets' => false,  # WebSockets proxied to standalone Action Cable server
       'tenants' => tenants,
       'pools' => build_pools_config
@@ -470,13 +491,13 @@ module Configurator
   def build_pools_config
     config = {
       'max_size' => calculate_pool_size,
-      'timeout' => '5m',
+      'timeout' => POOL_TIMEOUT,
       'start_port' => 4000
     }
 
     # Add memory limits and user/group isolation for Fly.io and Kamal (Linux) deployments
     if ENV['FLY_REGION'] || ENV['KAMAL_CONTAINER_NAME']
-      config['default_memory_limit'] = '768M'
+      config['default_memory_limit'] = DEFAULT_MEMORY_LIMIT
       config['user'] = 'rails'
       config['group'] = 'rails'
     end
@@ -561,10 +582,9 @@ module Configurator
       }
     }
 
-    
+
     # Add demo tenant if in a region
     if region || ENV['KAMAL_CONTAINER_NAME']
-      dbpath = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
       tenants << {
         'path' => region ? "#{root}/regions/#{region}/demo/" : "/demo/",
         'root' => "/rails/",
@@ -604,10 +624,7 @@ module Configurator
               }
             }
 
-            if info[:locale].present?
-              tenant['env']['RAILS_LOCALE'] = info[:locale].gsub('-', '_')
-            end
-
+            add_locale_if_present(tenant, info[:locale])
             tenants << tenant
           end
         else
@@ -623,10 +640,7 @@ module Configurator
             }
           }
 
-          if info[:locale].present?
-            tenant['env']['RAILS_LOCALE'] = info[:locale].gsub('-', '_')
-          end
-
+          add_locale_if_present(tenant, info[:locale])
           tenants << tenant
         end
       end
@@ -681,14 +695,12 @@ module Configurator
   def determine_papersize
     region = ENV['FLY_REGION']
     return 'letter' unless region
-    
+
     maps_file = File.join(Rails.root, 'config/tenant/map.yml')
-    if File.exist?(maps_file)
-      map = YAML.load_file(maps_file).dig('regions', region, 'map') rescue 'us'
-      (map || 'us') == 'us' ? 'letter' : 'a4'
-    else
-      'letter'
-    end
+    return 'letter' unless File.exist?(maps_file)
+
+    map = YAML.load_file(maps_file).dig('regions', region, 'map') rescue 'us'
+    (map || 'us') == 'us' ? 'letter' : 'a4'
   end
 
   def load_studios
@@ -704,7 +716,7 @@ module Configurator
     processes << {
       'name' => 'action-cable',
       'command' => 'bundle',
-      'args' => ['exec', 'puma', '-p', ENV.fetch('CABLE_PORT', '28080'), 'cable/config.ru'],
+      'args' => ['exec', 'puma', '-p', ENV.fetch('CABLE_PORT', CABLE_PORT), 'cable/config.ru'],
       'working_dir' => Rails.root.to_s,
       'env' => {
         'RAILS_ENV' => 'production',
@@ -737,29 +749,6 @@ module Configurator
     []
   end
 
-  def build_cgi_scripts_config_for_maintenance(root)
-    # CGI scripts configuration for maintenance mode with production paths
-    scripts = []
-
-    # Add configuration update CGI script
-    # Runs as root to allow rsync and config reload operations
-    scripts << {
-      'path' => "#{root}/update_config",
-      'script' => '/rails/script/update_configuration.rb',
-      'method' => 'POST',
-      'user' => 'root',
-      'group' => 'root',
-      'timeout' => '5m',
-      'reload_config' => 'config/navigator.yml',  # Reload to full config after update
-      'env' => {
-        'RAILS_DB_VOLUME' => '/data/db',
-        'RAILS_ENV' => 'production'
-      }
-    }
-
-    scripts
-  end
-
   def build_routes_config_for_maintenance
     # Routes for maintenance config - excludes Action Cable
     # since WebSocket connections are not needed during maintenance
@@ -782,21 +771,7 @@ module Configurator
     routes['rewrites'] << { 'from' => '^/([^/]+\.(gif|png|jpg|jpeg|ico|pdf|svg|webp|txt))$', 'to' => "#{root}/$1" }
 
     # Add proxy routes for remote services (excluding Action Cable)
-    routes['reverse_proxies'] << {
-      'path' => '^/showcase/password(/.*)',
-      'target' => 'https://rubix.intertwingly.net/showcase/password$1',
-      'headers' => {
-        'X-Forwarded-Host' => '$host'
-      }
-    }
-
-    routes['reverse_proxies'] << {
-      'path' => '^/showcase/studios/([a-z]*)/request$',
-      'target' => 'https://rubix.intertwingly.net/showcase/studios/$1/request',
-      'headers' => {
-        'X-Forwarded-Host' => '$host'
-      }
-    }
+    routes['reverse_proxies'].concat(build_remote_proxy_routes)
 
     routes
   end
