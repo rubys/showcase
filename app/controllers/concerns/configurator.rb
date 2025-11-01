@@ -89,6 +89,12 @@ module Configurator
       }
     end
 
+    # Add bot detection configuration
+    config['bot_detection'] = {
+      'enabled' => true,
+      'action' => 'reject'
+    }
+
     # Add CGI scripts configuration
     config['cgi_scripts'] = build_cgi_scripts_config(root)
 
@@ -571,6 +577,10 @@ module Configurator
           'SHOWCASE_LOGO' => 'intertwingly.png',
           'DATABASE_URL' => "sqlite3:///demo/db/demo.sqlite3",
           'RAILS_STORAGE' => '/demo/storage/demo'
+        },
+        'bot_detection' => {
+          'enabled' => true,
+          'action' => 'ignore'  # Allow bots on demo tenant for search engine indexing
         }
       }
     end
