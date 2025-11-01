@@ -117,11 +117,4 @@ pairs. Key features include:
 - Drag-and-drop grid interface for manual arrangement
 - Handles option tables via person_options join table
 
-The initial configuration had a 8 year old i3
-Linux box running Apache httpd handing SSL and reverse proxying the application
-to a 2021 vintage Mac Mini M1 running the nginx configuration described above.
-This approach could easily scale to be able to handle hundreds of events even
-with a half dozen or so running concurrently, but had a hard dependency on
-my house having both power and internet connectivity.  As such a different
-architecture was needed.  See [ARCHITECTURE.md](./ARCHITECTURE.md) for
-more details.
+The application is designed to scale from single events to hundreds of simultaneous events across multiple regions using a shared-nothing architecture. See [ARCHITECTURE.md](./ARCHITECTURE.md) for details on the production deployment architecture using Navigator, Fly.io, and Tigris storage.
