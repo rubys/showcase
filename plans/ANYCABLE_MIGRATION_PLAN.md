@@ -638,23 +638,38 @@ processes << {
 3. AnyCable receives broadcast and sends to all subscribed WebSocket clients
 4. **No Redis involved** - direct Rails → AnyCable → Clients
 
-**File**: `config/environments/production.rb`
+**IMPORTANT**: Cannot use `:async` adapter because Rails app and Action Cable server run as **separate processes**. The `:async` adapter only broadcasts within a single process (in-memory), so broadcasts from Rails would never reach the Action Cable server where WebSocket connections live.
+
+**Solution**: Use `anycable-rails` gem with HTTP broadcaster:
+
+**File**: `Gemfile`
 
 ```ruby
-# Configure Action Cable to use HTTP broadcaster
-# This eliminates the need for Redis
-Rails.application.configure do
-  # ... existing configuration ...
-
-  # Use async adapter (in-memory, no Redis needed)
-  config.action_cable.adapter = :async
-
-  # OR use inline adapter for even lower memory
-  # config.action_cable.adapter = :inline
-end
+gem 'anycable-rails', '~> 1.5'
 ```
 
-**No additional gems needed** - ActionCable's async adapter works with HTTP broadcasting out of the box.
+Then run: `bundle install`
+
+**File**: `config/cable.yml`
+
+```ruby
+production:
+  adapter: any_cable  # Use AnyCable adapter (NOT async, NOT redis)
+```
+
+**File**: `config/anycable.yml` (create this file)
+
+```yaml
+production:
+  # Use HTTP to broadcast from Rails to Navigator's WebSocket server
+  broadcast_adapter: http
+
+  # Navigator's integrated WebSocket server broadcast endpoint
+  http_broadcast_url: "http://localhost:#{ENV.fetch('CABLE_PORT', '28080')}/_broadcast"
+
+  # Optional: secure broadcasts with a key
+  # broadcast_key: <%= ENV['ANYCABLE_BROADCAST_KEY'] %>
+```
 
 **Broadcasting implementation**: Existing broadcasts work without changes:
 
@@ -666,36 +681,12 @@ ActionCable.server.broadcast(
 )
 ```
 
-**Under the hood with HTTP broadcaster**:
-1. ActionCable detects async adapter
-2. Rails makes HTTP POST to `http://localhost:28080/_broadcast` with JSON payload
-3. AnyCable receives broadcast via HTTP endpoint
-4. AnyCable sends to all subscribed WebSocket clients
+**How it works**:
+1. Rails calls `ActionCable.server.broadcast(stream, data)`
+2. anycable-rails gem intercepts this (via `:any_cable` adapter)
+3. HTTP POST sent to Navigator's `/_broadcast` endpoint
+4. Navigator's integrated AnyCable broadcasts to all WebSocket clients
 5. **No Redis needed** - broadcasts go directly via HTTP
-
-**Alternative: Use AnyCable gem** (optional, provides additional features):
-
-Add to Gemfile:
-
-```ruby
-gem 'anycable-rails', '~> 1.5'
-```
-
-**File**: `config/environments/production.rb`
-
-```ruby
-# AnyCable-Rails automatically configures HTTP broadcasting
-config.action_cable.adapter = :any_cable
-
-AnyCable.configure do |config|
-  config.broadcast_adapter = :http
-  config.http_broadcast_url = "http://localhost:#{ENV.fetch('CABLE_PORT', '28080')}/_broadcast"
-end
-```
-
-This provides automatic configuration and better integration, but adds gem dependency.
-
-**Recommendation**: Use async adapter (no gem) for maximum simplicity and lowest memory usage.
 
 #### Step 3b: Remove Redis from managed processes
 
@@ -1094,7 +1085,23 @@ Build minimal WebSocket support from scratch:
 
 **Timeline**: 2-3 days implementation + 1 day testing
 
-### Configuration
+### Configuration Changes Summary
+
+**What needs to change**:
+
+1. **Add gem**: `anycable-rails` to Gemfile
+2. **Change adapter**: `config/cable.yml` → `adapter: any_cable` (not `async`, not `redis`)
+3. **Create config**: `config/anycable.yml` with HTTP broadcast settings
+4. **Add Navigator config**: `config/navigator.yml` → `server.websocket` section
+5. **Remove processes**: Delete Action Cable and Redis from `configurator.rb`
+
+**What stays the same**:
+- ✅ All channel files unchanged
+- ✅ All `ActionCable.server.broadcast` calls unchanged
+- ✅ Client JavaScript unchanged (still connects to `/cable`)
+- ✅ Stream naming unchanged
+
+### Configuration Details
 
 **File**: `config/navigator.yml`
 
@@ -1119,14 +1126,29 @@ applications:
 
 ### Rails Configuration
 
-**File**: `config/environments/production.rb`
+**IMPORTANT**: Cannot use `:async` adapter because Rails app and Action Cable server run as **separate processes**. The `:async` adapter only broadcasts within a single process (in-memory).
+
+**Solution**: Use `anycable-rails` gem with HTTP broadcaster (same as Part 2):
+
+**File**: `Gemfile`
 
 ```ruby
-# Configure Action Cable to broadcast via HTTP
-config.action_cable.adapter = :async  # No Redis needed
+gem 'anycable-rails', '~> 1.5'
+```
 
-# Broadcasts go to Navigator's integrated WebSocket server
-# Navigator handles the /_broadcast endpoint
+**File**: `config/cable.yml`
+
+```yaml
+production:
+  adapter: any_cable  # Use AnyCable adapter (NOT async, NOT redis)
+```
+
+**File**: `config/anycable.yml`
+
+```yaml
+production:
+  broadcast_adapter: http
+  http_broadcast_url: "http://localhost:3000/_broadcast"  # Navigator's integrated endpoint
 ```
 
 **No changes needed** to existing `ActionCable.server.broadcast` calls!
