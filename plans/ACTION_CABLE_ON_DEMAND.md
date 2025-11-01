@@ -867,6 +867,97 @@ fly deploy -a smooth-nav
 
 ---
 
+## Alternative: Migrate to AnyCable Instead
+
+> **UPDATE (2025-11-01)**: After evaluating AnyCable, it provides superior memory savings without the complexity of on-demand startup.
+
+### Memory Comparison
+
+| Approach | Memory | Savings vs Baseline | Notes |
+|----------|--------|---------------------|-------|
+| Action Cable (always-on) | 169MB | 0MB baseline | Current state |
+| Action Cable (on-demand, disabled) | 31MB | 138MB (82%) | **Requires manual enable/disable** |
+| Action Cable (on-demand, optimized enabled) | 108-133MB | 36-61MB (21-36%) | Still uses significant memory |
+| **AnyCable (always-on, with Redis)** | **51-61MB** | **108-118MB (64-70%)** | **No on-demand needed** |
+| **AnyCable (always-on, HTTP broadcaster)** | **38-48MB** | **121-131MB (72-77%)** | **Best option** |
+
+### Why AnyCable is Superior
+
+1. **Simpler architecture**: No on-demand startup complexity, no `ENABLE_ACTION_CABLE` flag needed
+2. **Nearly matches disabled state**: AnyCable at 38-48MB is close to disabled Action Cable at 31MB, but WebSockets are always available
+3. **Better than optimized Action Cable**: Even optimized Action Cable (108-133MB when enabled) uses 2-3× more memory than AnyCable (38-61MB)
+4. **No Redis dependency**: HTTP broadcaster eliminates the 13.5MB Redis requirement entirely
+5. **Better performance**: Go-based server handles 100k+ concurrent connections vs Ruby's limitations
+6. **No manual intervention**: Always available, no need to remember to enable before events
+7. **Production-proven**: Used by major Rails applications at massive scale
+
+### Savings Across 8 Regions
+
+| Approach | Per-region Savings | Total Savings (8 regions) |
+|----------|-------------------|---------------------------|
+| On-demand (disabled) | 138MB | 1,104MB |
+| On-demand (optimized enabled) | 36-61MB | 288-488MB |
+| **AnyCable (with Redis)** | **108-118MB** | **864-944MB** |
+| **AnyCable (no Redis)** | **121-131MB** | **968-1,048MB** |
+
+### Recommended Path Forward
+
+**Instead of implementing this plan**, consider implementing [ANYCABLE_MIGRATION_PLAN.md](ANYCABLE_MIGRATION_PLAN.md):
+
+1. **Part 1 (3-5 hours)**: Migrate OutputChannel from WebSocket `perform` to HTTP POST + Job pattern
+   - Eliminates RPC-like behavior in Action Cable
+   - Follows existing patterns (ConfigUpdateJob, OfflinePlaylistJob)
+   - Prerequisite for AnyCable standalone mode
+
+2. **Part 2 (2-6 hours)**: Migrate to AnyCable standalone mode
+   - Replace Puma Action Cable (137.8MB) with AnyCable-Go (20-30MB)
+   - Eliminate Redis (13.5MB) using HTTP broadcaster
+   - **Result**: 121-131MB saved per region, 968-1,048MB across 8 regions
+
+### Benefits Summary
+
+**This plan (on-demand Action Cable)**:
+- ✅ Saves 138MB when disabled
+- ❌ Requires manual enable/disable before/after events
+- ❌ WebSockets unavailable when disabled
+- ❌ Risk of forgetting to enable before event
+- ❌ Still uses 108-133MB when enabled
+
+**AnyCable migration**:
+- ✅ Saves 121-131MB (nearly same as disabled)
+- ✅ WebSockets always available (no manual intervention)
+- ✅ Better performance (Go vs Ruby)
+- ✅ Simpler operations (no toggle needed)
+- ✅ No startup delay
+- ✅ Production-proven at scale
+
+### When to Still Use This Plan
+
+This plan (ACTION_CABLE_ON_DEMAND) remains valuable if:
+- Cannot migrate to AnyCable immediately (time constraints, compatibility concerns)
+- Need temporary memory savings before undertaking AnyCable migration
+- Want to test on-demand pattern for other services (database appliances, PDF generation, etc.)
+- Organizational policy prohibits Go-based services
+
+### Migration Timeline
+
+If proceeding with AnyCable instead:
+- **Week 1**: Implement OutputChannel migration (Part 1)
+- **Week 2**: Test and deploy OutputChannel changes
+- **Week 3**: Implement AnyCable migration (Part 2)
+- **Week 4**: Test and deploy AnyCable
+- **Week 5+**: Monitor and optimize
+
+**Total effort**: 5-11 hours implementation + testing/monitoring
+
+### Status
+
+**This plan is superseded by ANYCABLE_MIGRATION_PLAN.md for long-term memory optimization.**
+
+However, the techniques documented here (on-demand process startup, Navigator enhancements) may be applicable to other services in the future.
+
+---
+
 ## Future Enhancements (Phase 3+)
 
 After Phase 1+2 are successful and stable:
