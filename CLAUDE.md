@@ -2,6 +2,16 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Architecture Documentation
+
+For understanding the overall system architecture, deployment model, and operational patterns, see [ARCHITECTURE.md](ARCHITECTURE.md). Review this document when:
+
+- Working on deployment, multi-tenancy, or Navigator-related features
+- Understanding how the application runs in production (Fly.io, Tigris storage, global distribution)
+- Investigating performance, scaling, or infrastructure concerns
+- Making changes to configuration management, CGI scripts, or lifecycle hooks
+- Understanding the four-component system: Rails app, administration, Navigator reverse proxy, and glue scripts
+
 ## Rails Configuration
 
 The application runs on Rails 8.0.2 with full Rails 8.0 configuration defaults (`config.load_defaults 8.0`).
@@ -25,6 +35,15 @@ Future work could consider renaming these columns to non-reserved words for clea
 This is a Rails 8 application for managing ballroom dance showcase events. It handles event scheduling, heat management, scoring, and participant tracking across multiple locations and competitions.
 
 Models are split into two categories: **Base models** support ballroom dance event management (ages, billables, categories, dances, entries, events, formations, heats, judges, people, scores, solos, studios, tables, etc.), while **Admin models** support system administration and multi-tenancy (locales, locations, regions, showcases, users).
+
+### Frontend Architecture
+
+This application uses **import maps** for JavaScript module management (not Webpack or esbuild). When adding JavaScript functionality:
+
+- **Prefer Stimulus controllers** over inline scripts in views
+- Stimulus controllers are located in `app/javascript/controllers/`
+- Import maps configuration is in `config/importmap.rb`
+- Avoid `<script>` tags with inline JavaScript in ERB templates unless absolutely necessary
 
 ## Common Development Commands
 
@@ -96,7 +115,7 @@ bin/rails db:fixtures:load
 
 #### Judging & Scoring Models
 - `Judge` - Judge information for a person, has many recordings
-- `Score` - Judge scoring data for heats, broadcasts live updates via ActionCable
+- `Score` - Judge scoring data for heats, broadcasts live updates via ActionCable. **Important**: Scores with no data (nil `good`, `bad`, `value`, and blank `comments`) are normally deleted to keep the database clean. However, when `Event.assign_judges > 0`, empty scores are kept because they indicate judge assignment - the existence of a Score record shows which judge has been assigned to that heat/couple combination
 - `Recording` - Audio recordings by judges for heats, uploads to cloud storage
 
 #### Financial Models
