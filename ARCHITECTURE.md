@@ -101,6 +101,17 @@ Following [Rails best practices](https://guides.rubyonrails.org/action_cable_ove
 
 This architecture enables real-time updates during live events (judges entering scores, heat progression) while maintaining tenant isolation and keeping the cable server simple and stateless.
 
+### Background jobs
+
+The application uses Active Job with the **`:async` adapter in production** (in-memory thread pool). This is an unconventional choice for production—jobs are lost on machine restart—but acceptable for showcase's workload:
+
+- **ConfigUpdateJob**: Manually triggered, can be re-run if lost
+- **OfflinePlaylistJob**: User-initiated downloads, can retry
+- **SendInvoiceJob**: Email delivery, non-critical timing
+- **CommandExecutionJob**: Short-lived administrative tasks
+
+Jobs execute in the same Rails process using a thread pool, avoiding the complexity and overhead of external job backends (Solid Queue, Sidekiq, Redis). The trade-off is that queued jobs are lost during deployments or crashes, but all current jobs are either retriable or non-critical.
+
 ### Global distribution
 
 Events are distributed across multiple regions (currently 8 Fly.io regions across US, Europe, Asia, and Australia). Each region runs an identical machine, all accessing the same Tigris storage.
