@@ -850,7 +850,18 @@ If AnyCable causes issues:
 
 ## Part 3: Alternative - Integrated Navigator + AnyCable
 
-> **RECOMMENDED APPROACH**: This provides better memory savings and simpler deployment than Part 2.
+> **STATUS: ⚠️ IMPLEMENTATION ATTEMPTED (2025-11-02) - PAUSED FOR EVALUATION**
+>
+> **Implementation time**: ~3 hours (90% complete but untested)
+> **Result**: Configuration complete, Navigator builds, but not verified working
+> **Key learnings**:
+> - Custom code required: ~226 lines (wrapper around AnyCable)
+> - AnyCable dependency: 37k LOC added to binary
+> - Dev/prod difference: Development uses Action Cable `:async`, production uses AnyCable `:any_cable`
+> - Code complexity similar to building custom solution (~230 lines estimated)
+> **Decision**: Paused to evaluate custom WebSocket implementation (see CUSTOM_WEBSOCKET_PLAN.md)
+
+> **ORIGINAL DESCRIPTION**: This provides better memory savings and simpler deployment than Part 2.
 
 ### Overview
 
