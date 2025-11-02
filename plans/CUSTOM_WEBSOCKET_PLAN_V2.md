@@ -46,7 +46,7 @@ The Rails engine is complete and tested. Key components:
 **Installation**:
 ```bash
 # Add to Gemfile
-gem 'turbo_cable', path: '/Users/rubys/git/turbo_cable'  # or github: 'rubys/turbo_cable'
+gem 'turbo_cable', github: 'rubys/turbo_cable'
 
 # Install
 bundle install
@@ -333,10 +333,10 @@ Test all channels:
 2. ✅ Port working code from counter app
 3. ✅ Test with counter app
 4. ✅ Document (README)
-5. ⏭️ Publish gem (optional - can publish to GitHub or RubyGems later)
+5. ✅ Publish to GitHub (https://github.com/rubys/turbo_cable)
 
 ### Phase 2: Test in Showcase Dev (4 hours)
-1. Add `gem 'turbo_cable', path: '/Users/rubys/git/turbo_cable'` to Gemfile
+1. Add `gem 'turbo_cable', github: 'rubys/turbo_cable'` to Gemfile
 2. Run `rails generate turbo_cable:install`
 3. Restart server
 4. Verify current heat and scores work
@@ -451,9 +451,7 @@ gem 'turbo-rails' # Already there
 ### Installation in Any Rails App:
 ```bash
 # Add to Gemfile
-gem 'turbo_cable', path: '/Users/rubys/git/turbo_cable'
-# Or from GitHub (once pushed):
-# gem 'turbo_cable', github: 'rubys/turbo_cable'
+gem 'turbo_cable', github: 'rubys/turbo_cable'
 
 # Install
 bundle install
