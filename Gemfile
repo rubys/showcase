@@ -113,3 +113,5 @@ gem "geocoder", "~> 1.8"
 gem "rubyzip", "~> 3.0"
 
 gem "htauth", "~> 2.3"
+
+gem "turbo_cable", github: "rubys/turbo_cable"

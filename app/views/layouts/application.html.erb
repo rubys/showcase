@@ -32,7 +32,7 @@
     end
   end
   route += " data-controller='#{controllers.join(' ')}'" if controllers.any?
-  %><body<%= route.html_safe %> data-turbo-prefetch="false" data-locale="<%= (@locale || ENV.fetch("RAILS_LOCALE", "en_US")).gsub('_', '-') %>">
+  %><body data-controller="turbo-streams"<%= route.html_safe %> data-turbo-prefetch="false" data-locale="<%= (@locale || ENV.fetch("RAILS_LOCALE", "en_US")).gsub('_', '-') %>">
 
     <% unless @nologo %>
     <% if ENV['RAILS_APP_DB'] != 'index'
