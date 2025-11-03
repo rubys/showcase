@@ -72,6 +72,7 @@ module Configurator
   def build_navigator_config
     config = {
       'server' => build_server_config,
+      'cable' => build_cable_config,
       'applications' => build_applications_config,
       'managed_processes' => build_managed_processes_config,
       'routes' => build_routes_config,
@@ -102,6 +103,16 @@ module Configurator
     config['auth'] = auth_config if auth_config
 
     config
+  end
+
+  def build_cable_config
+    # TurboCable WebSocket configuration
+    # Explicitly configure the cable endpoints for clarity
+    {
+      'enabled' => true,
+      'path' => '/cable',
+      'broadcast_path' => '/_broadcast'
+    }
   end
 
   def build_server_config
