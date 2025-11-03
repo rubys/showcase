@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/rubys/turbo_cable.git
-  revision: d1026dd823b2de2b4df9b8292da3a243839a1065
+  revision: ee22bc55373e53f855ecc7f934fb845b56eac047
   specs:
     turbo_cable (0.1.0)
       rails (>= 8.1.1)

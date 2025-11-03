@@ -76,4 +76,8 @@ if [[ $# -gt 0 ]]; then
   fi
 fi
 
+# Foreman sets PORT=5000 by default, but Rails runs on port 3000
+# Set TURBO_CABLE_PORT so TurboCable broadcasts to the correct port
+export TURBO_CABLE_PORT=3000
+
 foreman start -f Procfile.dev
