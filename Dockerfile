@@ -29,7 +29,7 @@ FROM base AS build
 ARG RAILS_PROXY_HOST
 
 # Install packages needed to build gems
-RUN apt-get install --no-install-recommends -y build-essential libyaml-dev pkg-config zlib1g-dev
+RUN apt-get install --no-install-recommends -y build-essential git libyaml-dev pkg-config zlib1g-dev
 
 # Install application gems
 COPY --link Gemfile Gemfile.lock ./
@@ -94,7 +94,7 @@ FROM base
 
 # Install packages needed for deployment
 RUN bash -c "$(curl -L https://setup.vector.dev)" && \
-    apt-get install --no-install-recommends -y dnsutils nats-server poppler-utils procps redis-server ruby-foreman sqlite3 sudo vector vim unzip && \
+    apt-get install --no-install-recommends -y dnsutils nats-server poppler-utils procps ruby-foreman sqlite3 sudo vector vim unzip && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Copy built artifacts: gems, application
@@ -107,13 +107,6 @@ COPY --from=build-nav /go/bin/nats /usr/local/bin/nats
 RUN useradd rails --create-home --shell /bin/bash && \
     mkdir /data && \
     chown -R rails:rails db log storage tmp /data
-
-# configure redis
-RUN sed -i 's/^daemonize yes/daemonize no/' /etc/redis/redis.conf &&\
-  sed -i 's/^bind/# bind/' /etc/redis/redis.conf &&\
-  sed -i 's/^protected-mode yes/protected-mode no/' /etc/redis/redis.conf &&\
-  sed -i 's/^logfile/# logfile/' /etc/redis/redis.conf &&\
-  echo "vm.overcommit_memory = 1" >> /etc/sysctl.conf
 
 # Prep demo
 RUN SECRET_KEY_BASE=DUMMY RAILS_APP_DB=demo bin/rails db:prepare
