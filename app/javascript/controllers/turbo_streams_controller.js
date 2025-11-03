@@ -4,13 +4,13 @@ import { Controller } from "@hotwired/stimulus"
 // Automatically subscribes to streams marked with data-turbo-stream
 export default class extends Controller {
   connect() {
-    console.log("Turbo Streams WebSocket controller connected")
+    console.debug("Turbo Streams WebSocket controller connected")
 
     // Find all turbo-stream markers in the document
     const markers = document.querySelectorAll('[data-turbo-stream="true"]')
 
     if (markers.length === 0) {
-      console.log("No turbo-stream markers found")
+      console.debug("No turbo-stream markers found")
       return
     }
 
@@ -24,11 +24,11 @@ export default class extends Controller {
     })
 
     if (this.streams.size === 0) {
-      console.log("No streams to subscribe to")
+      console.debug("No streams to subscribe to")
       return
     }
 
-    console.log("Subscribing to streams:", Array.from(this.streams))
+    console.debug("Subscribing to streams:", Array.from(this.streams))
 
     // Create WebSocket connection
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -36,7 +36,7 @@ export default class extends Controller {
     this.subscribed = new Set()
 
     this.ws.onopen = () => {
-      console.log('WebSocket connected')
+      console.debug('WebSocket connected')
       // Subscribe to all streams
       this.streams.forEach(stream => {
         this.ws.send(JSON.stringify({
@@ -51,13 +51,13 @@ export default class extends Controller {
 
       switch (msg.type) {
         case 'subscribed':
-          console.log('Subscribed to stream:', msg.stream)
+          console.debug('Subscribed to stream:', msg.stream)
           this.subscribed.add(msg.stream)
           break
 
         case 'message':
           if (this.streams.has(msg.stream)) {
-            console.log("Received update on stream:", msg.stream)
+            console.debug("Received update on stream:", msg.stream)
             this.processTurboStream(msg.stream, msg.data)
           }
           break
@@ -74,12 +74,12 @@ export default class extends Controller {
     }
 
     this.ws.onclose = () => {
-      console.log('WebSocket disconnected')
+      console.debug('WebSocket disconnected')
 
       // Auto-reconnect after 3 seconds if we had subscriptions
       if (this.subscribed.size > 0) {
         setTimeout(() => {
-          console.log('Attempting to reconnect...')
+          console.debug('Attempting to reconnect...')
           this.connect()
         }, 3000)
       }
@@ -112,7 +112,7 @@ export default class extends Controller {
         bubbles: true
       })
       document.dispatchEvent(event)
-      console.log('Dispatched turbo:stream-message event for stream:', stream)
+      console.debug('Dispatched turbo:stream-message event for stream:', stream)
     }
   }
 
@@ -147,34 +147,34 @@ export default class extends Controller {
         if (template && template.content) {
           const newElement = template.content.firstElementChild.cloneNode(true)
           targetElement.replaceWith(newElement)
-          console.log('Replaced element:', target)
+          console.debug('Replaced element:', target)
         }
         break
 
       case 'update':
         if (template && template.content) {
           targetElement.innerHTML = template.innerHTML
-          console.log('Updated element:', target)
+          console.debug('Updated element:', target)
         }
         break
 
       case 'append':
         if (template && template.content) {
           targetElement.appendChild(template.content.cloneNode(true))
-          console.log('Appended to element:', target)
+          console.debug('Appended to element:', target)
         }
         break
 
       case 'prepend':
         if (template && template.content) {
           targetElement.prepend(template.content.cloneNode(true))
-          console.log('Prepended to element:', target)
+          console.debug('Prepended to element:', target)
         }
         break
 
       case 'remove':
         targetElement.remove()
-        console.log('Removed element:', target)
+        console.debug('Removed element:', target)
         break
 
       default:
