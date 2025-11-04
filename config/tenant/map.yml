@@ -424,6 +424,14 @@ studios:
     map: us
     x: 785.2697528990994
     y: 194.3870346408271
+  mcmurray:
+    name: McMurray
+    lat: 40.2791485
+    lon: -80.088632
+    region: iad
+    map: us
+    x: 712.2938332325348
+    y: 201.4958797230488
   mdballroom:
     name: Memorial DanceSport Ballroom
     lat: 29.7589382
