@@ -30,9 +30,10 @@ export default class extends Controller {
 
     console.debug("Subscribing to streams:", Array.from(this.streams))
 
-    // Create WebSocket connection
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    this.ws = new WebSocket(`${protocol}//${window.location.host}/cable`)
+    // Create WebSocket connection using the cable URL from meta tag
+    const cableUrlMeta = document.querySelector('meta[name="action-cable-url"]')
+    const cableUrl = cableUrlMeta?.content || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/cable`
+    this.ws = new WebSocket(cableUrl)
     this.subscribed = new Set()
 
     this.ws.onopen = () => {
@@ -97,7 +98,7 @@ export default class extends Controller {
       })
       this.ws.close()
     }
-    this.subscribed.clear()
+    this.subscribed?.clear()
   }
 
   processTurboStream(stream, data) {

@@ -107,10 +107,18 @@ module Configurator
 
   def build_cable_config
     # TurboCable WebSocket configuration
-    # Explicitly configure the cable endpoints for clarity
+    # Path must be the FULL path including root_path (Navigator checks full request path)
+    # For Fly.io: /showcase/regions/{region}/cable
+    # For local/other: /showcase/cable
+    cable_path = if ENV['FLY_REGION']
+                   "/showcase/regions/#{ENV['FLY_REGION']}/cable"
+                 else
+                   '/showcase/cable'
+                 end
+
     {
       'enabled' => true,
-      'path' => '/cable',
+      'path' => cable_path,
       'broadcast_path' => '/_broadcast'
     }
   end
