@@ -11,9 +11,6 @@ module Configurator
   DEFAULT_MEMORY_LIMIT = '768M'
   POOL_TIMEOUT = '5m'
 
-  # Port constants
-  CABLE_PORT = '28080'
-
   def generate_map
     map_data = RegionConfiguration.generate_map_data
     file = File.join(DBPATH, 'map.yml')
@@ -75,6 +72,7 @@ module Configurator
   def build_navigator_config
     config = {
       'server' => build_server_config,
+      'cable' => build_cable_config,
       'applications' => build_applications_config,
       'managed_processes' => build_managed_processes_config,
       'routes' => build_routes_config,
@@ -105,6 +103,16 @@ module Configurator
     config['auth'] = auth_config if auth_config
 
     config
+  end
+
+  def build_cable_config
+    # TurboCable WebSocket configuration
+    # Explicitly configure the cable endpoints for clarity
+    {
+      'enabled' => true,
+      'path' => '/cable',
+      'broadcast_path' => '/_broadcast'
+    }
   end
 
   def build_server_config
@@ -357,33 +365,6 @@ module Configurator
       }
     }
 
-    # Add WebSocket proxy for Action Cable
-    # For FLY_REGION: /showcase/regions/iad/cable -> proxy to :28080/cable
-    # For local dev: /showcase/cable -> proxy to :28080/cable
-    # For no root: /cable -> proxy to :28080/cable
-    # Use regex capture groups to strip path prefix and proxy just /cable
-    if ENV['FLY_REGION']
-      cable_path = "^#{root}/regions/#{ENV['FLY_REGION']}(/cable)$"
-      cable_target = "http://localhost:#{CABLE_PORT}$1"
-    elsif !root.empty?
-      cable_path = "^#{root}(/cable)$"
-      cable_target = "http://localhost:#{CABLE_PORT}$1"
-    else
-      cable_path = "^/cable$"
-      cable_target = "http://localhost:#{CABLE_PORT}/cable"
-    end
-
-    routes['reverse_proxies'] << {
-      'path' => cable_path,
-      'target' => cable_target,
-      'websocket' => true,
-      'headers' => {
-        'X-Forwarded-For' => '$remote_addr',
-        'X-Forwarded-Proto' => '$scheme',
-        'X-Forwarded-Host' => '$host'
-      }
-    }
-
     # Add redirects
     if region
       routes['redirects'] << { 'from' => '^/$', 'to' => "#{root}/studios/" }
@@ -538,17 +519,23 @@ module Configurator
     if root != ''
       env['RAILS_RELATIVE_URL_ROOT'] = root
     end
-    env['RAILS_APP_REDIS'] = 'showcase_production'
 
     # Enable JSON logging for navigator-managed apps
     env['RAILS_LOG_JSON'] = 'true'
 
-    # Action Cable configuration
+    # TurboCable WebSocket configuration
+    # RAILS_CABLE_PATH: Where clients connect (handled by Navigator)
+    # TURBO_CABLE_BROADCAST_URL: Where Rails broadcasts (Navigator's /_broadcast endpoint)
     if ENV['FLY_REGION']
       env['RAILS_CABLE_PATH'] = "/showcase/regions/#{ENV['FLY_REGION']}/cable"
     else
       env['RAILS_CABLE_PATH'] = '/showcase/cable'
     end
+
+    # Point broadcasts to Navigator's /_broadcast endpoint
+    # Use localhost:3000 for production (Fly.io/Kamal), localhost:9999 for local development
+    broadcast_port = ENV['FLY_APP_NAME'] || ENV['KAMAL_CONTAINER_NAME'] ? '3000' : '9999'
+    env['TURBO_CABLE_BROADCAST_URL'] = "http://localhost:#{broadcast_port}/_broadcast"
 
     # puma and Active Record pool size
     env['RAILS_MAX_THREADS'] = '3'
@@ -708,39 +695,9 @@ module Configurator
   end
 
   def build_managed_processes_config
-    # Return an array of managed process configurations
-    # This can be customized based on your needs
-    processes = []
-    
-    # Add standalone Action Cable server
-    processes << {
-      'name' => 'action-cable',
-      'command' => 'bundle',
-      'args' => ['exec', 'puma', '-p', ENV.fetch('CABLE_PORT', CABLE_PORT), 'cable/config.ru'],
-      'working_dir' => Rails.root.to_s,
-      'env' => {
-        'RAILS_ENV' => 'production',
-        'RAILS_APP_REDIS' => 'showcase_production',  # Same channel prefix as Rails tenants
-        'RAILS_APP_DB' => 'action-cable'  # Used for logging
-      },
-      'auto_restart' => true,
-      'start_delay' => '1s'  # Wait 1 second after Navigator starts
-    }
-    
-    # Add a Redis server if running on Fly.io
-    if ENV['FLY_APP_NAME']
-      processes << {
-        'name' => 'redis',
-        'command' => 'redis-server',
-        'args' => ['/etc/redis/redis.conf'],
-        'working_dir' => Rails.root.to_s,
-        'env' => {},
-        'auto_restart' => true,
-        'start_delay' => '2s'
-      }
-    end
-    
-    processes
+    # TurboCable provides in-process WebSocket handling via Rack middleware
+    # No need for standalone Action Cable server or Redis
+    []
   end
 
   def build_managed_processes_config_for_maintenance

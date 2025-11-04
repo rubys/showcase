@@ -1,18 +1,14 @@
 class OfflinePlaylistJob < ApplicationJob
   queue_as :default
 
-  def perform(event_id, user_id)
+  def perform(event_id, request_id)
     event = Event.find(event_id)
     Event.current = event
 
-    filename = "dj-playlist-#{event.name.parameterize}.zip"
-    cache_key = "offline_playlist_#{event_id}"
     database = ENV['RAILS_APP_DB']
 
-    Rails.cache.delete(cache_key)
-
-    ActionCable.server.broadcast(
-      "offline_playlist_#{database}_#{user_id}",
+    TurboCable::Broadcastable.broadcast_json(
+      "offline_playlist_#{database}_#{request_id}",
       { status: 'processing', progress: 0, message: 'Starting playlist generation...' }
     )
     
@@ -20,16 +16,18 @@ class OfflinePlaylistJob < ApplicationJob
       total_heats = Solo.joins(:heat).where(heats: { category: 'Solo', number: 1.. }).count
       
       if total_heats == 0
-        ActionCable.server.broadcast(
-          "offline_playlist_#{database}_#{user_id}",
+        TurboCable::Broadcastable.broadcast_json(
+          "offline_playlist_#{database}_#{request_id}",
           { status: 'error', message: 'No solos found' }
         )
         return
       end
-      
+
+      zip_path = generate_zip_file(event, request_id, total_heats, database)
+
       # Notify user we're finalizing the download file
-      ActionCable.server.broadcast(
-        "offline_playlist_#{database}_#{user_id}",
+      TurboCable::Broadcastable.broadcast_json(
+        "offline_playlist_#{database}_#{request_id}",
         {
           status: 'processing',
           progress: 100,
@@ -37,31 +35,23 @@ class OfflinePlaylistJob < ApplicationJob
         }
       )
 
-      zip_path = generate_zip_file(event, user_id, total_heats, database)
+      # Extract just the filename from the path for the download URL
+      zip_filename = File.basename(zip_path)
 
-      # Store just the path in cache, not the entire file
-      cache_data = {
-        filename: filename,
-        file_path: zip_path,
-        generated_at: Time.current
-      }
-
-      Rails.cache.write(cache_key, cache_data, expires_in: 1.hour)
-
-      ActionCable.server.broadcast(
-        "offline_playlist_#{database}_#{user_id}",
+      TurboCable::Broadcastable.broadcast_json(
+        "offline_playlist_#{database}_#{request_id}",
         {
           status: 'completed',
           progress: 100,
           message: 'Playlist ready for download',
-          download_key: cache_key
+          download_key: zip_filename
         }
       )
     rescue => e
       Rails.logger.error "OfflinePlaylistJob failed: #{e.message}\n#{e.backtrace.join("\n")}"
 
-      ActionCable.server.broadcast(
-        "offline_playlist_#{database}_#{user_id}",
+      TurboCable::Broadcastable.broadcast_json(
+        "offline_playlist_#{database}_#{request_id}",
         { status: 'error', message: "Failed to generate playlist: #{e.message}" }
       )
     end
@@ -69,23 +59,23 @@ class OfflinePlaylistJob < ApplicationJob
 
   private
 
-  def generate_zip_file(event, user_id, total_heats, database)
+  def generate_zip_file(event, request_id, total_heats, database)
     require 'zip'
     require 'fileutils'
-    
+
     # Create a directory for temporary files if it doesn't exist
     temp_dir = Rails.root.join('tmp', 'offline_playlists')
     FileUtils.mkdir_p(temp_dir)
-    
-    # Create a unique filename
-    zip_filename = "dj-playlist-#{event.id}-#{Time.current.to_i}.zip"
+
+    # Create a unique filename using timestamp
+    zip_filename = "dj-playlist-#{Time.current.to_i}.zip"
     zip_path = temp_dir.join(zip_filename)
     
     Zip::OutputStream.open(zip_path) do |zip|
       zip.put_next_entry("dj-playlist.html")
 
       # Stream HTML content directly to ZIP (no memory accumulation)
-      generate_html_content(zip, event, user_id, total_heats, database)
+      generate_html_content(zip, event, request_id, total_heats, database)
       
       zip.put_next_entry("README.txt")
       zip.write(generate_readme_content(event))
@@ -101,7 +91,7 @@ class OfflinePlaylistJob < ApplicationJob
     zip_path.to_s
   end
   
-  def generate_html_content(zip_stream, event, user_id, total_heats, database)
+  def generate_html_content(zip_stream, event, request_id, total_heats, database)
     solos_controller = SolosController.new
     solos_controller.index
     heats = solos_controller.instance_variable_get(:@solos).map { |solo| solo.last }.flatten.sort_by { |heat| heat.number }
@@ -124,8 +114,8 @@ class OfflinePlaylistJob < ApplicationJob
       # Broadcast if a second or more has elapsed since last broadcast, or if we're done
       current_time = Time.current
       if (current_time - last_broadcast_time) >= 1.0 || processed == total_heats
-        ActionCable.server.broadcast(
-          "offline_playlist_#{database}_#{user_id}",
+        TurboCable::Broadcastable.broadcast_json(
+          "offline_playlist_#{database}_#{request_id}",
           {
             status: 'processing',
             progress: progress,

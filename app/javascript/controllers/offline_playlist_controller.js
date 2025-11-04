@@ -1,24 +1,21 @@
 import { Controller } from "@hotwired/stimulus"
-import { createConsumer } from "@rails/actioncable"
 
 export default class extends Controller {
   static targets = [ "button", "progress", "message", "progressBar" ]
-  static values = { cleanupUrl: String }
+  static values = { cleanupUrl: String, stream: String, requestId: String }
 
   connect() {
-    this.consumer = createConsumer()
-    this.cacheKey = null
+    this.filename = null
+    // Listen for custom JSON events from TurboCable
+    this.boundHandleMessage = this.handleMessage.bind(this)
+    document.addEventListener('turbo:stream-message', this.boundHandleMessage)
   }
-  
+
   async disconnect() {
-    if (this.subscription) {
-      this.subscription.unsubscribe()
-    }
-    if (this.consumer) {
-      this.consumer.disconnect()
-    }
-    // Clean up the cache when leaving the page
-    if (this.cacheKey && this.hasCleanupUrlValue) {
+    document.removeEventListener('turbo:stream-message', this.boundHandleMessage)
+
+    // Clean up the generated file when leaving the page
+    if (this.filename && this.hasCleanupUrlValue) {
       try {
         await fetch(this.cleanupUrlValue, {
           method: "POST",
@@ -26,42 +23,44 @@ export default class extends Controller {
             "Content-Type": "application/json",
             "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
           },
-          body: JSON.stringify({ cache_key: this.cacheKey })
+          body: JSON.stringify({ filename: this.filename })
         })
       } catch (error) {
         // Silently fail - page is unloading anyway
       }
     }
   }
+
+  handleMessage(event) {
+    const { stream, data } = event.detail
+
+    // Only handle events for our stream
+    if (stream !== this.streamValue) return
+
+    // Handle different message types
+    this.handleProgressUpdate(data)
+  }
   
   async generate() {
     this.buttonTarget.disabled = true
     this.buttonTarget.classList.add("opacity-50", "cursor-not-allowed")
     this.progressTarget.classList.remove("hidden")
-    
+
     try {
-      const response = await fetch(window.location.pathname + ".json", {
+      const response = await fetch(window.location.pathname + `.json?request_id=${this.requestIdValue}`, {
         method: "GET",
         headers: {
           "Accept": "application/json",
           "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
         }
       })
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-      
-      const data = await response.json()
 
-      this.subscription = this.consumer.subscriptions.create(
-        { channel: "OfflinePlaylistChannel", user_id: data.user_id, database: data.database },
-        {
-          received: (data) => {
-            this.handleProgressUpdate(data)
-          }
-        }
-      )
+      // Job will broadcast updates via TurboCable
+      // No need to create subscription - we're already listening via turbo:stream-message
     } catch (error) {
       console.error("Error initiating playlist generation:", error)
       this.messageTarget.textContent = "Failed to start playlist generation"
@@ -91,11 +90,11 @@ export default class extends Controller {
     this.messageTarget.textContent = message
   }
   
-  showDownloadLink(cacheKey) {
-    const downloadUrl = `${window.location.pathname}.zip?cache_key=${cacheKey}`
-    
-    // Store the cache key for cleanup on disconnect
-    this.cacheKey = cacheKey
+  showDownloadLink(filename) {
+    const downloadUrl = `${window.location.pathname}.zip?filename=${filename}`
+
+    // Store the filename for cleanup on disconnect (though cleanup is now automatic via 2-hour expiry)
+    this.filename = filename
     
     // Hide only the progress bar (not the whole container)
     this.progressBarTarget.parentElement.classList.add("hidden")
@@ -117,9 +116,5 @@ export default class extends Controller {
   resetButton() {
     this.buttonTarget.disabled = false
     this.buttonTarget.classList.remove("opacity-50", "cursor-not-allowed")
-    if (this.subscription) {
-      this.subscription.unsubscribe()
-      this.subscription = null
-    }
   }
 }

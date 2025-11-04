@@ -49,7 +49,8 @@
     </ul>
   </div>
 
-  <div class="flex justify-between items-center" data-controller="offline-playlist" data-offline-playlist-cleanup-url-value="<%= djlist_cleanup_cache_solos_path %>">
+  <div class="flex justify-between items-center" data-controller="offline-playlist" data-offline-playlist-cleanup-url-value="<%= djlist_cleanup_cache_solos_path %>" data-offline-playlist-stream-value="offline_playlist_<%= ENV['RAILS_APP_DB'] %>_<%= @request_id %>" data-offline-playlist-request-id-value="<%= @request_id %>">
+    <%= turbo_stream_from "offline_playlist_#{ENV['RAILS_APP_DB']}_#{@request_id}" %>
     <h1 class="mx-auto font-bold text-4xl">Solos</h1>
     <div class="ml-4">
       <button data-offline-playlist-target="button"
