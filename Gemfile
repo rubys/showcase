@@ -114,4 +114,4 @@ gem "rubyzip", "~> 3.0"
 
 gem "htauth", "~> 2.3"
 
-gem "turbo_cable", github: "rubys/turbo_cable"
+gem "turbo_cable", "~> 1.0"
