@@ -199,7 +199,7 @@ def attempt_update(uri, machine_id, verbose, target)
 
   request = Net::HTTP::Post.new(uri.path)
   # Only set Fly-Force-Instance-Id header for Fly.io targets
-  request['Fly-Force-Instance-Id'] = machine_id if target == :fly
+  request['Fly-Force-Instance-Id'] = machine_id if target.to_s == 'fly'
 
   response = http.request(request)
 
