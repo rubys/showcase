@@ -7,7 +7,8 @@
   <div class="info-button">&#x24D8;</div>
   <ul class="info-box">
   <li>Drag and drop within a category to control the order of heats.
-  <li>Once complete, Redo the heats on the heats page to apply the new order.
+  <li><strong>Sort by level</strong> button: Orders solos by participant level within each category.
+  <li><strong>Max Gap</strong> button: Optimizes the schedule to maximize time between appearances for all performers (useful for costume changes).
   </ul>
   </div>
 
@@ -37,7 +38,7 @@
 
 <div class="mt-4 grid grid-cols-2 justify-items-center">
   <%= up_link 'Sort by level', sort_level_solos_path, class: "inline btn-blue", method: :post %>
-  <%= up_link 'Randomize', sort_gap_solos_path, class: "inline btn-blue", method: :post %>
+  <%= up_link 'Max Gap', sort_gap_solos_path, class: "inline btn-blue", method: :post %>
 </div>
 
 </div>

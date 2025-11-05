@@ -129,9 +129,9 @@ class SolosControllerTest < ActionDispatch::IntegrationTest
   
   test "sort_gap optimizes solo distribution" do
     post sort_gap_solos_url
-    
+
     assert_redirected_to solos_url
-    assert_match /solos remixed/, flash[:notice]
+    assert_match /solos optimized for maximum gaps/, flash[:notice]
   end
 
   # ===== SOLO SCRATCHING AND RESTORATION TESTS =====

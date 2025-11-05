@@ -98,7 +98,7 @@ bin/rails db:fixtures:load
 
 #### Core Competition Models
 - `Event` - Singleton configuration for each showcase, has attached counter_art file
-- `Person` - All participants (students, professionals, guests, judges, placeholders). STI disabled. Complex package defaults and active status management
+- `Person` - All participants (students, professionals, guests, judges, placeholders). STI disabled. Complex package defaults and active status management. **Special case**: Person with `id = 0` (named "Nobody") is a placeholder used for studio formations and should be excluded from participant calculations like gap optimization
 - `Studio` - Dance studios participating, has bidirectional pair relationships
 - `Dance` - Individual dance styles (Waltz, Tango, etc.). Implements scrutineering algorithms (Rules 5-8). **Important**: When a dance appears in multiple categories, there will be multiple Dance records with the same name - only one has positive order (the canonical dance), others have `order < 0` (called "split dances"). Split dances sync certain properties (like semi_finals) from the canonical dance. Name uniqueness is only enforced for positive order dances
 - `Category` - Competition categories combining age/level groupings, can be spacers (no dances)
