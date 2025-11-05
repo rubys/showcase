@@ -1,7 +1,7 @@
 # Offline Scoring Implementation Plan
 
-**Status:** Planning Document - Ready for Implementation
-**Last Updated:** 2025-10-23
+**Status:** Service Worker Implementation Complete - Exploring SPA Alternative
+**Last Updated:** 2025-01-05
 **Authors:** Sam Ruby, Claude Code
 
 ## Table of Contents
@@ -1898,6 +1898,63 @@ end
 | Cache contains stale data | Very Low | Low | Network-first strategy, version cache names |
 | User confusion about offline | Medium | Low | Clear UI indicators, documentation |
 | Sync fails silently | Very Low | High | Retry logic, manual button, notifications |
+
+---
+
+## Implementation Status
+
+### Service Worker Approach (Branch: `offline-scoring-service-worker`)
+
+**Status:** Fully implemented and functional
+
+**What was built:**
+- ✅ Service worker caching all heat pages (251 prefetch)
+- ✅ IndexedDB for queuing pending scores
+- ✅ Batch sync endpoint `/scores/:judge/batch`
+- ✅ Offline indicator UI with pending count
+- ✅ Automatic and manual sync
+- ✅ Pending score restoration when returning to heats
+- ✅ Deduplication of pending scores (updates instead of duplicates)
+- ✅ Cache updates after successful online submissions
+
+**Lessons learned:**
+- ✅ Service worker state management is complex for debugging
+- ✅ Requires frequent cache clearing during development
+- ✅ 251 separate prefetch requests puts load on server
+- ✅ Works well but adds complexity
+
+**Branch preserved for reference:** All work committed to `offline-scoring-service-worker` branch (not pushed).
+
+### SPA Approach with Stimulus + Custom Elements (In Planning)
+
+**Status:** Architecture design phase
+
+**Proposed approach:**
+1. Create JSON API endpoints that return heat data
+2. Build client-side renderers using Stimulus controllers + Custom Web Components
+3. Store all heat data in IndexedDB (one bulk download)
+4. Render heats client-side whether online or offline
+5. Eliminate service worker entirely (simpler architecture)
+
+**Benefits over service worker approach:**
+- One codebase for rendering (not Rails ERB + JavaScript)
+- Single bulk data download instead of 251 requests
+- No service worker complexity/debugging
+- Natural offline support via IndexedDB
+- Modern, component-based architecture
+
+**Challenges:**
+- Need to replicate complex ERB template logic in JavaScript
+- Multiple rendering modes (solo, finals, table, cards)
+- ~437 lines of ERB templates to port
+- Incremental migration strategy needed
+
+**Next steps:**
+1. Build proof-of-concept for one heat type (simplest: cards or solo)
+2. Create JSON endpoint for that heat type
+3. Build Stimulus controller + web component renderer
+4. Demonstrate side-by-side with existing ERB view
+5. Evaluate before committing to full migration
 
 ---
 
