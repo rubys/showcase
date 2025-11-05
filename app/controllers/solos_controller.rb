@@ -422,11 +422,19 @@ class SolosController < ApplicationController
     solos = {}
     order = []
 
+    # Group solos by category (e.g., Show 1, Show 2, Show 3) to keep shows separate
+    unscheduled = Struct.new(:id, :name).new(0, 'Unscheduled')
     Solo.ordered.each do |solo|
-      cat = solo.heat.dance.solo_category
+      next unless solo.heat.category == 'Solo'
+      cat = solo.heat.dance_category
+      cat = cat ? cat.base_category : unscheduled
       solos[cat] ||= []
       solos[cat] << solo
     end
+
+    # Sort categories by their order
+    sort_order = Category.pluck(:name, :order).to_h
+    solos = solos.sort_by {|cat, heats| sort_order[cat&.name || ''] || 0}
 
     solos.each do |cat, solos|
       order += solos.sort_by {|solo| solo.heat.entry.level_id}
@@ -460,11 +468,19 @@ class SolosController < ApplicationController
     notice = "solos optimized for maximum gaps"
     solos = {}
 
+    # Group solos by category (e.g., Show 1, Show 2, Show 3) to keep shows separate
+    unscheduled = Struct.new(:id, :name).new(0, 'Unscheduled')
     Solo.all.each do |solo|
-      cat = solo.heat.dance.solo_category
+      next unless solo.heat.category == 'Solo'
+      cat = solo.heat.dance_category
+      cat = cat ? cat.base_category : unscheduled
       solos[cat] ||= []
       solos[cat] << solo
     end
+
+    # Sort categories by their order
+    sort_order = Category.pluck(:name, :order).to_h
+    solos = solos.sort_by {|cat, heats| sort_order[cat&.name || ''] || 0}
 
     solos.each do |cat, solos|
       # Build participants hash with ALL people in each solo (lead, follow, formations)
