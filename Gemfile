@@ -23,7 +23,7 @@ gem "turbo-rails"
 gem "stimulus-rails"
 
 # Use Tailwind CSS [https://github.com/rails/tailwindcss-rails]
-gem "tailwindcss-rails", "~> 4.3.0"
+gem "tailwindcss-rails", "~> 4.4.0"
 
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
@@ -85,28 +85,26 @@ end
 
 gem "dockerfile-rails"
 
-gem "sentry-ruby", "~> 5.26"
-gem "sentry-rails", "~> 5.26"
+gem "sentry-ruby", "~> 6.1"
+gem "sentry-rails", "~> 6.1"
 
-gem "fast_excel", "~> 0.5.0"
+gem "fast_excel", "~> 0.5"
 gem "rqrcode", "~> 3.1"
-gem "chronic", "~> 0.10.2"
+gem "chronic", "~> 0.10"
 gem "combine_pdf", "~> 1.0"
 gem "kramdown", "~> 2.4"
 gem "tomlrb", "~> 2.0"
 gem "ansi-to-html", "~> 0.0.3"
 
-gem "useragent", "~> 0.16.10"
+gem "useragent", "~> 0.16"
 
 gem "kamal", require: false
 
 gem "csv", "~> 3.3"
 
-gem "thruster", "~> 0.1.9"
+gem "logger", "~> 1.7"
 
-gem "logger", "~> 1.6"
-
-gem "aws-sdk-s3", "~> 1.176"
+gem "aws-sdk-s3", "~> 1.202"
 
 gem "geocoder", "~> 1.8"
 

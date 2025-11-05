@@ -79,8 +79,8 @@ GEM
       public_suffix (>= 2.0.2, < 7.0)
     ansi-to-html (0.0.3)
     aws-eventstream (1.4.0)
-    aws-partitions (1.1174.0)
-    aws-sdk-core (3.234.0)
+    aws-partitions (1.1180.0)
+    aws-sdk-core (3.236.0)
       aws-eventstream (~> 1, >= 1.3.0)
       aws-partitions (~> 1, >= 1.992.0)
       aws-sigv4 (~> 1.9)
@@ -88,10 +88,10 @@ GEM
       bigdecimal
       jmespath (~> 1, >= 1.6.1)
       logger
-    aws-sdk-kms (1.115.0)
+    aws-sdk-kms (1.116.0)
       aws-sdk-core (~> 3, >= 3.234.0)
       aws-sigv4 (~> 1.5)
-    aws-sdk-s3 (1.201.0)
+    aws-sdk-s3 (1.202.0)
       aws-sdk-core (~> 3, >= 3.234.0)
       aws-sdk-kms (~> 1)
       aws-sigv4 (~> 1.5)
@@ -173,7 +173,7 @@ GEM
       activesupport (>= 7.0.0)
     jmespath (1.6.2)
     json (2.15.2)
-    kamal (2.8.1)
+    kamal (2.8.2)
       activesupport (>= 7.0)
       base64 (~> 0.2)
       bcrypt_pbkdf (~> 1.0)
@@ -307,18 +307,18 @@ GEM
       rqrcode_core (~> 2.0)
     rqrcode_core (2.0.0)
     ruby-rc4 (0.1.5)
-    rubyzip (3.2.0)
+    rubyzip (3.2.2)
     securerandom (0.4.1)
-    selenium-webdriver (4.37.0)
+    selenium-webdriver (4.38.0)
       base64 (~> 0.2)
       logger (~> 1.4)
       rexml (~> 3.2, >= 3.2.5)
       rubyzip (>= 1.2.2, < 4.0)
       websocket (~> 1.0)
-    sentry-rails (5.28.1)
-      railties (>= 5.0)
-      sentry-ruby (~> 5.28.1)
-    sentry-ruby (5.28.1)
+    sentry-rails (6.1.0)
+      railties (>= 5.2.0)
+      sentry-ruby (~> 6.1.0)
+    sentry-ruby (6.1.0)
       bigdecimal
       concurrent-ruby (~> 1.0, >= 1.0.2)
     simplecov (0.22.0)
@@ -344,27 +344,23 @@ GEM
     stimulus-rails (1.3.4)
       railties (>= 6.0.0)
     stringio (3.1.7)
-    tailwindcss-rails (4.3.0)
+    tailwindcss-rails (4.4.0)
       railties (>= 7.0.0)
       tailwindcss-ruby (~> 4.0)
-    tailwindcss-ruby (4.1.13)
-    tailwindcss-ruby (4.1.13-aarch64-linux-gnu)
-    tailwindcss-ruby (4.1.13-aarch64-linux-musl)
-    tailwindcss-ruby (4.1.13-arm64-darwin)
-    tailwindcss-ruby (4.1.13-x86_64-linux-gnu)
-    tailwindcss-ruby (4.1.13-x86_64-linux-musl)
+    tailwindcss-ruby (4.1.16)
+    tailwindcss-ruby (4.1.16-aarch64-linux-gnu)
+    tailwindcss-ruby (4.1.16-aarch64-linux-musl)
+    tailwindcss-ruby (4.1.16-arm64-darwin)
+    tailwindcss-ruby (4.1.16-x86_64-linux-gnu)
+    tailwindcss-ruby (4.1.16-x86_64-linux-musl)
     thor (1.4.0)
-    thruster (0.1.16)
-    thruster (0.1.16-aarch64-linux)
-    thruster (0.1.16-arm64-darwin)
-    thruster (0.1.16-x86_64-linux)
     timeout (0.4.4)
     tomlrb (2.0.3)
     tsort (0.2.0)
-    turbo-rails (2.0.17)
+    turbo-rails (2.0.20)
       actionpack (>= 7.1.0)
       railties (>= 7.1.0)
-    turbo_cable (1.0.0)
+    turbo_cable (1.0.1)
       rails (>= 7.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
@@ -390,8 +386,6 @@ PLATFORMS
   aarch64-linux-musl
   arm-linux-gnu
   arm-linux-musl
-  arm64-darwin-23
-  arm64-darwin-24
   arm64-darwin-25
   x86_64-linux
   x86_64-linux-gnu
@@ -399,15 +393,15 @@ PLATFORMS
 
 DEPENDENCIES
   ansi-to-html (~> 0.0.3)
-  aws-sdk-s3 (~> 1.176)
+  aws-sdk-s3 (~> 1.202)
   bootsnap
   capybara
-  chronic (~> 0.10.2)
+  chronic (~> 0.10)
   combine_pdf (~> 1.0)
   csv (~> 3.3)
   debug
   dockerfile-rails
-  fast_excel (~> 0.5.0)
+  fast_excel (~> 0.5)
   fuzzy_match
   geocoder (~> 1.8)
   hotwire-spark
@@ -416,7 +410,7 @@ DEPENDENCIES
   jbuilder
   kamal
   kramdown (~> 2.4)
-  logger (~> 1.6)
+  logger (~> 1.7)
   propshaft
   puma (>= 5.0)
   rails (~> 8.1.0)
@@ -424,19 +418,18 @@ DEPENDENCIES
   rqrcode (~> 3.1)
   rubyzip (~> 3.0)
   selenium-webdriver
-  sentry-rails (~> 5.26)
-  sentry-ruby (~> 5.26)
+  sentry-rails (~> 6.1)
+  sentry-ruby (~> 6.1)
   simplecov
   simplecov-html
   sqlite3 (~> 2.1)
   stimulus-rails
-  tailwindcss-rails (~> 4.3.0)
-  thruster (~> 0.1.9)
+  tailwindcss-rails (~> 4.4.0)
   tomlrb (~> 2.0)
   turbo-rails
   turbo_cable (~> 1.0)
   tzinfo-data
-  useragent (~> 0.16.10)
+  useragent (~> 0.16)
   web-console
 
 BUNDLED WITH

@@ -49,10 +49,10 @@ class ShowcasesTest < ApplicationSystemTestCase
 
   test "site owner can request a showcase with auto-generated key" do
     location = locations(:one)
-    
+
     visit studio_request_url(location_key: location.key)
-    
-    assert_selector "h1", text: "Request new showcase"
+
+    assert_selector "h1", text: "Create a Showcase Event"
     
     # Verify year field is not present
     assert_no_selector "label", text: "Year"
@@ -77,15 +77,15 @@ class ShowcasesTest < ApplicationSystemTestCase
   test "site owner must provide start date when requesting showcase" do
     location = locations(:one)
     visit studio_request_url(location_key: location.key)
-    
+
     fill_in "Name", with: "Test Showcase"
-    
+
     # Try to submit without start date
-    click_on "Request Showcase"
-    
+    click_on "Create Event"
+
     # Browser validation should prevent submission
     # Check that we're still on the same page
-    assert_selector "h1", text: "Request new showcase"
+    assert_selector "h1", text: "Create a Showcase Event"
   end
 
 end
