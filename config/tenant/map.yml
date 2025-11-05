@@ -128,6 +128,14 @@ studios:
     map: us
     x: 160.84891797792403
     y: 37.4219765697967
+  bloomington:
+    name: Bloomington
+    lat: 39.1670396
+    lon: -86.5342881
+    region: ord
+    map: us
+    x: 624.1873057530906
+    y: 234.46665224734318
   boston:
     name: Boston
     lat: 42.3554334

@@ -317,6 +317,9 @@
         :name: Fall Medal Ball
       fall-monster-ball:
         :name: Fall Monster Ball
+      fall-extravaganza:
+        :name: Fall Extravaganza
+        :date: 2025-11-14 - 2025-11-14
   glastonbury:
     :name: Glastonbury
     :region: ewr
@@ -458,6 +461,9 @@
     :events:
       fall-ball:
         :name: Fall Ball
+        :date: 2025-11-15 - 2025-11-15
+      fall-ball-showcase:
+        :name: Fall Ball Showcase
         :date: 2025-11-15 - 2025-11-15
   mdballroom:
     :name: Memorial DanceSport Ballroom
@@ -863,6 +869,9 @@
       warsaw:
         :name: Warsaw
         :date: '2025-06-22'
+      wrocaw-showcase-2025:
+        :name: Wrocaw Showcase 2025
+        :date: 2025-12-14 - 2025-12-14
   woodlands:
     :name: Woodlands
     :region: dfw
