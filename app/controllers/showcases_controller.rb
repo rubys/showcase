@@ -154,6 +154,8 @@ class ShowcasesController < ApplicationController
             "#{base_url}/#{@showcase.year}/#{@location_key}/#{@showcase.key}"
           end
 
+          logger.info "[#{request.request_id}] Showcase request submitted: #{@showcase.name}. Will redirect to: #{@return_to}"
+
           # Render new_request view which now has progress bar
           format.html { render :new_request, status: :ok }
         end
