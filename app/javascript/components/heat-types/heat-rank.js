@@ -51,7 +51,7 @@ export class HeatRank extends HTMLElement {
     if (entry.pro) return 'Pro';
 
     const ageCategory = entry.age?.category || '';
-    const levelInitials = entry.level?.name?.charAt(0) || '';
+    const levelInitials = entry.level?.initials || '';
 
     if (this.trackAges && ageCategory) {
       return `${ageCategory} - ${levelInitials}`;

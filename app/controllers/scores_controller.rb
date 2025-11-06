@@ -115,7 +115,8 @@ class ScoresController < ApplicationController
         assign_judges: event.assign_judges,
         backnums: event.backnums,
         track_ages: event.track_ages,
-        ballrooms: event.ballrooms
+        ballrooms: event.ballrooms,
+        column_order: event.column_order
       },
       judge: {
         id: judge.id,
@@ -151,13 +152,21 @@ class ScoresController < ApplicationController
               id: entry.lead.id,
               name: entry.lead.name,
               back: entry.lead.back,
-              type: entry.lead.type
+              type: entry.lead.type,
+              studio: entry.lead.studio ? {
+                id: entry.lead.studio.id,
+                name: entry.lead.studio.name
+              } : nil
             },
             follow: {
               id: entry.follow.id,
               name: entry.follow.name,
               back: entry.follow.back,
-              type: entry.follow.type
+              type: entry.follow.type,
+              studio: entry.follow.studio ? {
+                id: entry.follow.studio.id,
+                name: entry.follow.studio.name
+              } : nil
             },
             instructor: entry.instructor ? {
               id: entry.instructor.id,
@@ -173,7 +182,8 @@ class ScoresController < ApplicationController
             } : nil,
             level: entry.level ? {
               id: entry.level.id,
-              name: entry.level.name
+              name: entry.level.name,
+              initials: entry.level.initials
             } : nil,
             solo: heat.solo ? {
               id: heat.solo.id,

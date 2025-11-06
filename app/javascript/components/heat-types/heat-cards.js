@@ -14,6 +14,12 @@
 
 export class HeatCards extends HTMLElement {
   connectedCallback() {
+    // Make this element display as flex row to match original layout
+    this.style.display = 'flex';
+    this.style.flexDirection = 'row';
+    this.style.flex = '1';
+    this.style.overflow = 'hidden';
+
     this.draggedElement = null;
     this.render();
     this.attachEventListeners();
@@ -72,20 +78,28 @@ export class HeatCards extends HTMLElement {
    */
   buildCard(subject) {
     const entry = subject;
-    const lvl = entry.level?.name?.charAt(0) || '';
+    const lvl = entry.level?.initials || '';
 
-    // Determine name order
+    // Get column_order preference from event data
+    const event = this.eventData;
+    const columnOrder = event?.column_order || 1;
+
+    // Determine name order based on column_order or professional status
     let firstBack, secondBack;
-    if (entry.follow.type === 'Professional') {
-      firstBack = entry.lead.back_name || entry.lead.name;
-      secondBack = entry.follow.back_name || entry.follow.name;
+    if (columnOrder === 1 || entry.follow.type === 'Professional') {
+      firstBack = entry.lead.name;
+      secondBack = entry.follow.name;
     } else {
-      firstBack = entry.follow.back_name || entry.follow.name;
-      secondBack = entry.lead.back_name || entry.lead.name;
+      firstBack = entry.follow.name;
+      secondBack = entry.lead.name;
     }
 
+    // Format names for display (remove commas and spaces, truncate to 7 chars)
+    firstBack = firstBack.replace(/[, ]/g, '').substring(0, 7);
+    secondBack = secondBack.replace(/[, ]/g, '').substring(0, 7);
+
     const subjectCategory = this.getSubjectCategory(entry);
-    const levelInitials = entry.level?.name?.charAt(0) || '';
+    const levelInitials = entry.level?.initials || '';
 
     let cardContent;
 
@@ -305,10 +319,18 @@ export class HeatCards extends HTMLElement {
   render() {
     const scoreColumns = this.scores.map(score => this.buildScoreColumn(score)).join('');
 
+    // Build unscored column (empty score value)
+    const unscoredSubjects = this.results[''] || [];
+    const unscoredCards = unscoredSubjects.map(subject => this.buildCard(subject)).join('');
+
     this.innerHTML = `
       <div class="grow flex flex-col border-2 border-slate-400">
         <div class="hidden text-red-600 text-4xl" data-target="error"></div>
         ${scoreColumns}
+      </div><div class="my-auto h-full max-w-[30%] min-w-[30%] border-2 border-slate-400
+         flex flex-col flex-wrap pl-4" data-score="">
+        <span class="order-2 ml-auto p-2"></span>
+        ${unscoredCards}
       </div>
     `;
   }

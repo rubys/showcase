@@ -14,6 +14,14 @@
 
 export class HeatTable extends HTMLElement {
   connectedCallback() {
+    // Make this element participate in flex layout
+    // Access the native style property via the prototype to avoid getter conflict
+    const nativeStyle = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'style').get.call(this);
+    nativeStyle.display = 'flex';
+    nativeStyle.flexDirection = 'column';
+    nativeStyle.flex = '1';
+    nativeStyle.minHeight = '0';
+
     this.render();
     this.attachEventListeners();
   }
@@ -69,7 +77,7 @@ export class HeatTable extends HTMLElement {
     if (entry.pro) return 'Pro';
 
     const ageCategory = entry.age?.category || '';
-    const levelInitials = entry.level?.name?.charAt(0) || '';
+    const levelInitials = entry.level?.initials || '';
 
     if (this.trackAges && ageCategory) {
       return `${ageCategory} - ${levelInitials}`;

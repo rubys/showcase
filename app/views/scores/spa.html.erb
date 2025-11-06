@@ -1,24 +1,29 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>SPA Scoring Test - Judge <%= @judge.name %></title>
-  <%= csrf_meta_tags %>
-  <%= csp_meta_tag %>
+  <head>
+    <title>Showcase</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel='icon' type='image/png' href='/intertwingly.png'>
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
 
-  <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
-  <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
-  <%= javascript_importmap_tags %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
 
-  <script type="module">
-    import { HeatPage } from 'components/heat-page';
-  </script>
-</head>
+    <script type="module">
+      import { HeatPage } from 'components/heat-page';
+    </script>
+  </head>
 
-<body>
-  <heat-page
-    judge-id="<%= @judge.id %>"
-    heat-number="<%= @heat_number %>"
-    style="<%= @style %>">
-  </heat-page>
-</body>
+  <body data-controller="turbo-streams" data-controller='post-console-log' data-turbo-prefetch="false" data-locale="en-US">
+    <main class="mx-0 px-5 print:mx-0">
+      <heat-page
+        judge-id="<%= @judge.id %>"
+        heat-number="<%= @heat_number %>"
+        style="<%= @style %>">
+      </heat-page>
+    </main>
+  </body>
 </html>

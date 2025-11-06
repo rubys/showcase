@@ -6,7 +6,7 @@
  */
 
 const DB_NAME = 'showcase_heats';
-const DB_VERSION = 1;
+const DB_VERSION = 3;  // Bumped to invalidate cache after adding studio to lead/follow
 const STORE_NAME = 'heats';
 
 class HeatDataManager {
@@ -20,32 +20,49 @@ class HeatDataManager {
    * @returns {Promise<IDBDatabase>}
    */
   async init() {
-    if (this.db) return this.db;
+    console.log('[HeatDataManager] init called, DB version:', DB_VERSION);
+    if (this.db) {
+      console.log('[HeatDataManager] DB already initialized');
+      return this.db;
+    }
 
     return new Promise((resolve, reject) => {
+      console.log('[HeatDataManager] Opening IndexedDB...');
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onerror = () => {
-        console.error('Failed to open IndexedDB:', request.error);
+        console.error('[HeatDataManager] Failed to open IndexedDB:', request.error);
         reject(request.error);
       };
 
+      request.onblocked = () => {
+        console.warn('[HeatDataManager] IndexedDB upgrade blocked - close other tabs or connections');
+        // Try to continue anyway - the success handler will eventually fire
+      };
+
       request.onsuccess = () => {
+        console.log('[HeatDataManager] IndexedDB opened successfully');
         this.db = request.result;
         resolve(this.db);
       };
 
       request.onupgradeneeded = (event) => {
+        console.log('[HeatDataManager] Upgrade needed, old version:', event.oldVersion, 'new version:', event.newVersion);
         const db = event.target.result;
 
-        // Create object store if it doesn't exist
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          // Use judge_id as the key
-          const objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'judge_id' });
-
-          // Create index on timestamp for staleness checks
-          objectStore.createIndex('timestamp', 'timestamp', { unique: false });
+        // Delete old store if it exists (for schema changes)
+        if (db.objectStoreNames.contains(STORE_NAME)) {
+          console.log('[HeatDataManager] Deleting old object store');
+          db.deleteObjectStore(STORE_NAME);
         }
+
+        // Create object store
+        console.log('[HeatDataManager] Creating new object store');
+        const objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'judge_id' });
+
+        // Create index on timestamp for staleness checks
+        objectStore.createIndex('timestamp', 'timestamp', { unique: false });
+        console.log('[HeatDataManager] Object store created');
       };
     });
   }
@@ -210,25 +227,41 @@ class HeatDataManager {
    */
   async fetchAndStore(judgeId) {
     const url = `/scores/${judgeId}/heats.json`;
+    console.log('[HeatDataManager] fetchAndStore: fetching from', url);
 
     try {
+      console.log('[HeatDataManager] Making fetch request...');
       const response = await fetch(url, {
         headers: window.inject_region({
           'Accept': 'application/json'
         }),
         credentials: 'same-origin'
       });
+      console.log('[HeatDataManager] Fetch response received, status:', response.status);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
+      console.log('[HeatDataManager] Parsing JSON...');
       const data = await response.json();
-      await this.storeHeatData(judgeId, data);
+      console.log('[HeatDataManager] JSON parsed, storing to IndexedDB...');
+
+      // Try to store to IndexedDB with a timeout, but don't fail if it hangs
+      try {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Store timeout')), 2000)
+        );
+        await Promise.race([this.storeHeatData(judgeId, data), timeoutPromise]);
+        console.log('[HeatDataManager] Data stored successfully');
+      } catch (storeError) {
+        console.warn('[HeatDataManager] Failed to store to IndexedDB (continuing anyway):', storeError.message);
+        // Continue anyway - we have the data even if we couldn't cache it
+      }
 
       return data;
     } catch (error) {
-      console.error('Failed to fetch heat data:', error);
+      console.error('[HeatDataManager] Failed to fetch heat data:', error);
       throw error;
     }
   }
@@ -240,15 +273,36 @@ class HeatDataManager {
    * @returns {Promise<Object>}
    */
   async getData(judgeId, forceRefresh = false) {
+    console.log('[HeatDataManager] getData called for judge', judgeId, 'forceRefresh:', forceRefresh);
+
     if (!forceRefresh) {
-      const cached = await this.getHeatData(judgeId);
-      if (cached && !(await this.isStale(judgeId))) {
-        console.log('Using cached heat data');
-        return cached;
+      try {
+        console.log('[HeatDataManager] Checking for cached data...');
+
+        // Race between checking cache and a timeout
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('IndexedDB timeout')), 2000)
+        );
+
+        const cached = await Promise.race([this.getHeatData(judgeId), timeoutPromise]);
+        console.log('[HeatDataManager] Cached data:', cached ? 'found' : 'not found');
+
+        if (cached) {
+          const stale = await this.isStale(judgeId);
+          console.log('[HeatDataManager] Cache is stale:', stale);
+
+          if (!stale) {
+            console.log('[HeatDataManager] Using cached heat data');
+            return cached;
+          }
+        }
+      } catch (error) {
+        console.warn('[HeatDataManager] Failed to check cache, will fetch fresh:', error.message);
+        // Continue to fetch fresh data
       }
     }
 
-    console.log('Fetching fresh heat data from server');
+    console.log('[HeatDataManager] Fetching fresh heat data from server');
     return await this.fetchAndStore(judgeId);
   }
 }

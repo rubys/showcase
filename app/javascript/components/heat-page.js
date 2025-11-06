@@ -47,18 +47,24 @@ export class HeatPage extends HTMLElement {
    */
   async init() {
     try {
+      console.log('[HeatPage] Starting initialization for judge', this.judgeId);
+
       // Show loading state
       this.innerHTML = '<div class="flex items-center justify-center h-screen"><div class="text-2xl">Loading heat data...</div></div>';
 
       // Load data from IndexedDB or server
+      console.log('[HeatPage] Fetching data...');
       this.data = await heatDataManager.getData(this.judgeId);
+      console.log('[HeatPage] Data loaded:', this.data ? 'success' : 'failed');
 
       if (!this.data) {
         throw new Error('Failed to load heat data');
       }
 
       // Initial render
+      console.log('[HeatPage] Rendering...');
       this.render();
+      console.log('[HeatPage] Render complete');
 
       // Attach event listeners
       this.attachEventListeners();
@@ -69,6 +75,8 @@ export class HeatPage extends HTMLElement {
         <div class="flex items-center justify-center h-screen">
           <div class="text-2xl text-red-500">
             Failed to load heat data. Please check your connection and try again.
+            <br><br>
+            Error: ${error.message}
             <br><br>
             <button onclick="location.reload()" class="btn-blue">Retry</button>
           </div>

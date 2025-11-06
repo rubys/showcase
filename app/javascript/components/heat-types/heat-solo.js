@@ -12,6 +12,14 @@
 
 export class HeatSolo extends HTMLElement {
   connectedCallback() {
+    // Make this element participate in flex layout
+    // Access the native style property via the prototype to avoid getter conflict
+    const nativeStyle = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'style').get.call(this);
+    nativeStyle.display = 'flex';
+    nativeStyle.flexDirection = 'column';
+    nativeStyle.flex = '1';
+    nativeStyle.minHeight = '0';
+
     this.render();
     this.attachEventListeners();
   }
@@ -82,9 +90,18 @@ export class HeatSolo extends HTMLElement {
     } else if (dancers.length === 1) {
       return dancers[0].name || dancers[0].display_name;
     } else if (dancers.length === 2) {
+      // For two dancers (lead/follow), use join format without "and"
       const first = dancers[0].name || dancers[0].display_name;
       const second = dancers[1].name || dancers[1].display_name;
-      return `${first} and ${second}`;
+      // Split names and join them: "Murray, Arthur" + "Murray, Kathryn" -> "Arthur & Kathryn Murray"
+      const firstParts = first.split(', ').reverse();
+      const secondParts = second.split(', ').reverse();
+      // If same last name, combine as "First & Second Last"
+      if (firstParts.length > 1 && secondParts.length > 1 && firstParts[firstParts.length - 1] === secondParts[secondParts.length - 1]) {
+        return `${firstParts[0]} & ${secondParts[0]} ${firstParts[firstParts.length - 1]}`;
+      } else {
+        return `${first} and ${second}`;
+      }
     } else {
       const names = dancers.map(d => d.name || d.display_name);
       names[names.length - 1] = `and ${names[names.length - 1]}`;
@@ -101,14 +118,26 @@ export class HeatSolo extends HTMLElement {
 
     if (!subject) return '';
 
+    // Determine first dancer based on column order
+    const columnOrder = this.eventData.column_order || 1;
+    let firstDancer;
+
+    if (subject.lead.id !== 0) {
+      if (columnOrder === 1 || subject.follow.type === 'Professional') {
+        firstDancer = subject.lead;
+      } else {
+        firstDancer = subject.follow;
+      }
+    }
+
     // Check first dancer's studio
-    if (subject.lead && subject.lead.id !== 0) {
-      return subject.studio?.name || '';
+    if (firstDancer && firstDancer.studio) {
+      return firstDancer.studio.name;
     }
 
     // Check instructor's studio
-    if (subject.instructor) {
-      return subject.instructor.studio?.name || '';
+    if (subject.instructor && subject.instructor.studio) {
+      return subject.instructor.studio.name;
     }
 
     return '';
@@ -351,7 +380,7 @@ export class HeatSolo extends HTMLElement {
     }
 
     this.innerHTML = `
-      <div class="grow mx-auto md:w-2/3 w-full flex flex-col text-xl">
+      <div class="grow w-full flex flex-col text-xl">
         <div class="hidden text-red-600 text-4xl" data-target="error"></div>
 
         <div class="mb-4">

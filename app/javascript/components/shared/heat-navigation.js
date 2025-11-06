@@ -115,6 +115,9 @@ export class HeatNavigation extends HTMLElement {
     const prevButton = this.prevUrl ? `<a href="${this.prevUrl}" class="text-2xl lg:text-4xl" rel="prev">&lt;&lt;</a>` : '';
     const nextButton = this.nextUrl ? `<a href="${this.nextUrl}" class="text-2xl lg:text-4xl" rel="next">&gt;&gt;</a>` : '';
 
+    // Always show logo (intertwingly.png)
+    const logoHtml = `<a href="${this.rootPath}"><img class="absolute right-4 top-4 h-8" src="/intertwingly.png" /></a>`;
+
     let judgeSection = '';
     if (this.assignJudges) {
       const checked = judge.present ? 'checked' : '';
@@ -122,14 +125,14 @@ export class HeatNavigation extends HTMLElement {
         <h1 class="font-bold text-2xl pt-1 pb-3 flex-1 text-center">
           <input type="checkbox" name="active" ${checked} class="w-6 h-6 mr-3">
           <a href="/people/${judge.id}">${judge.name}</a>
-          ${this.logoUrl ? `<a href="${this.rootPath}"><img src="${this.logoUrl}" class="absolute right-4 top-4 h-8" alt="Logo"></a>` : ''}
+          ${logoHtml}
         </h1>
       `;
     } else {
       judgeSection = `
         <h1 class="font-bold text-2xl pt-1 pb-3 flex-1 text-center">
           <a href="/people/${judge.id}">${judge.name}</a>
-          ${this.logoUrl ? `<a href="${this.rootPath}"><img src="${this.logoUrl}" class="absolute right-4 top-4 h-8" alt="Logo"></a>` : ''}
+          ${logoHtml}
         </h1>
       `;
     }

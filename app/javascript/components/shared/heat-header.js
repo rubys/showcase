@@ -181,9 +181,13 @@ export class HeatHeader extends HTMLElement {
       `;
     }
 
+    // Build heatlist URL - use first subject's ID as the heat anchor
+    const heatId = heat.id || (subjects.length > 0 ? subjects[0].id : number);
+    const heatlistUrl = `/scores/${judge.id}/heatlist?style=${this.style}#heat_${heatId}`;
+
     this.innerHTML = `
       <h1 class="grow font-bold text-4xl pt-1 pb-3 text-center mx-8">
-        <a href="#heat-list" rel="up">
+        <a href="${heatlistUrl}" rel="up">
           <span>Heat ${number}:<br class="block sm:hidden"> ${dance.name}${comboDanceHtml}</span>
         </a>
         ${judgeBacksHtml}
