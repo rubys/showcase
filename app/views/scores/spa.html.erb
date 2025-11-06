@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SPA Scoring Test - Judge <%= @judge.name %></title>
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+  <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+  <%= javascript_importmap_tags %>
+
+  <script type="module">
+    import { HeatPage } from 'components/heat-page';
+  </script>
+</head>
+
+<body>
+  <heat-page
+    judge-id="<%= @judge.id %>"
+    heat-number="<%= @heat_number %>"
+    style="<%= @style %>">
+  </heat-page>
+</body>
+</html>

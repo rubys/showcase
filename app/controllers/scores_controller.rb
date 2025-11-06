@@ -81,6 +81,157 @@ class ScoresController < ApplicationController
     render :heatlist, status: (@browser_warn ? :upgrade_required : :ok)
   end
 
+  # GET /scores/:judge/spa - SPA test page
+  def spa
+    @judge = Person.find(params[:judge].to_i)
+    @heat_number = params[:heat]&.to_i || 1
+    @style = params[:style] || 'radio'
+    render layout: false
+  end
+
+  # GET /scores/:judge/heats.json - Returns all heats data for SPA rendering
+  def heats_json
+    event = Event.current
+    judge = Person.find(params[:judge].to_i)
+
+    # Load all heats with necessary associations
+    heats = Heat.where(number: 1..).order(:number).includes(
+      dance: [:open_category, :closed_category, :multi_category, :solo_category, :multi_children, :multi_dances, :songs],
+      entry: [:age, :level, :lead, :follow, :instructor, :studio],
+      solo: [:formations, :category_override],
+      scores: []
+    ).to_a
+
+    # Build the response data structure
+    data = {
+      event: {
+        id: event.id,
+        name: event.name,
+        open_scoring: event.open_scoring,
+        closed_scoring: event.closed_scoring,
+        multi_scoring: event.multi_scoring,
+        solo_scoring: event.solo_scoring,
+        heat_range_cat: event.heat_range_cat,
+        assign_judges: event.assign_judges,
+        backnums: event.backnums,
+        track_ages: event.track_ages,
+        ballrooms: event.ballrooms
+      },
+      judge: {
+        id: judge.id,
+        name: judge.name,
+        sort_order: judge.sort_order || 'back',
+        show_assignments: judge.show_assignments || 'first',
+        review_solos: judge&.judge&.review_solos&.downcase
+      },
+      heats: heats.group_by(&:number).map do |number, heat_group|
+        first_heat = heat_group.first
+        category = first_heat.category
+        dance = first_heat.dance
+
+        # Determine scoring type
+        scoring = if category == 'Solo'
+          event.solo_scoring
+        elsif category == 'Multi'
+          event.multi_scoring
+        elsif category == 'Open' || (category == 'Closed' && event.closed_scoring == '=') || event.heat_range_cat > 0
+          event.open_scoring
+        else
+          event.closed_scoring
+        end
+
+        # Build subjects list
+        subjects = heat_group.map do |heat|
+          entry = heat.entry
+          {
+            id: heat.id,
+            dance_id: heat.dance_id,
+            entry_id: heat.entry_id,
+            lead: {
+              id: entry.lead.id,
+              name: entry.lead.name,
+              back: entry.lead.back,
+              type: entry.lead.type
+            },
+            follow: {
+              id: entry.follow.id,
+              name: entry.follow.name,
+              back: entry.follow.back,
+              type: entry.follow.type
+            },
+            instructor: entry.instructor ? {
+              id: entry.instructor.id,
+              name: entry.instructor.name
+            } : nil,
+            studio: entry.studio ? {
+              id: entry.studio.id,
+              name: entry.studio.name
+            } : nil,
+            age: entry.age ? {
+              id: entry.age.id,
+              category: entry.age.category
+            } : nil,
+            level: entry.level ? {
+              id: entry.level.id,
+              name: entry.level.name
+            } : nil,
+            solo: heat.solo ? {
+              id: heat.solo.id,
+              order: heat.solo.order,
+              formations: heat.solo.formations.map do |formation|
+                {
+                  id: formation.id,
+                  person_id: formation.person_id,
+                  person_name: formation.person.name,
+                  on_floor: formation.on_floor
+                }
+              end
+            } : nil,
+            scores: heat.scores.select { |s| s.judge_id == judge.id }.map do |score|
+              {
+                id: score.id,
+                judge_id: score.judge_id,
+                heat_id: score.heat_id,
+                slot: score.slot,
+                good: score.good,
+                bad: score.bad,
+                value: score.value,
+                comments: score.comments
+              }
+            end
+          }
+        end
+
+        {
+          number: number,
+          category: category,
+          scoring: scoring,
+          dance: {
+            id: dance.id,
+            name: dance.name,
+            heat_length: dance.heat_length,
+            uses_scrutineering: dance.uses_scrutineering?,
+            multi_children: dance.multi_children.map { |c| { id: c.dance.id, name: c.dance.name } },
+            multi_parent: dance.multi_dances.first&.parent ? {
+              id: dance.multi_dances.first.parent.id,
+              name: dance.multi_dances.first.parent.name,
+              heat_length: dance.multi_dances.first.parent.heat_length
+            } : nil,
+            category_name: first_heat.dance_category&.name,
+            ballrooms: first_heat.dance_category&.ballrooms || event.ballrooms,
+            songs: dance.songs.map { |s| { id: s.id, title: s.title } }
+          },
+          subjects: subjects
+        }
+      end,
+      feedbacks: Feedback.all.map { |f| { id: f.id, value: f.value, abbr: f.abbr } },
+      score_options: SCORES,
+      timestamp: Time.current.to_i
+    }
+
+    render json: data
+  end
+
   # GET /scores/:judge/heat/:heat
   def heat
     @event = Event.current

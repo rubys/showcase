@@ -8,6 +8,7 @@ pin_all_from "app/javascript/controllers", under: "controllers"
 pin "@rails/actioncable", to: "actioncable.esm.js"
 pin_all_from "app/javascript/channels", under: "channels"
 pin_all_from "app/javascript/helpers", under: "helpers", preload: true
+pin_all_from "app/javascript/components", under: "components"
 pin "trix"
 pin "@rails/actiontext", to: "actiontext.js"
 pin "@xterm/xterm", to: "@xterm--xterm.js" # @5.5.0

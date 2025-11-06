@@ -214,6 +214,8 @@ Rails.application.routes.draw do
     end
 
     get '/scores/:judge/heatlist', to: 'scores#heatlist', as: 'judge_heatlist'
+    get '/scores/:judge/heats', to: 'scores#heats_json', defaults: { format: :json }, as: 'judge_heats_json'
+    get '/scores/:judge/spa', to: 'scores#spa', as: 'judge_spa'
     get '/scores/:judge/heat/:heat', to: 'scores#heat', as: 'judge_heat', heat: /\d+\.?\d*/
     get '/scores/:judge/heat/:heat/:slot', to: 'scores#heat', as: 'judge_heat_slot', heat: /\d+\.?\d*/
     post '/scores/:judge/post', to: 'scores#post', as: 'post_score'
