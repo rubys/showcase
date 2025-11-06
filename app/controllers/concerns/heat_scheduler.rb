@@ -9,16 +9,18 @@ module HeatScheduler
 
       # Check if this dance has multi-level splits
       dances_with_name = Dance.where(name: name, order: orders)
-      has_splits = dances_with_name.any? { |d| d.multi_children.any? && MultiLevel.where(dance: dances_with_name).exists? }
+      has_multi_level_splits = dances_with_name.any? { |d| d.multi_children.any? && MultiLevel.where(dance: dances_with_name).exists? }
 
-      if has_splits
+      if has_multi_level_splits
         # Assign fractional orders to keep splits sorted together but separated during grouping
         sorted_orders = orders.sort.reverse
         sorted_orders.each_with_index do |order, index|
           true_order[order] = max + (index * 0.001)
         end
       else
-        # Original behavior for non-split dances
+        # For category-based splits (and non-splits), use the same true_order
+        # This allows all splits of the same dance to be grouped together during scheduling,
+        # then the reorder function will separate them by agenda category
         orders.each {|order| true_order[order] = max}
       end
     end
@@ -297,30 +299,19 @@ module HeatScheduler
     multis = (categories.map {|cat| [cat, []]} + [[nil, []]]).to_h
 
     groups.each do |group|
-      dcat = group.dcat
       heat = group.first
       next unless heat
 
-      if heat&.solo&.category_override_id
-        solos[heat.solo.category_override] << group
-      elsif dcat == 'Open'
-        cats[group.dance.open_category] << group
-      elsif dcat == 'Closed'
-        cats[group.dance.closed_category] << group
-      elsif dcat == 'Solo'
-        solos[group.dance.solo_category] << group
-      elsif dcat == 'Multi'
-        multis[group.dance.multi_category] << group
-      elsif dcat == 'Pro Open'
-        cats[group.dance.pro_open_category] << group
-      elsif dcat == 'Pro Closed'
-        cats[group.dance.pro_closed_category] << group
-      elsif dcat == 'Pro Solo'
-        solos[group.dance.pro_solo_category] << group
-      elsif dcat == 'Pro Multi'
-        multis[group.dance.pro_multi_category] << group
+      # Use the agenda_category that was stored when the group was created
+      # instead of trying to derive it from dance properties
+      cat = group.agenda_category
+
+      if heat.category == 'Solo'
+        solos[cat] << group
+      elsif heat.category == 'Multi'
+        multis[cat] << group
       else
-        cats[group.override || group.dance.closed_category] << group
+        cats[cat] << group
       end
     end
 
@@ -330,6 +321,8 @@ module HeatScheduler
     true_order = build_true_order
 
     cats.each do |cat, groups|
+      original_count = groups.length
+
       if Event.current.intermix
         dances = groups.group_by {|group| [group.dcat, true_order[group.dance.order]]}
         candidates = []
@@ -337,15 +330,20 @@ module HeatScheduler
         max = dances.values.map(&:length).max || 1
         offset = 0.5/(max + 1)
 
-        dances.each do |id, groups|
-          denominator = groups.length.to_f + 1
-          groups.each_with_index do |group, index|
+        dances.each do |id, dance_groups|
+          denominator = dance_groups.length.to_f + 1
+          dance_groups.each_with_index do |group, index|
             slot = (((index+1.0)/denominator - offset)/offset/2).to_i
             candidates << [slot] + id + [group]
           end
         end
 
         groups = candidates.sort_by {|candidate| candidate[0..2]}.map(&:last)
+      end
+
+      # Debug: Check if groups were lost
+      if groups.length != original_count
+        Rails.logger.warn "Category #{cat&.name}: lost #{original_count - groups.length} groups during intermix (#{original_count} -> #{groups.length})"
       end
 
       groups +=
@@ -427,8 +425,33 @@ module HeatScheduler
       @@skating = Dance.where(semi_finals: true).pluck(:id)
 
       # only combine open/closed dances if the category is the same
-      @@combinable = @@category == 0 ? [] :
-        Dance.all.select {|dance| dance.open_category && dance.open_category_id == dance.closed_category_id}.map(&:id)
+      if @@category == 0
+        @@combinable = []
+      else
+        # Include dances where open and closed categories are the same
+        combinable = Dance.all.select {|dance| dance.open_category && dance.open_category_id == dance.closed_category_id}.map(&:id)
+
+        # Also include split dances that share an agenda category
+        # Group dances by name
+        Dance.all.group_by(&:name).each do |name, dances|
+          next if dances.length == 1  # Skip non-split dances
+
+          # For each agenda category, find all dances (splits) that belong to it
+          category_to_dances = Hash.new { |h, k| h[k] = [] }
+          dances.each do |dance|
+            [dance.open_category_id, dance.closed_category_id].compact.each do |cat_id|
+              category_to_dances[cat_id] << dance.id
+            end
+          end
+
+          # Mark all splits in the same agenda category as combinable
+          category_to_dances.each do |cat_id, dance_ids|
+            combinable.concat(dance_ids) if dance_ids.length > 1
+          end
+        end
+
+        @@combinable = combinable.uniq
+      end
     end
 
     def self.max= max
@@ -499,14 +522,18 @@ module HeatScheduler
       agenda_cat&.max_heat_size || @@event.max_heat_size || 9999
     end
 
+    attr_reader :agenda_category
+
     def initialize(list = [])
       @group = list
+      @agenda_category = nil
     end
 
     def match?(dance, dcat, availability, level, age, heat)
       return false unless @dance == dance
       return false unless @dcat == dcat or @@combinable.include? dance
       return false if heat.category == 'Solo'
+
       return true
     end
 
@@ -520,6 +547,7 @@ module HeatScheduler
 
         @dance = dance
         @dcat = dcat
+        @agenda_category = heat.dance_category
       end
 
       unless @@skating.include? heat.dance_id
@@ -541,6 +569,10 @@ module HeatScheduler
       return false unless (level-@min_level).abs <= @@level
       return false unless (age-@max_age).abs <= @@age
       return false unless (age-@min_age).abs <= @@age
+
+      # Check agenda category compatibility
+      heat_agenda_cat = heat.dance_category
+      return false unless @agenda_category == heat_agenda_cat
 
       @participants.add heat.lead
       @participants.add heat.follow
