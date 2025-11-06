@@ -45,15 +45,15 @@ class Category < ApplicationRecord
 
   def delete_owned_dances
     return unless routines? and Event.current.agenda_based_entries?
-    open_dances.where(order: ...0).delete_all
-    closed_dances.where(order: ...0).delete_all
-    solo_dances.where(order: ...0).delete_all
-    routine_dances.where(order: ...0).delete_all
-    multi_dances.where(order: ...0).delete_all
-    pro_open_dances.where(order: ...0).delete_all
-    pro_closed_dances.where(order: ...0).delete_all
-    pro_solo_dances.where(order: ...0).delete_all
-    pro_multi_dances.where(order: ...0).delete_all
+    open_dances.where(order: ...0).destroy_all
+    closed_dances.where(order: ...0).destroy_all
+    solo_dances.where(order: ...0).destroy_all
+    routine_dances.where(order: ...0).destroy_all
+    multi_dances.where(order: ...0).destroy_all
+    pro_open_dances.where(order: ...0).destroy_all
+    pro_closed_dances.where(order: ...0).destroy_all
+    pro_solo_dances.where(order: ...0).destroy_all
+    pro_multi_dances.where(order: ...0).destroy_all
   end
 
   def heats
