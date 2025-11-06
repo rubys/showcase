@@ -294,9 +294,13 @@ module HeatScheduler
 
   def reorder(groups)
     categories = Category.ordered.all
-    cats = (categories.map {|cat| [cat, []]} + [[nil, []]]).to_h
-    solos = (categories.map {|cat| [cat, []]} + [[nil, []]]).to_h
-    multis = (categories.map {|cat| [cat, []]} + [[nil, []]]).to_h
+    cats = Hash.new { |h, k| h[k] = [] }
+    solos = Hash.new { |h, k| h[k] = [] }
+    multis = Hash.new { |h, k| h[k] = [] }
+
+    # Initialize with known categories to maintain order
+    categories.each { |cat| cats[cat] = []; solos[cat] = []; multis[cat] = [] }
+    cats[nil] = []; solos[nil] = []; multis[nil] = []
 
     groups.each do |group|
       heat = group.first
