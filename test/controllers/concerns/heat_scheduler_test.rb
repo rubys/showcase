@@ -543,7 +543,72 @@ class HeatSchedulerTest < ActiveSupport::TestCase
     # Heat numbers should be consecutive starting from 1
     heat_numbers = Heat.where('number > 0').pluck(:number).sort
     expected = (1..heat_numbers.length).to_a
-    
+
     assert_equal expected, heat_numbers
+  end
+
+  test "category-based split dances are grouped consecutively by category" do
+    # This tests the fix for the Nashville Fall Ball issue where category-based
+    # split dances (multiple Dance records with same name but different categories)
+    # were being scattered instead of grouped consecutively.
+
+    # Create two agenda categories
+    cat1 = Category.create!(name: "Newcomer", order: 1000)
+    cat2 = Category.create!(name: "Bronze", order: 1001)
+
+    # Create category-based split dances: two "Test Waltz" dances with different categories
+    # (In the Nashville database, this was used instead of multi-level splits)
+    # Note: order 10 is the canonical dance, order -1 is the split
+    waltz1 = Dance.create!(name: "Test Waltz Split", order: 10, closed_category: cat1)
+    waltz2 = Dance.create!(name: "Test Waltz Split", order: -1, closed_category: cat2)
+
+    # Create entries and heats for category 1 (Newcomer)
+    5.times do |i|
+      entry = Entry.create!(
+        lead: Person.create!(name: "Lead #{i} Cat1", studio: @studio1),
+        follow: @instructor1,
+        age: ages(:one),
+        level: levels(:one)
+      )
+      Heat.create!(dance: waltz1, entry: entry, category: 'Closed', number: 0)
+    end
+
+    # Create entries and heats for category 2 (Bronze)
+    5.times do |i|
+      entry = Entry.create!(
+        lead: Person.create!(name: "Lead #{i} Cat2", studio: @studio2),
+        follow: @instructor2,
+        age: ages(:one),
+        level: levels(:one)
+      )
+      Heat.create!(dance: waltz2, entry: entry, category: 'Closed', number: 0)
+    end
+
+    # Schedule heats
+    @scheduler.schedule_heats
+
+    # Get all scheduled heats grouped by heat number
+    heats_by_number = Heat.where('number > 0').order(:number)
+      .group_by(&:number)
+      .map { |num, heats| [num, heats.first.dance_category] }
+
+    # Find which heat numbers belong to each category
+    cat1_heats = heats_by_number.select { |num, cat| cat == cat1 }.map(&:first)
+    cat2_heats = heats_by_number.select { |num, cat| cat == cat2 }.map(&:first)
+
+    # Verify both categories have heats scheduled
+    assert cat1_heats.any?, "Category 1 should have heats scheduled"
+    assert cat2_heats.any?, "Category 2 should have heats scheduled"
+
+    # Verify heats for each category are consecutive
+    assert_equal (cat1_heats.first..cat1_heats.last).to_a, cat1_heats,
+      "Category 1 heats should be consecutive (was: #{cat1_heats.inspect})"
+    assert_equal (cat2_heats.first..cat2_heats.last).to_a, cat2_heats,
+      "Category 2 heats should be consecutive (was: #{cat2_heats.inspect})"
+
+    # Verify categories are not interleaved
+    # (i.e., all cat1 heats should come before cat2, or vice versa)
+    assert cat1_heats.last < cat2_heats.first || cat2_heats.last < cat1_heats.first,
+      "Categories should not be interleaved"
   end
 end
