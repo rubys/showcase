@@ -273,7 +273,7 @@ export class HeatRank extends HTMLElement {
               <td>${firstName}</td>
               <td>${secondName}</td>
               <td>${categoryDisplay}</td>
-              <td>${subject.studio?.name || ''}</td>
+              <td>${subject.studio || ''}</td>
             </tr>
           `;
         }).join('');

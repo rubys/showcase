@@ -395,7 +395,7 @@ export class HeatTable extends HTMLElement {
             <td>${firstName}</td>
             <td>${secondName}</td>
             <td>${categoryDisplay}</td>
-            <td>${subject.studio?.name || ''}</td>
+            <td>${subject.studio || ''}</td>
             ${this.buildScoringCells(subject)}
           </tr>
           ${this.buildFeedbackRow(subject, colSpan)}

@@ -1,15 +1,21 @@
 /**
  * HeatPage - Main orchestrator component for SPA scoring
  *
- * This is the top-level component that:
- * - Loads heat data from IndexedDB or server
+ * Simple design:
+ * - On init: Upload dirty scores → Fetch fresh data from server
+ * - On navigation: Use in-memory data (no cache checks)
+ * - On score update: Update in-memory + POST to server (or queue if offline)
+ * - Server is always source of truth for heat data
+ * - IndexedDB only stores dirty scores (pending uploads)
+ *
+ * This component:
  * - Manages navigation between heats
  * - Renders appropriate heat type component
  * - Handles keyboard and swipe navigation
  * - Integrates with score submission
  *
  * Usage:
- *   <heat-page judge-id="123"></heat-page>
+ *   <heat-page judge-id="123" heat-number="1" style="radio"></heat-page>
  */
 
 import { heatDataManager } from 'helpers/heat_data_manager';
@@ -47,7 +53,7 @@ export class HeatPage extends HTMLElement {
   }
 
   /**
-   * Initialize - load data and render
+   * Initialize - upload dirty scores and load fresh data
    */
   async init() {
     try {
@@ -56,17 +62,18 @@ export class HeatPage extends HTMLElement {
       // Show loading state
       this.innerHTML = '<div class="flex items-center justify-center h-screen"><div class="text-2xl">Loading heat data...</div></div>';
 
-      // Load data from IndexedDB or server (with version check)
-      console.log('[HeatPage] Fetching data...');
-      this.data = await heatDataManager.getData(this.judgeId, this.currentHeatNumber);
+      // First, batch upload any pending dirty scores
+      console.log('[HeatPage] Checking for dirty scores...');
+      await heatDataManager.batchUploadDirtyScores(this.judgeId);
+
+      // Then fetch fresh data from server
+      console.log('[HeatPage] Fetching fresh data...');
+      this.data = await heatDataManager.getData(this.judgeId);
       console.log('[HeatPage] Data loaded:', this.data ? 'success' : 'failed');
 
       if (!this.data) {
         throw new Error('Failed to load heat data');
       }
-
-      // Check for dirty scores and attempt batch upload if online
-      this.checkAndUploadDirtyScores();
 
       // Listen for online event to batch upload dirty scores
       window.addEventListener('online', () => this.handleReconnection());
@@ -100,21 +107,17 @@ export class HeatPage extends HTMLElement {
    */
   async checkAndUploadDirtyScores() {
     try {
-      const dirtyScores = await heatDataManager.getDirtyScores(this.judgeId);
-      if (dirtyScores.length > 0) {
-        console.log(`[HeatPage] Found ${dirtyScores.length} dirty scores, attempting upload...`);
-        const result = await heatDataManager.batchUploadDirtyScores(this.judgeId);
+      const result = await heatDataManager.batchUploadDirtyScores(this.judgeId);
 
-        if (result.succeeded && result.succeeded.length > 0) {
-          console.log(`[HeatPage] Successfully uploaded ${result.succeeded.length} scores`);
-          // Refresh data after successful upload
-          this.data = await heatDataManager.getData(this.judgeId, this.currentHeatNumber, true);
-          this.render();
-        }
+      if (result.succeeded && result.succeeded.length > 0) {
+        console.log(`[HeatPage] Successfully uploaded ${result.succeeded.length} scores`);
+        // Refresh data after successful upload
+        this.data = await heatDataManager.getData(this.judgeId);
+        this.render();
+      }
 
-        if (result.failed && result.failed.length > 0) {
-          console.warn(`[HeatPage] Failed to upload ${result.failed.length} scores`);
-        }
+      if (result.failed && result.failed.length > 0) {
+        console.warn(`[HeatPage] Failed to upload ${result.failed.length} scores`);
       }
     } catch (error) {
       console.error('[HeatPage] Failed to check/upload dirty scores:', error);
@@ -122,7 +125,7 @@ export class HeatPage extends HTMLElement {
   }
 
   /**
-   * Handle reconnection - batch upload dirty scores
+   * Handle reconnection - batch upload dirty scores and refresh data
    */
   async handleReconnection() {
     console.log('[HeatPage] Reconnected to network');
@@ -167,7 +170,7 @@ export class HeatPage extends HTMLElement {
       subject.scores.push(judgeScore);
     }
 
-    // Update the score data
+    // Update the in-memory score data
     if (scoreData.score !== undefined) {
       judgeScore.value = scoreData.score;
     }
@@ -180,9 +183,6 @@ export class HeatPage extends HTMLElement {
     if (scoreData.bad !== undefined) {
       judgeScore.bad = scoreData.bad;
     }
-
-    // Update IndexedDB with new data
-    await heatDataManager.storeHeatData(this.judgeId, this.data);
 
     // POST score to server
     try {
@@ -236,7 +236,7 @@ export class HeatPage extends HTMLElement {
   }
 
   /**
-   * Navigate to a specific heat (with version check)
+   * Navigate to a specific heat
    */
   async navigateToHeat(heatNumber, slot = 0) {
     this.currentHeatNumber = parseInt(heatNumber);
@@ -253,25 +253,7 @@ export class HeatPage extends HTMLElement {
     url.searchParams.set('style', this.scoringStyle);
     window.history.pushState({}, '', url);
 
-    // Check version before rendering
-    try {
-      const serverVersion = await heatDataManager.checkServerVersion(this.judgeId, this.currentHeatNumber);
-
-      if (serverVersion) {
-        const isCurrent = await heatDataManager.isVersionCurrent(this.judgeId, serverVersion);
-
-        if (!isCurrent) {
-          console.log('[HeatPage] Version mismatch detected, refreshing data');
-          this.data = await heatDataManager.getData(this.judgeId, this.currentHeatNumber, true);
-        }
-      } else {
-        // Offline mode - use cached data
-        console.log('[HeatPage] Offline mode, using cached data');
-      }
-    } catch (error) {
-      console.warn('[HeatPage] Version check failed, using cached data:', error);
-    }
-
+    // Just render - data is already in memory
     this.render();
   }
 

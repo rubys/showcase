@@ -176,10 +176,7 @@ class ScoresController < ApplicationController
               id: entry.instructor.id,
               name: entry.instructor.name
             } : nil,
-            studio: entry.studio ? {
-              id: entry.studio.id,
-              name: entry.studio.name
-            } : nil,
+            studio: entry.invoice_studio,  # Use calculated invoice studio for display
             age: entry.age ? {
               id: entry.age.id,
               category: entry.age.category
