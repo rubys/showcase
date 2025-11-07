@@ -236,7 +236,12 @@ class ScoresController < ApplicationController
         }
       end,
       feedbacks: Feedback.all.map { |f| { id: f.id, value: f.value, abbr: f.abbr } },
-      score_options: SCORES,
+      score_options: {
+        "Open" => get_scores_for_type(event.open_scoring).tap { |s| s << '' unless s.empty? },
+        "Closed" => get_scores_for_type(event.closed_scoring == '=' ? event.open_scoring : event.closed_scoring).tap { |s| s << '' unless s.empty? },
+        "Solo" => get_scores_for_type(event.solo_scoring).tap { |s| s << '' unless s.empty? },
+        "Multi" => get_scores_for_type(event.multi_scoring).tap { |s| s << '' unless s.empty? }
+      },
       timestamp: Time.current.to_i
     }
 
