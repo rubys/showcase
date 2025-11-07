@@ -157,6 +157,8 @@ app/javascript/
 - Auto-reopen via `ensureOpen()` when needed
 - Prevents blocking issues with multiple tabs
 
+**Implementation:** See [Appendix A: IndexedDB Connection Lifecycle](#appendix-a-indexeddb-connection-lifecycle)
+
 ---
 
 ## Current Implementation Status
@@ -522,6 +524,8 @@ document.addEventListener('turbo:before-visit', (event) => {
 
 **Simple browser-native confirmation prevents accidental navigation.**
 
+**Full Implementation:** See [Appendix B: Offline Navigation Guard Implementation](#appendix-b-offline-navigation-guard-implementation)
+
 ---
 
 ## Deployment Strategy
@@ -858,17 +862,217 @@ end
 
 ## Appendix
 
+### Appendix A: IndexedDB Connection Lifecycle
+
+To prevent blocking issues when multiple tabs/windows are open and to minimize resource usage, implement a combined approach:
+
+**Strategy:**
+
+1. **Close on Tab Hidden** (Page Visibility API)
+   - Immediately close IndexedDB connection when tab becomes hidden
+   - Prevents long-running connections from blocking upgrades in other tabs
+   - User switching away indicates they're not actively using this tab
+
+2. **Close on Inactivity** (5-minute timeout)
+   - Track last score update operation (not mouse movements)
+   - Close connection after 5 minutes of no score updates
+   - Reset timer on any `storeHeatData()` or dirty scores write
+   - Allows judge to read/review without closing, but closes if truly idle
+
+**Implementation Pattern:**
+
+```javascript
+class HeatDataManager {
+  constructor() {
+    this.db = null;
+    this.inactivityTimer = null;
+    this.INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+
+    // Close immediately when tab hidden
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && this.db) {
+        console.log('[HeatDataManager] Tab hidden, closing IndexedDB');
+        this.closeDB();
+      }
+    });
+  }
+
+  closeDB() {
+    if (this.db) {
+      console.log('[HeatDataManager] Closing IndexedDB connection');
+      this.db.close();
+      this.db = null;
+    }
+    this.clearInactivityTimer();
+  }
+
+  clearInactivityTimer() {
+    if (this.inactivityTimer) {
+      clearTimeout(this.inactivityTimer);
+      this.inactivityTimer = null;
+    }
+  }
+
+  resetInactivityTimer() {
+    this.clearInactivityTimer();
+    this.inactivityTimer = setTimeout(() => {
+      console.log('[HeatDataManager] Inactivity timeout, closing IndexedDB');
+      this.closeDB();
+    }, this.INACTIVITY_TIMEOUT);
+  }
+
+  async ensureOpen() {
+    if (!this.db) {
+      await this.init();
+    }
+    return this.db;
+  }
+
+  async storeHeatData(judgeId, data) {
+    await this.ensureOpen();
+    // ... write operation ...
+    this.resetInactivityTimer();
+  }
+
+  async storeDirtyScores(judgeId, dirtyScores) {
+    await this.ensureOpen();
+    // ... write operation ...
+    this.resetInactivityTimer();
+  }
+}
+```
+
+**Benefits:**
+
+- **Prevents blocking**: Tabs not actively scoring won't block upgrades
+- **Resource efficiency**: Connections closed when not needed
+- **Low overhead**: Only tracks score updates (low frequency events)
+- **Seamless UX**: Automatically reopens when needed via `ensureOpen()`
+
+**Tradeoffs:**
+
+- **Slight delay on reopen**: ~10-50ms to reopen after idle/hidden
+- **Acceptable**: Score updates already have network latency (100-500ms)
+- **Read operations unaffected**: Version checks don't require IndexedDB
+
+---
+
+### Appendix B: Offline Navigation Guard Implementation
+
+**Full Implementation with Turbo and Browser Navigation:**
+
+```javascript
+// In HeatPage or app initialization
+class OfflineNavigationGuard {
+  constructor() {
+    this.isOffline = !navigator.onLine;
+
+    // Track online/offline state
+    window.addEventListener('online', () => {
+      this.isOffline = false;
+      console.log('[OfflineGuard] Online - navigation unrestricted');
+    });
+
+    window.addEventListener('offline', () => {
+      this.isOffline = true;
+      console.log('[OfflineGuard] Offline - navigation guard active');
+    });
+
+    // Intercept Turbo navigation
+    document.addEventListener('turbo:before-visit', (event) => {
+      if (this.isOffline && !this.isSPARoute(event.detail.url)) {
+        const confirmed = confirm(
+          "You're currently offline. If you leave this page, you may not be able to return until you're back online.\n\n" +
+          "Are you sure you want to leave?"
+        );
+
+        if (!confirmed) {
+          event.preventDefault();
+        }
+      }
+    });
+
+    // Additional coverage for browser navigation (back button, address bar)
+    window.addEventListener('beforeunload', (event) => {
+      if (this.isOffline && this.isSPARoute(window.location.href)) {
+        event.preventDefault();
+        event.returnValue = ''; // Required for Chrome
+      }
+    });
+  }
+
+  isSPARoute(url) {
+    // Check if URL is within SPA routes
+    const pathname = new URL(url, window.location.origin).pathname;
+    return pathname.match(/^\/scores\/\d+\/spa/);
+  }
+}
+
+// Initialize guard when SPA loads
+new OfflineNavigationGuard();
+```
+
+**Scope of Protected Routes:**
+- SPA routes: `/scores/:judge/spa*` - navigation within SPA is allowed
+- External routes: Everything else requires confirmation when offline
+
+**User Experience:**
+- Online: No disruption, navigation works normally
+- Offline: Browser-native confirm dialog warns before leaving SPA
+- Simple, clear messaging: "You may not be able to return"
+
+**Benefits:**
+- ✅ Simple implementation (~40 lines of code)
+- ✅ No service worker complexity
+- ✅ No additional caching/state management
+- ✅ Works with Turbo navigation
+- ✅ Can be enhanced later with service worker if needed
+
+**Limitations:**
+- ⚠️ Can't intercept hard refreshes (F5/Cmd+R)
+- ⚠️ `beforeunload` shows generic browser message (browser-controlled)
+- ⚠️ Some browsers may not fire `beforeunload` reliably
+
+**Future Enhancement Option:**
+
+If navigation guard proves insufficient, a minimal service worker can provide an "emergency escape hatch":
+
+```javascript
+// Minimal service worker for offline fallback
+self.addEventListener('fetch', event => {
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return new Response(`
+          <h1>You're Offline</h1>
+          <p>You can't access this page while offline.</p>
+          <a href="/scores/${judgeId}/spa">Return to Scoring</a>
+        `, {
+          headers: { 'Content-Type': 'text/html' }
+        });
+      })
+    );
+  }
+});
+```
+
+This provides recovery without managing application state.
+
+---
+
 ### Related Documents
 
 - [SLOT_NAVIGATION.md](SLOT_NAVIGATION.md) - Detailed slot navigation specification
 - [JSON_SIZE_ANALYSIS.md](JSON_SIZE_ANALYSIS.md) - Performance measurements
+- [SPA_SYNC_STRATEGY.md](SPA_SYNC_STRATEGY.md) - Detailed sync architecture reference (comprehensive flow diagrams and edge case analysis)
 
 ### Historical Context
 
 This plan consolidates and supersedes:
 - `OFFLINE_SCORING_PLAN.md` - Service worker approach (fully implemented on separate branch, archived)
 - `SPA_SCORING_PLAN.md` - Original SPA design (merged into this plan)
-- `SPA_SYNC_STRATEGY.md` - Sync strategy refinement (merged into this plan)
+
+The `SPA_SYNC_STRATEGY.md` document remains as a detailed reference for sync architecture with verbose explanations, flow diagrams, and edge case handling. This plan (`SPA_OFFLINE_SCORING.md`) serves as the **master implementation guide**, while `SPA_SYNC_STRATEGY.md` provides **architectural deep-dive** for those who need it.
 
 All previous plans available in Git history.
 
