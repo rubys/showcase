@@ -152,7 +152,7 @@ export class HeatTable extends HTMLElement {
       // Numeric input
       return `
         <td><div class="mx-auto text-center">
-          <input data-target="score" class="text-center w-20 h-10 border-2 invalid:border-red-600"
+          <input class="text-center w-20 h-10 border-2 invalid:border-red-600"
             pattern="^\\d\\d$" name="${subject.id}" value="${scoreValue}">
         </div></td>
       `;
@@ -305,7 +305,7 @@ export class HeatTable extends HTMLElement {
       <tr>
         <td></td>
         <td colspan="${colSpan - 1}">
-          <textarea data-target="comments" data-heat="${subject.id}"
+          <textarea data-heat="${subject.id}"
             class="resize-none block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
           >${comments}</textarea>
         </td>
@@ -480,14 +480,14 @@ export class HeatTable extends HTMLElement {
    * Attach event listeners
    */
   attachEventListeners() {
-    // Radio buttons and checkboxes
-    const scoreInputs = this.querySelectorAll('input[type="radio"], input[type="checkbox"], input[data-target="score"]');
+    // Radio buttons and checkboxes and numeric inputs
+    const scoreInputs = this.querySelectorAll('input[type="radio"], input[type="checkbox"], input[pattern]');
     scoreInputs.forEach(input => {
       input.addEventListener('change', (e) => this.handleScoreChange(e));
     });
 
     // Comments textareas
-    const commentTextareas = this.querySelectorAll('textarea[data-target="comments"]');
+    const commentTextareas = this.querySelectorAll('textarea[data-heat]');
     commentTextareas.forEach(textarea => {
       textarea.addEventListener('input', (e) => this.handleCommentsChange(e));
     });
