@@ -216,6 +216,34 @@ module Printable
       end
     end
 
+    # Preserve categories with duration (breaks, warm-ups) even if they have no heats
+    # Insert them into final_agenda at the appropriate position based on category order
+    @categories.values.sort_by(&:order).reverse.each do |cat|
+      next unless cat.duration && @agenda.key?(cat.name) && !final_agenda.key?(cat.name)
+
+      # Find the position where this category should be inserted
+      # It should appear just before the next category in order
+      next_cat = @categories.values.sort_by(&:order).find { |c| c.order > cat.order }
+
+      if next_cat && final_agenda.key?(next_cat.name)
+        # Insert before the next category
+        new_agenda = {}
+        final_agenda.each do |key, value|
+          if key == next_cat.name || key.start_with?("#{next_cat.name} (continued")
+            new_agenda[cat.name] = []
+            break
+          end
+          new_agenda[key] = value
+        end
+        # Add remaining entries
+        final_agenda.each { |key, value| new_agenda[key] = value unless new_agenda.key?(key) }
+        final_agenda = new_agenda
+      else
+        # Append at the end (before special categories)
+        final_agenda[cat.name] = []
+      end
+    end
+
     @agenda = final_agenda
 
     # assign start and finish times
@@ -277,6 +305,8 @@ module Printable
           @finish[number] ||= start
         end
 
+        # Handle categories with a minimum duration (e.g., breaks, warm-ups)
+        # Set finish time to either current time or start + duration, whichever is later
         if cat&.duration
           start = @cat_finish[name] = [start, @cat_start[name] + cat.duration*60].max
         else

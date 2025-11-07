@@ -413,4 +413,180 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
       assert_match /\/categories\/#{cat1.id}\/edit/, main_href
     end
   end
+
+  # ===== BREAK AND WARM-UP DURATION TESTS =====
+
+  test "categories with duration but no heats should display times" do
+    # Set up event with date and heat_length for time calculations
+    event = Event.current
+    event.update!(date: '2025-11-08', heat_length: 75, include_times: true)
+
+    # Clear existing heats and categories
+    Heat.destroy_all
+    Category.destroy_all
+
+    # Create categories: WARM-UP (20 min), SMOOTH (with heats), BREAK (15 min), RHYTHM (with heats)
+    warmup = Category.create!(name: 'WARM-UP', order: 1, time: '10:00', duration: 20)
+    smooth = Category.create!(name: 'SMOOTH', order: 2)
+    break_cat = Category.create!(name: 'BREAK', order: 3, duration: 15)
+    rhythm = Category.create!(name: 'RHYTHM', order: 4)
+
+    # Create heats only for SMOOTH and RHYTHM
+    waltz = dances(:waltz)
+    tango = dances(:tango)
+    waltz.update!(open_category: smooth)
+    tango.update!(open_category: rhythm)
+
+    entry = Entry.first
+    age = ages(:one)
+    level = levels(:one)
+    entry.update!(age: age, level: level)
+
+    Heat.create!(number: 1, entry: entry, dance: waltz, category: 'Open')
+    Heat.create!(number: 2, entry: entry, dance: tango, category: 'Open')
+
+    get categories_url
+
+    assert_response :success
+
+    doc = Nokogiri::HTML(response.body)
+
+    # Find WARM-UP row
+    warmup_row = doc.css('tbody tr').find { |row| row.css('td a').text == 'WARM-UP' }
+    assert_not_nil warmup_row, "WARM-UP category should appear in agenda"
+
+    # WARM-UP should have time columns even with 0 heats
+    warmup_cells = warmup_row.css('td').map(&:text).map(&:strip)
+
+    # Debug: check if we have enough cells (should be at least 5: name, entries, heats, start, end)
+    assert warmup_cells.length >= 4, "WARM-UP should have at least 4 cells (name, entries, heats, times), got: #{warmup_cells.inspect}"
+
+    # First cell is the category name link
+    assert_equal 'WARM-UP', warmup_cells[0]
+    assert_equal '0', warmup_cells[1], "WARM-UP should show 0 entries"
+    assert_equal '0', warmup_cells[2], "WARM-UP should show 0 heats"
+
+    # Time columns should exist
+    assert_match /10:00/, warmup_cells[3] || '', "WARM-UP should show start time"
+    assert_match /10:20/, warmup_cells[4] || '', "WARM-UP should show end time (start + 20 min)"
+
+    # Find BREAK row
+    break_row = doc.css('tbody tr').find { |row| row.css('td a').text == 'BREAK' }
+    assert_not_nil break_row, "BREAK category should appear in agenda"
+
+    # BREAK should have time columns
+    break_cells = break_row.css('td').map(&:text).map(&:strip)
+    assert_equal '0', break_cells[1], "BREAK should show 0 entries"
+    assert_equal '0', break_cells[2], "BREAK should show 0 heats"
+    assert_match /\d+:\d+/, break_cells[3], "BREAK should show start time"
+    assert_match /\d+:\d+/, break_cells[4], "BREAK should show end time"
+  end
+
+  test "categories with duration should appear in correct order" do
+    # Set up event with date and heat_length
+    event = Event.current
+    event.update!(date: '2025-11-08', heat_length: 75, include_times: true)
+
+    # Clear existing heats and categories
+    Heat.destroy_all
+    Category.destroy_all
+
+    # Create categories in specific order
+    warmup = Category.create!(name: 'WARM-UP', order: 1, time: '10:00', duration: 20)
+    smooth = Category.create!(name: 'SMOOTH', order: 2)
+    break1 = Category.create!(name: 'BREAK 1', order: 3, duration: 15)
+    rhythm = Category.create!(name: 'RHYTHM', order: 4)
+    break2 = Category.create!(name: 'BREAK 2', order: 5, duration: 10)
+
+    # Create heats for SMOOTH and RHYTHM
+    waltz = dances(:waltz)
+    tango = dances(:tango)
+    waltz.update!(open_category: smooth)
+    tango.update!(open_category: rhythm)
+
+    entry = Entry.first
+    entry.update!(age: ages(:one), level: levels(:one))
+
+    Heat.create!(number: 1, entry: entry, dance: waltz, category: 'Open')
+    Heat.create!(number: 2, entry: entry, dance: tango, category: 'Open')
+
+    get categories_url
+
+    assert_response :success
+
+    # Extract category names in order
+    category_names = []
+    assert_select 'tbody tr td:first-child a' do |links|
+      category_names = links.map(&:text).reject { |name| name == 'Unscheduled' }
+    end
+
+    # Verify order: WARM-UP, SMOOTH, BREAK 1, RHYTHM, BREAK 2
+    assert_includes category_names, 'WARM-UP'
+    assert_includes category_names, 'BREAK 1'
+    assert_includes category_names, 'BREAK 2'
+
+    warmup_idx = category_names.index('WARM-UP')
+    smooth_idx = category_names.index('SMOOTH')
+    break1_idx = category_names.index('BREAK 1')
+    rhythm_idx = category_names.index('RHYTHM')
+    break2_idx = category_names.index('BREAK 2')
+
+    assert warmup_idx < smooth_idx, "WARM-UP should come before SMOOTH"
+    assert smooth_idx < break1_idx, "SMOOTH should come before BREAK 1"
+    assert break1_idx < rhythm_idx, "BREAK 1 should come before RHYTHM"
+    assert rhythm_idx < break2_idx, "RHYTHM should come before BREAK 2"
+  end
+
+  test "break after heats should start after last heat finishes" do
+    # Set up event
+    event = Event.current
+    event.update!(date: '2025-11-08', heat_length: 75, include_times: true)
+
+    Heat.destroy_all
+    Category.destroy_all
+
+    smooth = Category.create!(name: 'SMOOTH', order: 1, time: '10:00')
+    break_cat = Category.create!(name: 'BREAK', order: 2, duration: 15)
+    rhythm = Category.create!(name: 'RHYTHM', order: 3)
+
+    waltz = dances(:waltz)
+    tango = dances(:tango)
+    waltz.update!(open_category: smooth)
+    tango.update!(open_category: rhythm)
+
+    entry = Entry.first
+    entry.update!(age: ages(:one), level: levels(:one))
+
+    # Create a heat in SMOOTH
+    Heat.create!(number: 1, entry: entry, dance: waltz, category: 'Open')
+    Heat.create!(number: 2, entry: entry, dance: tango, category: 'Open')
+
+    get categories_url
+
+    assert_response :success
+
+    doc = Nokogiri::HTML(response.body)
+
+    smooth_row = doc.css('tbody tr').find { |row| row.css('td a').text == 'SMOOTH' }
+    break_row = doc.css('tbody tr').find { |row| row.css('td a').text == 'BREAK' }
+    rhythm_row = doc.css('tbody tr').find { |row| row.css('td a').text == 'RHYTHM' }
+
+    # Extract finish time of SMOOTH
+    smooth_finish = smooth_row.css('td')[4]&.text&.strip
+
+    # Extract start time of BREAK
+    break_start = break_row.css('td')[3]&.text&.strip
+
+    # Extract end time of BREAK
+    break_end = break_row.css('td')[4]&.text&.strip
+
+    # Extract start time of RHYTHM
+    rhythm_start = rhythm_row.css('td')[3]&.text&.strip
+
+    # BREAK should start when SMOOTH finishes
+    assert_equal smooth_finish, break_start, "BREAK should start when SMOOTH finishes"
+
+    # RHYTHM should start when BREAK ends
+    assert_equal break_end, rhythm_start, "RHYTHM should start when BREAK ends"
+  end
 end
