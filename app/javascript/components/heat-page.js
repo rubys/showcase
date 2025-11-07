@@ -612,7 +612,6 @@ export class HeatPage extends HTMLElement {
             event-data='${JSON.stringify(this.data.event)}'
             prev-url="${prevUrl}"
             next-url="${nextUrl}"
-            up-url="/scores/${this.judgeId}/spa?style=${this.scoringStyle}"
             assign-judges="${this.data.event.assign_judges > 0}"
             root-path="/">
           </heat-navigation>
