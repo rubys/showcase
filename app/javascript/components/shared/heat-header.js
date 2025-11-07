@@ -181,9 +181,8 @@ export class HeatHeader extends HTMLElement {
       `;
     }
 
-    // Build heatlist URL - use first subject's ID as the heat anchor
-    const heatId = heat.id || (subjects.length > 0 ? subjects[0].id : number);
-    const heatlistUrl = `/scores/${judge.id}/heatlist?style=${this.style}#heat_${heatId}`;
+    // Build heat list URL - use SPA route for offline support
+    const heatlistUrl = `/scores/${judge.id}/spa?style=${this.style}`;
 
     this.innerHTML = `
       <h1 class="grow font-bold text-4xl pt-1 pb-3 text-center mx-8">
