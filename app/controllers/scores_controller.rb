@@ -242,6 +242,79 @@ class ScoresController < ApplicationController
     render json: data
   end
 
+  # GET /scores/:judge/version/:heat - Lightweight version check for sync strategy
+  def version_check
+    heat_number = params[:heat].to_f
+
+    # Get max updated_at from heats table
+    max_updated_at = Heat.where('number >= ?', 1).maximum(:updated_at)
+
+    # Get total heat count
+    heat_count = Heat.where('number >= ?', 1).distinct.count(:number)
+
+    render json: {
+      heat_number: heat_number,
+      max_updated_at: max_updated_at&.iso8601(3),
+      heat_count: heat_count
+    }
+  end
+
+  # POST /scores/:judge/batch - Batch score upload for offline sync
+  def batch_scores
+    judge = Person.find(params[:judge].to_i)
+    scores_data = params[:scores] || []
+
+    succeeded = []
+    failed = []
+
+    ActiveRecord::Base.transaction do
+      scores_data.each do |score_params|
+        begin
+          heat = Heat.find(score_params[:heat])
+          slot = score_params[:slot]&.to_i || 1
+
+          # Find or create score
+          score = Score.find_or_create_by(
+            judge_id: judge.id,
+            heat_id: heat.id,
+            slot: slot
+          )
+
+          # Update score attributes
+          score.value = score_params[:score]
+          score.comments = score_params[:comments]
+          score.good = score_params[:good]
+          score.bad = score_params[:bad]
+
+          # Check if score is empty
+          is_empty = score.value.blank? && score.comments.blank? &&
+                     score.good.blank? && score.bad.blank?
+
+          if is_empty && Event.current.assign_judges == 0
+            # Delete empty scores when not assigning judges
+            score.destroy if score.persisted?
+          else
+            # Save score
+            score.save!
+          end
+
+          succeeded << { heat_id: heat.id, slot: slot }
+        rescue => e
+          failed << {
+            heat_id: score_params[:heat],
+            slot: score_params[:slot] || 1,
+            error: e.message
+          }
+        end
+      end
+    end
+
+    render json: {
+      succeeded: succeeded,
+      failed: failed
+    }
+  end
+
   # GET /scores/:judge/heat/:heat
   def heat
     @event = Event.current
