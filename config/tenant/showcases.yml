@@ -151,6 +151,16 @@
       winter-medal-ball:
         :name: Winter Medal Ball
         :date: 2025-12-07 - 2025-12-07
+  bloomington:
+    :name: Bloomington
+    :region: ord
+    :events:
+      barbara-leininger:
+        :name: Barbara Leininger
+        :date: 2025-11-06 - 2025-11-06
+      fall-showcase-enchanted-garden:
+        :name: Fall Showcase - Enchanted Garden
+        :date: 2025-11-23 - 2025-11-23
   boston:
     :name: Boston
     :region: ewr
@@ -271,7 +281,13 @@
   everett:
     :name: Everett
     :region: sjc
-    :date: '2025-05-09'
+    :events:
+      showcase:
+        :name: Showcase
+        :date: '2025-05-09'
+      fantasia-in-studio-showcase:
+        :name: 'Fantasia: In Studio Showcase'
+        :date: 2025-11-14 - 2025-11-14
   firenze:
     :name: Firenze
     :region: ams
@@ -872,6 +888,9 @@
       wrocaw-showcase-2025:
         :name: Wrocaw Showcase 2025
         :date: 2025-12-14 - 2025-12-14
+      mock-a-tition:
+        :name: Mock-A-tition
+        :date: 2025-11-23 - 2025-11-23
   woodlands:
     :name: Woodlands
     :region: dfw
