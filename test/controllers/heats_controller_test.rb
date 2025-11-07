@@ -786,4 +786,116 @@ class HeatsControllerTest < ActionDispatch::IntegrationTest
       assert idx101 < idx102, "Heat 101 should appear before heat 102"
     end
   end
+
+  # ===== PARTNERLESS ENTRIES TESTS =====
+
+  test "index does not flag Nobody as duplicate participant" do
+    @event.update!(partnerless_entries: true)
+
+    # Find or create Event Staff studio for Nobody
+    event_staff = Studio.find_or_create_by(name: 'Event Staff') { |s| s.tables = 0 }
+
+    # Ensure Nobody exists
+    nobody = Person.find_or_create_by(id: 0) do |p|
+      p.name = 'Nobody'
+      p.type = 'Student'
+      p.studio = event_staff
+      p.level = @level
+      p.back = 0
+    end
+
+    # Create multiple partnerless entries for the same heat number
+    entry1 = Entry.create!(
+      lead: @student,
+      follow: nobody,
+      instructor: @instructor,
+      age: @age,
+      level: @level
+    )
+
+    student2 = Person.create!(
+      name: 'Test Student 2',
+      type: 'Student',
+      studio: @student.studio,
+      level: @level,
+      back: 999
+    )
+
+    entry2 = Entry.create!(
+      lead: student2,
+      follow: nobody,
+      instructor: @instructor,
+      age: @age,
+      level: @level
+    )
+
+    # Create heats with same number (partnerless group)
+    heat1 = Heat.create!(
+      number: 999,
+      category: 'Open',
+      dance: @dance,
+      entry: entry1
+    )
+
+    heat2 = Heat.create!(
+      number: 999,
+      category: 'Open',
+      dance: @dance,
+      entry: entry2
+    )
+
+    get heats_url
+
+    assert_response :success
+
+    # Verify Nobody is not mentioned in issues
+    assert_not response.body.include?('Nobody is on the floor'),
+      "Nobody should not be flagged as duplicate participant"
+  end
+
+  test "index still flags real participants appearing multiple times" do
+    # Create two entries with the same student in the same heat number
+    entry1 = Entry.create!(
+      lead: @student,
+      follow: @instructor,
+      age: @age,
+      level: @level
+    )
+
+    instructor2 = Person.create!(
+      name: 'Test Instructor 2',
+      type: 'Professional',
+      studio: @student.studio
+    )
+
+    entry2 = Entry.create!(
+      lead: @student,  # Same student!
+      follow: instructor2,
+      age: @age,
+      level: @level
+    )
+
+    # Create heats with same number
+    Heat.create!(
+      number: 998,
+      category: 'Open',
+      dance: @dance,
+      entry: entry1
+    )
+
+    Heat.create!(
+      number: 998,
+      category: 'Open',
+      dance: @dance,
+      entry: entry2
+    )
+
+    get heats_url
+
+    assert_response :success
+
+    # Should flag the real participant as appearing multiple times
+    assert_select 'h2', text: /Issues:/, count: 1
+    assert_match(/#{@student.display_name}.*on the floor/m, response.body)
+  end
 end

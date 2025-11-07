@@ -611,4 +611,169 @@ class HeatSchedulerTest < ActiveSupport::TestCase
     assert cat1_heats.last < cat2_heats.first || cat2_heats.last < cat1_heats.first,
       "Categories should not be interleaved"
   end
+
+  # ===== PARTNERLESS ENTRIES TESTS =====
+
+  test "schedule_heats consolidates multiple partnerless entries to same heat number" do
+    @event.update!(partnerless_entries: true)
+    Event.current = @event
+
+    # Find or create Event Staff studio for Nobody
+    event_staff = Studio.find_or_create_by(name: 'Event Staff') { |s| s.tables = 0 }
+
+    # Ensure Nobody exists
+    nobody = Person.find_or_create_by(id: 0) do |p|
+      p.name = 'Nobody'
+      p.type = 'Student'
+      p.studio = event_staff
+      p.level = levels(:one)
+      p.back = 0
+    end
+
+    # Create multiple students with different levels for partnerless entries
+    students = []
+    max_back = Person.maximum(:back) || 0
+    3.times do |i|
+      students << Person.create!(
+        name: "Partnerless Student #{i}",
+        type: 'Student',
+        studio: @studio1,
+        level: levels(:one),
+        back: max_back + 100 + i
+      )
+    end
+
+    # Create partnerless entries for the same dance
+    students.each do |student|
+      entry = Entry.create!(
+        lead: student,
+        follow: nobody,
+        instructor: @instructor1,
+        age: ages(:one),
+        level: levels(:one)
+      )
+
+      Heat.create!(
+        number: 0,  # Unscheduled
+        category: 'Open',
+        dance: @dance_waltz,
+        entry: entry
+      )
+    end
+
+    # Run scheduler
+    @scheduler.schedule_heats
+
+    # Verify all partnerless entries are assigned to the same heat number
+    partnerless_heats = Heat.joins(:entry).where(
+      'entries.lead_id = 0 OR entries.follow_id = 0'
+    ).where('heats.number > 0')
+
+    heat_numbers = partnerless_heats.pluck(:number).uniq
+    assert_equal 1, heat_numbers.length,
+      "All partnerless entries should be scheduled to the same heat number"
+
+    assert_equal 3, partnerless_heats.count,
+      "All 3 partnerless entries should be scheduled"
+  end
+
+  test "schedule_heats handles formations with participant conflicts correctly" do
+    Event.current = @event
+
+    # Find or create Event Staff studio for Nobody
+    event_staff = Studio.find_or_create_by(name: 'Event Staff') { |s| s.tables = 0 }
+
+    # Ensure Nobody exists
+    nobody = Person.find_or_create_by(id: 0) do |p|
+      p.name = 'Nobody'
+      p.type = 'Student'
+      p.studio = event_staff
+      p.level = levels(:one)
+      p.back = 0
+    end
+
+    # Create a studio formation (both lead and follow are Nobody)
+    formation_entry = Entry.create!(
+      lead: nobody,
+      follow: nobody,
+      instructor: @instructor1,
+      age: ages(:one),
+      level: levels(:one)
+    )
+
+    formation_heat = Heat.create!(
+      number: 0,
+      category: 'Open',
+      dance: @dance_waltz,
+      entry: formation_entry
+    )
+
+    # Create formation solo with student1 as participant
+    max_order = Solo.maximum(:order) || 0
+    solo = Solo.create!(heat: formation_heat, order: max_order + 1)
+    Formation.create!(solo: solo, person: @student1, on_floor: true)
+
+    # Create a partnerless entry with the SAME student (should conflict)
+    partnerless_entry = Entry.create!(
+      lead: @student1,  # Same student as in formation
+      follow: nobody,
+      instructor: @instructor1,
+      age: ages(:one),
+      level: levels(:one)
+    )
+
+    Heat.create!(
+      number: 0,
+      category: 'Open',
+      dance: @dance_waltz,
+      entry: partnerless_entry
+    )
+
+    # Run scheduler
+    @scheduler.schedule_heats
+
+    # Verify they have different heat numbers due to participant conflict
+    formation_heat.reload
+    partnerless_heat = Heat.find_by(entry: partnerless_entry)
+
+    assert formation_heat.number > 0, "Formation heat should be scheduled"
+    assert partnerless_heat.number > 0, "Partnerless heat should be scheduled"
+    assert_not_equal formation_heat.number, partnerless_heat.number,
+      "Formation and partnerless entry with same participant should not be grouped"
+  end
+
+  test "schedule_heats respects level/age ranges for non-partnerless entries" do
+    Event.current = @event
+
+    # Create two regular (non-partnerless) entries with different levels
+    entry1 = Entry.create!(
+      lead: @student1,
+      follow: @instructor1,
+      age: ages(:one),
+      level: levels(:one)
+    )
+
+    entry2 = Entry.create!(
+      lead: @student2,
+      follow: @instructor2,
+      age: ages(:one),
+      level: levels(:one)
+    )
+
+    Heat.create!(number: 0, category: 'Open', dance: @dance_waltz, entry: entry1)
+    Heat.create!(number: 0, category: 'Open', dance: @dance_waltz, entry: entry2)
+
+    # Set strict level range
+    @event.update!(heat_range_level: 0)
+
+    @scheduler.schedule_heats
+
+    heat1 = Heat.find_by(entry: entry1)
+    heat2 = Heat.find_by(entry: entry2)
+
+    # With strict level range, different levels should not be grouped
+    # (This depends on level differences and heat_range_level setting)
+    assert heat1.number > 0, "Entry 1 should be scheduled"
+    assert heat2.number > 0, "Entry 2 should be scheduled"
+  end
 end

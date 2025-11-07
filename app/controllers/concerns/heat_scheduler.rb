@@ -556,8 +556,9 @@ module HeatScheduler
 
       unless @@skating.include? heat.dance_id
         return if @group.size >= @@max
-        return if @participants.include? heat.lead
-        return if @participants.include? heat.follow
+        # Skip participant checks for Nobody (id=0) - allows multiple partnerless entries
+        return if heat.lead.id != 0 && @participants.include?(heat.lead)
+        return if heat.follow.id != 0 && @participants.include?(heat.follow)
         return if heat.lead.exclude_id and @participants.include? heat.lead.exclude
         return if heat.follow.exclude_id and @participants.include? heat.follow.exclude
       end
@@ -1012,4 +1013,5 @@ module HeatScheduler
       end
     end
   end
+
 end

@@ -13,9 +13,11 @@
 
 The Partnerless Entries feature allows students to compete without a partner. This is useful for:
 
+- **Line Dance competitions** where all students perform together on the floor
+- **Master Class sessions** where individuals sign up for group instruction with a master coach
+- **Jack & Jill competitions** or similar events with multiple simultaneous participants
 - Solo student competitions where dancers perform alone
 - Events where a student's partner is unavailable
-- Competitions specifically designed for individual performance
 
 ## How It Works
 
@@ -44,6 +46,31 @@ Once enabled, when creating entries for a student:
 3. **"Nobody" is automatically selected** for your convenience
 4. Select an instructor (required for student entries)
 5. Choose your dances and categories as normal
+
+## Heat Scheduling
+
+When you run **Redo** (re-schedule heats), the system automatically consolidates partnerless entries:
+
+- **Multiple partnerless entries** for the same dance and category are scheduled together
+- All participants dance **at the same heat number** (everyone on the floor simultaneously)
+- Each entry remains **separate** (not converted to formations)
+- The system ignores the "Nobody" placeholder when checking for participant conflicts
+- This allows all students with different levels and ages to be scheduled together
+
+### Categories That Benefit From This Feature
+
+- **Line Dance Competition** - All dancers perform the same choreography together
+- **Master Class** - Group instruction session with a master coach
+- **Jack & Jill** - Partners randomly assigned, but multiple couples on floor
+- Any event where multiple individuals participate simultaneously
+
+### Example
+
+If you have 20 students entered for "Line Dance Competition" with Nobody as partner:
+- Before Redo: 20 separate heats (213-232), each dancing alone
+- After Redo: All 20 entries assigned to the same heat number (e.g., Heat 213), dancing together
+
+Each student maintains their own Entry record with their instructor, level, and age, but they all perform at the same time.
 
 ## Display
 
