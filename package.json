@@ -1,0 +1,30 @@
+{
+  "name": "showcase",
+  "version": "1.0.0",
+  "description": "In between updates to [Agile Web Development with Rails 8](https://pragprog.com/titles/rails8/agile-web-development-with-rails-8/), I keep my Rails skills sharp by developing small applications.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "rubix.intertwingly.net:/archive/git/showcase.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@vitest/ui": "^3.2.4",
+    "fake-indexeddb": "^6.2.4",
+    "jsdom": "^27.0.1",
+    "vitest": "^3.2.4"
+  }
+}

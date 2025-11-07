@@ -493,6 +493,320 @@ window.addEventListener('beforeunload', (event) => {
 });
 ```
 
+## Testing Strategy
+
+### Overview
+
+To ensure the SPA implementation matches the traditional Rails implementation, we'll implement a comprehensive testing strategy with three layers:
+
+1. **Backend API Tests** - Expand existing Rails controller tests
+2. **System Tests** - Browser integration tests using existing Capybara/Selenium setup
+3. **JavaScript Unit Tests** - Test JS logic and offline behavior using Vitest
+
+### 1. Backend API Testing
+
+**Tool**: Existing Rails test infrastructure (Minitest)
+**Location**: `test/controllers/scores_controller_test.rb`
+
+The JSON API endpoints (lines 2041-2200) already have good coverage. We need to expand with:
+
+- `batch_scores` endpoint tests (batch upload, partial failures, empty score deletion)
+- `version_check` endpoint tests (timestamp accuracy, heat count changes)
+- `spa` view rendering tests (custom element presence)
+
+**Estimated additions**: ~150 lines
+
+### 2. System Tests (Browser Integration)
+
+**Tool**: Existing Capybara + Selenium setup
+**Location**: `test/system/scores_test.rb`
+
+Add browser-based tests for SPA user flows:
+
+```ruby
+test "should load SPA heat list" do
+  visit judge_spa_path(people(:Judy))
+  assert_selector 'heat-list', wait: 5
+  assert_text 'Heat'
+end
+
+test "should score heat via SPA radio interface" do
+  visit judge_spa_path(people(:Judy), heat: 59, style: 'radio')
+  assert_selector 'heat-table', wait: 5
+  first('input[type="radio"][value="G"]').click
+  sleep 1
+  visit by_level_scores_path
+  assert_selector "td", text: "G"
+end
+```
+
+**Note**: System tests can be slow and flaky, so keep them minimal (only critical user journeys).
+
+**Estimated additions**: ~200 lines
+
+### 3. JavaScript Unit Tests
+
+**Tool**: Vitest (Jest-compatible, modern ESM support)
+**Location**: `test/javascript/`
+
+Test JavaScript logic that can't be easily tested through Rails:
+
+- IndexedDB operations (dirty scores queue, last-write-wins)
+- Offline/online detection and sync logic
+- Fetch error handling and retry behavior
+- Component rendering logic (Custom Elements)
+
+**Why Vitest?**
+- ✅ Fast execution (uses Vite transformation)
+- ✅ Jest-compatible API (familiar, lots of examples)
+- ✅ Native ESM support (works with import maps)
+- ✅ Built-in browser API mocks (DOM, IndexedDB via fake-indexeddb)
+- ✅ Great TypeScript support (future-proof)
+- ✅ Active development and community
+
+**Setup Steps**:
+
+1. Initialize npm for dev dependencies:
+   ```bash
+   npm init -y
+   ```
+
+2. Install Vitest and dependencies:
+   ```bash
+   npm install --save-dev vitest @vitest/ui jsdom fake-indexeddb
+   ```
+
+3. Create Vitest config (`vitest.config.js`):
+   ```javascript
+   import { defineConfig } from 'vitest/config'
+
+   export default defineConfig({
+     test: {
+       environment: 'jsdom',
+       setupFiles: ['./test/javascript/setup.js'],
+       globals: true,
+       include: ['test/javascript/**/*.test.js']
+     }
+   })
+   ```
+
+4. Add test scripts to `package.json`:
+   ```json
+   {
+     "scripts": {
+       "test": "vitest",
+       "test:run": "vitest run",
+       "test:ui": "vitest --ui",
+       "test:coverage": "vitest --coverage"
+     }
+   }
+   ```
+
+5. Create test setup file (`test/javascript/setup.js`):
+   ```javascript
+   import 'fake-indexeddb/auto'
+
+   // Mock Rails helpers
+   global.window.inject_region = (headers) => headers
+
+   // Mock CSRF token
+   global.document.querySelector = (selector) => {
+     if (selector === 'meta[name="csrf-token"]') {
+       return { content: 'test-csrf-token' }
+     }
+     return null
+   }
+   ```
+
+**Example Test** (`test/javascript/heat_data_manager.test.js`):
+
+```javascript
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { heatDataManager } from '../../app/javascript/helpers/heat_data_manager'
+
+describe('HeatDataManager', () => {
+  beforeEach(async () => {
+    // Clear IndexedDB before each test
+    const dbs = await indexedDB.databases()
+    for (const db of dbs) {
+      indexedDB.deleteDatabase(db.name)
+    }
+  })
+
+  // Converted from Ruby: test "creates new score via AJAX post endpoint"
+  it('creates new dirty score in IndexedDB', async () => {
+    await heatDataManager.addDirtyScore(
+      55,    // judgeId
+      100,   // heatId
+      1,     // slot
+      { score: 'S', comments: '', good: '', bad: '' }
+    )
+
+    const dirtyScores = await heatDataManager.getDirtyScores(55)
+
+    expect(dirtyScores).toHaveLength(1)
+    expect(dirtyScores[0].heat).toBe(100)
+    expect(dirtyScores[0].score).toBe('S')
+  })
+
+  // Converted from Ruby: test "updates existing score value via AJAX"
+  it('updates existing dirty score (last write wins)', async () => {
+    await heatDataManager.addDirtyScore(55, 100, 1, { score: 'G' })
+    await heatDataManager.addDirtyScore(55, 100, 1, { score: 'B' })
+
+    const dirtyScores = await heatDataManager.getDirtyScores(55)
+
+    expect(dirtyScores).toHaveLength(1)
+    expect(dirtyScores[0].score).toBe('B')
+  })
+
+  // Test offline batch upload
+  it('batch uploads dirty scores to server', async () => {
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          succeeded: [{ heat: 100, slot: 1 }],
+          failed: []
+        })
+      })
+    )
+
+    await heatDataManager.addDirtyScore(55, 100, 1, { score: 'G' })
+    const result = await heatDataManager.batchUploadDirtyScores(55)
+
+    expect(result.succeeded).toHaveLength(1)
+    expect(result.failed).toHaveLength(0)
+
+    // Dirty scores should be cleared after successful upload
+    const remaining = await heatDataManager.getDirtyScores(55)
+    expect(remaining).toHaveLength(0)
+  })
+})
+```
+
+**Test Conversion Strategy**:
+
+The goal is to systematically convert Ruby controller tests to JavaScript tests to ensure feature parity:
+
+- Ruby test: "creates new score via AJAX" → JS test: "adds dirty score to IndexedDB"
+- Ruby test: "updates existing score" → JS test: "updates dirty score (last write wins)"
+- Ruby test: "deletes empty score" → JS test: "removes dirty score after upload"
+- Ruby test: "batch upload" → JS test: "batch uploads dirty scores to server"
+
+This systematic conversion ensures we catch any behavioral differences between implementations.
+
+**Estimated**: ~500 lines of JavaScript tests
+
+### Running Tests
+
+**Rails tests** (backend + system):
+```bash
+bin/rails test                    # All non-system tests
+bin/rails test:system             # System tests only
+bin/rails test test/controllers/scores_controller_test.rb  # Specific file
+```
+
+**JavaScript tests**:
+```bash
+npm test                          # Watch mode (interactive)
+npm run test:run                  # Single run (CI mode)
+npm run test:ui                   # Visual UI
+npm run test:coverage             # Coverage report
+```
+
+### Continuous Integration
+
+Update CI configuration to run JavaScript tests alongside Rails tests.
+
+**GitHub Actions** (`.github/workflows/ci.yml`):
+
+```yaml
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.3
+          bundler-cache: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Run Rails tests
+        run: |
+          bin/rails db:prepare
+          bin/rails test
+
+      - name: Run JavaScript tests
+        run: npm run test:run
+
+      - name: Run System tests
+        run: bin/rails test:system
+```
+
+**GitLab CI** (`.gitlab-ci.yml`):
+
+```yaml
+image: ruby:3.3
+
+variables:
+  NODE_VERSION: "20"
+
+before_script:
+  - apt-get update -qq && apt-get install -y nodejs npm
+  - bundle install
+  - npm ci
+
+test:rails:
+  script:
+    - bin/rails db:prepare
+    - bin/rails test
+
+test:javascript:
+  script:
+    - npm run test:run
+
+test:system:
+  script:
+    - bin/rails test:system
+```
+
+**Key CI Requirements**:
+1. Install Node.js (version 20+)
+2. Run `npm ci` to install JavaScript dependencies
+3. Run `npm run test:run` (single-run mode, not watch mode)
+4. Ensure exit code propagates (Vitest fails CI if tests fail)
+
+### Total Testing Investment
+
+- **Backend API tests**: ~150 lines (expand existing)
+- **System tests**: ~200 lines (expand existing)
+- **JavaScript tests**: ~500 lines (new Vitest tests)
+- **CI configuration**: ~30 lines (new Node.js setup)
+
+**Total**: ~880 lines of test code
+
+This is significantly less than the 2200 lines of Ruby tests because:
+1. Backend logic is simpler (server is source of truth)
+2. We're testing the SPA-specific behavior (offline, IndexedDB, sync)
+3. We're not re-testing Rails business logic (scrutineering, ranking, etc.)
+
 ## Future Enhancements
 
 1. **CSRF Token Refresh**: Add `GET /scores/:judge/csrf_token` endpoint that returns fresh token for batch uploads. Would allow re-enabling CSRF protection on batch endpoint if security requirements change. Current approach (skipping CSRF for batch) is acceptable given HTTP Basic Auth protection and judge-specific URLs.
