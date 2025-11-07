@@ -2199,4 +2199,221 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     assert data['timestamp'] <= Time.current.to_i
   end
 
+  # === SPA-Specific Endpoint Tests ===
+
+  test "spa endpoint renders spa view with heat-page custom element" do
+    get judge_spa_path(@judge)
+
+    assert_response :success
+    assert_select 'heat-page'
+  end
+
+  test "spa endpoint passes judge-id attribute" do
+    get judge_spa_path(@judge)
+
+    assert_response :success
+    assert_select "heat-page[judge-id='#{@judge.id}']"
+  end
+
+  test "spa endpoint passes heat-number when provided" do
+    get judge_spa_path(@judge, heat: 42)
+
+    assert_response :success
+    assert_select "heat-page[heat-number='42']"
+  end
+
+  test "spa endpoint passes style attribute" do
+    get judge_spa_path(@judge, style: 'radio')
+
+    assert_response :success
+    assert_select "heat-page[style='radio']"
+  end
+
+  test "batch_scores creates multiple scores from array" do
+    # Remove existing score
+    @score.destroy
+
+    batch_data = {
+      scores: [
+        {
+          heat: @test_heat.id,
+          slot: 1,
+          score: 'G',
+          comments: 'Great technique',
+          good: 'F',
+          bad: ''
+        },
+        {
+          heat: @test_heat.id,
+          slot: 2,
+          score: 'S',
+          comments: '',
+          good: '',
+          bad: 'T'
+        }
+      ]
+    }
+
+    assert_difference('Score.count', 2) do
+      post judge_batch_scores_path(@judge), params: batch_data, as: :json
+    end
+
+    assert_response :success
+    result = JSON.parse(@response.body)
+    assert_equal 2, result['succeeded'].length
+    assert_equal 0, result['failed'].length
+  end
+
+  test "batch_scores updates existing scores" do
+    # Create initial scores
+    score1 = Score.create!(heat: @test_heat, judge: @judge, value: 'G', slot: 1)
+    score2 = Score.create!(heat: @test_heat, judge: @judge, value: 'S', slot: 2)
+
+    batch_data = {
+      scores: [
+        { heat: @test_heat.id, slot: 1, score: 'B', comments: 'Updated', good: '', bad: '' },
+        { heat: @test_heat.id, slot: 2, score: 'GH', comments: '', good: '', bad: '' }
+      ]
+    }
+
+    assert_no_difference('Score.count') do
+      post judge_batch_scores_path(@judge), params: batch_data, as: :json
+    end
+
+    assert_response :success
+    result = JSON.parse(@response.body)
+    assert_equal 2, result['succeeded'].length
+
+    score1.reload
+    score2.reload
+    assert_equal 'B', score1.value
+    assert_equal 'Updated', score1.comments
+    assert_equal 'GH', score2.value
+  end
+
+  test "batch_scores handles empty scores based on assign_judges setting" do
+    original_assign = @event.assign_judges
+
+    # Test with assign_judges = 0 (should delete empty scores)
+    @event.update!(assign_judges: 0)
+
+    score_to_delete = Score.create!(heat: @test_heat, judge: @judge, value: 'G', slot: 1)
+
+    batch_data = {
+      scores: [
+        { heat: @test_heat.id, slot: 1, score: '', comments: '', good: '', bad: '' }
+      ]
+    }
+
+    assert_difference('Score.count', -1) do
+      post judge_batch_scores_path(@judge), params: batch_data, as: :json
+    end
+
+    assert_response :success
+
+    # Test with assign_judges > 0 (should keep empty scores)
+    @event.update!(assign_judges: 1)
+
+    batch_data = {
+      scores: [
+        { heat: @test_heat.id, slot: 1, score: '', comments: '', good: '', bad: '' }
+      ]
+    }
+
+    assert_difference('Score.count', 1) do
+      post judge_batch_scores_path(@judge), params: batch_data, as: :json
+    end
+
+    assert_response :success
+
+  ensure
+    @event.update!(assign_judges: original_assign)
+  end
+
+  test "batch_scores handles partial failures gracefully" do
+    batch_data = {
+      scores: [
+        { heat: @test_heat.id, slot: 1, score: 'G', comments: '', good: '', bad: '' },  # Valid
+        { heat: 99999, slot: 1, score: 'S', comments: '', good: '', bad: '' }           # Invalid heat ID
+      ]
+    }
+
+    post judge_batch_scores_path(@judge), params: batch_data, as: :json
+
+    assert_response :success
+    result = JSON.parse(@response.body)
+    assert_equal 1, result['succeeded'].length
+    assert_equal 1, result['failed'].length
+    assert_includes result['failed'][0]['error'], "Couldn't find Heat"
+  end
+
+  test "batch_scores handles readonly database" do
+    ApplicationRecord.class_variable_set(:@@readonly_showcase, true)
+
+    batch_data = {
+      scores: [
+        { heat: @test_heat.id, slot: 1, score: 'G', comments: '', good: '', bad: '' }
+      ]
+    }
+
+    post judge_batch_scores_path(@judge), params: batch_data, as: :json
+
+    assert_response :success
+    result = JSON.parse(@response.body)
+    assert_equal 0, result['succeeded'].length
+    assert_equal 1, result['failed'].length
+    assert_includes result['failed'][0]['error'], 'readonly'
+
+  ensure
+    ApplicationRecord.class_variable_set(:@@readonly_showcase, false)
+  end
+
+  test "batch_scores returns empty arrays when no scores provided" do
+    batch_data = { scores: [] }
+
+    post judge_batch_scores_path(@judge), params: batch_data, as: :json
+
+    assert_response :success
+    result = JSON.parse(@response.body)
+    assert_equal 0, result['succeeded'].length
+    assert_equal 0, result['failed'].length
+  end
+
+  test "version_check returns version metadata" do
+    get judge_version_check_path(@judge, @test_heat.number), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+
+    assert_includes data.keys, 'max_updated_at'
+    assert_includes data.keys, 'heat_count'
+    assert data['heat_count'].is_a?(Integer)
+    assert data['heat_count'] > 0
+  end
+
+  test "version_check includes heat number in response" do
+    get judge_version_check_path(@judge, @test_heat.number), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+
+    assert_equal @test_heat.number.to_f, data['heat_number'].to_f
+  end
+
+  test "version_check works with fractional heat numbers" do
+    fractional_heat = Heat.create!(
+      number: 15.5,
+      entry: @entry,
+      dance: @dance,
+      category: 'Open'
+    )
+
+    get judge_version_check_path(@judge, fractional_heat.number), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+
+    assert_equal 15.5, data['heat_number'].to_f
+  end
+
 end
