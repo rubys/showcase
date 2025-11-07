@@ -288,6 +288,42 @@ Showcase demonstrates that shared-nothing architectures work well when data natu
 
 Currently serving 75+ dance studios across 350+ events in 8 countries on 4 continents from 8 regions at modest cost.
 
+## Progressive Web App Implementation
+
+The judge scoring interface has been reimplemented as a **Single-Page Application (SPA)** using Web Components to provide offline-first functionality. This addresses connectivity issues that occur during live events.
+
+### Architecture
+
+**Component Structure:**
+- Custom elements (Web Components) for each heat type: `heat-solo`, `heat-rank`, `heat-table`, `heat-cards`
+- Container component `heat-page` manages navigation and state
+- Shared components `heat-header` and `heat-info-box` for consistent UI
+
+**Offline-First Data Management:**
+- `HeatDataManager` uses IndexedDB for client-side storage
+- Automatically queues scores when offline, syncs when connectivity returns
+- Batch upload mechanism minimizes HTTP requests
+- Falls back gracefully to traditional Rails views when JavaScript unavailable
+
+**Key Benefits:**
+1. **Judges can score without connectivity**: Critical for venues with unreliable WiFi
+2. **Faster interaction**: No page reloads, instant feedback
+3. **Automatic sync**: Transparent to users, no manual intervention required
+4. **Real-time updates**: ActionCable integration shows other judges' scores live
+5. **Touch-optimized**: Works well on iPads used during events
+
+**Testing:**
+- 133 JavaScript component tests ensure behavioral parity with Rails implementation
+- Tests cover navigation, semi-finals logic, offline queueing, component selection, and UI display
+- Component tests preferred over system tests (faster, more reliable, better coverage)
+
+**Deployment:**
+- Uses import maps (no build step required)
+- Progressive enhancement: works without JavaScript by falling back to Rails views
+- No changes to backend APIs (same JSON endpoints)
+
+This implementation demonstrates how PWA patterns can be applied incrementally to specific high-value features without requiring a full application rewrite.
+
 ## Possible improvements
 
 This architecture works well but has room for enhancement:
@@ -296,6 +332,10 @@ This architecture works well but has room for enhancement:
 
 2. **Metrics and observability**: Add Prometheus/OpenTelemetry integration to better understand usage patterns and optimize resource allocation
 
-3. **Progressive Web App**: Enable offline capabilities for judges to enter scores without reliable connectivity during events
+3. **Expand PWA capabilities**: The judge scoring SPA could be enhanced with:
+   - Service Worker for true offline mode (pre-cache all heat data)
+   - Install prompt for home screen access
+   - Background sync for automatic uploads when connectivity returns
+   - Push notifications for heat changes during events
 
 The current architecture prioritizes simplicity and reliability over optimization, which has proven effective for the workload. Future improvements should maintain these priorities while addressing specific pain points as they emerge.

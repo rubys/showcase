@@ -45,6 +45,44 @@ This application uses **import maps** for JavaScript module management (not Webp
 - Import maps configuration is in `config/importmap.rb`
 - Avoid `<script>` tags with inline JavaScript in ERB templates unless absolutely necessary
 
+The frontend primarily uses **ERB templates** with Turbo Drive for enhanced navigation and **Stimulus controllers** for interactive behaviors. This approach handles all event preparation, administration, participant management, and post-event publishing.
+
+#### Single-Page Application (SPA) for Live Event Features
+For features used heavily **during live events** (where offline capability and real-time updates are critical), the application uses a **Web Components-based SPA** approach:
+
+**Current SPA Implementation: Judge Scoring Interface**
+The judge scoring interface has been reimplemented using Web Components to provide offline-first functionality and real-time updates during events:
+
+**Core Components:**
+- `heat-page.js` - Main container managing heat navigation and state
+- `heat-solo.js` - Solo heat rendering with formations and scoring
+- `heat-rank.js` - Finals with drag-and-drop ranking
+- `heat-table.js` - Standard heat table with radio/checkbox scoring
+- `heat-cards.js` - Card-based drag-and-drop scoring interface
+- `heat-header.js` - Heat details (number, dance, slot display)
+- `heat-info-box.js` - Contextual help and instructions
+
+**Data Management:**
+- `HeatDataManager` - IndexedDB-based offline storage with automatic sync
+- Queues scores in IndexedDB when offline, uploads when connectivity returns
+- Fetches heat data from JSON endpoints (`/scores/:judge_id/heats.json`)
+- ActionCable integration for live score updates during events
+
+**Key Features:**
+- **Offline-first**: Judges can score heats without network connectivity
+- **Progressive enhancement**: Falls back to traditional views when JavaScript unavailable
+- **Behavioral parity**: SPA matches Rails view behavior exactly (verified by comprehensive tests)
+- **Real-time sync**: Live updates via ActionCable when other judges score
+- **Touch-friendly**: Optimized for tablet use (iPads) during live events
+
+**Implementation Status:**
+The ERB-based judge scoring views remain in place and will only be removed once the Web Components version is proven by actual usage during live events. Both implementations coexist, with the traditional views serving as a fallback.
+
+**When to use SPA vs Traditional:**
+- **Use SPA for live event features** that require offline capability, real-time updates, or heavy interaction during events (e.g., judge scoring, heat management)
+- **Use traditional ERB/Stimulus for everything else**: event preparation, administration, participant management, reporting, publishing
+- The majority of the application uses and will continue to use ERB templates with Stimulus controllers
+
 ## Common Development Commands
 
 ### Running the Application
@@ -65,6 +103,10 @@ bin/dev demo
 
 ### Testing
 
+The application has two parallel testing strategies:
+
+#### Rails Tests (Backend, API, System)
+
 ```bash
 # Run all tests except system tests
 bin/rails test
@@ -75,6 +117,54 @@ bin/rails test:system
 # Reset database and run tests
 bin/rails test:db
 ```
+
+Rails tests cover:
+- **Model tests**: Business logic, validations, associations
+- **Controller tests**: HTTP endpoints, JSON APIs, authentication
+- **Integration tests**: Multi-step workflows, complex interactions
+- **System tests**: Browser-based end-to-end tests using Capybara/Selenium
+
+#### JavaScript Tests (Frontend SPA)
+
+```bash
+# Run all JavaScript tests
+npm test
+
+# Run specific test file
+npm test -- navigation.test.js
+
+# Run tests in watch mode
+npm test -- --watch
+```
+
+JavaScript tests use **Vitest** (a fast, modern test runner) and follow a **component testing philosophy**:
+
+**Testing Philosophy:**
+- **Component tests are primary**: Test component behavior in isolation with helper functions
+- **System tests are minimal**: Only verify components render (3 basic tests)
+- **Behavioral parity**: JavaScript tests mirror Rails behavior tests to ensure SPA matches traditional views exactly
+
+**Test Categories:**
+- `navigation.test.js` (17 tests) - Heat navigation including fractional heats and slot progression
+- `semi_finals.test.js` (22 tests) - Semi-finals logic (≤8 couples skip to finals, >8 require semi-finals)
+- `start_button.test.js` (20 tests) - Emcee mode start button with offline protection
+- `component_selection.test.js` (20 tests) - Correct component selection based on category/properties
+- `heat_details.test.js` (29 tests) - Heat header and info box display logic
+- `score_posting.test.js` (13 tests) - Score submission with offline queueing
+- `heat_data_manager.test.js` (12 tests) - IndexedDB storage and sync logic
+
+**Why Component Tests:**
+- **Faster**: No browser overhead, pure JavaScript execution
+- **More reliable**: Less flaky than system tests, easier to debug
+- **Better coverage**: Test edge cases and error conditions easily
+- **Behavioral focus**: Tests verify what users see, not implementation details
+
+**Adding New Tests:**
+When adding features to the SPA, always add corresponding JavaScript tests. Follow the existing test patterns:
+1. Create helper functions that mirror the component's logic
+2. Test the behavior, not implementation details
+3. Cover edge cases and error conditions
+4. Ensure tests match Rails behavior when applicable
 
 ### Database Management
 
