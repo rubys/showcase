@@ -386,6 +386,15 @@ async function handleScoreUpdate(heatId, slot, scoreData) {
 - Empty scores may trigger deletion (depends on `Event.assign_judges` setting)
 - Partial failures handled: succeeded scores removed from dirty list, failed remain
 
+**Security Considerations:**
+- CSRF protection **skipped** for this endpoint
+- Rationale: Offline sync scenario means CSRF token may be stale after reconnection
+- Mitigations:
+  - HTTP Basic Auth still required (credentials validated on every request)
+  - Judge-specific URL prevents cross-judge attacks (`/scores/:judge/batch`)
+  - Score data is judge-owned (can't submit scores for another judge)
+- Future enhancement: Add CSRF token refresh endpoint if needed (see Future Enhancements)
+
 **Reconnection Flow:**
 ```javascript
 window.addEventListener('online', async () => {

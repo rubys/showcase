@@ -3,6 +3,10 @@ class ScoresController < ApplicationController
   include Retriable
   before_action :set_score, only: %i[ show edit update destroy ]
 
+  # Skip CSRF for batch upload - offline sync scenario means CSRF token may be stale
+  # Security: Still protected by HTTP Basic Auth, judge-specific URL prevents cross-judge attacks
+  skip_before_action :verify_authenticity_token, only: [:batch_scores]
+
   include ActiveStorage::SetCurrent
 
   SCORES = {

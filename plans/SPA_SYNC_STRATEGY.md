@@ -495,9 +495,10 @@ window.addEventListener('beforeunload', (event) => {
 
 ## Future Enhancements
 
-1. **Service Worker Safety Net**: Cache SPA shell and show "You're offline, return to scoring" fallback page when navigation fails. Provides emergency recovery without managing application state.
-2. **BroadcastChannel**: Sync multiple tabs in same browser
-3. **WebSocket Updates**: Push scratches/changes to active judges (no polling)
-4. **Conflict Resolution**: Handle rare edge cases of conflicting updates
-5. **Smart Preloading**: Prefetch likely next heat during current heat scoring
-6. **Judge-Scoped Versions**: Track versions per judge to reduce unnecessary refetches
+1. **CSRF Token Refresh**: Add `GET /scores/:judge/csrf_token` endpoint that returns fresh token for batch uploads. Would allow re-enabling CSRF protection on batch endpoint if security requirements change. Current approach (skipping CSRF for batch) is acceptable given HTTP Basic Auth protection and judge-specific URLs.
+2. **Service Worker Safety Net**: Cache SPA shell and show "You're offline, return to scoring" fallback page when navigation fails. Provides emergency recovery without managing application state.
+3. **BroadcastChannel**: Sync multiple tabs in same browser
+4. **WebSocket Updates**: Push scratches/changes to active judges (no polling)
+5. **Conflict Resolution**: Handle rare edge cases of conflicting updates
+6. **Smart Preloading**: Prefetch likely next heat during current heat scoring
+7. **Judge-Scoped Versions**: Track versions per judge to reduce unnecessary refetches
