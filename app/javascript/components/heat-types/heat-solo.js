@@ -197,6 +197,12 @@ export class HeatSolo extends HTMLElement {
     const button = this.querySelector('[data-action="start-heat"]');
     if (!button) return;
 
+    // Don't allow starting heat if offline
+    if (!navigator.onLine) {
+      console.log('[HeatSolo] Cannot start heat - offline');
+      return;
+    }
+
     fetch(this.getAttribute('start-action') || '', {
       method: 'POST',
       headers: window.inject_region({
@@ -307,9 +313,12 @@ export class HeatSolo extends HTMLElement {
 
       // Add start heat button if not current
       if (event.current_heat !== heat.number) {
+        const isOnline = navigator.onLine;
+        const disabledAttr = isOnline ? '' : 'disabled';
+        const buttonClass = isOnline ? 'btn-green' : 'btn-gray';
         contentHtml += `
           <div class="text-center mt-2">
-            <button data-action="start-heat" class="btn-green text-sm">
+            <button data-action="start-heat" class="${buttonClass} text-sm" ${disabledAttr}>
               Start Heat
             </button>
           </div>

@@ -187,6 +187,12 @@ export class HeatRank extends HTMLElement {
     const button = this.querySelector('[data-action="start-heat"]');
     if (!button) return;
 
+    // Don't allow starting heat if offline
+    if (!navigator.onLine) {
+      console.log('[HeatRank] Cannot start heat - offline');
+      return;
+    }
+
     fetch(this.getAttribute('start-action') || '', {
       method: 'POST',
       headers: window.inject_region({
@@ -281,9 +287,12 @@ export class HeatRank extends HTMLElement {
     // Add start heat button if emcee and not current
     let startButtonHtml = '';
     if (this.style === 'emcee' && this.eventData.current_heat !== heat.number) {
+      const isOnline = navigator.onLine;
+      const disabledAttr = isOnline ? '' : 'disabled';
+      const buttonClass = isOnline ? 'btn-green' : 'btn-gray';
       startButtonHtml = `
         <div class="text-center mt-2">
-          <button data-action="start-heat" class="btn-green text-sm">
+          <button data-action="start-heat" class="${buttonClass} text-sm" ${disabledAttr}>
             Start Heat
           </button>
         </div>
