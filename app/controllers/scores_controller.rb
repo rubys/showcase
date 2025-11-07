@@ -120,7 +120,8 @@ class ScoresController < ApplicationController
         backnums: event.backnums,
         track_ages: event.track_ages,
         ballrooms: event.ballrooms,
-        column_order: event.column_order
+        column_order: event.column_order,
+        judge_comments: event.judge_comments
       },
       judge: {
         id: judge.id,
