@@ -101,13 +101,55 @@ class ApplicationHelperTest < ActionView::TestCase
     @locale = "ja_JP"
     # Should use JPY for Japanese locale
     assert_equal "¥1,235", localized_currency(1234.56)
-    
+
     @locale = "en_GB"
     # Should use GBP for UK locale
     assert_equal "£1,234.56", localized_currency(1234.56)
-    
+
     @locale = "fr_FR"
     # Should use EUR for French locale
     assert_equal "1 234,56 €", localized_currency(1234.56)
+  end
+
+  # ===== COUPLE_NAMES TESTS =====
+
+  test "couple_names formats regular couple correctly" do
+    lead = Person.new(id: 1, name: "John Doe")
+    follow = Person.new(id: 2, name: "Jane Smith")
+    entry = Entry.new(lead: lead, follow: follow)
+
+    assert_equal "John Doe & Jane Smith", couple_names(entry)
+  end
+
+  test "couple_names formats solo with Nobody as follow" do
+    lead = Person.new(id: 1, name: "John Doe")
+    nobody = Person.new(id: 0, name: "Nobody")
+    entry = Entry.new(lead: lead, follow: nobody)
+
+    assert_equal "John Doe (Solo)", couple_names(entry)
+  end
+
+  test "couple_names formats solo with Nobody as lead" do
+    nobody = Person.new(id: 0, name: "Nobody")
+    follow = Person.new(id: 2, name: "Jane Smith")
+    entry = Entry.new(lead: nobody, follow: follow)
+
+    assert_equal "Jane Smith (Solo)", couple_names(entry)
+  end
+
+  test "couple_names formats formation with both Nobody" do
+    nobody = Person.new(id: 0, name: "Nobody")
+    entry = Entry.new(lead: nobody, follow: nobody)
+
+    assert_equal "Nobody & Nobody", couple_names(entry)
+  end
+
+  test "couple_names works with Heat object" do
+    lead = Person.new(id: 1, name: "John Doe")
+    follow = Person.new(id: 2, name: "Jane Smith")
+    entry = Entry.new(lead: lead, follow: follow)
+    heat = Heat.new(entry: entry)
+
+    assert_equal "John Doe & Jane Smith", couple_names(heat)
   end
 end

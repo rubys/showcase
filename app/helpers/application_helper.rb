@@ -148,9 +148,27 @@ module ApplicationHelper
     end
     
     # Format as decimal number without currency symbol
-    Locale.number_format(number, locale, style: 'decimal', 
-                        minimum_fraction_digits: precision, 
+    Locale.number_format(number, locale, style: 'decimal',
+                        minimum_fraction_digits: precision,
                         maximum_fraction_digits: precision)
+  end
+
+  def couple_names(entry_or_heat)
+    entry = entry_or_heat.is_a?(Heat) ? entry_or_heat.entry : entry_or_heat
+
+    if entry.lead.id == 0 && entry.follow.id == 0
+      # Both are Nobody - formation
+      entry.lead.name + ' & ' + entry.follow.name
+    elsif entry.lead.id == 0
+      # Lead is Nobody - follower dancing solo
+      entry.follow.name + ' (Solo)'
+    elsif entry.follow.id == 0
+      # Follow is Nobody - leader dancing solo
+      entry.lead.name + ' (Solo)'
+    else
+      # Regular couple
+      entry.lead.name + ' & ' + entry.follow.name
+    end
   end
 
 end

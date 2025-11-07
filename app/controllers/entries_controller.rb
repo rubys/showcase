@@ -106,7 +106,12 @@ class EntriesController < ApplicationController
     form_init(params[:primary])
     agenda_init
 
-    @partner = nil
+    # Auto-select Nobody if partnerless entries are enabled and student
+    if Event.current.partnerless_entries && @person&.type == 'Student' && Person.exists?(0)
+      @partner = 0
+    else
+      @partner = nil
+    end
     @age = @person.age_id
     @level = @person.level_id
   end

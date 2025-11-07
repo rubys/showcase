@@ -8,6 +8,7 @@ class Event < ApplicationRecord
   belongs_to :solo_level, class_name: 'Level', optional: true
 
   after_save :upload_blobs, if: -> { counter_art.attached? && counter_art.blob.created_at > 1.minute.ago }
+  after_save :ensure_nobody_exists, if: -> { saved_change_to_partnerless_entries? && partnerless_entries? }
 
   @@current = nil
   def self.current
@@ -84,5 +85,29 @@ class Event < ApplicationRecord
 
   def download_counter_art
     download_blob(counter_art.blob)
+  end
+
+private
+
+  def ensure_nobody_exists
+    return if Person.exists?(0)
+
+    # Find or create Event Staff studio
+    event_staff = Studio.find_or_create_by(name: 'Event Staff') do |s|
+      s.tables = 0
+    end
+
+    # Get first level for Nobody
+    first_level = Level.order(:id).first
+
+    # Create Nobody person
+    Person.create!(
+      id: 0,
+      name: 'Nobody',
+      type: 'Student',
+      studio: event_staff,
+      level: first_level,
+      back: 0
+    )
   end
 end

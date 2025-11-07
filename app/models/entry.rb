@@ -18,9 +18,18 @@ class Entry < ApplicationRecord
     if lead.type == 'Professional'
       follow
     elsif lead.id == 0
-      formations = heats&.first&.solo&.formations
-      formation = formations.find {|formation| formation.person.type == 'Student'} || formations.first
-      formation.person
+      if follow.id == 0
+        # Both are Nobody - this is a formation, look at participants
+        formations = heats&.first&.solo&.formations
+        formation = formations.find {|formation| formation.person.type == 'Student'} || formations.first
+        formation.person
+      else
+        # Lead is Nobody, follow is the student
+        follow
+      end
+    elsif follow.id == 0
+      # Follow is Nobody, lead is the student
+      lead
     else
       lead
     end
@@ -171,7 +180,29 @@ private
 
   def has_one_instructor
     return if lead.id == 0 && follow.id == 0
-    
+
+    # Handle partnerless entries (one partner is Nobody)
+    if Event.current.partnerless_entries && (lead.id == 0 || follow.id == 0)
+      # Partnerless entry - must have an instructor
+      instructors = 0
+      instructors += 1 if lead.type == 'Professional'
+      instructors += 1 if follow.type == 'Professional'
+      instructors += 1 if instructor_id
+
+      if instructors == 0
+        errors.add :instructor_id, 'Partnerless entries must have an instructor'
+      elsif instructors > 1
+        if instructor_id
+          errors.add :instructor_id, 'Entry already has an instructor'
+        elsif not Event.current.pro_heats
+          errors.add :lead_id, 'All entries must include a student'
+        end
+      elsif instructor_id and instructor.type != 'Professional'
+        errors.add :instructor_id, 'Instructor must be a profressional'
+      end
+      return
+    end
+
     instructors = 0
     instructors += 1 if lead.type == 'Professional'
     instructors += 1 if follow.type == 'Professional'

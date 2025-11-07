@@ -939,4 +939,63 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal false, new_dance.semi_finals, "Split dance should inherit semi_finals flag (even when false)"
     assert_equal original_dance.multi_children.count, new_dance.multi_children.count, "Split dance should have same component dances"
   end
+
+  # ===== PARTNERLESS ENTRIES TESTS =====
+
+  test "new entry auto-selects Nobody when partnerless_entries enabled for student" do
+    # Enable partnerless entries
+    @event.update!(partnerless_entries: true)
+
+    # Ensure Nobody exists
+    unless Person.exists?(0)
+      event_staff = Studio.find_or_create_by(name: 'Event Staff') { |s| s.tables = 0 }
+      Person.create!(
+        id: 0,
+        name: 'Nobody',
+        type: 'Student',
+        studio: event_staff,
+        level: @level,
+        back: 0
+      )
+    end
+
+    get new_entry_url, params: { primary: @student.id }
+
+    assert_response :success
+    # Check that Nobody option with value="0" is selected
+    assert_select 'select[name="entry[partner]"] option[value="0"][selected]', text: 'Nobody'
+  end
+
+  test "new entry does not auto-select Nobody when partnerless_entries disabled" do
+    @event.update!(partnerless_entries: false)
+
+    get new_entry_url, params: { primary: @student.id }
+
+    assert_response :success
+    # Check that Nobody option with value="0" is not selected
+    assert_select 'select[name="entry[partner]"] option[value="0"][selected]', count: 0
+  end
+
+  test "new entry does not auto-select Nobody for professionals" do
+    @event.update!(partnerless_entries: true)
+
+    # Ensure Nobody exists
+    unless Person.exists?(0)
+      event_staff = Studio.find_or_create_by(name: 'Event Staff') { |s| s.tables = 0 }
+      Person.create!(
+        id: 0,
+        name: 'Nobody',
+        type: 'Student',
+        studio: event_staff,
+        level: @level,
+        back: 0
+      )
+    end
+
+    get new_entry_url, params: { primary: @instructor.id }
+
+    assert_response :success
+    # Nobody should not be in the dropdown for professionals
+    assert_select 'select[name="entry[partner]"] option[value="0"]', count: 0
+  end
 end

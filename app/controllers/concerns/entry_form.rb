@@ -59,7 +59,17 @@ module EntryForm
         @boths = @avail.select {|person| person.role == 'Both'}.map(&:id)
       end
 
-      @avail = @avail.map {|person| [person.display_name, person.id]}.to_h
+      # Add Nobody option first if partnerless entries are enabled
+      if event.partnerless_entries && @person.type == 'Student'
+        nobody = Person.find_by(id: 0)
+        if nobody
+          @avail = {'Nobody' => 0}.merge(@avail.map {|person| [person.display_name, person.id]}.to_h)
+        else
+          @avail = @avail.map {|person| [person.display_name, person.id]}.to_h
+        end
+      else
+        @avail = @avail.map {|person| [person.display_name, person.id]}.to_h
+      end
       @instructors = Person.where(type: 'Professional', studio: studios).
         all.map {|person| [person.display_name, person.id]}.sort.to_h
     else

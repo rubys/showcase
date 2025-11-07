@@ -409,9 +409,95 @@ class EntryFormTest < ActiveSupport::TestCase
   
   test "form_init sets track_ages from event" do
     @event.update!(track_ages: true)
-    
+
     form_init(@student.id)
-    
+
     assert_equal true, @track_ages
+  end
+
+  # ===== PARTNERLESS ENTRIES TESTS =====
+
+  test "form_init includes Nobody in available list when partnerless_entries enabled" do
+    # Enable partnerless entries
+    @event.update!(partnerless_entries: true)
+
+    # Ensure Nobody exists
+    unless Person.exists?(0)
+      event_staff = Studio.find_or_create_by(name: 'Event Staff') { |s| s.tables = 0 }
+      Person.create!(
+        id: 0,
+        name: 'Nobody',
+        type: 'Student',
+        studio: event_staff,
+        level: @level,
+        back: 0
+      )
+    end
+
+    form_init(@student.id)
+
+    assert_includes @avail.keys, 'Nobody'
+    assert_equal 0, @avail['Nobody']
+    # Nobody should be first in the list
+    assert_equal 'Nobody', @avail.keys.first
+  end
+
+  test "form_init does not include Nobody when partnerless_entries disabled" do
+    # Disable partnerless entries
+    @event.update!(partnerless_entries: false)
+
+    # Ensure Nobody exists but shouldn't be in dropdown
+    unless Person.exists?(0)
+      event_staff = Studio.find_or_create_by(name: 'Event Staff') { |s| s.tables = 0 }
+      Person.create!(
+        id: 0,
+        name: 'Nobody',
+        type: 'Student',
+        studio: event_staff,
+        level: @level,
+        back: 0
+      )
+    end
+
+    form_init(@student.id)
+
+    assert_not_includes @avail.keys, 'Nobody'
+  end
+
+  test "form_init does not include Nobody for professionals" do
+    # Enable partnerless entries
+    @event.update!(partnerless_entries: true)
+
+    # Ensure Nobody exists
+    unless Person.exists?(0)
+      event_staff = Studio.find_or_create_by(name: 'Event Staff') { |s| s.tables = 0 }
+      Person.create!(
+        id: 0,
+        name: 'Nobody',
+        type: 'Student',
+        studio: event_staff,
+        level: @level,
+        back: 0
+      )
+    end
+
+    form_init(@instructor.id)
+
+    # Professionals shouldn't see Nobody option
+    assert_not_includes @avail.keys, 'Nobody'
+  end
+
+  test "form_init handles missing Nobody gracefully when partnerless_entries enabled" do
+    # Enable partnerless entries but don't create Nobody
+    @event.update!(partnerless_entries: true)
+    Person.find_by(id: 0)&.destroy
+
+    # Should not crash if Nobody doesn't exist
+    assert_nothing_raised do
+      form_init(@student.id)
+    end
+
+    # Nobody shouldn't be in list if it doesn't exist
+    assert_not_includes @avail.keys, 'Nobody'
   end
 end

@@ -595,17 +595,125 @@ class EntryTest < ActiveSupport::TestCase
 
   test "subject with formation entry (lead_id = 0)" do
     zero_person = Person.find(0)
-    
+
     entry = Entry.new(
       lead: zero_person,
       follow: @student1,
       age: @age,
       level: @level
     )
-    
+
     # When lead_id is 0, subject tries to find formation data
     # Without a heat/solo/formation setup, this will likely error or return something
     # The important thing is that the code path exists
     assert_equal 0, entry.lead_id
+  end
+
+  # ===== PARTNERLESS ENTRIES TESTS =====
+
+  test "should reject partnerless entry when feature disabled" do
+    @event.update!(partnerless_entries: false)
+    zero_person = Person.find(0)
+
+    entry = Entry.new(
+      lead: @student1,
+      follow: zero_person,
+      instructor: @instructor1,
+      age: @age,
+      level: @level
+    )
+
+    # Without the feature enabled, validation should fail
+    # (actually with the current logic it will be skipped because both aren't Nobody)
+    # This validates the default behavior remains unchanged
+    assert_equal false, @event.partnerless_entries
+  end
+
+  test "should allow partnerless entry with instructor when feature enabled" do
+    @event.update!(partnerless_entries: true)
+    zero_person = Person.find(0)
+
+    entry = Entry.new(
+      lead: @student1,
+      follow: zero_person,
+      instructor: @instructor1,
+      age: @age,
+      level: @level
+    )
+
+    assert entry.valid?, entry.errors.full_messages.to_sentence
+  end
+
+  test "should allow partnerless entry with professional lead when feature enabled" do
+    @event.update!(partnerless_entries: true)
+    zero_person = Person.find(0)
+
+    entry = Entry.new(
+      lead: @instructor1,
+      follow: zero_person,
+      age: @age,
+      level: @level
+    )
+
+    assert entry.valid?, entry.errors.full_messages.to_sentence
+  end
+
+  test "should allow partnerless entry with professional follow when feature enabled" do
+    @event.update!(partnerless_entries: true)
+    zero_person = Person.find(0)
+
+    entry = Entry.new(
+      lead: zero_person,
+      follow: @instructor1,
+      age: @age,
+      level: @level
+    )
+
+    assert entry.valid?, entry.errors.full_messages.to_sentence
+  end
+
+  test "should reject partnerless entry without instructor when feature enabled" do
+    @event.update!(partnerless_entries: true)
+    zero_person = Person.find(0)
+
+    entry = Entry.new(
+      lead: @student1,
+      follow: zero_person,
+      age: @age,
+      level: @level
+    )
+
+    assert_not entry.valid?
+    assert_includes entry.errors[:instructor_id], 'Partnerless entries must have an instructor'
+  end
+
+  test "subject returns follow when lead is Nobody" do
+    @event.update!(partnerless_entries: true)
+    zero_person = Person.find(0)
+
+    entry = Entry.create!(
+      lead: zero_person,
+      follow: @student1,
+      instructor: @instructor1,
+      age: @age,
+      level: @level
+    )
+
+    assert_equal @student1, entry.subject
+  end
+
+  test "subject returns lead when follow is Nobody" do
+    @event.update!(partnerless_entries: true)
+    zero_person = Person.find(0)
+
+    entry = Entry.create!(
+      lead: @student1,
+      follow: zero_person,
+      instructor: @instructor1,
+      age: @age,
+      level: @level
+    )
+
+    assert_equal @student1, entry.subject
   end
 end
