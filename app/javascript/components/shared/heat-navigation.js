@@ -30,6 +30,10 @@ export class HeatNavigation extends HTMLElement {
     return this.getAttribute('next-url') || '';
   }
 
+  get upUrl() {
+    return this.getAttribute('up-url') || '';
+  }
+
   get assignJudges() {
     return this.getAttribute('assign-judges') === 'true';
   }
@@ -115,8 +119,9 @@ export class HeatNavigation extends HTMLElement {
     const prevButton = this.prevUrl ? `<a href="${this.prevUrl}" class="text-2xl lg:text-4xl" rel="prev">&lt;&lt;</a>` : '';
     const nextButton = this.nextUrl ? `<a href="${this.nextUrl}" class="text-2xl lg:text-4xl" rel="next">&gt;&gt;</a>` : '';
 
-    // Always show logo (intertwingly.png)
+    // Always show logo (intertwingly.png) and up link if provided
     const logoHtml = `<a href="${this.rootPath}"><img class="absolute right-4 top-4 h-8" src="/intertwingly.png" /></a>`;
+    const upLink = this.upUrl ? `<a href="${this.upUrl}" rel="up" class="text-sm underline block mt-1">↑ Heat List</a>` : '';
 
     let judgeSection = '';
     if (this.assignJudges) {
@@ -125,6 +130,7 @@ export class HeatNavigation extends HTMLElement {
         <h1 class="font-bold text-2xl pt-1 pb-3 flex-1 text-center">
           <input type="checkbox" name="active" ${checked} class="w-6 h-6 mr-3">
           <a href="/people/${judge.id}">${judge.name}</a>
+          ${upLink}
           ${logoHtml}
         </h1>
       `;
@@ -132,6 +138,7 @@ export class HeatNavigation extends HTMLElement {
       judgeSection = `
         <h1 class="font-bold text-2xl pt-1 pb-3 flex-1 text-center">
           <a href="/people/${judge.id}">${judge.name}</a>
+          ${upLink}
           ${logoHtml}
         </h1>
       `;

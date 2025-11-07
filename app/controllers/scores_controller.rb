@@ -88,7 +88,7 @@ class ScoresController < ApplicationController
   # GET /scores/:judge/spa - SPA test page
   def spa
     @judge = Person.find(params[:judge].to_i)
-    @heat_number = params[:heat]&.to_i || 1
+    @heat_number = params[:heat]&.to_i  # nil if not provided - shows heatlist
     @style = params[:style] || 'radio'
     render layout: false
   end

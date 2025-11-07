@@ -21,7 +21,7 @@
     <main class="mx-0 px-5 print:mx-0">
       <heat-page
         judge-id="<%= @judge.id %>"
-        heat-number="<%= @heat_number %>"
+        <% if @heat_number %>heat-number="<%= @heat_number %>"<% end %>
         style="<%= @style %>">
       </heat-page>
     </main>

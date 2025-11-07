@@ -25,10 +25,14 @@ import { HeatHeader } from 'components/shared/heat-header';
 import { HeatInfoBox } from 'components/shared/heat-info-box';
 import { HeatNavigation } from 'components/shared/heat-navigation';
 
+// Import heat list component
+import { HeatList } from 'components/heat-list';
+
 export class HeatPage extends HTMLElement {
   connectedCallback() {
     this.judgeId = parseInt(this.getAttribute('judge-id'));
-    this.currentHeatNumber = parseInt(this.getAttribute('heat-number') || '1');
+    const heatAttr = this.getAttribute('heat-number');
+    this.currentHeatNumber = heatAttr ? parseInt(heatAttr) : null;
     this.scoringStyle = this.getAttribute('style') || 'radio';
     this.slot = parseInt(this.getAttribute('slot') || '0');
 
@@ -583,6 +587,14 @@ export class HeatPage extends HTMLElement {
   render() {
     if (!this.data) return;
 
+    // If no heat number, show heat list
+    if (this.currentHeatNumber === null) {
+      this.innerHTML = '<heat-list judge-id="' + this.judgeId + '" style="' + this.scoringStyle + '"></heat-list>';
+      const heatList = this.querySelector('heat-list');
+      heatList.setData(this.data);
+      return;
+    }
+
     const heat = this.getCurrentHeat();
     if (!heat) {
       this.innerHTML = '<div class="text-center text-red-500">Heat not found</div>';
@@ -618,6 +630,7 @@ export class HeatPage extends HTMLElement {
             event-data='${JSON.stringify(this.data.event)}'
             prev-url="${prevUrl}"
             next-url="${nextUrl}"
+            up-url="/scores/${this.judgeId}/spa?style=${this.scoringStyle}"
             assign-judges="${this.data.event.assign_judges > 0}"
             root-path="/">
           </heat-navigation>
