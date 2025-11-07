@@ -52,14 +52,20 @@ export class HeatPage extends HTMLElement {
       // Show loading state
       this.innerHTML = '<div class="flex items-center justify-center h-screen"><div class="text-2xl">Loading heat data...</div></div>';
 
-      // Load data from IndexedDB or server
+      // Load data from IndexedDB or server (with version check)
       console.log('[HeatPage] Fetching data...');
-      this.data = await heatDataManager.getData(this.judgeId);
+      this.data = await heatDataManager.getData(this.judgeId, this.currentHeatNumber);
       console.log('[HeatPage] Data loaded:', this.data ? 'success' : 'failed');
 
       if (!this.data) {
         throw new Error('Failed to load heat data');
       }
+
+      // Check for dirty scores and attempt batch upload if online
+      this.checkAndUploadDirtyScores();
+
+      // Listen for online event to batch upload dirty scores
+      window.addEventListener('online', () => this.handleReconnection());
 
       // Initial render
       console.log('[HeatPage] Rendering...');
@@ -86,6 +92,40 @@ export class HeatPage extends HTMLElement {
   }
 
   /**
+   * Check for dirty scores and batch upload if any exist
+   */
+  async checkAndUploadDirtyScores() {
+    try {
+      const dirtyScores = await heatDataManager.getDirtyScores(this.judgeId);
+      if (dirtyScores.length > 0) {
+        console.log(`[HeatPage] Found ${dirtyScores.length} dirty scores, attempting upload...`);
+        const result = await heatDataManager.batchUploadDirtyScores(this.judgeId);
+
+        if (result.succeeded && result.succeeded.length > 0) {
+          console.log(`[HeatPage] Successfully uploaded ${result.succeeded.length} scores`);
+          // Refresh data after successful upload
+          this.data = await heatDataManager.getData(this.judgeId, this.currentHeatNumber, true);
+          this.render();
+        }
+
+        if (result.failed && result.failed.length > 0) {
+          console.warn(`[HeatPage] Failed to upload ${result.failed.length} scores`);
+        }
+      }
+    } catch (error) {
+      console.error('[HeatPage] Failed to check/upload dirty scores:', error);
+    }
+  }
+
+  /**
+   * Handle reconnection - batch upload dirty scores
+   */
+  async handleReconnection() {
+    console.log('[HeatPage] Reconnected to network');
+    await this.checkAndUploadDirtyScores();
+  }
+
+  /**
    * Get current heat data
    */
   getCurrentHeat() {
@@ -94,9 +134,9 @@ export class HeatPage extends HTMLElement {
   }
 
   /**
-   * Handle score update - update in-memory data
+   * Handle score update - update in-memory data and POST to server
    */
-  handleScoreUpdate(scoreData) {
+  async handleScoreUpdate(scoreData) {
     if (!this.data || !this.data.heats) return;
 
     // Find the heat by ID
@@ -138,15 +178,63 @@ export class HeatPage extends HTMLElement {
     }
 
     // Update IndexedDB with new data
-    import('helpers/heat_data_manager').then(({ heatDataManager }) => {
-      heatDataManager.storeHeatData(this.judgeId, this.data);
-    });
+    await heatDataManager.storeHeatData(this.judgeId, this.data);
+
+    // POST score to server
+    try {
+      const response = await fetch(`/scores/${this.judgeId}/post`, {
+        method: 'POST',
+        headers: window.inject_region({
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content
+        }),
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          heat: scoreData.heat,
+          slot: scoreData.slot || 1,
+          score: scoreData.score || '',
+          comments: scoreData.comments || '',
+          good: scoreData.good || '',
+          bad: scoreData.bad || ''
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      console.log('[HeatPage] Score posted successfully');
+
+      // Remove from dirty scores if it was there
+      await heatDataManager.removeDirtyScore(
+        this.judgeId,
+        scoreData.heat,
+        scoreData.slot || 1
+      );
+
+    } catch (error) {
+      console.warn('[HeatPage] Failed to POST score, adding to dirty scores:', error);
+
+      // Add to dirty scores for later upload
+      await heatDataManager.addDirtyScore(
+        this.judgeId,
+        scoreData.heat,
+        scoreData.slot || 1,
+        {
+          score: scoreData.score || '',
+          comments: scoreData.comments || '',
+          good: scoreData.good || '',
+          bad: scoreData.bad || ''
+        }
+      );
+    }
   }
 
   /**
-   * Navigate to a specific heat
+   * Navigate to a specific heat (with version check)
    */
-  navigateToHeat(heatNumber, slot = 0) {
+  async navigateToHeat(heatNumber, slot = 0) {
     this.currentHeatNumber = parseInt(heatNumber);
     this.slot = parseInt(slot);
 
@@ -160,6 +248,25 @@ export class HeatPage extends HTMLElement {
     }
     url.searchParams.set('style', this.scoringStyle);
     window.history.pushState({}, '', url);
+
+    // Check version before rendering
+    try {
+      const serverVersion = await heatDataManager.checkServerVersion(this.judgeId, this.currentHeatNumber);
+
+      if (serverVersion) {
+        const isCurrent = await heatDataManager.isVersionCurrent(this.judgeId, serverVersion);
+
+        if (!isCurrent) {
+          console.log('[HeatPage] Version mismatch detected, refreshing data');
+          this.data = await heatDataManager.getData(this.judgeId, this.currentHeatNumber, true);
+        }
+      } else {
+        // Offline mode - use cached data
+        console.log('[HeatPage] Offline mode, using cached data');
+      }
+    } catch (error) {
+      console.warn('[HeatPage] Version check failed, using cached data:', error);
+    }
 
     this.render();
   }
