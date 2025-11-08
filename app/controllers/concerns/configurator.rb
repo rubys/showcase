@@ -192,19 +192,43 @@ module Configurator
   end
 
   def build_server_config_for_maintenance
-    # Hardcode production/container values for maintenance config
-    # This is only used during Fly.io startup, so we don't need environment detection
-    root = '/showcase'
+    # Generate environment-specific maintenance config
+    # Fly.io/Kamal: production container paths
+    # rubymini: admin server paths
+    # Otherwise: local development paths
+
+    if rubymini?
+      # rubymini admin server
+      listen = determine_listen_port
+      hostname = determine_host
+      root = determine_root_path
+      public_dir = Rails.root.join('public').to_s
+      production = false
+    elsif ENV['FLY_APP_NAME'] || ENV['KAMAL_CONTAINER_NAME']
+      # Production containers (Fly.io or Kamal)
+      listen = 3000
+      hostname = 'localhost'
+      root = '/showcase'
+      public_dir = 'public'
+      production = true
+    else
+      # Local development
+      listen = determine_listen_port
+      hostname = determine_host
+      root = determine_root_path
+      public_dir = Rails.root.join('public').to_s
+      production = false
+    end
 
     config = build_server_config_base(
-      listen: 3000,
-      hostname: 'localhost',
+      listen: listen,
+      hostname: hostname,
       root_path: root,
-      public_dir: 'public'
+      public_dir: public_dir
     )
 
     # Add CGI scripts configuration
-    config['cgi_scripts'] = build_cgi_scripts_config(root, production: true)
+    config['cgi_scripts'] = build_cgi_scripts_config(root, production: production)
 
     config
   end
@@ -336,14 +360,25 @@ module Configurator
     scripts = []
 
     # Determine paths based on environment
-    db_volume = production ? '/data/db' : (ENV['RAILS_DB_VOLUME'] || '/data/db')
-    reload_target = production ? 'config/navigator.yml' : 'config/navigator.yml'
+    if production
+      # Production containers (Fly.io/Kamal) - use container paths
+      db_volume = '/data/db'
+      script_path = '/rails/script/update_configuration.rb'
+      rails_env = 'production'
+    else
+      # rubymini or local development - use Rails.root paths
+      db_volume = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
+      script_path = Rails.root.join('script/update_configuration.rb').to_s
+      rails_env = 'production'
+    end
+
+    reload_target = 'config/navigator.yml'
 
     # Add configuration update CGI script (publicly accessible)
     # Runs as root to allow rsync and config reload operations
     scripts << {
       'path' => "#{root}/update_config",
-      'script' => '/rails/script/update_configuration.rb',
+      'script' => script_path,
       'method' => 'POST',
       'user' => 'root',
       'group' => 'root',
@@ -351,7 +386,7 @@ module Configurator
       'reload_config' => reload_target,
       'env' => {
         'RAILS_DB_VOLUME' => db_volume,
-        'RAILS_ENV' => 'production'
+        'RAILS_ENV' => rails_env
       }
     }
 
@@ -665,6 +700,11 @@ module Configurator
     }
   end
 
+  def rubymini?
+    require 'socket'
+    Socket.gethostname == 'rubymini'
+  end
+
   def determine_host
     if ENV['FLY_APP_NAME']
       "#{ENV['FLY_APP_NAME']}.fly.dev"
@@ -818,10 +858,18 @@ module Configurator
   end
 
   def build_auth_config_for_maintenance
-    # Build auth config with hardcoded production paths for maintenance config
+    # Build auth config with environment-specific paths for maintenance config
     # This is critical for redirects to work during maintenance mode
-    root = '/showcase'
-    htpasswd_path = '/data/db/htpasswd'
+
+    if ENV['FLY_APP_NAME'] || ENV['KAMAL_CONTAINER_NAME']
+      # Production containers - use container paths
+      root = '/showcase'
+      htpasswd_path = '/data/db/htpasswd'
+    else
+      # rubymini or local development - use Rails.root paths
+      root = determine_root_path
+      htpasswd_path = File.join(DBPATH, 'htpasswd')
+    end
 
     {
       'enabled' => true,
