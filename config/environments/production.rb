@@ -18,6 +18,17 @@ Rails.application.configure do
   # This ensures background jobs can broadcast progress updates
   ENV['TURBO_CABLE_BROADCAST_URL'] ||= 'http://localhost:9999/_broadcast' if ENV['RAILS_APP_OWNER'] == 'index'
 
+  # Configure host authorization for rubymini admin server
+  # Allow rubix.intertwingly.net as the primary host, plus rubymini for internal access
+  # This applies to all tenants running on rubymini, not just index
+  require 'socket'
+  if Socket.gethostname == 'rubymini'
+    config.hosts << 'rubix.intertwingly.net'
+    config.hosts << 'rubymini'
+    # Set the default URL host for URL generation
+    config.action_controller.default_url_options = { host: 'rubix.intertwingly.net', protocol: 'https' }
+  end
+
   # Full error reports are disabled and caching is turned on.
   config.consider_all_requests_local       = false
   config.action_controller.perform_caching = true
