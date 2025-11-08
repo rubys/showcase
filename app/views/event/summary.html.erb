@@ -25,7 +25,7 @@
 
         <% if %w(Professional Student).include? type %>
         <ul class="ml-4 list-disc list-inside">
-          <% people.group_by {|person| person.role}.sort.each do |role, people| %>
+          <% people.group_by {|person| person.role}.sort_by {|role, _| role || ""}.each do |role, people| %>
             <li><%= link_to role, people_path(type: type, role: role) %>: <%= people.length %></li>
           <% end %>
         </ul>
