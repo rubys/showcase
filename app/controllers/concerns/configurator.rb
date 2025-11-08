@@ -676,6 +676,9 @@ module Configurator
   end
 
   def determine_listen_port
+    # Allow override for testing (e.g., NAVIGATOR_PORT=9998)
+    return ENV['NAVIGATOR_PORT'].to_i if ENV['NAVIGATOR_PORT']
+
     if ENV['FLY_APP_NAME'] || ENV['KAMAL_CONTAINER_NAME']
       3000
     else
