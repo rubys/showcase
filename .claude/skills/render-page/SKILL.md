@@ -1,141 +1,88 @@
 ---
 name: render-page
-description: Techniques for rendering Rails pages without starting a server using the internal routing system. Use when the user needs to test page rendering, debug views, verify page correctness, or analyze rendering performance without HTTP overhead.
+description: Use this skill to inspect what a Rails page currently displays, extract HTML content, or verify rendering WITHOUT starting a dev server. Useful for understanding page output before making changes, debugging views, searching for content, or testing that pages work correctly. Provides scripts/render.rb for quick page inspection and HTML extraction.
 ---
 
-# Rendering Pages Without Starting a Server
+# Render Pages Without Starting a Server
 
-You can render any page in the application without starting a Rails server. This is useful for testing page rendering, debugging views, or verifying that pages work correctly.
+Use the `scripts/render.rb` tool to verify page rendering, extract HTML, or search content in rendered pages.
 
-## Basic Technique
+### Basic Usage
 
-Use Rails' internal routing system to render pages directly:
+```bash
+# Check if pages render successfully
+scripts/render.rb db/2025-alexandria-80-s-neon-nights.sqlite3 --check /people /heats /solos
+
+# Show summary with page sizes
+scripts/render.rb db/2025-alexandria-80-s-neon-nights.sqlite3 /people /heats
+
+# Get full HTML output (single page only)
+scripts/render.rb db/2025-alexandria-80-s-neon-nights.sqlite3 --html /solos
+
+# Search for specific content in rendered pages
+scripts/render.rb db/2025-alexandria-80-s-neon-nights.sqlite3 --search "Solos" /solos
+```
+
+### Script Options
+
+- `--check` - Only check if page renders (exit 0 on success, 1 on failure)
+- `--html` - Output full HTML content (works with single path only)
+- `--search TEXT` - Search for specific text in rendered output
+- `--verbose, -v` - Show detailed information
+- `--help, -h` - Show help message
+
+## Common Workflows
+
+### 1. Verify Pages Render Successfully
+
+Test multiple pages at once and see their sizes:
+
+```bash
+scripts/render.rb db/DATABASE.sqlite3 /people /heats /solos
+```
+
+For CI/CD pipelines, use `--check` mode (silent, exit code indicates success):
+
+```bash
+scripts/render.rb db/DATABASE.sqlite3 --check /people /heats /solos
+echo $?  # 0 = all succeeded, 1 = at least one failed
+```
+
+### 2. Search for Content in Rendered Pages
+
+Verify specific content appears in a page:
+
+```bash
+scripts/render.rb db/DATABASE.sqlite3 --search "Rhythm Solos" /solos
+# Output: ✓ /solos - 'Rhythm Solos' found
+```
+
+### 3. Extract HTML for Analysis
+
+Save rendered HTML to a file for inspection:
+
+```bash
+scripts/render.rb db/DATABASE.sqlite3 --html /heats > heats.html
+```
+
+## Advanced: Custom Scripts with Rails API
+
+For complex custom logic, write a Ruby script using Rails' routing API directly:
 
 ```ruby
-env = {
-  "PATH_INFO" => '/showcase/path/to/page',
-  "REQUEST_METHOD" => "GET"
-}
-
+# custom_test.rb
+env = { "PATH_INFO" => '/heats', "REQUEST_METHOD" => "GET" }
 code, headers, response = Rails.application.routes.call(env)
 
 if code == 200
   html = response.body.force_encoding('utf-8')
-  puts html
-else
-  puts "Error: #{code}"
-  puts response.inspect
-end
-```
-
-## Using bin/run
-
-The easiest way to test page rendering is with `bin/run`:
-
-```bash
-# Test rendering a specific page
-bin/run db/2025-boston.sqlite3 -e "
-env = {
-  'PATH_INFO' => '/showcase/2025/boston/',
-  'REQUEST_METHOD' => 'GET'
-}
-code, _, response = Rails.application.routes.call(env)
-puts code == 200 ? '✓ Success' : '✗ Failed'
-"
-
-# Get the full HTML output
-bin/run db/2025-boston.sqlite3 -e "
-env = {
-  'PATH_INFO' => '/showcase/heats',
-  'REQUEST_METHOD' => 'GET'
-}
-code, _, response = Rails.application.routes.call(env)
-puts response.body if code == 200
-"
-```
-
-## In a Script File
-
-Create a script to test multiple pages:
-
-```ruby
-# test_rendering.rb
-pages = [
-  '/showcase/',
-  '/showcase/heats',
-  '/showcase/people',
-  '/showcase/studios'
-]
-
-pages.each do |path|
-  env = {
-    "PATH_INFO" => path,
-    "REQUEST_METHOD" => "GET"
-  }
-
-  code, _headers, response = Rails.application.routes.call(env)
-
-  if code == 200
-    puts "✓ #{path} - #{response.body.length} bytes"
-  else
-    puts "✗ #{path} - Error #{code}"
-  end
-end
-```
-
-Run it with:
-
-```bash
-bin/run db/2025-boston.sqlite3 test_rendering.rb
-```
-
-## Testing Specific Features
-
-### Check if a page renders without errors
-
-```ruby
-env = {
-  "PATH_INFO" => '/showcase/heats',
-  "REQUEST_METHOD" => "GET"
-}
-
-code, _headers, response = Rails.application.routes.call(env)
-
-if code == 200
-  puts "Page rendered successfully"
+  puts "Success: #{html.length} bytes"
 else
   puts "Error: #{code}"
   exit 1
 end
 ```
 
-### Verify specific content in the response
+Run with `bin/run db/DATABASE.sqlite3 custom_test.rb`
 
-```ruby
-env = {
-  "PATH_INFO" => '/showcase/people',
-  "REQUEST_METHOD" => "GET"
-}
-
-code, _headers, response = Rails.application.routes.call(env)
-
-if code == 200
-  html = response.body.force_encoding('utf-8')
-  if html.include?("Students")
-    puts "✓ Students section found"
-  else
-    puts "✗ Students section missing"
-  end
-end
-```
-
-## Use Cases
-
-1. **Testing**: Verify pages render without starting a server
-2. **Debugging**: Inspect rendered HTML directly
-3. **Performance Analysis**: Measure rendering time without HTTP overhead
-4. **Validation**: Check that all expected pages render successfully after changes
-
-## Reference
-
-See `lib/tasks/prerender.rake` for a complete example of how this technique is used in production.
+See `lib/tasks/prerender.rake` for a production example of this technique.
