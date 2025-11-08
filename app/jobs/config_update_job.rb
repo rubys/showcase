@@ -74,11 +74,18 @@ class ConfigUpdateJob < ApplicationJob
   private
 
   def broadcast(user_id, database, status, progress, message)
+    Rails.logger.debug "ConfigUpdateJob: broadcast called with user_id=#{user_id.inspect}, database=#{database.inspect}"
     return unless user_id && database
 
+    stream_name = "config_update_#{database}_#{user_id}"
+    Rails.logger.info "ConfigUpdateJob: Broadcasting to #{stream_name}: #{message}"
+
     TurboCable::Broadcastable.broadcast_json(
-      "config_update_#{database}_#{user_id}",
+      stream_name,
       { status: status, progress: progress, message: message }
     )
+  rescue => e
+    Rails.logger.error "ConfigUpdateJob: Broadcast failed: #{e.class} - #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
   end
 end
