@@ -15,7 +15,7 @@ const STORE_NAME = 'dirty_scores';
 class HeatDataManager {
   constructor() {
     this.db = null;
-    this.initPromise = this.init();
+    this.initPromise = null;
   }
 
   /**
@@ -73,7 +73,10 @@ class HeatDataManager {
    */
   async ensureOpen() {
     if (!this.db) {
-      await this.init();
+      if (!this.initPromise) {
+        this.initPromise = this.init();
+      }
+      await this.initPromise;
     }
     return this.db;
   }
