@@ -1,12 +1,18 @@
 <tbody data-controller="drop" data-drop-action="<%= drop_solos_path %>" id="<%= id %>">
+  <%
+    # Get split point from category definition (position within category, not heat number)
+    split_after_position = category.respond_to?(:heats) ? category.heats : nil
+    heat_position = 0
+  %>
   <% heats.each do |heat| %>
     <% next if heat.number < 0 %>
+    <% heat_position += 1 %>
     <% formations = heat.solo.formations %>
     <tr class="hover:bg-yellow-200" draggable="true" id="<%= dom_id heat.solo %>" data-drag-id="<%= heat.solo.id %>">
       <td>
       <% if heat.category == 'Solo' && heat.solo.combo_dance %>
         <td class="row">
-          <%= link_to heat.dance.name, edit_dance_path(heat.dance) %> / 
+          <%= link_to heat.dance.name, edit_dance_path(heat.dance) %> /
           <%= link_to heat.solo.combo_dance.name, edit_dance_path(heat.solo.combo_dance) %>
       <% else %>
         <td class="row">
@@ -18,7 +24,7 @@
           people << heat.lead if heat.lead.id != 0
           formations.each_with_index {|formation, index| people << formation.person if index.even?}
           people.uniq!
-          people.each_with_index do |person, index| 
+          people.each_with_index do |person, index|
         %>
         <% if index > 0 %><br><% end %><%= link_to person.display_name, polymorphic_path(person, anchor: 'heats') %>
         <% end %>
@@ -39,7 +45,7 @@
       <% elsif entry.lead_id > 0 && entry.lead.type == "Professional" && entry.follow.type == "Professional" %>
         <% if formations.any? && entry.lead_id > 0 && entry.lead.type == "Professional" && entry.follow.type == "Professional" && formations.all? {|formation| formation.person.type == "Professional"} %>
         <td class="row">Pro Formation
-        <% 
+        <%
           studios = formations.map {|formation| formation.person.studio && formation.person.studio.name} + [entry.lead.studio && entry.lead.studio.name, entry.follow.studio && entry.follow.studio.name]
           studios = studios.uniq.compact.sort
           if studios.size > 1
@@ -56,5 +62,10 @@
       <td class="row text-center"><%= heat.entry.subject_category(@track_ages) %>
       <td class="row"><%= link_to studio, heat.studio, title: title %>
     </tr>
+    <% if split_after_position && heat_position == split_after_position %>
+      <tr class="separator-row">
+        <td colspan="7" style="height: 8px; background: linear-gradient(to right, #cbd5e1 0%, #475569 50%, #cbd5e1 100%); border-top: 2px solid #475569; border-bottom: 2px solid #475569;"></td>
+      </tr>
+    <% end %>
   <% end %>
 </tbody>

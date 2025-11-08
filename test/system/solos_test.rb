@@ -53,4 +53,49 @@ class SolosTest < ApplicationSystemTestCase
 
     assert_text "Solo was successfully scratched"
   end
+
+  test "displays visual separator for split categories" do
+    # Create a category with a split point
+    category_with_split = Category.create!(
+      name: "Test Split Solos",
+      order: 200,
+      split: "2"
+    )
+
+    # Create a dance associated with this category
+    dance = Dance.create!(
+      name: "Test Dance",
+      order: 200,
+      solo_category: category_with_split
+    )
+
+    level = levels(:one)
+    age = ages(:one)
+
+    # Create 4 solos in this category
+    4.times do |i|
+      entry = Entry.create!(
+        lead: people(:Kathryn),
+        follow: people(:Arthur),
+        age: age,
+        level: level
+      )
+      heat = Heat.create!(
+        number: 300 + i,
+        entry: entry,
+        category: "Solo",
+        dance: dance
+      )
+      Solo.create!(heat: heat, order: 3000 + i)
+    end
+
+    visit solos_url
+
+    # Check that the category is displayed
+    assert_text "Test Split Solos"
+
+    # Check for the presence of a separator row (with gradient background)
+    # The separator should have colspan="7" and specific styling
+    assert_selector 'tr.separator-row td[colspan="7"]', count: 1
+  end
 end
