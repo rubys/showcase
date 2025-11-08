@@ -13,6 +13,7 @@ server:
     - json
     - css
     - js
+    - map
     - png
     - jpg
     - gif
@@ -24,9 +25,7 @@ server:
     - index.html
     - ".html"
     - ".htm"
-    - ".txt"
-    - ".xml"
-    - ".json"
+    normalize_trailing_slashes: true
     cache_control:
       overrides:
       - path: "/showcase/assets/"
@@ -85,33 +84,3 @@ hooks:
       reload_config: config/navigator.yml
 logging:
   format: text
-auth:
-  enabled: true
-  realm: Showcase
-  htpasswd: "/data/db/htpasswd"
-  public_paths:
-  - "/showcase/assets/"
-  - "/showcase/cable"
-  - "/showcase/demo/"
-  - "/showcase/docs/"
-  - "/showcase/events/console"
-  - "/showcase/password/"
-  - "/showcase/regions/"
-  - "/showcase/studios/"
-  - "/showcase/index_update"
-  - "/showcase/index_date"
-  - "/showcase/update_config"
-  - "/favicon.ico"
-  - "/robots.txt"
-  - "/up"
-  - "*.css"
-  - "*.gif"
-  - "*.ico"
-  - "*.jpg"
-  - "*.js"
-  - "*.png"
-  - "*.svg"
-  - "*.webp"
-  auth_patterns:
-  - pattern: "^/$"
-    action: 'off'

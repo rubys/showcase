@@ -865,30 +865,9 @@ module Configurator
   end
 
   def build_auth_config_for_maintenance
-    # Build auth config with environment-specific paths for maintenance config
-    # This is critical for redirects to work during maintenance mode
-
-    if ENV['FLY_APP_NAME'] || ENV['KAMAL_CONTAINER_NAME']
-      # Production containers - use container paths
-      root = '/showcase'
-      htpasswd_path = '/data/db/htpasswd'
-    else
-      # rubymini or local development - use Rails.root paths
-      root = determine_root_path
-      htpasswd_path = File.join(DBPATH, 'htpasswd')
-    end
-
-    {
-      'enabled' => true,
-      'realm' => 'Showcase',
-      'htpasswd' => htpasswd_path,
-      'public_paths' => build_public_paths(root),
-      'auth_patterns' => [
-        # CRITICAL: Allow root path so redirect can work
-        # Without this, auth blocks request before redirect handler runs
-        { 'pattern' => '^/$', 'action' => 'off' }
-      ]
-    }
+    # Maintenance config serves only public/503.html without authentication
+    # No auth required - all requests should get the maintenance page
+    nil
   end
 
   def build_hooks_config_for_maintenance
