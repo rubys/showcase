@@ -13,6 +13,11 @@ Rails.application.configure do
   # Rake tasks automatically ignore this option for performance.
   config.eager_load = true
 
+  # TurboCable broadcast URL configuration
+  # When running on the index/admin server, broadcasts should go to Navigator's port (9999)
+  # This ensures background jobs can broadcast progress updates
+  ENV['TURBO_CABLE_BROADCAST_URL'] ||= 'http://localhost:9999/_broadcast' if ENV['RAILS_APP_OWNER'] == 'index'
+
   # Full error reports are disabled and caching is turned on.
   config.consider_all_requests_local       = false
   config.action_controller.perform_caching = true
