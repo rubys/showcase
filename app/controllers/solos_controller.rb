@@ -387,7 +387,7 @@ class SolosController < ApplicationController
         end
 
         render turbo_stream: turbo_stream.replace(id,
-          render_to_string(partial: 'cat', layout: false, locals: {heats: updated_heats, id: id})
+          render_to_string(partial: 'cat', layout: false, locals: {heats: updated_heats, id: id, category: category})
         )
       }
 
@@ -437,7 +437,18 @@ class SolosController < ApplicationController
     solos = solos.sort_by {|cat, heats| sort_order[cat&.name || ''] || 0}
 
     solos.each do |cat, solos|
-      order += solos.sort_by {|solo| solo.heat.entry.level_id}
+      # Check if category has a split point
+      split_point = cat.respond_to?(:heats) ? cat.heats : nil
+
+      if split_point && solos.length > split_point
+        # Split into groups and sort each separately
+        group1 = solos[0...split_point].sort_by {|solo| solo.heat.entry.level_id}
+        group2 = solos[split_point..-1].sort_by {|solo| solo.heat.entry.level_id}
+        order += group1 + group2
+      else
+        # No split, sort all together
+        order += solos.sort_by {|solo| solo.heat.entry.level_id}
+      end
     end
 
     new_heat_number = renumber_heats(order)
@@ -482,7 +493,21 @@ class SolosController < ApplicationController
     sort_order = Category.pluck(:name, :order).to_h
     solos = solos.sort_by {|cat, heats| sort_order[cat&.name || ''] || 0}
 
-    solos.each do |cat, solos|
+    solos.each do |cat, category_solos|
+      # Check if category has a split point
+      split_point = cat.respond_to?(:heats) ? cat.heats : nil
+
+      # Create groups based on split point
+      groups = []
+      if split_point && category_solos.length > split_point
+        groups << category_solos[0...split_point]
+        groups << category_solos[split_point..-1]
+      else
+        groups << category_solos
+      end
+
+      # Process each group separately with the gap optimization algorithm
+      groups.each do |solos|
       # Build participants hash with ALL people in each solo (lead, follow, formations)
       # Exclude Nobody (person 0) who is a placeholder for studio formations
       participants = {}
@@ -617,7 +642,8 @@ class SolosController < ApplicationController
 
       # Remove any nils and add to order
       order += schedule.compact
-    end
+      end # groups.each
+    end # solos.each
 
     new_heat_number = renumber_heats(order)
 
