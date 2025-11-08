@@ -169,7 +169,7 @@ module Configurator
     # Static file configuration shared by both full and maintenance configs
     {
       'public_dir' => public_dir,
-      'allowed_extensions' => %w[html htm txt xml json css js png jpg gif svg ico pdf xlsx],
+      'allowed_extensions' => %w[html htm txt xml json css js map png jpg gif svg ico pdf xlsx],
       'try_files' => %w[index.html .html .htm],
       'normalize_trailing_slashes' => true,
       'cache_control' => build_cache_control(root)
