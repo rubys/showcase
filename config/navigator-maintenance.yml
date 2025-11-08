@@ -1,0 +1,117 @@
+---
+server:
+  listen: 3000
+  hostname: localhost
+  root_path: "/showcase"
+  static:
+    public_dir: public
+    allowed_extensions:
+    - html
+    - htm
+    - txt
+    - xml
+    - json
+    - css
+    - js
+    - png
+    - jpg
+    - gif
+    - svg
+    - ico
+    - pdf
+    - xlsx
+    try_files:
+    - index.html
+    - ".html"
+    - ".htm"
+    - ".txt"
+    - ".xml"
+    - ".json"
+    cache_control:
+      overrides:
+      - path: "/showcase/assets/"
+        max_age: 24h
+      - path: "/showcase/"
+        max_age: 24h
+  health_check:
+    path: "/up"
+    response:
+      status: 200
+      body: OK
+      headers:
+        Content-Type: text/plain
+  cgi_scripts:
+  - path: "/showcase/update_config"
+    script: "/rails/script/update_configuration.rb"
+    method: POST
+    user: root
+    group: root
+    timeout: 5m
+    reload_config: config/navigator.yml
+    env:
+      RAILS_DB_VOLUME: "/data/db"
+      RAILS_ENV: production
+managed_processes: []
+routes:
+  redirects:
+  - from: "^/(showcase)?$"
+    to: "/showcase/studios/"
+  rewrites:
+  - from: "^/assets/(.*)"
+    to: "/showcase/assets/$1"
+  - from: "^/([^/]+\\.(gif|png|jpg|jpeg|ico|pdf|svg|webp|txt))$"
+    to: "/showcase/$1"
+  reverse_proxies:
+  - path: "^/showcase/password(/.*)"
+    target: https://rubix.intertwingly.net/showcase/password$1
+    headers:
+      X-Forwarded-Host: "$host"
+  - path: "^/showcase/studios/([a-z]*)/request$"
+    target: https://rubix.intertwingly.net/showcase/studios/$1/request
+    headers:
+      X-Forwarded-Host: "$host"
+  fly:
+    replay: []
+maintenance:
+  enabled: true
+  page: "/503.html"
+hooks:
+  server:
+    ready:
+    - command: ruby
+      args:
+      - script/nav_initialization.rb
+      timeout: 5m
+      reload_config: config/navigator.yml
+logging:
+  format: text
+auth:
+  enabled: true
+  realm: Showcase
+  htpasswd: "/data/db/htpasswd"
+  public_paths:
+  - "/showcase/assets/"
+  - "/showcase/cable"
+  - "/showcase/demo/"
+  - "/showcase/docs/"
+  - "/showcase/events/console"
+  - "/showcase/password/"
+  - "/showcase/regions/"
+  - "/showcase/studios/"
+  - "/showcase/index_update"
+  - "/showcase/index_date"
+  - "/showcase/update_config"
+  - "/favicon.ico"
+  - "/robots.txt"
+  - "/up"
+  - "*.css"
+  - "*.gif"
+  - "*.ico"
+  - "*.jpg"
+  - "*.js"
+  - "*.png"
+  - "*.svg"
+  - "*.webp"
+  auth_patterns:
+  - pattern: "^/$"
+    action: 'off'
