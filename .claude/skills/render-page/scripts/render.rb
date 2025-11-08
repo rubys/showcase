@@ -35,11 +35,14 @@ require 'pathname'
 # Show help if --help is requested without database
 if ARGV.include?('--help') || ARGV.include?('-h')
   puts "Usage: #{$0} DATABASE [options] PATH [PATH...]"
+  puts "   or: RAILS_APP_DB=database #{$0} [options] PATH [PATH...]"
   puts ""
   puts "Render Rails pages without starting a server"
   puts ""
   puts "Arguments:"
-  puts "  DATABASE          Database file (e.g., db/2025-boston.sqlite3) or 'test' or 'demo'"
+  puts "  DATABASE          Database file (e.g., db/2025-boston.sqlite3) or name (2025-boston)"
+  puts "                    Can also be 'test' or 'demo'"
+  puts "                    Alternative: Set RAILS_APP_DB environment variable"
   puts ""
   puts "Options:"
   puts "  --check           Only check if page renders (exit 0 on success, 1 on failure)"
@@ -50,20 +53,28 @@ if ARGV.include?('--help') || ARGV.include?('-h')
   puts ""
   puts "Examples:"
   puts "  #{$0} db/2025-boston.sqlite3 --check /heats"
-  puts "  #{$0} db/2025-boston.sqlite3 --html /people"
-  puts "  #{$0} db/2025-boston.sqlite3 --search 'Solos' /solos"
+  puts "  #{$0} 2025-boston --html /people"
+  puts "  RAILS_APP_DB=2025-boston #{$0} --search 'Solos' /solos"
   exit 0
 end
 
-# Get the database argument first
-if ARGV.empty? || ARGV.first.start_with?('--') || ARGV.first.start_with?('-')
-  puts "Error: DATABASE argument required"
+# Get the database - either from argument or environment variable
+database = nil
+
+# Check if first argument looks like a database path/name (not an option or path)
+if ARGV.first && !ARGV.first.start_with?('--') && !ARGV.first.start_with?('-') && !ARGV.first.start_with?('/')
+  database = ARGV.shift
+elsif ENV['RAILS_APP_DB']
+  database = ENV['RAILS_APP_DB']
+end
+
+if database.nil?
+  puts "Error: DATABASE argument required (or set RAILS_APP_DB environment variable)"
   puts "Usage: #{$0} DATABASE [options] PATH [PATH...]"
+  puts "   or: RAILS_APP_DB=database #{$0} [options] PATH [PATH...]"
   puts "Use --help for more information"
   exit 1
 end
-
-database = ARGV.shift
 
 # Set up Rails environment based on database
 script_dir = Pathname.new(__FILE__).dirname.realpath
@@ -71,7 +82,7 @@ script_dir = Pathname.new(__FILE__).dirname.realpath
 rails_root = script_dir.parent.parent.parent.parent
 Dir.chdir(rails_root)
 
-# Extract database name from path
+# Extract database name from path (handles both "db/name.sqlite3" and just "name")
 db_name = File.basename(database, '.sqlite3')
 ENV['RAILS_APP_DB'] = db_name
 ENV['RAILS_STORAGE'] = File.join(rails_root, 'storage')

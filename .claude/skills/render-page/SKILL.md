@@ -9,18 +9,33 @@ Use the `scripts/render.rb` tool to verify page rendering, extract HTML, or sear
 
 ### Basic Usage
 
+The script accepts the database either as an argument or via RAILS_APP_DB environment variable:
+
+```bash
+# Pass database as argument
+scripts/render.rb db/2025-alexandria-80-s-neon-nights.sqlite3 /people
+
+# Or just the database name
+scripts/render.rb 2025-alexandria-80-s-neon-nights /people
+
+# Or use environment variable
+RAILS_APP_DB=2025-alexandria-80-s-neon-nights scripts/render.rb /people
+```
+
+Common operations:
+
 ```bash
 # Check if pages render successfully
-scripts/render.rb db/2025-alexandria-80-s-neon-nights.sqlite3 --check /people /heats /solos
+scripts/render.rb 2025-alexandria-80-s-neon-nights --check /people /heats /solos
 
 # Show summary with page sizes
-scripts/render.rb db/2025-alexandria-80-s-neon-nights.sqlite3 /people /heats
+scripts/render.rb 2025-alexandria-80-s-neon-nights /people /heats
 
 # Get full HTML output (single page only)
-scripts/render.rb db/2025-alexandria-80-s-neon-nights.sqlite3 --html /solos
+scripts/render.rb 2025-alexandria-80-s-neon-nights --html /solos
 
 # Search for specific content in rendered pages
-scripts/render.rb db/2025-alexandria-80-s-neon-nights.sqlite3 --search "Solos" /solos
+scripts/render.rb 2025-alexandria-80-s-neon-nights --search "Solos" /solos
 ```
 
 ### Script Options
