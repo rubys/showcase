@@ -47,6 +47,9 @@
 # Ignore nginx password file
 /config/htpasswd
 
+# Ignore built Navigator binary
+/navigator/navigator
+
 /app/assets/builds/*
 !/app/assets/builds/.keep
 
