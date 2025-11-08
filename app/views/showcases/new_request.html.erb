@@ -7,8 +7,10 @@
      data-config-update-database-value="<%= ENV['RAILS_APP_DB'] %>"
      data-config-update-stream-value="config_update_<%= ENV['RAILS_APP_DB'] %>_<%= user&.id %>"
      data-config-update-redirect-url-value="<%= @return_to %>"
-     <%= turbo_stream_from "config_update_#{ENV['RAILS_APP_DB']}_#{user&.id}" %>
      <% end %>>
+  <% if @show_progress %>
+    <%= turbo_stream_from "config_update_#{ENV['RAILS_APP_DB']}_#{user&.id}" %>
+  <% end %>
   <h1 class="font-bold text-4xl"><%= @show_progress ? 'Creating Showcase' : 'Create a Showcase Event' %></h1>
 
   <% if @show_progress %>
