@@ -24,7 +24,7 @@ Rails.application.configure do
   require 'socket'
   if Socket.gethostname == 'rubymini'
     config.hosts << 'rubix.intertwingly.net'
-    config.hosts << 'rubymini'
+    config.hosts << /rubymini(:\d+)?/
     # Set the default URL host for URL generation
     config.action_controller.default_url_options = { host: 'rubix.intertwingly.net', protocol: 'https' }
   end

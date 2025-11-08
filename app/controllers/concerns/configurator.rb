@@ -156,13 +156,20 @@ module Configurator
 
   def build_server_config_base(listen:, hostname:, root_path:, public_dir:)
     # Core server configuration shared by both full and maintenance configs
-    {
+    config = {
       'listen' => listen,
       'hostname' => hostname,
       'root_path' => root_path,
       'static' => build_static_config(public_dir, root_path),
       'health_check' => build_health_check_config
     }
+
+    # rubymini runs behind Apache reverse proxy on rubix.intertwingly.net
+    # Enable trust_proxy so Navigator preserves X-Forwarded-Host from Apache
+    # This is required for Rails CSRF protection to see the correct origin
+    config['trust_proxy'] = true if rubymini?
+
+    config
   end
 
   def build_static_config(public_dir, root)
