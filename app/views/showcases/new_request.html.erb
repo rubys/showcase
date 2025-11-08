@@ -2,9 +2,13 @@
 
 <div class="mx-auto md:w-2/3 w-full"
      data-controller="config-update"
-     data-config-update-user-id-value="<%= @show_progress ? user&.id : '' %>"
-     data-config-update-database-value="<%= @show_progress ? ENV['RAILS_APP_DB'] : '' %>"
-     data-config-update-redirect-url-value="<%= @show_progress ? @return_to : '' %>">
+     <% if @show_progress %>
+     data-config-update-user-id-value="<%= user&.id %>"
+     data-config-update-database-value="<%= ENV['RAILS_APP_DB'] %>"
+     data-config-update-stream-value="config_update_<%= ENV['RAILS_APP_DB'] %>_<%= user&.id %>"
+     data-config-update-redirect-url-value="<%= @return_to %>"
+     <%= turbo_stream_from "config_update_#{ENV['RAILS_APP_DB']}_#{user&.id}" %>
+     <% end %>>
   <h1 class="font-bold text-4xl"><%= @show_progress ? 'Creating Showcase' : 'Create a Showcase Event' %></h1>
 
   <% if @show_progress %>

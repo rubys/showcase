@@ -7,7 +7,9 @@
 <div class="mx-auto md:w-2/3 w-full" data-controller="submit config-update"
      data-config-update-user-id-value="<%= user&.id %>"
      data-config-update-database-value="<%= ENV['RAILS_APP_DB'] %>"
+     data-config-update-stream-value="config_update_<%= ENV['RAILS_APP_DB'] %>_<%= user&.id %>"
      data-config-update-redirect-url-value="<%= admin_path %>">
+  <%= turbo_stream_from "config_update_#{ENV['RAILS_APP_DB']}_#{user&.id}" %>
 
 <h1 class="text-4xl font-extrabold text-center">Apply Changes</h1>
 

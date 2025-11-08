@@ -1,14 +1,10 @@
 import { Controller } from "@hotwired/stimulus"
-import { createConsumer } from "@rails/actioncable"
 
 export default class extends Controller {
   static targets = [ "progress", "message", "progressBar" ]
-  static values = { userId: Number, database: String, redirectUrl: String }
+  static values = { userId: Number, database: String, redirectUrl: String, stream: String }
 
   connect() {
-    this.consumer = createConsumer()
-    this.subscription = null
-
     // Auto-start progress tracking if user ID is set (indicates a progress page after form submission)
     // Check that userId is not just present but also not empty
     if (this.hasUserIdValue && this.userIdValue) {
@@ -20,75 +16,56 @@ export default class extends Controller {
     this.progressTarget.classList.remove("hidden")
     this.updateProgress(0, "Connecting...")
 
-    this.subscription = this.consumer.subscriptions.create(
-      {
-        channel: "ConfigUpdateChannel",
-        user_id: this.userIdValue,
-        database: this.databaseValue
-      },
-      {
-        connected: () => {
-          this.updateProgress(0, "Starting...")
-        },
-        received: (data) => {
-          this.handleProgressUpdate(data)
-        }
-      }
-    )
+    // Listen for custom JSON events from TurboCable
+    this.boundHandleMessage = this.handleMessage.bind(this)
+    document.addEventListener('turbo:stream-message', this.boundHandleMessage)
+  }
+
+  handleMessage(event) {
+    const { stream, data } = event.detail
+
+    // Only handle events for our stream
+    if (stream !== this.streamValue) return
+
+    this.handleProgressUpdate(data)
   }
 
   async triggerUpdate(event) {
     // Show progress indicator immediately
     this.progressTarget.classList.remove("hidden")
-    this.updateProgress(0, "Connecting...")
+    this.updateProgress(0, "Starting...")
 
     // Disable button
     event.target.disabled = true
 
-    // Subscribe to progress updates BEFORE triggering the job
-    this.subscription = this.consumer.subscriptions.create(
-      {
-        channel: "ConfigUpdateChannel",
-        user_id: this.userIdValue,
-        database: this.databaseValue
-      },
-      {
-        connected: async () => {
-          this.updateProgress(0, "Triggering update...")
+    // Listen for progress updates from TurboCable
+    this.boundHandleMessage = this.handleMessage.bind(this)
+    document.addEventListener('turbo:stream-message', this.boundHandleMessage)
 
-          // Trigger the ConfigUpdateJob
-          try {
-            // Use relative path which will include RAILS_RELATIVE_URL_ROOT automatically
-            const response = await fetch(window.location.pathname.replace('/apply', '/trigger_config_update'), {
-              method: 'POST',
-              headers: {
-                "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
-              }
-            })
-
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`)
-            }
-          } catch (error) {
-            console.error("Error triggering update:", error)
-            this.messageTarget.textContent = "Failed to start update"
-            this.messageTarget.classList.add("text-red-600")
-            event.target.disabled = false
-          }
-        },
-        received: (data) => {
-          this.handleProgressUpdate(data)
+    // Trigger the ConfigUpdateJob
+    try {
+      // Use relative path which will include RAILS_RELATIVE_URL_ROOT automatically
+      const response = await fetch(window.location.pathname.replace('/apply', '/trigger_config_update'), {
+        method: 'POST',
+        headers: {
+          "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
         }
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
-    )
+    } catch (error) {
+      console.error("Error triggering update:", error)
+      this.messageTarget.textContent = "Failed to start update"
+      this.messageTarget.classList.add("text-red-600")
+      event.target.disabled = false
+    }
   }
 
   disconnect() {
-    if (this.subscription) {
-      this.subscription.unsubscribe()
-    }
-    if (this.consumer) {
-      this.consumer.disconnect()
+    if (this.boundHandleMessage) {
+      document.removeEventListener('turbo:stream-message', this.boundHandleMessage)
     }
   }
 

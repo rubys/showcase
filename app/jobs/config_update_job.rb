@@ -76,7 +76,7 @@ class ConfigUpdateJob < ApplicationJob
   def broadcast(user_id, database, status, progress, message)
     return unless user_id && database
 
-    ActionCable.server.broadcast(
+    TurboCable::Broadcastable.broadcast_json(
       "config_update_#{database}_#{user_id}",
       { status: status, progress: progress, message: message }
     )
