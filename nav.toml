@@ -21,7 +21,7 @@ primary_region = "iad"
 
 [http_service]
   processes = ['app']
-  internal_port = 3000
+  internal_port = 9999
   force_https = true
   auto_stop_machines = false
   auto_start_machines = true

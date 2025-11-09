@@ -24,7 +24,7 @@ servers:
 proxy:
   ssl: true
   host: showcase.party
-  app_port: 3000
+  app_port: 9999
   healthcheck:
     path: /up
     interval: 900

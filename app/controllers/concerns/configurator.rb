@@ -215,7 +215,7 @@ module Configurator
       production = false
     elsif ENV['FLY_APP_NAME'] || ENV['KAMAL_CONTAINER_NAME']
       # Production containers (Fly.io or Kamal)
-      listen = 3000
+      listen = 9999
       hostname = 'localhost'
       root = '/showcase'
       public_dir = 'public'
@@ -588,9 +588,8 @@ module Configurator
     end
 
     # Point broadcasts to Navigator's /_broadcast endpoint
-    # Use localhost:3000 for production (Fly.io/Kamal), localhost:9999 for local development
-    broadcast_port = ENV['FLY_APP_NAME'] || ENV['KAMAL_CONTAINER_NAME'] ? '3000' : '9999'
-    env['TURBO_CABLE_BROADCAST_URL'] = "http://localhost:#{broadcast_port}/_broadcast"
+    # Navigator always listens on port 9999 (standardized across all environments)
+    env['TURBO_CABLE_BROADCAST_URL'] = "http://localhost:9999/_broadcast"
 
     # puma and Active Record pool size
     env['RAILS_MAX_THREADS'] = '3'
@@ -731,11 +730,8 @@ module Configurator
     # Allow override for testing (e.g., NAVIGATOR_PORT=9998)
     return ENV['NAVIGATOR_PORT'].to_i if ENV['NAVIGATOR_PORT']
 
-    if ENV['FLY_APP_NAME'] || ENV['KAMAL_CONTAINER_NAME']
-      3000
-    else
-      9999
-    end
+    # Navigator always listens on port 9999 (standardized across all environments)
+    9999
   end
 
   def determine_root_path
