@@ -872,16 +872,33 @@ module Configurator
 
   def build_hooks_config_for_maintenance
     # Minimal hooks for maintenance mode - only ready hook for initialization
+    ready_hooks = [
+      {
+        'command' => 'ruby',
+        'args' => ['script/nav_initialization.rb'],
+        'timeout' => '5m',
+        'reload_config' => 'config/navigator.yml'
+      }
+    ]
+
+    # rubymini needs assets precompiled on startup since they're not baked into a Docker image
+    # This runs after nav_initialization.rb but before the config reload
+    if rubymini?
+      ready_hooks << {
+        'command' => 'bin/rails',
+        'args' => ['assets:precompile'],
+        'env' => {
+          'RAILS_ENV' => 'production',
+          'RAILS_RELATIVE_URL_ROOT' => '/showcase',
+          'PATH' => ENV['PATH']
+        },
+        'timeout' => '2m'
+      }
+    end
+
     hooks = {
       'server' => {
-        'ready' => [
-          {
-            'command' => 'ruby',
-            'args' => ['script/nav_initialization.rb'],
-            'timeout' => '5m',
-            'reload_config' => 'config/navigator.yml'
-          }
-        ]
+        'ready' => ready_hooks
       }
     }
 
