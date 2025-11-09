@@ -25,6 +25,10 @@ Rails.application.configure do
   if Socket.gethostname == 'rubymini'
     config.hosts << 'rubix.intertwingly.net'
     config.hosts << /rubymini(:\d+)?/
+    # Allow Fly.io and Hetzner hosts that reverse proxy to rubymini
+    config.hosts << 'smooth.fly.dev'
+    config.hosts << 'hetzner.intertwingly.net'
+    config.hosts << 'showcase.party'
     # Set the default URL host for URL generation
     config.action_controller.default_url_options = { host: 'rubix.intertwingly.net', protocol: 'https' }
   end
