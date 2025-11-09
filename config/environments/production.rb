@@ -29,6 +29,8 @@ Rails.application.configure do
     config.hosts << 'smooth.fly.dev'
     config.hosts << 'hetzner.intertwingly.net'
     config.hosts << 'showcase.party'
+    # Allow cross-origin requests from Fly.io and Hetzner for CSRF protection
+    config.action_controller.forgery_protection_origin_check = false
     # Set the default URL host for URL generation
     config.action_controller.default_url_options = { host: 'rubix.intertwingly.net', protocol: 'https' }
   end
