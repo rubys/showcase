@@ -132,7 +132,7 @@ else
     exit 1
   end
 
-  machines_output, machines_stderr, machines_status = Open3.capture3(flyctl_cmd, 'machines', 'list', '--json')
+  machines_output, machines_stderr, machines_status = Open3.capture3({'LOG_LEVEL' => 'error'}, flyctl_cmd, 'machines', 'list', '--json')
 
   unless machines_status.success?
     puts "Error: Failed to get machines list"
