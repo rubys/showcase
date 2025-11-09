@@ -22,7 +22,7 @@ module ApplicationHelper
     scheme = (request.env['HTTP_X_FORWARDED_PROTO'] || request.env["rack.url_scheme"] || '').split(',').last&.strip
     return '' if scheme.blank?
     host = (request.env['HTTP_X_FORWARDED_HOST'] || request.env["HTTP_HOST"]).to_s.split(',').last&.strip
-    host = 'rubix.intertwingly.net' if ENV['RAILS_APP_OWNER'] == 'index'
+    host = 'rubix.intertwingly.net' if ENV['RAILS_APP_OWNER']&.downcase == 'index'
     # Check both request.env and ENV for RAILS_APP_SCOPE
     scope = request.env['RAILS_APP_SCOPE'] || ENV['RAILS_APP_SCOPE']
     root = request.env['RAILS_RELATIVE_URL_ROOT'] || ENV['RAILS_RELATIVE_URL_ROOT']
