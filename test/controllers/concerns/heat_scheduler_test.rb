@@ -16,14 +16,14 @@ class HeatSchedulerTest < ActiveSupport::TestCase
   # Create a test class that includes the HeatScheduler module
   class TestScheduler
     include HeatScheduler
-    
+
     # Mock the Printable module methods if needed
     def generate_agenda
       @start = []
       @heats = []
     end
   end
-  
+
   setup do
     @scheduler = TestScheduler.new
     @event = events(:one)
@@ -240,9 +240,21 @@ class HeatSchedulerTest < ActiveSupport::TestCase
   end
   
   test "schedule_heats respects category order" do
-    # Set category orders to ensure predictable sorting
-    @category_open.update!(order: 20)
-    @category_closed.update!(order: 10)
+    # Create isolated categories for this test to avoid fixture pollution
+    category_closed = Category.create!(name: "Test Isolated Closed", order: 10)
+    category_open = Category.create!(name: "Test Isolated Open", order: 20)
+
+    # Create isolated dance for this test
+    isolated_dance = Dance.create!(
+      name: "Test Isolated Dance",
+      order: 999,
+      open_category: category_open,
+      closed_category: category_closed
+    )
+
+    # Ensure event.heat_range_level is not 0 to prevent level-based resorting
+    @event.update!(heat_range_level: 1)
+    Event.current = @event  # Update the cached Event.current
 
     # Use fixture entries
     entry1 = entries(:one)
@@ -251,16 +263,16 @@ class HeatSchedulerTest < ActiveSupport::TestCase
     # Mark all existing heats as scratched (negative numbers) to exclude them
     Heat.update_all(number: -1)
 
-    # Create new heats for testing
+    # Create new heats for testing with isolated dance
     heat_closed = Heat.create!(
-      dance: @dance_waltz,
+      dance: isolated_dance,
       entry: entry1,
       category: 'Closed',
       number: 0
     )
 
     heat_open = Heat.create!(
-      dance: @dance_waltz,
+      dance: isolated_dance,
       entry: entry2,
       category: 'Open',
       number: 0
