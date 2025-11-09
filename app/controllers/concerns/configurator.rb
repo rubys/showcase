@@ -567,6 +567,9 @@ module Configurator
 
     env = {}
 
+    # Set Rails environment to production for Navigator-managed tenant apps
+    env['RAILS_ENV'] = 'production'
+
     # Global environment variables (no substitution needed)
     if root != ''
       env['RAILS_RELATIVE_URL_ROOT'] = root
