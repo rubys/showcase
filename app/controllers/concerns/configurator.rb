@@ -49,9 +49,9 @@ module Configurator
 
   # Build remote proxy routes for password and studio request endpoints
   def build_remote_proxy_routes
-    # Only add reverse proxies when configured to proxy to rubix.intertwingly.net
-    # This means Fly.io and Hetzner environments that proxy password/studio requests to rubymini
-    return [] unless determine_host == 'rubix.intertwingly.net'
+    # Don't add reverse proxies when we ARE rubix.intertwingly.net (the origin server)
+    # Only add them on Fly.io/Hetzner that need to proxy back to rubymini
+    return [] if determine_host == 'rubix.intertwingly.net'
 
     [
       {
