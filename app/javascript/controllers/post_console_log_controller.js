@@ -43,11 +43,14 @@ window.onunhandledrejection = function (e) {
 function hookLogType(logType) {
   const original= console[logType].bind(console);
   return function(){
-    postLog({ 
-      type: logType, 
-      timeStamp: TS(), 
-      value: Array.from(arguments).map(arg => arg ? arg.toString() : "null")
-    });
+    if (logType !== "debug") {
+      postLog({
+        type: logType,
+        timeStamp: TS(),
+        value: Array.from(arguments).map(arg => arg ? arg.toString() : "null")
+      });
+    }
+
     original.apply(console, arguments);
   };
 }
