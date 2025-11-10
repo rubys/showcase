@@ -467,8 +467,10 @@ app.get("/", async (req, res) => {
   results.push(`<small style="font-weight: normal">`)
   if (process.env.FLY_REGION) {
     results.push(`<a href="https://smooth.fly.dev/">smooth.fly.dev</a> logs: ${FLY_REGION}`)
-  } else {
+  } else if (process.env.KAMAL_CONTAINER_NAME) {
     results.push(`<a href="https://showcase.party/">showcase.party</a> logs`)
+  } else {
+    results.push(`<a href="https://rubix.intertwingly.net/showcase/">rubix</a> logs`)
   }
   results.push(`<h2>`)
 
