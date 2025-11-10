@@ -712,6 +712,14 @@ studios:
     map: us
     x: 204.57930454038387
     y: 269.07137956267366
+  verona:
+    name: Verona
+    lat: 45.4424977
+    lon: 10.9857377
+    region: ams
+    map: eu
+    x: 373.22893415771387
+    y: 354.11640335450704
   vicenza:
     name: Vicenza
     lat: 45.63485905
@@ -736,6 +744,14 @@ studios:
     map: us
     x: 654.1151636067387
     y: 228.04018651927674
+  wildwood:
+    name: Wildwood
+    lat: 28.865286
+    lon: -82.0394286
+    region: iad
+    map: us
+    x: 716.4927651967803
+    y: 418.0780769213427
   woodlands:
     name: Woodlands
     lat: 30.158

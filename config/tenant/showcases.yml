@@ -891,6 +891,13 @@
       mock-a-tition:
         :name: Mock-A-tition
         :date: 2025-11-23 - 2025-11-23
+  westchester:
+    :name: West Chester
+    :region: ord
+    :events:
+      cinderella-medal-ball:
+        :name: Cinderella Medal Ball
+        :date: 2025-11-14 - 2025-11-14
   woodlands:
     :name: Woodlands
     :region: dfw
