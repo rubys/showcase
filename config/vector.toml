@@ -15,6 +15,15 @@ inputs = ["navigator"]
 source = '''
   # Parse the JSON message from Navigator
   . = parse_json!(string!(.message))
+
+  # Add source field if missing (for HTTP access logs)
+  if !exists(.source) {
+    if exists(.client_ip) {
+      .source = "access"
+    } else {
+      .source = "unknown"
+    }
+  }
 '''
 
 [sinks.nats]
