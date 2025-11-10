@@ -11,7 +11,7 @@ import { startWs } from './websocket.ts'
 
 import { pattern, filtered, format, highlight, visit, HOST, LOGS, formatJsonLog, filteredJsonLog, isRailsAppLog } from "./view.ts"
 
-const PORT = 3000
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000
 const { NODE_ENV } = process.env
 
 const app = express();
