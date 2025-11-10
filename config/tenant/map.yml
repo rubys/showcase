@@ -656,6 +656,14 @@ studios:
     map: us
     x: 597.572238623354
     y: 182.69493513723273
+  scottsvalley:
+    name: Scotts Valley
+    lat: 37.0510595
+    lon: -122.014684
+    region: sjc
+    map: us
+    x: 109.42952486245832
+    y: 228.89615721987684
   slc:
     name: Salt Lake City
     lat: 40.7608
