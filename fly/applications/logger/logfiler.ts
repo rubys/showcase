@@ -86,12 +86,16 @@ fs.mkdirSync(LOGS, { recursive: true });
         } else {
           if (data.label?.service == "showcase-logger") continue;
 
+          // Preserve fly.region if already set (from Vector transform)
+          // Otherwise default to "hel" for backwards compatibility
+          const region = data.fly?.region || "hel";
+
           data.fly = {
             app: {
-              name: data.label?.service || "showcase",
-              instance: (data.container_id || HOSTNAME).slice(-12)
+              name: data.label?.service || data.fly?.app?.name || "showcase",
+              instance: data.fly?.app?.instance || (data.container_id || HOSTNAME).slice(-12)
             },
-            region: "hel"
+            region: region
           }
 
           data.log = {
