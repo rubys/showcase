@@ -4,7 +4,7 @@ class User < ApplicationRecord
 
   validates :userid, uniqueness: true, presence: true
   validates :password, confirmation: true
-  validates :email, uniqueness: true, presence: true
+  validates :email, presence: true
 
   has_many :locations, dependent: :nullify
 
