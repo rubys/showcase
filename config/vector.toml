@@ -14,16 +14,29 @@ type = "remap"
 inputs = ["navigator"]
 source = '''
   # Parse the JSON message from Navigator
-  . = parse_json!(string!(.message))
+  original = parse_json!(string!(.message))
 
   # Add source field if missing (for HTTP access logs)
-  if !exists(.source) {
-    if exists(.client_ip) {
-      .source = "access"
+  if !exists(original.source) {
+    if exists(original.client_ip) {
+      original.source = "access"
     } else {
-      .source = "unknown"
+      original.source = "unknown"
     }
   }
+
+  # Wrap in logfiler-expected format
+  .timestamp = original."@timestamp"
+  .message = encode_json(original)
+  .log = {"level": "info"}
+  .fly = {
+    "app": {
+      "name": "showcase",
+      "instance": "rubymini"
+    },
+    "region": "rdu"
+  }
+  .source = original.source
 '''
 
 [sinks.nats]
