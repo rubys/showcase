@@ -700,9 +700,21 @@ module Configurator
   end
 
   def build_logging_config
-    {
-      'format' => 'json'
-    }
+    config = { 'format' => 'json' }
+
+    # Enable Vector logging on rubymini for local log aggregation via NATS
+    if rubymini?
+      vector_config_path = File.join(Rails.root, 'config', 'vector.toml')
+      vector_socket_path = '/tmp/navigator-vector.sock'
+
+      config['vector'] = {
+        'enabled' => true,
+        'socket' => vector_socket_path,
+        'config' => vector_config_path
+      }
+    end
+
+    config
   end
 
   def build_maintenance_config

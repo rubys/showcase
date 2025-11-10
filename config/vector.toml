@@ -1,0 +1,23 @@
+# Vector Configuration for Showcase Logging
+# Receives logs from Navigator via Unix socket and forwards to NATS
+
+[sources.navigator]
+type = "socket"
+mode = "unix"
+path = "/tmp/navigator-vector.sock"
+max_length = 102400
+
+[transforms.parse_json]
+type = "remap"
+inputs = ["navigator"]
+source = '''
+  # Parse the JSON message from Navigator
+  . = parse_json!(string!(.message))
+'''
+
+[sinks.nats]
+type = "nats"
+inputs = ["parse_json"]
+url = "nats://localhost:4222"
+subject = "logs.showcase.rubymini.{{ source }}"
+encoding.codec = "json"
