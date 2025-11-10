@@ -13,13 +13,20 @@ fs.mkdirSync(LOGS, { recursive: true });
 
       // create a connection to a nats-server
       let nc;
-      if (process.env.FLY_REGION) {
+      if (process.env.NATS_URL) {
+        // Explicit NATS URL provided (e.g., for rubymini)
+        nc = await connect({
+          servers: process.env.NATS_URL,
+        });
+      } else if (process.env.FLY_REGION) {
+        // Running on Fly.io - use internal NATS
         nc = await connect({
           servers: "[fdaa::3]:4223",
           user: "dance-showcase",
           pass: process.env.ACCESS_TOKEN
         });
       } else {
+        // Running in Docker locally - use host.docker.internal
         nc = await connect({
           servers: "host.docker.internal:4222",
         });
