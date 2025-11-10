@@ -5,7 +5,6 @@
 type = "socket"
 mode = "unix"
 path = "/tmp/navigator-vector.sock"
-max_length = 102400
 
 [transforms.parse_json]
 type = "remap"
