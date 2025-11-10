@@ -1,6 +1,9 @@
 # Vector Configuration for Showcase Logging
 # Receives logs from Navigator via Unix socket and forwards to NATS
 
+# Global configuration
+data_dir = "/Users/rubys/git/showcase/log/vector"
+
 [sources.navigator]
 type = "socket"
 mode = "unix"
