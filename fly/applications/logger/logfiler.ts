@@ -1,11 +1,11 @@
 import { connect, StringCodec } from "nats";
 import fs from 'node:fs';
 
-import { pattern, highlight, filtered, format, formatJsonLog, filteredJsonLog, isRailsAppLog } from "./view.ts"
+import { pattern, highlight, filtered, format, formatJsonLog, filteredJsonLog, isRailsAppLog, LOGS } from "./view.ts"
 import { broadcast } from "./websocket.ts"
 import { alert } from "./sentry.ts"
 
-fs.mkdirSync("/logs", { recursive: true });
+fs.mkdirSync(LOGS, { recursive: true });
 
 (async () => {
   while (true) {
@@ -99,7 +99,7 @@ fs.mkdirSync("/logs", { recursive: true });
 
         // build log file name using timestamp
         const date = data.timestamp.slice(0, 10);
-        const name = `/logs/${date}.log`;
+        const name = `${LOGS}/${date}.log`;
 
         // if log file is not already open, open it
         if (name != current.name) {
@@ -108,7 +108,7 @@ fs.mkdirSync("/logs", { recursive: true });
           current.file = fs.openSync(name, 'a+');
 
           // Prune oldest files once we have a full week
-          fs.readdir("/logs", (error, files) => {
+          fs.readdir(LOGS, (error, files) => {
             if (error)
               reportError(error);
             else {
@@ -116,7 +116,7 @@ fs.mkdirSync("/logs", { recursive: true });
               files.sort();
               while (files.length > 8) {
                 const file = files.shift();
-                fs.unlink(`/logs/${file}`, reportError);
+                fs.unlink(`${LOGS}/${file}`, reportError);
               }
             }
           })

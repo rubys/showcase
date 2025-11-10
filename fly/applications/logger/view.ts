@@ -4,7 +4,7 @@ import process from 'node:process'
 import escape from "escape-html"
 
 const { NODE_ENV, FLY_REGION } = process.env
-export const LOGS = NODE_ENV == 'development' ? './logs' : '/logs'
+export const LOGS = process.env.LOGS || (NODE_ENV == 'development' ? './logs' : '/logs')
 const VISITTIME = `${LOGS}/.time`
 export const HOST = FLY_REGION ? "https://smooth.fly.dev/showcase" : "https://showcase.party"
 
