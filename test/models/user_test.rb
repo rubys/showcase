@@ -46,12 +46,11 @@ class UserTest < ActiveSupport::TestCase
     assert_includes @user.errors[:email], "can't be blank"
   end
 
-  test "email should be unique" do
+  test "email can be shared by multiple users" do
     duplicate_user = @user.dup
     duplicate_user.userid = "different_user"
     @user.save
-    assert_not duplicate_user.valid?
-    assert_includes duplicate_user.errors[:email], "has already been taken"
+    assert duplicate_user.valid?, "Should allow multiple users with same email"
   end
 
   test "email should be normalized (stripped)" do
