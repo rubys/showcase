@@ -22,8 +22,6 @@ Rails.application.routes.draw do
       get "/events/", to: "event#showcases", trailing_slash: true
       get "/studios/:studio/", to: 'event#showcases', as: 'studio_events', trailing_slash: true
 
-      get "logs", to: 'event#logs'
-
       if Rails.env.development?
          get "/:year/:city/:event", to: 'event#select', year: /\d+/
          root "event#regions"

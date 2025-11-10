@@ -439,7 +439,16 @@ module Configurator
     
     # Add proxy routes for remote services
     routes['reverse_proxies'].concat(build_remote_proxy_routes)
-    
+
+    # Add local proxy for logger app on rubymini
+    if determine_host == 'rubix.intertwingly.net'
+      routes['reverse_proxies'] << {
+        'path' => "^#{root}/logs(/.*)?$",
+        'target' => 'http://localhost:9001$1',
+        'strip_path' => true
+      }
+    end
+
     # Add PDF and XLSX generation routing to smooth-pdf app
     # Navigator supports three types of fly-replay routing:
     # 1. App-based: { 'app' => 'smooth-pdf' } -> routes to any instance of smooth-pdf app
