@@ -3,10 +3,14 @@ import process from 'node:process'
 
 import escape from "escape-html"
 
-const { NODE_ENV, FLY_REGION } = process.env
+const { NODE_ENV, FLY_REGION, KAMAL_CONTAINER_NAME } = process.env
 export const LOGS = process.env.LOGS || (NODE_ENV == 'development' ? './logs' : '/logs')
 const VISITTIME = `${LOGS}/.time`
-export const HOST = FLY_REGION ? "https://smooth.fly.dev/showcase" : "https://showcase.party"
+export const HOST = FLY_REGION
+  ? "https://smooth.fly.dev/showcase"
+  : (KAMAL_CONTAINER_NAME
+      ? "https://showcase.party"
+      : "https://rubix.intertwingly.net/showcase")
 
 // lines to be selected to be send to the browser
 export const pattern = new RegExp([
