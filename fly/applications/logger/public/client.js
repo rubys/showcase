@@ -98,7 +98,7 @@ if (!search.get('start') && search.get('view') !== 'printer' && search.get('view
 }
 
 // Show the Sentry issue link if a new issue was created
-fetch(new URL("/sentry/seen", window.location).href)
+fetch(new URL("sentry/seen", window.location).href)
   .then(response => response.text())
   .then(text => {
     if (!text) return

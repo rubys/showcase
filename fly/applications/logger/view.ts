@@ -172,7 +172,7 @@ function formatAppJsonLog(log: any, flyData: any, truncate: boolean = true) {
   return [
     `<time>${log['@timestamp'].replace('Z', 'Z')}</time>`,
     `<a href="${HOST}/regions/${region}/status"><span style="color: green">${region}</span></a>`,
-    request_id ? `<a href="/request/${request_id}">APP</a>` : 'APP',
+    request_id ? `<a href="request/${request_id}">APP</a>` : 'APP',
     `<span style="color: ${severityColor}">${severity}</span>`,
     `<span style="color: #333">${message}</span>`,
   ].join(' ');

@@ -481,7 +481,7 @@ app.get("/", async (req, res) => {
       .sentry {margin: 0 10px; padding: 4px; border: solid red 2px; border-radius: 10px}
     </style>
     ${results.reverse().join("\n")}
-    <script src="/static/client.js"></script>
+    <script src="static/client.js"></script>
   `)
 })
 
