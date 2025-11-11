@@ -85,26 +85,15 @@ module HeatScheduler
       # For availability ordering, add availability as third sort criterion
       availability = event.heat_order == 'A' ? (availability_scores[heat] || 10000) : 0
       
-      if heat.dance.semi_finals
-        # don't split semi-finals by level, age
-        [
-          order,
-          category,
-          availability,
-          1,
-          1,
-          heat
-        ]
-      else
-        [
-          order,
-          category,
-          availability,
-          heat.entry.level_id,
-          heat.entry.age_id,
-          heat
-        ]
-      end
+      # don't split semi-finals by level, age
+      [
+        order,
+        category,
+        availability,
+        heat.dance.semi_finals ? 1 : heat.entry.level_id,
+        heat.dance.semi_finals ? 1 : heat.entry.age_id,
+        heat
+      ]
     }
 
     heats = Group.sort(heats)
