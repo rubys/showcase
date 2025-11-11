@@ -114,7 +114,6 @@ RUN SECRET_KEY_BASE=DUMMY RAILS_APP_DB=demo bin/rails db:prepare
 # Deployment options
 ENV DATABASE_URL="sqlite3:///data/production.sqlite3" \
     RAILS_DB_VOLUME="/data/db" \
-    RAILS_LOG_TO_STDOUT="1" \
     RAILS_LOG_VOLUME="/data/log" \
     RAILS_SERVE_STATIC_FILES="true" \
     RAILS_STORAGE="/data/storage" \
