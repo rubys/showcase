@@ -13,6 +13,13 @@ regions:
     map: us
     x: 753.3598022258124
     y: 218.05721663167571
+  bos:
+    name: Boston, Massachusetts (US)
+    lat: 42.366978
+    lon: -71.02236
+    map: us
+    x: 827.1098175107608
+    y: 136.23009703027913
   ord:
     name: Chicago, Illinois (US)
     lat: 41.891544
@@ -27,6 +34,13 @@ regions:
     map: us
     x: 476.1993201496286
     y: 361.5248496538476
+  mia:
+    name: Miami, Florida (US)
+    lat: 25.7877
+    lon: -80.2241
+    map: us
+    x: 755.3064170132483
+    y: 469.82316642663625
   sjc:
     name: San Jose, California (US)
     lat: 37.3516
@@ -34,6 +48,13 @@ regions:
     map: us
     x: 112.63114487340647
     y: 223.9075025700198
+  sea:
+    name: Seattle, Washington (US)
+    lat: 47.6097
+    lon: -122.3331
+    map: us
+    x: 159.108421435958
+    y: 37.01944688208971
   ewr:
     name: Secaucus, NJ (US)
     lat: 40.789543
@@ -124,34 +145,18 @@ studios:
     name: Bellevue
     lat: 47.6144219
     lon: -122.192337
-    region: sjc
+    region: sea
     map: us
     x: 160.84891797792403
     y: 37.4219765697967
-  bloomington:
-    name: Bloomington
-    lat: 39.1670396
-    lon: -86.5342881
-    region: ord
-    map: us
-    x: 624.1873057530906
-    y: 234.46665224734318
   boston:
     name: Boston
     lat: 42.3554334
     lon: -71.060511
-    region: ewr
+    region: bos
     map: us
     x: 826.661092211232
     y: 136.57544481515015
-  candc:
-    name: C and C
-    lat: 29.4246002
-    lon: -98.4951405
-    region: dfw
-    map: us
-    x: 448.07226019872127
-    y: 423.87130567082215
   carmel:
     name: Carmel
     lat: 39.978
@@ -188,7 +193,7 @@ studios:
     name: Clearwater
     lat: 27.966
     lon: -82.796
-    region: dfw
+    region: mia
     map: us
     x: 706.5473236124388
     y: 436.43303362885484
@@ -204,7 +209,7 @@ studios:
     name: Coquitlam
     lat: 49.2842958
     lon: -122.793281
-    region: sjc
+    region: sea
     map: us
     x: 162.11317965957727
     y: 5.675253914880955
@@ -252,7 +257,7 @@ studios:
     name: Edmonton
     lat: 53.631611
     lon: -113.323975
-    region: sjc
+    region: sea
     map: us
     x: 240.22723932236266
     y: -5.264247432342131
@@ -260,7 +265,7 @@ studios:
     name: Everett
     lat: 47.9793437
     lon: -122.2127011
-    region: sjc
+    region: sea
     map: us
     x: 162.44243958813217
     y: 30.84344800516351
@@ -296,14 +301,6 @@ studios:
     map: us
     x: 112.33259789354952
     y: 219.97257053626845
-  glastonbury:
-    name: Glastonbury
-    lat: 41.7123218
-    lon: -72.608146
-    region: ewr
-    map: us
-    x: 809.07284211037
-    y: 153.64287510394968
   glenview:
     name: Glenview
     lat: 42.078
@@ -320,14 +317,6 @@ studios:
     map: us
     x: 625.7519967420483
     y: 292.3296808842899
-  guilford:
-    name: Guilford
-    lat: 41.2827593
-    lon: -72.6816365
-    region: ewr
-    map: us
-    x: 810.0501367199986
-    y: 161.7325765839489
   harrisburg:
     name: Harrisburg
     lat: 40.26
@@ -388,7 +377,7 @@ studios:
     name: Laval
     lat: 45.6066
     lon: -73.707092
-    region: ewr
+    region: bos
     map: us
     x: 777.3324153383578
     y: 86.23752866493703
@@ -412,7 +401,7 @@ studios:
     name: Lakewood Ranch
     lat: 27.409191200000002
     lon: -82.39252437499218
-    region: iad
+    region: mia
     map: us
     x: 714.6376165537483
     y: 445.74101093532545
@@ -420,7 +409,7 @@ studios:
     name: Manchester
     lat: 42.9956
     lon: -71.4548
-    region: ewr
+    region: bos
     map: us
     x: 818.3657544827604
     y: 126.33737918952897
@@ -432,14 +421,6 @@ studios:
     map: us
     x: 785.2697528990994
     y: 194.3870346408271
-  mcmurray:
-    name: McMurray
-    lat: 40.2791485
-    lon: -80.088632
-    region: iad
-    map: us
-    x: 712.2938332325348
-    y: 201.4958797230488
   mdballroom:
     name: Memorial DanceSport Ballroom
     lat: 29.7589382
@@ -460,7 +441,7 @@ studios:
     name: Miami
     lat: 25.7741728
     lon: -80.19362
-    region: iad
+    region: mia
     map: us
     x: 755.8582522492002
     y: 469.9842854067238
@@ -480,14 +461,6 @@ studios:
     map: us
     x: 106.77652299796523
     y: 217.4079077133133
-  moline:
-    name: Moline
-    lat: 41.5058344
-    lon: -90.5136642
-    region: ord
-    map: us
-    x: 564.7561391229914
-    y: 194.96133866132118
   montclair:
     name: Montclair
     lat: 34.0775104
@@ -516,7 +489,7 @@ studios:
     name: Montreal
     lat: 45.5019
     lon: -73.5674
-    region: ewr
+    region: bos
     map: us
     x: 779.5648385687444
     y: 87.71272338612823
@@ -528,19 +501,11 @@ studios:
     map: eu
     x: 353.62379883480446
     y: 348.1190555647173
-  nashville:
-    name: Nashville
-    lat: 36.1622767
-    lon: -86.7742984
-    region: ord
-    map: us
-    x: 626.2529538991158
-    y: 291.1962896784788
   ottawa:
     name: Ottawa
     lat: 45.4208777
     lon: -75.6901106
-    region: ewr
+    region: bos
     map: us
     x: 752.8013400154026
     y: 95.38644636060508
@@ -628,7 +593,7 @@ studios:
     name: Salem
     lat: 44.933
     lon: -123.04
-    region: sjc
+    region: sea
     map: us
     x: 136.50150209185773
     y: 82.40005410159029
@@ -644,7 +609,7 @@ studios:
     name: Sarasota
     lat: 27.339
     lon: -82.539
-    region: iad
+    region: mia
     map: us
     x: 712.4055629423673
     y: 447.3783588884137
@@ -656,14 +621,6 @@ studios:
     map: us
     x: 597.572238623354
     y: 182.69493513723273
-  scottsvalley:
-    name: Scotts Valley
-    lat: 37.0510595
-    lon: -122.014684
-    region: sjc
-    map: us
-    x: 109.42952486245832
-    y: 228.89615721987684
   slc:
     name: Salt Lake City
     lat: 40.7608
@@ -720,14 +677,6 @@ studios:
     map: us
     x: 204.57930454038387
     y: 269.07137956267366
-  verona:
-    name: Verona
-    lat: 45.4424977
-    lon: 10.9857377
-    region: ams
-    map: eu
-    x: 373.22893415771387
-    y: 354.11640335450704
   vicenza:
     name: Vicenza
     lat: 45.63485905
@@ -752,14 +701,6 @@ studios:
     map: us
     x: 654.1151636067387
     y: 228.04018651927674
-  wildwood:
-    name: Wildwood
-    lat: 28.865286
-    lon: -82.0394286
-    region: iad
-    map: us
-    x: 716.4927651967803
-    y: 418.0780769213427
   woodlands:
     name: Woodlands
     lat: 30.158
