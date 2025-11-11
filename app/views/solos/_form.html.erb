@@ -61,14 +61,18 @@
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
 
-  <% if @formation and @person&.type != "Professional" and @person&.id != 0 %>
-  <div class="my-5">
-  <%= form.label :on_floor, 'Instructors' %>
-  <ul class="ml-6">
-  <li class="my-2"><%= form.radio_button :on_floor, 1, checked: @on_floor %> On the dance floor with students
-  <li classs="my-2"><%= form.radio_button :on_floor, 0, checked: !@on_floor %> Credit only
-  </ul>
-  </div>
+  <% if @formation %>
+    <% if @person&.type != "Professional" and @person&.id != 0 %>
+    <div class="my-5">
+    <%= form.label :on_floor, 'Instructors' %>
+    <ul class="ml-6">
+    <li class="my-2"><%= form.radio_button :on_floor, 1, checked: @on_floor %> On the dance floor with students
+    <li classs="my-2"><%= form.radio_button :on_floor, 0, checked: !@on_floor %> Credit only
+    </ul>
+    </div>
+    <% elsif @instructor&.type == "Professional" && @person&.id == 0 %>
+    <%= form.hidden_field :on_floor, value: 1 %>
+    <% end %>
   <% end %>
 </div>
 <% end %>
