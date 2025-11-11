@@ -53,6 +53,19 @@ if ENV['RAILS_LOG_VOLUME']
   end
 end
 
+# Create and fix storage directory ownership if needed
+if ENV['RAILS_STORAGE']
+  storage_volume = ENV['RAILS_STORAGE']
+  FileUtils.mkdir_p storage_volume
+  if File.exist?(storage_volume)
+    stat = File.stat(storage_volume)
+    if stat.uid == 0
+      puts "Fixing ownership of #{storage_volume}"
+      system "chown -R rails:rails #{storage_volume}"
+    end
+  end
+end
+
 # Setup demo tenant directories (ephemeral, not on volume)
 if fly_io? || kamal?
   FileUtils.mkdir_p "/demo/db"
