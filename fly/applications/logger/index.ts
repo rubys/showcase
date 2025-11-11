@@ -444,7 +444,7 @@ app.get("/", async (req, res) => {
   if (!start) start = logs[logs.length - 1]
   for (const log of logs) {
     if (log.slice(0, start.length) == start) results.push('</u>')
-    results.push(`<a href=/regions/${FLY_REGION}/logs/${log}>${log.replace('.log', '')}</a>`)
+    results.push(`<a href=regions/${FLY_REGION}/logs/${log}>${log.replace('.log', '')}</a>`)
     if (log.slice(0, start.length) == start) results.push('<u>')
   }
   results.push('<p id="archives">')
@@ -461,7 +461,7 @@ app.get("/", async (req, res) => {
 
   for (const region of REGIONS) {
     if (region != FLY_REGION) {
-      results.push(`<a href="/regions/${region}/">${region}</a>`)
+      results.push(`<a href="regions/${region}/">${region}</a>`)
     }
   }
   results.push(`<small style="font-weight: normal">`)
