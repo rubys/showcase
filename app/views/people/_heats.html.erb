@@ -71,7 +71,7 @@ body {
       </td>
       <% end %>
       <td>
-      <% partners = heat.partners(person) %>
+      <% partners = heat.partners(person).reject { |p| p.id == 0 } %>
       <% partners.each_with_index do |partner, index| %>
         <div class="mx-4"><%= link_to partner.display_name, partner %></div>
       <% end %>
@@ -98,6 +98,23 @@ body {
 <% end %>
 
 <% if person == nil or (person&.type == 'Professional' and not person.instructor_entries.empty?) %>
+<%
+  # Collect valid heats (excluding those where both lead and follow are Nobody when showing for a person)
+  valid_heats = []
+  @heats.each do |number, heats|
+    heats.each do |heat|
+      if person
+        next unless heat.entry.instructor == person
+        # Skip if both lead and follow are Nobody (id == 0)
+        next if heat.entry.lead.id == 0 && heat.entry.follow.id == 0
+      else
+        next unless heat.entry.subject.studio == @studio
+      end
+      valid_heats << [number, heat]
+    end
+  end
+%>
+<% if valid_heats.any? %>
 <table class="" style="break-after: page">
   <thead>
   <tr>
@@ -133,17 +150,10 @@ body {
   </thead>
   <tbody>
   <% heatlist = @heatlist[person] %>
-  <% @heats.each do |number, heats| %>
-  <% heats.each do |heat| %>
-    <%  
-      if person
-        next unless heat.entry.instructor == person 
-      else
-        next unless heat.entry.subject.studio == @studio
-      end
-    %>
+  <% valid_heats.each do |number, heat| %>
     <% count[heat.category] += 1 if heat.number > 0 %>
     <% ballrooms = heat.dance_category&.ballrooms || @ballrooms %>
+    <% heats = @heats[number] %>
     <tr class="text-sm<% if heat.number < 0%> line-through<% end %>">
       <% if @start %>
       <td class="text-right pr-4"><%= localized_time(@start[number], @locale)&.gsub(/ [ap]m$/, '') %></td>
@@ -172,7 +182,6 @@ body {
       <td class="text-center"><%= heat.entry.subject_lvlcat(@track_ages) %></td>
     </tr>
   <% end %>
-  <% end %>
   <tr>
   <td colspan="6" class="pt-2 text-center">
   <%
@@ -186,4 +195,5 @@ body {
   </tr>
   </tbody>
 </table>
+<% end %>
 <% end %>
