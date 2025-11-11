@@ -19,7 +19,11 @@ number, or feedback on areas that are particularly notable or need improvement (
 
 * Closed scoring generally is GH/G/S/B, but can be the same as open.
 
-* Heats can be ordered to generally progress from newcomer to advanced within each agenda item, typically resulting in large breaks for each participant.  Random will space things out.
+* Heat ordering options:
+  * **Newcomer to Advanced** - Heats progress from newcomer to advanced within each agenda item, typically resulting in large breaks for each participant.
+  * **Random** - Heats are randomly ordered, spacing things out more evenly.
+  * **Availability** - Prioritizes participants with limited availability (earliest departures first, then no constraints, then late arrivals).
+  * **Block** - Groups entries by agenda category so each entry dances all their dances in a block consecutively. The same dances from multiple entries are scheduled together. This option only applies to amateur open and closed heats.
 
 * Intermix dances within category - this is best explained by example.  If set, smooth heats may be Waltz, Tango, Fox Trot, Waltz, Tango, Fox Trot, etc..  If unset, smooth may be Waltz, Walz, Waltz, Tango, Tango, Tango, etc..
 

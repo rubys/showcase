@@ -98,6 +98,83 @@ module HeatScheduler
 
     heats = Group.sort(heats)
 
+    # If block scheduling is enabled, replace eligible heats with blocks
+    if event.heat_order == 'B'
+      blocks_map = {}
+      remaining_heats = []
+
+      heats.each do |heat_tuple|
+        heat = heat_tuple.last
+
+        # Only block amateur open and closed heats
+        if !heat.entry.pro && ['Open', 'Closed'].include?(heat.category)
+          agenda_cat = heat.dance_category
+          next unless agenda_cat # Skip if no agenda category
+
+          # Create unique key for this block: entry_id + heat_category + agenda_category_id
+          block_key = [heat.entry_id, heat.category, agenda_cat.id]
+
+          if !blocks_map[block_key]
+            blocks_map[block_key] = Block.new(heat.entry, heat.category, agenda_cat)
+          end
+
+          block = blocks_map[block_key]
+
+          # Check if this dance is already in the block (constraint: no duplicate dances in a block)
+          if block.heats.any? { |h| h.dance_id == heat.dance_id }
+            # Keep non-blockable heat as-is (can't add duplicate dance to block)
+            remaining_heats << heat_tuple
+          else
+            block.add_heat(heat)
+          end
+        else
+          # Keep non-blockable heats as-is
+          remaining_heats << heat_tuple
+        end
+      end
+
+      # Replace heats list with blocks (as tuples) and remaining heats
+      block_tuples = blocks_map.values.filter_map do |block|
+        # Skip empty blocks (all heats were duplicates)
+        next if block.heats.empty?
+
+        # Create a tuple for the block using the first heat's dance order
+        first_heat = block.heats.first
+        heat_cat_num = heat_categories[block.heat_category]
+        heat_cat_num += 4 if block.entry.pro
+
+        if event.heat_range_cat == 1 && heat_cat_num == 0
+          heat_cat_num = 1
+        end
+
+        # Use the dance order from the first heat in the block
+        dance_order = true_order[first_heat.dance.order]
+
+        [
+          dance_order,
+          heat_cat_num,
+          0, # availability score (blocks don't have individual availability)
+          block.entry.level_id,
+          block.entry.age_id,
+          block
+        ]
+      end
+
+      # Sort blocks and remaining heats together
+      # Use sort_by to avoid direct Heat<=>Block comparisons
+      combined = block_tuples + remaining_heats
+      heats = combined.sort_by do |tuple|
+        # For sorting, use the tuple values themselves, not the final object
+        # tuple format: [dance_order, category, availability, level_id, age_id, heat_or_block]
+        if event.heat_range_cat == 0
+          # Reverse first two elements for category=0
+          tuple[0..1].reverse + tuple[2..4]
+        else
+          tuple[0..4]
+        end
+      end
+    end
+
     max = event.max_heat_size || 9999
 
     # group entries into heats
@@ -194,10 +271,43 @@ module HeatScheduler
     # not as a post-processing step
 
     ActiveRecord::Base.transaction do
-      groups.each_with_index do |group, index|
-        group.each do |heat|
-          heat.number = index + 1
-          heat.save validate: false
+      heat_number = 1
+
+      groups.each do |group|
+        # Check if this group contains blocks
+        has_blocks = false
+        group.each { |item| has_blocks = true if item.is_a?(Block) }
+
+        if has_blocks
+          # Unpack blocks: collect all heats from all blocks in this group
+          all_heats = []
+          group.each do |item|
+            if item.is_a?(Block)
+              all_heats.concat(item.heats)
+            else
+              all_heats << item
+            end
+          end
+
+          # Sort and group by dance order
+          heats_by_dance = all_heats.group_by { |heat| true_order[heat.dance.order] }
+          sorted_dance_orders = heats_by_dance.keys.sort
+
+          # Assign consecutive heat numbers to each dance group
+          sorted_dance_orders.each do |dance_order|
+            heats_by_dance[dance_order].each do |heat|
+              heat.number = heat_number
+              heat.save validate: false
+            end
+            heat_number += 1
+          end
+        else
+          # Regular group without blocks
+          group.each do |heat|
+            heat.number = heat_number
+            heat.save validate: false
+          end
+          heat_number += 1
         end
       end
     end
@@ -598,6 +708,134 @@ module HeatScheduler
 
     def size
       @group.size
+    end
+  end
+
+  # BlockDance: Virtual dance representing an agenda category for block scheduling
+  class BlockDance
+    attr_reader :agenda_category, :dance_order
+
+    def initialize(agenda_category, dance_order)
+      @agenda_category = agenda_category
+      @dance_order = dance_order
+    end
+
+    def id
+      "block_#{@agenda_category.id}"
+    end
+
+    def order
+      @dance_order
+    end
+
+    def semi_finals
+      false
+    end
+
+    # Return the agenda category for all category types
+    def open_category
+      @agenda_category
+    end
+
+    def closed_category
+      @agenda_category
+    end
+
+    def solo_category
+      @agenda_category
+    end
+
+    def multi_category
+      @agenda_category
+    end
+
+    def pro_open_category
+      @agenda_category
+    end
+
+    def pro_closed_category
+      @agenda_category
+    end
+
+    def pro_solo_category
+      @agenda_category
+    end
+
+    def pro_multi_category
+      @agenda_category
+    end
+  end
+
+  # Block: Container for multiple heats with the same entry and agenda category
+  class Block
+    include Comparable
+
+    attr_reader :heats, :entry, :heat_category, :agenda_category, :block_dance
+
+    def initialize(entry, heat_category, agenda_category)
+      @entry = entry
+      @heat_category = heat_category
+      @agenda_category = agenda_category
+      @heats = []
+      @block_dance = nil  # Will be set when first heat is added
+    end
+
+    def add_heat(heat)
+      @heats << heat
+      # Set block_dance based on first heat's dance order
+      if @block_dance.nil?
+        @block_dance = BlockDance.new(@agenda_category, heat.dance.order)
+      end
+    end
+
+    def dance
+      @block_dance
+    end
+
+    def dance_id
+      @block_dance&.id
+    end
+
+    def category
+      @heat_category
+    end
+
+    def lead
+      @entry.lead
+    end
+
+    def follow
+      @entry.follow
+    end
+
+    def dance_category
+      @agenda_category
+    end
+
+    def solo
+      nil
+    end
+
+    def number
+      nil  # Blocks don't have heat numbers until unpacked
+    end
+
+    def number=(value)
+      # Blocks can't be assigned numbers directly
+    end
+
+    # Implement comparison operator to make blocks sortable with heats
+    # Use the first heat in the block for comparison
+    def <=>(other)
+      if other.is_a?(Block)
+        # Compare blocks by their first heat
+        @heats.first <=> other.heats.first
+      elsif other.is_a?(Heat)
+        # Compare block to heat using first heat
+        @heats.first <=> other
+      else
+        nil
+      end
     end
   end
 
