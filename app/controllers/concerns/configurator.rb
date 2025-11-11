@@ -445,7 +445,8 @@ module Configurator
       routes['reverse_proxies'] << {
         'path' => "^#{root}/logs(/.*)?$",
         'target' => 'http://localhost:9001$1',
-        'strip_path' => true
+        'strip_path' => true,
+        'websocket' => true
       }
     end
 
