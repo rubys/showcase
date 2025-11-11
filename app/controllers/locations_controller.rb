@@ -151,7 +151,7 @@ class LocationsController < ApplicationController
 
     location.update!(sisters: sisters.join(','))
 
-    redirect_to edit_location_url(location.id), notice: notices.join(' and ')
+    redirect_to edit_location_url(location.id), notice: notices.join(' and '), allow_other_host: true
   end
 
   # POST /locations or /locations.json

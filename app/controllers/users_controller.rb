@@ -112,7 +112,7 @@ class UsersController < ApplicationController
     notices << "#{removed} #{"site".pluralize(removed)} removed" if removed > 0
     notices << "Auth didn't change" if notices.length == 0
 
-    redirect_to edit_location_url(location.id, anchor: 'authorization'), notice: notices.join(' and ')
+    redirect_to edit_location_url(location.id, anchor: 'authorization'), notice: notices.join(' and '), allow_other_host: true
   end
 
   # DELETE /users/1 or /users/1.json

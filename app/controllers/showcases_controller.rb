@@ -106,10 +106,10 @@ class ShowcasesController < ApplicationController
           # Redirect based on return_to parameter
           if params[:return_to].present?
             format.html { redirect_to params[:return_to],
-              notice: "#{@showcase.name} was successfully created." }
+              notice: "#{@showcase.name} was successfully created.", allow_other_host: true }
           else
             format.html { redirect_to events_location_url(@showcase.location),
-              notice: "#{@showcase.name} was successfully created." }
+              notice: "#{@showcase.name} was successfully created.", allow_other_host: true }
           end
         else
           # For regular users: Show progress bar with real-time updates
@@ -185,7 +185,7 @@ class ShowcasesController < ApplicationController
         generate_showcases
 
         format.html { redirect_to events_location_url(@showcase.location),
-          notice: "#{@showcase.name} was successfully updated." }
+          notice: "#{@showcase.name} was successfully updated.", allow_other_host: true }
         format.json { render :show, status: :ok, location: @showcase }
       else
         edit
@@ -202,7 +202,7 @@ class ShowcasesController < ApplicationController
 
     respond_to do |format|
       format.html { redirect_to events_location_url(@showcase.location), status: 303,
-        notice: "#{@showcase.name} was successfully destroyed." }
+        notice: "#{@showcase.name} was successfully destroyed.", allow_other_host: true }
       format.json { head :no_content }
     end
   end
