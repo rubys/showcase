@@ -593,7 +593,7 @@ app.get("/request/:request_id", async (request, response, next) => {
       </style>
       <div class="header-container">
         <h1>Request ${request_id} (Raw)</h1>
-        <a href="/request/${request_id}" class="toggle-button">View Formatted</a>
+        <a href="${request_id}" class="toggle-button">View Formatted</a>
       </div>
       <pre>${rawResults.join("\n")}</pre>
     `)
@@ -616,7 +616,7 @@ app.get("/request/:request_id", async (request, response, next) => {
       </style>
       <div class="header-container">
         <h1>Request ${request_id}</h1>
-        <a href="/request/${request_id}?raw" class="toggle-button">View Raw</a>
+        <a href="${request_id}?raw" class="toggle-button">View Raw</a>
       </div>
       ${results.join("\n")}
     `)
