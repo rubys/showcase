@@ -244,7 +244,8 @@ class RecordingsController < ApplicationController
       decrypted = encryptor.decrypt_and_verify(encrypted)
       
       # Add timestamp validation for additional security (tokens expire after 30 days)
-      if Time.current.to_i - decrypted[:timestamp] > 30.days.to_i
+      # Handle both old tokens (without timestamp) and new tokens (with timestamp)
+      if decrypted[:timestamp] && Time.current.to_i - decrypted[:timestamp] > 30.days.to_i
         raise ActiveRecord::RecordNotFound
       end
       
