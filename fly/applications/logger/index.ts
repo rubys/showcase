@@ -501,62 +501,116 @@ app.get("/request/:request_id", async (request, response, next) => {
 
   results.push('<pre>')
 
-  while (logs.length > 0) {
-    const log = logs.pop();
-    if (!log?.endsWith('.log')) continue;
+  // Track all IDs we're searching for (request ID + job IDs)
+  let searchIds = new Set<string>([request_id]);
+  let previousSearchIdsSize = 0;
 
-    const rl = readline.createInterface({
-      input: fs.createReadStream(path.join(LOGS, log)),
-      crlfDelay: Infinity
-    });
+  // Regex to extract job IDs from enqueued job lines
+  const jobIdRegex = /Job ID: ([0-9a-f-]{36})/i;
 
-    await new Promise(resolve => {
-      rl.on('line', line => {
-        if (!line.includes(request_id)) return;
+  // Use Sets to track seen lines for deduplication
+  const seenRawLines = new Set<string>();
+  const seenFormattedLines = new Set<string>();
 
-        // Always collect raw lines
-        rawResults.push(line);
+  // Keep searching until we find no new job IDs
+  while (searchIds.size > previousSearchIdsSize) {
+    previousSearchIdsSize = searchIds.size;
 
-        if (!isRaw) {
-          // Try to handle as JSON log first
-          let messageMatch = line.match(/^\S+\s+\[.*?\]\s+(\w+)\s+\[\w+\]\s+(.*)$/);
-          if (messageMatch) {
-            let region = messageMatch[1];
-            let message = messageMatch[2];
-            if (message.trim().startsWith('{')) {
-              try {
-                let jsonLog = JSON.parse(message.trim());
+    // Scan through all log files for this iteration
+    let logsToSearch = [...logs].sort();
+    let foundAnyMatch = false;
 
-                // Create flyData equivalent for request context
-                let flyData = {
-                  fly: {
-                    region: region
-                  }
-                };
+    while (logsToSearch.length > 0) {
+      const log = logsToSearch.pop();
+      if (!log?.endsWith('.log')) continue;
 
-                let formattedJson = formatJsonLog(jsonLog, flyData, false); // Don't truncate in request viewer
-                if (formattedJson) {
-                  // Apply ANSI conversion to the formatted JSON log
-                  results.push(convert.toHtml(formattedJson));
-                  return;
-                }
-              } catch (e) {
-                // Not valid JSON, fall through to traditional handling
-              }
+      const rl = readline.createInterface({
+        input: fs.createReadStream(path.join(LOGS, log)),
+        crlfDelay: Infinity
+      });
+
+      await new Promise(resolve => {
+        rl.on('line', line => {
+          // Check if line matches any of our search IDs
+          let matchesSearchId = false;
+          for (const id of searchIds) {
+            if (line.includes(id)) {
+              matchesSearchId = true;
+              break;
             }
           }
 
-          // Traditional log format with ANSI conversion
-          results.push(convert.toHtml(line));
-        }
+          if (!matchesSearchId) return;
+
+          foundAnyMatch = true;
+
+          // Check if this line enqueues a job and extract the job ID
+          if (line.includes('Enqueued') && line.includes('Job ID:')) {
+            const match = line.match(jobIdRegex);
+            if (match && match[1]) {
+              searchIds.add(match[1]);
+            }
+          }
+
+          // Always collect raw lines (avoid duplicates using Set)
+          if (!seenRawLines.has(line)) {
+            seenRawLines.add(line);
+            rawResults.push(line);
+          }
+
+          if (!isRaw) {
+            // Try to handle as JSON log first
+            let messageMatch = line.match(/^\S+\s+\[.*?\]\s+(\w+)\s+\[\w+\]\s+(.*)$/);
+            if (messageMatch) {
+              let region = messageMatch[1];
+              let message = messageMatch[2];
+              if (message.trim().startsWith('{')) {
+                try {
+                  let jsonLog = JSON.parse(message.trim());
+
+                  // Create flyData equivalent for request context
+                  let flyData = {
+                    fly: {
+                      region: region
+                    }
+                  };
+
+                  let formattedJson = formatJsonLog(jsonLog, flyData, false); // Don't truncate in request viewer
+                  if (formattedJson) {
+                    // Apply ANSI conversion to the formatted JSON log
+                    const formatted = convert.toHtml(formattedJson);
+                    if (!seenFormattedLines.has(formatted)) {
+                      seenFormattedLines.add(formatted);
+                      results.push(formatted);
+                    }
+                    return;
+                  }
+                } catch (e) {
+                  // Not valid JSON, fall through to traditional handling
+                }
+              }
+            }
+
+            // Traditional log format with ANSI conversion
+            const formatted = convert.toHtml(line);
+            if (!seenFormattedLines.has(formatted)) {
+              seenFormattedLines.add(formatted);
+              results.push(formatted);
+            }
+          }
+        });
+
+        rl.on('close', () => {
+          resolve(null)
+        });
       });
 
-      rl.on('close', () => {
-        resolve(null)
-      });
-    });
+      // Only break if we found matches (to complete the full scan)
+      if (foundAnyMatch && logsToSearch.length === 0) break;
+    }
 
-    if (results.length > 1 || rawResults.length > 0) break;
+    // If we didn't find any matches in this iteration, no point in continuing
+    if (!foundAnyMatch) break;
   }
 
   results.push('</pre>')
