@@ -10,8 +10,53 @@
 
 export class HeatNavigation extends HTMLElement {
   connectedCallback() {
+    this.isOnline = navigator.onLine;
+    this.pendingCount = 0; // TODO: Track pending sync operations
     this.render();
     this.attachEventListeners();
+    this.setupOnlineOfflineListeners();
+  }
+
+  disconnectedCallback() {
+    this.removeOnlineOfflineListeners();
+  }
+
+  /**
+   * Setup online/offline event listeners
+   */
+  setupOnlineOfflineListeners() {
+    this.handleOnline = () => {
+      this.isOnline = true;
+      this.updateConnectionStatus();
+    };
+    this.handleOffline = () => {
+      this.isOnline = false;
+      this.updateConnectionStatus();
+    };
+    window.addEventListener('online', this.handleOnline);
+    window.addEventListener('offline', this.handleOffline);
+  }
+
+  /**
+   * Remove online/offline event listeners
+   */
+  removeOnlineOfflineListeners() {
+    if (this.handleOnline) {
+      window.removeEventListener('online', this.handleOnline);
+    }
+    if (this.handleOffline) {
+      window.removeEventListener('offline', this.handleOffline);
+    }
+  }
+
+  /**
+   * Update connection status display
+   */
+  updateConnectionStatus() {
+    const statusElement = this.querySelector('.connection-status');
+    if (statusElement) {
+      statusElement.innerHTML = this.buildConnectionStatusHtml();
+    }
   }
 
   get judgeData() {
@@ -67,6 +112,47 @@ export class HeatNavigation extends HTMLElement {
   }
 
   /**
+   * Build WiFi icon (online)
+   */
+  buildWifiOnlineIcon() {
+    return `
+      <svg class="h-8 w-8 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+        <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+        <circle cx="12" cy="20" r="1"></circle>
+      </svg>
+    `;
+  }
+
+  /**
+   * Build WiFi icon (offline)
+   */
+  buildWifiOfflineIcon() {
+    return `
+      <svg class="h-8 w-8 inline-block text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+        <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+        <circle cx="12" cy="20" r="1"></circle>
+        <line x1="1" y1="1" x2="23" y2="23"></line>
+      </svg>
+    `;
+  }
+
+  /**
+   * Build connection status HTML
+   */
+  buildConnectionStatusHtml() {
+    if (this.isOnline) {
+      return this.buildWifiOnlineIcon();
+    } else {
+      const pendingText = this.pendingCount > 0 ? `<span class="text-red-500 font-bold mr-1">${this.pendingCount}</span>` : '';
+      return `${pendingText}${this.buildWifiOfflineIcon()}`;
+    }
+  }
+
+  /**
    * Toggle judge presence
    */
   togglePresence(event) {
@@ -115,8 +201,17 @@ export class HeatNavigation extends HTMLElement {
     const prevButton = this.prevUrl ? `<a href="${this.prevUrl}" class="text-2xl lg:text-4xl" rel="prev">&lt;&lt;</a>` : '';
     const nextButton = this.nextUrl ? `<a href="${this.nextUrl}" class="text-2xl lg:text-4xl" rel="next">&gt;&gt;</a>` : '';
 
-    // Always show logo (intertwingly.png)
-    const logoHtml = `<a href="${this.rootPath}"><img class="absolute right-4 top-4 h-8" src="/intertwingly.png" /></a>`;
+    // Build status icons: connection status + logo
+    const statusHtml = `
+      <div class="absolute right-4 top-4 flex items-center gap-2">
+        <span class="connection-status flex items-center">
+          ${this.buildConnectionStatusHtml()}
+        </span>
+        <a href="${this.rootPath}" class="flex items-center">
+          <img class="h-8" src="/intertwingly.png" />
+        </a>
+      </div>
+    `;
 
     let judgeSection = '';
     if (this.assignJudges) {
@@ -125,14 +220,14 @@ export class HeatNavigation extends HTMLElement {
         <h1 class="font-bold text-2xl pt-1 pb-3 flex-1 text-center">
           <input type="checkbox" name="active" ${checked} class="w-6 h-6 mr-3">
           <a href="/people/${judge.id}">${judge.display_name || judge.name}</a>
-          ${logoHtml}
+          ${statusHtml}
         </h1>
       `;
     } else {
       judgeSection = `
         <h1 class="font-bold text-2xl pt-1 pb-3 flex-1 text-center">
           <a href="/people/${judge.id}">${judge.display_name || judge.name}</a>
-          ${logoHtml}
+          ${statusHtml}
         </h1>
       `;
     }
