@@ -411,6 +411,61 @@ export class HeatPage extends HTMLElement {
   }
 
   /**
+   * Sort subjects based on judge's sort_order setting
+   * Matches ERB logic from scores_controller.rb:467-487
+   */
+  sortSubjects(subjects) {
+    const sortOrder = this.data.judge.sort_order || 'back';
+    const showAssignments = this.data.judge.show_assignments || 'first';
+    const assignJudges = this.data.event.assign_judges > 0;
+
+    // Create a copy to avoid mutating original
+    let sorted = [...subjects];
+
+    // Initial sort by assignment priority (if applicable) and back number
+    if (assignJudges && showAssignments !== 'mixed') {
+      sorted.sort((a, b) => {
+        const aAssigned = a.scores?.some(s => s.judge_id === this.data.judge.id) ? 0 : 1;
+        const bAssigned = b.scores?.some(s => s.judge_id === this.data.judge.id) ? 0 : 1;
+
+        if (aAssigned !== bAssigned) return aAssigned - bAssigned;
+        if (a.dance_id !== b.dance_id) return a.dance_id - b.dance_id;
+        return (a.lead.back || 0) - (b.lead.back || 0);
+      });
+    } else {
+      sorted.sort((a, b) => {
+        if (a.dance_id !== b.dance_id) return a.dance_id - b.dance_id;
+        return (a.lead.back || 0) - (b.lead.back || 0);
+      });
+    }
+
+    // Apply level sort if requested
+    if (sortOrder === 'level') {
+      sorted.sort((a, b) => {
+        // Assignment priority first (if applicable)
+        if (assignJudges && showAssignments !== 'mixed') {
+          const aAssigned = a.scores?.some(s => s.judge_id === this.data.judge.id) ? 0 : 1;
+          const bAssigned = b.scores?.some(s => s.judge_id === this.data.judge.id) ? 0 : 1;
+          if (aAssigned !== bAssigned) return aAssigned - bAssigned;
+        }
+
+        // Then by level_id, age_id, and back number
+        const aLevelId = a.level?.id || 0;
+        const bLevelId = b.level?.id || 0;
+        if (aLevelId !== bLevelId) return aLevelId - bLevelId;
+
+        const aAgeId = a.age?.id || 0;
+        const bAgeId = b.age?.id || 0;
+        if (aAgeId !== bAgeId) return aAgeId - bAgeId;
+
+        return (a.lead.back || 0) - (b.lead.back || 0);
+      });
+    }
+
+    return sorted;
+  }
+
+  /**
    * Build heat type component
    */
   buildHeatTypeComponent() {
@@ -452,8 +507,10 @@ export class HeatPage extends HTMLElement {
 
       // Add ballrooms for table
       if (componentType === 'heat-table') {
+        // Sort subjects according to judge's sort_order setting
+        const sortedSubjects = this.sortSubjects(heat.subjects);
         // Group subjects by ballroom (simplified - would need actual ballroom logic)
-        const ballrooms = { '': heat.subjects };
+        const ballrooms = { '': sortedSubjects };
         attrs += ` ballrooms='${JSON.stringify(ballrooms)}'`;
         attrs += ` scoring="${heat.scoring}"`;
         attrs += ` feedbacks='${JSON.stringify(this.data.feedbacks)}'`;
