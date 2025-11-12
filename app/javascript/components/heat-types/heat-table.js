@@ -39,7 +39,7 @@ export class HeatTable extends HTMLElement {
   }
 
   get style() {
-    return this.getAttribute('style') || 'radio';
+    return this.getAttribute('scoring-style') || 'radio';
   }
 
   get scoring() {

@@ -27,7 +27,7 @@ export class HeatHeader extends HTMLElement {
   }
 
   get style() {
-    return this.getAttribute('style') || 'radio';
+    return this.getAttribute('scoring-style') || 'radio';
   }
 
   get slot() {
@@ -128,6 +128,15 @@ export class HeatHeader extends HTMLElement {
     const judge = this.judgeData;
     const { number, dance, category, subjects } = heat;
 
+    // Build dance name with category (matching ERB logic)
+    let danceName = dance.name;
+    const combineOpenAndClosed = event.heat_range_cat === 1;
+
+    // Add category prefix unless combining open/closed categories
+    if (!(combineOpenAndClosed && ['Open', 'Closed'].includes(category))) {
+      danceName = `${category} ${dance.name}`;
+    }
+
     // Build combo dance display
     let comboDanceHtml = '';
     if (category === 'Solo' && heat.solo?.combo_dance_id) {
@@ -185,14 +194,12 @@ export class HeatHeader extends HTMLElement {
     const heatlistUrl = `/scores/${judge.id}/spa?style=${this.style}`;
 
     this.innerHTML = `
-      <h1 class="grow font-bold text-4xl pt-1 pb-3 text-center mx-8">
+      <h1 class="font-bold text-4xl pt-1 pb-3 text-center mx-8">
         <a href="${heatlistUrl}" rel="up">
-          <span>Heat ${number}:<br class="block sm:hidden"> ${dance.name}${comboDanceHtml}</span>
-        </a>
-        ${judgeBacksHtml}
-        ${emceeHtml}
-        ${multiDanceHtml}
-      </h1>
+          <span>Heat ${number}:<br class="block sm:hidden"> ${danceName}${comboDanceHtml}
+      </span>
+</a>${judgeBacksHtml ? '\n    ' + judgeBacksHtml : ''}${emceeHtml ? '\n    ' + emceeHtml : ''}${multiDanceHtml ? '\n    ' + multiDanceHtml : ''}
+  </h1>
     `;
   }
 }

@@ -36,10 +36,14 @@ import { HeatList } from 'components/heat-list';
 
 export class HeatPage extends HTMLElement {
   connectedCallback() {
+    // Make this element transparent in layout - don't interfere with child layout
+    const nativeStyle = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'style').get.call(this);
+    nativeStyle.display = 'contents';
+
     this.judgeId = parseInt(this.getAttribute('judge-id'));
     const heatAttr = this.getAttribute('heat-number');
     this.currentHeatNumber = heatAttr ? parseInt(heatAttr) : null;
-    this.scoringStyle = this.getAttribute('style') || 'radio';
+    this.scoringStyle = this.getAttribute('scoring-style') || 'radio';
     this.slot = parseInt(this.getAttribute('slot') || '0');
 
     this.data = null;
@@ -423,7 +427,7 @@ export class HeatPage extends HTMLElement {
       heat-data='${heatData}'
       event-data='${eventData}'
       judge-data='${judgeData}'
-      style="${this.scoringStyle}"
+      scoring-style="${this.scoringStyle}"
       drop-action="/scores/${this.judgeId}/post"
       start-action="/events/start_heat"
     `;
@@ -571,7 +575,7 @@ export class HeatPage extends HTMLElement {
 
     // If no heat number, show heat list
     if (this.currentHeatNumber === null) {
-      this.innerHTML = '<heat-list judge-id="' + this.judgeId + '" style="' + this.scoringStyle + '"></heat-list>';
+      this.innerHTML = '<heat-list judge-id="' + this.judgeId + '" scoring-style="' + this.scoringStyle + '"></heat-list>';
       const heatList = this.querySelector('heat-list');
       heatList.setData(this.data);
       return;
@@ -591,7 +595,7 @@ export class HeatPage extends HTMLElement {
           heat-data='${JSON.stringify(heat)}'
           event-data='${JSON.stringify(this.data.event)}'
           judge-data='${JSON.stringify(this.data.judge)}'
-          style="${this.scoringStyle}"
+          scoring-style="${this.scoringStyle}"
           slot="${this.slot}"
           final="${heat.dance.uses_scrutineering && this.slot > (heat.dance.heat_length || 0)}">
         </heat-header>
@@ -599,10 +603,10 @@ export class HeatPage extends HTMLElement {
         <heat-info-box
           heat-data='${JSON.stringify(heat)}'
           event-data='${JSON.stringify(this.data.event)}'
-          style="${this.scoringStyle}">
+          scoring-style="${this.scoringStyle}">
         </heat-info-box>
 
-        <div class="h-full flex flex-col max-h-[85%]">
+        <div class="flex-1 flex flex-col overflow-hidden">
           <div class="flex-1 flex flex-row overflow-hidden">
             ${this.buildHeatTypeComponent()}
           </div>

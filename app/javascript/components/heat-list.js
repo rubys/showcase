@@ -10,8 +10,12 @@
 
 export class HeatList extends HTMLElement {
   connectedCallback() {
+    // Make this element transparent in layout - don't interfere with child layout
+    const nativeStyle = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'style').get.call(this);
+    nativeStyle.display = 'contents';
+
     this.judgeId = parseInt(this.getAttribute('judge-id'));
-    this.scoringStyle = this.getAttribute('style') || 'radio';
+    this.scoringStyle = this.getAttribute('scoring-style') || 'radio';
     this.data = null;
 
     this.render();

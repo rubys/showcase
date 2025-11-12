@@ -11,6 +11,10 @@
 
 export class HeatRank extends HTMLElement {
   connectedCallback() {
+    // Make this element transparent in layout - don't interfere with child flex properties
+    const nativeStyle = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'style').get.call(this);
+    nativeStyle.display = 'contents';
+
     this.draggedElement = null;
     this.render();
     this.attachEventListeners();
@@ -29,7 +33,7 @@ export class HeatRank extends HTMLElement {
   }
 
   get style() {
-    return this.getAttribute('style') || 'radio';
+    return this.getAttribute('scoring-style') || 'radio';
   }
 
   get slot() {
