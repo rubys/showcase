@@ -281,8 +281,12 @@ export class HeatTable extends HTMLElement {
 
     if (!feedbackHtml) return '';
 
+    // Derive feedback action from drop-action attribute
+    const dropAction = this.getAttribute('drop-action') || '';
+    const feedbackAction = dropAction.replace('/post', '/post-feedback');
+
     return `
-      <tr data-controller="open-feedback" class="open-fb-row" data-heat="${subject.id}">
+      <tr data-controller="open-feedback" class="open-fb-row" data-heat="${subject.id}" data-feedback-action="${feedbackAction}">
         <td colspan="${colSpan}">
           ${feedbackHtml}
         </td>
@@ -497,9 +501,13 @@ export class HeatTable extends HTMLElement {
   }
 
   render() {
+    // Get slot if this is a multi-dance heat
+    const slot = this.getAttribute('slot') || '';
+    const slotAttr = slot ? ` data-slot="${slot}"` : '';
+
     this.innerHTML = `
-      <div class="grow flex flex-col border-2 border-slate-400 overflow-y-auto">
-        <div class="hidden text-red-600 text-4xl" data-target="error"></div>
+      <div data-controller="score"${slotAttr} class="grow flex flex-col border-2 border-slate-400 overflow-y-auto">
+        <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>
         <table class="table-auto border-separate border-spacing-y-1 mx-4">
           ${this.buildHeaders()}
           <tbody>
