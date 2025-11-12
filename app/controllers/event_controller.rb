@@ -518,7 +518,8 @@ class EventController < ApplicationController
           end
         end
 
-        @locale = Location.find_by(key: city)&.locale
+        @location = Location.find_by(key: city)
+        @locale = @location&.locale
       end
     end
 
@@ -528,7 +529,8 @@ class EventController < ApplicationController
         sites.select! {|token, info| token == @studio}
       end
 
-      @locale = Location.find_by(key: @studio)&.locale
+      @location = Location.find_by(key: @studio)
+      @locale = @location&.locale
     end
 
     @city = params[:city] || @studio
@@ -542,9 +544,12 @@ class EventController < ApplicationController
 
     @showcases.select! {|year, sites| !sites.empty?}
     if @showcases.empty?
-      @map = YAML.load_file('config/tenant/map.yml')
-      unless @map['studios'] && @map['studios'][@city]
-        raise ActiveRecord::RecordNotFound
+      # Check if location exists in database or in map.yml
+      unless @location
+        @map = YAML.load_file('config/tenant/map.yml')
+        unless @map['studios'] && @map['studios'][@city]
+          raise ActiveRecord::RecordNotFound
+        end
       end
     end
 
@@ -582,7 +587,7 @@ class EventController < ApplicationController
       elsif @map && @map['studios'] && @map['studios'][@city]
         region = @map['studios'][@city]['region']
         @up = region_path(region)
-      else
+      elsif @showcases.any?
         region = @showcases.values.first.values.first[:region]
         @up = region_path(region)
       end
