@@ -126,6 +126,7 @@ class ScoresController < ApplicationController
       judge: {
         id: judge.id,
         name: judge.name,
+        display_name: judge.display_name,
         sort_order: judge.sort_order || 'back',
         show_assignments: judge.show_assignments || 'first',
         review_solos: judge&.judge&.review_solos&.downcase
@@ -156,6 +157,7 @@ class ScoresController < ApplicationController
             lead: {
               id: entry.lead.id,
               name: entry.lead.name,
+              display_name: entry.lead.display_name,
               back: entry.lead.back,
               type: entry.lead.type,
               studio: entry.lead.studio ? {
@@ -166,6 +168,7 @@ class ScoresController < ApplicationController
             follow: {
               id: entry.follow.id,
               name: entry.follow.name,
+              display_name: entry.follow.display_name,
               back: entry.follow.back,
               type: entry.follow.type,
               studio: entry.follow.studio ? {

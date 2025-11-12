@@ -363,11 +363,11 @@ export class HeatTable extends HTMLElement {
         // Determine names order
         let firstName, secondName;
         if (columnOrder === 1 || subject.lead.type === 'Student') {
-          firstName = subject.lead.name || subject.lead.display_name;
-          secondName = subject.follow.name || subject.follow.display_name;
+          firstName = subject.lead.display_name || subject.lead.name;
+          secondName = subject.follow.display_name || subject.follow.name;
         } else {
-          firstName = subject.follow.name || subject.follow.display_name;
-          secondName = subject.lead.name || subject.lead.display_name;
+          firstName = subject.follow.display_name || subject.follow.name;
+          secondName = subject.lead.display_name || subject.lead.name;
         }
 
         // Category display

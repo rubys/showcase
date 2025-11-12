@@ -124,14 +124,14 @@ export class HeatNavigation extends HTMLElement {
       judgeSection = `
         <h1 class="font-bold text-2xl pt-1 pb-3 flex-1 text-center">
           <input type="checkbox" name="active" ${checked} class="w-6 h-6 mr-3">
-          <a href="/people/${judge.id}">${judge.name}</a>
+          <a href="/people/${judge.id}">${judge.display_name || judge.name}</a>
           ${logoHtml}
         </h1>
       `;
     } else {
       judgeSection = `
         <h1 class="font-bold text-2xl pt-1 pb-3 flex-1 text-center">
-          <a href="/people/${judge.id}">${judge.name}</a>
+          <a href="/people/${judge.id}">${judge.display_name || judge.name}</a>
           ${logoHtml}
         </h1>
       `;
