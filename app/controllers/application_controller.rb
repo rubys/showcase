@@ -123,7 +123,10 @@ class ApplicationController < ActionController::Base
         # Refresh cache and try one more time before failing
         User.reload_auth
         return if User.authorized?(@authuser)
-        return forbidden unless User.owned?(@authuser, @studio)
+        unless User.owned?(@authuser, @studio)
+          forbidden
+          return
+        end
       end
     end
 
