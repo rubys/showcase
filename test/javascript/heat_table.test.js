@@ -85,9 +85,61 @@ describe('Table Heat Component', () => {
         isScratched,
         scoreValue,
         scoreData,
-        dance_id: subject.dance_id
+        dance_id: subject.dance_id || 1,
+        level_id: subject.level?.id || 0,
+        age_id: subject.age?.id || 0,
+        isAssigned: eventData.assign_judges > 0 && subject.scores?.length > 0
       }
     })
+
+    // Sort rows based on judge preferences
+    const sortOrder = judgeData.sort_order || 'back'
+    const showAssignments = judgeData.show_assignments || 'first'
+    const assignJudges = eventData.assign_judges || 0
+
+    if (assignJudges > 0 && showAssignments === 'first') {
+      // Sort with assignments first within groups
+      if (sortOrder === 'level') {
+        rows.sort((a, b) => {
+          // First level_id
+          if (a.level_id !== b.level_id) return a.level_id - b.level_id
+          // Then age_id
+          if (a.age_id !== b.age_id) return a.age_id - b.age_id
+          // Then assigned first within level/age group
+          if (a.isAssigned !== b.isAssigned) return b.isAssigned ? 1 : -1
+          // Finally back number
+          return a.back - b.back
+        })
+      } else {
+        // Back number sort with assignments first within dance groups
+        rows.sort((a, b) => {
+          // First dance_id
+          if (a.dance_id !== b.dance_id) return a.dance_id - b.dance_id
+          // Then assigned first within dance group
+          if (a.isAssigned !== b.isAssigned) return b.isAssigned ? 1 : -1
+          // Finally back number
+          return a.back - b.back
+        })
+      }
+    } else if (sortOrder === 'level') {
+      // Level sort without assignment filtering
+      rows.sort((a, b) => {
+        // Level_id
+        if (a.level_id !== b.level_id) return a.level_id - b.level_id
+        // Then age_id
+        if (a.age_id !== b.age_id) return a.age_id - b.age_id
+        // Finally back number
+        return a.back - b.back
+      })
+    } else {
+      // Default: sort by dance_id then back
+      rows.sort((a, b) => {
+        // Dance_id
+        if (a.dance_id !== b.dance_id) return a.dance_id - b.dance_id
+        // Back number
+        return a.back - b.back
+      })
+    }
 
     // Determine score display type
     const isEmcee = style === 'emcee'
@@ -773,6 +825,118 @@ describe('Table Heat Component', () => {
       expect(rendered.hasBallroomColumn).toBe(true)
       expect(rendered.rows[0].ballroom).toBe('A')
       expect(rendered.rows[1].ballroom).toBe('B')
+    })
+  })
+
+  describe('T40-T42: Sort Order', () => {
+    it('T40: sort_order: "back" sorts by dance_id then back number', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          dance_id: 2,
+          lead: createPerson({ back: 503 })
+        }),
+        createSubject({
+          id: 2,
+          dance_id: 1,
+          lead: createPerson({ back: 502 })
+        }),
+        createSubject({
+          id: 3,
+          dance_id: 1,
+          lead: createPerson({ back: 501 })
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ sort_order: 'back' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '1', ['1', '2', '3', 'F', ''])
+
+      // Should sort by dance_id first, then back number
+      expect(rendered.rows[0].back).toBe(501) // dance_id 1
+      expect(rendered.rows[1].back).toBe(502) // dance_id 1
+      expect(rendered.rows[2].back).toBe(503) // dance_id 2
+    })
+
+    it('T41: sort_order: "level" sorts by level_id, age_id, back number', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 503 }),
+          level: createLevel({ id: 2, name: 'Bronze' }),
+          age: createAge({ id: 1, category: 'Adult' })
+        }),
+        createSubject({
+          id: 2,
+          lead: createPerson({ back: 502 }),
+          level: createLevel({ id: 1, name: 'Newcomer' }),
+          age: createAge({ id: 2, category: 'Senior' })
+        }),
+        createSubject({
+          id: 3,
+          lead: createPerson({ back: 501 }),
+          level: createLevel({ id: 1, name: 'Newcomer' }),
+          age: createAge({ id: 1, category: 'Adult' })
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ sort_order: 'level' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '1', ['1', '2', '3', 'F', ''])
+
+      // Should sort by level_id first, then age_id, then back number
+      expect(rendered.rows[0].back).toBe(501) // level_id 1, age_id 1
+      expect(rendered.rows[1].back).toBe(502) // level_id 1, age_id 2
+      expect(rendered.rows[2].back).toBe(503) // level_id 2, age_id 1
+    })
+
+    it('T42: Level sort with assignment shows assigned first within each level', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 503 }),
+          level: createLevel({ id: 1, name: 'Newcomer' }),
+          scores: [] // Not assigned (no score)
+        }),
+        createSubject({
+          id: 2,
+          lead: createPerson({ back: 502 }),
+          level: createLevel({ id: 1, name: 'Newcomer' }),
+          scores: [createScore({ judge_id: 55, value: null })] // Assigned
+        }),
+        createSubject({
+          id: 3,
+          lead: createPerson({ back: 501 }),
+          level: createLevel({ id: 2, name: 'Bronze' }),
+          scores: [createScore({ judge_id: 55, value: null })] // Assigned
+        }),
+        createSubject({
+          id: 4,
+          lead: createPerson({ back: 504 }),
+          level: createLevel({ id: 2, name: 'Bronze' }),
+          scores: [] // Not assigned
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55, sort_order: 'level', show_assignments: 'first' }),
+        event: createEvent({ assign_judges: 1 }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '1', ['1', '2', '3', 'F', ''])
+
+      // Should show assigned first within each level
+      expect(rendered.rows[0].back).toBe(502) // level 1, assigned
+      expect(rendered.rows[1].back).toBe(503) // level 1, not assigned
+      expect(rendered.rows[2].back).toBe(501) // level 2, assigned
+      expect(rendered.rows[3].back).toBe(504) // level 2, not assigned
     })
   })
 })
