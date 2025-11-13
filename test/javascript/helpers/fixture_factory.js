@@ -200,7 +200,8 @@ export const createSubject = (overrides = {}) => {
     level: entry.level,
     solo: overrides.solo !== undefined ? overrides.solo : null,
     scores: overrides.scores || [],
-    pro: overrides.pro !== undefined ? overrides.pro : false
+    pro: overrides.pro !== undefined ? overrides.pro : false,
+    ballroom: overrides.ballroom !== undefined ? overrides.ballroom : null
   }
 
   // Only add number if explicitly provided

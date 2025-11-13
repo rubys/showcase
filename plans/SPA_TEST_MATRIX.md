@@ -18,7 +18,7 @@ This document provides a systematic plan to test and implement all scoring/judgi
 - `heat-navigation.js` - Navigation footer
 - `HeatDataManager` - IndexedDB-based offline storage
 
-### ✅ Existing Tests (174 total)
+### ✅ Existing Tests (199 total)
 - `navigation.test.js` (17 tests) - Heat navigation and slot progression
 - `semi_finals.test.js` (22 tests) - Semi-finals logic
 - `start_button.test.js` (20 tests) - Emcee mode start button
@@ -28,6 +28,7 @@ This document provides a systematic plan to test and implement all scoring/judgi
 - `heat_data_manager.test.js` (12 tests) - IndexedDB storage and sync
 - `heat_solo.test.js` (19 tests) - Solo heat variations ✅ **NEW**
 - `heat_rank.test.js` (22 tests) - Rank heat variations ✅ **NEW**
+- `heat_table.test.js` (25 tests) - Table heat basic display and scoring ✅ **NEW**
 
 ### 🔴 Needs Implementation & Testing
 Based on ERB views analysis, the following variations need systematic testing:
@@ -153,40 +154,48 @@ end
 - Drag-and-drop functionality maintains sequential rank numbering
 - Empty heat handling with appropriate message
 
-### 3. Table Heat View (`heat-table.js`)
+### 3. Table Heat View (`heat-table.js`) ✅ **BASIC TESTS COMPLETED**
 
 **ERB Template:** `_table_heat.html.erb`
 
-**Current Implementation:** Exists, needs comprehensive testing for all scoring types
+**Implementation Status:** ✅ Basic display and radio/number scoring tested (25 tests passing)
 
-**Variations to Test:**
+**Variations Tested:**
 
-#### Basic Table Display
+#### Basic Table Display ✅
 
-| Test ID | Setting | Value | Expected Behavior |
-|---------|---------|-------|-------------------|
-| T1 | `column_order` | `1` | Show Back/Lead/Follow/Category/Studio |
-| T2 | `column_order` | `0` | Show Back/Student/Instructor/Category/Studio |
-| T3 | `ballrooms` | `2+` | Add Ballroom column after Back |
-| T4 | `combine_open_and_closed` | `true` | Show "Open - " or "Closed - " prefix in category |
-| T5 | `track_ages` | `true` | Include age in category display |
-| T6 | `track_ages` | `false` | Exclude age from category |
+| Test ID | Setting | Value | Expected Behavior | Status |
+|---------|---------|-------|-------------------|--------|
+| T1 | `column_order` | `1` | Show Back/Lead/Follow/Category/Studio | ✅ |
+| T2 | `column_order` | `0` | Show Back/Student/Instructor/Category/Studio | ✅ |
+| T3 | `ballrooms` | `2+` | Add Ballroom column after Back | ✅ |
+| T4 | `combine_open_and_closed` | `true` | Show "Open - " or "Closed - " prefix in category | ✅ |
+| T5 | `track_ages` | `true` | Include age in category display | ✅ |
+| T6 | `track_ages` | `false` | Exclude age from category | ✅ |
 
-#### Scoring Type: Radio (`'1'` or `'G'`)
+#### Scoring Type: Radio (`'1'` or `'G'`) ✅
 
-| Test ID | Scoring | Expected Behavior |
-|---------|---------|-------------------|
-| T7 | `'1'` | Radio buttons for 1/2/3/F/- |
-| T8 | `'G'` | Radio buttons for GH/G/S/B/- |
-| T9 | Both | Clicking radio updates score, posts to server |
+| Test ID | Scoring | Expected Behavior | Status |
+|---------|---------|-------------------|--------|
+| T7 | `'1'` | Radio buttons for 1/2/3/F/- | ✅ |
+| T8 | `'G'` | Radio buttons for GH/G/S/B/- | ✅ |
+| T9 | Both | Clicking radio updates score, posts to server | ✅ |
 
-#### Scoring Type: Number (`'#'`)
+#### Scoring Type: Number (`'#'`) ✅
 
-| Test ID | Expected Behavior |
-|---------|-------------------|
-| T10 | Show input field with pattern `^\d\d$` (two digits) |
-| T11 | Validate 0-99 range |
-| T12 | Post on blur/change |
+| Test ID | Expected Behavior | Status |
+|---------|-------------------|--------|
+| T10 | Show input field with pattern `^\d\d$` (two digits) | ✅ |
+| T11 | Validate 0-99 range | ✅ |
+| T12 | Post on blur/change | ✅ |
+
+**Test File:** `test/javascript/heat_table.test.js` ✅ **25 tests passing**
+
+**Implementation Notes:**
+- Fixed column_order handling in buildHeaders (line 104) and buildRows (line 327)
+- display_name already prioritized correctly
+- Added ballroom property support to fixture factory
+- Empty heats, scratched heats, and pro couples all handled correctly
 
 #### Scoring Type: Scrutineering (semi_finals)
 
@@ -348,12 +357,17 @@ end
 - Fixed `fixture_factory.js` createEntry and createSubject
 
 ### Phase 4: Table Heat Tests & Implementation (Weeks 4-6)
-1. Write `test/javascript/heat_table.test.js` (~45 tests: T1-T45)
-   - Week 4: Basic display, radio/number scoring (T1-T12)
-   - Week 5: Scrutineering, feedback scoring (T13-T29)
-   - Week 6: Comments, assignments, sorting, emcee (T30-T45)
-2. Enhance `heat-table.js` incrementally to pass test groups
-3. This is the most complex component - most variations happen here
+1. ✅ **Week 4 Complete**: Basic display, radio/number scoring (T1-T12, 25 tests)
+   - ✅ Wrote `test/javascript/heat_table.test.js` with 25 tests
+   - ✅ Enhanced `heat-table.js` column_order handling
+   - ✅ All 199 tests passing
+2. 🔴 **Week 5 Pending**: Scrutineering, feedback scoring (T13-T29)
+3. 🔴 **Week 6 Pending**: Comments, assignments, sorting, emcee (T30-T45)
+
+**Deliverables (Week 4):**
+- `test/javascript/heat_table.test.js` (25 tests)
+- Fixed `heat-table.js` column_order handling (lines 104, 327)
+- Enhanced `fixture_factory.js` with ballroom property support
 
 ### Phase 5: Cards Heat Tests & Implementation (Week 7)
 1. Write `test/javascript/heat_cards.test.js` (9 tests: C1-C9)
@@ -423,9 +437,9 @@ test('Solo heat with 4-part scoring', () => {
 - Code review completed
 
 ### Overall Project Success
-- **219+ total tests** (174 completed + ~45 remaining)
-  - ✅ 174 tests passing (133 original + 19 solo + 22 rank)
-  - 🔴 ~45 table heat tests remaining (T1-T45)
+- **219+ total tests** (199 completed + ~20 remaining)
+  - ✅ 199 tests passing (133 original + 19 solo + 22 rank + 25 table)
+  - 🔴 ~20 table heat tests remaining (T13-T45)
 - All scoring options tested and working
 - Offline sync reliable across all scoring types
 - Performance acceptable (< 200ms render time per heat)

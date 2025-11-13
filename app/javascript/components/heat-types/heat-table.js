@@ -101,7 +101,7 @@ export class HeatTable extends HTMLElement {
    */
   buildHeaders() {
     const ballroomsCount = this.heatData.dance.ballrooms || this.eventData.ballrooms;
-    const columnOrder = this.eventData.column_order || 1;
+    const columnOrder = this.judgeData.column_order !== undefined ? this.judgeData.column_order : 1;
     const leadHeader = columnOrder === 1 ? 'Lead' : 'Student';
     const followHeader = columnOrder === 1 ? 'Follow' : 'Instructor';
 
@@ -324,7 +324,7 @@ export class HeatTable extends HTMLElement {
    */
   buildRows() {
     const ballroomsCount = this.heatData.dance.ballrooms || this.eventData.ballrooms;
-    const columnOrder = this.eventData.column_order || 1;
+    const columnOrder = this.judgeData.column_order !== undefined ? this.judgeData.column_order : 1;
     const ballroomsData = this.ballrooms;
     const colSpan = 5 + (ballroomsCount > 1 ? 1 : 0) + (this.scores?.length || 0);
 
