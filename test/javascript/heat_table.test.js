@@ -89,9 +89,10 @@ describe('Table Heat Component', () => {
     })
 
     // Determine score display type
-    const isNumericScoring = scoring === '#'
-    const isSemiFinals = heat.dance?.semi_finals && subjects.length > 0
-    const isRadioScoring = !isNumericScoring && !isSemiFinals && !['&', '+', '@'].includes(scoring)
+    const isEmcee = style === 'emcee'
+    const isNumericScoring = !isEmcee && scoring === '#'
+    const isSemiFinals = !isEmcee && heat.dance?.semi_finals && subjects.length > 0
+    const isRadioScoring = !isEmcee && !isNumericScoring && !isSemiFinals && !['&', '+', '@'].includes(scoring)
 
     return {
       leadHeader,
@@ -104,8 +105,8 @@ describe('Table Heat Component', () => {
       isNumericScoring,
       isSemiFinals,
       isRadioScoring,
-      isEmcee: style === 'emcee',
-      showStartButton: style === 'emcee' && eventData.current_heat !== heat.number
+      isEmcee,
+      showStartButton: isEmcee && eventData.current_heat !== heat.number
     }
   }
 
@@ -629,6 +630,44 @@ describe('Table Heat Component', () => {
       expect(rendered.rows[0].scoreValue).toBe('1')
       // Second subject no callback (value = '')
       expect(rendered.rows[1].scoreValue).toBe('')
+    })
+  })
+
+  describe('T43-T45: Emcee Mode', () => {
+    it('T43: Hides all scoring columns in emcee mode', () => {
+      const data = createHeatData({
+        heat: createHeat({ category: 'Open' })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '1', ['1', '2', '3', 'F', ''], 'emcee')
+
+      expect(rendered.isEmcee).toBe(true)
+      // Scoring should not be shown
+      expect(rendered.isRadioScoring).toBe(false)
+    })
+
+    it('T44: Shows "Start Heat" button if not current heat', () => {
+      const data = createHeatData({
+        event: createEvent({ current_heat: 99 }),
+        heat: createHeat({ number: 100, category: 'Open' })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '1', ['1', '2', '3', 'F', ''], 'emcee')
+
+      expect(rendered.isEmcee).toBe(true)
+      expect(rendered.showStartButton).toBe(true)
+    })
+
+    it('T45: Hides start button when current heat', () => {
+      const data = createHeatData({
+        event: createEvent({ current_heat: 100 }),
+        heat: createHeat({ number: 100, category: 'Open' })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '1', ['1', '2', '3', 'F', ''], 'emcee')
+
+      expect(rendered.isEmcee).toBe(true)
+      expect(rendered.showStartButton).toBe(false)
     })
   })
 })
