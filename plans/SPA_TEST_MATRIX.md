@@ -18,7 +18,7 @@ This document provides a systematic plan to test and implement all scoring/judgi
 - `heat-navigation.js` - Navigation footer
 - `HeatDataManager` - IndexedDB-based offline storage
 
-### ✅ Existing Tests (232 total)
+### ✅ Existing Tests (244 total)
 - `navigation.test.js` (17 tests) - Heat navigation and slot progression
 - `semi_finals.test.js` (22 tests) - Semi-finals logic
 - `start_button.test.js` (20 tests) - Emcee mode start button
@@ -28,7 +28,8 @@ This document provides a systematic plan to test and implement all scoring/judgi
 - `heat_data_manager.test.js` (12 tests) - IndexedDB storage and sync
 - `heat_solo.test.js` (19 tests) - Solo heat variations ✅
 - `heat_rank.test.js` (22 tests) - Rank heat variations ✅
-- `heat_table.test.js` (58 tests) - **ALL** table heat variations ✅ **COMPLETE**
+- `heat_table.test.js` (58 tests) - **ALL** table heat variations ✅
+- `heat_cards.test.js` (12 tests) - Cards heat variations ✅ **COMPLETE**
 
 ### 🔴 Needs Implementation & Testing
 Based on ERB views analysis, the following variations need systematic testing:
@@ -277,27 +278,33 @@ end
 
 **Test File:** `test/javascript/heat_table.test.js` ✅
 
-### 4. Cards Heat View (`heat-cards.js`)
+### 4. Cards Heat View (`heat-cards.js`) ✅ **COMPLETED**
 
 **ERB Template:** `_cards_heat.html.erb`
 
-**Current Implementation:** Exists, needs testing
+**Implementation Status:** ✅ Completed and tested (12 tests passing)
 
-**Variations to Test:**
+**Variations Tested:**
 
-| Test ID | Setting | Expected Behavior |
-|---------|---------|-------------------|
-| C1 | Basic layout | Show score columns with blank column for unscored |
-| C2 | `backnums: true` | Show back number prominently on cards |
-| C3 | `backnums: false` | Show names on cards |
-| C4 | `column_order: 1` | Lead name first on card |
-| C5 | `column_order: 0` | Follow name first on card |
-| C6 | `track_ages: true` | Show age on card |
-| C7 | `combine_open_and_closed: true` | Show Open/Closed on card |
-| C8 | Drag and drop | Move card between score columns |
-| C9 | Colors by level | Apply level-specific colors (head-NV, base-NV) |
+| Test ID | Setting | Expected Behavior | Status |
+|---------|---------|-------------------|--------|
+| C1 | Basic layout | Show score columns with blank column for unscored | ✅ |
+| C2 | `backnums: true` | Show back number prominently on cards | ✅ |
+| C3 | `backnums: false` | Show names on cards | ✅ |
+| C4 | `column_order: 1` | Lead name first on card | ✅ |
+| C5 | `column_order: 0` | Follow name first on card | ✅ |
+| C6 | `track_ages: true` | Show age on card | ✅ |
+| C7 | `combine_open_and_closed: true` | Show Open/Closed on card | ✅ |
+| C8 | Drag and drop | Move card between score columns | ✅ |
+| C9 | Colors by level | Apply level-specific colors (head-NV, base-NV) | ✅ |
 
-**Test File:** `test/javascript/heat_cards.test.js` (NEW)
+**Test File:** `test/javascript/heat_cards.test.js` ✅ **12 tests passing**
+
+**Implementation Notes:**
+- Card organization by score value (including empty/unscored column)
+- Name formatting with truncation (7 characters max)
+- Level-specific CSS classes for color coding
+- Drag-and-drop card movement between score columns
 
 ## Navigation & Infrastructure Tests
 
@@ -437,9 +444,10 @@ test('Solo heat with 4-part scoring', () => {
 - Code review completed
 
 ### Overall Project Success
-- **232 total tests** - ALL TABLE HEAT TESTS COMPLETE! ✅
-  - ✅ 232 tests passing (133 original + 19 solo + 22 rank + 58 table)
+- **244 total tests** - ALL HEAT COMPONENT TESTS COMPLETE! ✅
+  - ✅ 244 tests passing (133 original + 19 solo + 22 rank + 58 table + 12 cards)
   - ✅ **Phase 4 (Table Heat) COMPLETE**: All 58 variations tested and passing
+  - ✅ **Phase 5 (Cards Heat) COMPLETE**: All 12 variations tested and passing
 - All scoring options tested and working
 - Offline sync reliable across all scoring types
 - Performance acceptable (< 200ms render time per heat)
