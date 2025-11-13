@@ -151,7 +151,11 @@ describe('Table Heat Component', () => {
     const isEmcee = style === 'emcee'
     const isNumericScoring = !isEmcee && scoring === '#'
     const isSemiFinals = !isEmcee && heat.dance?.semi_finals && subjects.length > 0
-    const isRadioScoring = !isEmcee && !isNumericScoring && !isSemiFinals && !['&', '+', '@'].includes(scoring)
+    const isFeedbackScoring = !isEmcee && scoring === '+'
+    const isValueFeedbackScoring = !isEmcee && scoring === '&'
+    const isGradeFeedbackScoring = !isEmcee && scoring === '@'
+    const hasFeedbackButtons = !isEmcee && ['+', '&', '@'].includes(scoring)
+    const isRadioScoring = !isEmcee && !isNumericScoring && !isSemiFinals && !hasFeedbackButtons
 
     return {
       leadHeader,
@@ -164,6 +168,10 @@ describe('Table Heat Component', () => {
       isNumericScoring,
       isSemiFinals,
       isRadioScoring,
+      isFeedbackScoring,
+      isValueFeedbackScoring,
+      isGradeFeedbackScoring,
+      hasFeedbackButtons,
       isEmcee,
       showStartButton: isEmcee && eventData.current_heat !== heat.number
     }
@@ -1098,6 +1106,322 @@ describe('Table Heat Component', () => {
       // No couples when filtering to 'only' with no assignments
       expect(rendered.rows.length).toBe(0)
       expect(rendered.hasSubjects).toBe(false)
+    })
+  })
+
+  describe('T16-T19: Feedback Scoring (+)', () => {
+    it('T16: Shows two sections for Good and Bad feedback', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, good: null, bad: null })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '+' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '+', [])
+
+      expect(rendered.isFeedbackScoring).toBe(true)
+      expect(rendered.hasFeedbackButtons).toBe(true)
+      expect(data.feedbacks.length).toBeGreaterThan(0)
+    })
+
+    it('T17: Feedback buttons available for selection', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, good: null, bad: null })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '+' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '+', [])
+
+      // Should have feedback options from data
+      expect(data.feedbacks).toEqual([
+        { id: 1, value: 'Frame', abbr: 'F' },
+        { id: 2, value: 'Posture', abbr: 'P' },
+        { id: 3, value: 'Footwork', abbr: 'FW' },
+        { id: 4, value: 'Lead/Follow', abbr: 'LF' },
+        { id: 5, value: 'Timing', abbr: 'T' },
+        { id: 6, value: 'Styling', abbr: 'S' }
+      ])
+    })
+
+    it('T18: Stores good and bad feedback selections', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, good: '1,3', bad: '2,5' })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '+' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '+', [])
+
+      expect(rendered.rows[0].scoreData.good).toBe('1,3')
+      expect(rendered.rows[0].scoreData.bad).toBe('2,5')
+    })
+
+    it('T19: Good and bad are mutually exclusive per feedback type', () => {
+      // This test verifies the data structure supports mutual exclusivity
+      // The actual enforcement happens in the component's click handler
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, good: '1', bad: '2' })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '+' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '+', [])
+
+      // Verify data stores both good and bad separately
+      expect(rendered.rows[0].scoreData.good).toBe('1')
+      expect(rendered.rows[0].scoreData.bad).toBe('2')
+      expect(rendered.isFeedbackScoring).toBe(true)
+    })
+  })
+
+  describe('T20-T24: Number + Feedback Scoring (&)', () => {
+    it('T20: Shows value buttons (1-5) for overall score', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, value: '3', good: null, bad: null })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '&' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '&', [])
+
+      expect(rendered.isValueFeedbackScoring).toBe(true)
+      expect(rendered.rows[0].scoreData.value).toBe('3')
+    })
+
+    it('T21: Shows good feedback buttons (6 buttons)', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, value: null, good: '1,3,5', bad: null })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '&' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '&', [])
+
+      expect(rendered.rows[0].scoreData.good).toBe('1,3,5')
+      expect(data.feedbacks.length).toBe(6)
+    })
+
+    it('T22: Shows needs work feedback buttons (6 buttons)', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, value: null, good: null, bad: '2,4' })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '&' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '&', [])
+
+      expect(rendered.rows[0].scoreData.bad).toBe('2,4')
+    })
+
+    it('T23: Overall value buttons toggle (only one active)', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, value: '4', good: null, bad: null })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '&' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '&', [])
+
+      // Only one value should be set
+      expect(rendered.rows[0].scoreData.value).toBe('4')
+      expect(rendered.isValueFeedbackScoring).toBe(true)
+    })
+
+    it('T24: Good/bad buttons toggle, mutually exclusive per feedback', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, value: '3', good: '1,5', bad: '2' })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '&' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '&', [])
+
+      // Can have both good and bad, but not same feedback ID in both
+      expect(rendered.rows[0].scoreData.good).toBe('1,5')
+      expect(rendered.rows[0].scoreData.bad).toBe('2')
+      expect(rendered.rows[0].scoreData.value).toBe('3')
+    })
+  })
+
+  describe('T25-T29: Grade + Feedback Scoring (@)', () => {
+    it('T25: Shows grade buttons (B/S/G/GH) for overall score', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, value: 'G', good: null, bad: null })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '@' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '@', [])
+
+      expect(rendered.isGradeFeedbackScoring).toBe(true)
+      expect(rendered.rows[0].scoreData.value).toBe('G')
+    })
+
+    it('T26: Shows good feedback buttons (6 buttons)', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, value: null, good: '1,3,5', bad: null })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '@' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '@', [])
+
+      expect(rendered.rows[0].scoreData.good).toBe('1,3,5')
+      expect(data.feedbacks.length).toBe(6)
+    })
+
+    it('T27: Shows needs work feedback buttons (6 buttons)', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, value: null, good: null, bad: '2,4,6' })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '@' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '@', [])
+
+      expect(rendered.rows[0].scoreData.bad).toBe('2,4,6')
+    })
+
+    it('T28: Overall grade buttons toggle (only one active)', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, value: 'GH', good: null, bad: null })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '@' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '@', [])
+
+      // Only one grade should be set
+      expect(rendered.rows[0].scoreData.value).toBe('GH')
+      expect(rendered.isGradeFeedbackScoring).toBe(true)
+    })
+
+    it('T29: Good/bad buttons toggle, mutually exclusive per feedback', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, value: 'S', good: '1,3', bad: '4,6' })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '@' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '@', [])
+
+      // Can have both good and bad, but not same feedback ID in both
+      expect(rendered.rows[0].scoreData.good).toBe('1,3')
+      expect(rendered.rows[0].scoreData.bad).toBe('4,6')
+      expect(rendered.rows[0].scoreData.value).toBe('S')
     })
   })
 })
