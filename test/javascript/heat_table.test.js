@@ -92,15 +92,21 @@ describe('Table Heat Component', () => {
       }
     })
 
-    // Sort rows based on judge preferences
+    // Filter and sort rows based on judge preferences
     const sortOrder = judgeData.sort_order || 'back'
     const showAssignments = judgeData.show_assignments || 'first'
     const assignJudges = eventData.assign_judges || 0
 
+    // Filter rows if show_assignments is 'only'
+    let filteredRows = rows
+    if (assignJudges > 0 && showAssignments === 'only') {
+      filteredRows = rows.filter(row => row.isAssigned)
+    }
+
     if (assignJudges > 0 && showAssignments === 'first') {
       // Sort with assignments first within groups
       if (sortOrder === 'level') {
-        rows.sort((a, b) => {
+        filteredRows.sort((a, b) => {
           // First level_id
           if (a.level_id !== b.level_id) return a.level_id - b.level_id
           // Then age_id
@@ -112,7 +118,7 @@ describe('Table Heat Component', () => {
         })
       } else {
         // Back number sort with assignments first within dance groups
-        rows.sort((a, b) => {
+        filteredRows.sort((a, b) => {
           // First dance_id
           if (a.dance_id !== b.dance_id) return a.dance_id - b.dance_id
           // Then assigned first within dance group
@@ -123,7 +129,7 @@ describe('Table Heat Component', () => {
       }
     } else if (sortOrder === 'level') {
       // Level sort without assignment filtering
-      rows.sort((a, b) => {
+      filteredRows.sort((a, b) => {
         // Level_id
         if (a.level_id !== b.level_id) return a.level_id - b.level_id
         // Then age_id
@@ -133,7 +139,7 @@ describe('Table Heat Component', () => {
       })
     } else {
       // Default: sort by dance_id then back
-      rows.sort((a, b) => {
+      filteredRows.sort((a, b) => {
         // Dance_id
         if (a.dance_id !== b.dance_id) return a.dance_id - b.dance_id
         // Back number
@@ -151,8 +157,8 @@ describe('Table Heat Component', () => {
       leadHeader,
       followHeader,
       hasBallroomColumn: ballroomsCount > 1,
-      rows,
-      hasSubjects: subjects.length > 0,
+      rows: filteredRows,
+      hasSubjects: filteredRows.length > 0,
       scoring,
       scores,
       isNumericScoring,
@@ -937,6 +943,161 @@ describe('Table Heat Component', () => {
       expect(rendered.rows[1].back).toBe(503) // level 1, not assigned
       expect(rendered.rows[2].back).toBe(501) // level 2, assigned
       expect(rendered.rows[3].back).toBe(504) // level 2, not assigned
+    })
+  })
+
+  describe('T33-T37: Judge Assignment', () => {
+    it('T33: Shows red border indicator for assigned back numbers', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, value: null })] // Assigned
+        }),
+        createSubject({
+          id: 2,
+          lead: createPerson({ back: 502 }),
+          scores: [] // Not assigned
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ assign_judges: 1 }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '1', ['1', '2', '3', 'F', ''])
+
+      expect(rendered.rows[0].isAssigned).toBe(true)
+      expect(rendered.rows[1].isAssigned).toBe(false)
+    })
+
+    it('T34: show_assignments: "first" shows assigned first, then others', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 503 }),
+          scores: [] // Not assigned
+        }),
+        createSubject({
+          id: 2,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, value: null })] // Assigned
+        }),
+        createSubject({
+          id: 3,
+          lead: createPerson({ back: 502 }),
+          scores: [] // Not assigned
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55, show_assignments: 'first' }),
+        event: createEvent({ assign_judges: 1 }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '1', ['1', '2', '3', 'F', ''])
+
+      // Assigned first, then sorted by back
+      expect(rendered.rows[0].back).toBe(501) // assigned
+      expect(rendered.rows[1].back).toBe(502) // not assigned, lower back
+      expect(rendered.rows[2].back).toBe(503) // not assigned, higher back
+    })
+
+    it('T35: show_assignments: "only" shows only assigned couples', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, value: null })] // Assigned
+        }),
+        createSubject({
+          id: 2,
+          lead: createPerson({ back: 502 }),
+          scores: [] // Not assigned
+        }),
+        createSubject({
+          id: 3,
+          lead: createPerson({ back: 503 }),
+          scores: [createScore({ judge_id: 55, value: null })] // Assigned
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55, show_assignments: 'only' }),
+        event: createEvent({ assign_judges: 1 }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '1', ['1', '2', '3', 'F', ''])
+
+      // Only assigned couples shown
+      expect(rendered.rows.length).toBe(2)
+      expect(rendered.rows[0].back).toBe(501)
+      expect(rendered.rows[1].back).toBe(503)
+    })
+
+    it('T36: show_assignments: "mixed" shows all in sort order', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 503 }),
+          scores: [] // Not assigned
+        }),
+        createSubject({
+          id: 2,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, value: null })] // Assigned
+        }),
+        createSubject({
+          id: 3,
+          lead: createPerson({ back: 502 }),
+          scores: [] // Not assigned
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55, show_assignments: 'mixed' }),
+        event: createEvent({ assign_judges: 1 }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '1', ['1', '2', '3', 'F', ''])
+
+      // All shown in back number order (no assignment priority)
+      expect(rendered.rows.length).toBe(3)
+      expect(rendered.rows[0].back).toBe(501)
+      expect(rendered.rows[1].back).toBe(502)
+      expect(rendered.rows[2].back).toBe(503)
+    })
+
+    it('T37: No assigned couples shows "No couples assigned" message', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [] // Not assigned
+        }),
+        createSubject({
+          id: 2,
+          lead: createPerson({ back: 502 }),
+          scores: [] // Not assigned
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55, show_assignments: 'only' }),
+        event: createEvent({ assign_judges: 1 }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '1', ['1', '2', '3', 'F', ''])
+
+      // No couples when filtering to 'only' with no assignments
+      expect(rendered.rows.length).toBe(0)
+      expect(rendered.hasSubjects).toBe(false)
     })
   })
 })

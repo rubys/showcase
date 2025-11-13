@@ -18,7 +18,7 @@ This document provides a systematic plan to test and implement all scoring/judgi
 - `heat-navigation.js` - Navigation footer
 - `HeatDataManager` - IndexedDB-based offline storage
 
-### ✅ Existing Tests (213 total)
+### ✅ Existing Tests (218 total)
 - `navigation.test.js` (17 tests) - Heat navigation and slot progression
 - `semi_finals.test.js` (22 tests) - Semi-finals logic
 - `start_button.test.js` (20 tests) - Emcee mode start button
@@ -28,7 +28,7 @@ This document provides a systematic plan to test and implement all scoring/judgi
 - `heat_data_manager.test.js` (12 tests) - IndexedDB storage and sync
 - `heat_solo.test.js` (19 tests) - Solo heat variations ✅
 - `heat_rank.test.js` (22 tests) - Rank heat variations ✅
-- `heat_table.test.js` (39 tests) - Table heat display and scoring ✅
+- `heat_table.test.js` (44 tests) - Table heat display and scoring ✅
 
 ### 🔴 Needs Implementation & Testing
 Based on ERB views analysis, the following variations need systematic testing:
@@ -189,7 +189,7 @@ end
 | T11 | Validate 0-99 range | ✅ |
 | T12 | Post on blur/change | ✅ |
 
-**Test File:** `test/javascript/heat_table.test.js` ✅ **39 tests passing**
+**Test File:** `test/javascript/heat_table.test.js` ✅ **44 tests passing**
 
 **Implementation Notes:**
 - Fixed column_order handling in buildHeaders (line 104) and buildRows (line 327)
@@ -242,15 +242,15 @@ end
 | T31 | `judge_comments: false` | No textarea | ✅ |
 | T32 | Comment input | Debounce and post to server | ✅ |
 
-#### Judge Assignment
+#### Judge Assignment ✅
 
-| Test ID | Setting | Expected Behavior |
-|---------|---------|-------------------|
-| T33 | `assign_judges > 0` | Show red border on assigned back numbers |
-| T34 | `show_assignments: 'first'` | Show assigned first, then others |
-| T35 | `show_assignments: 'only'` | Show only assigned couples |
-| T36 | `show_assignments: 'mixed'` | Show all in sort order |
-| T37 | No assigned couples | Show "No couples assigned" message |
+| Test ID | Setting | Expected Behavior | Status |
+|---------|---------|-------------------|--------|
+| T33 | `assign_judges > 0` | Show red border on assigned back numbers | ✅ |
+| T34 | `show_assignments: 'first'` | Show assigned first, then others | ✅ |
+| T35 | `show_assignments: 'only'` | Show only assigned couples | ✅ |
+| T36 | `show_assignments: 'mixed'` | Show all in sort order | ✅ |
+| T37 | No assigned couples | Show "No couples assigned" message | ✅ |
 
 #### Ballroom Assignment ✅
 
@@ -437,9 +437,9 @@ test('Solo heat with 4-part scoring', () => {
 - Code review completed
 
 ### Overall Project Success
-- **219+ total tests** (213 completed + ~6 remaining)
-  - ✅ 213 tests passing (133 original + 19 solo + 22 rank + 39 table)
-  - 🔴 ~6 table heat tests remaining (T16-T29, T33-T37: feedback scoring, judge assignments)
+- **219+ total tests** (218 completed, only T16-T29 remaining)
+  - ✅ 218 tests passing (133 original + 19 solo + 22 rank + 44 table)
+  - 🔴 Only T16-T29 remaining: Feedback scoring modes (+, &, @) with good/bad button grids
 - All scoring options tested and working
 - Offline sync reliable across all scoring types
 - Performance acceptable (< 200ms render time per heat)
