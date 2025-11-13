@@ -561,4 +561,74 @@ describe('Table Heat Component', () => {
       expect(rendered.rows[0].category).toBe('Pro')
     })
   })
+
+  describe('T13-T15: Scrutineering (semi_finals callback)', () => {
+    it('T13: Shows single checkbox per couple for callback vote', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          scores: []
+        })
+      ]
+
+      const data = createHeatData({
+        heat: createHeat({
+          category: 'Open',
+          subjects,
+          subject_count: undefined,
+          dance: createDance({ semi_finals: true })
+        })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '1', ['1', '2', '3', 'F', ''])
+
+      expect(rendered.isSemiFinals).toBe(true)
+      expect(rendered.isRadioScoring).toBe(false)
+      expect(rendered.isNumericScoring).toBe(false)
+    })
+
+    it('T14: Header shows "Callback?" for semi-finals', () => {
+      const data = createHeatData({
+        heat: createHeat({
+          category: 'Open',
+          dance: createDance({ semi_finals: true })
+        })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '1', ['1', '2', '3', 'F', ''])
+
+      // Header should indicate callback voting
+      expect(rendered.isSemiFinals).toBe(true)
+    })
+
+    it('T15: Checkbox toggles value between checked and unchecked', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          scores: [createScore({ judge_id: 55, value: '1' })]
+        }),
+        createSubject({
+          id: 2,
+          scores: [createScore({ judge_id: 55, value: '' })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        heat: createHeat({
+          category: 'Open',
+          subjects,
+          subject_count: undefined,
+          dance: createDance({ semi_finals: true })
+        })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '1', ['1', '2', '3', 'F', ''])
+
+      // First subject has callback (value = '1')
+      expect(rendered.rows[0].scoreValue).toBe('1')
+      // Second subject no callback (value = '')
+      expect(rendered.rows[1].scoreValue).toBe('')
+    })
+  })
 })

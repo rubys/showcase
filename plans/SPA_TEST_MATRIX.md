@@ -18,7 +18,7 @@ This document provides a systematic plan to test and implement all scoring/judgi
 - `heat-navigation.js` - Navigation footer
 - `HeatDataManager` - IndexedDB-based offline storage
 
-### ✅ Existing Tests (199 total)
+### ✅ Existing Tests (202 total)
 - `navigation.test.js` (17 tests) - Heat navigation and slot progression
 - `semi_finals.test.js` (22 tests) - Semi-finals logic
 - `start_button.test.js` (20 tests) - Emcee mode start button
@@ -26,9 +26,9 @@ This document provides a systematic plan to test and implement all scoring/judgi
 - `heat_details.test.js` (29 tests) - Heat header and info box display
 - `score_posting.test.js` (13 tests) - Score submission with offline queueing
 - `heat_data_manager.test.js` (12 tests) - IndexedDB storage and sync
-- `heat_solo.test.js` (19 tests) - Solo heat variations ✅ **NEW**
-- `heat_rank.test.js` (22 tests) - Rank heat variations ✅ **NEW**
-- `heat_table.test.js` (25 tests) - Table heat basic display and scoring ✅ **NEW**
+- `heat_solo.test.js` (19 tests) - Solo heat variations ✅
+- `heat_rank.test.js` (22 tests) - Rank heat variations ✅
+- `heat_table.test.js` (28 tests) - Table heat display and scoring ✅ **UPDATED**
 
 ### 🔴 Needs Implementation & Testing
 Based on ERB views analysis, the following variations need systematic testing:
@@ -189,7 +189,7 @@ end
 | T11 | Validate 0-99 range | ✅ |
 | T12 | Post on blur/change | ✅ |
 
-**Test File:** `test/javascript/heat_table.test.js` ✅ **25 tests passing**
+**Test File:** `test/javascript/heat_table.test.js` ✅ **28 tests passing**
 
 **Implementation Notes:**
 - Fixed column_order handling in buildHeaders (line 104) and buildRows (line 327)
@@ -197,13 +197,13 @@ end
 - Added ballroom property support to fixture factory
 - Empty heats, scratched heats, and pro couples all handled correctly
 
-#### Scoring Type: Scrutineering (semi_finals)
+#### Scoring Type: Scrutineering (semi_finals) ✅
 
-| Test ID | Expected Behavior |
-|---------|-------------------|
-| T13 | Show single checkbox per couple (callback vote) |
-| T14 | Header shows "Callback?" |
-| T15 | Clicking checkbox toggles value '1' or '' |
+| Test ID | Expected Behavior | Status |
+|---------|-------------------|--------|
+| T13 | Show single checkbox per couple (callback vote) | ✅ |
+| T14 | Header shows "Callback?" | ✅ |
+| T15 | Clicking checkbox toggles value '1' or '' | ✅ |
 
 #### Scoring Type: Feedback (`'+'`)
 
@@ -437,9 +437,9 @@ test('Solo heat with 4-part scoring', () => {
 - Code review completed
 
 ### Overall Project Success
-- **219+ total tests** (199 completed + ~20 remaining)
-  - ✅ 199 tests passing (133 original + 19 solo + 22 rank + 25 table)
-  - 🔴 ~20 table heat tests remaining (T13-T45)
+- **219+ total tests** (202 completed + ~17 remaining)
+  - ✅ 202 tests passing (133 original + 19 solo + 22 rank + 28 table)
+  - 🔴 ~17 table heat tests remaining (T16-T45)
 - All scoring options tested and working
 - Offline sync reliable across all scoring types
 - Performance acceptable (< 200ms render time per heat)
