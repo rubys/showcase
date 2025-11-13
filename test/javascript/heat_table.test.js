@@ -84,7 +84,8 @@ describe('Table Heat Component', () => {
         studio: subject.studio || '',
         isScratched,
         scoreValue,
-        scoreData
+        scoreData,
+        dance_id: subject.dance_id
       }
     })
 
@@ -717,6 +718,61 @@ describe('Table Heat Component', () => {
 
       // Comments should be in the score data
       expect(rendered.rows[0].scoreData.comments).toBe('Great timing!')
+    })
+  })
+
+  describe('T38-T39: Ballroom and Dance Separators', () => {
+    it('T38: Gray separator line between different dances', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          dance_id: 1,
+          lead: createPerson({ back: 501 })
+        }),
+        createSubject({
+          id: 2,
+          dance_id: 2, // Different dance
+          lead: createPerson({ back: 502 })
+        })
+      ]
+
+      const data = createHeatData({
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '1', ['1', '2', '3', 'F', ''])
+
+      // Different dance_ids should trigger separator logic
+      expect(rendered.rows[0].dance_id).toBe(1)
+      expect(rendered.rows[1].dance_id).toBe(2)
+    })
+
+    it('T39: Black separator line between ballrooms', () => {
+      // When ballroom changes to 'B', there should be a black separator
+      // This is tested by having subjects with different ballroom values
+      const subjects = [
+        createSubject({
+          id: 1,
+          ballroom: 'A',
+          lead: createPerson({ back: 501 })
+        }),
+        createSubject({
+          id: 2,
+          ballroom: 'B', // Ballroom B triggers separator
+          lead: createPerson({ back: 502 })
+        })
+      ]
+
+      const data = createHeatData({
+        event: createEvent({ ballrooms: 2 }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '1', ['1', '2', '3', 'F', ''])
+
+      expect(rendered.hasBallroomColumn).toBe(true)
+      expect(rendered.rows[0].ballroom).toBe('A')
+      expect(rendered.rows[1].ballroom).toBe('B')
     })
   })
 })

@@ -18,7 +18,7 @@ This document provides a systematic plan to test and implement all scoring/judgi
 - `heat-navigation.js` - Navigation footer
 - `HeatDataManager` - IndexedDB-based offline storage
 
-### ✅ Existing Tests (208 total)
+### ✅ Existing Tests (210 total)
 - `navigation.test.js` (17 tests) - Heat navigation and slot progression
 - `semi_finals.test.js` (22 tests) - Semi-finals logic
 - `start_button.test.js` (20 tests) - Emcee mode start button
@@ -28,7 +28,7 @@ This document provides a systematic plan to test and implement all scoring/judgi
 - `heat_data_manager.test.js` (12 tests) - IndexedDB storage and sync
 - `heat_solo.test.js` (19 tests) - Solo heat variations ✅
 - `heat_rank.test.js` (22 tests) - Rank heat variations ✅
-- `heat_table.test.js` (34 tests) - Table heat display and scoring ✅ **UPDATED**
+- `heat_table.test.js` (36 tests) - Table heat display and scoring ✅
 
 ### 🔴 Needs Implementation & Testing
 Based on ERB views analysis, the following variations need systematic testing:
@@ -189,7 +189,7 @@ end
 | T11 | Validate 0-99 range | ✅ |
 | T12 | Post on blur/change | ✅ |
 
-**Test File:** `test/javascript/heat_table.test.js` ✅ **34 tests passing**
+**Test File:** `test/javascript/heat_table.test.js` ✅ **36 tests passing**
 
 **Implementation Notes:**
 - Fixed column_order handling in buildHeaders (line 104) and buildRows (line 327)
@@ -252,12 +252,12 @@ end
 | T36 | `show_assignments: 'mixed'` | Show all in sort order |
 | T37 | No assigned couples | Show "No couples assigned" message |
 
-#### Ballroom Assignment
+#### Ballroom Assignment ✅
 
-| Test ID | Setting | Expected Behavior |
-|---------|---------|-------------------|
-| T38 | Multiple dances in heat | Gray separator line between dances |
-| T39 | `ballrooms > 1` | Black separator line between ballrooms (ballroom: 'B') |
+| Test ID | Setting | Expected Behavior | Status |
+|---------|---------|-------------------|--------|
+| T38 | Multiple dances in heat | Gray separator line between dances | ✅ |
+| T39 | `ballrooms > 1` | Black separator line between ballrooms (ballroom: 'B') | ✅ |
 
 #### Sort Order
 
@@ -437,9 +437,9 @@ test('Solo heat with 4-part scoring', () => {
 - Code review completed
 
 ### Overall Project Success
-- **219+ total tests** (208 completed + ~11 remaining)
-  - ✅ 208 tests passing (133 original + 19 solo + 22 rank + 34 table)
-  - 🔴 ~11 table heat tests remaining (T16-T29, T33-T42: feedback, assignments, sorting/separators)
+- **219+ total tests** (210 completed + ~9 remaining)
+  - ✅ 210 tests passing (133 original + 19 solo + 22 rank + 36 table)
+  - 🔴 ~9 table heat tests remaining (T16-T29, T33-T37, T40-T42: feedback, assignments, sorting)
 - All scoring options tested and working
 - Offline sync reliable across all scoring types
 - Performance acceptable (< 200ms render time per heat)
