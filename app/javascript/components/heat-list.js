@@ -16,6 +16,7 @@ export class HeatList extends HTMLElement {
 
     this.judgeId = parseInt(this.getAttribute('judge-id'));
     this.scoringStyle = this.getAttribute('scoring-style') || 'radio';
+    this.basePath = this.getAttribute('base-path') || '';
     this.data = null;
     this.sortOrder = null;  // Will be set from data
     this.showAssignments = null;  // Will be set from data
@@ -197,7 +198,7 @@ export class HeatList extends HTMLElement {
       formData.append('show', this.showAssignments);
       formData.append('style', this.scoringStyle);
 
-      await fetch(`/scores/sort`, {
+      await fetch(`${this.basePath}/scores/sort`, {
         method: 'POST',
         body: formData,
         headers: {
@@ -219,7 +220,7 @@ export class HeatList extends HTMLElement {
       formData.append('style', this.scoringStyle);
       formData.append('sort', this.sortOrder);
 
-      await fetch(`/people/${this.judgeId}/show_assignments`, {
+      await fetch(`${this.basePath}/people/${this.judgeId}/show_assignments`, {
         method: 'POST',
         body: formData,
         headers: {

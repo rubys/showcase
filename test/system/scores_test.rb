@@ -40,8 +40,8 @@ class ScoresTest < ApplicationSystemTestCase
     assert_selector "heat-page"
     assert_selector "heat-list"
 
-    # Verify page title/header
-    assert_text judge.name
+    # Verify judge name appears (in navigation footer, could be display_name or name)
+    assert_text(/Judy.*Sheindlin|Sheindlin.*Judy/)
 
     # Wait for data to load and verify heat list appears
     # Heat list renders as table rows with links

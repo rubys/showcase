@@ -16,6 +16,16 @@ class HeatDataManager {
   constructor() {
     this.db = null;
     this.initPromise = null;
+    this.basePath = '';
+  }
+
+  /**
+   * Set the base path for all API requests
+   * @param {string} basePath - The base URL path (e.g., "http://localhost:3000/showcase/2025/city/event")
+   */
+  setBasePath(basePath) {
+    this.basePath = basePath;
+    console.debug('[HeatDataManager] Base path set to:', basePath);
   }
 
   /**
@@ -338,7 +348,7 @@ class HeatDataManager {
    * @returns {Promise<Object>}
    */
   async getData(judgeId) {
-    const url = `/scores/${judgeId}/heats.json`;
+    const url = `${this.basePath}/scores/${judgeId}/heats.json`;
     console.debug('[HeatDataManager] Fetching fresh data from', url);
 
     try {
@@ -377,7 +387,7 @@ class HeatDataManager {
 
     console.debug(`[HeatDataManager] Uploading ${dirtyScores.length} dirty scores`);
 
-    const url = `/scores/${judgeId}/batch`;
+    const url = `${this.basePath}/scores/${judgeId}/batch`;
 
     try {
       const response = await fetch(url, {

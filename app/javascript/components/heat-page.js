@@ -45,10 +45,14 @@ export class HeatPage extends HTMLElement {
     this.currentHeatNumber = heatAttr ? parseInt(heatAttr) : null;
     this.scoringStyle = this.getAttribute('scoring-style') || 'radio';
     this.slot = parseInt(this.getAttribute('slot') || '0');
+    this.basePath = this.getAttribute('base-path') || '';
 
     this.data = null;
     this.touchStart = null;
     this.dataManager = heatDataManager; // Make data manager accessible to child components
+
+    // Set base path in data manager
+    heatDataManager.setBasePath(this.basePath);
 
     this.init();
   }
@@ -589,7 +593,7 @@ export class HeatPage extends HTMLElement {
       this.innerHTML = `
         <div class="flex flex-col h-screen max-h-screen w-full">
           <div class="flex-1 overflow-auto">
-            <heat-list judge-id="${this.judgeId}" scoring-style="${this.scoringStyle}"></heat-list>
+            <heat-list judge-id="${this.judgeId}" scoring-style="${this.scoringStyle}" base-path="${this.basePath}"></heat-list>
           </div>
           <heat-navigation
             judge-data='${JSON.stringify(this.data.judge)}'
@@ -597,6 +601,7 @@ export class HeatPage extends HTMLElement {
             prev-url=""
             next-url=""
             assign-judges="${this.data.event.assign_judges > 0}"
+            base-path="${this.basePath}"
             root-path="/">
           </heat-navigation>
         </div>

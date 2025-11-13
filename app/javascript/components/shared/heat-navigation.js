@@ -117,6 +117,10 @@ export class HeatNavigation extends HTMLElement {
     return this.getAttribute('root-path') || '/';
   }
 
+  get basePath() {
+    return this.getAttribute('base-path') || '';
+  }
+
   /**
    * Navigate to previous heat
    */
@@ -193,7 +197,7 @@ export class HeatNavigation extends HTMLElement {
     const isPresent = checkbox.checked;
 
     // Send update to server
-    fetch(`/people/${this.judgeData.id}/toggle_present`, {
+    fetch(`${this.basePath}/people/${this.judgeData.id}/toggle_present`, {
       method: 'POST',
       headers: window.inject_region({
         'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
