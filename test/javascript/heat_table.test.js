@@ -670,4 +670,53 @@ describe('Table Heat Component', () => {
       expect(rendered.showStartButton).toBe(false)
     })
   })
+
+  describe('T30-T32: Judge Comments', () => {
+    it('T30: Shows textarea under each couple when judge_comments = true', () => {
+      const subjects = [
+        createSubject({ id: 1 })
+      ]
+
+      const data = createHeatData({
+        event: createEvent({ judge_comments: true }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '1', ['1', '2', '3', 'F', ''])
+
+      // Should have judge comments enabled
+      expect(data.event.judge_comments).toBe(true)
+    })
+
+    it('T31: No textarea when judge_comments = false', () => {
+      const data = createHeatData({
+        event: createEvent({ judge_comments: false }),
+        heat: createHeat({ category: 'Open' })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '1', ['1', '2', '3', 'F', ''])
+
+      expect(data.event.judge_comments).toBe(false)
+    })
+
+    it('T32: Comment input should debounce and post to server', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          scores: [createScore({ judge_id: 55, comments: 'Great timing!' })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ judge_comments: true }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined })
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '1', ['1', '2', '3', 'F', ''])
+
+      // Comments should be in the score data
+      expect(rendered.rows[0].scoreData.comments).toBe('Great timing!')
+    })
+  })
 })

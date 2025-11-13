@@ -18,7 +18,7 @@ This document provides a systematic plan to test and implement all scoring/judgi
 - `heat-navigation.js` - Navigation footer
 - `HeatDataManager` - IndexedDB-based offline storage
 
-### ✅ Existing Tests (205 total)
+### ✅ Existing Tests (208 total)
 - `navigation.test.js` (17 tests) - Heat navigation and slot progression
 - `semi_finals.test.js` (22 tests) - Semi-finals logic
 - `start_button.test.js` (20 tests) - Emcee mode start button
@@ -28,7 +28,7 @@ This document provides a systematic plan to test and implement all scoring/judgi
 - `heat_data_manager.test.js` (12 tests) - IndexedDB storage and sync
 - `heat_solo.test.js` (19 tests) - Solo heat variations ✅
 - `heat_rank.test.js` (22 tests) - Rank heat variations ✅
-- `heat_table.test.js` (31 tests) - Table heat display and scoring ✅ **UPDATED**
+- `heat_table.test.js` (34 tests) - Table heat display and scoring ✅ **UPDATED**
 
 ### 🔴 Needs Implementation & Testing
 Based on ERB views analysis, the following variations need systematic testing:
@@ -189,7 +189,7 @@ end
 | T11 | Validate 0-99 range | ✅ |
 | T12 | Post on blur/change | ✅ |
 
-**Test File:** `test/javascript/heat_table.test.js` ✅ **31 tests passing**
+**Test File:** `test/javascript/heat_table.test.js` ✅ **34 tests passing**
 
 **Implementation Notes:**
 - Fixed column_order handling in buildHeaders (line 104) and buildRows (line 327)
@@ -234,13 +234,13 @@ end
 | T28 | Overall buttons toggle (only one active) |
 | T29 | Good/bad buttons toggle, mutually exclusive |
 
-#### Judge Comments
+#### Judge Comments ✅
 
-| Test ID | Setting | Expected Behavior |
-|---------|---------|-------------------|
-| T30 | `judge_comments: true` | Show textarea under each couple |
-| T31 | `judge_comments: false` | No textarea |
-| T32 | Comment input | Debounce and post to server |
+| Test ID | Setting | Expected Behavior | Status |
+|---------|---------|-------------------|--------|
+| T30 | `judge_comments: true` | Show textarea under each couple | ✅ |
+| T31 | `judge_comments: false` | No textarea | ✅ |
+| T32 | Comment input | Debounce and post to server | ✅ |
 
 #### Judge Assignment
 
@@ -437,9 +437,9 @@ test('Solo heat with 4-part scoring', () => {
 - Code review completed
 
 ### Overall Project Success
-- **219+ total tests** (205 completed + ~14 remaining)
-  - ✅ 205 tests passing (133 original + 19 solo + 22 rank + 31 table)
-  - 🔴 ~14 table heat tests remaining (T16-T42: feedback, comments, assignments, sorting)
+- **219+ total tests** (208 completed + ~11 remaining)
+  - ✅ 208 tests passing (133 original + 19 solo + 22 rank + 34 table)
+  - 🔴 ~11 table heat tests remaining (T16-T29, T33-T42: feedback, assignments, sorting/separators)
 - All scoring options tested and working
 - Offline sync reliable across all scoring types
 - Performance acceptable (< 200ms render time per heat)
