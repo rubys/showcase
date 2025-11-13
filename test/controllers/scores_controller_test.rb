@@ -2226,7 +2226,7 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     get judge_spa_path(@judge, style: 'radio')
 
     assert_response :success
-    assert_select "heat-page[style='radio']"
+    assert_select "heat-page[scoring-style='radio']"
   end
 
   test "batch_scores creates multiple scores from array" do
