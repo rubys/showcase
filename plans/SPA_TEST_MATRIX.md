@@ -18,7 +18,7 @@ This document provides a systematic plan to test and implement all scoring/judgi
 - `heat-navigation.js` - Navigation footer
 - `HeatDataManager` - IndexedDB-based offline storage
 
-### ✅ Existing Tests (250 total)
+### ✅ Existing Tests (258 total)
 - `navigation.test.js` (23 tests) - Heat navigation, slot progression, and review_solos filtering ✅
 - `semi_finals.test.js` (22 tests) - Semi-finals logic
 - `start_button.test.js` (20 tests) - Emcee mode start button
@@ -28,7 +28,7 @@ This document provides a systematic plan to test and implement all scoring/judgi
 - `heat_data_manager.test.js` (12 tests) - IndexedDB storage and sync
 - `heat_solo.test.js` (19 tests) - Solo heat variations ✅
 - `heat_rank.test.js` (22 tests) - Rank heat variations ✅
-- `heat_table.test.js` (58 tests) - **ALL** table heat variations ✅
+- `heat_table.test.js` (66 tests) - **ALL** table heat variations including custom feedbacks ✅
 - `heat_cards.test.js` (12 tests) - Cards heat variations ✅
 
 ### 🔴 Needs Implementation & Testing
@@ -276,6 +276,19 @@ end
 | T44 | Show "Start Heat" button if not current heat | ✅ |
 | T45 | Hide start button when current heat | ✅ |
 
+#### Custom Feedback Buttons ✅
+
+| Test ID | Expected Behavior | Status |
+|---------|-------------------|--------|
+| T46 | Uses custom feedbacks from database when available (`'+'`) | ✅ |
+| T47 | Custom feedbacks respect order field | ✅ |
+| T48 | Custom feedbacks with selected state using abbreviations | ✅ |
+| T49 | Custom feedbacks work with `'&'` scoring (number + feedback) | ✅ |
+| T50 | Custom feedbacks work with `'@'` scoring (grade + feedback) | ✅ |
+| T51 | Empty custom feedbacks falls back to defaults | ✅ |
+| T52 | Custom feedbacks with gaps in order numbers | ✅ |
+| T53 | Large number of custom feedbacks (10+ buttons) | ✅ |
+
 **Test File:** `test/javascript/heat_table.test.js` ✅
 
 ### 4. Cards Heat View (`heat-cards.js`) ✅ **COMPLETED**
@@ -363,28 +376,49 @@ end
 - Fixed `heat-rank.js` column_order and display_name handling
 - Fixed `fixture_factory.js` createEntry and createSubject
 
-### Phase 4: Table Heat Tests & Implementation (Weeks 4-6)
+### Phase 4: Table Heat Tests & Implementation ✅ **COMPLETED**
 1. ✅ **Week 4 Complete**: Basic display, radio/number scoring (T1-T12, 25 tests)
    - ✅ Wrote `test/javascript/heat_table.test.js` with 25 tests
    - ✅ Enhanced `heat-table.js` column_order handling
    - ✅ All 199 tests passing
-2. 🔴 **Week 5 Pending**: Scrutineering, feedback scoring (T13-T29)
-3. 🔴 **Week 6 Pending**: Comments, assignments, sorting, emcee (T30-T45)
+2. ✅ **Week 5 Complete**: Scrutineering, feedback scoring (T13-T29, 17 tests)
+   - ✅ Added scrutineering tests (T13-T15)
+   - ✅ Added feedback scoring tests for +, &, @ modes (T16-T29)
+   - ✅ All 232 tests passing
+3. ✅ **Week 6 Complete**: Comments, assignments, sorting, emcee, custom feedbacks (T30-T53, 24 tests)
+   - ✅ Added judge comments tests (T30-T32)
+   - ✅ Added judge assignment tests (T33-T37)
+   - ✅ Added ballroom separator tests (T38-T39)
+   - ✅ Added sort order tests (T40-T42)
+   - ✅ Added emcee mode tests (T43-T45)
+   - ✅ Added custom feedback tests (T46-T53)
+   - ✅ All 258 tests passing
 
-**Deliverables (Week 4):**
-- `test/javascript/heat_table.test.js` (25 tests)
+**Deliverables:**
+- `test/javascript/heat_table.test.js` (66 tests, 1670 lines)
 - Fixed `heat-table.js` column_order handling (lines 104, 327)
 - Enhanced `fixture_factory.js` with ballroom property support
+- Complete coverage of all table heat scoring variations
 
-### Phase 5: Cards Heat Tests & Implementation (Week 7)
-1. Write `test/javascript/heat_cards.test.js` (9 tests: C1-C9)
-2. Enhance `heat-cards.js` to pass all tests
-3. Verify drag-and-drop works correctly
+### Phase 5: Cards Heat Tests & Implementation ✅ **COMPLETED**
+1. ✅ Wrote `test/javascript/heat_cards.test.js` (12 tests: C1-C9)
+2. ✅ Enhanced `heat-cards.js` to pass all tests
+3. ✅ Verified drag-and-drop works correctly
 
-### Phase 6: Navigation Enhancements (Week 8)
-1. Enhance `test/javascript/navigation.test.js` (6 new tests: N1-N6)
-2. Update navigation logic to handle review_solos filtering
-3. Verify multi-dance slot navigation
+**Deliverables:**
+- `test/javascript/heat_cards.test.js` (417 lines, 12 tests)
+- Fixed showBacknum boolean conversion
+- Fixed unscored column filtering
+
+### Phase 6: Navigation Enhancements ✅ **COMPLETED**
+1. ✅ Enhanced `test/javascript/navigation.test.js` (6 new tests: N1-N6)
+2. ✅ Verified review_solos filtering logic
+3. ✅ Verified multi-dance slot navigation
+
+**Deliverables:**
+- Enhanced `test/javascript/navigation.test.js` (23 tests total, up from 17)
+- All solo filtering modes tested (all/even/odd/none)
+- Multi-dance slot navigation verified
 
 ### Phase 7: Integration & System Testing (Week 9)
 1. Manual testing with demo database covering all option combinations

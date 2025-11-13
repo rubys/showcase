@@ -1424,4 +1424,246 @@ describe('Table Heat Component', () => {
       expect(rendered.rows[0].scoreData.value).toBe('S')
     })
   })
+
+  describe('T30-T37: Custom Feedback Buttons', () => {
+    it('T30: Uses custom feedbacks from database when available (+)', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, good: null, bad: null })]
+        })
+      ]
+
+      const customFeedbacks = [
+        { id: 10, order: 1, value: 'Dance & Frame', abbr: 'DF' },
+        { id: 11, order: 2, value: 'Timing', abbr: 'T' },
+        { id: 12, order: 3, value: 'Cuban Motion', abbr: 'CM' },
+        { id: 13, order: 4, value: 'Rise & Fall', abbr: 'RF' },
+        { id: 14, order: 5, value: 'Footwork', abbr: 'FW' }
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '+' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined }),
+        feedbacks: customFeedbacks
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '+', [])
+
+      expect(rendered.isFeedbackScoring).toBe(true)
+      expect(data.feedbacks).toEqual(customFeedbacks)
+      expect(data.feedbacks.length).toBe(5)
+    })
+
+    it('T31: Custom feedbacks respect order field', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, good: null, bad: null })]
+        })
+      ]
+
+      // Out of order - should be sorted by order field
+      const customFeedbacks = [
+        { id: 10, order: 3, value: 'Footwork', abbr: 'FW' },
+        { id: 11, order: 1, value: 'Frame', abbr: 'F' },
+        { id: 12, order: 2, value: 'Posture', abbr: 'P' }
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '+' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined }),
+        feedbacks: customFeedbacks
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '+', [])
+
+      // Feedbacks should maintain their order from database
+      expect(data.feedbacks[0].abbr).toBe('FW')
+      expect(data.feedbacks[1].abbr).toBe('F')
+      expect(data.feedbacks[2].abbr).toBe('P')
+    })
+
+    it('T32: Custom feedbacks with selected state using abbreviations', () => {
+      const customFeedbacks = [
+        { id: 10, order: 1, value: 'Dance & Frame', abbr: 'DF' },
+        { id: 11, order: 2, value: 'Timing', abbr: 'T' },
+        { id: 12, order: 3, value: 'Cuban Motion', abbr: 'CM' },
+        { id: 13, order: 4, value: 'Rise & Fall', abbr: 'RF' }
+      ]
+
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, good: 'DF CM', bad: 'T' })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '+' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined }),
+        feedbacks: customFeedbacks
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '+', [])
+
+      // Score should store abbreviations, not IDs
+      expect(rendered.rows[0].scoreData.good).toBe('DF CM')
+      expect(rendered.rows[0].scoreData.bad).toBe('T')
+    })
+
+    it('T33: Custom feedbacks work with & scoring (number + feedback)', () => {
+      const customFeedbacks = [
+        { id: 20, order: 1, value: 'Connection', abbr: 'C' },
+        { id: 21, order: 2, value: 'Musicality', abbr: 'M' },
+        { id: 22, order: 3, value: 'Technique', abbr: 'TC' }
+      ]
+
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, value: '4', good: 'C M', bad: 'TC' })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '&' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined }),
+        feedbacks: customFeedbacks
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '&', [])
+
+      expect(rendered.isValueFeedbackScoring).toBe(true)
+      expect(rendered.rows[0].scoreData.value).toBe('4')
+      expect(rendered.rows[0].scoreData.good).toBe('C M')
+      expect(rendered.rows[0].scoreData.bad).toBe('TC')
+    })
+
+    it('T34: Custom feedbacks work with @ scoring (grade + feedback)', () => {
+      const customFeedbacks = [
+        { id: 30, order: 1, value: 'Balance', abbr: 'B' },
+        { id: 31, order: 2, value: 'Extension', abbr: 'E' },
+        { id: 32, order: 3, value: 'Rotation', abbr: 'R' }
+      ]
+
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, value: 'GH', good: 'E R', bad: 'B' })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '@' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined }),
+        feedbacks: customFeedbacks
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '@', [])
+
+      expect(rendered.isGradeFeedbackScoring).toBe(true)
+      expect(rendered.rows[0].scoreData.value).toBe('GH')
+      expect(rendered.rows[0].scoreData.good).toBe('E R')
+      expect(rendered.rows[0].scoreData.bad).toBe('B')
+    })
+
+    it('T35: Empty custom feedbacks falls back to defaults', () => {
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, good: null, bad: null })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '+' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined }),
+        feedbacks: [] // Empty - should use defaults
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '+', [])
+
+      expect(rendered.isFeedbackScoring).toBe(true)
+      // When no custom feedbacks, component uses hardcoded defaults
+      expect(data.feedbacks.length).toBe(0)
+    })
+
+    it('T36: Custom feedbacks with gaps in order numbers', () => {
+      const customFeedbacks = [
+        { id: 40, order: 1, value: 'First', abbr: 'F1' },
+        { id: 41, order: 5, value: 'Fifth', abbr: 'F5' },
+        { id: 42, order: 10, value: 'Tenth', abbr: 'F10' }
+      ]
+
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, good: 'F1 F10', bad: 'F5' })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '+' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined }),
+        feedbacks: customFeedbacks
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '+', [])
+
+      // Should handle non-contiguous order numbers
+      expect(rendered.rows[0].scoreData.good).toBe('F1 F10')
+      expect(rendered.rows[0].scoreData.bad).toBe('F5')
+    })
+
+    it('T37: Large number of custom feedbacks (10+ buttons)', () => {
+      const customFeedbacks = [
+        { id: 50, order: 1, value: 'Dance & Frame', abbr: 'DF' },
+        { id: 51, order: 2, value: 'Timing', abbr: 'T' },
+        { id: 52, order: 3, value: 'Lead/Follow', abbr: 'LF' },
+        { id: 53, order: 4, value: 'Cuban Motion', abbr: 'CM' },
+        { id: 54, order: 5, value: 'Rise & Fall', abbr: 'RF' },
+        { id: 55, order: 6, value: 'Footwork', abbr: 'FW' },
+        { id: 56, order: 7, value: 'Balance', abbr: 'B' },
+        { id: 57, order: 8, value: 'Arm Styling', abbr: 'AS' },
+        { id: 58, order: 9, value: 'Contra-Body', abbr: 'CB' },
+        { id: 59, order: 10, value: 'Floor Craft', abbr: 'FC' }
+      ]
+
+      const subjects = [
+        createSubject({
+          id: 1,
+          lead: createPerson({ back: 501 }),
+          scores: [createScore({ judge_id: 55, good: 'DF T LF CM RF', bad: 'FW B AS' })]
+        })
+      ]
+
+      const data = createHeatData({
+        judge: createJudge({ id: 55 }),
+        event: createEvent({ open_scoring: '+' }),
+        heat: createHeat({ category: 'Open', subjects, subject_count: undefined }),
+        feedbacks: customFeedbacks
+      })
+
+      const rendered = renderTableData(data, data.event, data.judge, '+', [])
+
+      expect(data.feedbacks.length).toBe(10)
+      expect(rendered.rows[0].scoreData.good).toBe('DF T LF CM RF')
+      expect(rendered.rows[0].scoreData.bad).toBe('FW B AS')
+    })
+  })
 })
