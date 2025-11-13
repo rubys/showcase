@@ -1,0 +1,25 @@
+<% if person.type == 'Judge' %>
+<div class="mt-8 p-4 bg-amber-50 border-2 border-amber-300 rounded-lg">
+<h3 class="font-bold text-lg mb-2 text-amber-900">🧪 Experimental: Offline-Capable Scoring (Beta)</h3>
+<p class="text-sm mb-3 text-gray-700">
+This new scoring interface works offline and syncs when you reconnect. It's functionally complete with comprehensive tests,
+but awaiting real-world validation. Try it alongside the traditional views above.
+</p>
+<div class="mx-auto">
+<%= link_to 'Offline Scoring Interface', judge_spa_path(person), class: "btn-purple" %>
+</div>
+</div>
+<% end %>
+
+<% if person.type == 'Emcee' || (person.type == 'DJ' && Person.where(type: 'Emcee').count == 0) %>
+<div class="mt-8 p-4 bg-amber-50 border-2 border-amber-300 rounded-lg">
+<h3 class="font-bold text-lg mb-2 text-amber-900">🧪 Experimental: Offline-Capable Emcee View (Beta)</h3>
+<p class="text-sm mb-3 text-gray-700">
+This new emcee interface works offline and includes the "Start Heat" button. It's functionally complete with comprehensive tests,
+but awaiting real-world validation. Try it alongside the traditional view above.
+</p>
+<div class="mx-auto">
+<%= link_to 'Offline Emcee Interface', judge_spa_path(person), class: "btn-purple" %>
+</div>
+</div>
+<% end %>

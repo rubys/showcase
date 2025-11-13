@@ -55,6 +55,7 @@ Some of these features may be partially available on an experimental basis. If y
 * [Compmngr](./experimental/Compmngr) - importing of entries from Compmngr
 * [Feedback](./experimental/Feedback) - customize judge feedback options
 * [Internationalization](./experimental/I18n) - languages, dates, times, and currency
+* [Offline Scoring](./experimental/Offline-Scoring) - judge scoring that works without internet connectivity
 * [Partnerless Entries](./experimental/Partnerless-Entries) - students competing without a partner
 * [Questions](./experimental/Questions) - collecting custom information like meal choices and preferences
 * [Scrutineering](./experimental/Scrutineering) - multi-heats with callbacks and rankings

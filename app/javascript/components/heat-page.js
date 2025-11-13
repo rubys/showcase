@@ -584,9 +584,23 @@ export class HeatPage extends HTMLElement {
   render() {
     if (!this.data) return;
 
-    // If no heat number, show heat list
+    // If no heat number, show heat list with navigation footer
     if (this.currentHeatNumber === null) {
-      this.innerHTML = '<heat-list judge-id="' + this.judgeId + '" scoring-style="' + this.scoringStyle + '"></heat-list>';
+      this.innerHTML = `
+        <div class="flex flex-col h-screen max-h-screen w-full">
+          <div class="flex-1 overflow-auto">
+            <heat-list judge-id="${this.judgeId}" scoring-style="${this.scoringStyle}"></heat-list>
+          </div>
+          <heat-navigation
+            judge-data='${JSON.stringify(this.data.judge)}'
+            event-data='${JSON.stringify(this.data.event)}'
+            prev-url=""
+            next-url=""
+            assign-judges="${this.data.event.assign_judges > 0}"
+            root-path="/">
+          </heat-navigation>
+        </div>
+      `;
       const heatList = this.querySelector('heat-list');
       heatList.setData(this.data);
       return;

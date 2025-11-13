@@ -246,6 +246,11 @@ class ScoresController < ApplicationController
         "Solo" => get_scores_for_type(event.solo_scoring).tap { |s| s << '' unless s.empty? },
         "Multi" => get_scores_for_type(event.multi_scoring).tap { |s| s << '' unless s.empty? }
       },
+      qr_code: {
+        url: judge_spa_url(judge),
+        svg: RQRCode::QRCode.new(judge_spa_url(judge)).as_svg(viewbox: true)
+      },
+      assign_judges: event.assign_judges > 0,
       timestamp: Time.current.to_i
     }
 
