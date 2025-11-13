@@ -2,14 +2,42 @@
 
 For judges and emcees working in locations with unreliable internet connectivity, the application now offers an offline-capable scoring interface that works without a network connection and automatically syncs when connectivity returns.
 
-## What It Does
+## What's Different?
 
-The offline scoring interface allows judges to:
+**This interface is designed to work exactly like the traditional scoring interface, with one key enhancement: it works offline.**
 
-* **Score heats without internet**: All scoring functions work even when your device has no network connection
-* **Automatic syncing**: Scores are saved locally on your device and automatically uploaded when connectivity is restored
-* **Seamless experience**: The interface looks and behaves identically to the traditional scoring views
-* **Visual feedback**: Clear indicators show WiFi status and pending score count
+All the same scoring features you're used to are available:
+
+* Radio buttons, checkboxes, cards, rankings
+* Solo scoring and multi-dance compilations
+* Sort by back number or level
+* Judge assignments and filtering
+* QR code sharing
+
+The only difference is that when your internet connection drops, this interface keeps working. Your scores are saved on your device and automatically upload when connectivity returns.
+
+## Why Two Interfaces?
+
+Although this offline-capable version has passed 133+ automated tests and is designed to behave identically to the traditional interface, it's a complete rewrite of the scoring views. We need real-world validation before making it the standard.
+
+**Which one should you use?**
+
+* **Use the offline-capable interface if**: You want the peace of mind of knowing scoring will continue even if WiFi drops, or you're willing to help us validate this new implementation
+* **Use the traditional interface if**: You prefer to stick with the proven, long-established interface, or if you encounter any issues with the new version
+
+Once the offline-capable version is proven reliable through actual event usage, it will replace the traditional interface entirely.
+
+## Limitations When Actually Offline
+
+When your device has no internet connection, certain event management functions won't work (these limitations apply to all interfaces, not just this one):
+
+* Scratching or adding heats requires a network connection
+* Heat list counters won't update
+* Users with cell phones may see heat lists, but they won't advance
+* Score tallying won't occur
+* Scrutineering of preliminary heats won't select couples to advance
+
+These functions will work normally once connectivity is restored.
 
 ## How to Access
 
@@ -29,44 +57,20 @@ When you open the offline scoring interface:
    - Red WiFi icon with slash = offline
    - Red number + WiFi icon = number of scores waiting to upload
 
-## Key Features
-
-* **Info box with tips**: Click the ⓘ icon in the top left for helpful hints
-* **QR code**: Share direct access to your scoring interface (links to the offline-capable version)
-* **Sort order**: Choose between sorting by back number or level
-* **Judge assignments**: Filter heats by assignment (first/only/mixed) when applicable
-* **Unassigned heats**: Heats without judge assignments appear in red
-* **Full scoring parity**: Supports all scoring modes (radio buttons, checkboxes, cards, rankings, solos, multi-dances)
-
-## When to Use
-
-This feature is particularly valuable for:
-
-* **Venues with poor WiFi**: Ballrooms, convention centers, or hotels with unreliable internet
-* **Backup plan**: Even with good connectivity, provides insurance against network issues
-* **Remote locations**: Events in areas with limited infrastructure
-* **Large events**: Reduces server load by batching uploads
-
 ## Important Notes
 
 * **Browser storage**: Scores are stored in your browser's local storage. Don't clear browser data during an event.
-* **Same device**: Return to the same device and browser to resume scoring if you navigate away.
+* **Same device**: Return to the same device and browser to resume scoring if you navigate away. Do not switch devices or share devices with different judges.
 * **Automatic sync**: Scores upload automatically when online—no manual action required.
 * **Testing recommended**: Try it before your event to ensure your device and browser support it properly.
 * **Comprehensive testing**: The offline interface has passed 133+ automated tests covering navigation, scoring, semi-finals, callbacks, and edge cases.
 
-## Status: Experimental
+## Help Us Validate
 
-This feature is **code complete and comprehensively tested**, but awaiting real-world validation during live events. It's designed to behave identically to the traditional scoring views, but hasn't yet been used in production.
+If you'd like to help prove this interface is ready to become the standard:
 
-The traditional scoring interface remains the primary option and will continue to be available. Once the offline interface has been validated by actual usage during events, it may become the default.
+1. Use it during your event (the traditional interface remains available as a backup)
+2. Report any differences in behavior compared to the traditional interface
+3. Let us know about any issues or concerns
 
-## Try It Out
-
-If you'd like to help validate this feature:
-
-1. Use it alongside the traditional views during an event
-2. Report any differences in behavior or unexpected issues
-3. Note any performance or usability concerns
-
-Your feedback will help determine when this feature is ready to become the standard scoring interface.
+Your real-world feedback is the final step before we retire the traditional interface and make offline capability the standard for all judges.
