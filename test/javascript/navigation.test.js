@@ -315,4 +315,104 @@ describe('Heat Navigation Algorithm', () => {
       expect(sorted.map(h => h.number)).toEqual([15, 15.1, 15.5, 16])
     })
   })
+
+  describe('Review Solos Filtering (N1-N6)', () => {
+    // Helper to filter heats based on review_solos preference
+    const filterHeats = (heats, reviewSolos) => {
+      if (reviewSolos === 'none') {
+        return heats.filter(h => h.category !== 'Solo')
+      } else if (reviewSolos === 'even') {
+        return heats.filter(h => h.category !== 'Solo' || h.number % 2 === 0)
+      } else if (reviewSolos === 'odd') {
+        return heats.filter(h => h.category !== 'Solo' || h.number % 2 === 1)
+      }
+      return heats // 'all'
+    }
+
+    it('N1: review_solos: "all" shows all solo heats', () => {
+      const data = createHeatData([
+        { number: 10, category: 'Solo' },
+        { number: 11, category: 'Solo' },
+        { number: 12, category: 'Closed' },
+        { number: 13, category: 'Solo' }
+      ])
+
+      const filtered = filterHeats(data.heats, 'all')
+      const soloHeats = filtered.filter(h => h.category === 'Solo')
+
+      expect(soloHeats.length).toBe(3)
+      expect(soloHeats.map(h => h.number)).toEqual([10, 11, 13])
+    })
+
+    it('N2: review_solos: "even" shows only even-numbered solo heats', () => {
+      const data = createHeatData([
+        { number: 10, category: 'Solo' },  // Even - included
+        { number: 11, category: 'Solo' },  // Odd - excluded
+        { number: 12, category: 'Closed' }, // Not solo - included
+        { number: 13, category: 'Solo' },  // Odd - excluded
+        { number: 14, category: 'Solo' }   // Even - included
+      ])
+
+      const filtered = filterHeats(data.heats, 'even')
+
+      expect(filtered.length).toBe(3) // 10, 12, 14
+      expect(filtered.map(h => h.number)).toEqual([10, 12, 14])
+    })
+
+    it('N3: review_solos: "odd" shows only odd-numbered solo heats', () => {
+      const data = createHeatData([
+        { number: 10, category: 'Solo' },  // Even - excluded
+        { number: 11, category: 'Solo' },  // Odd - included
+        { number: 12, category: 'Closed' }, // Not solo - included
+        { number: 13, category: 'Solo' },  // Odd - included
+        { number: 14, category: 'Solo' }   // Even - excluded
+      ])
+
+      const filtered = filterHeats(data.heats, 'odd')
+
+      expect(filtered.length).toBe(3) // 11, 12, 13
+      expect(filtered.map(h => h.number)).toEqual([11, 12, 13])
+    })
+
+    it('N4: review_solos: "none" skips all solo heats in navigation', () => {
+      const data = createHeatData([
+        { number: 10, category: 'Solo' },
+        { number: 11, category: 'Solo' },
+        { number: 12, category: 'Closed' },
+        { number: 13, category: 'Solo' },
+        { number: 14, category: 'Open' }
+      ])
+
+      const filtered = filterHeats(data.heats, 'none')
+
+      // Should only have non-Solo heats
+      expect(filtered.length).toBe(2)
+      expect(filtered.map(h => h.number)).toEqual([12, 14])
+      expect(filtered.every(h => h.category !== 'Solo')).toBe(true)
+    })
+
+    it('N5: Multi-dance child heats navigate to slot 1', () => {
+      const data = createHeatData([
+        { number: 20, category: 'Multi', scrutineering: true, heat_length: 3 },
+        { number: 21, category: 'Closed' }
+      ])
+
+      // Starting at heat 20 slot 1 should be allowed
+      const next = findNextHeat(data.heats, 20, 1)
+      expect(next.number).toBe(20)
+      expect(next.slot).toBe(2) // Advance to slot 2
+    })
+
+    it('N6: Previous heat multi-dance navigates to last slot', () => {
+      const data = createHeatData([
+        { number: 30, category: 'Multi', scrutineering: true, heat_length: 4 },
+        { number: 31, category: 'Closed' }
+      ])
+
+      // Going back from heat 31 should go to heat 30 slot 4 (last slot)
+      const prev = findPrevHeat(data.heats, 31, 1)
+      expect(prev.number).toBe(30)
+      expect(prev.slot).toBe(4) // Last slot of multi-dance
+    })
+  })
 })

@@ -18,8 +18,8 @@ This document provides a systematic plan to test and implement all scoring/judgi
 - `heat-navigation.js` - Navigation footer
 - `HeatDataManager` - IndexedDB-based offline storage
 
-### ✅ Existing Tests (244 total)
-- `navigation.test.js` (17 tests) - Heat navigation and slot progression
+### ✅ Existing Tests (250 total)
+- `navigation.test.js` (23 tests) - Heat navigation, slot progression, and review_solos filtering ✅
 - `semi_finals.test.js` (22 tests) - Semi-finals logic
 - `start_button.test.js` (20 tests) - Emcee mode start button
 - `component_selection.test.js` (20 tests) - Component selection based on category
@@ -29,7 +29,7 @@ This document provides a systematic plan to test and implement all scoring/judgi
 - `heat_solo.test.js` (19 tests) - Solo heat variations ✅
 - `heat_rank.test.js` (22 tests) - Rank heat variations ✅
 - `heat_table.test.js` (58 tests) - **ALL** table heat variations ✅
-- `heat_cards.test.js` (12 tests) - Cards heat variations ✅ **COMPLETE**
+- `heat_cards.test.js` (12 tests) - Cards heat variations ✅
 
 ### 🔴 Needs Implementation & Testing
 Based on ERB views analysis, the following variations need systematic testing:
