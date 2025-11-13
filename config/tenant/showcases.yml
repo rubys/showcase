@@ -41,6 +41,11 @@
       pep-rally:
         :name: Pep Rally
         :date: 2026-06-13 - 2026-06-13
+  pinehurst:
+    :name: Pinehurst
+    :region: iad
+    :logo: intertwingly.png
+    :date: 2026-12-07 - 2026-12-07
 2025:
   abq:
     :name: Albuquerque
@@ -82,8 +87,14 @@
     :region: iad
     :events:
       80-s-neon-nights:
-        :name: 80's Neon Nights
+        :name: 80's Neon Nights - Original
         :date: 2025-11-15 - 2025-11-15
+      80s-neon-nights-agt:
+        :name: 80s Neon Nights - AGT
+        :date: 2025-11-15 - 2025-11-15
+      80s-neon-nights-agsc:
+        :name: 80s Neon Nights - AGSC
+        :date: 2025-11-25 - 2025-11-25
   annapolis:
     :name: Annapolis
     :region: iad
@@ -471,6 +482,12 @@
       medal-ball:
         :name: Medal Ball
         :date: '2025-06-21'
+      holiday-medal-ball:
+        :name: Holiday Medal Ball
+        :date: 2025-12-20 - 2025-12-20
+      holiday-ball:
+        :name: Holiday Ball
+        :date: 2025-12-20 - 2025-12-20
   mcmurray:
     :name: McMurray
     :region: iad
@@ -677,11 +694,6 @@
       disco-showcase:
         :name: DISCO Showcase
         :date: 2025-08-30 - 2025-08-30
-  pinehurst:
-    :name: Pinehurst
-    :region: iad
-    :logo: intertwingly.png
-    :date: 2025-12-07 - 2025-12-07
   princeton:
     :name: Princeton
     :region: ewr
@@ -741,6 +753,13 @@
         :name: March
       september:
         :name: September
+  scottsvalley:
+    :name: Scotts Valley
+    :region: sjc
+    :events:
+      fall-extravaganza:
+        :name: Fall Extravaganza
+        :date: 2025-11-12 - 2025-11-12
   slc:
     :name: Salt Lake City
     :region: sjc
