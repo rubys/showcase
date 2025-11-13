@@ -23,7 +23,7 @@
         judge-id="<%= @judge.id %>"
         <% if @heat_number %>heat-number="<%= @heat_number %>"<% end %>
         scoring-style="<%= @style %>"
-        base-path="<%= request.base_url + (ENV['RAILS_APP_SCOPE'] || '') %>">
+        base-path="<%= ENV['RAILS_APP_SCOPE'] || '' %>">
       </heat-page>
     </main>
   </body>
