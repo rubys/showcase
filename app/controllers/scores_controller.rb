@@ -197,7 +197,7 @@ class ScoresController < ApplicationController
                 {
                   id: formation.id,
                   person_id: formation.person_id,
-                  person_name: formation.person.name,
+                  person_name: formation.person.display_name,
                   on_floor: formation.on_floor
                 }
               end

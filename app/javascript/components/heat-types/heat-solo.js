@@ -88,11 +88,11 @@ export class HeatSolo extends HTMLElement {
     if (dancers.length === 0) {
       return '';
     } else if (dancers.length === 1) {
-      return dancers[0].name || dancers[0].display_name;
+      return dancers[0].display_name || dancers[0].name;
     } else if (dancers.length === 2) {
       // For two dancers (lead/follow), use join format without "and"
-      const first = dancers[0].name || dancers[0].display_name;
-      const second = dancers[1].name || dancers[1].display_name;
+      const first = dancers[0].display_name || dancers[0].name;
+      const second = dancers[1].display_name || dancers[1].name;
       // Split names and join them: "Murray, Arthur" + "Murray, Kathryn" -> "Arthur & Kathryn Murray"
       const firstParts = first.split(', ').reverse();
       const secondParts = second.split(', ').reverse();
@@ -103,7 +103,7 @@ export class HeatSolo extends HTMLElement {
         return `${first} and ${second}`;
       }
     } else {
-      const names = dancers.map(d => d.name || d.display_name);
+      const names = dancers.map(d => d.display_name || d.name);
       names[names.length - 1] = `and ${names[names.length - 1]}`;
       return names.join(', ');
     }
