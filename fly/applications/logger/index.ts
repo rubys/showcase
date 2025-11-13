@@ -50,7 +50,7 @@ async function getLatest() {
     headers: { Authorization: `Bearer ${SENTRY_TOKEN}` }
   })
 
-  const issues = await api_response.json() as { lastSeen: string }[]
+  const issues = (await api_response.json() as { lastSeen: string }[]) || []
 
   let lastSeen = "0";
   for (const issue of issues) {
