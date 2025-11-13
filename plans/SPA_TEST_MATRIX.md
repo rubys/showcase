@@ -18,7 +18,7 @@ This document provides a systematic plan to test and implement all scoring/judgi
 - `heat-navigation.js` - Navigation footer
 - `HeatDataManager` - IndexedDB-based offline storage
 
-### ✅ Existing Tests (133 total)
+### ✅ Existing Tests (174 total)
 - `navigation.test.js` (17 tests) - Heat navigation and slot progression
 - `semi_finals.test.js` (22 tests) - Semi-finals logic
 - `start_button.test.js` (20 tests) - Emcee mode start button
@@ -26,6 +26,8 @@ This document provides a systematic plan to test and implement all scoring/judgi
 - `heat_details.test.js` (29 tests) - Heat header and info box display
 - `score_posting.test.js` (13 tests) - Score submission with offline queueing
 - `heat_data_manager.test.js` (12 tests) - IndexedDB storage and sync
+- `heat_solo.test.js` (19 tests) - Solo heat variations ✅ **NEW**
+- `heat_rank.test.js` (22 tests) - Rank heat variations ✅ **NEW**
 
 ### 🔴 Needs Implementation & Testing
 Based on ERB views analysis, the following variations need systematic testing:
@@ -93,50 +95,63 @@ else
 end
 ```
 
-### 1. Solo Heat View (`heat-solo.js`)
+### 1. Solo Heat View (`heat-solo.js`) ✅ **COMPLETED**
 
 **ERB Template:** `_solo_heat.html.erb`
 
-**Current Implementation:** Basic structure exists
+**Implementation Status:** ✅ Completed and tested (19 tests passing)
 
-**Variations to Test:**
+**Variations Tested:**
 
-| Test ID | Setting | Value | Expected Behavior |
-|---------|---------|-------|-------------------|
-| S1 | `solo_scoring` | `'1'` | Single numeric input (0-100) |
-| S2 | `solo_scoring` | `'4'` | Four inputs: Technique, Execution, Presentation, Showmanship (0-25 each) |
-| S3 | `column_order` | `1` | Show Lead, Follow order |
-| S4 | `column_order` | `0` | Show Student, Instructor order |
-| S5 | `formations.on_floor` | `true` | Include formation members in display |
-| S6 | `formations.on_floor` | `false` | Exclude from display (credit only) |
-| S7 | Style | `'emcee'` | Show song/artist, hide scoring, show "Start Heat" button |
-| S8 | Comments | - | Textarea for judge comments |
-| S9 | Combo dance | - | Show "Dance1 / Dance2" format |
+| Test ID | Setting | Value | Expected Behavior | Status |
+|---------|---------|-------|-------------------|--------|
+| S1 | `solo_scoring` | `'1'` | Single numeric input (0-100) | ✅ |
+| S2 | `solo_scoring` | `'4'` | Four inputs: Technique, Execution, Presentation, Showmanship (0-25 each) | ✅ |
+| S3 | `column_order` | `1` | Show Lead, Follow order | ✅ |
+| S4 | `column_order` | `0` | Show Student, Instructor order | ✅ |
+| S5 | `formations.on_floor` | `true` | Include formation members in display | ✅ |
+| S6 | `formations.on_floor` | `false` | Exclude from display (credit only) | ✅ |
+| S7 | Style | `'emcee'` | Show song/artist, hide scoring, show "Start Heat" button | ✅ |
+| S8 | Comments | - | Textarea for judge comments | ✅ |
+| S9 | Combo dance | - | Show "Dance1 / Dance2" format | ✅ |
 
-**Test File:** `test/javascript/heat_solo.test.js` (NEW)
+**Test File:** `test/javascript/heat_solo.test.js` ✅ **19 tests passing**
 
-### 2. Rank Heat View (`heat-rank.js`)
+**Implementation Notes:**
+- Fixed display_name prioritization in component (lines 91, 94, 95, 106)
+- Fixed API to return formation.person.display_name in scores_controller.rb:200
+- Dancer name formatting handles same-last-name consolidation ("John & Jane Smith")
+- Studio determined from first dancer or instructor fallback
+
+### 2. Rank Heat View (`heat-rank.js`) ✅ **COMPLETED**
 
 **ERB Template:** `_rank_heat.html.erb`
 
-**Current Implementation:** Exists, needs comprehensive testing
+**Implementation Status:** ✅ Completed and tested (22 tests passing)
 
-**Variations to Test:**
+**Variations Tested:**
 
-| Test ID | Setting | Value | Expected Behavior |
-|---------|---------|-------|-------------------|
-| R1 | Initial state | - | Show all couples in semi-finals callback order |
-| R2 | Drag and drop | - | Reorder ranks, update all affected ranks |
-| R3 | `column_order` | `1` | Show Lead/Follow columns |
-| R4 | `column_order` | `0` | Show Student/Instructor columns |
-| R5 | `combine_open_and_closed` | `true` | Show "Open - " or "Closed - " prefix |
-| R6 | `track_ages` | `true` | Show age category in subject category |
-| R7 | `track_ages` | `false` | Hide age category |
-| R8 | Style | `'emcee'` | Show "Start Heat" button |
-| R9 | Scratched heats | `number < 0` | Show line-through, opacity-50 |
-| R10 | Pro couples | - | Show "Pro" instead of level |
+| Test ID | Setting | Value | Expected Behavior | Status |
+|---------|---------|-------|-------------------|--------|
+| R1 | Initial state | - | Show all couples in semi-finals callback order | ✅ |
+| R2 | Drag and drop | - | Reorder ranks, update all affected ranks | ✅ |
+| R3 | `column_order` | `1` | Show Lead/Follow columns | ✅ |
+| R4 | `column_order` | `0` | Show Student/Instructor columns | ✅ |
+| R5 | `combine_open_and_closed` | `true` | Show "Open - " or "Closed - " prefix | ✅ |
+| R6 | `track_ages` | `true` | Show age category in subject category | ✅ |
+| R7 | `track_ages` | `false` | Hide age category | ✅ |
+| R8 | Style | `'emcee'` | Show "Start Heat" button | ✅ |
+| R9 | Scratched heats | `number <= 0` | Show line-through, opacity-50, not draggable | ✅ |
+| R10 | Pro couples | - | Show "Pro" instead of level | ✅ |
 
-**Test File:** `test/javascript/heat_rank.test.js` (ENHANCE)
+**Test File:** `test/javascript/heat_rank.test.js` ✅ **22 tests passing**
+
+**Implementation Notes:**
+- Fixed column_order handling (0 vs 1) using `!== undefined ? : 1` pattern
+- Fixed display_name prioritization in component (lines 258-262)
+- Scratched heats correctly identified with `number <= 0`
+- Drag-and-drop functionality maintains sequential rank numbering
+- Empty heat handling with appropriate message
 
 ### 3. Table Heat View (`heat-table.js`)
 
@@ -303,20 +318,34 @@ end
 
 ## Implementation Plan
 
-### Phase 1: Test Infrastructure (Week 1)
-1. Create test helper utilities for rendering components with mocked data
-2. Create fixture factory for generating test heat data with all option combinations
-3. Set up component testing patterns
+### Phase 1: Test Infrastructure ✅ **COMPLETED**
+1. ✅ Created test helper utilities (`component_helpers.js`)
+2. ✅ Created fixture factory (`fixture_factory.js`) with all data generators
+3. ✅ Established component testing patterns
 
-### Phase 2: Solo Heat Tests & Implementation (Week 2)
-1. Write `test/javascript/heat_solo.test.js` (9 tests: S1-S9)
-2. Implement or enhance `heat-solo.js` to pass all tests
-3. Verify behavioral parity with `_solo_heat.html.erb`
+**Deliverables:**
+- `test/javascript/helpers/fixture_factory.js` (387 lines)
+- `test/javascript/helpers/component_helpers.js` (350 lines)
 
-### Phase 3: Rank Heat Tests & Implementation (Week 3)
-1. Write comprehensive `test/javascript/heat_rank.test.js` (10 tests: R1-R10)
-2. Enhance `heat-rank.js` to pass all tests
-3. Verify drag-and-drop rank updates work offline
+### Phase 2: Solo Heat Tests & Implementation ✅ **COMPLETED**
+1. ✅ Wrote `test/javascript/heat_solo.test.js` (19 tests: S1-S9 + additional coverage)
+2. ✅ Enhanced `heat-solo.js` to pass all tests
+3. ✅ Verified behavioral parity with `_solo_heat.html.erb`
+
+**Deliverables:**
+- `test/javascript/heat_solo.test.js` (533 lines, 19 tests)
+- Fixed `heat-solo.js` display_name handling
+- Fixed `scores_controller.rb` formation API
+
+### Phase 3: Rank Heat Tests & Implementation ✅ **COMPLETED**
+1. ✅ Wrote comprehensive `test/javascript/heat_rank.test.js` (22 tests: R1-R10 + variations)
+2. ✅ Enhanced `heat-rank.js` to pass all tests
+3. ✅ Verified drag-and-drop rank updates
+
+**Deliverables:**
+- `test/javascript/heat_rank.test.js` (505 lines, 22 tests)
+- Fixed `heat-rank.js` column_order and display_name handling
+- Fixed `fixture_factory.js` createEntry and createSubject
 
 ### Phase 4: Table Heat Tests & Implementation (Weeks 4-6)
 1. Write `test/javascript/heat_table.test.js` (~45 tests: T1-T45)
@@ -394,7 +423,9 @@ test('Solo heat with 4-part scoring', () => {
 - Code review completed
 
 ### Overall Project Success
-- **179+ total tests** (existing 133 + new ~46)
+- **219+ total tests** (174 completed + ~45 remaining)
+  - ✅ 174 tests passing (133 original + 19 solo + 22 rank)
+  - 🔴 ~45 table heat tests remaining (T1-T45)
 - All scoring options tested and working
 - Offline sync reliable across all scoring types
 - Performance acceptable (< 200ms render time per heat)

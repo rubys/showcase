@@ -102,11 +102,10 @@ export const createEntry = (overrides = {}) => {
     id: overrides.id || 1,
     lead: overrides.lead || createPerson({ id: 101, name: 'Pro Leader', type: leadType, back: 501 }),
     follow: overrides.follow || createPerson({ id: 201, name: 'Student Follower', type: followType, back: 401 }),
-    instructor: overrides.instructor || null,
-    studio: overrides.studio || 'Test Studio',
-    age: overrides.age || null,
-    level: overrides.level || createLevel(),
-    ...overrides
+    instructor: overrides.instructor !== undefined ? overrides.instructor : null,
+    studio: overrides.studio !== undefined ? overrides.studio : 'Test Studio',
+    age: overrides.age !== undefined ? overrides.age : null,
+    level: overrides.level || createLevel()
   }
 }
 
@@ -178,35 +177,38 @@ export const createScore = (overrides = {}) => {
  * Create subject (heat entry with scores)
  */
 export const createSubject = (overrides = {}) => {
-  // Allow explicit override of entry sub-properties
-  let entry
-  if (overrides.lead || overrides.follow || overrides.level || overrides.instructor || overrides.age) {
-    entry = createEntry({
-      lead: overrides.lead,
-      follow: overrides.follow,
-      instructor: overrides.instructor,
-      studio: overrides.studio,
-      age: overrides.age,
-      level: overrides.level
-    })
-  } else {
-    entry = overrides.entry || createEntry()
-  }
+  // Always create entry first to ensure lead/follow exist
+  const entry = overrides.entry || createEntry({
+    lead: overrides.lead,
+    follow: overrides.follow,
+    instructor: overrides.instructor,
+    studio: overrides.studio,
+    age: overrides.age,
+    level: overrides.level
+  })
 
-  return {
+  // Build result without ...overrides to avoid undefined properties
+  const result = {
     id: overrides.id || 1,
     dance_id: overrides.dance_id || 1,
     entry_id: overrides.entry_id || 1,
-    lead: overrides.lead || entry.lead,
-    follow: overrides.follow || entry.follow,
-    instructor: overrides.instructor || entry.instructor,
-    studio: overrides.studio || entry.studio,
-    age: overrides.age || entry.age,
-    level: overrides.level || entry.level,
+    lead: entry.lead,
+    follow: entry.follow,
+    instructor: entry.instructor,
+    studio: overrides.studio !== undefined ? overrides.studio : entry.studio,
+    age: entry.age,
+    level: entry.level,
     solo: overrides.solo !== undefined ? overrides.solo : null,
     scores: overrides.scores || [],
-    ...overrides
+    pro: overrides.pro !== undefined ? overrides.pro : false
   }
+
+  // Only add number if explicitly provided
+  if (overrides.number !== undefined) {
+    result.number = overrides.number
+  }
+
+  return result
 }
 
 /**
