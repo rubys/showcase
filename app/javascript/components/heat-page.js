@@ -62,19 +62,19 @@ export class HeatPage extends HTMLElement {
    */
   async init() {
     try {
-      console.log('[HeatPage] Starting initialization for judge', this.judgeId);
+      console.debug('[HeatPage] Starting initialization for judge', this.judgeId);
 
       // Show loading state
       this.innerHTML = '<div class="flex items-center justify-center h-screen"><div class="text-2xl">Loading heat data...</div></div>';
 
       // First, batch upload any pending dirty scores
-      console.log('[HeatPage] Checking for dirty scores...');
+      console.debug('[HeatPage] Checking for dirty scores...');
       await heatDataManager.batchUploadDirtyScores(this.judgeId);
 
       // Then fetch fresh data from server
-      console.log('[HeatPage] Fetching fresh data...');
+      console.debug('[HeatPage] Fetching fresh data...');
       this.data = await heatDataManager.getData(this.judgeId);
-      console.log('[HeatPage] Data loaded:', this.data ? 'success' : 'failed');
+      console.debug('[HeatPage] Data loaded:', this.data ? 'success' : 'failed');
 
       if (!this.data) {
         throw new Error('Failed to load heat data');
@@ -84,9 +84,9 @@ export class HeatPage extends HTMLElement {
       window.addEventListener('online', () => this.handleReconnection());
 
       // Initial render
-      console.log('[HeatPage] Rendering...');
+      console.debug('[HeatPage] Rendering...');
       this.render();
-      console.log('[HeatPage] Render complete');
+      console.debug('[HeatPage] Render complete');
 
       // Attach event listeners
       this.attachEventListeners();
@@ -115,7 +115,7 @@ export class HeatPage extends HTMLElement {
       const result = await heatDataManager.batchUploadDirtyScores(this.judgeId);
 
       if (result.succeeded && result.succeeded.length > 0) {
-        console.log(`[HeatPage] Successfully uploaded ${result.succeeded.length} scores`);
+        console.debug(`[HeatPage] Successfully uploaded ${result.succeeded.length} scores`);
         // Refresh data after successful upload
         this.data = await heatDataManager.getData(this.judgeId);
         this.render();
@@ -133,7 +133,7 @@ export class HeatPage extends HTMLElement {
    * Handle reconnection - batch upload dirty scores and refresh data
    */
   async handleReconnection() {
-    console.log('[HeatPage] Reconnected to network');
+    console.debug('[HeatPage] Reconnected to network');
     await this.checkAndUploadDirtyScores();
   }
 
@@ -190,7 +190,7 @@ export class HeatPage extends HTMLElement {
       judgeScore.bad = scoreData.bad;
     }
 
-    console.log('[HeatPage] Score updated in memory');
+    console.debug('[HeatPage] Score updated in memory');
   }
 
   /**

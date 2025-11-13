@@ -21,7 +21,7 @@ export class HeatNavigation extends HTMLElement {
 
     // Listen for score changes to update pending count
     this.handlePendingCountChanged = () => {
-      console.log('[heat-navigation] Received pending-count-changed event');
+      console.debug('[heat-navigation] Received pending-count-changed event');
       this.updatePendingCount();
     };
     document.addEventListener('pending-count-changed', this.handlePendingCountChanged);
@@ -81,7 +81,7 @@ export class HeatNavigation extends HTMLElement {
       if (!judgeId) return;
 
       const count = await heatDataManager.getDirtyScoreCount(judgeId);
-      console.log('[heat-navigation] Pending count:', count, 'previous:', this.pendingCount);
+      console.debug('[heat-navigation] Pending count:', count, 'previous:', this.pendingCount);
       this.pendingCount = count;
       this.updateConnectionStatus();
     } catch (error) {

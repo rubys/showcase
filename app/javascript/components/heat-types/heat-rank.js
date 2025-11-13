@@ -193,7 +193,7 @@ export class HeatRank extends HTMLElement {
 
     // Don't allow starting heat if offline
     if (!navigator.onLine) {
-      console.log('[HeatRank] Cannot start heat - offline');
+      console.debug('[HeatRank] Cannot start heat - offline');
       return;
     }
 

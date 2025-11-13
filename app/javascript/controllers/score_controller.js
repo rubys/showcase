@@ -195,11 +195,11 @@ export default class extends Controller {
     // If offline-capable attribute is present, skip fetch and return success
     // (the SPA will handle the actual save via HeatDataManager)
     if (this.element.dataset.offlineCapable === "true") {
-      console.log('[score_controller] offline-capable detected, skipping fetch');
+      console.debug('[score_controller] offline-capable detected, skipping fetch');
       return Promise.resolve({ ok: true });
     }
 
-    console.log('[score_controller] Making fetch request, offlineCapable:', this.element.dataset.offlineCapable);
+    console.debug('[score_controller] Making fetch request, offlineCapable:', this.element.dataset.offlineCapable);
 
     return fetch(this.element.dataset.dropAction, {
       method: "POST",

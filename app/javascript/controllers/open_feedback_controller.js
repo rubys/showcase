@@ -54,7 +54,7 @@ export default class extends Controller {
 
         // If offline-capable, skip fetch and delegate to SPA's HeatDataManager
         if (score.dataset.offlineCapable === "true") {
-          console.log('[open_feedback_controller] offline-capable detected, skipping fetch');
+          console.debug('[open_feedback_controller] offline-capable detected, skipping fetch');
           // Dispatch event for SPA to handle both save and UI update
           const event = new CustomEvent('feedback-score', {
             bubbles: true,
@@ -64,7 +64,7 @@ export default class extends Controller {
           return;
         }
 
-        console.log('[open_feedback_controller] Making fetch request, offlineCapable:', score.dataset.offlineCapable);
+        console.debug('[open_feedback_controller] Making fetch request, offlineCapable:', score.dataset.offlineCapable);
 
         fetch(this.element.dataset.feedbackAction, {
           method: "POST",

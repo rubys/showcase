@@ -23,14 +23,14 @@ class HeatDataManager {
    * @returns {Promise<IDBDatabase>}
    */
   async init() {
-    console.log('[HeatDataManager] init called, DB version:', DB_VERSION);
+    console.debug('[HeatDataManager] init called, DB version:', DB_VERSION);
     if (this.db) {
-      console.log('[HeatDataManager] DB already initialized');
+      console.debug('[HeatDataManager] DB already initialized');
       return this.db;
     }
 
     return new Promise((resolve, reject) => {
-      console.log('[HeatDataManager] Opening IndexedDB...');
+      console.debug('[HeatDataManager] Opening IndexedDB...');
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onerror = () => {
@@ -43,26 +43,26 @@ class HeatDataManager {
       };
 
       request.onsuccess = () => {
-        console.log('[HeatDataManager] IndexedDB opened successfully');
+        console.debug('[HeatDataManager] IndexedDB opened successfully');
         this.db = request.result;
         resolve(this.db);
       };
 
       request.onupgradeneeded = (event) => {
-        console.log('[HeatDataManager] Upgrade needed, old version:', event.oldVersion, 'new version:', event.newVersion);
+        console.debug('[HeatDataManager] Upgrade needed, old version:', event.oldVersion, 'new version:', event.newVersion);
         const db = event.target.result;
 
         // Delete old store if it exists (for schema changes)
         if (db.objectStoreNames.contains(STORE_NAME)) {
-          console.log('[HeatDataManager] Deleting old object store');
+          console.debug('[HeatDataManager] Deleting old object store');
           db.deleteObjectStore(STORE_NAME);
         }
 
         // Create object store for dirty scores
-        console.log('[HeatDataManager] Creating dirty scores object store');
+        console.debug('[HeatDataManager] Creating dirty scores object store');
         const objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'judge_id' });
         objectStore.createIndex('timestamp', 'timestamp', { unique: false });
-        console.log('[HeatDataManager] Object store created');
+        console.debug('[HeatDataManager] Object store created');
       };
     });
   }
@@ -132,7 +132,7 @@ class HeatDataManager {
         const putRequest = objectStore.put(record);
 
         putRequest.onsuccess = () => {
-          console.log(`Dirty score added for judge ${judgeId}, heat ${heatId}, slot ${slot}`);
+          console.debug(`Dirty score added for judge ${judgeId}, heat ${heatId}, slot ${slot}`);
           resolve();
         };
 
@@ -211,7 +211,7 @@ class HeatDataManager {
         const putRequest = objectStore.put(record);
 
         putRequest.onsuccess = () => {
-          console.log(`Dirty score removed for judge ${judgeId}, heat ${heatId}, slot ${slot}`);
+          console.debug(`Dirty score removed for judge ${judgeId}, heat ${heatId}, slot ${slot}`);
           resolve();
         };
 
@@ -253,7 +253,7 @@ class HeatDataManager {
         const putRequest = objectStore.put(record);
 
         putRequest.onsuccess = () => {
-          console.log(`All dirty scores cleared for judge ${judgeId}`);
+          console.debug(`All dirty scores cleared for judge ${judgeId}`);
           resolve();
         };
 
@@ -296,17 +296,17 @@ class HeatDataManager {
         });
 
         if (response.ok) {
-          console.log('[HeatDataManager] Score saved online');
+          console.debug('[HeatDataManager] Score saved online');
 
           // Try to upload any pending scores in the background
           this.batchUploadDirtyScores(judgeId).then(result => {
             if (result.succeeded && result.succeeded.length > 0) {
-              console.log('[HeatDataManager] Background upload: synced', result.succeeded.length, 'pending scores');
+              console.debug('[HeatDataManager] Background upload: synced', result.succeeded.length, 'pending scores');
               // Notify that pending count changed
               document.dispatchEvent(new CustomEvent('pending-count-changed', { bubbles: true }));
             }
           }).catch(err => {
-            console.log('[HeatDataManager] Background upload failed:', err);
+            console.debug('[HeatDataManager] Background upload failed:', err);
           });
 
           return;
@@ -329,7 +329,7 @@ class HeatDataManager {
 
     // Use null for slot if not provided (most heats don't use slots)
     await this.addDirtyScore(judgeId, data.heat, data.slot || null, scoreData);
-    console.log('[HeatDataManager] Score saved offline');
+    console.debug('[HeatDataManager] Score saved offline');
   }
 
   /**
@@ -339,7 +339,7 @@ class HeatDataManager {
    */
   async getData(judgeId) {
     const url = `/scores/${judgeId}/heats.json`;
-    console.log('[HeatDataManager] Fetching fresh data from', url);
+    console.debug('[HeatDataManager] Fetching fresh data from', url);
 
     try {
       const response = await fetch(url, {
@@ -354,7 +354,7 @@ class HeatDataManager {
       }
 
       const data = await response.json();
-      console.log('[HeatDataManager] Data fetched successfully');
+      console.debug('[HeatDataManager] Data fetched successfully');
       return data;
     } catch (error) {
       console.error('[HeatDataManager] Failed to fetch heat data:', error);
@@ -371,11 +371,11 @@ class HeatDataManager {
     const dirtyScores = await this.getDirtyScores(judgeId);
 
     if (dirtyScores.length === 0) {
-      console.log('[HeatDataManager] No dirty scores to upload');
+      console.debug('[HeatDataManager] No dirty scores to upload');
       return { succeeded: [], failed: [] };
     }
 
-    console.log(`[HeatDataManager] Uploading ${dirtyScores.length} dirty scores`);
+    console.debug(`[HeatDataManager] Uploading ${dirtyScores.length} dirty scores`);
 
     const url = `/scores/${judgeId}/batch`;
 
@@ -399,7 +399,7 @@ class HeatDataManager {
       // Clear dirty scores on success
       if (result.succeeded && result.succeeded.length > 0) {
         await this.clearDirtyScores(judgeId);
-        console.log(`[HeatDataManager] Batch upload successful: ${result.succeeded.length} scores uploaded`);
+        console.debug(`[HeatDataManager] Batch upload successful: ${result.succeeded.length} scores uploaded`);
       }
 
       return result;

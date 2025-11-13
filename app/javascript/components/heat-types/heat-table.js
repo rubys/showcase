@@ -544,7 +544,7 @@ export class HeatTable extends HTMLElement {
       }));
 
       // Notify navigation to update pending count
-      console.log('[heat-table] Dispatching pending-count-changed event');
+      console.debug('[heat-table] Dispatching pending-count-changed event');
       this.dispatchEvent(new CustomEvent('pending-count-changed', {
         bubbles: true
       }));

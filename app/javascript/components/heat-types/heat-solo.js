@@ -199,7 +199,7 @@ export class HeatSolo extends HTMLElement {
 
     // Don't allow starting heat if offline
     if (!navigator.onLine) {
-      console.log('[HeatSolo] Cannot start heat - offline');
+      console.debug('[HeatSolo] Cannot start heat - offline');
       return;
     }
 
