@@ -48,6 +48,7 @@ export class HeatPage extends HTMLElement {
 
     this.data = null;
     this.touchStart = null;
+    this.dataManager = heatDataManager; // Make data manager accessible to child components
 
     this.init();
   }
@@ -145,9 +146,10 @@ export class HeatPage extends HTMLElement {
   }
 
   /**
-   * Handle score update - update in-memory data and POST to server
+   * Handle score update - update in-memory data
+   * (Actual save is handled by HeatDataManager in heat-table.js)
    */
-  async handleScoreUpdate(scoreData) {
+  handleScoreUpdate(scoreData) {
     if (!this.data || !this.data.heats) return;
 
     // Find the heat by ID
@@ -188,55 +190,7 @@ export class HeatPage extends HTMLElement {
       judgeScore.bad = scoreData.bad;
     }
 
-    // POST score to server
-    try {
-      const response = await fetch(`/scores/${this.judgeId}/post`, {
-        method: 'POST',
-        headers: window.inject_region({
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content
-        }),
-        credentials: 'same-origin',
-        body: JSON.stringify({
-          heat: scoreData.heat,
-          slot: scoreData.slot || 1,
-          score: scoreData.score || '',
-          comments: scoreData.comments || '',
-          good: scoreData.good || '',
-          bad: scoreData.bad || ''
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      console.log('[HeatPage] Score posted successfully');
-
-      // Remove from dirty scores if it was there
-      await heatDataManager.removeDirtyScore(
-        this.judgeId,
-        scoreData.heat,
-        scoreData.slot || 1
-      );
-
-    } catch (error) {
-      console.warn('[HeatPage] Failed to POST score, adding to dirty scores:', error);
-
-      // Add to dirty scores for later upload
-      await heatDataManager.addDirtyScore(
-        this.judgeId,
-        scoreData.heat,
-        scoreData.slot || 1,
-        {
-          score: scoreData.score || '',
-          comments: scoreData.comments || '',
-          good: scoreData.good || '',
-          bad: scoreData.bad || ''
-        }
-      );
-    }
+    console.log('[HeatPage] Score updated in memory');
   }
 
   /**

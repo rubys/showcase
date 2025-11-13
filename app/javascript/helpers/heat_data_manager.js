@@ -174,6 +174,14 @@ class HeatDataManager {
   }
 
   /**
+   * Get count of dirty scores for a judge
+   */
+  async getDirtyScoreCount(judgeId) {
+    const dirtyScores = await this.getDirtyScores(judgeId);
+    return dirtyScores.length;
+  }
+
+  /**
    * Remove a specific dirty score (after successful upload)
    * @param {number} judgeId - The judge ID
    * @param {number} heatId - The heat ID
@@ -260,6 +268,68 @@ class HeatDataManager {
         reject(request.error);
       };
     });
+  }
+
+  /**
+   * Save a score (online or offline)
+   * @param {number} judgeId - The judge ID
+   * @param {Object} data - Score data {heat, score?, comments?, good?, bad?, slot?}
+   * @returns {Promise<void>}
+   */
+  async saveScore(judgeId, data) {
+    // Determine which endpoint to use based on data type
+    // Feedback scores have value/good/bad keys, regular scores have score/comments
+    const isFeedback = data.value !== undefined || data.good !== undefined || data.bad !== undefined;
+    const url = isFeedback ? `/scores/${judgeId}/post-feedback` : `/scores/${judgeId}/post`;
+
+    // Try to save online if connected
+    if (navigator.onLine) {
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: window.inject_region({
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content,
+            'Content-Type': 'application/json'
+          }),
+          credentials: 'same-origin',
+          body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+          console.log('[HeatDataManager] Score saved online');
+
+          // Try to upload any pending scores in the background
+          this.batchUploadDirtyScores(judgeId).then(result => {
+            if (result.succeeded && result.succeeded.length > 0) {
+              console.log('[HeatDataManager] Background upload: synced', result.succeeded.length, 'pending scores');
+              // Notify that pending count changed
+              document.dispatchEvent(new CustomEvent('pending-count-changed', { bubbles: true }));
+            }
+          }).catch(err => {
+            console.log('[HeatDataManager] Background upload failed:', err);
+          });
+
+          return;
+        } else {
+          console.warn('[HeatDataManager] Online save failed, falling back to offline');
+        }
+      } catch (error) {
+        console.warn('[HeatDataManager] Online save failed, falling back to offline:', error);
+      }
+    }
+
+    // Save offline
+    // Map data fields to batch format (batch endpoint expects 'score' not 'value')
+    const scoreData = {
+      score: data.score || data.value,  // Handle both regular scores (score) and feedback scores (value)
+      comments: data.comments,
+      good: data.good,
+      bad: data.bad
+    };
+
+    // Use null for slot if not provided (most heats don't use slots)
+    await this.addDirtyScore(judgeId, data.heat, data.slot || null, scoreData);
+    console.log('[HeatDataManager] Score saved offline');
   }
 
   /**

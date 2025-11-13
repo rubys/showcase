@@ -42,7 +42,7 @@ export default class extends Controller {
         const token = document.querySelector('meta[name="csrf-token"]').content;
         const score = document.querySelector("div[data-controller=score]");
 
-        let feedbackType = button.parentElement.classList.contains("good") ? "good" : 
+        let feedbackType = button.parentElement.classList.contains("good") ? "good" :
           (button.parentElement.classList.contains("bad") ? "bad" : "value");
         let feedbackValue = button.querySelector("abbr").textContent;
 
@@ -51,6 +51,20 @@ export default class extends Controller {
           slot: score.dataset.slot && parseInt(score.dataset.slot),
           [feedbackType] : feedbackValue
         };
+
+        // If offline-capable, skip fetch and delegate to SPA's HeatDataManager
+        if (score.dataset.offlineCapable === "true") {
+          console.log('[open_feedback_controller] offline-capable detected, skipping fetch');
+          // Dispatch event for SPA to handle both save and UI update
+          const event = new CustomEvent('feedback-score', {
+            bubbles: true,
+            detail: { feedback, button, element: this.element }
+          });
+          this.element.dispatchEvent(event);
+          return;
+        }
+
+        console.log('[open_feedback_controller] Making fetch request, offlineCapable:', score.dataset.offlineCapable);
 
         fetch(this.element.dataset.feedbackAction, {
           method: "POST",

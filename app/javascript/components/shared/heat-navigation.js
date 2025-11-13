@@ -8,17 +8,30 @@
  * - Optional judge presence checkbox (when assign_judges is enabled)
  */
 
+import { heatDataManager } from 'helpers/heat_data_manager';
+
 export class HeatNavigation extends HTMLElement {
   connectedCallback() {
     this.isOnline = navigator.onLine;
-    this.pendingCount = 0; // TODO: Track pending sync operations
+    this.pendingCount = 0;
     this.render();
     this.attachEventListeners();
     this.setupOnlineOfflineListeners();
+    this.updatePendingCount(); // Initial count
+
+    // Listen for score changes to update pending count
+    this.handlePendingCountChanged = () => {
+      console.log('[heat-navigation] Received pending-count-changed event');
+      this.updatePendingCount();
+    };
+    document.addEventListener('pending-count-changed', this.handlePendingCountChanged);
   }
 
   disconnectedCallback() {
     this.removeOnlineOfflineListeners();
+    if (this.handlePendingCountChanged) {
+      document.removeEventListener('pending-count-changed', this.handlePendingCountChanged);
+    }
   }
 
   /**
@@ -56,6 +69,23 @@ export class HeatNavigation extends HTMLElement {
     const statusElement = this.querySelector('.connection-status');
     if (statusElement) {
       statusElement.innerHTML = this.buildConnectionStatusHtml();
+    }
+  }
+
+  /**
+   * Update pending count from IndexedDB
+   */
+  async updatePendingCount() {
+    try {
+      const judgeId = this.judgeData.id;
+      if (!judgeId) return;
+
+      const count = await heatDataManager.getDirtyScoreCount(judgeId);
+      console.log('[heat-navigation] Pending count:', count, 'previous:', this.pendingCount);
+      this.pendingCount = count;
+      this.updateConnectionStatus();
+    } catch (error) {
+      console.error('Failed to get pending count:', error);
     }
   }
 
@@ -144,11 +174,14 @@ export class HeatNavigation extends HTMLElement {
    * Build connection status HTML
    */
   buildConnectionStatusHtml() {
-    if (this.isOnline) {
+    // Show offline icon if there are pending scores (regardless of network status)
+    if (this.pendingCount > 0) {
+      const pendingText = `<span class="text-red-500 font-bold mr-1">${this.pendingCount}</span>`;
+      return `${pendingText}${this.buildWifiOfflineIcon()}`;
+    } else if (this.isOnline) {
       return this.buildWifiOnlineIcon();
     } else {
-      const pendingText = this.pendingCount > 0 ? `<span class="text-red-500 font-bold mr-1">${this.pendingCount}</span>` : '';
-      return `${pendingText}${this.buildWifiOfflineIcon()}`;
+      return this.buildWifiOfflineIcon();
     }
   }
 

@@ -281,7 +281,7 @@ class ScoresController < ApplicationController
       scores_data.each do |score_params|
         begin
           heat = Heat.find(score_params[:heat])
-          slot = score_params[:slot]&.to_i || 1
+          slot = score_params[:slot]&.to_i
 
           # Find or create score
           score = Score.find_or_create_by(
@@ -312,7 +312,7 @@ class ScoresController < ApplicationController
         rescue => e
           failed << {
             heat_id: score_params[:heat],
-            slot: score_params[:slot] || 1,
+            slot: score_params[:slot]&.to_i,
             error: e.message
           }
         end
