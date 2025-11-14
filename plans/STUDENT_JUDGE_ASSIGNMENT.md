@@ -292,13 +292,13 @@ Add second button in the judge assignment section:
 
 ### Step 4: Add Analysis Tool (Optional)
 
-**File**: `scripts/analyze_student_assignments.rb`
+**File**: `plans/analyze_student_assignments.rb`
 
-The analysis script created during investigation can be moved to `scripts/` directory and enhanced:
+The analysis script is included in the plans directory for preview and testing:
 
 ```ruby
 #!/usr/bin/env ruby
-# Usage: RAILS_APP_DB=event-name bin/rails runner scripts/analyze_student_assignments.rb
+# Usage: RAILS_APP_DB=event-name bin/rails runner plans/analyze_student_assignments.rb
 
 require_relative '../config/environment'
 
