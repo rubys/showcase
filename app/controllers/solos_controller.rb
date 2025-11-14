@@ -404,7 +404,7 @@ class SolosController < ApplicationController
 
     if @solo.heat.number != 0
       notice = "#{formation.empty? ? 'Solo' : 'Formation'} was successfully #{@solo.heat.number < 0 ? 'restored' : 'scratched'}."
-      @solo.heat.update(number: -@solo.heat.number)
+      @solo.heat.update_attribute(:number, -@solo.heat.number)
     else
       @solo.heat.destroy
       entry.reload
