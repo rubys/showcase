@@ -484,15 +484,12 @@ export class HeatPage extends HTMLElement {
     if (!heat) return '<div class="text-center text-red-500">Heat not found</div>';
 
     const componentType = this.getHeatTypeComponent();
-    const heatData = JSON.stringify(heat);
-    const eventData = JSON.stringify(this.data.event);
-    const judgeData = JSON.stringify(this.data.judge);
 
     // Common attributes
     let attrs = `
-      heat-data='${heatData}'
-      event-data='${eventData}'
-      judge-data='${judgeData}'
+      heat-data='${this.escapeJson(heat)}'
+      event-data='${this.escapeJson(this.data.event)}'
+      judge-data='${this.escapeJson(this.data.judge)}'
       scoring-style="${this.scoringStyle}"
       drop-action="/scores/${this.judgeId}/post"
       start-action="/events/start_heat"
@@ -501,7 +498,7 @@ export class HeatPage extends HTMLElement {
     if (componentType === 'heat-table' || componentType === 'heat-cards') {
       // Need scores and results for table/cards
       const scores = this.data.score_options[heat.category] || [];
-      attrs += ` scores='${JSON.stringify(scores)}'`;
+      attrs += ` scores='${this.escapeJson(scores)}'`;
 
       // Build results map (score -> subjects with that score)
       const results = {};
@@ -514,7 +511,7 @@ export class HeatPage extends HTMLElement {
         results[scoreValue].push(subject);
       });
 
-      attrs += ` results='${JSON.stringify(results)}'`;
+      attrs += ` results='${this.escapeJson(results)}'`;
 
       // Add ballrooms for table
       if (componentType === 'heat-table') {
@@ -522,9 +519,9 @@ export class HeatPage extends HTMLElement {
         const sortedSubjects = this.sortSubjects(heat.subjects);
         // Group subjects by ballroom (simplified - would need actual ballroom logic)
         const ballrooms = { '': sortedSubjects };
-        attrs += ` ballrooms='${JSON.stringify(ballrooms)}'`;
+        attrs += ` ballrooms='${this.escapeJson(ballrooms)}'`;
         attrs += ` scoring="${heat.scoring}"`;
-        attrs += ` feedbacks='${JSON.stringify(this.data.feedbacks)}'`;
+        attrs += ` feedbacks='${this.escapeJson(this.data.feedbacks)}'`;
         attrs += ` assign-judges="${this.data.event.assign_judges > 0}"`;
       }
     }
@@ -618,6 +615,19 @@ export class HeatPage extends HTMLElement {
   }
 
   /**
+   * Escape HTML entities in JSON for safe embedding in attributes
+   * Prevents XSS and JSON parsing errors from quotes/apostrophes
+   */
+  escapeJson(obj) {
+    return JSON.stringify(obj)
+      .replace(/&/g, '&amp;')
+      .replace(/'/g, '&apos;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  /**
    * Remove event listeners
    */
   removeEventListeners() {
@@ -668,9 +678,9 @@ export class HeatPage extends HTMLElement {
     this.innerHTML = `
       <div class="flex flex-col h-screen max-h-screen w-full">
         <heat-header
-          heat-data='${JSON.stringify(heat)}'
-          event-data='${JSON.stringify(this.data.event)}'
-          judge-data='${JSON.stringify(this.data.judge)}'
+          heat-data='${this.escapeJson(heat)}'
+          event-data='${this.escapeJson(this.data.event)}'
+          judge-data='${this.escapeJson(this.data.judge)}'
           scoring-style="${this.scoringStyle}"
           slot="${this.slot}"
           final="${heat.dance.uses_scrutineering && this.slot > (heat.dance.heat_length || 0)}"
@@ -678,8 +688,8 @@ export class HeatPage extends HTMLElement {
         </heat-header>
 
         <heat-info-box
-          heat-data='${JSON.stringify(heat)}'
-          event-data='${JSON.stringify(this.data.event)}'
+          heat-data='${this.escapeJson(heat)}'
+          event-data='${this.escapeJson(this.data.event)}'
           scoring-style="${this.scoringStyle}">
         </heat-info-box>
 
@@ -689,8 +699,8 @@ export class HeatPage extends HTMLElement {
           </div>
 
           <heat-navigation
-            judge-data='${JSON.stringify(this.data.judge)}'
-            event-data='${JSON.stringify(this.data.event)}'
+            judge-data='${this.escapeJson(this.data.judge)}'
+            event-data='${this.escapeJson(this.data.event)}'
             prev-url="${prevUrl}"
             next-url="${nextUrl}"
             assign-judges="${this.data.event.assign_judges > 0}"
