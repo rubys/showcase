@@ -307,33 +307,33 @@ export class HeatPage extends HTMLElement {
     let prevUrl = '';
     let nextUrl = '';
 
-    // Previous
+    // Previous (use SPA route format)
     if (this.slot > 1) {
-      prevUrl = `/scores/${this.judgeId}/heat/${this.currentHeatNumber}/${this.slot - 1}`;
+      prevUrl = `${this.basePath}/scores/${this.judgeId}/spa?heat=${this.currentHeatNumber}&slot=${this.slot - 1}&style=${this.scoringStyle}`;
     } else if (currentIndex > 0) {
       const prevHeat = heats[currentIndex - 1];
       if (prevHeat.dance.heat_length) {
         const maxSlots = prevHeat.dance.heat_length * (prevHeat.dance.uses_scrutineering ? 2 : 1);
-        prevUrl = `/scores/${this.judgeId}/heat/${prevHeat.number}/${maxSlots}`;
+        prevUrl = `${this.basePath}/scores/${this.judgeId}/spa?heat=${prevHeat.number}&slot=${maxSlots}&style=${this.scoringStyle}`;
       } else {
-        prevUrl = `/scores/${this.judgeId}/heat/${prevHeat.number}`;
+        prevUrl = `${this.basePath}/scores/${this.judgeId}/spa?heat=${prevHeat.number}&style=${this.scoringStyle}`;
       }
     }
 
-    // Next
+    // Next (use SPA route format)
     if (heat && heat.dance.heat_length && this.slot > 0) {
       const maxSlots = heat.dance.heat_length * (heat.dance.uses_scrutineering ? 2 : 1);
       if (this.slot < maxSlots) {
-        nextUrl = `/scores/${this.judgeId}/heat/${this.currentHeatNumber}/${this.slot + 1}`;
+        nextUrl = `${this.basePath}/scores/${this.judgeId}/spa?heat=${this.currentHeatNumber}&slot=${this.slot + 1}&style=${this.scoringStyle}`;
       }
     }
 
     if (!nextUrl && currentIndex >= 0 && currentIndex < heats.length - 1) {
       const nextHeat = heats[currentIndex + 1];
       if (nextHeat.dance.heat_length) {
-        nextUrl = `/scores/${this.judgeId}/heat/${nextHeat.number}/1`;
+        nextUrl = `${this.basePath}/scores/${this.judgeId}/spa?heat=${nextHeat.number}&slot=1&style=${this.scoringStyle}`;
       } else {
-        nextUrl = `/scores/${this.judgeId}/heat/${nextHeat.number}`;
+        nextUrl = `${this.basePath}/scores/${this.judgeId}/spa?heat=${nextHeat.number}&style=${this.scoringStyle}`;
       }
     }
 
@@ -550,6 +550,12 @@ export class HeatPage extends HTMLElement {
 
     this.addEventListener('navigate-next', () => {
       this.navigateNext();
+    });
+
+    // Listen for heat selection from heat-list
+    this.addEventListener('navigate-to-heat', (e) => {
+      const heatNumber = e.detail.heat;
+      this.navigateToHeat(heatNumber, 0);
     });
 
     // Listen for score updates to update in-memory data

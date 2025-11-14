@@ -186,6 +186,25 @@ export class HeatList extends HTMLElement {
         this.render();
       });
     });
+
+    // Heat links - use client-side navigation to avoid page reload
+    const heatLinks = this.querySelectorAll('table a[href*="heat="]');
+    heatLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const url = new URL(link.href);
+        const heat = url.searchParams.get('heat');
+        if (heat) {
+          // Update URL without reload
+          window.history.pushState({}, '', url.pathname + url.search);
+          // Dispatch event to parent heat-page to re-render
+          this.dispatchEvent(new CustomEvent('navigate-to-heat', {
+            bubbles: true,
+            detail: { heat: parseInt(heat) }
+          }));
+        }
+      });
+    });
   }
 
   /**
