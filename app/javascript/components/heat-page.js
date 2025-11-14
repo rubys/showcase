@@ -582,9 +582,10 @@ export class HeatPage extends HTMLElement {
   }
 
   /**
-   * Attach event listeners
+   * Attach event listeners (called once in connectedCallback)
    */
   attachEventListeners() {
+    // Keyboard and touch handlers on document.body
     this.keydownHandler = (e) => this.handleKeydown(e);
     this.touchStartHandler = (e) => this.handleTouchStart(e);
     this.touchEndHandler = (e) => this.handleTouchEnd(e);
@@ -636,6 +637,7 @@ export class HeatPage extends HTMLElement {
       document.body.removeEventListener('touchstart', this.touchStartHandler);
       document.body.removeEventListener('touchend', this.touchEndHandler);
     }
+    this.listenersAttached = false;
   }
 
   /**

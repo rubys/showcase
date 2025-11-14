@@ -12,12 +12,14 @@ export default class extends Controller {
     let form = ["INPUT", "TEXTAREA"].includes(event.target.nodeName) ||
       ["INPUT", "TEXTAREA"].includes(document.activeElement.nodeName);
 
+    // Skip arrow left/right navigation in offline-capable SPA mode
+    // (SPA handles its own keyboard navigation via heat-page component)
     if (event.key == "ArrowRight") {
-      if (form) return;
+      if (form || this.element.dataset.offlineCapable === "true") return;
       let link = document.querySelector("a[rel=next]");
       if (link) link.click();
     } else if (event.key == "ArrowLeft") {
-      if (form) return;
+      if (form || this.element.dataset.offlineCapable === "true") return;
       let link = document.querySelector("a[rel=prev]");
       if (link) link.click();
     } else if (event.key == "ArrowUp") {
@@ -68,6 +70,10 @@ export default class extends Controller {
 
   touchend = event => {
     let direction = this.swipe(event);
+
+    // Skip swipe navigation in offline-capable SPA mode
+    // (SPA handles its own touch navigation via heat-page component)
+    if (this.element.dataset.offlineCapable === "true") return;
 
     if (direction == "right") {
       let link = document.querySelector("a[rel=prev]");
