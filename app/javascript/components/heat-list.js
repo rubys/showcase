@@ -341,8 +341,8 @@ export class HeatList extends HTMLElement {
       textColor = 'text-black';
     }
 
-    // Build heat URL
-    const url = `/scores/${this.judgeId}/spa?heat=${heat.number}&style=${this.scoringStyle}`;
+    // Build heat URL (include base-path for scoped routes)
+    const url = `${this.basePath}/scores/${this.judgeId}/spa?heat=${heat.number}&style=${this.scoringStyle}`;
 
     return `
       ${categoryHeader}

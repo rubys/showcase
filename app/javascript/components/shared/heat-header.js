@@ -42,6 +42,10 @@ export class HeatHeader extends HTMLElement {
     return this.getAttribute('callbacks');
   }
 
+  get basePath() {
+    return this.getAttribute('base-path') || '';
+  }
+
   /**
    * Calculate dance slot display text
    */
@@ -190,8 +194,8 @@ export class HeatHeader extends HTMLElement {
       `;
     }
 
-    // Build heat list URL - use SPA route for offline support
-    const heatlistUrl = `/scores/${judge.id}/spa?style=${this.style}`;
+    // Build heat list URL - use SPA route for offline support (include base-path for scoped routes)
+    const heatlistUrl = `${this.basePath}/scores/${judge.id}/spa?style=${this.style}`;
 
     this.innerHTML = `
       <h1 class="font-bold text-4xl pt-1 pb-3 text-center mx-8">

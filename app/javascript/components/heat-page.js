@@ -627,7 +627,8 @@ export class HeatPage extends HTMLElement {
           judge-data='${JSON.stringify(this.data.judge)}'
           scoring-style="${this.scoringStyle}"
           slot="${this.slot}"
-          final="${heat.dance.uses_scrutineering && this.slot > (heat.dance.heat_length || 0)}">
+          final="${heat.dance.uses_scrutineering && this.slot > (heat.dance.heat_length || 0)}"
+          base-path="${this.basePath}">
         </heat-header>
 
         <heat-info-box
