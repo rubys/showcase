@@ -29,6 +29,9 @@ export const pattern = new RegExp([
 
 // identify which lines are to be filtered
 export function filtered(match: RegExpMatchArray) {
+  // Don't filter password/verify paths
+  if (/^(showcase\/)?password\/verify(\?|$)/.test(match[6])) return false
+
   if (match[6].startsWith("assets")) return true
   if (match[6].startsWith("showcase/assets")) return true
   return match[3] === '-' || match[3] === 'rubys' || match[6].endsWith('/cable')
@@ -187,6 +190,9 @@ function formatAppJsonLog(log: any, flyData: any, truncate: boolean = true) {
 export function filteredJsonLog(jsonLog: any) {
   // Access logs - filter assets and cable requests
   if (jsonLog.uri) {
+    // Don't filter password/verify paths
+    if (/^\/(showcase\/)?password\/verify(\?|$)/.test(jsonLog.uri)) return false;
+
     if (jsonLog.uri.includes("/assets/")) return true;
     if (jsonLog.uri.includes("/cable")) return true;
     // Filter out rubys and anonymous users (matching non-JSON behavior)
