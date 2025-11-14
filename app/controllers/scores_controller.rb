@@ -221,6 +221,7 @@ class ScoresController < ApplicationController
           number: number,
           category: category,
           scoring: scoring,
+          updated_at: heat_group.map(&:updated_at).compact.max&.iso8601(3),
           dance: {
             id: dance.id,
             name: dance.name,

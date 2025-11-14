@@ -615,19 +615,6 @@ export class HeatPage extends HTMLElement {
     this.addEventListener('score-updated', (e) => {
       this.handleScoreUpdate(e.detail);
     });
-
-    // Also intercept direct link clicks as backup
-    this.addEventListener('click', (e) => {
-      const link = e.target.closest('a[rel="prev"], a[rel="next"]');
-      if (link) {
-        e.preventDefault();
-        if (link.getAttribute('rel') === 'prev') {
-          this.navigatePrev();
-        } else {
-          this.navigateNext();
-        }
-      }
-    });
   }
 
   /**
