@@ -17,6 +17,7 @@ class HeatDataManager {
     this.db = null;
     this.initPromise = null;
     this.basePath = '';
+    this.cachedVersion = null;
   }
 
   /**
@@ -343,13 +344,14 @@ class HeatDataManager {
   }
 
   /**
-   * Fetch heat data from the server (always fetches fresh)
+   * Fetch heat data from the server - caches version metadata for comparison
    * @param {number} judgeId - The judge ID
+   * @param {boolean} forceRefetch - Force refetch even if cached (default: false)
    * @returns {Promise<Object>}
    */
-  async getData(judgeId) {
+  async getData(judgeId, forceRefetch = false) {
     const url = `${this.basePath}/scores/${judgeId}/heats.json`;
-    console.debug('[HeatDataManager] Fetching fresh data from', url);
+    console.debug('[HeatDataManager] Fetching data from', url, { forceRefetch });
 
     try {
       const response = await fetch(url, {
@@ -365,11 +367,56 @@ class HeatDataManager {
 
       const data = await response.json();
       console.debug('[HeatDataManager] Data fetched successfully');
+
+      // Store version metadata for future comparison
+      await this.storeCachedVersion(judgeId, data);
+
       return data;
     } catch (error) {
       console.error('[HeatDataManager] Failed to fetch heat data:', error);
       throw error;
     }
+  }
+
+  /**
+   * Store version metadata for future comparison
+   * @param {number} judgeId - The judge ID
+   * @param {Object} data - The heat data (contains version info)
+   */
+  async storeCachedVersion(judgeId, data) {
+    try {
+      // Calculate version metadata from heat data
+      const heats = data.heats || [];
+      let maxUpdatedAt = null;
+
+      heats.forEach(heat => {
+        if (heat.updated_at) {
+          if (!maxUpdatedAt || heat.updated_at > maxUpdatedAt) {
+            maxUpdatedAt = heat.updated_at;
+          }
+        }
+      });
+
+      const version = {
+        max_updated_at: maxUpdatedAt,
+        heat_count: heats.length
+      };
+
+      // Store in memory for quick access
+      this.cachedVersion = version;
+
+      console.debug('[HeatDataManager] Cached version stored:', version);
+    } catch (error) {
+      console.error('[HeatDataManager] Failed to store cached version:', error);
+    }
+  }
+
+  /**
+   * Get the cached version metadata
+   * @returns {Object|null} Version metadata {max_updated_at, heat_count} or null
+   */
+  getCachedVersion() {
+    return this.cachedVersion || null;
   }
 
   /**

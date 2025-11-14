@@ -215,8 +215,61 @@ export class HeatPage extends HTMLElement {
     url.searchParams.set('style', this.scoringStyle);
     window.history.pushState({}, '', url);
 
-    // Just render - data is already in memory
+    // Check version and conditionally refetch data
+    await this.checkVersionAndRefetch();
+
+    // Render with current data (either cached or freshly fetched)
     this.render();
+  }
+
+  /**
+   * Check server version and refetch data if changed
+   */
+  async checkVersionAndRefetch() {
+    try {
+      // Fetch version from server
+      const versionUrl = `${this.basePath}/scores/${this.judgeId}/version/${this.currentHeatNumber}`;
+      const response = await fetch(versionUrl);
+
+      if (!response.ok) {
+        // Offline or error - use cached data
+        console.debug('[HeatPage] Version check failed, using cached data (offline)');
+        return;
+      }
+
+      const serverVersion = await response.json();
+      const cachedVersion = heatDataManager.getCachedVersion();
+
+      // Compare versions
+      if (this.isVersionCurrent(cachedVersion, serverVersion)) {
+        // Versions match - use cached data
+        console.debug('[HeatPage] Version check: data is current, using cache');
+        return;
+      }
+
+      // Versions differ - refetch full data
+      console.debug('[HeatPage] Version check: data changed, refetching', {
+        cached: cachedVersion,
+        server: serverVersion
+      });
+
+      this.data = await heatDataManager.getData(this.judgeId, true); // Force refetch
+    } catch (error) {
+      // Network error - use cached data
+      console.debug('[HeatPage] Version check failed, using cached data (error):', error.message);
+    }
+  }
+
+  /**
+   * Compare cached and server versions
+   */
+  isVersionCurrent(cachedVersion, serverVersion) {
+    if (!cachedVersion || !serverVersion) return false;
+
+    return (
+      cachedVersion.max_updated_at === serverVersion.max_updated_at &&
+      cachedVersion.heat_count === serverVersion.heat_count
+    );
   }
 
   /**

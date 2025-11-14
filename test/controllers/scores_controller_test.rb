@@ -2229,6 +2229,81 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     assert_select "heat-page[scoring-style='radio']"
   end
 
+  # === Version Check Endpoint Tests ===
+
+  test "version_check returns max_updated_at and heat_count" do
+    get judge_version_check_path(judge: @judge.id, heat: 1), as: :json
+
+    assert_response :success
+    assert_equal 'application/json; charset=utf-8', @response.content_type
+
+    data = JSON.parse(@response.body)
+
+    # Check structure
+    assert_includes data.keys, 'heat_number'
+    assert_includes data.keys, 'max_updated_at'
+    assert_includes data.keys, 'heat_count'
+
+    # Verify heat_number matches request
+    assert_equal 1.0, data['heat_number']
+
+    # Verify heat_count is positive
+    assert data['heat_count'] > 0, "Expected heat_count > 0"
+  end
+
+  test "version_check max_updated_at changes when heat updated" do
+    # Get initial version
+    get judge_version_check_path(judge: @judge.id, heat: 1), as: :json
+    initial_data = JSON.parse(@response.body)
+    initial_updated_at = initial_data['max_updated_at']
+
+    # Update a heat
+    heat = Heat.where('number >= ?', 1).first
+    heat.touch
+
+    # Get new version
+    get judge_version_check_path(judge: @judge.id, heat: 1), as: :json
+    new_data = JSON.parse(@response.body)
+    new_updated_at = new_data['max_updated_at']
+
+    # Verify updated_at changed
+    refute_equal initial_updated_at, new_updated_at, "Expected max_updated_at to change after heat update"
+  end
+
+  test "version_check heat_count changes when heat added" do
+    # Get initial count
+    get judge_version_check_path(judge: @judge.id, heat: 1), as: :json
+    initial_data = JSON.parse(@response.body)
+    initial_count = initial_data['heat_count']
+
+    # Add a new heat
+    heat = Heat.create!(
+      number: 999,
+      dance: dances(:waltz),
+      entry: entries(:one),
+      category: 'Open'
+    )
+
+    # Get new count
+    get judge_version_check_path(judge: @judge.id, heat: 1), as: :json
+    new_data = JSON.parse(@response.body)
+    new_count = new_data['heat_count']
+
+    # Verify count increased
+    assert_equal initial_count + 1, new_count, "Expected heat_count to increase by 1"
+
+    # Cleanup
+    heat.destroy
+  end
+
+  test "version_check accepts fractional heat numbers" do
+    get judge_version_check_path(judge: @judge.id, heat: 59.5), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+    assert_equal 59.5, data['heat_number']
+  end
+
   test "batch_scores creates multiple scores from array" do
     # Remove existing score
     @score.destroy
