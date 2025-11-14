@@ -22,6 +22,9 @@ export class HeatList extends HTMLElement {
     this.showAssignments = null;  // Will be set from data
     this.infoBoxVisible = false;
 
+    // Attach event listeners ONCE using event delegation
+    this.attachEventListeners();
+
     this.render();
   }
 
@@ -75,8 +78,7 @@ export class HeatList extends HTMLElement {
       </div>
     `;
 
-    // Attach event listeners after render
-    this.attachEventListeners();
+    // Note: Event listeners are attached once in connectedCallback using delegation
   }
 
   /**
@@ -152,45 +154,24 @@ export class HeatList extends HTMLElement {
   }
 
   /**
-   * Attach event listeners for interactive elements
+   * Attach event listeners using delegation (called once in connectedCallback)
    */
   attachEventListeners() {
-    // Info box toggle
-    const infoButton = this.querySelector('.info-button');
-    const infoBox = this.querySelector('.info-box');
-    if (infoButton && infoBox) {
-      infoButton.addEventListener('click', () => {
-        this.infoBoxVisible = !this.infoBoxVisible;
-        infoBox.style.display = this.infoBoxVisible ? 'block' : 'none';
-      });
-    }
+    // Use event delegation on the component itself
+    this.addEventListener('click', (e) => {
+      // Info box toggle
+      if (e.target.closest('.info-button')) {
+        const infoBox = this.querySelector('.info-box');
+        if (infoBox) {
+          this.infoBoxVisible = !this.infoBoxVisible;
+          infoBox.style.display = this.infoBoxVisible ? 'block' : 'none';
+        }
+        return;
+      }
 
-    // Sort order change
-    const sortRadios = this.querySelectorAll('input[name="sort"]');
-    sortRadios.forEach(radio => {
-      radio.addEventListener('change', (e) => {
-        this.sortOrder = e.target.value;
-        this.saveSortOrder(e.target.value);
-        // Re-render to apply new sort
-        this.render();
-      });
-    });
-
-    // Show assignments change
-    const showRadios = this.querySelectorAll('input[name="show"]');
-    showRadios.forEach(radio => {
-      radio.addEventListener('change', (e) => {
-        this.showAssignments = e.target.value;
-        this.saveShowAssignments(e.target.value);
-        // Re-render to apply new filter
-        this.render();
-      });
-    });
-
-    // Heat links - use client-side navigation to avoid page reload
-    const heatLinks = this.querySelectorAll('table a[href*="heat="]');
-    heatLinks.forEach(link => {
-      link.addEventListener('click', (e) => {
+      // Heat links - use client-side navigation
+      const link = e.target.closest('table a[href*="heat="]');
+      if (link) {
         e.preventDefault();
         const url = new URL(link.href);
         const heat = url.searchParams.get('heat');
@@ -203,7 +184,29 @@ export class HeatList extends HTMLElement {
             detail: { heat: parseInt(heat) }
           }));
         }
-      });
+        return;
+      }
+    });
+
+    // Sort order and show assignments need 'change' event, not 'click'
+    this.addEventListener('change', (e) => {
+      // Sort order change
+      if (e.target.name === 'sort') {
+        this.sortOrder = e.target.value;
+        this.saveSortOrder(e.target.value);
+        // Re-render to apply new sort
+        this.render();
+        return;
+      }
+
+      // Show assignments change
+      if (e.target.name === 'show') {
+        this.showAssignments = e.target.value;
+        this.saveShowAssignments(e.target.value);
+        // Re-render to apply new filter
+        this.render();
+        return;
+      }
     });
   }
 
