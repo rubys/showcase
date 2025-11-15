@@ -117,7 +117,9 @@ class HeatDataManager {
         };
 
         // Find existing dirty score for this heat/slot
-        const key = `${heatId}-${slot}`;
+        // Normalize slot: treat null as 1 for consistency
+        const normalizedSlot = slot || 1;
+        const key = `${heatId}-${normalizedSlot}`;
         const existingIndex = record.dirty_scores.findIndex(
           s => `${s.heat}-${s.slot || 1}` === key
         );
@@ -291,7 +293,7 @@ class HeatDataManager {
     // Determine which endpoint to use based on data type
     // Feedback scores have value/good/bad keys, regular scores have score/comments
     const isFeedback = data.value !== undefined || data.good !== undefined || data.bad !== undefined;
-    const url = isFeedback ? `/scores/${judgeId}/post-feedback` : `/scores/${judgeId}/post`;
+    const url = isFeedback ? `${this.basePath}/scores/${judgeId}/post-feedback` : `${this.basePath}/scores/${judgeId}/post`;
 
     // Try to save online if connected
     if (navigator.onLine) {
@@ -308,6 +310,16 @@ class HeatDataManager {
 
         if (response.ok) {
           console.debug('[HeatDataManager] Score saved online');
+
+          // Update dirty queue with the latest value to ensure batch sync uses newest data
+          // This handles race conditions where an older queued score might exist
+          const scoreData = {
+            score: data.score || data.value,
+            comments: data.comments,
+            good: data.good,
+            bad: data.bad
+          };
+          await this.addDirtyScore(judgeId, data.heat, data.slot || null, scoreData);
 
           // Try to upload any pending scores in the background
           this.batchUploadDirtyScores(judgeId).then(result => {
