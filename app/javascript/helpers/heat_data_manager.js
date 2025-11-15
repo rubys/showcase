@@ -8,6 +8,8 @@
  * - On navigation: Use in-memory data (no cache, no version checks)
  */
 
+import ScoreMergeHelper from 'helpers/score_merge_helper';
+
 const DB_NAME = 'showcase_dirty_scores';
 const DB_VERSION = 1;
 const STORE_NAME = 'dirty_scores';
@@ -394,12 +396,7 @@ class HeatDataManager {
 
     // Save offline
     // Merge with current score to preserve all fields (important for batch upload)
-    const mergedData = {
-      score: data.score || data.value || currentScore.value || '',
-      comments: data.comments !== undefined ? data.comments : (currentScore.comments || ''),
-      good: data.good !== undefined ? data.good : (currentScore.good || ''),
-      bad: data.bad !== undefined ? data.bad : (currentScore.bad || '')
-    };
+    const mergedData = ScoreMergeHelper.mergeForOffline(data, currentScore);
 
     // Use null for slot if not provided (most heats don't use slots)
     await this.addDirtyScore(judgeId, data.heat, data.slot || null, mergedData);
@@ -407,20 +404,7 @@ class HeatDataManager {
 
     // Return optimistic update data - only include fields that were in the request
     // This prevents overwriting existing data (e.g., don't clear 'good' when updating 'value')
-    const result = {};
-    if (data.value !== undefined || data.score !== undefined) {
-      result.value = data.value || data.score;
-    }
-    if (data.good !== undefined) {
-      result.good = data.good;
-    }
-    if (data.bad !== undefined) {
-      result.bad = data.bad;
-    }
-    if (data.comments !== undefined) {
-      result.comments = data.comments;
-    }
-    return result;
+    return ScoreMergeHelper.generateOptimisticResponse(data);
   }
 
   /**

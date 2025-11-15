@@ -4,24 +4,31 @@
 
 This document outlines a comprehensive refactoring of the judge scoring SPA to improve code organization, reduce coupling, and establish clear architectural boundaries.
 
-## Current State
+**Last Updated:** 2025-11-15 (after Priority 1 completion and offline scoring fixes)
 
-**Web Components** (1,608 lines):
-- `heat_data_manager.js`: 525 lines - IndexedDB, dirty scores, connectivity, sync
-- `heat-page.js`: 769 lines - orchestration, navigation, version checks, popstate
-- `heat-navigation.js`: 314 lines - navigation UI with connectivity display
+## Current State (As of 2025-11-15)
 
-**Stimulus Controllers** (640 lines, modified for SPA):
-- `score_controller.js`: 530 lines - keyboard/touch nav, drag-and-drop, scoring
-  - Lines 16-24, 74-76, 200-206: Bypass logic when `data-offline-capable="true"`
-- `open_feedback_controller.js`: 110 lines - feedback button clicks
-  - Lines 55-65: Dispatch event instead of fetch when `offline-capable`
+**Web Components** (1,659 lines):
+- `heat_data_manager.js`: 564 lines (+39) - IndexedDB, dirty scores, connectivity, sync, **offline merging**
+- `heat-page.js`: 781 lines (+12) - orchestration, navigation, version checks, popstate
+- `heat-navigation.js`: 314 lines (unchanged) - navigation UI with connectivity display
 
-**Issues**:
-1. **Tight coupling**: Controllers know about SPA via `offline-capable` checks
-2. **Unclear ownership**: Who handles keyboard navigation? Both controller and component
-3. **Duplicated logic**: Navigation, score submission in multiple places
-4. **Confusing flow**: Controller → event → component → HeatDataManager
+**Stimulus Controllers** (611 lines, cleaned up):
+- `score_controller.js`: 515 lines (-15) - keyboard/touch nav, drag-and-drop, scoring
+  - ✅ **No offline-capable bypasses** (removed in Priority 1)
+- `open_feedback_controller.js`: 96 lines (-14) - feedback button clicks
+  - ✅ **No offline-capable bypasses** (removed in Priority 1)
+
+**Priority 1 Status: ✅ COMPLETE** (commit 835754e7)
+- All Stimulus dependencies removed from SPA
+- Clean separation: ERB = Stimulus, SPA = Web Components
+- No `data-controller` or `data-offline-capable` attributes remain
+
+**New Complexity Since Plan** (commit 0ebc0811):
+- Offline score field preservation added (lines 396-402 in heat_data_manager.js)
+- Cache invalidation after batch upload (line 509-512)
+- Score merging with current values to prevent field loss
+- `saveScore()` grew from ~60 to 95 lines due to merging logic
 
 ## Target State
 
@@ -44,15 +51,15 @@ This document outlines a comprehensive refactoring of the judge scoring SPA to i
 
 ---
 
-## Test Baseline (Established 2025-11-14)
+## Test Baseline (Updated 2025-11-15)
 
 | Test Suite | Status | Details |
 |------------|--------|---------|
-| **JavaScript (Vitest)** | ✅ **Pass** | 280/280 tests |
+| **JavaScript (Vitest)** | ✅ **Pass** | 287/287 tests |
 | **Rails Unit/Integration** | ✅ **Pass** | 1107 runs, 5135 assertions |
 | **Rails System Tests** | ✅ **Pass** | 129 runs, 319 assertions (6 skips) |
 
-**Total: 1516 passing tests**
+**Total: 1523 passing tests** (+7 from offline scoring fixes)
 
 All tests must continue passing after each priority phase.
 
@@ -580,13 +587,308 @@ Files modified:
 - score_controller.js: Removed offline-capable bypasses
 - open_feedback_controller.js: Removed offline-capable bypasses
 
-All tests passing: 280 JS + 1107 Rails + 129 System = 1516 total
+All tests passing: 287 JS + 1107 Rails + 129 System = 1523 total
 "
 ```
 
 ---
 
-## Priority 2: Split HeatDataManager
+## Priority 2a: Extract ScoreMergeHelper (NEW)
+
+**Goal**: Extract complex score field merging logic from HeatDataManager.
+
+**Rationale**: The offline fixes (commit 0ebc0811) added complex merging logic to preserve score fields when saving offline. This logic is now ~30 lines within `saveScore()` and violates single responsibility. Extracting it will:
+- Make saveScore() cleaner and easier to understand
+- Allow testing merge logic in isolation
+- Reuse merge logic if needed elsewhere (e.g., batch upload)
+
+**Estimated Time**: 2-4 hours (half day)
+
+### Current Problem
+
+**`heat_data_manager.js` lines 396-402** (merging for offline save):
+```javascript
+// Save offline
+const mergedData = {
+  score: data.score || data.value || currentScore.value || '',
+  comments: data.comments !== undefined ? data.comments : (currentScore.comments || ''),
+  good: data.good !== undefined ? data.good : (currentScore.good || ''),
+  bad: data.bad !== undefined ? data.bad : (currentScore.bad || '')
+};
+
+await this.addDirtyScore(judgeId, data.heat, data.slot || null, mergedData);
+```
+
+This merging handles:
+1. **Field alias**: `score` vs `value` (both used in different contexts)
+2. **Partial updates**: Only update fields present in request
+3. **Default values**: Empty string for missing fields
+4. **Preservation**: Keep existing values if not in update
+
+**Complexity**: This logic is duplicated conceptually in the optimistic update section (lines 409-423) which determines which fields to return.
+
+### Files to Create
+
+#### `app/javascript/helpers/score_merge_helper.js`
+
+**Purpose**: Handle score field merging for offline saves and optimistic updates.
+
+```javascript
+/**
+ * ScoreMergeHelper - Score field merging logic
+ *
+ * Handles merging of score updates with current values for offline saves
+ * and generating optimistic update responses.
+ */
+
+class ScoreMergeHelper {
+  /**
+   * Merge score update with current values for offline storage
+   *
+   * @param {Object} update - The score update {score?, value?, good?, bad?, comments?}
+   * @param {Object} current - Current score values {value?, good?, bad?, comments?}
+   * @returns {Object} Merged data for offline storage {score, comments, good, bad}
+   */
+  static mergeForOffline(update, current = {}) {
+    return {
+      score: update.score || update.value || current.value || '',
+      comments: update.comments !== undefined ? update.comments : (current.comments || ''),
+      good: update.good !== undefined ? update.good : (current.good || ''),
+      bad: update.bad !== undefined ? update.bad : (current.bad || '')
+    };
+  }
+
+  /**
+   * Generate optimistic update response (only fields that were updated)
+   *
+   * @param {Object} update - The score update {score?, value?, good?, bad?, comments?}
+   * @returns {Object} Response with only updated fields {value?, good?, bad?, comments?}
+   */
+  static generateOptimisticResponse(update) {
+    const result = {};
+
+    if (update.value !== undefined || update.score !== undefined) {
+      result.value = update.value || update.score;
+    }
+    if (update.good !== undefined) {
+      result.good = update.good;
+    }
+    if (update.bad !== undefined) {
+      result.bad = update.bad;
+    }
+    if (update.comments !== undefined) {
+      result.comments = update.comments;
+    }
+
+    return result;
+  }
+
+  /**
+   * Normalize score field names (score → value)
+   *
+   * @param {Object} data - Data with possibly mixed field names
+   * @returns {Object} Data with normalized field names
+   */
+  static normalizeFieldNames(data) {
+    const normalized = { ...data };
+
+    if (normalized.score !== undefined && normalized.value === undefined) {
+      normalized.value = normalized.score;
+      delete normalized.score;
+    }
+
+    return normalized;
+  }
+}
+
+export default ScoreMergeHelper;
+```
+
+### Files to Update
+
+#### `app/javascript/helpers/heat_data_manager.js`
+
+**Import**:
+```javascript
+import ScoreMergeHelper from 'helpers/score_merge_helper';
+```
+
+**Update `saveScore()` offline section** (lines 395-423):
+
+**Before** (30 lines of merging logic):
+```javascript
+// Save offline
+const mergedData = {
+  score: data.score || data.value || currentScore.value || '',
+  comments: data.comments !== undefined ? data.comments : (currentScore.comments || ''),
+  good: data.good !== undefined ? data.good : (currentScore.good || ''),
+  bad: data.bad !== undefined ? data.bad : (currentScore.bad || '')
+};
+
+await this.addDirtyScore(judgeId, data.heat, data.slot || null, mergedData);
+console.debug('[HeatDataManager] Score saved offline with merged data:', mergedData);
+
+// Return optimistic update data - only include fields that were in the request
+const result = {};
+if (data.value !== undefined || data.score !== undefined) {
+  result.value = data.value || data.score;
+}
+if (data.good !== undefined) {
+  result.good = data.good;
+}
+if (data.bad !== undefined) {
+  result.bad = data.bad;
+}
+if (data.comments !== undefined) {
+  result.comments = data.comments;
+}
+return result;
+```
+
+**After** (6 lines using helper):
+```javascript
+// Save offline
+const mergedData = ScoreMergeHelper.mergeForOffline(data, currentScore);
+
+await this.addDirtyScore(judgeId, data.heat, data.slot || null, mergedData);
+console.debug('[HeatDataManager] Score saved offline with merged data:', mergedData);
+
+// Return optimistic update data - only include fields that were in the request
+return ScoreMergeHelper.generateOptimisticResponse(data);
+```
+
+**Benefit**: Reduced from 30 lines to 6 lines, clearer intent.
+
+### Update Import Maps
+
+**`config/importmap.rb`**:
+
+**Add**:
+```ruby
+pin "helpers/score_merge_helper", to: "helpers/score_merge_helper.js", preload: true
+```
+
+### Testing Checklist
+
+**JavaScript Tests**:
+```bash
+npm run test:run
+```
+- ✅ 287/287 tests passing (especially heat_data_manager.test.js saveScore tests)
+
+**Add new tests** for `score_merge_helper.test.js`:
+```javascript
+import { describe, it, expect } from 'vitest'
+import ScoreMergeHelper from '../../app/javascript/helpers/score_merge_helper'
+
+describe('ScoreMergeHelper', () => {
+  describe('mergeForOffline', () => {
+    it('merges partial update with current values', () => {
+      const update = { good: 'F P' }
+      const current = { value: '3', good: 'F', bad: '', comments: 'test' }
+
+      const merged = ScoreMergeHelper.mergeForOffline(update, current)
+
+      expect(merged.score).toBe('3')  // Preserved from current.value
+      expect(merged.good).toBe('F P')  // Updated
+      expect(merged.bad).toBe('')  // Preserved
+      expect(merged.comments).toBe('test')  // Preserved
+    })
+
+    it('handles empty current values', () => {
+      const update = { value: '4', good: 'T' }
+      const current = {}
+
+      const merged = ScoreMergeHelper.mergeForOffline(update, current)
+
+      expect(merged.score).toBe('4')
+      expect(merged.good).toBe('T')
+      expect(merged.bad).toBe('')  // Default
+      expect(merged.comments).toBe('')  // Default
+    })
+
+    it('prefers score over value in update', () => {
+      const update = { score: 'S', value: '5' }
+
+      const merged = ScoreMergeHelper.mergeForOffline(update, {})
+
+      expect(merged.score).toBe('S')
+    })
+  })
+
+  describe('generateOptimisticResponse', () => {
+    it('returns only updated fields', () => {
+      const update = { value: '3', good: 'F' }
+
+      const response = ScoreMergeHelper.generateOptimisticResponse(update)
+
+      expect(response.value).toBe('3')
+      expect(response.good).toBe('F')
+      expect(response.bad).toBeUndefined()
+      expect(response.comments).toBeUndefined()
+    })
+
+    it('handles empty update', () => {
+      const update = {}
+
+      const response = ScoreMergeHelper.generateOptimisticResponse(update)
+
+      expect(Object.keys(response)).toHaveLength(0)
+    })
+  })
+})
+```
+
+**Manual Testing**:
+1. ✅ Save score offline → fields preserved correctly
+2. ✅ Update only good feedback offline → value/bad/comments preserved
+3. ✅ Batch upload → all fields present
+4. ✅ Optimistic UI updates → only changed fields update
+
+**Rails Tests**:
+```bash
+PARALLEL_WORKERS=0 bin/rails test
+PARALLEL_WORKERS=0 bin/rails test:system
+```
+- ✅ All tests still passing
+
+### Commit Point
+
+```bash
+git add -A
+git commit -m "Extract score merging logic into ScoreMergeHelper
+
+Created ScoreMergeHelper (helpers/score_merge_helper.js):
+- mergeForOffline(): Merge partial updates with current values
+- generateOptimisticResponse(): Return only updated fields
+- normalizeFieldNames(): Handle score vs value field aliases
+
+Simplified HeatDataManager.saveScore():
+- Reduced offline save section from 30 lines to 6 lines
+- Clearer intent and easier to understand
+- Merging logic now testable in isolation
+
+Benefits:
+- Single responsibility for merging logic
+- Reusable across codebase
+- Easier to test complex merge scenarios
+- No behavior changes
+
+Files created:
+- helpers/score_merge_helper.js (new)
+- test/javascript/score_merge_helper.test.js (new, 8 tests)
+
+Files modified:
+- helpers/heat_data_manager.js (simplified)
+- config/importmap.rb (added score_merge_helper pin)
+
+All tests passing: 295 JS + 1107 Rails + 129 System = 1531 total
+"
+```
+
+---
+
+## Priority 2b-d: Split HeatDataManager
 
 **Goal**: Separate concerns - connectivity tracking, dirty queue, data fetching.
 
@@ -1260,7 +1562,7 @@ Files modified:
 - config/importmap.rb (added new pins)
 - components/heat-page.js (updated imports)
 
-All tests passing: 280 JS + 1107 Rails + 129 System = 1516 total
+All tests passing: 295 JS + 1107 Rails + 129 System = 1531 total
 "
 ```
 
@@ -1629,7 +1931,414 @@ Files modified:
 - components/heat-page.js (simplified)
 - config/importmap.rb (added heat_navigator pin)
 
-All tests passing: 280 JS + 1107 Rails + 129 System = 1516 total
+All tests passing: 295 JS + 1107 Rails + 129 System = 1531 total
+"
+```
+
+---
+
+## Priority 4: Extract FeedbackPanel Component (NEW)
+
+**Goal**: Extract feedback button rendering and interaction logic into reusable component.
+
+**Rationale**: The offline fixes revealed that feedback button logic in heat-table.js is complex (~70 lines, lines 666-734) and could benefit from extraction. This logic handles:
+- Button rendering with selected state
+- Click handling with server communication
+- Gathering current values for offline preservation
+- UI updates based on server response
+- Event dispatching for in-memory updates
+
+**Estimated Time**: 6-10 hours (1-1.5 days)
+
+### Current Problem
+
+**`heat-table.js` lines 666-734** (feedback button logic):
+- 23 lines for button click handler
+- 28 lines for UI update logic
+- 11 lines for event dispatch
+- Mixed concerns: DOM manipulation, data gathering, server communication
+
+**Complexity**: This logic is tightly coupled to heat-table rendering, making it hard to:
+- Test feedback interactions in isolation
+- Reuse feedback UI in other contexts (e.g., heat-solo)
+- Understand feedback behavior separate from table rendering
+
+### Files to Create
+
+#### `app/javascript/components/shared/feedback-panel.js`
+
+**Purpose**: Reusable feedback button panel component.
+
+```javascript
+/**
+ * FeedbackPanel - Feedback button panel component
+ *
+ * Renders feedback buttons (good/bad/value) and handles interactions.
+ * Communicates with server via HeatDataManager and dispatches events
+ * for parent components to update their state.
+ *
+ * Usage:
+ *   <feedback-panel
+ *     judge-id="55"
+ *     heat="100"
+ *     slot="1"
+ *     good="F P"
+ *     bad=""
+ *     value="3"
+ *     overall-options='["1","2","3","4","5"]'
+ *     good-options='[{"abbr":"F","full":"Footwork"},...]'
+ *     bad-options='[...]'>
+ *   </feedback-panel>
+ */
+
+import { heatDataManager } from 'helpers/heat_data_manager';
+
+class FeedbackPanel extends HTMLElement {
+  connectedCallback() {
+    this.parseAttributes();
+    this.render();
+    this.setupEventListeners();
+  }
+
+  parseAttributes() {
+    this.judgeId = parseInt(this.getAttribute('judge-id'));
+    this.heat = parseInt(this.getAttribute('heat'));
+    this.slot = this.getAttribute('slot') ? parseInt(this.getAttribute('slot')) : null;
+    this.good = this.getAttribute('good') || '';
+    this.bad = this.getAttribute('bad') || '';
+    this.value = this.getAttribute('value') || '';
+
+    try {
+      this.overallOptions = JSON.parse(this.getAttribute('overall-options') || '[]');
+      this.goodOptions = JSON.parse(this.getAttribute('good-options') || '[]');
+      this.badOptions = JSON.parse(this.getAttribute('bad-options') || '[]');
+    } catch (e) {
+      console.error('[FeedbackPanel] Failed to parse options:', e);
+      this.overallOptions = [];
+      this.goodOptions = [];
+      this.badOptions = [];
+    }
+  }
+
+  render() {
+    const goodFeedback = this.good.split(' ').filter(f => f);
+    const badFeedback = this.bad.split(' ').filter(f => f);
+
+    this.innerHTML = `
+      <div class="feedback-panel">
+        <!-- Overall Score -->
+        <div class="feedback-section value" data-value="${this.value}">
+          ${this.overallOptions.map(opt => `
+            <button class="feedback-btn ${this.value === opt ? 'selected' : ''}">
+              <abbr>${opt}</abbr>
+            </button>
+          `).join('')}
+        </div>
+
+        <!-- Good Feedback -->
+        <div class="feedback-section good" data-value="${this.good}">
+          ${this.goodOptions.map(opt => `
+            <button class="feedback-btn ${goodFeedback.includes(opt.abbr) ? 'selected' : ''}">
+              <abbr title="${opt.full}">${opt.abbr}</abbr>
+              <span class="sr-only">${opt.full}</span>
+            </button>
+          `).join('')}
+        </div>
+
+        <!-- Bad Feedback -->
+        <div class="feedback-section bad" data-value="${this.bad}">
+          ${this.badOptions.map(opt => `
+            <button class="feedback-btn ${badFeedback.includes(opt.abbr) ? 'selected' : ''}">
+              <abbr title="${opt.full}">${opt.abbr}</abbr>
+              <span class="sr-only">${opt.full}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  setupEventListeners() {
+    const buttons = this.querySelectorAll('.feedback-btn');
+
+    for (const button of buttons) {
+      button.addEventListener('click', async () => {
+        await this.handleFeedbackClick(button);
+      });
+    }
+  }
+
+  async handleFeedbackClick(button) {
+    const feedbackType = button.parentElement.classList.contains('good') ? 'good' :
+      (button.parentElement.classList.contains('bad') ? 'bad' : 'value');
+    const feedbackValue = button.querySelector('abbr')?.textContent;
+
+    // Send only the clicked value - server handles toggling and mutual exclusivity
+    const scoreData = {
+      heat: this.heat,
+      slot: this.slot,
+      [feedbackType]: feedbackValue
+    };
+
+    // Get current values from all sections for offline preservation
+    const sections = this.querySelectorAll('.feedback-section');
+    const currentScore = {};
+    for (const section of sections) {
+      const sectionType = section.classList.contains('good') ? 'good' :
+        (section.classList.contains('bad') ? 'bad' : 'value');
+      currentScore[sectionType] = section.dataset.value || '';
+    }
+
+    try {
+      const response = await heatDataManager.saveScore(this.judgeId, scoreData, currentScore);
+
+      // Update UI based on response - only update sections that are in the response
+      if (response && !response.error) {
+        this.updateUI(response);
+
+        // Dispatch event for parent component to update in-memory data
+        this.dispatchEvent(new CustomEvent('score-updated', {
+          bubbles: true,
+          detail: {
+            heat: scoreData.heat,
+            slot: scoreData.slot,
+            ...response  // Spread response to include value/good/bad/comments
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('[FeedbackPanel] Failed to save feedback:', error);
+    }
+  }
+
+  updateUI(response) {
+    const sections = this.querySelectorAll('.feedback-section');
+
+    for (const section of sections) {
+      const sectionType = section.classList.contains('good') ? 'good' :
+        (section.classList.contains('bad') ? 'bad' : 'value');
+
+      // Only update this section if it's in the response
+      if (response[sectionType] === undefined) {
+        continue;  // Skip sections not in response - preserves existing UI state
+      }
+
+      const feedbackValue = response[sectionType] || '';  // Handle null
+      const feedback = feedbackValue.split(' ').filter(f => f);
+
+      section.dataset.value = feedbackValue;
+
+      for (const btn of section.querySelectorAll('button')) {
+        const btnAbbr = btn.querySelector('abbr');
+        if (btnAbbr && feedback.includes(btnAbbr.textContent)) {
+          btn.classList.add('selected');
+        } else {
+          btn.classList.remove('selected');
+        }
+      }
+    }
+  }
+}
+
+customElements.define('feedback-panel', FeedbackPanel);
+
+export default FeedbackPanel;
+```
+
+### Files to Update
+
+#### `app/javascript/components/heat-types/heat-table.js`
+
+**Import**:
+```javascript
+import FeedbackPanel from 'components/shared/feedback-panel';
+```
+
+**Replace feedback button rendering** (lines 266-295):
+
+**Before** (~30 lines of template):
+```javascript
+${entry.open_feedback ? `
+  <tr class="open-fb-row" data-heat="${heat.number}">
+    <td colspan="${colspan}">
+      <div class="flex gap-2">
+        <div class="value" data-value="${judgeScore?.value || ''}">
+          ${this.event.feedback.overall.map(opt => `
+            <button>
+              <abbr>${opt}</abbr>
+            </button>
+          `).join('')}
+        </div>
+        <div class="good" data-value="${judgeScore?.good || ''}">
+          ${this.event.feedback.good.map(opt => `
+            <button>
+              <abbr title="${opt.full}">${opt.abbr}</abbr>
+              <span class="sr-only">${opt.full}</span>
+            </button>
+          `).join('')}
+        </div>
+        <div class="bad" data-value="${judgeScore?.bad || ''}">
+          ${this.event.feedback.bad.map(opt => `
+            <button>
+              <abbr title="${opt.full}">${opt.abbr}</abbr>
+              <span class="sr-only">${opt.full}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    </td>
+  </tr>
+` : ''}
+```
+
+**After** (~5 lines using component):
+```javascript
+${entry.open_feedback ? `
+  <tr class="open-fb-row" data-heat="${heat.number}">
+    <td colspan="${colspan}">
+      <feedback-panel
+        judge-id="${this.judgeData.id}"
+        heat="${heat.number}"
+        slot="${this.getAttribute('slot') || ''}"
+        good="${judgeScore?.good || ''}"
+        bad="${judgeScore?.bad || ''}"
+        value="${judgeScore?.value || ''}"
+        overall-options='${JSON.stringify(this.event.feedback.overall)}'
+        good-options='${JSON.stringify(this.event.feedback.good)}'
+        bad-options='${JSON.stringify(this.event.feedback.bad)}'>
+      </feedback-panel>
+    </td>
+  </tr>
+` : ''}
+```
+
+**Delete feedback button handler** (lines 666-734) - now handled by component.
+
+**Keep score-updated event listener** in heat-table.js to update in-memory data.
+
+### Update Import Maps
+
+**`config/importmap.rb`**:
+
+**Add**:
+```ruby
+pin "components/shared/feedback-panel", to: "components/shared/feedback-panel.js", preload: true
+```
+
+### Testing Checklist
+
+**JavaScript Tests**:
+```bash
+npm run test:run
+```
+- ✅ 295/295 tests passing
+
+**Add new tests** for `feedback_panel.test.js`:
+```javascript
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { screen } from '@testing-library/dom'
+import '@testing-library/jest-dom'
+import FeedbackPanel from '../../app/javascript/components/shared/feedback-panel'
+
+describe('FeedbackPanel', () => {
+  beforeEach(() => {
+    document.body.innerHTML = ''
+  })
+
+  it('renders feedback buttons', () => {
+    const panel = document.createElement('feedback-panel')
+    panel.setAttribute('judge-id', '55')
+    panel.setAttribute('heat', '100')
+    panel.setAttribute('good', 'F P')
+    panel.setAttribute('bad', '')
+    panel.setAttribute('value', '3')
+    panel.setAttribute('overall-options', '["1","2","3","4","5"]')
+    panel.setAttribute('good-options', '[{"abbr":"F","full":"Footwork"},{"abbr":"P","full":"Posture"}]')
+    panel.setAttribute('bad-options', '[]')
+
+    document.body.appendChild(panel)
+
+    expect(panel.querySelector('.value button.selected abbr').textContent).toBe('3')
+    expect(panel.querySelectorAll('.good button.selected')).toHaveLength(2)
+  })
+
+  it('handles feedback button click', async () => {
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ good: 'F P T' })
+      })
+    )
+
+    const panel = document.createElement('feedback-panel')
+    panel.setAttribute('judge-id', '55')
+    panel.setAttribute('heat', '100')
+    panel.setAttribute('good', 'F P')
+    panel.setAttribute('good-options', '[{"abbr":"F","full":"Footwork"},{"abbr":"P","full":"Posture"},{"abbr":"T","full":"Timing"}]')
+
+    document.body.appendChild(panel)
+
+    const tButton = Array.from(panel.querySelectorAll('.good button'))
+      .find(btn => btn.querySelector('abbr').textContent === 'T')
+
+    await tButton.click()
+
+    // Wait for async update
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    expect(panel.querySelectorAll('.good button.selected')).toHaveLength(3)
+  })
+})
+```
+
+**Manual Testing**:
+1. ✅ Feedback buttons render correctly
+2. ✅ Clicking feedback button saves and updates UI
+3. ✅ Offline mode preserves all fields
+4. ✅ Multiple heats with feedback work
+5. ✅ Mutual exclusivity (good/bad) works
+
+**Rails Tests**:
+```bash
+PARALLEL_WORKERS=0 bin/rails test
+PARALLEL_WORKERS=0 bin/rails test:system
+```
+- ✅ All tests still passing
+
+### Commit Point
+
+```bash
+git add -A
+git commit -m "Extract feedback panel into reusable component
+
+Created FeedbackPanel (components/shared/feedback-panel.js):
+- Renders feedback buttons (good/bad/value)
+- Handles button clicks with server communication
+- Updates UI based on server response
+- Dispatches score-updated events for parent components
+- Preserves fields for offline saves
+
+Simplified heat-table.js:
+- Reduced feedback rendering from 30 lines to 5 lines
+- Removed 70 lines of feedback button handling logic
+- Uses feedback-panel component declaratively
+- Clearer separation of concerns
+
+Benefits:
+- Reusable feedback UI across heat types
+- Testable in isolation
+- Single responsibility for feedback interactions
+- No behavior changes
+
+Files created:
+- components/shared/feedback-panel.js (new)
+- test/javascript/feedback_panel.test.js (new, 5 tests)
+
+Files modified:
+- components/heat-types/heat-table.js (simplified)
+- config/importmap.rb (added feedback-panel pin)
+
+All tests passing: 300 JS + 1107 Rails + 129 System = 1536 total
 "
 ```
 
@@ -1637,24 +2346,28 @@ All tests passing: 280 JS + 1107 Rails + 129 System = 1516 total
 
 ## Success Criteria
 
-After completing all three priorities:
+After completing all priorities:
 
 **Code Quality**:
 - ✅ Clear architectural boundaries (ERB = Stimulus, SPA = Web Components)
-- ✅ Single responsibility for each class
+- ✅ Single responsibility for each class/component
 - ✅ No coupling between controllers and components
 - ✅ Easy to understand and maintain
+- ✅ Reusable components (FeedbackPanel, HeatNavigator)
+- ✅ Testable logic in isolation (ScoreMergeHelper, ConnectivityTracker)
 
 **Test Coverage**:
-- ✅ All 1516 tests passing
+- ✅ All ~1536 tests passing (300 JS + 1107 Rails + 129 System)
 - ✅ No regressions introduced
 - ✅ Both SPA and ERB paths tested
+- ✅ New helper classes have dedicated test suites
 
 **Functionality**:
 - ✅ SPA works identically to before
 - ✅ ERB views work identically to before
 - ✅ Offline/online sync works correctly
 - ✅ All interactions work (keyboard, touch, drag-and-drop)
+- ✅ Feedback buttons work in all modes
 
 **Documentation**:
 - ✅ Clear comments in new classes
@@ -1690,16 +2403,25 @@ All tests should pass after rollback to previous state.
 
 ## Timeline Summary
 
-| Priority | Time Estimate | Calendar Days |
-|----------|---------------|---------------|
-| 1. Remove Stimulus from SPA | 10-14 hours | 1-2 days |
-| 2. Split HeatDataManager | 8-13 hours | 1-2 days |
-| 3. Extract Navigation | 4-7 hours | 0.5-1 day |
-| **Total** | **22-34 hours** | **3-5 days** |
+| Priority | Time Estimate | Calendar Days | Status |
+|----------|---------------|---------------|--------|
+| 1. Remove Stimulus from SPA | 10-14 hours | 1-2 days | ✅ **COMPLETE** (commit 835754e7) |
+| 2a. Extract ScoreMergeHelper | 2-4 hours | 0.5 day | ⏳ Pending |
+| 2b-d. Split HeatDataManager | 8-13 hours | 1-2 days | ⏳ Pending |
+| 3. Extract Navigation | 4-7 hours | 0.5-1 day | ⏳ Pending |
+| 4. Extract FeedbackPanel | 6-10 hours | 1-1.5 days | ⏳ Pending |
+| **Total** | **30-48 hours** | **4.5-7 days** | 1 of 5 complete |
 
-**Phased approach**: Complete Priority 1, test in production, then proceed to Priority 2, etc.
+**Phased approach**: Complete each priority, test in production, then proceed to next.
 
 **Continuous deployment**: Commit after each priority, deploy, verify in production before proceeding.
+
+**Recommended sequence**:
+1. ✅ Priority 1 complete - clean architectural boundary established
+2. **Next: Priority 2a** (ScoreMergeHelper) - quick win, simplifies saveScore()
+3. Then Priority 2b-d (Split HeatDataManager) - major refactor, builds on 2a
+4. Then Priority 3 (HeatNavigator) - independent extraction
+5. Finally Priority 4 (FeedbackPanel) - polish, reusable component
 
 ---
 
@@ -1707,7 +2429,26 @@ All tests should pass after rollback to previous state.
 
 - This plan assumes working in focused blocks - actual calendar time may vary
 - Each priority is independently valuable - can stop after any phase
-- Priority 1 gives biggest architectural win
-- Priorities 2 and 3 are polish/cleanup
+- ✅ **Priority 1 complete** - biggest architectural win achieved
+- **Priority 2a (NEW)** addresses complexity added by offline fixes
+- Priorities 2b-d, 3, 4 are progressive refinements
 - All changes are backwards compatible until ERB views retired
 - ERB retirement is future work, not in this plan
+
+---
+
+## Revision History
+
+**2025-11-15**: Plan revised after Priority 1 completion and offline scoring fixes
+- Added Priority 2a (ScoreMergeHelper) - extract merging logic added in offline fixes
+- Added Priority 4 (FeedbackPanel) - extract complex feedback button logic
+- Renumbered original Priority 2 to Priority 2b-d
+- Updated test baseline: 287 JS tests (+7 from offline fixes)
+- Updated time estimates: 30-48 hours total (was 22-34 hours)
+- Updated line counts to reflect current state
+
+**2025-11-14**: Original plan created
+- Priority 1: Remove Stimulus from SPA
+- Priority 2: Split HeatDataManager
+- Priority 3: Extract Navigation Logic
+- Test baseline: 280 JS tests
