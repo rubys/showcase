@@ -259,6 +259,10 @@ describe('Version Check', () => {
       heatPage.basePath = ''
       heatPage.data = { heats: [], judge: {}, event: {} }
 
+      // Import HeatNavigator and initialize it
+      const { default: HeatNavigator } = await import('../../app/javascript/helpers/heat_navigator.js')
+      heatPage.navigator = new HeatNavigator(heatPage)
+
       // Mock checkVersionAndRefetch
       const mockCheck = vi.fn(() => Promise.resolve())
       heatPage.checkVersionAndRefetch = mockCheck
@@ -266,7 +270,7 @@ describe('Version Check', () => {
       // Mock render to avoid DOM manipulation
       heatPage.render = vi.fn()
 
-      await heatPage.navigateToHeat(5, 0)
+      await heatPage.navigator.navigateToHeat(5, 0)
 
       // Verify version check was called
       expect(mockCheck).toHaveBeenCalled()

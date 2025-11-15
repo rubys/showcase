@@ -19,6 +19,7 @@
  */
 
 import { heatDataManager } from 'helpers/heat_data_manager';
+import HeatNavigator from 'helpers/heat_navigator';
 
 // Import heat type components
 import { HeatSolo } from 'components/heat-types/heat-solo';
@@ -54,12 +55,17 @@ export class HeatPage extends HTMLElement {
     // Set base path in data manager
     heatDataManager.setBasePath(this.basePath);
 
+    // Create navigator
+    this.navigator = new HeatNavigator(this);
+
     this.init();
   }
 
   disconnectedCallback() {
     this.removeEventListeners();
-    this.removePopstateListener();
+    if (this.navigator) {
+      this.navigator.destroy();
+    }
   }
 
   /**
@@ -95,7 +101,6 @@ export class HeatPage extends HTMLElement {
 
       // Attach event listeners
       this.attachEventListeners();
-      this.setupPopstateListener();
 
     } catch (error) {
       console.error('Failed to initialize heat page:', error);
@@ -141,14 +146,6 @@ export class HeatPage extends HTMLElement {
   async handleReconnection() {
     console.debug('[HeatPage] Reconnected to network');
     await this.checkAndUploadDirtyScores();
-  }
-
-  /**
-   * Get current heat data
-   */
-  getCurrentHeat() {
-    if (!this.data || !this.data.heats) return null;
-    return this.data.heats.find(h => h.number === this.currentHeatNumber);
   }
 
   /**
@@ -200,30 +197,6 @@ export class HeatPage extends HTMLElement {
     console.debug('[HeatPage] Score updated in memory');
   }
 
-  /**
-   * Navigate to a specific heat
-   */
-  async navigateToHeat(heatNumber, slot = 0) {
-    this.currentHeatNumber = parseInt(heatNumber);
-    this.slot = parseInt(slot);
-
-    // Update URL without reload - stay on SPA route
-    const url = new URL(window.location);
-    url.searchParams.set('heat', this.currentHeatNumber);
-    if (this.slot > 0) {
-      url.searchParams.set('slot', this.slot);
-    } else {
-      url.searchParams.delete('slot');
-    }
-    url.searchParams.set('style', this.scoringStyle);
-    window.history.pushState({}, '', url);
-
-    // Check version and conditionally refetch data
-    await this.checkVersionAndRefetch();
-
-    // Render with current data (either cached or freshly fetched)
-    this.render();
-  }
 
   /**
    * Check server version and refetch data if changed
@@ -281,132 +254,12 @@ export class HeatPage extends HTMLElement {
     );
   }
 
-  /**
-   * Navigate to next heat
-   */
-  navigateNext() {
-    const heat = this.getCurrentHeat();
-    if (!heat) return;
-
-    // Check if we need to navigate to next slot or next heat
-    if (heat.dance.heat_length && this.slot > 0) {
-      const maxSlots = heat.dance.heat_length * (heat.dance.uses_scrutineering ? 2 : 1);
-      if (this.slot < maxSlots) {
-        this.navigateToHeat(this.currentHeatNumber, this.slot + 1);
-        return;
-      }
-    }
-
-    // Find next heat
-    const heats = this.getFilteredHeats();
-    const currentIndex = heats.findIndex(h => h.number === this.currentHeatNumber);
-
-    if (currentIndex >= 0 && currentIndex < heats.length - 1) {
-      const nextHeat = heats[currentIndex + 1];
-      const nextSlot = nextHeat.dance.heat_length ? 1 : 0;
-      this.navigateToHeat(nextHeat.number, nextSlot);
-    }
-  }
-
-  /**
-   * Navigate to previous heat
-   */
-  navigatePrev() {
-    const heat = this.getCurrentHeat();
-    if (!heat) return;
-
-    // Check if we need to navigate to previous slot
-    if (this.slot > 1) {
-      this.navigateToHeat(this.currentHeatNumber, this.slot - 1);
-      return;
-    }
-
-    // Find previous heat
-    const heats = this.getFilteredHeats();
-    const currentIndex = heats.findIndex(h => h.number === this.currentHeatNumber);
-
-    if (currentIndex > 0) {
-      const prevHeat = heats[currentIndex - 1];
-      let prevSlot = 0;
-
-      if (prevHeat.dance.heat_length) {
-        const maxSlots = prevHeat.dance.heat_length * (prevHeat.dance.uses_scrutineering ? 2 : 1);
-        prevSlot = maxSlots;
-      }
-
-      this.navigateToHeat(prevHeat.number, prevSlot);
-    }
-  }
-
-  /**
-   * Get filtered heats based on judge preferences
-   */
-  getFilteredHeats() {
-    if (!this.data || !this.data.heats) return [];
-
-    const showSolos = this.data.judge.review_solos;
-    let heats = this.data.heats;
-
-    if (showSolos === 'none') {
-      heats = heats.filter(h => h.category !== 'Solo');
-    } else if (showSolos === 'even') {
-      heats = heats.filter(h => h.category !== 'Solo' || h.number % 2 === 0);
-    } else if (showSolos === 'odd') {
-      heats = heats.filter(h => h.category !== 'Solo' || h.number % 2 === 1);
-    }
-
-    return heats;
-  }
-
-  /**
-   * Get prev/next URLs for navigation
-   */
-  getNavigationUrls() {
-    const heats = this.getFilteredHeats();
-    const currentIndex = heats.findIndex(h => h.number === this.currentHeatNumber);
-    const heat = this.getCurrentHeat();
-
-    let prevUrl = '';
-    let nextUrl = '';
-
-    // Previous (use SPA route format)
-    if (this.slot > 1) {
-      prevUrl = `${this.basePath}/scores/${this.judgeId}/spa?heat=${this.currentHeatNumber}&slot=${this.slot - 1}&style=${this.scoringStyle}`;
-    } else if (currentIndex > 0) {
-      const prevHeat = heats[currentIndex - 1];
-      if (prevHeat.dance.heat_length) {
-        const maxSlots = prevHeat.dance.heat_length * (prevHeat.dance.uses_scrutineering ? 2 : 1);
-        prevUrl = `${this.basePath}/scores/${this.judgeId}/spa?heat=${prevHeat.number}&slot=${maxSlots}&style=${this.scoringStyle}`;
-      } else {
-        prevUrl = `${this.basePath}/scores/${this.judgeId}/spa?heat=${prevHeat.number}&style=${this.scoringStyle}`;
-      }
-    }
-
-    // Next (use SPA route format)
-    if (heat && heat.dance.heat_length && this.slot > 0) {
-      const maxSlots = heat.dance.heat_length * (heat.dance.uses_scrutineering ? 2 : 1);
-      if (this.slot < maxSlots) {
-        nextUrl = `${this.basePath}/scores/${this.judgeId}/spa?heat=${this.currentHeatNumber}&slot=${this.slot + 1}&style=${this.scoringStyle}`;
-      }
-    }
-
-    if (!nextUrl && currentIndex >= 0 && currentIndex < heats.length - 1) {
-      const nextHeat = heats[currentIndex + 1];
-      if (nextHeat.dance.heat_length) {
-        nextUrl = `${this.basePath}/scores/${this.judgeId}/spa?heat=${nextHeat.number}&slot=1&style=${this.scoringStyle}`;
-      } else {
-        nextUrl = `${this.basePath}/scores/${this.judgeId}/spa?heat=${nextHeat.number}&style=${this.scoringStyle}`;
-      }
-    }
-
-    return { prevUrl, nextUrl };
-  }
 
   /**
    * Determine which heat type component to use
    */
   getHeatTypeComponent() {
-    const heat = this.getCurrentHeat();
+    const heat = this.navigator.getCurrentHeat();
     if (!heat) return null;
 
     if (heat.category === 'Solo') {
@@ -489,7 +342,7 @@ export class HeatPage extends HTMLElement {
    * Build heat type component
    */
   buildHeatTypeComponent() {
-    const heat = this.getCurrentHeat();
+    const heat = this.navigator.getCurrentHeat();
     if (!heat) return '<div class="text-center text-red-500">Heat not found</div>';
 
     const componentType = this.getHeatTypeComponent();
@@ -551,10 +404,10 @@ export class HeatPage extends HTMLElement {
 
     if (event.key === 'ArrowRight' && !isFormElement) {
       event.preventDefault();
-      this.navigateNext();
+      this.navigator.navigateNext();
     } else if (event.key === 'ArrowLeft' && !isFormElement) {
       event.preventDefault();
-      this.navigatePrev();
+      this.navigator.navigatePrev();
     } else if (event.key === 'Escape') {
       if (document.activeElement) document.activeElement.blur();
     }
@@ -581,9 +434,9 @@ export class HeatPage extends HTMLElement {
 
     if (Math.abs(deltaX) > width / 2 && Math.abs(deltaY) < height / 4) {
       if (deltaX > 0) {
-        this.navigatePrev();
+        this.navigator.navigatePrev();
       } else {
-        this.navigateNext();
+        this.navigator.navigateNext();
       }
     }
 
@@ -605,17 +458,17 @@ export class HeatPage extends HTMLElement {
 
     // Listen for navigation events from heat-navigation component
     this.addEventListener('navigate-prev', () => {
-      this.navigatePrev();
+      this.navigator.navigatePrev();
     });
 
     this.addEventListener('navigate-next', () => {
-      this.navigateNext();
+      this.navigator.navigateNext();
     });
 
     // Listen for heat selection from heat-list
     this.addEventListener('navigate-to-heat', (e) => {
       const heatNumber = e.detail.heat;
-      this.navigateToHeat(heatNumber, 0);
+      this.navigator.navigateToHeat(heatNumber, 0);
     });
 
     // Listen for score updates to update in-memory data
@@ -661,50 +514,6 @@ export class HeatPage extends HTMLElement {
   }
 
   /**
-   * Setup popstate listener for browser back/forward buttons
-   */
-  setupPopstateListener() {
-    this.popstateHandler = (event) => {
-      console.debug('[HeatPage] Popstate event - URL changed via browser navigation');
-      // Read heat number and slot from URL
-      const url = new URL(window.location);
-      const heatParam = url.searchParams.get('heat');
-      const slotParam = url.searchParams.get('slot');
-      const styleParam = url.searchParams.get('style');
-
-      if (heatParam) {
-        const newHeatNumber = parseInt(heatParam);
-        const newSlot = slotParam ? parseInt(slotParam) : 0;
-        const newStyle = styleParam || 'radio';
-
-        // Update internal state
-        this.currentHeatNumber = newHeatNumber;
-        this.slot = newSlot;
-        this.scoringStyle = newStyle;
-
-        // Check version and render
-        this.checkVersionAndRefetch().then(() => {
-          this.render();
-        });
-      } else {
-        // No heat parameter - show heat list
-        this.currentHeatNumber = null;
-        this.render();
-      }
-    };
-    window.addEventListener('popstate', this.popstateHandler);
-  }
-
-  /**
-   * Remove popstate listener
-   */
-  removePopstateListener() {
-    if (this.popstateHandler) {
-      window.removeEventListener('popstate', this.popstateHandler);
-    }
-  }
-
-  /**
    * Main render method
    */
   render() {
@@ -733,13 +542,13 @@ export class HeatPage extends HTMLElement {
       return;
     }
 
-    const heat = this.getCurrentHeat();
+    const heat = this.navigator.getCurrentHeat();
     if (!heat) {
       this.innerHTML = '<div class="text-center text-red-500">Heat not found</div>';
       return;
     }
 
-    const { prevUrl, nextUrl } = this.getNavigationUrls();
+    const { prevUrl, nextUrl } = this.navigator.getNavigationUrls();
 
     this.innerHTML = `
       <div class="flex flex-col h-screen max-h-screen w-full">
