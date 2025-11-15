@@ -12,6 +12,8 @@
  * - Responsive layout (shows more info on larger screens)
  */
 
+import { heatDataManager } from 'helpers/heat_data_manager';
+
 export class HeatCards extends HTMLElement {
   connectedCallback() {
     // Make this element display as flex row to match original layout
@@ -23,6 +25,10 @@ export class HeatCards extends HTMLElement {
     this.draggedElement = null;
     this.render();
     this.attachEventListeners();
+  }
+
+  disconnectedCallback() {
+    // No event listeners to clean up (all listeners are on child elements that get removed with innerHTML)
   }
 
   get heatData() {
@@ -204,7 +210,7 @@ export class HeatCards extends HTMLElement {
   /**
    * Handle drop
    */
-  handleDrop(event, scoreColumn) {
+  async handleDrop(event, scoreColumn) {
     event.preventDefault();
     scoreColumn.classList.remove('bg-yellow-200');
 
@@ -215,7 +221,6 @@ export class HeatCards extends HTMLElement {
 
     // Move card to new column
     this.draggedElement.style.opacity = '1';
-    if (back) back.style.opacity = '0.5';
 
     // Find insertion point (sorted by back number)
     const backText = back?.textContent || '';
@@ -231,22 +236,16 @@ export class HeatCards extends HTMLElement {
       scoreColumn.appendChild(this.draggedElement);
     }
 
-    // Save to server
+    // Save to server (postScore handles UI updates)
     const heatId = parseInt(this.draggedElement.getAttribute('data-heat'));
     const score = scoreColumn.getAttribute('data-score') || '';
 
-    this.postScore({ heat: heatId, score: score }, this.draggedElement)
-      .then(response => {
-        if (back) back.style.opacity = '1';
+    const response = await this.postScore({ heat: heatId, score: score }, this.draggedElement);
 
-        if (response.ok) {
-          if (back) back.classList.remove('text-red-500');
-        } else {
-          // Revert on error
-          parent.appendChild(this.draggedElement);
-          if (back) back.classList.add('text-red-500');
-        }
-      });
+    // Revert on error
+    if (!response.ok) {
+      parent.appendChild(this.draggedElement);
+    }
 
     return false;
   }
@@ -259,40 +258,55 @@ export class HeatCards extends HTMLElement {
   }
 
   /**
-   * Post score to server
+   * Post score to server (with offline support)
    */
-  postScore(data, element) {
-    return fetch(this.getAttribute('drop-action') || '', {
-      method: 'POST',
-      headers: window.inject_region({
-        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
-        'Content-Type': 'application/json'
-      }),
-      credentials: 'same-origin',
-      body: JSON.stringify(data)
-    }).then(response => {
-      const errorDiv = this.querySelector('[data-target="error"]');
+  async postScore(data, element) {
+    const back = element.querySelector('span');
+    if (back) back.style.opacity = '0.5';
 
-      if (response.ok) {
-        if (errorDiv) errorDiv.style.display = 'none';
+    try {
+      // Save score (handles online/offline automatically)
+      const judgeId = this.judgeData.id;
+      await heatDataManager.saveScore(judgeId, data);
 
-        // Notify parent to update in-memory data
-        this.dispatchEvent(new CustomEvent('score-updated', {
-          bubbles: true,
-          detail: data
-        }));
-      } else {
-        if (errorDiv) {
-          errorDiv.textContent = response.statusText;
-          errorDiv.style.display = 'block';
-        }
+      // Update UI on success
+      if (back) {
+        back.style.opacity = '1';
+        back.classList.remove('text-red-500');
       }
 
-      return response;
-    }).catch(error => {
+      const errorDiv = this.querySelector('[data-target="error"]');
+      if (errorDiv) errorDiv.style.display = 'none';
+
+      // Notify parent to update in-memory data
+      this.dispatchEvent(new CustomEvent('score-updated', {
+        bubbles: true,
+        detail: data
+      }));
+
+      // Notify navigation to update pending count
+      this.dispatchEvent(new CustomEvent('pending-count-changed', {
+        bubbles: true
+      }));
+
+      return { ok: true };
+    } catch (error) {
       console.error('Failed to save score:', error);
+
+      // Update UI on error
+      if (back) {
+        back.style.opacity = '1';
+        back.classList.add('text-red-500');
+      }
+
+      const errorDiv = this.querySelector('[data-target="error"]');
+      if (errorDiv) {
+        errorDiv.textContent = error.message || 'Failed to save score';
+        errorDiv.style.display = 'block';
+      }
+
       return { ok: false };
-    });
+    }
   }
 
   /**

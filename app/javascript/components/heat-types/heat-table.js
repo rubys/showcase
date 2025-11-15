@@ -28,6 +28,17 @@ export class HeatTable extends HTMLElement {
     this.attachEventListeners();
   }
 
+  disconnectedCallback() {
+    // Clean up event listeners
+    if (this.keydownHandler) {
+      document.body.removeEventListener('keydown', this.keydownHandler);
+    }
+    if (this.touchStartHandler) {
+      document.body.removeEventListener('touchstart', this.touchStartHandler);
+      document.body.removeEventListener('touchend', this.touchEndHandler);
+    }
+  }
+
   get heatData() {
     return JSON.parse(this.getAttribute('heat-data') || '{}');
   }
@@ -288,7 +299,7 @@ export class HeatTable extends HTMLElement {
     const feedbackAction = dropAction.replace('/post', '/post-feedback');
 
     return `
-      <tr data-controller="open-feedback" class="open-fb-row" data-heat="${subject.id}" data-feedback-action="${feedbackAction}">
+      <tr class="open-fb-row" data-heat="${subject.id}" data-feedback-action="${feedbackAction}">
         <td colspan="${colSpan}">
           ${feedbackHtml}
         </td>
@@ -556,9 +567,163 @@ export class HeatTable extends HTMLElement {
   }
 
   /**
+   * Setup keyboard navigation listeners
+   * Handles: Arrow up/down (table navigation), Tab (input focus), Escape (blur)
+   * Note: Arrow left/right for heat navigation is handled by heat-page component
+   */
+  setupKeyboardListeners() {
+    this.keydownHandler = (event) => {
+      const isFormElement = ['INPUT', 'TEXTAREA'].includes(event.target.nodeName) ||
+        ['INPUT', 'TEXTAREA'].includes(document.activeElement?.nodeName);
+
+      // Arrow up/down within table (not handled - native browser behavior is fine)
+      // Tab for navigation (native behavior)
+      // Escape to blur
+      if (event.key === 'Escape') {
+        if (document.activeElement) document.activeElement.blur();
+      }
+      // Space/Enter for start heat button (not in table view typically)
+    };
+
+    document.body.addEventListener('keydown', this.keydownHandler);
+  }
+
+  /**
+   * Setup touch gesture listeners
+   * Note: Swipe left/right for heat navigation is handled by heat-page component
+   * This only handles up swipe to show heat list
+   */
+  setupTouchListeners() {
+    this.touchStart = null;
+
+    this.touchStartHandler = (event) => {
+      this.touchStart = event.touches[0];
+    };
+
+    this.touchEndHandler = (event) => {
+      const direction = this.swipe(event);
+      if (direction === 'up') {
+        // Dispatch event for heat-page to handle
+        this.dispatchEvent(new CustomEvent('show-heat-list', { bubbles: true }));
+      }
+    };
+
+    document.body.addEventListener('touchstart', this.touchStartHandler);
+    document.body.addEventListener('touchend', this.touchEndHandler);
+  }
+
+  /**
+   * Detect swipe direction
+   */
+  swipe(event) {
+    if (!this.touchStart) return null;
+    const stop = event.changedTouches[0];
+    if (stop.identifier !== this.touchStart.identifier) return null;
+
+    const deltaX = stop.clientX - this.touchStart.clientX;
+    const deltaY = stop.clientY - this.touchStart.clientY;
+    const height = document.documentElement.clientHeight;
+    const width = document.documentElement.clientWidth;
+
+    if (Math.abs(deltaX) > width/2 && Math.abs(deltaY) < height/4) {
+      return deltaX > 0 ? 'right' : 'left';
+    } else if (Math.abs(deltaY) > height/2 && Math.abs(deltaX) < width/4) {
+      return deltaY > 0 ? 'down' : 'up';
+    }
+    return null;
+  }
+
+  /**
+   * Setup feedback button listeners
+   * Replaces open-feedback controller functionality
+   */
+  setupFeedbackListeners() {
+    const feedbackRows = this.querySelectorAll('.open-fb-row');
+
+    for (const row of feedbackRows) {
+      // Highlight previous row on hover
+      const previous = row.previousElementSibling;
+      if (previous) {
+        row.addEventListener('mouseenter', () => {
+          previous.classList.add('bg-yellow-200');
+        });
+        row.addEventListener('mouseleave', () => {
+          previous.classList.remove('bg-yellow-200');
+        });
+      }
+
+      // Setup button handlers
+      const buttons = row.querySelectorAll('button');
+      for (const button of buttons) {
+        button.disabled = false;
+
+        const span = button.querySelector('span');
+        const abbr = button.querySelector('abbr');
+        if (span && abbr) {
+          abbr.title = span.textContent;
+          const feedback = button.parentElement.dataset.value?.split(' ') || [];
+          if (feedback.includes(abbr.textContent)) {
+            button.classList.add('selected');
+          }
+        }
+
+        button.addEventListener('click', async () => {
+          const feedbackType = button.parentElement.classList.contains('good') ? 'good' :
+            (button.parentElement.classList.contains('bad') ? 'bad' : 'value');
+          const feedbackValue = button.querySelector('abbr')?.textContent;
+
+          const slot = this.getAttribute('slot');
+          const scoreData = {
+            heat: parseInt(row.dataset.heat),
+            slot: slot ? parseInt(slot) : null,
+            [feedbackType]: feedbackValue
+          };
+
+          try {
+            const response = await heatDataManager.saveScore(this.judgeData.id, scoreData);
+
+            // Update UI based on response
+            if (response && !response.error) {
+              const sections = button.parentElement.parentElement.children;
+              for (const section of sections) {
+                const sectionType = section.classList.contains('good') ? 'good' :
+                  (section.classList.contains('bad') ? 'bad' : 'value');
+                const feedback = (response[sectionType] || '').split(' ');
+
+                for (const btn of section.querySelectorAll('button')) {
+                  const btnAbbr = btn.querySelector('abbr');
+                  if (btnAbbr && feedback.includes(btnAbbr.textContent)) {
+                    btn.classList.add('selected');
+                  } else {
+                    btn.classList.remove('selected');
+                  }
+                }
+              }
+            }
+
+            // Dispatch event for heat-page to update in-memory data
+            this.dispatchEvent(new CustomEvent('score-updated', {
+              bubbles: true,
+              detail: scoreData
+            }));
+          } catch (error) {
+            console.error('[HeatTable] Failed to save feedback:', error);
+          }
+        });
+      }
+    }
+  }
+
+  /**
    * Attach event listeners
    */
   attachEventListeners() {
+    // Setup keyboard navigation (arrow keys, tab, escape)
+    this.setupKeyboardListeners();
+
+    // Setup touch gestures
+    this.setupTouchListeners();
+
     // Radio buttons and checkboxes and numeric inputs
     const scoreInputs = this.querySelectorAll('input[type="radio"], input[type="checkbox"], input[pattern]');
     scoreInputs.forEach(input => {
@@ -571,8 +736,8 @@ export class HeatTable extends HTMLElement {
       textarea.addEventListener('input', (e) => this.handleCommentsChange(e));
     });
 
-    // Listen for feedback-score events from open-feedback controller
-    this.addEventListener('feedback-score', (e) => this.handleFeedbackScore(e));
+    // Setup feedback buttons (was handled by open-feedback controller)
+    this.setupFeedbackListeners();
   }
 
   render() {
@@ -581,8 +746,8 @@ export class HeatTable extends HTMLElement {
     const slotAttr = slot ? ` data-slot="${slot}"` : '';
 
     this.innerHTML = `
-      <div data-controller="score"${slotAttr} data-offline-capable="true" class="grow flex flex-col border-2 border-slate-400 overflow-y-auto">
-        <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>
+      <div${slotAttr} class="grow flex flex-col border-2 border-slate-400 overflow-y-auto">
+        <div class="hidden text-red-600 text-4xl"></div>
         <table class="table-auto border-separate border-spacing-y-1 mx-4">
           ${this.buildHeaders()}
           <tbody>

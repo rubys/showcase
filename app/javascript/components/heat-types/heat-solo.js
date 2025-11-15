@@ -10,6 +10,8 @@
  * - Start heat button (for emcee)
  */
 
+import { heatDataManager } from 'helpers/heat_data_manager';
+
 export class HeatSolo extends HTMLElement {
   connectedCallback() {
     // Make this element participate in flex layout
@@ -22,6 +24,14 @@ export class HeatSolo extends HTMLElement {
 
     this.render();
     this.attachEventListeners();
+  }
+
+  disconnectedCallback() {
+    // Clear comment timeout if active
+    if (this.commentTimeout) {
+      clearTimeout(this.commentTimeout);
+      this.commentTimeout = null;
+    }
   }
 
   get heatData() {
@@ -219,43 +229,41 @@ export class HeatSolo extends HTMLElement {
   }
 
   /**
-   * Post score to server
+   * Post score to server (with offline support)
    */
-  postScore(data, element) {
+  async postScore(data, element) {
     element.disabled = true;
 
-    fetch(this.getAttribute('drop-action') || '', {
-      method: 'POST',
-      headers: window.inject_region({
-        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
-        'Content-Type': 'application/json'
-      }),
-      credentials: 'same-origin',
-      body: JSON.stringify(data)
-    }).then(response => {
+    try {
+      // Save score (handles online/offline automatically)
+      const judgeId = this.judgeData.id;
+      await heatDataManager.saveScore(judgeId, data);
+
+      // Update UI on success
       element.disabled = false;
-
-      if (response.ok) {
-        if (element.tagName === 'TEXTAREA') {
-          element.classList.add('bg-gray-50');
-          element.classList.remove('bg-yellow-200');
-        } else {
-          element.style.backgroundColor = null;
-        }
-
-        // Notify parent to update in-memory data
-        this.dispatchEvent(new CustomEvent('score-updated', {
-          bubbles: true,
-          detail: data
-        }));
+      if (element.tagName === 'TEXTAREA') {
+        element.classList.add('bg-gray-50');
+        element.classList.remove('bg-yellow-200');
       } else {
-        element.style.backgroundColor = '#F00';
+        element.style.backgroundColor = null;
       }
-    }).catch(error => {
+
+      // Notify parent to update in-memory data
+      this.dispatchEvent(new CustomEvent('score-updated', {
+        bubbles: true,
+        detail: data
+      }));
+
+      // Notify navigation to update pending count
+      this.dispatchEvent(new CustomEvent('pending-count-changed', {
+        bubbles: true
+      }));
+
+    } catch (error) {
       element.disabled = false;
       element.style.backgroundColor = '#F00';
       console.error('Failed to save score:', error);
-    });
+    }
   }
 
   /**

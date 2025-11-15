@@ -12,14 +12,12 @@ export default class extends Controller {
     let form = ["INPUT", "TEXTAREA"].includes(event.target.nodeName) ||
       ["INPUT", "TEXTAREA"].includes(document.activeElement.nodeName);
 
-    // Skip arrow left/right navigation in offline-capable SPA mode
-    // (SPA handles its own keyboard navigation via heat-page component)
     if (event.key == "ArrowRight") {
-      if (form || this.element.dataset.offlineCapable === "true") return;
+      if (form) return;
       let link = document.querySelector("a[rel=next]");
       if (link) link.click();
     } else if (event.key == "ArrowLeft") {
-      if (form || this.element.dataset.offlineCapable === "true") return;
+      if (form) return;
       let link = document.querySelector("a[rel=prev]");
       if (link) link.click();
     } else if (event.key == "ArrowUp") {
@@ -70,10 +68,6 @@ export default class extends Controller {
 
   touchend = event => {
     let direction = this.swipe(event);
-
-    // Skip swipe navigation in offline-capable SPA mode
-    // (SPA handles its own touch navigation via heat-page component)
-    if (this.element.dataset.offlineCapable === "true") return;
 
     if (direction == "right") {
       let link = document.querySelector("a[rel=prev]");
@@ -198,15 +192,6 @@ export default class extends Controller {
   }
 
   post = results => {
-    // If offline-capable attribute is present, skip fetch and return success
-    // (the SPA will handle the actual save via HeatDataManager)
-    if (this.element.dataset.offlineCapable === "true") {
-      console.debug('[score_controller] offline-capable detected, skipping fetch');
-      return Promise.resolve({ ok: true });
-    }
-
-    console.debug('[score_controller] Making fetch request, offlineCapable:', this.element.dataset.offlineCapable);
-
     return fetch(this.element.dataset.dropAction, {
       method: "POST",
       headers: window.inject_region({

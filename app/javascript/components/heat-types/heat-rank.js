@@ -9,6 +9,8 @@
  * - Start heat button (for emcee)
  */
 
+import { heatDataManager } from 'helpers/heat_data_manager';
+
 export class HeatRank extends HTMLElement {
   connectedCallback() {
     // Make this element transparent in layout - don't interfere with child flex properties
@@ -18,6 +20,10 @@ export class HeatRank extends HTMLElement {
     this.draggedElement = null;
     this.render();
     this.attachEventListeners();
+  }
+
+  disconnectedCallback() {
+    // No event listeners to clean up (all listeners are on child elements that get removed with innerHTML)
   }
 
   get heatData() {
@@ -149,39 +155,54 @@ export class HeatRank extends HTMLElement {
   }
 
   /**
-   * Save ranking to server
+   * Save ranking to server (with offline support)
    */
-  saveRanking() {
+  async saveRanking() {
     const rows = this.querySelectorAll('tr[draggable="true"]');
     const ranking = Array.from(rows).map((row, index) => ({
       id: parseInt(row.getAttribute('data-drag-id')),
       rank: index + 1
     }));
 
-    const data = {
-      slot: this.slot,
-      ranking: ranking
-    };
+    try {
+      // Save each rank as an individual score
+      const judgeId = this.judgeData.id;
+      const slot = this.slot || null;
 
-    fetch(this.getAttribute('drop-action') || '', {
-      method: 'POST',
-      headers: window.inject_region({
-        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
-        'Content-Type': 'application/json'
-      }),
-      credentials: 'same-origin',
-      body: JSON.stringify(data)
-    }).then(response => {
-      if (!response.ok) {
-        const errorDiv = this.querySelector('[data-target="error"]');
-        if (errorDiv) {
-          errorDiv.textContent = 'Failed to save ranking';
-          errorDiv.classList.remove('hidden');
-        }
+      for (const entry of ranking) {
+        await heatDataManager.saveScore(judgeId, {
+          heat: entry.id,
+          slot: slot,
+          score: String(entry.rank)  // Convert rank to string to match score format
+        });
       }
-    }).catch(error => {
+
+      // Hide error message on success
+      const errorDiv = this.querySelector('[data-target="error"]');
+      if (errorDiv) {
+        errorDiv.classList.add('hidden');
+      }
+
+      // Notify parent to update in-memory data
+      this.dispatchEvent(new CustomEvent('score-updated', {
+        bubbles: true,
+        detail: { slot }
+      }));
+
+      // Notify navigation to update pending count
+      this.dispatchEvent(new CustomEvent('pending-count-changed', {
+        bubbles: true
+      }));
+
+    } catch (error) {
       console.error('Failed to save ranking:', error);
-    });
+
+      const errorDiv = this.querySelector('[data-target="error"]');
+      if (errorDiv) {
+        errorDiv.textContent = 'Failed to save ranking';
+        errorDiv.classList.remove('hidden');
+      }
+    }
   }
 
   /**
