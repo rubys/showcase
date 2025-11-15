@@ -248,6 +248,14 @@ studios:
     map: us
     x: 743.3241585423084
     y: 278.05716284229277
+  edgewater:
+    name: Edgewater
+    lat: 38.9358105
+    lon: -76.5530141
+    region: iad
+    map: us
+    x: 766.5006169758972
+    y: 217.0566201733884
   edmonton:
     name: Edmonton
     lat: 53.631611

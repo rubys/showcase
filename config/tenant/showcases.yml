@@ -28,6 +28,13 @@
       snowball:
         :name: Snowball
         :date: 2026-12-11 - 2026-12-12
+  edgewater:
+    :name: Edgewater
+    :region: iad
+    :events:
+      disney:
+        :name: Disney Showcase & Freestyles
+        :date: 2026-03-27 - 2026-03-28
   livermore:
     :name: Livermore
     :region: sjc
@@ -86,9 +93,6 @@
     :name: Alexandria
     :region: iad
     :events:
-      80-s-neon-nights:
-        :name: 80's Neon Nights - Original
-        :date: 2025-11-15 - 2025-11-15
       80s-neon-nights-agt:
         :name: 80s Neon Nights - AGT
         :date: 2025-11-15 - 2025-11-15
