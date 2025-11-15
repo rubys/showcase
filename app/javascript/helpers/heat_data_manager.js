@@ -1,26 +1,21 @@
 /**
- * HeatDataManager - Manages dirty scores queue for offline sync
+ * HeatDataManager - Simplified data fetching and caching
  *
- * Simple design:
- * - Server is source of truth for heat data (always fetch fresh)
- * - IndexedDB only stores dirty scores (pending uploads)
- * - On init: Upload dirty scores → Fetch fresh data
- * - On navigation: Use in-memory data (no cache, no version checks)
+ * Responsibilities:
+ * - Fetch heat data from server
+ * - Cache version metadata
+ * - Coordinate score saving (delegates to queue and connectivity)
+ * - Batch upload coordination
  */
 
 import ScoreMergeHelper from 'helpers/score_merge_helper';
-
-const DB_NAME = 'showcase_dirty_scores';
-const DB_VERSION = 1;
-const STORE_NAME = 'dirty_scores';
+import { connectivityTracker } from 'helpers/connectivity_tracker';
+import { dirtyScoresQueue } from 'helpers/dirty_scores_queue';
 
 class HeatDataManager {
   constructor() {
-    this.db = null;
-    this.initPromise = null;
     this.basePath = '';
     this.cachedVersion = null;
-    this.isConnected = navigator.onLine; // Track actual connectivity based on request success/failure
   }
 
   /**
@@ -33,378 +28,74 @@ class HeatDataManager {
   }
 
   /**
-   * Update connectivity status based on network request success/failure
-   * @param {boolean} connected - Whether the network request succeeded
-   * @param {number} judgeId - The judge ID (for triggering batch upload on reconnection)
-   */
-  updateConnectivity(connected, judgeId = null) {
-    const wasConnected = this.isConnected;
-    this.isConnected = connected;
-
-    // Dispatch connectivity change event
-    if (wasConnected !== connected) {
-      console.debug('[HeatDataManager] Connectivity changed:', wasConnected ? 'online→offline' : 'offline→online');
-      document.dispatchEvent(new CustomEvent('connectivity-changed', {
-        detail: { connected, wasConnected }
-      }));
-
-      // If transitioning from offline to online, trigger batch upload
-      if (!wasConnected && connected && judgeId) {
-        console.debug('[HeatDataManager] Reconnected - triggering batch upload');
-        this.batchUploadDirtyScores(judgeId).then(result => {
-          if (result.succeeded && result.succeeded.length > 0) {
-            console.debug('[HeatDataManager] Reconnection sync:', result.succeeded.length, 'scores uploaded');
-            document.dispatchEvent(new CustomEvent('pending-count-changed', { bubbles: true }));
-
-            // Invalidate cache so fresh data is fetched on next navigation
-            this.invalidateCache();
-            // Also trigger immediate refresh if on heat-page
-            document.dispatchEvent(new CustomEvent('scores-synced', { bubbles: true }));
-          }
-        }).catch(err => {
-          console.debug('[HeatDataManager] Reconnection sync failed:', err);
-        });
-      }
-    }
-  }
-
-  /**
-   * Initialize the IndexedDB database
-   * @returns {Promise<IDBDatabase>}
+   * Initialize dirty scores queue
    */
   async init() {
-    console.debug('[HeatDataManager] init called, DB version:', DB_VERSION);
-    if (this.db) {
-      console.debug('[HeatDataManager] DB already initialized');
-      return this.db;
-    }
-
-    return new Promise((resolve, reject) => {
-      console.debug('[HeatDataManager] Opening IndexedDB...');
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-      request.onerror = () => {
-        console.error('[HeatDataManager] Failed to open IndexedDB:', request.error);
-        reject(request.error);
-      };
-
-      request.onblocked = () => {
-        console.warn('[HeatDataManager] IndexedDB upgrade blocked - close other tabs or connections');
-      };
-
-      request.onsuccess = () => {
-        console.debug('[HeatDataManager] IndexedDB opened successfully');
-        this.db = request.result;
-        resolve(this.db);
-      };
-
-      request.onupgradeneeded = (event) => {
-        console.debug('[HeatDataManager] Upgrade needed, old version:', event.oldVersion, 'new version:', event.newVersion);
-        const db = event.target.result;
-
-        // Delete old store if it exists (for schema changes)
-        if (db.objectStoreNames.contains(STORE_NAME)) {
-          console.debug('[HeatDataManager] Deleting old object store');
-          db.deleteObjectStore(STORE_NAME);
-        }
-
-        // Create object store for dirty scores
-        console.debug('[HeatDataManager] Creating dirty scores object store');
-        const objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'judge_id' });
-        objectStore.createIndex('timestamp', 'timestamp', { unique: false });
-        console.debug('[HeatDataManager] Object store created');
-      };
-    });
+    await dirtyScoresQueue.init();
   }
 
   /**
-   * Ensure database connection is open (lazy open pattern)
-   * @returns {Promise<IDBDatabase>}
-   */
-  async ensureOpen() {
-    if (!this.db) {
-      if (!this.initPromise) {
-        this.initPromise = this.init();
-      }
-      await this.initPromise;
-    }
-    return this.db;
-  }
-
-  /**
-   * Add or update a dirty score (score pending upload)
-   * Uses "last update wins" - if score already exists for this heat/slot, it's replaced
+   * Get dirty score count (delegates to queue)
    * @param {number} judgeId - The judge ID
-   * @param {number} heatId - The heat ID
-   * @param {number} slot - The slot number (default 1)
-   * @param {Object} scoreData - Score data {score, comments, good, bad}
-   * @returns {Promise<void>}
-   */
-  async addDirtyScore(judgeId, heatId, slot = 1, scoreData) {
-    await this.ensureOpen();
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(STORE_NAME);
-      const request = objectStore.get(judgeId);
-
-      request.onsuccess = () => {
-        const record = request.result || {
-          judge_id: judgeId,
-          timestamp: Date.now(),
-          dirty_scores: []
-        };
-
-        // Find existing dirty score for this heat/slot
-        // Normalize slot: treat null as 1 for consistency
-        const normalizedSlot = slot || 1;
-        const key = `${heatId}-${normalizedSlot}`;
-        const existingIndex = record.dirty_scores.findIndex(
-          s => `${s.heat}-${s.slot || 1}` === key
-        );
-
-        const dirtyScore = {
-          heat: heatId,
-          slot: slot,
-          score: scoreData.score,
-          comments: scoreData.comments,
-          good: scoreData.good,
-          bad: scoreData.bad,
-          timestamp: Date.now()
-        };
-
-        if (existingIndex >= 0) {
-          // Replace existing (last update wins)
-          record.dirty_scores[existingIndex] = dirtyScore;
-        } else {
-          // Add new
-          record.dirty_scores.push(dirtyScore);
-        }
-
-        const putRequest = objectStore.put(record);
-
-        putRequest.onsuccess = () => {
-          console.debug(`Dirty score added for judge ${judgeId}, heat ${heatId}, slot ${slot}`);
-          resolve();
-        };
-
-        putRequest.onerror = () => {
-          console.error('Failed to add dirty score:', putRequest.error);
-          reject(putRequest.error);
-        };
-      };
-
-      request.onerror = () => {
-        console.error('Failed to get record for dirty score:', request.error);
-        reject(request.error);
-      };
-    });
-  }
-
-  /**
-   * Get all dirty scores for a judge
-   * @param {number} judgeId - The judge ID
-   * @returns {Promise<Array>} Array of dirty score objects
-   */
-  async getDirtyScores(judgeId) {
-    await this.ensureOpen();
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([STORE_NAME], 'readonly');
-      const objectStore = transaction.objectStore(STORE_NAME);
-      const request = objectStore.get(judgeId);
-
-      request.onsuccess = () => {
-        resolve(request.result?.dirty_scores || []);
-      };
-
-      request.onerror = () => {
-        console.error('Failed to retrieve dirty scores:', request.error);
-        reject(request.error);
-      };
-    });
-  }
-
-  /**
-   * Get count of dirty scores for a judge
+   * @returns {Promise<number>}
    */
   async getDirtyScoreCount(judgeId) {
-    const dirtyScores = await this.getDirtyScores(judgeId);
-    return dirtyScores.length;
+    return dirtyScoresQueue.getDirtyScoreCount(judgeId);
   }
 
   /**
-   * Remove a specific dirty score (after successful upload)
+   * Get all dirty scores for a judge (delegates to queue)
    * @param {number} judgeId - The judge ID
-   * @param {number} heatId - The heat ID
-   * @param {number} slot - The slot number (default 1)
-   * @returns {Promise<void>}
+   * @returns {Promise<Array>}
    */
-  async removeDirtyScore(judgeId, heatId, slot = 1) {
-    await this.ensureOpen();
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(STORE_NAME);
-      const request = objectStore.get(judgeId);
-
-      request.onsuccess = () => {
-        const record = request.result;
-        if (!record) {
-          resolve(); // No record, nothing to remove
-          return;
-        }
-
-        const key = `${heatId}-${slot}`;
-        record.dirty_scores = record.dirty_scores.filter(
-          s => `${s.heat}-${s.slot || 1}` !== key
-        );
-
-        const putRequest = objectStore.put(record);
-
-        putRequest.onsuccess = () => {
-          console.debug(`Dirty score removed for judge ${judgeId}, heat ${heatId}, slot ${slot}`);
-          resolve();
-        };
-
-        putRequest.onerror = () => {
-          console.error('Failed to remove dirty score:', putRequest.error);
-          reject(putRequest.error);
-        };
-      };
-
-      request.onerror = () => {
-        console.error('Failed to get record for dirty score removal:', request.error);
-        reject(request.error);
-      };
-    });
+  async getDirtyScores(judgeId) {
+    return dirtyScoresQueue.getDirtyScores(judgeId);
   }
 
   /**
-   * Clear all dirty scores for a judge (after successful batch upload)
+   * Clear all dirty scores for a judge (delegates to queue)
    * @param {number} judgeId - The judge ID
    * @returns {Promise<void>}
    */
   async clearDirtyScores(judgeId) {
-    await this.ensureOpen();
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(STORE_NAME);
-      const request = objectStore.get(judgeId);
-
-      request.onsuccess = () => {
-        const record = request.result;
-        if (!record) {
-          resolve(); // No record, nothing to clear
-          return;
-        }
-
-        record.dirty_scores = [];
-
-        const putRequest = objectStore.put(record);
-
-        putRequest.onsuccess = () => {
-          console.debug(`All dirty scores cleared for judge ${judgeId}`);
-          resolve();
-        };
-
-        putRequest.onerror = () => {
-          console.error('Failed to clear dirty scores:', putRequest.error);
-          reject(putRequest.error);
-        };
-      };
-
-      request.onerror = () => {
-        console.error('Failed to get record for clearing dirty scores:', request.error);
-        reject(request.error);
-      };
-    });
+    return dirtyScoresQueue.clearDirtyScores(judgeId);
   }
 
   /**
-   * Save a score (online or offline)
+   * Add or update a dirty score (delegates to queue)
    * @param {number} judgeId - The judge ID
-   * @param {Object} data - Score data {heat, score?, comments?, good?, bad?, slot?}
-   * @param {Object} currentScore - Current score values {value?, good?, bad?} for offline merge
-   * @returns {Promise<Object>} Response object with score data
+   * @param {number} heatId - The heat ID
+   * @param {number|null} slot - The slot number
+   * @param {Object} scoreData - Score data {score, comments, good, bad}
+   * @returns {Promise<void>}
    */
-  async saveScore(judgeId, data, currentScore = {}) {
-    // Determine which endpoint to use based on data type
-    // Feedback scores have value/good/bad keys, regular scores have score/comments
-    const isFeedback = data.value !== undefined || data.good !== undefined || data.bad !== undefined;
-    const url = isFeedback ? `${this.basePath}/scores/${judgeId}/post-feedback` : `${this.basePath}/scores/${judgeId}/post`;
+  async addDirtyScore(judgeId, heatId, slot, scoreData) {
+    return dirtyScoresQueue.addDirtyScore(judgeId, heatId, slot, scoreData);
+  }
 
-    // Try to save online if connected
-    if (navigator.onLine) {
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: window.inject_region({
-            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content,
-            'Content-Type': 'application/json'
-          }),
-          credentials: 'same-origin',
-          body: JSON.stringify(data)
-        });
+  /**
+   * Remove a specific dirty score (delegates to queue)
+   * @param {number} judgeId - The judge ID
+   * @param {number} heatId - The heat ID
+   * @param {number|null} slot - The slot number
+   * @returns {Promise<void>}
+   */
+  async removeDirtyScore(judgeId, heatId, slot) {
+    return dirtyScoresQueue.removeDirtyScore(judgeId, heatId, slot);
+  }
 
-        if (response.ok) {
-          console.debug('[HeatDataManager] Score saved online');
-
-          // Update connectivity status (success)
-          this.updateConnectivity(true, judgeId);
-
-          // Parse response to get updated score data
-          const responseData = await response.json();
-
-          // Check if there are pending dirty scores
-          const dirtyCount = await this.getDirtyScoreCount(judgeId);
-
-          if (dirtyCount > 0) {
-            // There are pending scores - add this one with latest value from server response
-            // to prevent batch upload from sending stale data
-            const scoreData = {
-              score: responseData.score || responseData.value,
-              comments: responseData.comments,
-              good: responseData.good,
-              bad: responseData.bad
-            };
-            await this.addDirtyScore(judgeId, data.heat, data.slot || null, scoreData);
-
-            // Batch upload all pending scores (including this one with updated value)
-            this.batchUploadDirtyScores(judgeId).then(result => {
-              if (result.succeeded && result.succeeded.length > 0) {
-                console.debug('[HeatDataManager] Background upload: synced', result.succeeded.length, 'pending scores');
-                // Notify that pending count changed
-                document.dispatchEvent(new CustomEvent('pending-count-changed', { bubbles: true }));
-              }
-            }).catch(err => {
-              console.debug('[HeatDataManager] Background upload failed:', err);
-            });
-          }
-
-          return responseData;
-        } else {
-          console.warn('[HeatDataManager] Online save failed, falling back to offline');
-          this.updateConnectivity(false);
-        }
-      } catch (error) {
-        console.warn('[HeatDataManager] Online save failed, falling back to offline:', error);
-        this.updateConnectivity(false);
-      }
-    }
-
-    // Save offline
-    // Merge with current score to preserve all fields (important for batch upload)
-    const mergedData = ScoreMergeHelper.mergeForOffline(data, currentScore);
-
-    // Use null for slot if not provided (most heats don't use slots)
-    await this.addDirtyScore(judgeId, data.heat, data.slot || null, mergedData);
-    console.debug('[HeatDataManager] Score saved offline with merged data:', mergedData);
-
-    // Return optimistic update data - only include fields that were in the request
-    // This prevents overwriting existing data (e.g., don't clear 'good' when updating 'value')
-    return ScoreMergeHelper.generateOptimisticResponse(data);
+  /**
+   * Update connectivity status (delegates to tracker)
+   * @param {boolean} connected - Whether the network request succeeded
+   * @param {number} judgeId - The judge ID
+   */
+  updateConnectivity(connected, judgeId = null) {
+    connectivityTracker.updateConnectivity(
+      connected,
+      judgeId,
+      (id) => this.batchUploadDirtyScores(id),
+      () => this.invalidateCache()
+    );
   }
 
   /**
@@ -426,7 +117,7 @@ class HeatDataManager {
       });
 
       if (!response.ok) {
-        this.updateConnectivity(false);
+        connectivityTracker.updateConnectivity(false);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -434,7 +125,12 @@ class HeatDataManager {
       console.debug('[HeatDataManager] Data fetched successfully');
 
       // Update connectivity status (success)
-      this.updateConnectivity(true, judgeId);
+      connectivityTracker.updateConnectivity(
+        true,
+        judgeId,
+        (id) => this.batchUploadDirtyScores(id),
+        () => this.invalidateCache()
+      );
 
       // Store version metadata for future comparison
       await this.storeCachedVersion(judgeId, data);
@@ -442,7 +138,7 @@ class HeatDataManager {
       return data;
     } catch (error) {
       console.error('[HeatDataManager] Failed to fetch heat data:', error);
-      this.updateConnectivity(false);
+      connectivityTracker.updateConnectivity(false);
       throw error;
     }
   }
@@ -497,12 +193,102 @@ class HeatDataManager {
   }
 
   /**
+   * Save a score (online or offline)
+   * @param {number} judgeId - The judge ID
+   * @param {Object} data - Score data {heat, score?, comments?, good?, bad?, slot?}
+   * @param {Object} currentScore - Current score values {value?, good?, bad?} for offline merge
+   * @returns {Promise<Object>} Response object with score data
+   */
+  async saveScore(judgeId, data, currentScore = {}) {
+    // Determine which endpoint to use based on data type
+    // Feedback scores have value/good/bad keys, regular scores have score/comments
+    const isFeedback = data.value !== undefined || data.good !== undefined || data.bad !== undefined;
+    const url = isFeedback ? `${this.basePath}/scores/${judgeId}/post-feedback` : `${this.basePath}/scores/${judgeId}/post`;
+
+    // Try to save online if connected
+    if (navigator.onLine) {
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: window.inject_region({
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content,
+            'Content-Type': 'application/json'
+          }),
+          credentials: 'same-origin',
+          body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+          console.debug('[HeatDataManager] Score saved online');
+
+          // Update connectivity status (success)
+          connectivityTracker.updateConnectivity(
+            true,
+            judgeId,
+            (id) => this.batchUploadDirtyScores(id),
+            () => this.invalidateCache()
+          );
+
+          // Parse response to get updated score data
+          const responseData = await response.json();
+
+          // Check if there are pending dirty scores
+          const dirtyCount = await this.getDirtyScoreCount(judgeId);
+
+          if (dirtyCount > 0) {
+            // There are pending scores - add this one with latest value from server response
+            // to prevent batch upload from sending stale data
+            const scoreData = {
+              score: responseData.score || responseData.value,
+              comments: responseData.comments,
+              good: responseData.good,
+              bad: responseData.bad
+            };
+            await dirtyScoresQueue.addDirtyScore(judgeId, data.heat, data.slot || null, scoreData);
+
+            // Batch upload all pending scores (including this one with updated value)
+            this.batchUploadDirtyScores(judgeId).then(result => {
+              if (result.succeeded && result.succeeded.length > 0) {
+                console.debug('[HeatDataManager] Background upload: synced', result.succeeded.length, 'pending scores');
+                // Notify that pending count changed
+                document.dispatchEvent(new CustomEvent('pending-count-changed', { bubbles: true }));
+              }
+            }).catch(err => {
+              console.debug('[HeatDataManager] Background upload failed:', err);
+            });
+          }
+
+          return responseData;
+        } else {
+          console.warn('[HeatDataManager] Online save failed, falling back to offline');
+          connectivityTracker.updateConnectivity(false);
+        }
+      } catch (error) {
+        console.warn('[HeatDataManager] Online save failed, falling back to offline:', error);
+        connectivityTracker.updateConnectivity(false);
+      }
+    }
+
+    // Save offline
+    // Merge with current score to preserve all fields (important for batch upload)
+    const mergedData = ScoreMergeHelper.mergeForOffline(data, currentScore);
+
+    // Use null for slot if not provided (most heats don't use slots)
+    await dirtyScoresQueue.addDirtyScore(judgeId, data.heat, data.slot || null, mergedData);
+    console.debug('[HeatDataManager] Score saved offline with merged data:', mergedData);
+
+    // Return optimistic update data - only include fields that were in the request
+    // This prevents overwriting existing data (e.g., don't clear 'good' when updating 'value')
+    return ScoreMergeHelper.generateOptimisticResponse(data);
+  }
+
+  /**
    * Batch upload dirty scores to server
    * @param {number} judgeId - The judge ID
    * @returns {Promise<Object>} {succeeded: [], failed: []}
    */
   async batchUploadDirtyScores(judgeId) {
-    const dirtyScores = await this.getDirtyScores(judgeId);
+    const dirtyScores = await dirtyScoresQueue.getDirtyScores(judgeId);
 
     if (dirtyScores.length === 0) {
       console.debug('[HeatDataManager] No dirty scores to upload');
@@ -532,7 +318,7 @@ class HeatDataManager {
 
       // Clear dirty scores on success
       if (result.succeeded && result.succeeded.length > 0) {
-        await this.clearDirtyScores(judgeId);
+        await dirtyScoresQueue.clearDirtyScores(judgeId);
         console.debug(`[HeatDataManager] Batch upload successful: ${result.succeeded.length} scores uploaded`);
       }
 
