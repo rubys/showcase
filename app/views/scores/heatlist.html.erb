@@ -80,8 +80,8 @@
         <% end %>
         <tr id="<%= dom_id heat %>" class="text-<%= @unassigned.include?(heat.number.to_f) ? "red-500" : ((@scored[heat.number] || !@missed.include?(heat.number)) ? 'slate-400' : 'black') %>">
         <% next if @show_solos == 'none'
-           next if @show_solos == 'even' and heat.number.odd?
-           next if @show_solos == 'odd' and heat.number.even? %>
+           next if @show_solos == 'even' and heat.number.to_i.odd?
+           next if @show_solos == 'odd' and heat.number.to_i.even? %>
         <%
           if @style == 'recordings'
              link = heat.category == 'Multi' ?
