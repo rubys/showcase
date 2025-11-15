@@ -108,14 +108,7 @@ class FeedbackPanel extends HTMLElement {
       (button.parentElement.classList.contains('bad') ? 'bad' : 'value');
     const feedbackValue = button.querySelector('abbr')?.textContent;
 
-    // Send only the clicked value - server handles toggling and mutual exclusivity
-    const scoreData = {
-      heat: this.heat,
-      slot: this._slotNumber,
-      [feedbackType]: feedbackValue
-    };
-
-    // Get current values from all sections for offline preservation
+    // Get current values from all sections
     const sections = this.querySelectorAll('.value, .good, .bad');
     const currentScore = {};
     for (const section of sections) {
@@ -124,12 +117,59 @@ class FeedbackPanel extends HTMLElement {
       currentScore[sectionType] = section.dataset.value || '';
     }
 
+    // Compute the new value locally for optimistic updates (used when offline)
+    let computedValue;
+    let computedOppositeValue;
+    if (feedbackType === 'value') {
+      // Overall score: radio button behavior (single selection)
+      computedValue = feedbackValue;
+    } else {
+      // Good/Bad feedback: toggle behavior (multiple selections)
+      const currentList = (currentScore[feedbackType] || '').split(' ').filter(f => f);
+      const oppositeType = feedbackType === 'good' ? 'bad' : 'good';
+      const oppositeList = (currentScore[oppositeType] || '').split(' ').filter(f => f);
+
+      // Toggle the clicked feedback in the current list
+      if (currentList.includes(feedbackValue)) {
+        // Remove it (toggle off)
+        computedValue = currentList.filter(f => f !== feedbackValue).join(' ');
+        computedOppositeValue = currentScore[oppositeType]; // Unchanged
+      } else {
+        // Add it (toggle on) and remove from opposite list (mutual exclusivity)
+        currentList.push(feedbackValue);
+        computedValue = currentList.join(' ');
+
+        // Update opposite list to remove this feedback (mutual exclusivity)
+        const newOppositeList = oppositeList.filter(f => f !== feedbackValue);
+        computedOppositeValue = newOppositeList.join(' ');
+      }
+    }
+
+    // Send only the clicked value to server (server handles toggle logic when online)
+    const scoreData = {
+      heat: this.heat,
+      slot: this._slotNumber,
+      [feedbackType]: feedbackValue
+    };
+
     try {
       const response = await heatDataManager.saveScore(this.judgeId, scoreData, currentScore);
 
-      // Update UI based on response - only update sections that are in the response
       if (response && !response.error) {
-        this.updateUI(response);
+        // Merge computed toggle values for offline behavior
+        // When online: server returns properly toggled values, use those
+        // When offline: server echoes back what we sent, use our computed toggle values
+        const mergedResponse = { ...response };
+
+        // For good/bad feedback: if server just echoed back what we sent (offline),
+        // use our computed toggle values to ensure proper toggle behavior with mutual exclusivity
+        if (feedbackType !== 'value' && response[feedbackType] === feedbackValue) {
+          mergedResponse[feedbackType] = computedValue;
+          const oppositeType = feedbackType === 'good' ? 'bad' : 'good';
+          mergedResponse[oppositeType] = computedOppositeValue;
+        }
+
+        this.updateUI(mergedResponse);
 
         // Dispatch event for parent component to update in-memory data
         this.dispatchEvent(new CustomEvent('score-updated', {
@@ -137,7 +177,7 @@ class FeedbackPanel extends HTMLElement {
           detail: {
             heat: scoreData.heat,
             slot: this._slotNumber,
-            ...response  // Spread response to include value/good/bad/comments
+            ...mergedResponse  // Spread merged response to include computed toggle values
           }
         }));
       }
