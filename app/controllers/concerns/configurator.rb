@@ -47,18 +47,16 @@ module Configurator
     tenant['env']['RAILS_LOCALE'] = locale.gsub('-', '_') if locale.present?
   end
 
-  # Build storage proxy route for Tigris blobs with CORS headers
+  # Build storage proxy route for Tigris blobs
+  # Note: headers are NOT included because they would be added to the outgoing
+  # request to Tigris, invalidating AWS signatures. Navigator passes through
+  # CORS headers from Tigris responses unchanged.
   def build_storage_proxy_route
     bucket = ENV['BUCKET_NAME'] || 'showcase'
 
     {
       'path' => '^/storage(/.*)',
-      'target' => "https://#{bucket}.fly.storage.tigris.dev$1",
-      'headers' => {
-        'Access-Control-Allow-Origin' => '*',
-        'Access-Control-Allow-Methods' => 'GET, HEAD, OPTIONS',
-        'Access-Control-Allow-Headers' => 'Range, Content-Type'
-      }
+      'target' => "https://#{bucket}.fly.storage.tigris.dev$1"
     }
   end
 
@@ -268,6 +266,7 @@ module Configurator
       "#{root}/events/console",
       "#{root}/password/",
       "#{root}/regions/",
+      "#{root}/storage/",  # Tigris storage proxy for song files
       "#{root}/studios/",
       "#{root}/index_date",
       "#{root}/update_config",  # CGI endpoint for configuration updates
