@@ -172,4 +172,21 @@ module ApplicationHelper
     end
   end
 
+  # Rewrite Tigris storage URLs to use Navigator proxy for CORS support
+  def proxied_storage_url(url)
+    return url unless url.present?
+
+    # Match Tigris storage URLs
+    if url.match?(/https?:\/\/[^\/]+\.fly\.storage\.tigris\.dev\//)
+      # Extract the path after the domain
+      path = url.sub(/https?:\/\/[^\/]+\.fly\.storage\.tigris\.dev/, '')
+      # Return proxied path through Navigator
+      root = request.env['RAILS_RELATIVE_URL_ROOT'] || ''
+      "#{root}/storage#{path}"
+    else
+      # Return unchanged for non-Tigris URLs
+      url
+    end
+  end
+
 end
