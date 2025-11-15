@@ -17,11 +17,31 @@ class ScoreMergeHelper {
     // Ensure current is an object (handle null/undefined)
     const currentScore = current || {};
 
+    // For feedback toggle: if update has computed toggle values in current,
+    // prefer those over the single clicked value in update
+    // This handles the case where FeedbackPanel sends clicked value for online
+    // but provides computed toggle values for offline merge
+    let good, bad;
+
+    if (update.good !== undefined && currentScore._computedGood !== undefined) {
+      // Use computed toggle value from currentScore
+      good = currentScore._computedGood;
+      bad = currentScore._computedBad || '';
+    } else if (update.bad !== undefined && currentScore._computedBad !== undefined) {
+      // Use computed toggle value from currentScore
+      bad = currentScore._computedBad;
+      good = currentScore._computedGood || '';
+    } else {
+      // Standard merge: prefer update over current
+      good = update.good !== undefined ? update.good : (currentScore.good || '');
+      bad = update.bad !== undefined ? update.bad : (currentScore.bad || '');
+    }
+
     return {
       score: update.score || update.value || currentScore.value || '',
       comments: update.comments !== undefined ? update.comments : (currentScore.comments || ''),
-      good: update.good !== undefined ? update.good : (currentScore.good || ''),
-      bad: update.bad !== undefined ? update.bad : (currentScore.bad || '')
+      good,
+      bad
     };
   }
 

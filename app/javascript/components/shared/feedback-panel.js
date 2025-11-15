@@ -145,15 +145,25 @@ class FeedbackPanel extends HTMLElement {
       }
     }
 
-    // Send only the clicked value to server (server handles toggle logic when online)
+    // Send clicked value to server (server's post_feedback endpoint handles toggle logic)
     const scoreData = {
       heat: this.heat,
       slot: this._slotNumber,
       [feedbackType]: feedbackValue
     };
 
+    // For offline saves: provide computed toggle values via special _computed fields
+    // ScoreMergeHelper will use these for batch upload instead of the clicked value
+    const enhancedCurrentScore = { ...currentScore };
+    if (feedbackType !== 'value') {
+      // Provide computed toggle values for offline merge
+      // These ensure batch_scores endpoint gets correct toggled values
+      enhancedCurrentScore._computedGood = feedbackType === 'good' ? computedValue : computedOppositeValue;
+      enhancedCurrentScore._computedBad = feedbackType === 'bad' ? computedValue : computedOppositeValue;
+    }
+
     try {
-      const response = await heatDataManager.saveScore(this.judgeId, scoreData, currentScore);
+      const response = await heatDataManager.saveScore(this.judgeId, scoreData, enhancedCurrentScore);
 
       if (response && !response.error) {
         // Merge computed toggle values for offline behavior
