@@ -1,3 +1,9 @@
+<style>
+  tr.cached {
+    background-color: #f0fdf4; /* Light green */
+  }
+</style>
+
 <script>
   function audioSourceError(event) {
     const enclosing = event.target.parentNode.parentNode;
@@ -50,7 +56,7 @@
     </ul>
   </div>
 
-  <div class="flex justify-between items-center" data-controller="offline-playlist progressive-audio" data-offline-playlist-cleanup-url-value="<%= djlist_cleanup_cache_solos_path %>" data-offline-playlist-stream-value="offline_playlist_<%= ENV['RAILS_APP_DB'] %>_<%= @request_id %>" data-offline-playlist-request-id-value="<%= @request_id %>">
+  <div class="flex justify-between items-center" data-controller="offline-playlist progressive-audio" data-offline-playlist-cleanup-url-value="<%= djlist_cleanup_cache_solos_path %>" data-offline-playlist-stream-value="offline_playlist_<%= ENV['RAILS_APP_DB'] %>_<%= @request_id %>" data-offline-playlist-request-id-value="<%= @request_id %>" data-progressive-audio-event-id-value="<%= ENV['RAILS_APP_DB'] %>">
     <%= turbo_stream_from "offline_playlist_#{ENV['RAILS_APP_DB']}_#{@request_id}" %>
     <h1 class="mx-auto font-bold text-4xl">Solos</h1>
     <div class="ml-4">
@@ -61,12 +67,23 @@
         Cache Songs Locally
       </button>
 
+      <button data-progressive-audio-target="clearButton"
+              data-action="click->progressive-audio#clearCache"
+              class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 mr-2 hidden"
+              title="Clear all cached songs for this event">
+        Clear Cache
+      </button>
+
       <button data-offline-playlist-target="button"
               data-action="click->offline-playlist#generate"
               class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
               title="Generate and download a self-contained HTML file with embedded audio for offline playback">
         Prepare Offline Version
       </button>
+
+      <div data-progressive-audio-target="stats" class="text-sm text-gray-600 mt-2">
+        Checking cache...
+      </div>
 
       <div data-progressive-audio-target="progress" class="hidden mt-4">
         <div class="mb-2">
