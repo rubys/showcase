@@ -86,18 +86,42 @@ export class HeatTable extends HTMLElement {
 
   /**
    * Get subject category display
+   * Matches Entry#subject_category logic from app/models/entry.rb
    */
   getSubjectCategory(entry) {
     if (entry.pro) return 'Pro';
 
     const ageCategory = entry.age?.category || '';
     const levelInitials = entry.level?.initials || '';
+    const followIsPro = entry.follow?.type === 'Professional';
+    const leadIsPro = entry.lead?.type === 'Professional';
+    const proAm = this.eventData.pro_am;
 
-    if (this.trackAges && ageCategory) {
-      return `${ageCategory} - ${levelInitials}`;
+    let prefix;
+    if (proAm === 'G') {
+      if (followIsPro) {
+        prefix = 'G';
+      } else if (leadIsPro) {
+        prefix = 'L';
+      } else {
+        prefix = 'AC';
+      }
+    } else {
+      if (followIsPro) {
+        prefix = 'L';
+      } else if (leadIsPro) {
+        prefix = 'F';
+      } else {
+        prefix = 'AC';
+      }
     }
 
-    return levelInitials;
+    // Build the category string
+    if (this.trackAges && ageCategory) {
+      return `${prefix} - ${ageCategory} - ${levelInitials}`;
+    }
+
+    return `${prefix} - ${levelInitials}`;
   }
 
   /**

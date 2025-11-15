@@ -121,7 +121,8 @@ class ScoresController < ApplicationController
         track_ages: event.track_ages,
         ballrooms: event.ballrooms,
         column_order: event.column_order,
-        judge_comments: event.judge_comments
+        judge_comments: event.judge_comments,
+        pro_am: event.pro_am
       },
       judge: {
         id: judge.id,
@@ -154,6 +155,7 @@ class ScoresController < ApplicationController
             id: heat.id,
             dance_id: heat.dance_id,
             entry_id: heat.entry_id,
+            pro: entry.pro,
             lead: {
               id: entry.lead.id,
               name: entry.lead.name,

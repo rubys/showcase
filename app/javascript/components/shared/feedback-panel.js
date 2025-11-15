@@ -63,41 +63,38 @@ class FeedbackPanel extends HTMLElement {
     const badFeedback = this.bad.split(' ').filter(f => f);
 
     this.innerHTML = `
-      <div class="flex gap-2">
-        <!-- Overall Score -->
-        <div class="value" data-value="${this.value}">
-          ${this.overallOptions.map(opt => `
-            <button class="fb ${this.value === opt ? 'selected' : ''}">
-              <abbr>${opt}</abbr>
-            </button>
-          `).join('')}
-        </div>
-
-        <!-- Good Feedback -->
-        <div class="good" data-value="${this.good}">
-          ${this.goodOptions.map(opt => `
-            <button class="fb ${goodFeedback.includes(opt.abbr) ? 'selected' : ''}">
-              <abbr title="${opt.full}">${opt.abbr}</abbr>
-              <span class="sr-only">${opt.full}</span>
-            </button>
-          `).join('')}
-        </div>
-
-        <!-- Bad Feedback -->
-        <div class="bad" data-value="${this.bad}">
-          ${this.badOptions.map(opt => `
-            <button class="fb ${badFeedback.includes(opt.abbr) ? 'selected' : ''}">
-              <abbr title="${opt.full}">${opt.abbr}</abbr>
-              <span class="sr-only">${opt.full}</span>
-            </button>
-          `).join('')}
-        </div>
+      <div class="grid value w-full" data-value="${this.value}" style="grid-template-columns: 100px repeat(${this.overallOptions.length}, 1fr)">
+        <div class="bg-gray-200 inline-flex justify-center items-center">Overall</div>
+        ${this.overallOptions.map(opt => `
+          <button class="open-fb ${this.value === opt ? 'selected' : ''}">
+            <abbr title="${opt}">${opt}</abbr>
+            <span>${opt}</span>
+          </button>
+        `).join('')}
+      </div>
+      <div class="grid good" data-value="${this.good}" style="grid-template-columns: 100px repeat(${this.goodOptions.length}, 1fr)">
+        <div class="bg-gray-200 inline-flex justify-center items-center">Good</div>
+        ${this.goodOptions.map(opt => `
+          <button class="open-fb ${goodFeedback.includes(opt.abbr) ? 'selected' : ''}">
+            <abbr title="${opt.full}">${opt.abbr}</abbr>
+            <span>${opt.full}</span>
+          </button>
+        `).join('')}
+      </div>
+      <div class="grid bad" data-value="${this.bad}" style="grid-template-columns: 100px repeat(${this.badOptions.length}, 1fr)">
+        <div class="bg-gray-200 inline-flex justify-center items-center">Needs Work</div>
+        ${this.badOptions.map(opt => `
+          <button class="open-fb ${badFeedback.includes(opt.abbr) ? 'selected' : ''}">
+            <abbr title="${opt.full}">${opt.abbr}</abbr>
+            <span>${opt.full}</span>
+          </button>
+        `).join('')}
       </div>
     `;
   }
 
   setupEventListeners() {
-    const buttons = this.querySelectorAll('.fb');
+    const buttons = this.querySelectorAll('.open-fb');
 
     for (const button of buttons) {
       button.addEventListener('click', async () => {
