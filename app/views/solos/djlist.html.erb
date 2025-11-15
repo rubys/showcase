@@ -18,6 +18,7 @@
     <li class="text-xl mb-4 text-center">Having Trouble?</li>
     <ul class="list-disc ml-4">
     <li>Refresh the page; there may have been wifi issues.</li>
+    <li>Click "Cache Songs Locally" to download all songs and store them in this page. This allows playback without network connectivity. Songs stay cached even if wifi drops.</li>
     <li>Consider downloading an offline version of the playlist. This is a multi-step process:
       <ol class="list-decimal ml-4">
         <li>Click the "Prepare Offline Version" button.</li>
@@ -49,21 +50,43 @@
     </ul>
   </div>
 
-  <div class="flex justify-between items-center" data-controller="offline-playlist" data-offline-playlist-cleanup-url-value="<%= djlist_cleanup_cache_solos_path %>" data-offline-playlist-stream-value="offline_playlist_<%= ENV['RAILS_APP_DB'] %>_<%= @request_id %>" data-offline-playlist-request-id-value="<%= @request_id %>">
+  <div class="flex justify-between items-center" data-controller="offline-playlist progressive-audio" data-offline-playlist-cleanup-url-value="<%= djlist_cleanup_cache_solos_path %>" data-offline-playlist-stream-value="offline_playlist_<%= ENV['RAILS_APP_DB'] %>_<%= @request_id %>" data-offline-playlist-request-id-value="<%= @request_id %>">
     <%= turbo_stream_from "offline_playlist_#{ENV['RAILS_APP_DB']}_#{@request_id}" %>
     <h1 class="mx-auto font-bold text-4xl">Solos</h1>
     <div class="ml-4">
+      <button data-progressive-audio-target="button"
+              data-action="click->progressive-audio#cache"
+              class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 mr-2"
+              title="Download and cache all songs locally in this page for playback without network">
+        Cache Songs Locally
+      </button>
+
       <button data-offline-playlist-target="button"
               data-action="click->offline-playlist#generate"
               class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
               title="Generate and download a self-contained HTML file with embedded audio for offline playback">
         Prepare Offline Version
       </button>
-      
-      <div data-offline-playlist-target="progress" class="hidden">
-        <div class="mb-2 mt-4">
+
+      <div data-progressive-audio-target="progress" class="hidden mt-4">
+        <div class="mb-2">
           <div class="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
-            <div data-offline-playlist-target="progressBar" 
+            <div data-progressive-audio-target="progressBar"
+                 class="bg-blue-500 h-full text-xs font-medium text-white text-center p-0.5 leading-5 transition-all duration-300"
+                 style="width: 0%">
+              0%
+            </div>
+          </div>
+        </div>
+        <p data-progressive-audio-target="message" class="text-sm text-gray-600">
+          Caching songs...
+        </p>
+      </div>
+
+      <div data-offline-playlist-target="progress" class="hidden mt-4">
+        <div class="mb-2">
+          <div class="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
+            <div data-offline-playlist-target="progressBar"
                  class="bg-blue-500 h-full text-xs font-medium text-white text-center p-0.5 leading-5 transition-all duration-300"
                  style="width: 0%">
               0%
@@ -105,7 +128,7 @@
        </td>
        <% if heat.solo.song_file.attached? %>
        <td>
-         <audio controls style="display: inline">
+         <audio controls preload="none" style="display: inline">
            <source src=<%= heat.solo.song_file.url %> type=<%= heat.solo.song_file.content_type %> onerror="audioSourceError(event)">
          </audio>
        </td>
