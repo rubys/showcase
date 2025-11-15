@@ -59,6 +59,7 @@ export class HeatPage extends HTMLElement {
 
   disconnectedCallback() {
     this.removeEventListeners();
+    this.removePopstateListener();
   }
 
   /**
@@ -94,6 +95,7 @@ export class HeatPage extends HTMLElement {
 
       // Attach event listeners
       this.attachEventListeners();
+      this.setupPopstateListener();
 
     } catch (error) {
       console.error('Failed to initialize heat page:', error);
@@ -234,10 +236,15 @@ export class HeatPage extends HTMLElement {
       if (!response.ok) {
         // Offline or error - use cached data
         console.debug('[HeatPage] Version check failed, using cached data (offline)');
+        heatDataManager.updateConnectivity(false);
         return;
       }
 
       const serverVersion = await response.json();
+
+      // Update connectivity status (success)
+      heatDataManager.updateConnectivity(true, this.judgeId);
+
       const cachedVersion = heatDataManager.getCachedVersion();
 
       // Compare versions
@@ -257,6 +264,7 @@ export class HeatPage extends HTMLElement {
     } catch (error) {
       // Network error - use cached data
       console.debug('[HeatPage] Version check failed, using cached data (error):', error.message);
+      heatDataManager.updateConnectivity(false);
     }
   }
 
@@ -638,6 +646,50 @@ export class HeatPage extends HTMLElement {
       document.body.removeEventListener('touchend', this.touchEndHandler);
     }
     this.listenersAttached = false;
+  }
+
+  /**
+   * Setup popstate listener for browser back/forward buttons
+   */
+  setupPopstateListener() {
+    this.popstateHandler = (event) => {
+      console.debug('[HeatPage] Popstate event - URL changed via browser navigation');
+      // Read heat number and slot from URL
+      const url = new URL(window.location);
+      const heatParam = url.searchParams.get('heat');
+      const slotParam = url.searchParams.get('slot');
+      const styleParam = url.searchParams.get('style');
+
+      if (heatParam) {
+        const newHeatNumber = parseInt(heatParam);
+        const newSlot = slotParam ? parseInt(slotParam) : 0;
+        const newStyle = styleParam || 'radio';
+
+        // Update internal state
+        this.currentHeatNumber = newHeatNumber;
+        this.slot = newSlot;
+        this.scoringStyle = newStyle;
+
+        // Check version and render
+        this.checkVersionAndRefetch().then(() => {
+          this.render();
+        });
+      } else {
+        // No heat parameter - show heat list
+        this.currentHeatNumber = null;
+        this.render();
+      }
+    };
+    window.addEventListener('popstate', this.popstateHandler);
+  }
+
+  /**
+   * Remove popstate listener
+   */
+  removePopstateListener() {
+    if (this.popstateHandler) {
+      window.removeEventListener('popstate', this.popstateHandler);
+    }
   }
 
   /**

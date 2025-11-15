@@ -17,6 +17,7 @@ export class HeatNavigation extends HTMLElement {
     this.render();
     this.attachEventListeners();
     this.setupOnlineOfflineListeners();
+    this.setupConnectivityListener();
     this.updatePendingCount(); // Initial count
 
     // Listen for score changes to update pending count
@@ -29,6 +30,7 @@ export class HeatNavigation extends HTMLElement {
 
   disconnectedCallback() {
     this.removeOnlineOfflineListeners();
+    this.removeConnectivityListener();
     if (this.handlePendingCountChanged) {
       document.removeEventListener('pending-count-changed', this.handlePendingCountChanged);
     }
@@ -59,6 +61,32 @@ export class HeatNavigation extends HTMLElement {
     }
     if (this.handleOffline) {
       window.removeEventListener('offline', this.handleOffline);
+    }
+  }
+
+  /**
+   * Setup connectivity change listener (from actual network requests)
+   */
+  setupConnectivityListener() {
+    this.handleConnectivityChanged = (event) => {
+      console.debug('[heat-navigation] Connectivity changed:', event.detail);
+      this.isOnline = event.detail.connected;
+      this.updateConnectionStatus();
+
+      // Update pending count when reconnecting (batch upload may have cleared scores)
+      if (event.detail.connected && !event.detail.wasConnected) {
+        this.updatePendingCount();
+      }
+    };
+    document.addEventListener('connectivity-changed', this.handleConnectivityChanged);
+  }
+
+  /**
+   * Remove connectivity change listener
+   */
+  removeConnectivityListener() {
+    if (this.handleConnectivityChanged) {
+      document.removeEventListener('connectivity-changed', this.handleConnectivityChanged);
     }
   }
 

@@ -18,6 +18,7 @@ class HeatDataManager {
     this.initPromise = null;
     this.basePath = '';
     this.cachedVersion = null;
+    this.isConnected = navigator.onLine; // Track actual connectivity based on request success/failure
   }
 
   /**
@@ -27,6 +28,37 @@ class HeatDataManager {
   setBasePath(basePath) {
     this.basePath = basePath;
     console.debug('[HeatDataManager] Base path set to:', basePath);
+  }
+
+  /**
+   * Update connectivity status based on network request success/failure
+   * @param {boolean} connected - Whether the network request succeeded
+   * @param {number} judgeId - The judge ID (for triggering batch upload on reconnection)
+   */
+  updateConnectivity(connected, judgeId = null) {
+    const wasConnected = this.isConnected;
+    this.isConnected = connected;
+
+    // Dispatch connectivity change event
+    if (wasConnected !== connected) {
+      console.debug('[HeatDataManager] Connectivity changed:', wasConnected ? 'online→offline' : 'offline→online');
+      document.dispatchEvent(new CustomEvent('connectivity-changed', {
+        detail: { connected, wasConnected }
+      }));
+
+      // If transitioning from offline to online, trigger batch upload
+      if (!wasConnected && connected && judgeId) {
+        console.debug('[HeatDataManager] Reconnected - triggering batch upload');
+        this.batchUploadDirtyScores(judgeId).then(result => {
+          if (result.succeeded && result.succeeded.length > 0) {
+            console.debug('[HeatDataManager] Reconnection sync:', result.succeeded.length, 'scores uploaded');
+            document.dispatchEvent(new CustomEvent('pending-count-changed', { bubbles: true }));
+          }
+        }).catch(err => {
+          console.debug('[HeatDataManager] Reconnection sync failed:', err);
+        });
+      }
+    }
   }
 
   /**
@@ -311,6 +343,9 @@ class HeatDataManager {
         if (response.ok) {
           console.debug('[HeatDataManager] Score saved online');
 
+          // Update connectivity status (success)
+          this.updateConnectivity(true, judgeId);
+
           // Update dirty queue with the latest value to ensure batch sync uses newest data
           // This handles race conditions where an older queued score might exist
           const scoreData = {
@@ -335,9 +370,11 @@ class HeatDataManager {
           return;
         } else {
           console.warn('[HeatDataManager] Online save failed, falling back to offline');
+          this.updateConnectivity(false);
         }
       } catch (error) {
         console.warn('[HeatDataManager] Online save failed, falling back to offline:', error);
+        this.updateConnectivity(false);
       }
     }
 
@@ -374,11 +411,15 @@ class HeatDataManager {
       });
 
       if (!response.ok) {
+        this.updateConnectivity(false);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
       console.debug('[HeatDataManager] Data fetched successfully');
+
+      // Update connectivity status (success)
+      this.updateConnectivity(true, judgeId);
 
       // Store version metadata for future comparison
       await this.storeCachedVersion(judgeId, data);
@@ -386,6 +427,7 @@ class HeatDataManager {
       return data;
     } catch (error) {
       console.error('[HeatDataManager] Failed to fetch heat data:', error);
+      this.updateConnectivity(false);
       throw error;
     }
   }
