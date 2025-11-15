@@ -13,6 +13,7 @@
  */
 
 import { heatDataManager } from 'helpers/heat_data_manager';
+import FeedbackPanel from 'components/shared/feedback-panel';
 
 export class HeatTable extends HTMLElement {
   connectedCallback() {
@@ -193,115 +194,77 @@ export class HeatTable extends HTMLElement {
     }
 
     const score = this.getSubjectScore(subject);
-    const good = (score?.good || '').replace(/"/g, '&quot;');
-    const bad = (score?.bad || '').replace(/"/g, '&quot;');
-    const value = (score?.value || '').replace(/"/g, '&quot;');
+    const good = (score?.good || '').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+    const bad = (score?.bad || '').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+    const value = (score?.value || '').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 
-    let feedbackHtml = '';
-
-    // Overall scoring buttons (& or @)
+    // Determine overall options based on scoring type
+    let overallOptions = [];
     if (this.scoring === '&') {
-      feedbackHtml += `
-        <div class="grid value w-full" data-value="${value}" style='grid-template-columns: 100px repeat(5, 1fr)'>
-          <div class="bg-gray-200 inline-flex justify-center items-center">Overall</div>
-          ${[1, 2, 3, 4, 5].map(i => `<button class="open-fb" data-value="${i}"><abbr>${i}</abbr><span>${i}</span></button>`).join('')}
-        </div>
-      `;
+      overallOptions = ['1', '2', '3', '4', '5'];
     } else if (this.scoring === '@') {
-      feedbackHtml += `
-        <div class="grid value w-full" data-value="${value}" style='grid-template-columns: 100px repeat(4, 1fr)'>
-          <div class="bg-gray-200 inline-flex justify-center items-center">Overall</div>
-          ${['B', 'S', 'G', 'GH'].map(v => `<button class="open-fb" data-value="${v}"><abbr>${v}</abbr><span>${v}</span></button>`).join('')}
-        </div>
-      `;
+      overallOptions = ['B', 'S', 'G', 'GH'];
     }
 
-    // Good/Bad feedback buttons
+    // Determine good/bad feedback options
+    let goodOptions = [];
+    let badOptions = [];
+
     if (this.feedbacks.length > 0) {
       // Custom feedbacks from database
-      const maxOrder = Math.max(...this.feedbacks.map(f => f.order || 1));
-      const goodButtons = [];
-      const badButtons = [];
-
-      for (let i = 1; i <= maxOrder; i++) {
-        const feedback = this.feedbacks.find(f => (f.order || 1) === i);
-        if (feedback) {
-          goodButtons.push(`<button class="open-fb" data-feedback="${feedback.id}"><abbr>${feedback.abbr}</abbr><span>${feedback.value}</span></button>`);
-          badButtons.push(`<button class="open-fb" data-feedback="${feedback.id}"><abbr>${feedback.abbr}</abbr><span>${feedback.value}</span></button>`);
-        } else {
-          goodButtons.push('<span></span>');
-          badButtons.push('<span></span>');
-        }
-      }
-
-      feedbackHtml += `
-        <div class="grid grid-cols-2 w-full divide-x-2 divide-black">
-          <div class="grid grid-cols-5 good" data-value="${good}" title="Good Job With">
-            ${goodButtons.join('')}
-          </div>
-          <div class="grid grid-cols-5 bad" data-value="${bad}" title="Needs Work On">
-            ${badButtons.join('')}
-          </div>
-        </div>
-      `;
+      goodOptions = this.feedbacks.map(f => ({ abbr: f.abbr, full: f.value }));
+      badOptions = this.feedbacks.map(f => ({ abbr: f.abbr, full: f.value }));
     } else if (this.scoring === '&' || this.scoring === '@') {
       // Default feedback for & and @
       const defaultFeedbacks = [
-        { abbr: 'F', label: 'Frame' },
-        { abbr: 'P', label: 'Posture' },
-        { abbr: 'FW', label: 'Footwork' },
-        { abbr: 'LF', label: 'Lead/\u200BFollow' },
-        { abbr: 'T', label: 'Timing' },
-        { abbr: 'S', label: 'Styling' }
+        { abbr: 'F', full: 'Frame' },
+        { abbr: 'P', full: 'Posture' },
+        { abbr: 'FW', full: 'Footwork' },
+        { abbr: 'LF', full: 'Lead/\u200BFollow' },
+        { abbr: 'T', full: 'Timing' },
+        { abbr: 'S', full: 'Styling' }
       ];
-
-      feedbackHtml += `
-        <div class="grid good" data-value="${good}" style='grid-template-columns: 100px repeat(6, 1fr)'>
-          <div class="bg-gray-200 inline-flex justify-center items-center">Good</div>
-          ${defaultFeedbacks.map(f => `<button class="open-fb" data-feedback="${f.abbr}"><abbr>${f.abbr}</abbr><span>${f.label}</span></button>`).join('')}
-        </div>
-        <div class="grid bad" data-value="${bad}" style='grid-template-columns: 100px repeat(6, 1fr)'>
-          <div class="bg-gray-200 inline-flex justify-center items-center">Needs Work</div>
-          ${defaultFeedbacks.map(f => `<button class="open-fb" data-feedback="${f.abbr}"><abbr>${f.abbr}</abbr><span>${f.label}</span></button>`).join('')}
-        </div>
-      `;
+      goodOptions = defaultFeedbacks;
+      badOptions = defaultFeedbacks;
     } else if (this.scoring === '+') {
       // Detailed feedback for +
       const detailedFeedbacks = [
-        { abbr: 'DF', label: 'Dance Frame' },
-        { abbr: 'T', label: 'Timing' },
-        { abbr: 'LF', label: 'Lead/\u200BFollow' },
-        { abbr: 'CM', label: 'Cuban Motion' },
-        { abbr: 'RF', label: 'Rise & Fall' },
-        { abbr: 'FW', label: 'Footwork' },
-        { abbr: 'B', label: 'Balance' },
-        { abbr: 'AS', label: 'Arm Styling' },
-        { abbr: 'CB', label: 'Contra-Body' },
-        { abbr: 'FC', label: 'Floor Craft' }
+        { abbr: 'DF', full: 'Dance Frame' },
+        { abbr: 'T', full: 'Timing' },
+        { abbr: 'LF', full: 'Lead/\u200BFollow' },
+        { abbr: 'CM', full: 'Cuban Motion' },
+        { abbr: 'RF', full: 'Rise & Fall' },
+        { abbr: 'FW', full: 'Footwork' },
+        { abbr: 'B', full: 'Balance' },
+        { abbr: 'AS', full: 'Arm Styling' },
+        { abbr: 'CB', full: 'Contra-Body' },
+        { abbr: 'FC', full: 'Floor Craft' }
       ];
-
-      feedbackHtml += `
-        <div class="grid grid-cols-2 w-full divide-x-2 divide-black">
-          <div class="grid grid-cols-5 good" data-value="${good}" title="Good Job With">
-            ${detailedFeedbacks.map(f => `<button class="open-fb" data-feedback="${f.abbr}"><abbr>${f.abbr}</abbr><span>${f.label}</span></button>`).join('')}
-          </div>
-          <div class="grid grid-cols-5 bad" data-value="${bad}" title="Needs Work On">
-            ${detailedFeedbacks.map(f => `<button class="open-fb" data-feedback="${f.abbr}"><abbr>${f.abbr}</abbr><span>${f.label}</span></button>`).join('')}
-          </div>
-        </div>
-      `;
+      goodOptions = detailedFeedbacks;
+      badOptions = detailedFeedbacks;
     }
 
-    if (!feedbackHtml) return '';
+    // If no feedback options, return empty
+    if (overallOptions.length === 0 && goodOptions.length === 0 && badOptions.length === 0) {
+      return '';
+    }
 
-    // Derive feedback action from drop-action attribute
-    const dropAction = this.getAttribute('drop-action') || '';
-    const feedbackAction = dropAction.replace('/post', '/post-feedback');
-
+    // Use FeedbackPanel component
+    const slot = this.getAttribute('slot') || '';
     return `
-      <tr class="open-fb-row" data-heat="${subject.id}" data-feedback-action="${feedbackAction}">
+      <tr class="open-fb-row" data-heat="${subject.id}">
         <td colspan="${colSpan}">
-          ${feedbackHtml}
+          <feedback-panel
+            judge-id="${this.judgeData.id}"
+            heat="${subject.id}"
+            slot="${slot}"
+            good="${good}"
+            bad="${bad}"
+            value="${value}"
+            overall-options='${JSON.stringify(overallOptions)}'
+            good-options='${JSON.stringify(goodOptions)}'
+            bad-options='${JSON.stringify(badOptions)}'>
+          </feedback-panel>
         </td>
       </tr>
     `;
@@ -634,8 +597,8 @@ export class HeatTable extends HTMLElement {
   }
 
   /**
-   * Setup feedback button listeners
-   * Replaces open-feedback controller functionality
+   * Setup feedback row hover effects
+   * Highlights the previous row when hovering over feedback row
    */
   setupFeedbackListeners() {
     const feedbackRows = this.querySelectorAll('.open-fb-row');
@@ -649,92 +612,6 @@ export class HeatTable extends HTMLElement {
         });
         row.addEventListener('mouseleave', () => {
           previous.classList.remove('bg-yellow-200');
-        });
-      }
-
-      // Setup button handlers
-      const buttons = row.querySelectorAll('button');
-      for (const button of buttons) {
-        button.disabled = false;
-
-        const span = button.querySelector('span');
-        const abbr = button.querySelector('abbr');
-        if (span && abbr) {
-          abbr.title = span.textContent;
-          const feedback = button.parentElement.dataset.value?.split(' ') || [];
-          if (feedback.includes(abbr.textContent)) {
-            button.classList.add('selected');
-          }
-        }
-
-        button.addEventListener('click', async () => {
-          const feedbackType = button.parentElement.classList.contains('good') ? 'good' :
-            (button.parentElement.classList.contains('bad') ? 'bad' : 'value');
-          const feedbackValue = button.querySelector('abbr')?.textContent;
-
-          // Send only the clicked value - server handles toggling and mutual exclusivity
-          const scoreData = {
-            heat: parseInt(row.dataset.heat),
-            slot: this.getAttribute('slot') ? parseInt(this.getAttribute('slot')) : null,
-            [feedbackType]: feedbackValue
-          };
-
-          // Get current values from all sections for offline preservation
-          const sections = button.parentElement.parentElement.children;
-          const currentScore = {};
-          for (const section of sections) {
-            const sectionType = section.classList.contains('good') ? 'good' :
-              (section.classList.contains('bad') ? 'bad' : 'value');
-            currentScore[sectionType] = section.dataset.value || '';
-          }
-
-          try {
-            const response = await heatDataManager.saveScore(this.judgeData.id, scoreData, currentScore);
-
-            // Update UI based on response - only update sections that are in the response
-            if (response && !response.error) {
-              const sections = button.parentElement.parentElement.children;
-              for (const section of sections) {
-                const sectionType = section.classList.contains('good') ? 'good' :
-                  (section.classList.contains('bad') ? 'bad' : 'value');
-
-                // Only update this section if it's in the response
-                // (offline responses only include fields that were updated)
-                if (response[sectionType] === undefined) {
-                  continue;  // Skip sections not in response - preserves existing UI state
-                }
-
-                const feedbackValue = response[sectionType] || '';  // Handle null
-                const feedback = feedbackValue.split(' ').filter(f => f);
-
-                // Update section's data-value for next click
-                section.dataset.value = feedbackValue;
-
-                // Update button states
-                for (const btn of section.querySelectorAll('button')) {
-                  const btnAbbr = btn.querySelector('abbr');
-                  if (btnAbbr && feedback.includes(btnAbbr.textContent)) {
-                    btn.classList.add('selected');
-                  } else {
-                    btn.classList.remove('selected');
-                  }
-                }
-              }
-            }
-
-            // Dispatch event for heat-page to update in-memory data
-            // Use response data (has actual saved values) + heat/slot from request
-            this.dispatchEvent(new CustomEvent('score-updated', {
-              bubbles: true,
-              detail: {
-                heat: scoreData.heat,
-                slot: scoreData.slot,
-                ...response  // Spread response to include value/good/bad/comments
-              }
-            }));
-          } catch (error) {
-            console.error('[HeatTable] Failed to save feedback:', error);
-          }
         });
       }
     }
