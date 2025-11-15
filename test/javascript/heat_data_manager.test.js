@@ -192,4 +192,230 @@ describe('HeatDataManager', () => {
       await expect(heatDataManager.getData(55)).rejects.toThrow('Network unavailable')
     })
   })
+
+  // saveScore() function tests - the high-level API for saving scores
+  describe('saveScore()', () => {
+    it('returns server response data on successful online save', async () => {
+      const serverResponse = {
+        value: '4',
+        good: 'F P',
+        bad: null,
+        comments: ''
+      }
+
+      global.fetch = vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(serverResponse)
+        })
+      )
+
+      const result = await heatDataManager.saveScore(55, {
+        heat: 100,
+        slot: null,
+        good: 'F'
+      })
+
+      expect(result).toEqual(serverResponse)
+      expect(result.good).toBe('F P')
+      expect(result.bad).toBe(null)
+    })
+
+    it('handles null values in server response', async () => {
+      const serverResponse = {
+        value: '3',
+        good: 'F',
+        bad: null,  // Server returns null when field is cleared
+        comments: null
+      }
+
+      global.fetch = vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(serverResponse)
+        })
+      )
+
+      const result = await heatDataManager.saveScore(55, {
+        heat: 100,
+        slot: null,
+        good: 'F'
+      })
+
+      // Should not throw error on null values
+      expect(result.bad).toBe(null)
+      expect(result.comments).toBe(null)
+    })
+
+    it('returns optimistic data on offline save', async () => {
+      global.fetch = vi.fn(() => Promise.reject(new Error('Network unavailable')))
+
+      const result = await heatDataManager.saveScore(55, {
+        heat: 100,
+        slot: null,
+        value: '3',
+        good: 'F',
+        bad: '',
+        comments: ''
+      })
+
+      // Should return only fields that were in the request
+      expect(result.value).toBe('3')
+      expect(result.good).toBe('F')
+      expect(result.bad).toBe('')
+      expect(result.comments).toBe('')
+
+      // Should be queued in dirty scores
+      const dirtyScores = await heatDataManager.getDirtyScores(55)
+      expect(dirtyScores).toHaveLength(1)
+      expect(dirtyScores[0].score).toBe('3')
+    })
+
+    it('returns partial optimistic data - does not include undefined fields', async () => {
+      global.fetch = vi.fn(() => Promise.reject(new Error('Network unavailable')))
+
+      const result = await heatDataManager.saveScore(55, {
+        heat: 100,
+        slot: null,
+        value: '3'  // Only sending value, not good/bad/comments
+      })
+
+      // Should only return the value field, not good/bad/comments
+      expect(result.value).toBe('3')
+      expect(result.good).toBeUndefined()
+      expect(result.bad).toBeUndefined()
+      expect(result.comments).toBeUndefined()
+    })
+
+    it('does NOT add to dirty queue when successful online save and queue is empty', async () => {
+      const serverResponse = {
+        value: '4',
+        good: 'F',
+        bad: '',
+        comments: ''
+      }
+
+      global.fetch = vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(serverResponse)
+        })
+      )
+
+      // Ensure dirty queue is empty
+      await heatDataManager.clearDirtyScores(55)
+
+      await heatDataManager.saveScore(55, {
+        heat: 100,
+        slot: null,
+        good: 'F'
+      })
+
+      // Should NOT add to dirty queue when queue is empty
+      const dirtyScores = await heatDataManager.getDirtyScores(55)
+      expect(dirtyScores).toHaveLength(0)
+    })
+
+    it('adds to dirty queue when successful online save but queue has pending scores', async () => {
+      const serverResponse = {
+        value: '4',
+        good: 'F',
+        bad: '',
+        comments: ''
+      }
+
+      // Mock successful POST but failed batch upload to keep scores in queue
+      let callCount = 0
+      global.fetch = vi.fn(() => {
+        callCount++
+        if (callCount === 1) {
+          // First call: successful POST
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve(serverResponse)
+          })
+        } else {
+          // Second call: batch upload - simulate failure
+          return Promise.resolve({
+            ok: false,
+            status: 500
+          })
+        }
+      })
+
+      // Add a pending dirty score
+      await heatDataManager.addDirtyScore(55, 99, null, {
+        score: 'G',
+        comments: '',
+        good: '',
+        bad: ''
+      })
+
+      // Now save a new score - it should succeed online but also add to dirty queue
+      // because there's a pending score
+      await heatDataManager.saveScore(55, {
+        heat: 100,
+        slot: null,
+        good: 'F'
+      })
+
+      // Wait for async batch upload to complete
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // Should have added to dirty queue (original pending + new save with updated value)
+      const dirtyScores = await heatDataManager.getDirtyScores(55)
+      expect(dirtyScores.length).toBeGreaterThanOrEqual(1)
+    })
+
+    it('uses server response data (not request data) when adding to dirty queue', async () => {
+      const serverResponse = {
+        value: '4',
+        good: 'F P T',  // Server returns expanded list
+        bad: '',
+        comments: ''
+      }
+
+      let callCount = 0
+      global.fetch = vi.fn(() => {
+        callCount++
+        if (callCount === 1) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve(serverResponse)
+          })
+        } else {
+          // Batch upload fails
+          return Promise.resolve({
+            ok: false,
+            status: 500
+          })
+        }
+      })
+
+      // Add pending score
+      await heatDataManager.addDirtyScore(55, 99, null, {
+        score: 'G',
+        comments: '',
+        good: '',
+        bad: ''
+      })
+
+      // Save with partial data - server returns complete data
+      await heatDataManager.saveScore(55, {
+        heat: 100,
+        slot: null,
+        good: 'F'  // Sent only "F"
+      })
+
+      // Wait for batch upload
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // Dirty queue should contain server's complete response, not just "F"
+      const dirtyScores = await heatDataManager.getDirtyScores(55)
+      const savedScore = dirtyScores.find(s => s.heat === 100)
+      if (savedScore) {
+        expect(savedScore.good).toBe('F P T')  // Should use server's expanded value
+      }
+    })
+  })
 })

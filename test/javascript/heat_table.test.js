@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   createHeatData,
   createHeat,
@@ -11,6 +11,7 @@ import {
   createScore,
   createDance
 } from './helpers/fixture_factory'
+import '../../app/javascript/components/heat-types/heat-table'
 
 /**
  * Table Heat Component Tests

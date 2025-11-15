@@ -183,8 +183,9 @@ export class HeatPage extends HTMLElement {
     }
 
     // Update the in-memory score data
-    if (scoreData.score !== undefined) {
-      judgeScore.value = scoreData.score;
+    // Handle both 'score' (regular scores) and 'value' (feedback scores)
+    if (scoreData.score !== undefined || scoreData.value !== undefined) {
+      judgeScore.value = scoreData.score || scoreData.value;
     }
     if (scoreData.comments !== undefined) {
       judgeScore.comments = scoreData.comments;
@@ -621,6 +622,14 @@ export class HeatPage extends HTMLElement {
     this.addEventListener('score-updated', (e) => {
       this.handleScoreUpdate(e.detail);
     });
+
+    // Listen for scores-synced event (after successful batch upload on reconnection)
+    this.scoresSyncedHandler = async () => {
+      console.debug('[HeatPage] Scores synced - refreshing data');
+      this.data = await heatDataManager.getData(this.judgeId);
+      this.render();
+    };
+    document.addEventListener('scores-synced', this.scoresSyncedHandler);
   }
 
   /**
@@ -644,6 +653,9 @@ export class HeatPage extends HTMLElement {
       document.body.removeEventListener('keydown', this.keydownHandler);
       document.body.removeEventListener('touchstart', this.touchStartHandler);
       document.body.removeEventListener('touchend', this.touchEndHandler);
+    }
+    if (this.scoresSyncedHandler) {
+      document.removeEventListener('scores-synced', this.scoresSyncedHandler);
     }
     this.listenersAttached = false;
   }

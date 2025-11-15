@@ -53,6 +53,11 @@ class HeatDataManager {
           if (result.succeeded && result.succeeded.length > 0) {
             console.debug('[HeatDataManager] Reconnection sync:', result.succeeded.length, 'scores uploaded');
             document.dispatchEvent(new CustomEvent('pending-count-changed', { bubbles: true }));
+
+            // Invalidate cache so fresh data is fetched on next navigation
+            this.invalidateCache();
+            // Also trigger immediate refresh if on heat-page
+            document.dispatchEvent(new CustomEvent('scores-synced', { bubbles: true }));
           }
         }).catch(err => {
           console.debug('[HeatDataManager] Reconnection sync failed:', err);
@@ -319,9 +324,10 @@ class HeatDataManager {
    * Save a score (online or offline)
    * @param {number} judgeId - The judge ID
    * @param {Object} data - Score data {heat, score?, comments?, good?, bad?, slot?}
-   * @returns {Promise<void>}
+   * @param {Object} currentScore - Current score values {value?, good?, bad?} for offline merge
+   * @returns {Promise<Object>} Response object with score data
    */
-  async saveScore(judgeId, data) {
+  async saveScore(judgeId, data, currentScore = {}) {
     // Determine which endpoint to use based on data type
     // Feedback scores have value/good/bad keys, regular scores have score/comments
     const isFeedback = data.value !== undefined || data.good !== undefined || data.bad !== undefined;
@@ -346,28 +352,36 @@ class HeatDataManager {
           // Update connectivity status (success)
           this.updateConnectivity(true, judgeId);
 
-          // Update dirty queue with the latest value to ensure batch sync uses newest data
-          // This handles race conditions where an older queued score might exist
-          const scoreData = {
-            score: data.score || data.value,
-            comments: data.comments,
-            good: data.good,
-            bad: data.bad
-          };
-          await this.addDirtyScore(judgeId, data.heat, data.slot || null, scoreData);
+          // Parse response to get updated score data
+          const responseData = await response.json();
 
-          // Try to upload any pending scores in the background
-          this.batchUploadDirtyScores(judgeId).then(result => {
-            if (result.succeeded && result.succeeded.length > 0) {
-              console.debug('[HeatDataManager] Background upload: synced', result.succeeded.length, 'pending scores');
-              // Notify that pending count changed
-              document.dispatchEvent(new CustomEvent('pending-count-changed', { bubbles: true }));
-            }
-          }).catch(err => {
-            console.debug('[HeatDataManager] Background upload failed:', err);
-          });
+          // Check if there are pending dirty scores
+          const dirtyCount = await this.getDirtyScoreCount(judgeId);
 
-          return;
+          if (dirtyCount > 0) {
+            // There are pending scores - add this one with latest value from server response
+            // to prevent batch upload from sending stale data
+            const scoreData = {
+              score: responseData.score || responseData.value,
+              comments: responseData.comments,
+              good: responseData.good,
+              bad: responseData.bad
+            };
+            await this.addDirtyScore(judgeId, data.heat, data.slot || null, scoreData);
+
+            // Batch upload all pending scores (including this one with updated value)
+            this.batchUploadDirtyScores(judgeId).then(result => {
+              if (result.succeeded && result.succeeded.length > 0) {
+                console.debug('[HeatDataManager] Background upload: synced', result.succeeded.length, 'pending scores');
+                // Notify that pending count changed
+                document.dispatchEvent(new CustomEvent('pending-count-changed', { bubbles: true }));
+              }
+            }).catch(err => {
+              console.debug('[HeatDataManager] Background upload failed:', err);
+            });
+          }
+
+          return responseData;
         } else {
           console.warn('[HeatDataManager] Online save failed, falling back to offline');
           this.updateConnectivity(false);
@@ -379,17 +393,34 @@ class HeatDataManager {
     }
 
     // Save offline
-    // Map data fields to batch format (batch endpoint expects 'score' not 'value')
-    const scoreData = {
-      score: data.score || data.value,  // Handle both regular scores (score) and feedback scores (value)
-      comments: data.comments,
-      good: data.good,
-      bad: data.bad
+    // Merge with current score to preserve all fields (important for batch upload)
+    const mergedData = {
+      score: data.score || data.value || currentScore.value || '',
+      comments: data.comments !== undefined ? data.comments : (currentScore.comments || ''),
+      good: data.good !== undefined ? data.good : (currentScore.good || ''),
+      bad: data.bad !== undefined ? data.bad : (currentScore.bad || '')
     };
 
     // Use null for slot if not provided (most heats don't use slots)
-    await this.addDirtyScore(judgeId, data.heat, data.slot || null, scoreData);
-    console.debug('[HeatDataManager] Score saved offline');
+    await this.addDirtyScore(judgeId, data.heat, data.slot || null, mergedData);
+    console.debug('[HeatDataManager] Score saved offline with merged data:', mergedData);
+
+    // Return optimistic update data - only include fields that were in the request
+    // This prevents overwriting existing data (e.g., don't clear 'good' when updating 'value')
+    const result = {};
+    if (data.value !== undefined || data.score !== undefined) {
+      result.value = data.value || data.score;
+    }
+    if (data.good !== undefined) {
+      result.good = data.good;
+    }
+    if (data.bad !== undefined) {
+      result.bad = data.bad;
+    }
+    if (data.comments !== undefined) {
+      result.comments = data.comments;
+    }
+    return result;
   }
 
   /**
@@ -471,6 +502,14 @@ class HeatDataManager {
    */
   getCachedVersion() {
     return this.cachedVersion || null;
+  }
+
+  /**
+   * Invalidate the cached version - forces fresh data fetch on next getData() call
+   */
+  invalidateCache() {
+    console.debug('[HeatDataManager] Cache invalidated');
+    this.cachedVersion = null;
   }
 
   /**

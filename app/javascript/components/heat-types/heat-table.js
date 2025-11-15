@@ -672,24 +672,45 @@ export class HeatTable extends HTMLElement {
             (button.parentElement.classList.contains('bad') ? 'bad' : 'value');
           const feedbackValue = button.querySelector('abbr')?.textContent;
 
-          const slot = this.getAttribute('slot');
+          // Send only the clicked value - server handles toggling and mutual exclusivity
           const scoreData = {
             heat: parseInt(row.dataset.heat),
-            slot: slot ? parseInt(slot) : null,
+            slot: this.getAttribute('slot') ? parseInt(this.getAttribute('slot')) : null,
             [feedbackType]: feedbackValue
           };
 
-          try {
-            const response = await heatDataManager.saveScore(this.judgeData.id, scoreData);
+          // Get current values from all sections for offline preservation
+          const sections = button.parentElement.parentElement.children;
+          const currentScore = {};
+          for (const section of sections) {
+            const sectionType = section.classList.contains('good') ? 'good' :
+              (section.classList.contains('bad') ? 'bad' : 'value');
+            currentScore[sectionType] = section.dataset.value || '';
+          }
 
-            // Update UI based on response
+          try {
+            const response = await heatDataManager.saveScore(this.judgeData.id, scoreData, currentScore);
+
+            // Update UI based on response - only update sections that are in the response
             if (response && !response.error) {
               const sections = button.parentElement.parentElement.children;
               for (const section of sections) {
                 const sectionType = section.classList.contains('good') ? 'good' :
                   (section.classList.contains('bad') ? 'bad' : 'value');
-                const feedback = (response[sectionType] || '').split(' ');
 
+                // Only update this section if it's in the response
+                // (offline responses only include fields that were updated)
+                if (response[sectionType] === undefined) {
+                  continue;  // Skip sections not in response - preserves existing UI state
+                }
+
+                const feedbackValue = response[sectionType] || '';  // Handle null
+                const feedback = feedbackValue.split(' ').filter(f => f);
+
+                // Update section's data-value for next click
+                section.dataset.value = feedbackValue;
+
+                // Update button states
                 for (const btn of section.querySelectorAll('button')) {
                   const btnAbbr = btn.querySelector('abbr');
                   if (btnAbbr && feedback.includes(btnAbbr.textContent)) {
@@ -702,9 +723,14 @@ export class HeatTable extends HTMLElement {
             }
 
             // Dispatch event for heat-page to update in-memory data
+            // Use response data (has actual saved values) + heat/slot from request
             this.dispatchEvent(new CustomEvent('score-updated', {
               bubbles: true,
-              detail: scoreData
+              detail: {
+                heat: scoreData.heat,
+                slot: scoreData.slot,
+                ...response  // Spread response to include value/good/bad/comments
+              }
             }));
           } catch (error) {
             console.error('[HeatTable] Failed to save feedback:', error);
