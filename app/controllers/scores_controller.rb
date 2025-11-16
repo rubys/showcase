@@ -148,9 +148,69 @@ class ScoresController < ApplicationController
           event.closed_scoring
         end
 
+        # Check if category scoring is enabled for this heat
+        dance_category = first_heat.dance_category
+        category_scoring_enabled = event.student_judge_assignments &&
+          dance_category&.use_category_scoring
+
+        # Pre-load category scores if needed
+        category_scores_by_person = {}
+        if category_scoring_enabled
+          category_id = dance_category.id
+          student_ids = heat_group.map do |heat|
+            entry = heat.entry
+            entry.lead.type == 'Student' ? entry.lead.id : entry.follow.id
+          end.compact.uniq
+
+          Score.where(
+            heat_id: -category_id,
+            judge_id: judge.id,
+            person_id: student_ids
+          ).each do |score|
+            category_scores_by_person[score.person_id] = score
+          end
+        end
+
         # Build subjects list
         subjects = heat_group.map do |heat|
           entry = heat.entry
+
+          # Determine student and load appropriate score
+          student = entry.lead.type == 'Student' ? entry.lead : entry.follow
+          student_id = student&.id
+
+          # Get scores for this subject
+          subject_scores = if category_scoring_enabled && student_id && category_scores_by_person[student_id]
+            # Use category score
+            cat_score = category_scores_by_person[student_id]
+            [{
+              id: cat_score.id,
+              judge_id: cat_score.judge_id,
+              heat_id: heat.id,  # Use actual heat ID for frontend
+              slot: nil,
+              good: cat_score.good,
+              bad: cat_score.bad,
+              value: cat_score.good,  # Category score value is in 'good' field
+              comments: cat_score.comments,
+              person_id: student_id,
+              category_scoring: true
+            }]
+          else
+            # Use per-heat scores
+            heat.scores.select { |s| s.judge_id == judge.id }.map do |score|
+              {
+                id: score.id,
+                judge_id: score.judge_id,
+                heat_id: score.heat_id,
+                slot: score.slot,
+                good: score.good,
+                bad: score.bad,
+                value: score.value,
+                comments: score.comments
+              }
+            end
+          end
+
           {
             id: heat.id,
             dance_id: heat.dance_id,
@@ -204,18 +264,7 @@ class ScoresController < ApplicationController
                 }
               end
             } : nil,
-            scores: heat.scores.select { |s| s.judge_id == judge.id }.map do |score|
-              {
-                id: score.id,
-                judge_id: score.judge_id,
-                heat_id: score.heat_id,
-                slot: score.slot,
-                good: score.good,
-                bad: score.bad,
-                value: score.value,
-                comments: score.comments
-              }
-            end
+            scores: subject_scores
           }
         end
 

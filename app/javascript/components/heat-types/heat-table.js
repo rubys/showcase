@@ -13,6 +13,7 @@
  */
 
 import { heatDataManager } from 'helpers/heat_data_manager';
+import { enhanceWithPersonId } from 'helpers/score_data_helper';
 import FeedbackPanel from 'components/shared/feedback-panel';
 
 export class HeatTable extends HTMLElement {
@@ -419,7 +420,15 @@ export class HeatTable extends HTMLElement {
     const heatId = parseInt(input.getAttribute('name'));
     const value = input.type === 'checkbox' ? (input.checked ? '1' : '') : input.value;
 
-    this.postScore({ heat: heatId, score: value }, input);
+    // Build score data with person_id if category scoring enabled
+    const data = enhanceWithPersonId(
+      { heat: heatId, score: value },
+      this.ballrooms,
+      heatId,
+      this.judgeData.id
+    );
+
+    this.postScore(data, input);
   }
 
   /**
@@ -427,6 +436,9 @@ export class HeatTable extends HTMLElement {
    */
   handleFeedbackScore(event) {
     const { feedback, button, element } = event.detail;
+
+    // Include person_id if category scoring is enabled
+    enhanceWithPersonId(feedback, this.ballrooms, feedback.heat, this.judgeData.id);
 
     // Update UI immediately (optimistic update)
     const sections = element.children[0].children; // Get all sections (Overall, Good, Bad)
@@ -504,7 +516,15 @@ export class HeatTable extends HTMLElement {
     if (this.commentTimeout) clearTimeout(this.commentTimeout);
 
     this.commentTimeout = setTimeout(() => {
-      this.postScore({ heat: heatId, comments: textarea.value }, textarea);
+      // Build comment data with person_id if category scoring enabled
+      const data = enhanceWithPersonId(
+        { heat: heatId, comments: textarea.value },
+        this.ballrooms,
+        heatId,
+        this.judgeData.id
+      );
+
+      this.postScore(data, textarea);
       this.commentTimeout = null;
     }, 2000);
   }

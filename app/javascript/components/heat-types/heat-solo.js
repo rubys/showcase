@@ -11,6 +11,7 @@
  */
 
 import { heatDataManager } from 'helpers/heat_data_manager';
+import { enhanceWithPersonId } from 'helpers/score_data_helper';
 
 export class HeatSolo extends HTMLElement {
   connectedCallback() {
@@ -160,10 +161,11 @@ export class HeatSolo extends HTMLElement {
     const input = event.target;
     const name = input.getAttribute('name');
     const value = input.value;
+    const heatId = this.heatData.subjects[0].id;
 
     // Prepare score data
     const data = {
-      heat: this.heatData.subjects[0].id,
+      heat: heatId,
       score: value
     };
 
@@ -171,6 +173,9 @@ export class HeatSolo extends HTMLElement {
     if (name && this.eventData.solo_scoring === '4') {
       data.name = name;
     }
+
+    // Include person_id if category scoring is enabled
+    enhanceWithPersonId(data, this.heatData, heatId, this.judgeData.id);
 
     // Send to server
     this.postScore(data, input);
@@ -190,10 +195,13 @@ export class HeatSolo extends HTMLElement {
     if (this.commentTimeout) clearTimeout(this.commentTimeout);
 
     this.commentTimeout = setTimeout(() => {
-      const data = {
-        heat: this.heatData.subjects[0].id,
-        comments: textarea.value
-      };
+      const heatId = this.heatData.subjects[0].id;
+      const data = enhanceWithPersonId(
+        { heat: heatId, comments: textarea.value },
+        this.heatData,
+        heatId,
+        this.judgeData.id
+      );
 
       this.postScore(data, textarea);
       this.commentTimeout = null;

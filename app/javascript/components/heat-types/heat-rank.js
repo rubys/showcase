@@ -10,6 +10,7 @@
  */
 
 import { heatDataManager } from 'helpers/heat_data_manager';
+import { enhanceWithPersonId } from 'helpers/score_data_helper';
 
 export class HeatRank extends HTMLElement {
   connectedCallback() {
@@ -170,11 +171,19 @@ export class HeatRank extends HTMLElement {
       const slot = this.slot || null;
 
       for (const entry of ranking) {
-        await heatDataManager.saveScore(judgeId, {
-          heat: entry.id,
-          slot: slot,
-          score: String(entry.rank)  // Convert rank to string to match score format
-        });
+        // Build score data with person_id if category scoring enabled
+        const data = enhanceWithPersonId(
+          {
+            heat: entry.id,
+            slot: slot,
+            score: String(entry.rank)  // Convert rank to string to match score format
+          },
+          this.heatData,
+          entry.id,
+          judgeId
+        );
+
+        await heatDataManager.saveScore(judgeId, data);
       }
 
       // Hide error message on success

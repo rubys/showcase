@@ -13,6 +13,7 @@
  */
 
 import { heatDataManager } from 'helpers/heat_data_manager';
+import { enhanceWithPersonId } from 'helpers/score_data_helper';
 
 export class HeatCards extends HTMLElement {
   connectedCallback() {
@@ -240,7 +241,15 @@ export class HeatCards extends HTMLElement {
     const heatId = parseInt(this.draggedElement.getAttribute('data-heat'));
     const score = scoreColumn.getAttribute('data-score') || '';
 
-    const response = await this.postScore({ heat: heatId, score: score }, this.draggedElement);
+    // Build score data with person_id if category scoring enabled
+    const data = enhanceWithPersonId(
+      { heat: heatId, score: score },
+      this.results,
+      heatId,
+      this.judgeData.id
+    );
+
+    const response = await this.postScore(data, this.draggedElement);
 
     // Revert on error
     if (!response.ok) {
