@@ -62,7 +62,7 @@ class ScoresController < ApplicationController
     end
 
     @scored = Score.includes(:heat).where(judge: @judge).
-      select {|score| score.value || score.comments || score.good || score.bad}.
+      select {|score| score.heat_id.positive? && (score.value || score.comments || score.good || score.bad)}.
       group_by {|score| score.heat.number.to_f}
     @count = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance).count
 
@@ -80,7 +80,25 @@ class ScoresController < ApplicationController
 
     @browser_warn = browser_warn
 
-    @unassigned = @assign_judges ? Heat.includes(:scores).where(category: ['Open', 'Closed'], scores: { id: nil }).distinct.pluck(:number).select {it > 0} : []
+    # Find unassigned heats, excluding category-scored categories
+    if @assign_judges
+      # Get category IDs that use category scoring
+      event = Event.current
+      category_scored_ids = event.student_judge_assignments ?
+        Category.where(use_category_scoring: true).pluck(:id) : []
+
+      # Build query to find heats with no scores
+      query = Heat.includes(:scores).where(category: ['Open', 'Closed'], scores: { id: nil })
+
+      # Exclude heats in category-scored categories
+      if category_scored_ids.any?
+        query = query.joins(:dance).where.not(dances: { closed_category_id: category_scored_ids })
+      end
+
+      @unassigned = query.distinct.pluck(:number).select {|it| it > 0}
+    else
+      @unassigned = []
+    end
 
     render :heatlist, status: (@browser_warn ? :upgrade_required : :ok)
   end
@@ -513,12 +531,16 @@ class ScoresController < ApplicationController
         OpenStruct.new(
           heat_id: heat.id,
           heat: heat,
+          judge_id: @judge.id,  # Include judge_id for assignment checking
           value: cat_score.good,  # Category numeric score stored in 'good' field
           comments: cat_score.comments,
           good: cat_score.good,
           bad: cat_score.bad
         )
       end.compact
+
+      # Store assignment info for view (which students have category scores)
+      @category_score_assignments = Set.new(category_scores_by_person.keys)
 
       student_results = scores.map {|s| [s.heat, s.value]}.
         select {|heat, value| value}.to_h
@@ -880,8 +902,35 @@ class ScoresController < ApplicationController
     heat = Heat.find(params[:heat].to_i)
     slot = params[:slot]&.to_i
 
+    # Check if category scoring is enabled for this heat
+    category = heat.dance_category
+    category_scoring_enabled = Event.current.student_judge_assignments &&
+      category&.use_category_scoring
+
     retry_transaction do
-    score = Score.find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
+    if category_scoring_enabled
+      # Category scoring: save to category score
+      student = if heat.entry.lead.type == 'Student'
+        heat.entry.lead
+      elsif heat.entry.follow.type == 'Student'
+        heat.entry.follow
+      end
+
+      unless student
+        render json: { error: 'No student found for category scoring' }, status: :unprocessable_content
+        return
+      end
+
+      score = Score.find_or_create_by(
+        judge_id: judge.id,
+        heat_id: -category.id,  # Negative ID for category scores
+        person_id: student.id
+      )
+    else
+      # Per-heat scoring
+      score = Score.find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
+    end
+
     if ApplicationRecord.readonly?
       render json: 'database is readonly', status: :service_unavailable
     else

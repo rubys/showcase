@@ -46,7 +46,12 @@
       <tr><td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) + (@scores&.length || 0) %>" class="bg-black"></td></tr>
     <% end %>
     <% subjects.each do |subject| %>
-    <% assign = @assign_judges ? subject.scores.any? {|score| score.judge_id == @judge.id} : true %>
+    <% if @category_scoring_enabled && @category_score_assignments %>
+      <% student_id = @heat_to_student[subject.id] %>
+      <% assign = @assign_judges ? @category_score_assignments.include?(student_id) : true %>
+    <% else %>
+      <% assign = @assign_judges ? subject.scores.any? {|score| score.judge_id == @judge.id} : true %>
+    <% end %>
     <% next if @show == 'only' and not assign %>
     <% if subject.dance_id != dance %>
     <tr><td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) + (@scores&.length || 0) %>" class="bg-gray-400"></td></tr>

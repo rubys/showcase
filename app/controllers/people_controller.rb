@@ -779,7 +779,6 @@ class PeopleController < ApplicationController
       select {|person| person.present?}.map(&:id).shuffle
 
     # Unified assignment: handle both category scoring and per-heat scoring
-    stats = []
 
     # 1. Handle category scoring for enabled categories (both event and category flags set)
     if @event.student_judge_assignments
@@ -792,16 +791,6 @@ class PeopleController < ApplicationController
         # Perform category assignment
         assignment_results = assign_categories_to_judges_with_variety(category_scoring_categories, judges)
         generate_category_scores(assignment_results)
-
-        # Collect stats
-        assignment_results.each do |category_id, judge_loads|
-          category = Category.find(category_id)
-          stats << "#{category.name} (by category):"
-          judge_loads.each do |judge_id, load|
-            judge = Person.find(judge_id)
-            stats << "  #{judge.name}: #{load[:student_count]} students, #{load[:heat_count]} heats"
-          end
-        end
       end
     end
 
@@ -928,16 +917,9 @@ class PeopleController < ApplicationController
       end
     end
 
-    # Build final message including both types of assignment
-    if stats.any?
-      per_heat_count = unscored.is_a?(Hash) ? unscored.values.flatten.count : unscored.count
-      stats << "Per-heat assignment: #{per_heat_count} heats" if per_heat_count > 0
-      message = "Judge assignments created:\n#{stats.join("\n")}"
-    else
-      message = "#{unscored.count} entries assigned to #{judges.count} judges."
-    end
-
-    redirect_to person_path(params[:id]), notice: message
+    # Simple confirmation message for MVP
+    # Detailed statistics can be added later if requested
+    redirect_to person_path(params[:id]), notice: "Judge assignments created"
   end
 
   def reset_assignments
