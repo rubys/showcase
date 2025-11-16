@@ -481,9 +481,19 @@ export default class extends Controller {
       const allSongs = await this.getAllCachedSongs()
       const eventSongs = allSongs.filter(s => s.eventId === this.eventIdValue)
 
+      // Delete by raw key (handles both old full URLs and new base URLs)
+      const transaction = this.db.transaction(['songs'], 'readwrite')
+      const objectStore = transaction.objectStore('songs')
+
       for (const song of eventSongs) {
-        await this.deleteSong(song.url)
+        objectStore.delete(song.url)  // Delete by raw key, don't extract base URL
       }
+
+      // Wait for transaction to complete
+      await new Promise((resolve, reject) => {
+        transaction.oncomplete = resolve
+        transaction.onerror = () => reject(transaction.error)
+      })
 
       // Reload page to reset audio elements
       window.location.reload()
