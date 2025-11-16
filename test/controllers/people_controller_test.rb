@@ -342,4 +342,147 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
     person.reload
     assert_equal 0, person.answers.count, "All answers should be deleted when options are removed"
   end
+
+  # ===== UNIFIED ASSIGN_JUDGES TESTS =====
+
+  test "assign_judges creates per-heat scores when category scoring disabled" do
+    # Setup judges
+    judge1 = Person.create!(name: 'Judge One', type: 'Judge', present: true, studio: studios(:one))
+    judge2 = Person.create!(name: 'Judge Two', type: 'Judge', present: true, studio: studios(:one))
+
+    # Create heats
+    entry = Entry.create!(lead: people(:instructor1), follow: people(:student_one), age: ages(:one), level: levels(:one))
+    heat1 = Heat.create!(number: 1, entry: entry, dance: dances(:waltz), category: 'Closed')
+    heat2 = Heat.create!(number: 2, entry: entry, dance: dances(:tango), category: 'Closed')
+
+    # Ensure category scoring is disabled
+    Event.first.update!(student_judge_assignments: false)
+
+    post assign_judges_person_path(judge1)
+
+    assert_redirected_to person_path(judge1)
+
+    # Should create per-heat scores (positive heat_id)
+    scores = Score.heat_scores
+    assert scores.count > 0, "Should create per-heat scores"
+    assert_equal 0, Score.category_scores.count, "Should not create category scores"
+  end
+
+  test "assign_judges creates category scores when both flags enabled" do
+    # Setup event and category with category scoring enabled
+    event = Event.first
+    event.update!(student_judge_assignments: true)
+
+    category = categories(:one)
+    category.update!(use_category_scoring: true)
+
+    # Setup judges
+    judge1 = Person.create!(name: 'Judge One', type: 'Judge', present: true, studio: studios(:one))
+    judge2 = Person.create!(name: 'Judge Two', type: 'Judge', present: true, studio: studios(:one))
+
+    # Create students dancing together
+    student1 = Person.create!(name: 'Student One', type: 'Student', studio: studios(:one))
+    student2 = Person.create!(name: 'Student Two', type: 'Student', studio: studios(:one))
+
+    # Create closed heats in this category with students
+    dance_in_category = Dance.create!(name: 'Test Dance', closed_category: category, order: 1)
+    entry = Entry.create!(lead: student1, follow: student2, age: ages(:one), level: levels(:one))
+    Heat.create!(number: 1, entry: entry, dance: dance_in_category, category: 'Closed')
+    Heat.create!(number: 2, entry: entry, dance: dance_in_category, category: 'Closed')
+
+    post assign_judges_person_path(judge1)
+
+    assert_redirected_to person_path(judge1)
+
+    # Should create category scores (negative heat_id)
+    category_scores = Score.category_scores
+    assert category_scores.count > 0, "Should create category scores"
+
+    # Check that heat_id is negative (category scoring)
+    category_scores.each do |score|
+      assert score.heat_id < 0, "Category score should have negative heat_id"
+      assert_equal category.id, score.actual_category_id
+      assert_not_nil score.person_id, "Category score should have person_id"
+    end
+  end
+
+  test "assign_judges handles mixed categories correctly" do
+    # Setup event with category scoring enabled
+    event = Event.first
+    event.update!(student_judge_assignments: true)
+
+    # Category 1: category scoring enabled
+    category1 = categories(:one)
+    category1.update!(use_category_scoring: true)
+
+    # Category 2: category scoring disabled
+    category2 = categories(:two)
+    category2.update!(use_category_scoring: false)
+
+    # Setup judges
+    judge1 = Person.create!(name: 'Judge One', type: 'Judge', present: true, studio: studios(:one))
+    judge2 = Person.create!(name: 'Judge Two', type: 'Judge', present: true, studio: studios(:one))
+
+    # Create students for category 1
+    student1 = Person.create!(name: 'Student One', type: 'Student', studio: studios(:one))
+    student2 = Person.create!(name: 'Student Two', type: 'Student', studio: studios(:one))
+    dance1 = Dance.create!(name: 'Dance 1', closed_category: category1, order: 1)
+    entry1 = Entry.create!(lead: student1, follow: student2, age: ages(:one), level: levels(:one))
+    Heat.create!(number: 1, entry: entry1, dance: dance1, category: 'Closed')
+
+    # Create heats for category 2 (per-heat scoring)
+    dance2 = Dance.create!(name: 'Dance 2', closed_category: category2, order: 2)
+    entry2 = Entry.create!(lead: people(:instructor1), follow: people(:student_one), age: ages(:one), level: levels(:one))
+    Heat.create!(number: 2, entry: entry2, dance: dance2, category: 'Closed')
+
+    post assign_judges_person_path(judge1)
+
+    assert_redirected_to person_path(judge1)
+
+    # Should have both types of scores
+    assert Score.category_scores.count > 0, "Should create category scores for category 1"
+    assert Score.heat_scores.count > 0, "Should create per-heat scores for category 2"
+  end
+
+  test "assign_judges with no judges present shows alert" do
+    # Ensure all judges are not present
+    Person.where(type: 'Judge').update_all(present: false)
+
+    post assign_judges_person_path(@person)
+
+    assert_redirected_to person_path(@person)
+    assert_equal "No judges are marked as present.", flash[:alert]
+  end
+
+  test "assign_judges preserves student partnerships within category" do
+    # Setup
+    event = Event.first
+    event.update!(student_judge_assignments: true)
+
+    category = categories(:one)
+    category.update!(use_category_scoring: true)
+
+    judge1 = Person.create!(name: 'Judge One', type: 'Judge', present: true, studio: studios(:one))
+    judge2 = Person.create!(name: 'Judge Two', type: 'Judge', present: true, studio: studios(:one))
+
+    # Create two students who dance together
+    student1 = Person.create!(name: 'Student One', type: 'Student', studio: studios(:one))
+    student2 = Person.create!(name: 'Student Two', type: 'Student', studio: studios(:one))
+
+    dance = Dance.create!(name: 'Test Dance', closed_category: category, order: 1)
+    entry = Entry.create!(lead: student1, follow: student2, age: ages(:one), level: levels(:one))
+    Heat.create!(number: 1, entry: entry, dance: dance, category: 'Closed')
+
+    post assign_judges_person_path(judge1)
+
+    assert_redirected_to person_path(judge1)
+
+    # Both students should be assigned to the same judge
+    score1 = Score.find_by(heat_id: -category.id, person_id: student1.id)
+    score2 = Score.find_by(heat_id: -category.id, person_id: student2.id)
+
+    assert_not_nil score1, "Student 1 should have a category score"
+    assert_not_nil score2, "Student 2 should have a category score"
+    assert_equal score1.judge_id, score2.judge_id, "Students dancing together should have same judge"
+  end
 end

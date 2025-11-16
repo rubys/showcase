@@ -82,6 +82,30 @@ class ScoresController < ApplicationController
 
     @unassigned = @assign_judges ? Heat.includes(:scores).where(category: ['Open', 'Closed'], scores: { id: nil }).distinct.pluck(:number).select {it > 0} : []
 
+    # Load category assignments
+    category_scores = Score.category_scores.where(judge: @judge).includes(:person)
+
+    @category_assignments = category_scores.group_by(&:actual_category).transform_values do |scores|
+      scores.map do |score|
+        student_heats = Heat.where(number: 1.., category: 'Closed')
+          .joins(:entry, :dance)
+          .where(dances: { closed_category_id: score.actual_category_id })
+          .where('entries.lead_id = ? OR entries.follow_id = ?', score.person_id, score.person_id)
+
+        OpenStruct.new(
+          id: score.person_id,
+          name: score.person.name,
+          heat_count: student_heats.count,
+          score: score
+        )
+      end
+    end
+
+    # Track which category scores are complete
+    @category_scored = category_scores.group_by(&:actual_category_id).transform_values do |scores|
+      scores.select { |s| s.comments.present? || s.good.present? }.map(&:person_id)
+    end
+
     render :heatlist, status: (@browser_warn ? :upgrade_required : :ok)
   end
 
@@ -592,6 +616,33 @@ class ScoresController < ApplicationController
     @assign_judges = @style != 'emcee' && @event.assign_judges > 0 && @heat.category != 'Solo' && Person.where(type: 'Judge').count > 1
 
     @feedbacks = Feedback.all
+  end
+
+  # GET /scores/:judge/category/:category/student/:student
+  def category_score
+    @judge = Person.find(params[:judge].to_i)
+    @category = Category.find(params[:category].to_i)
+    @student = Person.find(params[:student].to_i)
+    @event = Event.current
+
+    # Find existing score or initialize new one
+    @score = Score.find_or_initialize_by(
+      heat_id: -@category.id,
+      judge_id: @judge.id,
+      person_id: @student.id
+    )
+
+    # Find all heats for this student in this category
+    student_ids = [@student.id]
+    @student_heats = Heat.where(number: 1.., category: 'Closed')
+      .joins(:entry, :dance)
+      .where(dances: { closed_category_id: @category.id })
+      .where('entries.lead_id IN (?) OR entries.follow_id IN (?)', student_ids, student_ids)
+      .order(:number)
+
+    @browser_warn = browser_warn
+
+    render :category_score
   end
 
   def post

@@ -434,4 +434,202 @@ class ScoreTest < ActiveSupport::TestCase
     second_places = @heat.scores.where(value: '2')
     assert_equal 2, second_places.count
   end
+
+  # ===== CATEGORY SCORING TESTS =====
+
+  test "category_score? returns true for negative heat_id" do
+    category = categories(:one)
+    student = people(:student_one)
+
+    score = Score.create!(
+      heat_id: -category.id,
+      judge: @judge,
+      person: student,
+      comments: 'Great progress in this category'
+    )
+
+    assert score.category_score?
+    refute score.per_heat_score?
+  end
+
+  test "per_heat_score? returns true for positive heat_id" do
+    score = Score.create!(
+      judge: @judge,
+      heat: @heat,
+      value: '1'
+    )
+
+    assert score.per_heat_score?
+    refute score.category_score?
+  end
+
+  test "actual_category_id returns positive category ID" do
+    category = categories(:one)
+    student = people(:student_one)
+
+    score = Score.create!(
+      heat_id: -category.id,
+      judge: @judge,
+      person: student
+    )
+
+    assert_equal category.id, score.actual_category_id
+  end
+
+  test "actual_category returns Category object" do
+    category = categories(:one)
+    student = people(:student_one)
+
+    score = Score.create!(
+      heat_id: -category.id,
+      judge: @judge,
+      person: student
+    )
+
+    assert_equal category, score.actual_category
+  end
+
+  test "actual_heat returns Heat object for per-heat scores" do
+    score = Score.create!(
+      judge: @judge,
+      heat: @heat,
+      value: '1'
+    )
+
+    assert_equal @heat, score.actual_heat
+  end
+
+  test "category_scores scope returns only category scores" do
+    category = categories(:one)
+    student = people(:student_one)
+
+    # Create one category score
+    category_score = Score.create!(
+      heat_id: -category.id,
+      judge: @judge,
+      person: student
+    )
+
+    # Create one heat score
+    heat_score = Score.create!(
+      judge: @judge,
+      heat: @heat,
+      value: '1'
+    )
+
+    category_scores = Score.category_scores
+    assert_includes category_scores, category_score
+    refute_includes category_scores, heat_score
+  end
+
+  test "heat_scores scope returns only per-heat scores" do
+    category = categories(:one)
+    student = people(:student_one)
+
+    # Create one category score
+    category_score = Score.create!(
+      heat_id: -category.id,
+      judge: @judge,
+      person: student
+    )
+
+    # Create one heat score
+    heat_score = Score.create!(
+      judge: @judge,
+      heat: @heat,
+      value: '1'
+    )
+
+    heat_scores = Score.heat_scores
+    assert_includes heat_scores, heat_score
+    refute_includes heat_scores, category_score
+  end
+
+  test "category score requires person_id" do
+    category = categories(:one)
+
+    score = Score.new(
+      heat_id: -category.id,
+      judge: @judge,
+      person_id: nil
+    )
+
+    refute score.valid?
+    assert_includes score.errors[:person_id], "can't be blank"
+  end
+
+  test "category score allows nil heat association" do
+    category = categories(:one)
+    student = people(:student_one)
+
+    score = Score.create!(
+      heat_id: -category.id,
+      judge: @judge,
+      person: student,
+      heat: nil
+    )
+
+    assert score.valid?
+    assert_nil score.heat
+  end
+
+  test "category score stores comments and good feedback" do
+    category = categories(:one)
+    student = people(:student_one)
+
+    score = Score.create!(
+      heat_id: -category.id,
+      judge: @judge,
+      person: student,
+      good: '8',
+      comments: 'Excellent technique throughout all heats in this category'
+    )
+
+    assert_equal '8', score.good
+    assert_equal 'Excellent technique throughout all heats in this category', score.comments
+  end
+
+  test "multiple category scores for different categories" do
+    category1 = categories(:one)
+    category2 = categories(:two)
+    student = people(:student_one)
+
+    score1 = Score.create!(
+      heat_id: -category1.id,
+      judge: @judge,
+      person: student,
+      comments: 'Category 1 feedback'
+    )
+
+    score2 = Score.create!(
+      heat_id: -category2.id,
+      judge: @judge,
+      person: student,
+      comments: 'Category 2 feedback'
+    )
+
+    assert_not_equal score1.heat_id, score2.heat_id
+    assert_equal category1, score1.actual_category
+    assert_equal category2, score2.actual_category
+  end
+
+  test "category score can be found by category and student" do
+    category = categories(:one)
+    student = people(:student_one)
+
+    score = Score.create!(
+      heat_id: -category.id,
+      judge: @judge,
+      person: student,
+      good: '9'
+    )
+
+    found_score = Score.find_by(
+      heat_id: -category.id,
+      judge_id: @judge.id,
+      person_id: student.id
+    )
+
+    assert_equal score, found_score
+  end
 end

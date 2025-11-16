@@ -774,12 +774,51 @@ class PeopleController < ApplicationController
       return
     end
 
+    @event = Event.current
     judges = Person.includes(:judge).where(type: 'Judge').
       select {|person| person.present?}.map(&:id).shuffle
+
+    # Unified assignment: handle both category scoring and per-heat scoring
+    stats = []
+
+    # 1. Handle category scoring for enabled categories (both event and category flags set)
+    if @event.student_judge_assignments
+      category_scoring_categories = Category.where(use_category_scoring: true).order(:order)
+
+      if category_scoring_categories.any?
+        # Clear existing category score assignments
+        Score.category_scores.destroy_all
+
+        # Perform category assignment
+        assignment_results = assign_categories_to_judges_with_variety(category_scoring_categories, judges)
+        generate_category_scores(assignment_results)
+
+        # Collect stats
+        assignment_results.each do |category_id, judge_loads|
+          category = Category.find(category_id)
+          stats << "#{category.name} (by category):"
+          judge_loads.each do |judge_id, load|
+            judge = Person.find(judge_id)
+            stats << "  #{judge.name}: #{load[:student_count]} students, #{load[:heat_count]} heats"
+          end
+        end
+      end
+    end
+
+    # 2. Handle traditional per-heat scoring for all other heats
+    #    Exclude heats in categories that use category scoring
+    category_scored_ids = @event.student_judge_assignments ?
+      Category.where(use_category_scoring: true).pluck(:id) : []
+
     scored = Score.joins(:heat).distinct.where.not(heats: {number: ...0}).pluck(:number)
 
     if ENV['RAILS_APP_DB'] == '2024-glenview'
-      unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).pluck(:number, :id)
+      # Exclude heats in categories that use category scoring
+      query = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo")
+      if category_scored_ids.any?
+        query = query.joins(:dance).where.not(dances: { closed_category_id: category_scored_ids })
+      end
+      unscored = query.order(:number).pluck(:number, :id)
 
       counts = unscored.group_by(&:first).map {|number, heats| [number, heats.length]}.to_h
 
@@ -823,10 +862,12 @@ class PeopleController < ApplicationController
       end
 
     else
-
-      unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).pluck(:id)
-
-      @event = Event.current
+      # Exclude heats in categories that use category scoring
+      query = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo")
+      if category_scored_ids.any?
+        query = query.joins(:dance).where.not(dances: { closed_category_id: category_scored_ids })
+      end
+      unscored = query.order(:number).pluck(:id)
 
       if Category.where.not(ballrooms: nil).any?
         @include_times = true  # Override for admin view
@@ -855,7 +896,12 @@ class PeopleController < ApplicationController
 
       counts = judges.map {|id| [id, 0]}.to_h
       queue = []
-      unscored = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo").order(:number).group_by(&:number)
+      # Exclude heats in categories that use category scoring
+      query = Heat.where.not(number: scored).where.not(number: ...0).where.not(category: "Solo")
+      if category_scored_ids.any?
+        query = query.joins(:dance).where.not(dances: { closed_category_id: category_scored_ids })
+      end
+      unscored = query.order(:number).group_by(&:number)
       splittable = Judge.where.not(ballroom: 'Both').any? && !eligable[:A].empty? && !eligable[:B].empty?
 
       Score.transaction do
@@ -882,7 +928,16 @@ class PeopleController < ApplicationController
       end
     end
 
-    redirect_to person_path(params[:id]), notice: "#{unscored.count} entries assigned to #{judges.count} judges."
+    # Build final message including both types of assignment
+    if stats.any?
+      per_heat_count = unscored.is_a?(Hash) ? unscored.values.flatten.count : unscored.count
+      stats << "Per-heat assignment: #{per_heat_count} heats" if per_heat_count > 0
+      message = "Judge assignments created:\n#{stats.join("\n")}"
+    else
+      message = "#{unscored.count} entries assigned to #{judges.count} judges."
+    end
+
+    redirect_to person_path(params[:id]), notice: message
   end
 
   def reset_assignments
@@ -1260,6 +1315,135 @@ class PeopleController < ApplicationController
           .where("TRIM(COALESCE(comments, '')) = ''")
           .where.not(heats: { number: completed })
           .delete_all
+      end
+    end
+
+    # Helper methods for student judge assignment by category
+
+    def assign_categories_to_judges_with_variety(categories, judge_ids)
+      # Track judge assignments for variety
+      student_judge_history = Hash.new { |h, k| h[k] = [] }
+      results = {}
+
+      categories.each do |category|
+        units = build_category_assignment_units(category)
+        units.sort_by! { |u| -u[:heat_count] }
+
+        judge_loads = judge_ids.index_with do |id|
+          { student_count: 0, heat_count: 0, units: [] }
+        end
+
+        units.each do |unit|
+          best_judge_id = judge_ids.min_by do |judge_id|
+            heat_score = judge_loads[judge_id][:heat_count]
+            repeat_count = unit[:students].count { |sid| student_judge_history[sid].include?(judge_id) }
+            variety_penalty = repeat_count * 1000
+
+            heat_score + variety_penalty
+          end
+
+          judge_loads[best_judge_id][:student_count] += unit[:student_count]
+          judge_loads[best_judge_id][:heat_count] += unit[:heat_count]
+          judge_loads[best_judge_id][:units] << unit
+
+          unit[:students].each do |student_id|
+            student_judge_history[student_id] << best_judge_id
+          end
+        end
+
+        results[category.id] = judge_loads
+      end
+
+      results
+    end
+
+    def build_category_assignment_units(category)
+      student_ids = Person.where(type: 'Student').pluck(:id)
+
+      heats = Heat.where(number: 1.., category: 'Closed')
+        .joins(:entry, :dance)
+        .where(dances: { closed_category_id: category.id })
+        .where('entries.lead_id IN (?) OR entries.follow_id IN (?)', student_ids, student_ids)
+
+      student_partnerships = Hash.new { |h, k| h[k] = Set.new }
+      student_heat_count = Hash.new(0)
+
+      heats.each do |heat|
+        lead_id = heat.entry.lead_id
+        follow_id = heat.entry.follow_id
+
+        lead_is_student = student_ids.include?(lead_id)
+        follow_is_student = student_ids.include?(follow_id)
+
+        if lead_is_student
+          student_heat_count[lead_id] += 1
+          if follow_is_student
+            student_partnerships[lead_id].add(follow_id)
+            student_partnerships[follow_id].add(lead_id)
+          end
+        end
+
+        student_heat_count[follow_id] += 1 if follow_is_student
+      end
+
+      groups = find_connected_components(student_partnerships, student_heat_count.keys)
+
+      groups.map do |student_ids|
+        {
+          students: student_ids,
+          student_count: student_ids.count,
+          heat_count: student_ids.sum { |id| student_heat_count[id] }
+        }
+      end
+    end
+
+    def find_connected_components(partnerships, all_student_ids)
+      groups = []
+      visited = Set.new
+
+      partnerships.keys.each do |student_id|
+        next if visited.include?(student_id)
+
+        group = Set.new
+        queue = [student_id]
+
+        while queue.any?
+          current = queue.shift
+          next if visited.include?(current)
+
+          visited.add(current)
+          group.add(current)
+
+          partnerships[current].each do |partner_id|
+            queue.push(partner_id) unless visited.include?(partner_id)
+          end
+        end
+
+        groups << group.to_a if group.any?
+      end
+
+      all_student_ids.each do |student_id|
+        groups << [student_id] unless visited.include?(student_id)
+      end
+
+      groups
+    end
+
+    def generate_category_scores(assignment_results)
+      Score.transaction do
+        assignment_results.each do |category_id, judge_loads|
+          judge_loads.each do |judge_id, load|
+            load[:units].each do |unit|
+              unit[:students].each do |student_id|
+                Score.find_or_create_by!(
+                  heat_id: -category_id,
+                  judge_id: judge_id,
+                  person_id: student_id
+                )
+              end
+            end
+          end
+        end
       end
     end
 end

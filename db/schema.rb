@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_11_07_131836) do
+ActiveRecord::Schema[8.1].define(version: 2025_11_16_195631) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -117,6 +117,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_07_131836) do
     t.decimal "studio_cost_override", precision: 7, scale: 2
     t.string "time"
     t.datetime "updated_at", null: false
+    t.boolean "use_category_scoring", default: true
   end
 
   create_table "dances", force: :cascade do |t|
@@ -216,6 +217,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_07_131836) do
     t.integer "solo_level_id"
     t.string "solo_scoring", default: "1"
     t.boolean "strict_scoring", default: false
+    t.boolean "student_judge_assignments", default: false
     t.string "student_package_description"
     t.decimal "studio_formation_cost", precision: 7, scale: 2
     t.integer "table_size"
@@ -401,13 +403,16 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_07_131836) do
     t.string "comments"
     t.datetime "created_at", null: false
     t.string "good"
-    t.integer "heat_id", null: false
+    t.integer "heat_id"
     t.integer "judge_id", null: false
+    t.integer "person_id"
     t.integer "slot"
     t.datetime "updated_at", null: false
     t.string "value"
+    t.index ["heat_id", "judge_id", "person_id"], name: "index_scores_on_heat_judge_person"
     t.index ["heat_id"], name: "index_scores_on_heat_id"
     t.index ["judge_id"], name: "index_scores_on_judge_id"
+    t.index ["person_id"], name: "index_scores_on_person_id"
   end
 
   create_table "showcases", force: :cascade do |t|
@@ -549,7 +554,6 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_07_131836) do
   add_foreign_key "questions", "billables"
   add_foreign_key "recordings", "heats"
   add_foreign_key "recordings", "judges"
-  add_foreign_key "scores", "heats"
   add_foreign_key "scores", "people", column: "judge_id"
   add_foreign_key "showcases", "locations"
   add_foreign_key "solos", "categories", column: "category_override_id"
