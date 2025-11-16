@@ -146,7 +146,7 @@
        <% if heat.solo.song_file.attached? %>
        <td>
          <audio controls preload="none" style="display: inline">
-           <source src="<%= proxied_storage_url(heat.solo.song_file.url) %>" type=<%= heat.solo.song_file.content_type %> onerror="audioSourceError(event)">
+           <source src="<%= heat.solo.song_file.url(expires_in: 1.hour) %>" type=<%= heat.solo.song_file.content_type %> onerror="audioSourceError(event)">
          </audio>
        </td>
        <% else %>

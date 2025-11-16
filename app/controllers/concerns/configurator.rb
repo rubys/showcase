@@ -47,19 +47,6 @@ module Configurator
     tenant['env']['RAILS_LOCALE'] = locale.gsub('-', '_') if locale.present?
   end
 
-  # Build storage proxy route for Tigris blobs
-  # Note: headers are NOT included because they would be added to the outgoing
-  # request to Tigris, invalidating AWS signatures. Navigator passes through
-  # CORS headers from Tigris responses unchanged.
-  def build_storage_proxy_route
-    bucket = ENV['BUCKET_NAME'] || 'showcase'
-
-    {
-      'path' => '^/storage(/.*)',
-      'target' => "https://#{bucket}.fly.storage.tigris.dev$1"
-    }
-  end
-
   # Build remote proxy routes for password and studio request endpoints
   def build_remote_proxy_routes
     # Don't add reverse proxies when we ARE rubix.intertwingly.net (the origin server)
@@ -266,7 +253,6 @@ module Configurator
       "#{root}/events/console",
       "#{root}/password/",
       "#{root}/regions/",
-      "#{root}/storage/",  # Tigris storage proxy for song files
       "#{root}/studios/",
       "#{root}/index_date",
       "#{root}/update_config",  # CGI endpoint for configuration updates
@@ -453,9 +439,6 @@ module Configurator
     
     # Add proxy routes for remote services
     routes['reverse_proxies'].concat(build_remote_proxy_routes)
-
-    # Add storage proxy route for Tigris with CORS headers
-    routes['reverse_proxies'] << build_storage_proxy_route
 
     # Add local proxy for logger app on rubymini
     if determine_host == 'rubix.intertwingly.net'
@@ -827,9 +810,6 @@ module Configurator
 
     # Add proxy routes for remote services (excluding Action Cable)
     routes['reverse_proxies'].concat(build_remote_proxy_routes)
-
-    # Add storage proxy route for Tigris with CORS headers
-    routes['reverse_proxies'] << build_storage_proxy_route
 
     routes
   end
