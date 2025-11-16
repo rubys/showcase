@@ -98,6 +98,13 @@ start times for each heat will show up on the heats page.</li>
   </div>
   <% end %>
 
+  <% if Event.current.student_judge_assignments %>
+  <div class="my-5">
+    <%= form.check_box :use_category_scoring, class: 'h-10' %>
+    <%= form.label :use_category_scoring, 'Use category scoring (one score per student per category)?' %>
+  </div>
+  <% end %>
+
   <div data-controller="category-override">
   <div class="my-5">
     <%= form.check_box :customize, class: 'entry-count h-10',

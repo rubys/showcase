@@ -82,30 +82,6 @@ class ScoresController < ApplicationController
 
     @unassigned = @assign_judges ? Heat.includes(:scores).where(category: ['Open', 'Closed'], scores: { id: nil }).distinct.pluck(:number).select {it > 0} : []
 
-    # Load category assignments
-    category_scores = Score.category_scores.where(judge: @judge).includes(:person)
-
-    @category_assignments = category_scores.group_by(&:actual_category).transform_values do |scores|
-      scores.map do |score|
-        student_heats = Heat.where(number: 1.., category: 'Closed')
-          .joins(:entry, :dance)
-          .where(dances: { closed_category_id: score.actual_category_id })
-          .where('entries.lead_id = ? OR entries.follow_id = ?', score.person_id, score.person_id)
-
-        OpenStruct.new(
-          id: score.person_id,
-          name: score.person.name,
-          heat_count: student_heats.count,
-          score: score
-        )
-      end
-    end
-
-    # Track which category scores are complete
-    @category_scored = category_scores.group_by(&:actual_category_id).transform_values do |scores|
-      scores.select { |s| s.comments.present? || s.good.present? }.map(&:person_id)
-    end
-
     render :heatlist, status: (@browser_warn ? :upgrade_required : :ok)
   end
 
@@ -447,9 +423,62 @@ class ScoresController < ApplicationController
       end
     end
 
-    scores = Score.where(judge: @judge, heat: @subjects, slot: slots).all
-    student_results = scores.map {|score| [score.heat, score.value]}.
-      select {|heat, value| value}.to_h
+    # Check if category scoring is enabled for this heat's category
+    category = @heat.dance_category
+    @category_scoring_enabled = @event.student_judge_assignments &&
+      category&.use_category_scoring
+
+    if @category_scoring_enabled
+      # Store category metadata for use in view and post action
+      @category_id = category.id
+      @heat_to_student = {}
+
+      # Build map of heat_id -> student_id for this heat
+      @subjects.each do |heat|
+        student = if heat.entry.lead.type == 'Student'
+          heat.entry.lead
+        elsif heat.entry.follow.type == 'Student'
+          heat.entry.follow
+        end
+        @heat_to_student[heat.id] = student.id if student
+      end
+
+      # Load category scores for these students
+      student_ids = @heat_to_student.values.uniq
+      category_scores_by_person = Score.where(
+        heat_id: -@category_id,
+        judge_id: @judge.id,
+        person_id: student_ids
+      ).index_by(&:person_id)
+
+      # Create virtual per-heat scores from category scores
+      # This allows the rest of the code to work unchanged
+      scores = @subjects.map do |heat|
+        student_id = @heat_to_student[heat.id]
+        next unless student_id
+
+        cat_score = category_scores_by_person[student_id]
+        next unless cat_score
+
+        # Create object that acts like a Score for the view
+        OpenStruct.new(
+          heat_id: heat.id,
+          heat: heat,
+          value: cat_score.good,  # Category numeric score stored in 'good' field
+          comments: cat_score.comments,
+          good: cat_score.good,
+          bad: cat_score.bad
+        )
+      end.compact
+
+      student_results = scores.map {|s| [s.heat, s.value]}.
+        select {|heat, value| value}.to_h
+    else
+      # Per-heat scoring (existing behavior)
+      scores = Score.where(judge: @judge, heat: @subjects, slot: slots).all
+      student_results = scores.map {|score| [score.heat, score.value]}.
+        select {|heat, value| value}.to_h
+    end
 
     @results = {}
     @subjects.each do |subject|
@@ -618,33 +647,6 @@ class ScoresController < ApplicationController
     @feedbacks = Feedback.all
   end
 
-  # GET /scores/:judge/category/:category/student/:student
-  def category_score
-    @judge = Person.find(params[:judge].to_i)
-    @category = Category.find(params[:category].to_i)
-    @student = Person.find(params[:student].to_i)
-    @event = Event.current
-
-    # Find existing score or initialize new one
-    @score = Score.find_or_initialize_by(
-      heat_id: -@category.id,
-      judge_id: @judge.id,
-      person_id: @student.id
-    )
-
-    # Find all heats for this student in this category
-    student_ids = [@student.id]
-    @student_heats = Heat.where(number: 1.., category: 'Closed')
-      .joins(:entry, :dance)
-      .where(dances: { closed_category_id: @category.id })
-      .where('entries.lead_id IN (?) OR entries.follow_id IN (?)', student_ids, student_ids)
-      .order(:number)
-
-    @browser_warn = browser_warn
-
-    render :category_score
-  end
-
   def post
     judge = Person.find(params[:judge].to_i)
     heat = Heat.find(params[:heat].to_i)
@@ -662,42 +664,100 @@ class ScoresController < ApplicationController
       # slot = 1 unless final
     end
 
-    retry_transaction do
-      score = Score.find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
-      if ApplicationRecord.readonly?
-        render json: 'database is readonly', status: :service_unavailable
-      elsif params[:comments]
-        if params[:comments].empty?
-          score.comments = nil
-        else
-          score.comments = params[:comments]
-        end
+    # Check if category scoring is enabled for this heat
+    category = heat.dance_category
+    category_scoring_enabled = Event.current.student_judge_assignments &&
+      category&.use_category_scoring
 
-        keep = score.good || score.bad || (!score.comments.blank?) || score.value || Event.current.assign_judges > 0
-        if keep ? score.save : score.delete
-          render json: score.as_json
-        else
-          render json: score.errors, status: :unprocessable_content
-        end
-      elsif not params[:score].blank? or not score.comments.blank? or Event.current.assign_judges > 0
-        if params[:name] && heat.category == 'Solo' && Event.current.solo_scoring == '4'
-          # Solo heats with 4-part scoring use JSON to store multiple named scores
-          value = score.value&.start_with?('{') ? JSON.parse(score.value) : {}
-          value[params[:name]] = params[:score]
-          score.value = value.to_json
-        else
-          # All other scoring types (including solo with single score) store plain values
-          score.value = params[:score]
-        end
+    if category_scoring_enabled
+      # Category scoring: save to category score
+      # Determine which student this heat is for
+      student = if heat.entry.lead.type == 'Student'
+        heat.entry.lead
+      elsif heat.entry.follow.type == 'Student'
+        heat.entry.follow
+      end
 
-        if score.save
-          render json: score.as_json
+      unless student
+        render json: { error: 'No student found for category scoring' }, status: :unprocessable_content
+        return
+      end
+
+      retry_transaction do
+        score = Score.find_or_create_by(
+          judge_id: judge.id,
+          heat_id: -category.id,  # Negative ID for category scores
+          person_id: student.id
+        )
+
+        if ApplicationRecord.readonly?
+          render json: 'database is readonly', status: :service_unavailable
+        elsif params[:comments]
+          if params[:comments].empty?
+            score.comments = nil
+          else
+            score.comments = params[:comments]
+          end
+
+          keep = score.good || (!score.comments.blank?) || Event.current.assign_judges > 0
+          if keep ? score.save : score.delete
+            render json: score.as_json
+          else
+            render json: score.errors, status: :unprocessable_content
+          end
+        elsif not params[:score].blank? or not score.comments.blank? or Event.current.assign_judges > 0
+          # Category scores store numeric value in 'good' field
+          score.good = params[:score]
+
+          if score.save
+            render json: score.as_json
+          else
+            render json: score.errors, status: :unprocessable_content
+          end
         else
-          render json: score.errors, status: :unprocessable_content
+          score.destroy
+          render json: score
         end
-      else
-        score.destroy
-        render json: score
+      end
+    else
+      # Per-heat scoring (existing behavior)
+      retry_transaction do
+        score = Score.find_or_create_by(judge_id: judge.id, heat_id: heat.id, slot: slot)
+        if ApplicationRecord.readonly?
+          render json: 'database is readonly', status: :service_unavailable
+        elsif params[:comments]
+          if params[:comments].empty?
+            score.comments = nil
+          else
+            score.comments = params[:comments]
+          end
+
+          keep = score.good || score.bad || (!score.comments.blank?) || score.value || Event.current.assign_judges > 0
+          if keep ? score.save : score.delete
+            render json: score.as_json
+          else
+            render json: score.errors, status: :unprocessable_content
+          end
+        elsif not params[:score].blank? or not score.comments.blank? or Event.current.assign_judges > 0
+          if params[:name] && heat.category == 'Solo' && Event.current.solo_scoring == '4'
+            # Solo heats with 4-part scoring use JSON to store multiple named scores
+            value = score.value&.start_with?('{') ? JSON.parse(score.value) : {}
+            value[params[:name]] = params[:score]
+            score.value = value.to_json
+          else
+            # All other scoring types (including solo with single score) store plain values
+            score.value = params[:score]
+          end
+
+          if score.save
+            render json: score.as_json
+          else
+            render json: score.errors, status: :unprocessable_content
+          end
+        else
+          score.destroy
+          render json: score
+        end
       end
     end
   end

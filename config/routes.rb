@@ -218,7 +218,6 @@ Rails.application.routes.draw do
     post '/scores/:judge/batch', to: 'scores#batch_scores', defaults: { format: :json }, as: 'judge_batch_scores'
     get '/scores/:judge/heat/:heat', to: 'scores#heat', as: 'judge_heat', heat: /\d+\.?\d*/
     get '/scores/:judge/heat/:heat/:slot', to: 'scores#heat', as: 'judge_heat_slot', heat: /\d+\.?\d*/
-    get '/scores/:judge/category/:category/student/:student', to: 'scores#category_score', as: 'category_score'
     post '/scores/:judge/post', to: 'scores#post', as: 'post_score'
     post '/scores/:judge/sort', to: 'scores#sort', as: 'sort_scores'
     post '/scores/:judge/update-rank', to: 'scores#update_rank', as: 'update_rank'

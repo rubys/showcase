@@ -347,8 +347,8 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
 
   test "assign_judges creates per-heat scores when category scoring disabled" do
     # Setup judges
-    judge1 = Person.create!(name: 'Judge One', type: 'Judge', present: true, studio: studios(:one))
-    judge2 = Person.create!(name: 'Judge Two', type: 'Judge', present: true, studio: studios(:one))
+    judge1 = Person.create!(name: 'Judge One', type: 'Judge', studio: studios(:one))
+    judge2 = Person.create!(name: 'Judge Two', type: 'Judge', studio: studios(:one))
 
     # Create heats
     entry = Entry.create!(lead: people(:instructor1), follow: people(:student_one), age: ages(:one), level: levels(:one))
@@ -373,20 +373,23 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
     event = Event.first
     event.update!(student_judge_assignments: true)
 
+    # Disable category scoring for all categories first
+    Category.update_all(use_category_scoring: false)
+
     category = categories(:one)
     category.update!(use_category_scoring: true)
 
     # Setup judges
-    judge1 = Person.create!(name: 'Judge One', type: 'Judge', present: true, studio: studios(:one))
-    judge2 = Person.create!(name: 'Judge Two', type: 'Judge', present: true, studio: studios(:one))
+    judge1 = Person.create!(name: 'Judge One', type: 'Judge', studio: studios(:one))
+    judge2 = Person.create!(name: 'Judge Two', type: 'Judge', studio: studios(:one))
 
     # Create students dancing together
-    student1 = Person.create!(name: 'Student One', type: 'Student', studio: studios(:one))
-    student2 = Person.create!(name: 'Student Two', type: 'Student', studio: studios(:one))
+    student1 = Person.create!(name: 'Category Test Student A', type: 'Student', studio: studios(:one), level: levels(:one))
+    student2 = Person.create!(name: 'Category Test Student B', type: 'Student', studio: studios(:one), level: levels(:one))
 
     # Create closed heats in this category with students
-    dance_in_category = Dance.create!(name: 'Test Dance', closed_category: category, order: 1)
-    entry = Entry.create!(lead: student1, follow: student2, age: ages(:one), level: levels(:one))
+    dance_in_category = Dance.create!(name: 'Category Test Dance', closed_category: category, order: 100)
+    entry = Entry.create!(lead: student1, follow: student2, instructor: people(:instructor1), age: ages(:one), level: levels(:one))
     Heat.create!(number: 1, entry: entry, dance: dance_in_category, category: 'Closed')
     Heat.create!(number: 2, entry: entry, dance: dance_in_category, category: 'Closed')
 
@@ -411,27 +414,29 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
     event = Event.first
     event.update!(student_judge_assignments: true)
 
+    # Disable category scoring for all categories first
+    Category.update_all(use_category_scoring: false)
+
     # Category 1: category scoring enabled
     category1 = categories(:one)
     category1.update!(use_category_scoring: true)
 
-    # Category 2: category scoring disabled
+    # Category 2: category scoring disabled (already false from update_all)
     category2 = categories(:two)
-    category2.update!(use_category_scoring: false)
 
     # Setup judges
-    judge1 = Person.create!(name: 'Judge One', type: 'Judge', present: true, studio: studios(:one))
-    judge2 = Person.create!(name: 'Judge Two', type: 'Judge', present: true, studio: studios(:one))
+    judge1 = Person.create!(name: 'Judge One', type: 'Judge', studio: studios(:one))
+    judge2 = Person.create!(name: 'Judge Two', type: 'Judge', studio: studios(:one))
 
     # Create students for category 1
-    student1 = Person.create!(name: 'Student One', type: 'Student', studio: studios(:one))
-    student2 = Person.create!(name: 'Student Two', type: 'Student', studio: studios(:one))
-    dance1 = Dance.create!(name: 'Dance 1', closed_category: category1, order: 1)
-    entry1 = Entry.create!(lead: student1, follow: student2, age: ages(:one), level: levels(:one))
+    student1 = Person.create!(name: 'Mixed Test Student A', type: 'Student', studio: studios(:one), level: levels(:one))
+    student2 = Person.create!(name: 'Mixed Test Student B', type: 'Student', studio: studios(:one), level: levels(:one))
+    dance1 = Dance.create!(name: 'Mixed Dance 1', closed_category: category1, order: 101)
+    entry1 = Entry.create!(lead: student1, follow: student2, instructor: people(:instructor1), age: ages(:one), level: levels(:one))
     Heat.create!(number: 1, entry: entry1, dance: dance1, category: 'Closed')
 
     # Create heats for category 2 (per-heat scoring)
-    dance2 = Dance.create!(name: 'Dance 2', closed_category: category2, order: 2)
+    dance2 = Dance.create!(name: 'Mixed Dance 2', closed_category: category2, order: 102)
     entry2 = Entry.create!(lead: people(:instructor1), follow: people(:student_one), age: ages(:one), level: levels(:one))
     Heat.create!(number: 2, entry: entry2, dance: dance2, category: 'Closed')
 
@@ -444,9 +449,9 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
     assert Score.heat_scores.count > 0, "Should create per-heat scores for category 2"
   end
 
-  test "assign_judges with no judges present shows alert" do
-    # Ensure all judges are not present
-    Person.where(type: 'Judge').update_all(present: false)
+  test "assign_judges with no judges shows alert" do
+    # Ensure there are no judges
+    Person.where(type: 'Judge').destroy_all
 
     post assign_judges_person_path(@person)
 
@@ -459,18 +464,21 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
     event = Event.first
     event.update!(student_judge_assignments: true)
 
+    # Disable category scoring for all categories first
+    Category.update_all(use_category_scoring: false)
+
     category = categories(:one)
     category.update!(use_category_scoring: true)
 
-    judge1 = Person.create!(name: 'Judge One', type: 'Judge', present: true, studio: studios(:one))
-    judge2 = Person.create!(name: 'Judge Two', type: 'Judge', present: true, studio: studios(:one))
+    judge1 = Person.create!(name: 'Judge One', type: 'Judge', studio: studios(:one))
+    judge2 = Person.create!(name: 'Judge Two', type: 'Judge', studio: studios(:one))
 
     # Create two students who dance together
-    student1 = Person.create!(name: 'Student One', type: 'Student', studio: studios(:one))
-    student2 = Person.create!(name: 'Student Two', type: 'Student', studio: studios(:one))
+    student1 = Person.create!(name: 'Partnership Test Student A', type: 'Student', studio: studios(:one), level: levels(:one))
+    student2 = Person.create!(name: 'Partnership Test Student B', type: 'Student', studio: studios(:one), level: levels(:one))
 
-    dance = Dance.create!(name: 'Test Dance', closed_category: category, order: 1)
-    entry = Entry.create!(lead: student1, follow: student2, age: ages(:one), level: levels(:one))
+    dance = Dance.create!(name: 'Partnership Test Dance', closed_category: category, order: 103)
+    entry = Entry.create!(lead: student1, follow: student2, instructor: people(:instructor1), age: ages(:one), level: levels(:one))
     Heat.create!(number: 1, entry: entry, dance: dance, category: 'Closed')
 
     post assign_judges_person_path(judge1)
