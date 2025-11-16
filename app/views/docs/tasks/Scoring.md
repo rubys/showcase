@@ -171,6 +171,12 @@ Judges can choose between two scoring interfaces based on their preference:
 - Automatic score compilation and averaging
 - Conflict resolution for tied scores
 
+### Student Judge Assignments by Category (Experimental)
+- Assign students to specific judges on a per-category basis
+- Each student receives one consolidated score per category
+- Algorithm maximizes judge variety across categories while ensuring partnerships share the same judge
+- See [Student Judge Assignments](../experimental/Student-Judge-Assignments) for details
+
 ### Integration with Other Features
 - Scores integrate with [Scheduling](./Scheduling) system
 - Results feed into [Publishing](./Publishing) for printed materials

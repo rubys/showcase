@@ -60,6 +60,7 @@ Some of these features may be partially available on an experimental basis. If y
 * [Partnerless Entries](./experimental/Partnerless-Entries) - students competing without a partner
 * [Questions](./experimental/Questions) - collecting custom information like meal choices and preferences
 * [Scrutineering](./experimental/Scrutineering) - multi-heats with callbacks and rankings
+* [Student Judge Assignments](./experimental/Student-Judge-Assignments) - per-category judge assignments with judge variety prioritization
 * [Tables](./experimental/Tables) - seating assignments for events and/or meals
 * [Voice](./experimental/Voice) - capturing Judge comments using voice input
 

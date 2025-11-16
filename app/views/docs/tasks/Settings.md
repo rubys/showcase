@@ -45,6 +45,8 @@ number, or feedback on areas that are particularly notable or need improvement (
 
 * Assign judges couples to evaluate? - this is useful if you have several judges and a large number of couples on the floor at a time.  This doesn't limit judges to only evaluate those couples, instead it indicates which couples a judge should to focus on.
 
+* Enable student judge assignments by category? [experimental] - enable per-category judge assignments for students with judge variety prioritization. When enabled, each student is assigned to a specific judge for each category, receiving one consolidated score per category rather than individual scores for each heat. See [Student Judge Assignments](../experimental/Student-Judge-Assignments) for details.
+
 * Include independent instructors? - use this if your studio has instructors that are invoiced separately but otherwise participate
 with your studio.
 
