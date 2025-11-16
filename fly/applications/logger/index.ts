@@ -512,6 +512,10 @@ app.get("/request/:request_id", async (request, response, next) => {
   const seenRawLines = new Set<string>();
   const seenFormattedLines = new Set<string>();
 
+  // Track first matching entry timestamp to limit scan to same day
+  let firstTimestamp: Date | null = null;
+  let cutoffDate: string | null = null;
+
   // Keep searching until we find no new job IDs
   while (searchIds.size > previousSearchIdsSize) {
     previousSearchIdsSize = searchIds.size;
@@ -523,6 +527,9 @@ app.get("/request/:request_id", async (request, response, next) => {
     while (logsToSearch.length > 0) {
       const log = logsToSearch.pop();
       if (!log?.endsWith('.log')) continue;
+
+      // If we have a cutoff date, skip log files older than that
+      if (cutoffDate && log < cutoffDate) continue;
 
       const rl = readline.createInterface({
         input: fs.createReadStream(path.join(LOGS, log)),
@@ -543,6 +550,17 @@ app.get("/request/:request_id", async (request, response, next) => {
           if (!matchesSearchId) return;
 
           foundAnyMatch = true;
+
+          // Track first matching entry timestamp to limit scan to same day
+          if (!firstTimestamp) {
+            const timestamp = line.split(' ')[0];
+            try {
+              firstTimestamp = new Date(timestamp);
+              cutoffDate = firstTimestamp.toISOString().split('T')[0];
+            } catch (e) {
+              // If timestamp parsing fails, continue without cutoff
+            }
+          }
 
           // Check if this line enqueues a job and extract the job ID
           if (line.includes('Enqueued') && line.includes('Job ID:')) {
