@@ -313,11 +313,22 @@ export default class extends Controller {
   }
 
   // Get cached song from IndexedDB
+  // Extract base URL without query parameters (for stable cache keys)
+  getBaseUrl(url) {
+    try {
+      const urlObj = new URL(url)
+      return urlObj.origin + urlObj.pathname
+    } catch (error) {
+      return url
+    }
+  }
+
   async getCachedSong(url) {
+    const baseUrl = this.getBaseUrl(url)
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction(['songs'], 'readonly')
       const objectStore = transaction.objectStore('songs')
-      const request = objectStore.get(url)
+      const request = objectStore.get(baseUrl)
 
       request.onsuccess = () => resolve(request.result)
       request.onerror = () => reject(request.error)
@@ -326,12 +337,13 @@ export default class extends Controller {
 
   // Store song in IndexedDB
   async storeSong(url, blob, contentType) {
+    const baseUrl = this.getBaseUrl(url)
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction(['songs'], 'readwrite')
       const objectStore = transaction.objectStore('songs')
 
       const song = {
-        url: url,
+        url: baseUrl,  // Use base URL as stable key
         blob: blob,
         contentType: contentType,
         cachedAt: Date.now(),
@@ -360,10 +372,11 @@ export default class extends Controller {
 
   // Delete song from IndexedDB
   async deleteSong(url) {
+    const baseUrl = this.getBaseUrl(url)
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction(['songs'], 'readwrite')
       const objectStore = transaction.objectStore('songs')
-      const request = objectStore.delete(url)
+      const request = objectStore.delete(baseUrl)
 
       request.onsuccess = () => resolve()
       request.onerror = () => reject(request.error)
