@@ -48,8 +48,26 @@
     # Use landscape if we have comments OR feedback (creating multiple tables for same heats)
     use_landscape = has_comments || has_feedback
     %>
-    <%= render "people/scores#{use_landscape ? '_landscape' : ''}", person: person %>
-    <% found = true %>
+    <% # Render per-heat scores (if any heats with per-heat scoring) %>
+    <% if person_heats.any? { |heat| !(@event.assign_judges > 0 && heat.dance_category&.use_category_scoring) } %>
+      <%= render "people/scores#{use_landscape ? '_landscape' : ''}", person: person %>
+      <% found = true %>
+    <% end %>
+
+    <% # Render category scores (one page per category score) %>
+    <% if @category_scores && @event.assign_judges > 0 %>
+      <% person_category_scores = @category_scores.select { |(person_id, cat_id), scores| person_id == person.id } %>
+      <% person_category_scores.sort_by { |(pid, cid), _| cid }.each do |(person_id, cat_id), judge_scores| %>
+        <% category = @categories[cat_id] %>
+        <% next unless category %>
+        <% judge_scores.each do |judge_id, score| %>
+          <% judge = @judges.find { |j| j.id == judge_id } %>
+          <% next unless judge %>
+          <%= render "people/category_score", person: person, category: category, score: score, judge: judge, event: @event %>
+          <% found = true %>
+        <% end %>
+      <% end %>
+    <% end %>
   <% end %>
 
   <% unless found %>

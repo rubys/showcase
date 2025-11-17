@@ -1,0 +1,171 @@
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 0.5in;
+  }
+
+  .category-score-page {
+    break-before: page;
+    font-family: Arial, sans-serif;
+  }
+
+  .category-score-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+  }
+
+  .category-score-logo {
+    max-width: 150px;
+    max-height: 150px;
+  }
+
+  .category-score-student-name {
+    font-size: 2.5rem;
+    font-weight: normal;
+    color: #2563eb;
+    text-align: right;
+  }
+
+  .category-score-event-name {
+    font-size: 1.25rem;
+    color: #2563eb;
+    margin-bottom: 2rem;
+  }
+
+  .category-score-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2rem;
+  }
+
+  .category-score-table td {
+    padding: 0.75rem;
+    border-bottom: 2px solid #2563eb;
+  }
+
+  .category-score-table td:first-child {
+    width: 50%;
+    color: #2563eb;
+    font-weight: 500;
+  }
+
+  .category-score-checkbox {
+    width: 30px;
+    height: 30px;
+    border: 2px solid #2563eb;
+    display: inline-block;
+    vertical-align: middle;
+    position: relative;
+  }
+
+  .category-score-checkbox.checked::after {
+    content: "✓";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    color: #2563eb;
+    font-weight: bold;
+  }
+
+  .category-score-column-header {
+    text-align: center;
+    font-size: 0.875rem;
+    font-weight: normal;
+    padding-bottom: 0.25rem;
+  }
+
+  .category-score-checkbox-cell {
+    text-align: center;
+    width: 16.67%;
+  }
+
+  .category-score-comments {
+    margin-top: 1rem;
+  }
+
+  .category-score-comments-label {
+    color: #2563eb;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  .category-score-comments-lines {
+    border: none;
+    border-bottom: 1px solid #999;
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .category-score-judge {
+    text-align: right;
+    margin-top: 2rem;
+    font-size: 1.5rem;
+    color: #2563eb;
+  }
+</style>
+
+<div class="category-score-page">
+  <div class="category-score-header">
+    <% if event.counter_art.attached? %>
+    <%= image_tag event.counter_art, class: "category-score-logo", alt: "Event Logo" %>
+    <% end %>
+    <div>
+      <div class="category-score-student-name"><%= person.name %></div>
+    </div>
+  </div>
+
+  <div class="category-score-event-name"><%= event.name %></div>
+
+  <table class="category-score-table">
+    <thead>
+      <tr>
+        <td></td>
+        <td class="category-score-column-header category-score-checkbox-cell">NEEDS<br>WORK</td>
+        <td class="category-score-column-header category-score-checkbox-cell">GOOD</td>
+        <td class="category-score-column-header category-score-checkbox-cell">EXCELLENT</td>
+      </tr>
+    </thead>
+    <tbody>
+      <% Feedback.ordered.each do |feedback| %>
+      <%
+        # Determine checkbox states
+        in_good = score.good&.include?(feedback.abbr)
+        in_bad = score.bad&.include?(feedback.abbr)
+        needs_work = in_bad
+        excellent = in_good && !in_bad
+        good = !in_good && !in_bad
+      %>
+      <tr>
+        <td><%= feedback.value %></td>
+        <td class="category-score-checkbox-cell">
+          <div class="category-score-checkbox <%= 'checked' if needs_work %>"></div>
+        </td>
+        <td class="category-score-checkbox-cell">
+          <div class="category-score-checkbox <%= 'checked' if good %>"></div>
+        </td>
+        <td class="category-score-checkbox-cell">
+          <div class="category-score-checkbox <%= 'checked' if excellent %>"></div>
+        </td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <div class="category-score-comments">
+    <div class="category-score-comments-label">COMMENTS:</div>
+    <% if score.comments.present? %>
+      <% score.comments.lines.each do |line| %>
+        <div class="category-score-comments-lines"><%= line.strip %></div>
+      <% end %>
+    <% end %>
+    <% (10 - (score.comments&.lines&.count || 0)).times do %>
+      <div class="category-score-comments-lines">&nbsp;</div>
+    <% end %>
+  </div>
+
+  <div class="category-score-judge">Judge: <%= judge.name %></div>
+</div>
