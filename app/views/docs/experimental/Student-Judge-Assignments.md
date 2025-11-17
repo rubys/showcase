@@ -12,6 +12,7 @@ In traditional scoring, each heat is scored independently by all judges. With ca
 * **Simplified scoring for judges** - Judges score each student once per category instead of once per heat
 
 This feature is particularly useful for:
+
 * Events with multiple judges (3+ recommended)
 * Students competing in multiple categories
 * Events wanting to maximize judge variety while maintaining scoring consistency
@@ -21,6 +22,7 @@ This feature is particularly useful for:
 ### Step 1: Enable Event-Level Feature
 
 Navigate to **Settings** → **Event Options** and check:
+
 * ✓ **Enable student judge assignments by category?**
 
 This enables the feature for your event but doesn't activate it for any categories yet.
@@ -39,28 +41,12 @@ Categories default to using category scoring when the event-level feature is ena
 ### Mixed Configuration
 
 You can use category scoring for some categories and traditional per-heat scoring for others in the same event:
+
 * **Solo category** might use per-heat scoring (each solo scored individually)
 * **Closed categories** might use category scoring (one score per student per category)
 * **Open categories** might use traditional scoring (all judges score each heat)
 
 The system automatically uses the appropriate scoring method based on the category configuration.
-
-## How It Works
-
-### Assignment Process
-
-When you click **Assign Judges** from a person's page:
-
-1. **Category-based assignment** runs for enabled categories:
-   * System identifies all students competing in each category
-   * Groups students who dance together (partnerships)
-   * Uses greedy bin-packing algorithm to distribute students across judges
-   * **Prioritizes judge variety**: 1000× penalty for assigning same judge to a student across categories
-   * Ensures partnerships always share the same judge within a category
-
-2. **Traditional assignment** runs for remaining heats:
-   * Heats in categories without category scoring are assigned normally
-   * Each heat scored independently by assigned judges
 
 ### Scoring Interface
 
@@ -80,30 +66,15 @@ When both the lead and follow are students (amateur couple), the heat appears **
 * **Column headers adapt**: When column order is set to show Student/Partner, the student being evaluated always appears in the "Student" column
 
 Example:
-```
+
 Heat 40 - Amateur Couple (both students):
-┌─────────────────────────────────────────┐
-│ Student        Partner      Category    │
-├─────────────────────────────────────────┤
-│ Alice Student  Bob Student  Adult - NC  │ ← Alice being scored
-│ Bob Student    Alice Student Adult - NC │ ← Bob being scored
-└─────────────────────────────────────────┘
-```
 
-Behind the scenes:
-* When viewing a heat in a category-scored category, the system loads the student's category score
-* When posting a score, it saves to the category score (not the individual heat)
-* All heats for the same student in that category will show the same score
-* For amateur couples, each student's score is tracked separately using `student_id`
-
-### Score Storage
-
-Technically:
-* Category scores are stored with `heat_id = -category_id` (negative ID)
-* Per-heat scores use `heat_id = heat.id` (positive ID)
-* Category scores include `person_id` to track which student the score is for
-* For amateur couples, category scores also include `student_id` to distinguish between the lead and follow student's separate scores
-* The system automatically determines which score type to use based on configuration
+      ┌─────────────────────────────────────────┐
+      │ Student        Partner      Category    │
+      ├─────────────────────────────────────────┤
+      │ Alice Student  Bob Student  Adult - NC  │ ← Alice being scored
+      │ Bob Student    Alice Student Adult - NC │ ← Bob being scored
+      └─────────────────────────────────────────┘
 
 ## Assignment Algorithm Details
 
@@ -120,6 +91,7 @@ The assignment algorithm optimizes for two goals in order:
    * Example: With 39 students and 3 judges, achieved 2.7% CV (near-perfect balance)
 
 **Partnership handling:**
+
 * Connected component analysis identifies student groups who dance together
 * Entire partnership assigned to same judge within a category
 * **Amateur couples** (both lead and follow are students) are each scored separately but assigned to the same judge within the category
@@ -130,11 +102,13 @@ The assignment algorithm optimizes for two goals in order:
 ### Viewing Scores
 
 **From Judge Pages:**
+
 * Judges see their assigned students listed by category
 * Category scores appear once per student (not repeated for each heat)
 * Scores display alongside student information
 
 **From Summary Page:**
+
 * Results show category scores for enabled categories
 * Per-heat scores show for traditional categories
 * Formatting automatically adapts based on score type
@@ -142,76 +116,22 @@ The assignment algorithm optimizes for two goals in order:
 ### Assignment Report
 
 After assigning judges, you'll see statistics showing:
+
 * Number of students assigned per judge in each category
 * Distribution balance (coefficient of variation)
 * Overall judge variety percentage across categories
 
 ## Things to Be Aware Of
 
-* **Assignment is per-category, not per-event**: Running "Assign Judges" will assign judges for ALL enabled categories at once. If you need to reassign, it will replace all category assignments.
-
-* **Partnerships must be consistent**: If students dance together in some heats but not others within the same category, the system groups them together. This may result in larger assignment units than expected.
-
 * **Judge variety depends on configuration**: With only 2 judges, students will see the same judges repeatedly. 3+ judges recommended for meaningful variety.
-
-* **Offline scoring supported**: The [Offline Scoring](./Offline-Scoring) feature works with category scoring - judges can score offline and scores sync when connectivity returns.
-
-* **No separate scoring interface**: Judges use the same heat-by-heat interface. The system handles loading/saving category scores transparently.
 
 * **Category score appears on all heats**: When a judge views any heat for a student in a category-scored category, they see that student's category score. Changing the score updates it for all heats.
 
-* **Empty scores handled differently**: Normally, empty scores are deleted to keep the database clean. With category scoring, empty scores are kept because they indicate judge assignment - the existence of a score record shows which judge has been assigned to that student/category combination.
+* **Partnerships must be consistent**: If students dance together in some heats but not others within the same category, the system groups them together. This may result in larger assignment units than expected.
 
 * **Amateur couples appear twice**: When both the lead and follow are students (amateur couple), the heat appears twice in the scoring interface - once for each student. Each student receives their own independent category score. This allows both students in an amateur couple to be evaluated separately while competing together.
 
-## Example Scenario
-
-**Event Setup:**
-* 3 judges (Judge A, Judge B, Judge C)
-* 4 categories: Smooth, Rhythm, Standard, Latin
-* All categories have category scoring enabled
-* 39 students competing in various categories
-
-**After Assignment:**
-* Each student assigned to one judge per category
-* Student 1 might have: Smooth→Judge A, Rhythm→Judge B, Standard→Judge C, Latin→Judge A
-* Student 2 (dancing with Student 1) has same assignments for shared categories
-* Judge variety achieved: 81.1% (students saw 2-3 different judges across their categories)
-* Workload balance: 2.7% CV (13 students per judge ±0.35 students)
-
-**During Scoring:**
-* Judge A views Heat 5 (Student 1, Smooth category)
-* Enters score: GH (Gold Hand)
-* System saves to Student 1's Smooth category score
-* When Judge A views Heat 12 (Student 1 again, still Smooth), same GH score appears
-* Judge A can update the score if needed - all heats for Student 1 in Smooth reflect the change
-
-## Future Enhancements
-
-Potential improvements under consideration:
-* **Manual override**: Allow manual reassignment of specific students to different judges
-* **Category-specific judge pools**: Restrict certain judges to certain categories
-* **Assignment preview**: Show proposed assignments before committing
-* **Historical variety**: Consider judge variety across multiple events for returning students
-
-## Troubleshooting
-
-**"No judges are marked as present"**
-* Ensure at least one judge has the "Present" checkbox marked on their person record
-* The assignment algorithm only assigns to present judges
-
-**Judge variety seems low**
-* Check number of categories: More categories enable better variety
-* Check judge count: 3+ judges recommended
-* Check student participation: Students in only 1-2 categories can't demonstrate variety
-
-**Scores appearing on wrong heats**
-* This is expected behavior - category scores appear on all heats for that student in that category
-* Verify category has category scoring enabled (if not desired)
-
-**Can't find category scoring option**
-* Ensure event-level "Enable student judge assignments by category?" is checked in Settings
-* Refresh the page after enabling the event-level setting
+* **Offline scoring supported**: The [Offline Scoring](./Offline-Scoring) feature works with category scoring - judges can score offline and scores sync when connectivity returns.
 
 ## Related Topics
 
