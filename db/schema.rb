@@ -409,10 +409,10 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_16_195631) do
     t.integer "slot"
     t.datetime "updated_at", null: false
     t.string "value"
-    t.index ["heat_id", "judge_id", "person_id"], name: "index_scores_on_heat_judge_person"
+    t.index ["heat_id", "judge_id", "person_id"], name: "index_scores_on_heat_judge_person", where: "heat_id < 0"
     t.index ["heat_id"], name: "index_scores_on_heat_id"
     t.index ["judge_id"], name: "index_scores_on_judge_id"
-    t.index ["person_id"], name: "index_scores_on_person_id"
+    t.index ["person_id"], name: "index_scores_on_person_id", where: "person_id IS NOT NULL"
   end
 
   create_table "showcases", force: :cascade do |t|

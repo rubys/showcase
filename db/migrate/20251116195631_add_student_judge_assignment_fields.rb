@@ -11,12 +11,15 @@ class AddStudentJudgeAssignmentFields < ActiveRecord::Migration[8.0]
     # Score person tracking: which student this category score is for
     # (only used when heat_id is negative, indicating category scoring)
     add_column :scores, :person_id, :integer
-    add_index :scores, :person_id
+    # Partial index: only index non-NULL person_ids (category scores only)
+    add_index :scores, :person_id, where: "person_id IS NOT NULL"
 
     # Composite index for efficient category score lookups
     # This allows queries like: Score.where(heat_id: -category_id, judge_id: judge.id, person_id: student.id)
+    # Partial index: only for category scores (heat_id < 0)
     add_index :scores, [:heat_id, :judge_id, :person_id],
-              name: 'index_scores_on_heat_judge_person'
+              name: 'index_scores_on_heat_judge_person',
+              where: "heat_id < 0"
 
     # Remove foreign key constraint on heat_id to allow negative values for category scoring
     # Category scores use heat_id = -category_id (negative value)
