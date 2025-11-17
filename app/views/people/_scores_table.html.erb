@@ -4,7 +4,7 @@
 <caption class="text-left font-bold pt-8 text-3xl pb-5">Scores</caption>
 
 <thead>
-<th class="row-head">Dance/Category</th>
+<th class="row-head">Dance<% Event.current.student_judge_assignments? ? '/Category' : '' %></th>
 <% score_range.each do |score| %>
   <% if score_bgcolor.include? score %>
   <th class="row-head bg-slate-200"><%= score %>
@@ -37,7 +37,7 @@
     <% values = scores[-cat_id] %>
     <% next unless values %>
     <tr class="bg-blue-50">
-      <td class="row"><%= category.name %> (category)
+      <td class="row"><%= category.name %>
       <% score_range.each do |score| %>
       <% if score_bgcolor.include? score %>
       <td class="row text-right px-4 bg-slate-200"><%= values[score] || '' %></td>
