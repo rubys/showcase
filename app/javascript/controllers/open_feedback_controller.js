@@ -52,6 +52,12 @@ export default class extends Controller {
           [feedbackType] : feedbackValue
         };
 
+        // Extract student_id from previous table row for category scoring
+        let previousRow = this.element.previousElementSibling;
+        if (previousRow && previousRow.dataset.studentId) {
+          feedback.student_id = parseInt(previousRow.dataset.studentId);
+        }
+
         fetch(this.element.dataset.feedbackAction, {
           method: "POST",
           headers: window.inject_region({

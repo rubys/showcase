@@ -498,41 +498,89 @@ class ScoresController < ApplicationController
     if @category_scoring_enabled
       # Store category metadata for use in view and post action
       @category_id = category.id
-      @heat_to_student = {}
 
-      # Build map of heat_id -> student_id for this heat
+      # Build list of all students in this heat (handles amateur couples)
+      # Maps heat_id -> array of {student: Person, role: 'lead'/'follow'}
+      @heat_students = {}
+      student_ids = []
+
       @subjects.each do |heat|
-        student = if heat.entry.lead.type == 'Student'
-          heat.entry.lead
-        elsif heat.entry.follow.type == 'Student'
-          heat.entry.follow
+        students = []
+        if heat.entry.lead.type == 'Student'
+          students << { student: heat.entry.lead, role: 'lead' }
+          student_ids << heat.entry.lead.id
         end
-        @heat_to_student[heat.id] = student.id if student
+        if heat.entry.follow.type == 'Student'
+          students << { student: heat.entry.follow, role: 'follow' }
+          student_ids << heat.entry.follow.id
+        end
+        @heat_students[heat.id] = students if students.any?
       end
 
-      # Load category scores for these students
-      student_ids = @heat_to_student.values.uniq
+      # Load category scores for all students
       category_scores_by_person = Score.where(
         heat_id: -@category_id,
         judge_id: @judge.id,
-        person_id: student_ids
+        person_id: student_ids.uniq
       ).index_by(&:person_id)
 
-      # Create virtual per-heat scores from category scores
-      # This allows the rest of the code to work unchanged
-      scores = @subjects.map do |heat|
-        student_id = @heat_to_student[heat.id]
-        next unless student_id
+      # Expand subjects for amateur couples - each student gets their own row
+      expanded_subjects = []
+      @subjects.each do |heat|
+        students = @heat_students[heat.id] || []
 
+        if students.length == 2
+          # Amateur couple - create two entries, one for each student
+          students.each do |student_info|
+            # Create a wrapper object that looks like a heat but tracks which student
+            expanded_subjects << OpenStruct.new(
+              id: heat.id,
+              number: heat.number,
+              dance_id: heat.dance_id,
+              dance: heat.dance,
+              category: heat.category,
+              entry: heat.entry,
+              lead: heat.entry.lead,
+              follow: heat.entry.follow,
+              subject: student_info[:student],  # The student being scored
+              student_role: student_info[:role], # 'lead' or 'follow'
+              scores: heat.scores,  # Preserve scores association for sorting
+              original_heat: heat
+            )
+          end
+        elsif students.length == 1
+          # Single student - keep as-is but mark the student
+          expanded_subjects << OpenStruct.new(
+            id: heat.id,
+            number: heat.number,
+            dance_id: heat.dance_id,
+            dance: heat.dance,
+            category: heat.category,
+            entry: heat.entry,
+            lead: heat.entry.lead,
+            follow: heat.entry.follow,
+            subject: students.first[:student],
+            student_role: students.first[:role],
+            scores: heat.scores,  # Preserve scores association for sorting
+            original_heat: heat
+          )
+        end
+      end
+
+      @subjects = expanded_subjects
+
+      # Create virtual scores for each subject (student)
+      scores = @subjects.map do |subject|
+        student_id = subject.subject.id
         cat_score = category_scores_by_person[student_id]
         next unless cat_score
 
         # Create object that acts like a Score for the view
         OpenStruct.new(
-          heat_id: heat.id,
-          heat: heat,
-          judge_id: @judge.id,  # Include judge_id for assignment checking
-          value: cat_score.good,  # Category numeric score stored in 'good' field
+          heat_id: subject.id,
+          heat: subject,
+          judge_id: @judge.id,
+          value: cat_score.good,
           comments: cat_score.comments,
           good: cat_score.good,
           bad: cat_score.bad
@@ -542,6 +590,7 @@ class ScoresController < ApplicationController
       # Store assignment info for view (which students have category scores)
       @category_score_assignments = Set.new(category_scores_by_person.keys)
 
+      # Build results map using the subject wrapper's student
       student_results = scores.map {|s| [s.heat, s.value]}.
         select {|heat, value| value}.to_h
     else
@@ -743,7 +792,10 @@ class ScoresController < ApplicationController
     if category_scoring_enabled
       # Category scoring: save to category score
       # Determine which student this heat is for
-      student = if heat.entry.lead.type == 'Student'
+      student = if params[:student_id]
+        # Use student_id from frontend (for amateur couples)
+        Person.find(params[:student_id].to_i)
+      elsif heat.entry.lead.type == 'Student'
         heat.entry.lead
       elsif heat.entry.follow.type == 'Student'
         heat.entry.follow
@@ -910,7 +962,10 @@ class ScoresController < ApplicationController
     retry_transaction do
     if category_scoring_enabled
       # Category scoring: save to category score
-      student = if heat.entry.lead.type == 'Student'
+      student = if params[:student_id]
+        # Use student_id from frontend (for amateur couples)
+        Person.find(params[:student_id].to_i)
+      elsif heat.entry.lead.type == 'Student'
         heat.entry.lead
       elsif heat.entry.follow.type == 'Student'
         heat.entry.follow

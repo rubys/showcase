@@ -415,11 +415,19 @@ export default class extends Controller {
         comment.addEventListener("change", _event => {
           comment.disabled = true;
 
-          this.post({
+          let data = {
             heat: parseInt(comment.dataset.heat),
             test: "data",
             comments: comment.value
-          }).then(response => {
+          };
+
+          // Extract student_id from closest table row for category scoring
+          let row = comment.closest("tr");
+          if (row && row.dataset.studentId) {
+            data.student_id = parseInt(row.dataset.studentId);
+          }
+
+          this.post(data).then(response => {
             comment.disabled = false;
             comment.classList.add("bg-gray-50");
             comment.classList.remove("bg-yellow-200");
@@ -451,11 +459,19 @@ export default class extends Controller {
           return;
         }
 
-        this.post({
+        let data = {
           heat: parseInt(button.name),
           slot: this.element.dataset.slot && parseInt(this.element.dataset.slot),
           score: button.type == "radio" ? button.value : (button.checked ? 1 : "")
-        }).then(response => {
+        };
+
+        // Extract student_id from closest table row for category scoring
+        let row = button.closest("tr");
+        if (row && row.dataset.studentId) {
+          data.student_id = parseInt(row.dataset.studentId);
+        }
+
+        this.post(data).then(response => {
           button.disabled = false;
           if (response.ok) {
             button.classList.remove("border-red-500");
@@ -488,6 +504,12 @@ export default class extends Controller {
 
         if (target.name) {
           data.name = target.name;
+        }
+
+        // Extract student_id from closest table row for category scoring
+        let row = target.closest("tr");
+        if (row && row.dataset.studentId) {
+          data.student_id = parseInt(row.dataset.studentId);
         }
 
         this.post(data).then(response => {
