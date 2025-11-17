@@ -175,10 +175,14 @@ class ScoresController < ApplicationController
         category_scores_by_person = {}
         if category_scoring_enabled
           category_id = dance_category.id
-          student_ids = heat_group.map do |heat|
+          # Collect ALL students (both lead and follow for amateur couples)
+          student_ids = heat_group.flat_map do |heat|
             entry = heat.entry
-            entry.lead.type == 'Student' ? entry.lead.id : entry.follow.id
-          end.compact.uniq
+            students = []
+            students << entry.lead.id if entry.lead.type == 'Student'
+            students << entry.follow.id if entry.follow.type == 'Student'
+            students
+          end.uniq
 
           Score.where(
             heat_id: -category_id,
@@ -190,100 +194,111 @@ class ScoresController < ApplicationController
         end
 
         # Build subjects list
-        subjects = heat_group.map do |heat|
+        subjects = heat_group.flat_map do |heat|
           entry = heat.entry
 
-          # Determine student and load appropriate score
-          student = entry.lead.type == 'Student' ? entry.lead : entry.follow
-          student_id = student&.id
+          # Collect all students in this heat
+          students = []
+          students << { student: entry.lead, role: 'lead' } if entry.lead.type == 'Student'
+          students << { student: entry.follow, role: 'follow' } if entry.follow.type == 'Student'
 
-          # Get scores for this subject
-          subject_scores = if category_scoring_enabled && student_id && category_scores_by_person[student_id]
-            # Use category score
-            cat_score = category_scores_by_person[student_id]
-            [{
-              id: cat_score.id,
-              judge_id: cat_score.judge_id,
-              heat_id: heat.id,  # Use actual heat ID for frontend
-              slot: nil,
-              good: cat_score.good,
-              bad: cat_score.bad,
-              value: cat_score.good,  # Category score value is in 'good' field
-              comments: cat_score.comments,
-              person_id: student_id,
-              category_scoring: true
-            }]
-          else
-            # Use per-heat scores
-            heat.scores.select { |s| s.judge_id == judge.id }.map do |score|
-              {
-                id: score.id,
-                judge_id: score.judge_id,
-                heat_id: score.heat_id,
-                slot: score.slot,
-                good: score.good,
-                bad: score.bad,
-                value: score.value,
-                comments: score.comments
-              }
-            end
-          end
+          # For amateur couples (both students), create two subject entries
+          # For single student, create one entry
+          students.map do |student_info|
+            student = student_info[:student]
+            student_id = student.id
+            student_role = student_info[:role]
 
-          {
-            id: heat.id,
-            dance_id: heat.dance_id,
-            entry_id: heat.entry_id,
-            pro: entry.pro,
-            lead: {
-              id: entry.lead.id,
-              name: entry.lead.name,
-              display_name: entry.lead.display_name,
-              back: entry.lead.back,
-              type: entry.lead.type,
-              studio: entry.lead.studio ? {
-                id: entry.lead.studio.id,
-                name: entry.lead.studio.name
-              } : nil
-            },
-            follow: {
-              id: entry.follow.id,
-              name: entry.follow.name,
-              display_name: entry.follow.display_name,
-              back: entry.follow.back,
-              type: entry.follow.type,
-              studio: entry.follow.studio ? {
-                id: entry.follow.studio.id,
-                name: entry.follow.studio.name
-              } : nil
-            },
-            instructor: entry.instructor ? {
-              id: entry.instructor.id,
-              name: entry.instructor.name
-            } : nil,
-            studio: entry.invoice_studio,  # Use calculated invoice studio for display
-            age: entry.age ? {
-              id: entry.age.id,
-              category: entry.age.category
-            } : nil,
-            level: entry.level ? {
-              id: entry.level.id,
-              name: entry.level.name,
-              initials: entry.level.initials
-            } : nil,
-            solo: heat.solo ? {
-              id: heat.solo.id,
-              order: heat.solo.order,
-              formations: heat.solo.formations.map do |formation|
+            # Get scores for this subject
+            subject_scores = if category_scoring_enabled && student_id && category_scores_by_person[student_id]
+              # Use category score
+              cat_score = category_scores_by_person[student_id]
+              [{
+                id: cat_score.id,
+                judge_id: cat_score.judge_id,
+                heat_id: heat.id,  # Use actual heat ID for frontend
+                slot: nil,
+                good: cat_score.good,
+                bad: cat_score.bad,
+                value: cat_score.good,  # Category score value is in 'good' field
+                comments: cat_score.comments,
+                person_id: student_id,
+                category_scoring: true
+              }]
+            else
+              # Use per-heat scores
+              heat.scores.select { |s| s.judge_id == judge.id }.map do |score|
                 {
-                  id: formation.id,
-                  person_id: formation.person_id,
-                  person_name: formation.person.display_name,
-                  on_floor: formation.on_floor
+                  id: score.id,
+                  judge_id: score.judge_id,
+                  heat_id: score.heat_id,
+                  slot: score.slot,
+                  good: score.good,
+                  bad: score.bad,
+                  value: score.value,
+                  comments: score.comments
                 }
               end
-            } : nil,
-            scores: subject_scores
-          }
+            end
+
+            {
+              id: heat.id,
+              dance_id: heat.dance_id,
+              entry_id: heat.entry_id,
+              pro: entry.pro,
+              student_id: category_scoring_enabled ? student_id : nil,  # Add for amateur couples
+              student_role: category_scoring_enabled ? student_role : nil,  # Track which student
+              lead: {
+                id: entry.lead.id,
+                name: entry.lead.name,
+                display_name: entry.lead.display_name,
+                back: entry.lead.back,
+                type: entry.lead.type,
+                studio: entry.lead.studio ? {
+                  id: entry.lead.studio.id,
+                  name: entry.lead.studio.name
+                } : nil
+              },
+              follow: {
+                id: entry.follow.id,
+                name: entry.follow.name,
+                display_name: entry.follow.display_name,
+                back: entry.follow.back,
+                type: entry.follow.type,
+                studio: entry.follow.studio ? {
+                  id: entry.follow.studio.id,
+                  name: entry.follow.studio.name
+                } : nil
+              },
+              instructor: entry.instructor ? {
+                id: entry.instructor.id,
+                name: entry.instructor.name
+              } : nil,
+              studio: entry.invoice_studio,  # Use calculated invoice studio for display
+              age: entry.age ? {
+                id: entry.age.id,
+                category: entry.age.category
+              } : nil,
+              level: entry.level ? {
+                id: entry.level.id,
+                name: entry.level.name,
+                initials: entry.level.initials
+              } : nil,
+              solo: heat.solo ? {
+                id: heat.solo.id,
+                order: heat.solo.order,
+                formations: heat.solo.formations.map do |formation|
+                  {
+                    id: formation.id,
+                    person_id: formation.person_id,
+                    person_name: formation.person.display_name,
+                    on_floor: formation.on_floor
+                  }
+                end
+              } : nil,
+              scores: subject_scores
+            }
+          end
         end
 
         {
@@ -634,9 +649,12 @@ class ScoresController < ApplicationController
       @bad = {}
       @value = {}
       scores.each do |score|
-        @good[score.heat_id] = score.good
-        @bad[score.heat_id] = score.bad
-        @value[score.heat_id] = score.value
+        # For category scoring, score.heat is the subject wrapper (OpenStruct)
+        # For per-heat scoring, score.heat is a Heat model, so use heat_id
+        key = score.heat.is_a?(OpenStruct) ? score.heat : score.heat_id
+        @good[key] = score.good
+        @bad[key] = score.bad
+        @value[key] = score.value
       end
     end
 

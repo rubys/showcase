@@ -140,7 +140,7 @@ export class HeatTable extends HTMLElement {
     const ballroomsCount = this.heatData.dance.ballrooms || this.eventData.ballrooms;
     const columnOrder = this.judgeData.column_order !== undefined ? this.judgeData.column_order : 1;
     const leadHeader = columnOrder === 1 ? 'Lead' : 'Student';
-    const followHeader = columnOrder === 1 ? 'Follow' : 'Instructor';
+    const followHeader = columnOrder === 1 ? 'Follow' : 'Partner';
 
     let scoreHeaders = '';
 
@@ -367,7 +367,19 @@ export class HeatTable extends HTMLElement {
 
         // Determine names order
         let firstName, secondName;
-        if (columnOrder === 1 || subject.lead.type === 'Student') {
+        if (columnOrder === 1) {
+          firstName = subject.lead.display_name || subject.lead.name;
+          secondName = subject.follow.display_name || subject.follow.name;
+        } else if (subject.student_role) {
+          // Category scoring with amateur couples - show student being evaluated first
+          if (subject.student_role === 'lead') {
+            firstName = subject.lead.display_name || subject.lead.name;
+            secondName = subject.follow.display_name || subject.follow.name;
+          } else {
+            firstName = subject.follow.display_name || subject.follow.name;
+            secondName = subject.lead.display_name || subject.lead.name;
+          }
+        } else if (subject.lead.type === 'Student') {
           firstName = subject.lead.display_name || subject.lead.name;
           secondName = subject.follow.display_name || subject.follow.name;
         } else {
@@ -393,8 +405,12 @@ export class HeatTable extends HTMLElement {
         const isScratched = subject.number <= 0;
         const trClass = isScratched ? 'hover:bg-yellow-200 line-through opacity-50' : 'hover:bg-yellow-200';
 
+        // Create unique row ID for amateur couples
+        const rowId = subject.student_id ? `heat-${subject.id}-student-${subject.student_id}` : `heat-${subject.id}`;
+        const studentDataAttr = subject.student_id ? `data-student-id="${subject.student_id}"` : '';
+
         rowsHtml += `
-          <tr class="${trClass}" id="heat-${subject.id}">
+          <tr class="${trClass}" id="${rowId}" ${studentDataAttr}>
             ${backCell}
             ${ballroomsCount > 1 ? `<td class="${this.judgeData.sort_order !== 'level' ? 'py-2 ' : ''}text-center font-medium">${ballroom || '-'}</td>` : ''}
             <td>${firstName}</td>

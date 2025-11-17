@@ -91,9 +91,21 @@ export class HeatCards extends HTMLElement {
     const event = this.eventData;
     const columnOrder = event?.column_order || 1;
 
-    // Determine name order based on column_order or professional status
+    // Determine name order based on column_order, student_role, or professional status
     let firstBack, secondBack;
-    if (columnOrder === 1 || entry.follow.type === 'Professional') {
+    if (columnOrder === 1) {
+      firstBack = entry.lead.name;
+      secondBack = entry.follow.name;
+    } else if (entry.student_role) {
+      // Category scoring with amateur couples - show student being evaluated first
+      if (entry.student_role === 'lead') {
+        firstBack = entry.lead.name;
+        secondBack = entry.follow.name;
+      } else {
+        firstBack = entry.follow.name;
+        secondBack = entry.lead.name;
+      }
+    } else if (entry.follow.type === 'Professional') {
       firstBack = entry.lead.name;
       secondBack = entry.follow.name;
     } else {
@@ -139,11 +151,16 @@ export class HeatCards extends HTMLElement {
       `;
     }
 
+    // Create unique ID for amateur couples
+    const cardId = subject.student_id ? `heat-${subject.id}-student-${subject.student_id}` : `heat-${subject.id}`;
+    const studentDataAttr = subject.student_id ? `data-student-id="${subject.student_id}"` : '';
+
     return `
       <div class='grid align-middle w-20 my-[1%] min-h-[12%] sm:min-h-[24%] mx-1 border-2 rounded-lg text-center head-${lvl}'
            draggable="true"
            data-heat="${subject.id}"
-           id="heat-${subject.id}">
+           id="${cardId}"
+           ${studentDataAttr}>
         ${cardContent}
       </div>
     `;

@@ -47,7 +47,7 @@ export function getSubjectScore(subject, judgeId) {
 }
 
 /**
- * Enhance score data with person_id if category scoring is enabled
+ * Enhance score data with person_id and student_id if category scoring is enabled
  * @param {Object} data - The score data to enhance (mutated in place)
  * @param {Object} dataSource - Data structure containing subjects
  * @param {number} heatId - The heat ID
@@ -60,6 +60,10 @@ export function enhanceWithPersonId(data, dataSource, heatId, judgeId) {
     const score = getSubjectScore(subject, judgeId);
     if (score?.person_id) {
       data.person_id = score.person_id;
+    }
+    // Add student_id for amateur couples with category scoring
+    if (subject.student_id) {
+      data.student_id = subject.student_id;
     }
   }
   return data;
