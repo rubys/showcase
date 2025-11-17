@@ -64,16 +64,37 @@ When you click **Assign Judges** from a person's page:
 
 ### Scoring Interface
 
-**For judges**, the scoring interface remains unchanged:
+**For judges**, the scoring interface adapts based on the heat composition:
 
 1. **Navigate heats normally** using the heat list or navigation buttons
 2. **View heat details** showing all couples competing
 3. **Enter scores** using your preferred method (radio buttons, cards, rankings)
 
+**Amateur Couple Support:**
+
+When both the lead and follow are students (amateur couple), the heat appears **twice in the scoring interface** - once for each student:
+
+* **First row/card**: Shows the lead student being evaluated, with follow as partner
+* **Second row/card**: Shows the follow student being evaluated, with lead as partner
+* **Each student scored independently**: The lead and follow receive separate category scores
+* **Column headers adapt**: When column order is set to show Student/Partner, the student being evaluated always appears in the "Student" column
+
+Example:
+```
+Heat 40 - Amateur Couple (both students):
+┌─────────────────────────────────────────┐
+│ Student        Partner      Category    │
+├─────────────────────────────────────────┤
+│ Alice Student  Bob Student  Adult - NC  │ ← Alice being scored
+│ Bob Student    Alice Student Adult - NC │ ← Bob being scored
+└─────────────────────────────────────────┘
+```
+
 Behind the scenes:
 * When viewing a heat in a category-scored category, the system loads the student's category score
 * When posting a score, it saves to the category score (not the individual heat)
 * All heats for the same student in that category will show the same score
+* For amateur couples, each student's score is tracked separately using `student_id`
 
 ### Score Storage
 
@@ -81,6 +102,7 @@ Technically:
 * Category scores are stored with `heat_id = -category_id` (negative ID)
 * Per-heat scores use `heat_id = heat.id` (positive ID)
 * Category scores include `person_id` to track which student the score is for
+* For amateur couples, category scores also include `student_id` to distinguish between the lead and follow student's separate scores
 * The system automatically determines which score type to use based on configuration
 
 ## Assignment Algorithm Details
@@ -100,6 +122,7 @@ The assignment algorithm optimizes for two goals in order:
 **Partnership handling:**
 * Connected component analysis identifies student groups who dance together
 * Entire partnership assigned to same judge within a category
+* **Amateur couples** (both lead and follow are students) are each scored separately but assigned to the same judge within the category
 * Small adjustments made after initial assignment to improve balance
 
 ## Reports and Results
@@ -138,6 +161,8 @@ After assigning judges, you'll see statistics showing:
 * **Category score appears on all heats**: When a judge views any heat for a student in a category-scored category, they see that student's category score. Changing the score updates it for all heats.
 
 * **Empty scores handled differently**: Normally, empty scores are deleted to keep the database clean. With category scoring, empty scores are kept because they indicate judge assignment - the existence of a score record shows which judge has been assigned to that student/category combination.
+
+* **Amateur couples appear twice**: When both the lead and follow are students (amateur couple), the heat appears twice in the scoring interface - once for each student. Each student receives their own independent category score. This allows both students in an amateur couple to be evaluated separately while competing together.
 
 ## Example Scenario
 
