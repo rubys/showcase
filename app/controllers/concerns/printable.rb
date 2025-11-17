@@ -669,6 +669,18 @@ module Printable
     @nologo = true
     @event = Event.current
     @track_ages = @event.track_ages
+
+    # Load category scores for students
+    # Group by person_id and category_id for easy lookup
+    @category_scores = Score.where('heat_id < 0').
+      where.not(good: [nil, '']).
+      includes(:judge).
+      group_by { |score| [score.person_id, score.heat_id.abs] }.
+      transform_values { |scores| scores.index_by(&:judge_id) }
+
+    # Load categories for category score display
+    category_ids = @category_scores.keys.map(&:last).uniq
+    @categories = Category.where(id: category_ids).index_by(&:id)
   end
 
   def render_as_pdf(basename:, concat: [])

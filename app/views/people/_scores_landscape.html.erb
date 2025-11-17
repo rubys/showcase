@@ -92,6 +92,8 @@
   <tbody>
     <% @heats.each do |heat| %>
     <% next unless [heat.entry.lead, heat.entry.follow].include?(person) or @formations.any? {|id, number| id == person.id && number == heat.number} %>
+    <% # Skip heats in categories with category scoring enabled - show category row instead %>
+    <% next if @event.assign_judges > 0 && heat.dance_category&.use_category_scoring %>
     <tr class="text-sm">
       <td class="text-center"><%= heat.number %></td>
 
@@ -166,6 +168,43 @@
         <%= heat.scores.map { |score| score.comments if score.comments && !score.comments.blank? }.compact.join('; ') %>
       </td>
     </tr>
+    <% end %>
+
+    <% # Show category scores for this person %>
+    <% if @category_scores %>
+      <% person_category_scores = @category_scores.select { |(person_id, cat_id), scores| person_id == person.id } %>
+      <% unless person_category_scores.empty? %>
+        <% person_category_scores.sort_by { |(pid, cid), _| cid }.each do |(person_id, cat_id), judge_scores| %>
+          <% category = @categories[cat_id] %>
+          <% next unless category %>
+          <tr class="bg-blue-50 text-sm">
+            <td class="text-center font-bold">Category</td>
+            <% if @score_values != false %>
+            <% if @judges.empty? %>
+            <td></td>
+            <% else %>
+            <% judge_ids.each do |judge| %>
+              <td class="text-center"><%= judge_scores[judge]&.good || '' %></td>
+            <% end %>
+            <% end %>
+            <% end %>
+            <td><div class="mx-4"><%= category.name %></div></td>
+            <td></td>
+            <td class="pl-4 text-right" colspan="<%= @track_ages ? 3 : 2 %>">All heats in category</td>
+            <% if %w(+ & @).include? @event.open_scoring %>
+            <% judge_ids.each do |judge| %>
+              <td class="text-center"><%= judge_scores[judge]&.good || '' %></td>
+            <% end %>
+            <% judge_ids.each do |judge| %>
+              <td class="text-center"><%= judge_scores[judge]&.bad || '' %></td>
+            <% end %>
+            <% end %>
+            <td class="px-2 text-sm">
+              <%= judge_scores.values.map(&:comments).compact.reject(&:blank?).join('; ') %>
+            </td>
+          </tr>
+        <% end %>
+      <% end %>
     <% end %>
   </tbody>
 

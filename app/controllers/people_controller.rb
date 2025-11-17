@@ -462,7 +462,8 @@ class PeopleController < ApplicationController
     @solos = Solo.includes(:heat, :formations).all.map(&:heat) & @heats
     @solos.select! {|heat| heat.category == 'Solo'}
 
-    @scores = Score.joins(heat: :entry).
+    # Get per-heat scores (traditional scoring)
+    per_heat_scores = Score.joins(heat: :entry).
       where(entry: {follow_id: @person.id}).or(
         Score.joins(heat: :entry).where(entry: {lead_id: @person.id})
       ).group(:value, :dance_id).order(:dance_id).
@@ -471,6 +472,25 @@ class PeopleController < ApplicationController
       map {|dance, list| [dance, list.map {|(value, dance), count|
         [value, count]
       }.to_h]}.to_h
+
+    # Get category scores (category scoring)
+    # Category scores have heat_id < 0 and person_id = student
+    category_scores = Score.where(person_id: @person.id).
+      where('heat_id < 0').
+      where.not(good: [nil, '']).
+      group_by { |score| score.heat_id.abs }.  # Group by category_id (abs of negative heat_id)
+      transform_values { |scores|
+        scores.map { |score| [score.good, 1] }.to_h
+      }
+
+    # Merge both types of scores
+    # Use negative keys for category scores to distinguish from dance scores
+    @scores = per_heat_scores.merge(
+      category_scores.transform_keys { |cat_id| -cat_id }
+    )
+
+    # Load categories for category scores display
+    @categories = Category.where(id: category_scores.keys).index_by(&:id)
 
     if @person.type == 'Judge'
       @multi = Dance.where.not(multi_category: nil).count

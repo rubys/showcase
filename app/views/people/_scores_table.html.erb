@@ -1,9 +1,10 @@
-<% unless scores.empty? %>
+<% # Only show scores table for letter grade scoring, not feedback scoring %>
+<% unless scores.empty? || %w(+ & @).include?(Event.current.open_scoring) %>
 <table>
 <caption class="text-left font-bold pt-8 text-3xl pb-5">Scores</caption>
 
 <thead>
-<th class="row-head">Dance</th>
+<th class="row-head">Dance/Category</th>
 <% score_range.each do |score| %>
   <% if score_bgcolor.include? score %>
   <th class="row-head bg-slate-200"><%= score %>
@@ -14,6 +15,7 @@
 </thead>
 
 <tbody>
+<% # Show per-heat scores (dances) %>
 <% dances.each do |dance, partners| %>
   <% values = scores[dance.id] %>
   <% next unless values %>
@@ -27,6 +29,24 @@
     <% end %>
     <% end %>
   </tr>
+<% end %>
+
+<% # Show category scores %>
+<% if defined?(@categories) && @categories %>
+  <% @categories.each do |cat_id, category| %>
+    <% values = scores[-cat_id] %>
+    <% next unless values %>
+    <tr class="bg-blue-50">
+      <td class="row"><%= category.name %> (category)
+      <% score_range.each do |score| %>
+      <% if score_bgcolor.include? score %>
+      <td class="row text-right px-4 bg-slate-200"><%= values[score] || '' %></td>
+      <% else %>
+      <td class="row text-right px-4"><%= values[score] || '' %></td>
+      <% end %>
+      <% end %>
+    </tr>
+  <% end %>
 <% end %>
 </tbody>
 </table>
