@@ -14,11 +14,65 @@
 - **New:** `script/generate_and_upload_maps.rb` - Standalone script (replaces inline generation)
 - **Delete:** `script/reconfig` - Redundant with new script + config-update
 - **Update:** `script/config-update` - Add Step 0: generate and upload maps
+- **Update:** `sync_databases_s3.rb` - Upload map ERB files alongside index.sqlite3
 - **Update:** Admin controllers - Call script after location/region changes
 - **Update:** `bin/apply-changes.rb` - Remove inline map generation (call config-update instead)
 - **Remove:** Configuration drift detection (S3 is source of truth)
 
 **Result:** Location updates via admin UI, no git commits, 30-60 seconds vs 5-10 minutes.
+
+## Deployment Environments
+
+Three distinct deployment environments with different roles:
+
+### Rubix (Admin Server)
+- **Role:** Administrative server, source of truth for index.sqlite3 and maps
+- **Operations:** Upload only, never download
+- **S3 Access:** No S3 env vars, but has rclone.conf (parsed by sync_databases_s3.rb)
+- **Storage:** No /data/db directory
+- **Sync Method:** Uses `sync_databases_s3.rb` which handles rclone credentials and calls webhook on completion
+- **Webhook Responsibilities:** Archives, pushes updates to Hetzner backup, sends Sentry alerts on failure
+
+### Fly.io (Production)
+- **Role:** User-facing production environment
+- **Operations:** Download index and maps from S3 on start, resume, and config changes
+- **S3 Access:** Has S3 env vars (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_ENDPOINT_URL_S3)
+- **Storage:** /data/db present (persistent Fly.io volume)
+- **Sync Method:** Direct S3 download via aws-sdk-s3
+
+### Hetzner (Hot Backup)
+- **Role:** Hot backup, available even if S3 is down
+- **Operations:** Download index and maps from /data/db (synced via Rubix webhook)
+- **S3 Access:** No S3 env vars (intentionally - must work when S3 is down)
+- **Storage:** /data/db present (mapped to Kamal host drive)
+- **Sync Method:** Files pushed to /data/db by Rubix webhook
+
+### Download Logic (All Environments)
+
+```ruby
+def download_maps_and_index
+  if s3_env_vars_present?
+    # Fly.io: Download from S3
+    download_from_s3
+  elsif Dir.exist?('/data/db')
+    # Hetzner: Copy from /data/db (synced via webhook)
+    copy_from_data_db
+  else
+    # Rubix or fallback: Do nothing, use git-tracked files
+    # Map ERB files in git serve as fallback
+  end
+end
+```
+
+### Upload Logic (Rubix Only)
+
+All uploads go through `sync_databases_s3.rb`:
+- Parses rclone.conf for credentials
+- Uploads to S3 (Tigris)
+- Calls webhook on completion
+- Webhook archives, pushes to Hetzner, sends Sentry alerts on failure
+
+This keeps a clean division of labor: `sync_databases_s3.rb` updates S3, webhook handles distribution.
 
 ## Overview
 
@@ -649,21 +703,23 @@ The prerender task will automatically pick up the new ERB templates and regenera
      map_yaml: ../../tmp/map.yml  # Changed from ../../config/tenant/map.yml
    ```
 
-2. **Add to .gitignore** (if not already present)
+2. **Add tmp/map.yml to .gitignore** (if not already present)
    ```
    tmp/map.yml
-   app/views/event/_usmap.html.erb
-   app/views/event/_eumap.html.erb
-   app/views/event/_aumap.html.erb
-   app/views/event/_jpmap.html.erb
    ```
 
-3. **Remove from git**
+   **Note:** Do NOT add map ERB files to .gitignore. Keep them in git as fallback:
+   - Useful if S3 download fails
+   - Useful for Hetzner before first webhook sync
+   - They may be stale but still functional
+
+3. **Remove config/tenant/map.yml from git**
    ```bash
    git rm config/tenant/map.yml
-   git rm app/views/event/_*map.html.erb
-   git commit -m "Remove git-tracked map files - now generated from S3"
+   git commit -m "Remove git-tracked map.yml - now using tmp/map.yml as transient build artifact"
    ```
+
+   **Note:** Keep map ERB files in git - they serve as fallback if other operations fail.
 
 4. **Delete script/reconfig**
    ```bash
@@ -905,11 +961,11 @@ The plan has **duplicate code** in three places that should be **shared**:
 
 ### 1. Map Download Logic (Duplicated 3 times)
 
-**Current plan has inline S3 download code in:**
-- `script/nav_initialization.rb` (lines 508-556 in plan) - Start/resume hook
-- `script/update_configuration.rb` (lines 581-622 in plan) - Config update CGI
+**Current plan has inline download code in:**
+- `script/nav_initialization.rb` - Start/resume hook
+- `script/update_configuration.rb` - Config update CGI
 
-**Problem:** Same logic (iterate 4 files, download from S3, check mtime, handle errors) duplicated
+**Problem:** Same logic (iterate 4 files, download from S3 or /data/db, check mtime, handle errors) duplicated
 
 **Refactoring:** Create **`lib/map_downloader.rb`** module:
 
@@ -917,7 +973,25 @@ The plan has **duplicate code** in three places that should be **shared**:
 module MapDownloader
   MAP_FILES = %w[_usmap _eumap _aumap _jpmap].freeze
 
-  def self.download_from_s3(rails_root: '/rails', quiet: false)
+  def self.download(rails_root: '/rails', quiet: false)
+    # Determine source based on environment
+    if s3_env_vars_present?
+      # Fly.io: Download from S3
+      download_from_s3(rails_root: rails_root, quiet: quiet)
+    elsif Dir.exist?('/data/db')
+      # Hetzner: Copy from /data/db (synced via webhook)
+      copy_from_data_db(rails_root: rails_root, quiet: quiet)
+    else
+      # Rubix or fallback: Do nothing, use git-tracked files
+      { downloaded: [], skipped: MAP_FILES.map { |f| "#{f} (using git fallback)" } }
+    end
+  end
+
+  def self.s3_env_vars_present?
+    %w[AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_ENDPOINT_URL_S3].all? { |var| ENV[var] }
+  end
+
+  def self.download_from_s3(rails_root:, quiet:)
     downloaded = []
     skipped = []
 
@@ -946,19 +1020,54 @@ module MapDownloader
 
     { downloaded: downloaded, skipped: skipped }
   end
+
+  def self.copy_from_data_db(rails_root:, quiet:)
+    downloaded = []
+    skipped = []
+
+    MAP_FILES.each do |map_name|
+      source_path = "/data/db/views/event/#{map_name}.html.erb"
+      local_path = File.join(rails_root, 'app/views/event', "#{map_name}.html.erb")
+
+      begin
+        if File.exist?(source_path)
+          source_mtime = File.mtime(source_path)
+          local_mtime = File.exist?(local_path) ? File.mtime(local_path) : Time.at(0)
+
+          if source_mtime > local_mtime
+            FileUtils.cp(source_path, local_path)
+            downloaded << map_name
+          else
+            skipped << "#{map_name} (already current)"
+          end
+        else
+          skipped << "#{map_name} (not in /data/db)"
+        end
+      rescue => e
+        puts "  ✗ Failed to copy #{map_name}: #{e.message}" unless quiet
+      end
+    end
+
+    { downloaded: downloaded, skipped: skipped }
+  end
 end
 ```
 
 **Usage in all three scripts:**
 ```ruby
 # script/nav_initialization.rb (in Thread 1)
-result = MapDownloader.download_from_s3(rails_root: git_path)
+result = MapDownloader.download(rails_root: git_path)
 puts "  ✓ Downloaded #{result[:downloaded].length} map(s): #{result[:downloaded].join(', ')}"
 
 # script/update_configuration.rb (Operation 2.5)
-result = MapDownloader.download_from_s3(rails_root: Rails.root.to_s)
+result = MapDownloader.download(rails_root: Rails.root.to_s)
 log "SUCCESS: Downloaded: #{result[:downloaded].join(', ')}"
 ```
+
+The `download` method automatically determines the source based on environment:
+- **Fly.io:** Downloads from S3 (env vars present)
+- **Hetzner:** Copies from /data/db (no env vars, but /data/db exists)
+- **Rubix:** Does nothing (uses git-tracked files as fallback)
 
 **Benefits:**
 - Single source of truth for map download logic
@@ -966,55 +1075,30 @@ log "SUCCESS: Downloaded: #{result[:downloaded].join(', ')}"
 - Can easily add metrics/logging
 - Reduces plan from ~100 lines to ~20 lines per location
 
-### 2. Map Upload Logic (Duplicated in generate_and_upload_maps.rb)
+### 2. Map Upload Logic (via sync_databases_s3.rb)
 
-**Current plan:** Inline S3 upload code in `script/generate_and_upload_maps.rb` (lines 393-428)
+**Current plan:** Uploads should go through `sync_databases_s3.rb` which:
+- Parses rclone.conf for credentials
+- Uploads to S3 (Tigris)
+- Calls webhook on completion (archives, pushes to Hetzner, sends Sentry alerts)
 
-**Refactoring:** Add `MapDownloader.upload_to_s3` method:
+**Refactoring:** Update `sync_databases_s3.rb` to also upload map ERB files:
 
 ```ruby
-module MapDownloader
-  def self.upload_to_s3(rails_root: Dir.pwd)
-    erb_files = MAP_FILES.map { |name|
-      [name, File.join(rails_root, 'app/views/event', "#{name}.html.erb")]
-    }.to_h
+# In sync_databases_s3.rb, after uploading index.sqlite3:
 
-    # Capture mtimes before makemaps.js runs
-    before_mtimes = erb_files.transform_values do |path|
-      File.exist?(path) ? File.mtime(path) : Time.at(0)
-    end
+# Upload map ERB templates
+MapDownloader::MAP_FILES.each do |map_name|
+  local_path = File.join(git_path, 'app/views/event', "#{map_name}.html.erb")
+  s3_key = "views/event/#{map_name}.html.erb"
 
-    yield if block_given?  # Run makemaps.js
-
-    # Upload only changed files
-    uploaded = []
-    erb_files.each do |region, local_path|
-      after_mtime = File.exist?(local_path) ? File.mtime(local_path) : Time.at(0)
-
-      if after_mtime > before_mtimes[region]
-        s3_path = "views/event/#{File.basename(local_path)}"
-        S3Sync.upload(local_path, s3_path)
-        uploaded << region
-      end
-    end
-
-    { uploaded: uploaded }
+  if File.exist?(local_path)
+    upload_to_s3(local_path, s3_key)
   end
 end
 ```
 
-**Usage:**
-```ruby
-# script/generate_and_upload_maps.rb
-result = MapDownloader.upload_to_s3(rails_root: git_path) do
-  # Run makemaps.js
-  Dir.chdir(git_path) do
-    system('node', 'utils/mapper/makemaps.js') or raise "makemaps.js failed"
-  end
-end
-
-puts "Uploaded: #{result[:uploaded].join(', ')}"
-```
+**Note:** The `generate_and_upload_maps.rb` script generates the maps locally, then calls `sync_databases_s3.rb` to upload them (along with index.sqlite3). This maintains the clean division of labor where sync_databases_s3.rb handles all S3 interactions and webhook notifications.
 
 ### 3. ERB File Path Constants (Duplicated 4+ times)
 
