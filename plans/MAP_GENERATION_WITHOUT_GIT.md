@@ -69,7 +69,7 @@ This breaks the "no git commits for config changes" workflow.
 
 ## Proposed Solution
 
-### Option A: Pre-generate Maps at Docker Build Time (Recommended)
+### Option A: Pre-generate Maps at Docker Build Time
 
 **Approach:** Generate all possible map variations during Docker build, serve statically
 
@@ -79,35 +79,12 @@ This breaks the "no git commits for config changes" workflow.
 - Simpler deployment workflow
 - Maps are static anyway (lat/lon → x/y is deterministic)
 
-**Implementation:**
+**Drawbacks:**
+- **Still requires deployment to update maps** - defeats the goal of "no git commits"
+- Can't add new locations without rebuilding Docker image
+- **Not suitable for this use case**
 
-1. **Docker build stage:** Generate complete map set
-   ```dockerfile
-   # In Dockerfile, add build stage for maps
-   FROM node:20 AS map-builder
-   WORKDIR /maps
-   COPY utils/mapper /maps
-   # Generate all maps with projections
-   RUN npm install && node makemaps.js --all-locations
-   ```
-
-2. **Rails generates map.yml from DB → upload to S3**
-   - Admin machine: After location change, generate `db/map.yml` from index.sqlite3
-   - Upload `db/map.yml` to S3 alongside `index.sqlite3`
-   - Production machines: Download `db/map.yml` from S3 during config update
-
-3. **Runtime map rendering uses pre-built projections + dynamic data**
-   - Pre-built: SVG map backgrounds (countries/states polygons)
-   - Pre-built: Projection functions (lat/lon → x/y)
-   - Dynamic: Location markers from `db/map.yml`
-   - JavaScript controller applies projections client-side
-
-**Files:**
-- `app/views/event/_map.html.erb` - Loads JS controller, renders SVG container
-- `app/javascript/controllers/map_controller.js` - Client-side projection logic
-- `public/maps/*.json` - Pre-built projection data (from Docker build)
-
-### Option B: Generate Maps on Admin Machine, Upload to S3
+### Option B: Generate Maps on Admin Machine, Upload to S3 (Recommended)
 
 **Approach:** Admin machine has Node.js, generates maps, uploads to S3
 
@@ -513,6 +490,91 @@ end
 This means existing calls to `generate_map` (in admin#create_region, admin#destroy_region) automatically upload maps.
 
 ### Phase 3: Production Workflow (Download + Prerender)
+
+Maps need to be downloaded in two scenarios:
+1. **Initial deployment/startup** - Maps not in Docker image
+2. **Config update** - Admin triggers update via CGI endpoint
+
+#### Scenario 1: Initial Deployment (script/nav_initialization.rb)
+
+This script runs as a Navigator ready hook during maintenance mode startup. It currently:
+- Syncs index.sqlite3 from S3 (Thread 1)
+- Updates htpasswd (Thread 2)
+- Generates showcases.yml
+- Generates navigator.yml
+
+**Add map download to Thread 1** (after S3 sync, before showcases.yml generation):
+
+```ruby
+# Thread 1: S3 sync (slowest operation, ~3s) - Fly.io only
+if fly_io?
+  threads << Thread.new do
+    puts "Syncing databases from S3..."
+    system "ruby #{git_path}/script/sync_databases_s3.rb --index-only --safe --quiet"
+    puts "  ✓ S3 sync complete"
+
+    # Download map ERB templates from S3 (NEW)
+    puts "Downloading map ERB templates from S3..."
+    begin
+      require 'aws-sdk-s3'
+
+      s3_client = Aws::S3::Client.new(
+        region: 'auto',
+        endpoint: ENV['AWS_ENDPOINT_URL_S3'],
+        access_key_id: ENV['AWS_ACCESS_KEY_ID'],
+        secret_access_key: ENV['AWS_SECRET_ACCESS_KEY']
+      )
+
+      bucket = 'showcase-data'
+      downloaded = []
+
+      ['_usmap', '_eumap', '_aumap', '_jpmap'].each do |map_name|
+        s3_key = "views/event/#{map_name}.html.erb"
+        local_path = "#{git_path}/app/views/event/#{map_name}.html.erb"
+
+        begin
+          # Download from S3 (overwrites local file)
+          s3_client.get_object(
+            bucket: bucket,
+            key: s3_key,
+            response_target: local_path
+          )
+          downloaded << map_name
+        rescue Aws::S3::Errors::NoSuchKey
+          # Map doesn't exist in S3 yet (first bootstrap)
+          puts "  → #{map_name}.html.erb not found in S3 (will use Docker image version if present)"
+        end
+      end
+
+      puts "  ✓ Downloaded #{downloaded.length} map(s): #{downloaded.join(', ')}" if downloaded.any?
+    rescue => e
+      puts "  ✗ Map download failed: #{e.message}"
+      puts "    Using Docker image maps (may be outdated)"
+    end
+  end
+end
+```
+
+**Note:** During initial deployment, maps from Docker image serve as fallback until first admin update.
+
+**Hook Consolidation Opportunity:**
+
+Currently `build_hooks_config` in `app/controllers/concerns/configurator.rb` has two separate start hooks:
+1. `/rails/script/hook_navigator_start.sh` - System configuration (Redis, etc.)
+2. `/rails/script/update_htpasswd.rb` - Updates htpasswd
+
+And one resume hook:
+3. `script/nav_initialization.rb` - Full initialization (S3 sync, htpasswd, maps, config generation)
+
+**Recommendation:** Consolidate start hooks by having `hook_navigator_start.sh` call `update_htpasswd.rb`, reducing to:
+- **Start hook:** `hook_navigator_start.sh` → calls `update_htpasswd.rb` → system config + htpasswd
+- **Resume hook:** `nav_initialization.rb` → S3 sync + maps download + htpasswd + config generation
+
+Or even simpler: Have `nav_initialization.rb` run on both start and resume (with a flag to skip S3 sync on start if not needed).
+
+This would make the hook configuration cleaner and ensure maps are downloaded consistently.
+
+#### Scenario 2: Config Update (script/update_configuration.rb)
 
 **script/update_configuration.rb** (CGI endpoint called by admin):
 
