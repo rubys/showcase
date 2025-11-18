@@ -248,30 +248,79 @@ When admin updates a location via Rails UI:
    end
    ```
 
-2. **Generate map artifacts**
+2. **Generate map artifacts (with change detection)**
    ```ruby
    # New method in locations_controller.rb or admin_controller.rb
    def generate_and_upload_maps
      # Step 1: Generate map.yml from database (without x,y)
      map_data = RegionConfiguration.generate_map_data
-     File.write('db/map.yml', YAML.dump(map_data))
+     new_map_yaml = YAML.dump(map_data)
 
-     # Step 2: Copy to config/tenant for makemaps.js
-     FileUtils.cp('db/map.yml', 'config/tenant/map.yml')
+     # Step 2: Check if map data actually changed
+     map_yml_path = 'tmp/map.yml'
+     if File.exist?(map_yml_path)
+       old_map_yaml = File.read(map_yml_path)
+       if old_map_yaml == new_map_yaml
+         Rails.logger.info "Map data unchanged, skipping generation"
+         return
+       end
+     end
 
-     # Step 3: Run makemaps.js to add x,y coords and generate ERB files
+     # Step 3: Write new map.yml to tmp/ (transient build artifact)
+     File.write(map_yml_path, new_map_yaml)
+     Rails.logger.info "Map data changed, regenerating maps"
+
+     # Step 4: Capture ERB file mtimes before generation
+     erb_files = {
+       'us' => 'app/views/event/_usmap.html.erb',
+       'eu' => 'app/views/event/_eumap.html.erb',
+       'au' => 'app/views/event/_aumap.html.erb',
+       'jp' => 'app/views/event/_jpmap.html.erb'
+     }
+
+     before_mtimes = erb_files.transform_values do |path|
+       File.exist?(path) ? File.mtime(path) : Time.at(0)
+     end
+
+     # Step 5: Run makemaps.js to add x,y coords and generate ERB files
+     # Note: makemaps.js reads/writes tmp/map.yml (configured in utils/mapper/files.yml)
      unless system('node utils/mapper/makemaps.js')
        raise "Map generation failed"
      end
 
-     # Step 4: Upload generated ERB files to S3
-     # (map.yml stays local - only used by makemaps.js)
-     S3Sync.upload('app/views/event/_usmap.html.erb', 'views/event/_usmap.html.erb')
-     S3Sync.upload('app/views/event/_eumap.html.erb', 'views/event/_eumap.html.erb')
-     S3Sync.upload('app/views/event/_aumap.html.erb', 'views/event/_aumap.html.erb')
-     S3Sync.upload('app/views/event/_jpmap.html.erb', 'views/event/_jpmap.html.erb')
+     # Step 6: Upload only changed ERB files to S3
+     # makemaps.js only rewrites files that changed (line 176 check)
+     uploaded = []
+     erb_files.each do |region, local_path|
+       after_mtime = File.exist?(local_path) ? File.mtime(local_path) : Time.at(0)
+
+       if after_mtime > before_mtimes[region]
+         s3_path = "views/event/#{File.basename(local_path)}"
+         Rails.logger.info "Uploading #{local_path} to S3 (#{region} map changed)"
+         S3Sync.upload(local_path, s3_path)
+         uploaded << region
+       else
+         Rails.logger.info "Skipping #{local_path} (#{region} map unchanged)"
+       end
+     end
+
+     Rails.logger.info "Map generation complete. Uploaded: #{uploaded.join(', ')}"
    end
    ```
+
+   **File organization:**
+   - `tmp/map.yml` - Transient build artifact (generated from DB, consumed by makemaps.js)
+   - `app/views/event/_*map.html.erb` - Generated ERB templates (uploaded to S3)
+
+   **Optimization layers:**
+   1. **Early exit:** Compare new map_data with existing tmp/map.yml, return if unchanged
+   2. **Selective upload:** Only upload ERB files that were modified by makemaps.js
+
+   **Typical scenarios:**
+   - Update non-location field (showcase name, etc.) → Early exit, 0 files
+   - Update location in Virginia → Only `_usmap.html.erb` uploads (1 file)
+   - Update location in Sydney → Only `_aumap.html.erb` uploads (1 file)
+   - Add new location → Affected map updates (1 file)
 
 ### Phase 3: Production Workflow (Download + Prerender)
 
@@ -288,13 +337,33 @@ log "-" * 70
 begin
   # Download ERB templates to /rails/app/views/event/
   # These contain the complete map HTML with location x,y coordinates already embedded
+  # Only download files that exist in S3 (some may not have been uploaded if unchanged)
   rails_root = Rails.root.to_s
-  S3Sync.download('views/event/_usmap.html.erb', "#{rails_root}/app/views/event/_usmap.html.erb")
-  S3Sync.download('views/event/_eumap.html.erb', "#{rails_root}/app/views/event/_eumap.html.erb")
-  S3Sync.download('views/event/_aumap.html.erb', "#{rails_root}/app/views/event/_aumap.html.erb")
-  S3Sync.download('views/event/_jpmap.html.erb', "#{rails_root}/app/views/event/_jpmap.html.erb")
+  downloaded = []
+  skipped = []
 
-  log "SUCCESS: Map ERB templates downloaded"
+  ['_usmap', '_eumap', '_aumap', '_jpmap'].each do |map_name|
+    s3_path = "views/event/#{map_name}.html.erb"
+    local_path = "#{rails_root}/app/views/event/#{map_name}.html.erb"
+
+    if S3Sync.exists?(s3_path)
+      # Check if S3 version is newer than local version
+      s3_mtime = S3Sync.mtime(s3_path)
+      local_mtime = File.exist?(local_path) ? File.mtime(local_path) : Time.at(0)
+
+      if s3_mtime > local_mtime
+        S3Sync.download(s3_path, local_path)
+        downloaded << map_name
+      else
+        skipped << "#{map_name} (already current)"
+      end
+    else
+      skipped << "#{map_name} (not in S3)"
+    end
+  end
+
+  log "SUCCESS: Map ERB templates downloaded: #{downloaded.join(', ')}" if downloaded.any?
+  log "INFO: Skipped: #{skipped.join(', ')}" if skipped.any?
 rescue => e
   log "ERROR: Map download failed: #{e.message}"
   # Continue anyway - use existing maps
@@ -319,25 +388,32 @@ ruby bin/prepare.rb (reads tmp/tenants.list)
 
 The prerender task will automatically pick up the new ERB templates and regenerate static HTML files.
 
-### Phase 4: Remove Git-Tracked Files
+### Phase 4: Remove Git-Tracked Files and Update Configuration
 
-1. **Add to .gitignore**
+1. **Update utils/mapper/files.yml**
+   Change map_yaml path from config/tenant to tmp:
+   ```yaml
+   files:
+     map_yaml: ../../tmp/map.yml  # Changed from ../../config/tenant/map.yml
    ```
-   config/tenant/map.yml
+
+2. **Add to .gitignore** (if not already present)
+   ```
+   tmp/map.yml
    app/views/event/_usmap.html.erb
    app/views/event/_eumap.html.erb
    app/views/event/_aumap.html.erb
    app/views/event/_jpmap.html.erb
    ```
 
-2. **Remove from git**
+3. **Remove from git**
    ```bash
    git rm config/tenant/map.yml
    git rm app/views/event/_*map.html.erb
    git commit -m "Remove git-tracked map files - now generated from S3"
    ```
 
-3. **Update bin/apply-changes.rb**
+4. **Update bin/apply-changes.rb**
    Remove the map.yml copy and makemaps.js call (lines 62-69):
    ```ruby
    # DELETE THIS SECTION:
@@ -352,14 +428,55 @@ The prerender task will automatically pick up the new ERB templates and regenera
 
    Maps are now uploaded to S3 by locations_controller.rb
 
+5. **Clean up old references**
+   Search codebase for `config/tenant/map.yml` and update to `tmp/map.yml` if needed
+
 ## Benefits After Migration
 
 1. **No git commits needed** - Add/update locations via admin UI, no deployment required
 2. **Faster updates** - Config update via CGI (30-60 seconds) vs Docker deploy (5-10 minutes)
-3. **Automatic propagation** - S3 → all production regions via existing update_configuration flow
-4. **Consistent with showcase workflow** - Both use index.sqlite3 → S3 → production pattern
-5. **Leverages existing infrastructure** - Navigator CGI, ready hooks, prerender all already working
-6. **No new dependencies** - Admin already has Node.js, production already has S3 sync
+3. **Efficient uploads** - Only changed maps uploaded (e.g., Virginia update → only US map)
+4. **Efficient downloads** - Production only downloads maps newer than local versions
+5. **Automatic propagation** - S3 → all production regions via existing update_configuration flow
+6. **Consistent with showcase workflow** - Both use index.sqlite3 → S3 → production pattern
+7. **Leverages existing infrastructure** - Navigator CGI, ready hooks, prerender all already working
+8. **No new dependencies** - Admin already has Node.js, production already has S3 sync
+
+### Change Detection Optimization (3 Layers)
+
+**Layer 1 - Early exit (Admin):**
+- Generate map_data from database (lat/lon for all locations)
+- Compare with existing tmp/map.yml content
+- If identical, return immediately (no makemaps.js, no uploads)
+- **Benefit:** Updating non-location data (showcase name, etc.) does zero work
+
+**Layer 2 - Selective generation (makemaps.js):**
+- Built-in change detection (line 176: checks if SVG content changed)
+- Only rewrites ERB files when map content actually differs
+- **Benefit:** Location metadata changes don't trigger unnecessary rewrites
+
+**Layer 3 - Selective upload (Admin):**
+- Compare ERB file mtimes before/after makemaps.js
+- Only upload files that were modified
+- **Benefit:** Regional changes only affect one map file
+
+**Layer 4 - Selective download (Production):**
+- Check S3 mtime vs local mtime
+- Only download if S3 version is newer
+- **Benefit:** Machines with current maps skip download
+
+**Typical scenarios:**
+- Update showcase name → Early exit, 0 files (Layer 1)
+- Update location description (no lat/lon change) → Early exit, 0 files (Layer 1)
+- Update Virginia location lat/lon → 1 file upload/download (Layers 2+3+4)
+- Update Sydney location → 1 file upload/download (Layers 2+3+4)
+- Add new Tokyo location → 1 file upload/download (Layers 2+3+4)
+- No location changes → 0 files (Layer 1)
+
+**Edge cases:**
+- First deployment: All 4 files upload (bootstrap)
+- Location moves between map regions: 2 files change (old + new map)
+- Multiple locations in same region: 1 file (map consolidates all)
 
 ## Complete Workflow After Implementation
 
