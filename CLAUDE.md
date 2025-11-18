@@ -191,7 +191,7 @@ bin/rails db:fixtures:load
 - `Person` - All participants (students, professionals, guests, judges, placeholders). STI disabled. Complex package defaults and active status management. **Special case**: Person with `id = 0` (named "Nobody") is a placeholder used for studio formations and should be excluded from participant calculations like gap optimization
 - `Studio` - Dance studios participating, has bidirectional pair relationships
 - `Dance` - Individual dance styles (Waltz, Tango, etc.). Implements scrutineering algorithms (Rules 5-8). **Important**: When a dance appears in multiple categories, there will be multiple Dance records with the same name - only one has positive order (the canonical dance), others have `order < 0` (called "split dances"). Split dances sync certain properties (like semi_finals) from the canonical dance. Name uniqueness is only enforced for positive order dances
-- `Category` - Competition categories combining age/level groupings, can be spacers (no dances)
+- `Category` - Competition categories combining age/level groupings, can be spacers (no dances). Has `use_category_scoring` (defaults to true) which works with the event's `student_judge_assignments` to enable category-based scoring - a category only uses category scoring when BOTH flags are set. The default of true provides an opt-out mechanism for specific categories
 - `Age` & `Level` - Organizational structures for competition grouping (age categories and proficiency levels)
 - `CatExtension` - Category splits into multiple parts when needed
 
@@ -205,7 +205,7 @@ bin/rails db:fixtures:load
 
 #### Judging & Scoring Models
 - `Judge` - Judge information for a person, has many recordings
-- `Score` - Judge scoring data for heats, broadcasts live updates via ActionCable. **Important**: Scores with no data (nil `good`, `bad`, `value`, and blank `comments`) are normally deleted to keep the database clean. However, when `Event.assign_judges > 0`, empty scores are kept because they indicate judge assignment - the existence of a Score record shows which judge has been assigned to that heat/couple combination
+- `Score` - Judge scoring data for heats, broadcasts live updates via ActionCable. **Important**: Scores with no data (nil `good`, `bad`, `value`, and blank `comments`) are normally deleted to keep the database clean. However, when `Event.assign_judges > 0`, empty scores are kept because they indicate judge assignment - the existence of a Score record shows which judge has been assigned to that heat/couple combination. **Category scoring**: When `heat_id` is negative, it represents a category score where `heat_id = -category_id`. These scores also have `person_id` set to identify which student the category score belongs to
 - `Recording` - Audio recordings by judges for heats, uploads to cloud storage
 
 #### Financial Models
