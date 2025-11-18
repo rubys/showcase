@@ -144,6 +144,14 @@ studios:
     map: us
     x: 826.661092211232
     y: 136.57544481515015
+  brescia:
+    name: Brescia
+    lat: 45.7795805
+    lon: 10.425873
+    region: ams
+    map: eu
+    x: 367.37035459468245
+    y: 347.62711607252277
   candc:
     name: C and C
     lat: 29.4246002

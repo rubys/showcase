@@ -48,6 +48,9 @@
       pep-rally:
         :name: Pep Rally
         :date: 2026-06-13 - 2026-06-13
+      lot-s-of-love-medal-ball:
+        :name: '"Lot''s of Love" Medal Ball'
+        :date: 2026-02-14 - 2026-02-14
   pinehurst:
     :name: Pinehurst
     :region: iad
