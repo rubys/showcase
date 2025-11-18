@@ -62,10 +62,6 @@ When an admin creates a showcase:
    - Used to build inventory of all showcases
    - Can read from `db/showcases.yml` instead
 
-10. **LegacyConfigurator concern** (app/controllers/concerns/legacy_configurator.rb)
-    - Multiple uses for navigator config generation
-    - Can read from `db/showcases.yml` instead
-
 ### Script Dependencies (Can migrate now)
 
 11. **bin/apply-changes.rb**
@@ -227,14 +223,14 @@ All application code now uses `ShowcasesLoader.load` instead of directly reading
 5. ✅ EventController (app/controllers/event_controller.rb:496, 596, 613, 1225)
 6. ✅ Configurator (app/controllers/concerns/configurator.rb:35)
 7. ✅ ShowcaseInventory (app/controllers/concerns/showcase_inventory.rb:10)
-8. ✅ LegacyConfigurator (app/controllers/concerns/legacy_configurator.rb:224, 274, 351, 524)
-9. ✅ bin/apply-changes.rb - Now copies to both `db/deployed-showcases.yml` (for change detection) and `config/tenant/showcases.yml` (git-tracked, will be removed in Phase 3)
-10. ✅ script/orphan_databases.rb (script/orphan_databases.rb:35)
-11. ✅ script/sync_databases_s3.rb (script/sync_databases_s3.rb:119)
-12. ✅ config/environments/development.rb (config/environments/development.rb:87)
-13. ✅ test/integration/prerender_configuration_sync_test.rb (line 16)
-14. ✅ test/tasks/prerender_test.rb (lines 11, 48)
-15. ✅ db/seeds/generic.rb (db/seeds/generic.rb:33)
+8. ✅ bin/apply-changes.rb - Now copies to both `db/deployed-showcases.yml` (for change detection) and `config/tenant/showcases.yml` (git-tracked, will be removed in Phase 3)
+9. ✅ script/orphan_databases.rb (script/orphan_databases.rb:35)
+10. ✅ script/sync_databases_s3.rb (script/sync_databases_s3.rb:119)
+11. ✅ config/environments/development.rb (config/environments/development.rb:87)
+12. ✅ test/integration/prerender_configuration_sync_test.rb (line 16)
+13. ✅ test/tasks/prerender_test.rb (lines 11, 48)
+14. ✅ db/seeds/generic.rb (db/seeds/generic.rb:33)
+15. ✅ LegacyConfigurator (app/controllers/concerns/legacy_configurator.rb) - **REMOVED** - Replaced by script/generate_navigator_config.rb
 
 **Test Results:**
 - All tests pass: 1029 runs, 4782 assertions, 0 failures, 0 errors
