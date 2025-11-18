@@ -899,6 +899,153 @@ Before Phase 4, rollback is even simpler:
 **Option C (Ruby Projection):**
 - 20-30 hours (porting D3-geo): **Too much maintenance burden**
 
+## Refactoring Opportunities
+
+The plan has **duplicate code** in three places that should be **shared**:
+
+### 1. Map Download Logic (Duplicated 3 times)
+
+**Current plan has inline S3 download code in:**
+- `script/nav_initialization.rb` (lines 508-556 in plan) - Start/resume hook
+- `script/update_configuration.rb` (lines 581-622 in plan) - Config update CGI
+
+**Problem:** Same logic (iterate 4 files, download from S3, check mtime, handle errors) duplicated
+
+**Refactoring:** Create **`lib/map_downloader.rb`** module:
+
+```ruby
+module MapDownloader
+  MAP_FILES = %w[_usmap _eumap _aumap _jpmap].freeze
+
+  def self.download_from_s3(rails_root: '/rails', quiet: false)
+    downloaded = []
+    skipped = []
+
+    MAP_FILES.each do |map_name|
+      s3_key = "views/event/#{map_name}.html.erb"
+      local_path = File.join(rails_root, 'app/views/event', "#{map_name}.html.erb")
+
+      begin
+        if S3Sync.exists?(s3_key)
+          s3_mtime = S3Sync.mtime(s3_key)
+          local_mtime = File.exist?(local_path) ? File.mtime(local_path) : Time.at(0)
+
+          if s3_mtime > local_mtime
+            S3Sync.download(s3_key, local_path)
+            downloaded << map_name
+          else
+            skipped << "#{map_name} (already current)"
+          end
+        else
+          skipped << "#{map_name} (not in S3)"
+        end
+      rescue => e
+        puts "  ✗ Failed to download #{map_name}: #{e.message}" unless quiet
+      end
+    end
+
+    { downloaded: downloaded, skipped: skipped }
+  end
+end
+```
+
+**Usage in all three scripts:**
+```ruby
+# script/nav_initialization.rb (in Thread 1)
+result = MapDownloader.download_from_s3(rails_root: git_path)
+puts "  ✓ Downloaded #{result[:downloaded].length} map(s): #{result[:downloaded].join(', ')}"
+
+# script/update_configuration.rb (Operation 2.5)
+result = MapDownloader.download_from_s3(rails_root: Rails.root.to_s)
+log "SUCCESS: Downloaded: #{result[:downloaded].join(', ')}"
+```
+
+**Benefits:**
+- Single source of truth for map download logic
+- Easier to add mtime comparison, error handling, retry logic
+- Can easily add metrics/logging
+- Reduces plan from ~100 lines to ~20 lines per location
+
+### 2. Map Upload Logic (Duplicated in generate_and_upload_maps.rb)
+
+**Current plan:** Inline S3 upload code in `script/generate_and_upload_maps.rb` (lines 393-428)
+
+**Refactoring:** Add `MapDownloader.upload_to_s3` method:
+
+```ruby
+module MapDownloader
+  def self.upload_to_s3(rails_root: Dir.pwd)
+    erb_files = MAP_FILES.map { |name|
+      [name, File.join(rails_root, 'app/views/event', "#{name}.html.erb")]
+    }.to_h
+
+    # Capture mtimes before makemaps.js runs
+    before_mtimes = erb_files.transform_values do |path|
+      File.exist?(path) ? File.mtime(path) : Time.at(0)
+    end
+
+    yield if block_given?  # Run makemaps.js
+
+    # Upload only changed files
+    uploaded = []
+    erb_files.each do |region, local_path|
+      after_mtime = File.exist?(local_path) ? File.mtime(local_path) : Time.at(0)
+
+      if after_mtime > before_mtimes[region]
+        s3_path = "views/event/#{File.basename(local_path)}"
+        S3Sync.upload(local_path, s3_path)
+        uploaded << region
+      end
+    end
+
+    { uploaded: uploaded }
+  end
+end
+```
+
+**Usage:**
+```ruby
+# script/generate_and_upload_maps.rb
+result = MapDownloader.upload_to_s3(rails_root: git_path) do
+  # Run makemaps.js
+  Dir.chdir(git_path) do
+    system('node', 'utils/mapper/makemaps.js') or raise "makemaps.js failed"
+  end
+end
+
+puts "Uploaded: #{result[:uploaded].join(', ')}"
+```
+
+### 3. ERB File Path Constants (Duplicated 4+ times)
+
+**Current plan has hardcoded paths:**
+- `app/views/event/_usmap.html.erb` (repeated ~10 times)
+- `app/views/event/_eumap.html.erb` (repeated ~10 times)
+- etc.
+
+**Refactoring:** Use `MapDownloader::MAP_FILES` constant everywhere
+
+### 4. S3 Bucket Name (Hardcoded)
+
+**Current plan:** `bucket = 'showcase-data'` appears in multiple places
+
+**Refactoring:** Add to S3Sync module or environment variable
+
+## Summary of Refactoring
+
+**Before refactoring:**
+- 3 locations with ~50 lines of duplicate download code
+- 1 location with ~30 lines of upload code
+- Hardcoded file paths and bucket names everywhere
+
+**After refactoring:**
+- 1 shared `lib/map_downloader.rb` module (~80 lines total)
+- 3 locations with ~3 lines of download code each
+- 1 location with ~5 lines of upload code
+- Centralized constants
+
+**Reduction:** ~200 lines of plan → ~100 lines, easier to maintain
+
 ## References
 
 - Current implementation: `utils/mapper/makemaps.js`
