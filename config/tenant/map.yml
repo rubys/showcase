@@ -152,6 +152,14 @@ studios:
     map: eu
     x: 367.37035459468245
     y: 347.62711607252277
+  cambridge:
+    name: Cambridge
+    lat: 42.3656347
+    lon: -71.1040018
+    region: ewr
+    map: us
+    x: 826.0355634285223
+    y: 136.54474930935555
   candc:
     name: C and C
     lat: 29.4246002
