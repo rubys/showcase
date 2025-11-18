@@ -2,20 +2,19 @@
   <% found = false %>
   <% @score_values = !Score.where.not(value: [nil, ""]).empty? %>
   
-  <% 
+  <%
   # Cache scrutineering results once per request for dances with participating people
   @scrutineering_cache = {}
-  participating_people = @people.select { |person| 
-    @heats.any? {|heat| [heat.entry.lead, heat.entry.follow].include?(person)} or 
+  participating_people = @people.select { |person|
+    @heats.any? {|heat| [heat.entry.lead_id, heat.entry.follow_id].include?(person.id)} or
     @formations.any? {|id, number| id == person.id && number}
   }
-  
+
   if participating_people.any?
     # Find all scrutineering dances that have participating people
+    participating_ids = participating_people.map(&:id)
     scrutineering_dances = @heats.select { |heat|
-      heat.dance.semi_finals && participating_people.any? { |person|
-        [heat.entry.lead, heat.entry.follow].include?(person)
-      }
+      heat.dance.semi_finals && ([heat.entry.lead_id, heat.entry.follow_id] & participating_ids).any?
     }.map(&:dance).uniq
     
     # Calculate scrutineering results once for each relevant dance
@@ -26,12 +25,12 @@
   %>
   
   <% @people.each do |person| %>
-    <% next unless @heats.any? {|heat| [heat.entry.lead, heat.entry.follow].include? person} or @formations.any? {|id, number| id == person.id} %>
+    <% next unless @heats.any? {|heat| [heat.entry.lead_id, heat.entry.follow_id].include? person.id} or @formations.any? {|id, number| id == person.id} %>
     <%
     # Determine if we should use landscape mode
     # Use landscape when there are multiple information sections (comments or feedback) for the same heats
     person_heats = @heats.select { |heat|
-      [heat.entry.lead, heat.entry.follow].include?(person) or
+      [heat.entry.lead_id, heat.entry.follow_id].include?(person.id) or
       @formations.any? {|id, number| id == person.id && number == heat.number}
     }
 
@@ -49,13 +48,13 @@
     use_landscape = has_comments || has_feedback
     %>
     <% # Render per-heat scores (if any heats with per-heat scoring) %>
-    <% if person_heats.any? { |heat| !(@event.assign_judges > 0 && heat.dance_category&.use_category_scoring) } %>
+    <% if person_heats.any? { |heat| !(@event.student_judge_assignments && heat.dance_category&.use_category_scoring) } %>
       <%= render "people/scores#{use_landscape ? '_landscape' : ''}", person: person %>
       <% found = true %>
     <% end %>
 
     <% # Render category scores (one page per category score) %>
-    <% if @category_scores && @event.assign_judges > 0 %>
+    <% if @category_scores && @event.student_judge_assignments %>
       <% person_category_scores = @category_scores.select { |(person_id, cat_id), scores| person_id == person.id } %>
       <% person_category_scores.sort_by { |(pid, cid), _| cid }.each do |(person_id, cat_id), judge_scores| %>
         <% category = @categories[cat_id] %>

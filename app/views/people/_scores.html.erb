@@ -22,9 +22,9 @@
   </thead>
   <tbody>
     <% @heats.each do |heat| %>
-    <% next unless [heat.entry.lead, heat.entry.follow].include?(person) or @formations.any? {|id, number| id == person.id && number == heat.number} %>
+    <% next unless [heat.entry.lead_id, heat.entry.follow_id].include?(person.id) or @formations.any? {|id, number| id == person.id && number == heat.number} %>
     <% # Skip heats in categories with category scoring enabled - show category row instead %>
-    <% next if @event.assign_judges > 0 && heat.dance_category&.use_category_scoring %>
+    <% next if @event.student_judge_assignments && heat.dance_category&.use_category_scoring %>
     <tr class="text-sm">
       <td class="text-center"><%= heat.number %></td>
       <% if @judges.empty? %>
@@ -100,8 +100,8 @@
     <% end %>
   </tbody>
 
-  <% commented = @heats.select do |heat| 
-      next unless [heat.entry.lead, heat.entry.follow].include?(person) or @formations.any? {|id, number| id == person.id && number == heat.number}
+  <% commented = @heats.select do |heat|
+      next unless [heat.entry.lead_id, heat.entry.follow_id].include?(person.id) or @formations.any? {|id, number| id == person.id && number == heat.number}
       next unless heat.scores.any? {|score| score.comments}
       heat.scores.any? {|score| !score.comments.blank?}
     end
@@ -134,7 +134,7 @@
 </table>
 </div>
 
-<% if %w(+ & @).include? @event.open_scoring and @heats.any? {|heat| [heat.entry.lead, heat.entry.follow].include? person and (heat.category == 'Open' || (heat.category == 'Closed' && (@event.heat_range_cat > 0 || @event.closed_scoring == '=')))} %>
+<% if %w(+ & @).include? @event.open_scoring and @heats.any? {|heat| [heat.entry.lead_id, heat.entry.follow_id].include? person.id and (heat.category == 'Open' || (heat.category == 'Closed' && (@event.heat_range_cat > 0 || @event.closed_scoring == '=')))} %>
 <table class="mt-8" style="break-inside: avoid">
   <thead>
     <tr>
@@ -150,7 +150,7 @@
   </thead>
   <tbody>
     <% @heats.each do |heat| %>
-    <% next unless [heat.entry.lead, heat.entry.follow].include? person %>
+    <% next unless [heat.entry.lead_id, heat.entry.follow_id].include? person.id %>
     <% next unless heat.category == 'Open' || (heat.category == 'Closed' && (@event.heat_range_cat > 0 || @event.closed_scoring == '=')) %>
     <tr class="text-sm">
       <td class="text-center"><%= heat.number %>
@@ -237,16 +237,16 @@ person_scrutineering_results = []
 @scrutineering_cache ||= {}
 
 # Find scrutineering dances for this person
-person_scrutineering_dances = @heats.select { |heat| 
-  heat.dance.semi_finals && [heat.entry.lead, heat.entry.follow].include?(person) 
+person_scrutineering_dances = @heats.select { |heat|
+  heat.dance.semi_finals && [heat.entry.lead_id, heat.entry.follow_id].include?(person.id)
 }.map(&:dance).uniq
 
 person_scrutineering_dances.each do |dance|
   # Calculate scrutineering results if not cached
   @scrutineering_cache[dance.id] ||= dance.scrutineering
-  
+
   summary, ranks = @scrutineering_cache[dance.id]
-  person_entries = @heats.select { |heat| heat.dance == dance && [heat.entry.lead, heat.entry.follow].include?(person) }
+  person_entries = @heats.select { |heat| heat.dance == dance && [heat.entry.lead_id, heat.entry.follow_id].include?(person.id) }
   person_entries.each do |heat|
     entry_id = heat.entry_id
     if ranks[entry_id]
