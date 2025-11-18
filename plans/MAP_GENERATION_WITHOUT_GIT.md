@@ -2,6 +2,24 @@
 
 ## Status: 📋 Planning
 
+## Executive Summary
+
+**Problem:** Location updates require git commits and deployments (5-10 minutes). Showcase updates use S3-based workflow (30-60 seconds). Need same workflow for locations.
+
+**Solution:** Create standalone `script/generate_and_upload_maps.rb` called by both:
+1. `script/config-update` (quick config updates) - ensures maps are always current
+2. Admin controllers (location/region changes) - immediate upload after edit
+
+**Key Changes:**
+- **New:** `script/generate_and_upload_maps.rb` - Standalone script (replaces inline generation)
+- **Delete:** `script/reconfig` - Redundant with new script + config-update
+- **Update:** `script/config-update` - Add Step 0: generate and upload maps
+- **Update:** Admin controllers - Call script after location/region changes
+- **Update:** `bin/apply-changes.rb` - Remove inline map generation (call config-update instead)
+- **Remove:** Configuration drift detection (S3 is source of truth)
+
+**Result:** Location updates via admin UI, no git commits, 30-60 seconds vs 5-10 minutes.
+
 ## Overview
 
 Currently, adding or updating a location requires:
@@ -186,7 +204,42 @@ This breaks the "no git commits for config changes" workflow.
 
 ## Implementation Plan: Option B (Detailed)
 
-### Current Navigator Configuration
+### Current Workflow Context
+
+**Admin Machine Workflow:**
+
+The admin machine has two main scripts for applying configuration changes:
+
+1. **script/reconfig** - Full regeneration script (runs map generation TWICE - will be deleted)
+   - Regenerates tmp/regions.json and tmp/deployed.json from flyctl
+   - Regenerates db/map.yml and config/tenant/map.yml from index.sqlite3
+   - Runs makemaps.js if either file changed
+   - Regenerates db/showcases.yml and config/tenant/showcases.yml from index.sqlite3
+   - ISSUE: This script generates maps but does NOT upload to S3 or trigger production updates
+
+2. **bin/apply-changes.rb** - Full deployment script (runs map generation ONCE)
+   - Checks if remote index.sqlite3 is older than local → runs script/config-update if needed
+   - Creates Fly.io machines for pending regions
+   - Copies db/map.yml → config/tenant/map.yml and runs makemaps.js
+   - Copies db/showcases.yml → config/tenant/showcases.yml and deployed-showcases.yml
+   - Deploys code changes via `fly deploy`
+   - Destroys duplicate/removed machines
+   - Commits and pushes changes
+
+3. **script/config-update** - Quick config update (called by ConfigUpdateJob)
+   - Syncs index.sqlite3 to S3 (or rsync for Kamal)
+   - Gets list of deployment targets (Fly machines or Kamal server)
+   - POSTs to /showcase/update_config on each target
+   - ISSUE: Does NOT generate or upload maps
+
+**Admin Controller Actions:**
+
+- `admin#apply` - Shows pending changes, detects drift, allows user to trigger apply
+- `admin#trigger_config_update` - Enqueues ConfigUpdateJob which runs script/config-update
+- `admin#create_region` and `admin#destroy_region` - Call `generate_map` after region changes
+- `locations_controller#update` - Should call map generation (currently missing)
+
+**Production Machine Workflow:**
 
 Navigator supports CGI scripts and hooks that make this workflow possible:
 
@@ -213,11 +266,18 @@ hooks:
       # It calls bin/prerender which regenerates static HTML files
 ```
 
-The ready hook (script/ready.sh) runs:
+**script/update_configuration.rb** (CGI endpoint):
+- Downloads index.sqlite3 from S3
+- Updates htpasswd from index.sqlite3
+- Generates showcases.yml from index.sqlite3
+- Generates navigator.yml
+- ISSUE: Does NOT download map files (comment says "would need node/makemaps.js")
+
+**script/ready.sh** (ready hook):
 1. `bin/prerender` - Regenerates all static HTML from ERB templates
 2. `bin/prepare.rb` - Updates event databases
 
-This means when map ERB templates change, prerender automatically regenerates static HTML.
+When map ERB templates change, prerender automatically regenerates static HTML.
 
 ### Phase 1: S3 Storage Structure
 
@@ -232,95 +292,225 @@ Create S3 paths for map ERB templates alongside index.sqlite3:
 
 ### Phase 2: Admin Machine Workflow (Generate + Upload)
 
-When admin updates a location via Rails UI:
+#### Key Changes
 
-1. **Save location to index.sqlite3**
-   ```ruby
-   # app/controllers/locations_controller.rb
-   def update
-     @location.update!(location_params)
+1. **Create standalone script: script/generate_and_upload_maps.rb**
+   - This replaces map generation functionality in script/reconfig
+   - Can be called standalone (like script/config-update)
+   - Does NOT require Rails environment (uses minimal Ruby with AWS SDK)
+   - Runs: generate map data → makemaps.js → upload to S3
 
-     # Generate and upload maps
-     generate_and_upload_maps
+2. **Update script/config-update to call generate_and_upload_maps**
+   - Add map generation BEFORE uploading index.sqlite3
+   - Ensures maps are always current when config updates run
 
-     # Trigger config update on production
-     ConfigUpdateJob.perform_later(current_user.id)
-   end
-   ```
+3. **Delete script/reconfig**
+   - Redundant with generate_and_upload_maps + config-update combination
+   - Was running map generation twice unnecessarily
+   - Configuration drift detection no longer needed (S3 is source of truth)
 
-2. **Generate map artifacts (with change detection)**
-   ```ruby
-   # New method in locations_controller.rb or admin_controller.rb
-   def generate_and_upload_maps
-     # Step 1: Generate map.yml from database (without x,y)
-     map_data = RegionConfiguration.generate_map_data
-     new_map_yaml = YAML.dump(map_data)
+4. **Update locations_controller.rb**
+   - Call generate_and_upload_maps after location save
+   - Automatically triggers when admin updates location via UI
 
-     # Step 2: Check if map data actually changed
-     map_yml_path = 'tmp/map.yml'
-     if File.exist?(map_yml_path)
-       old_map_yaml = File.read(map_yml_path)
-       if old_map_yaml == new_map_yaml
-         Rails.logger.info "Map data unchanged, skipping generation"
-         return
-       end
-     end
+#### Implementation: script/generate_and_upload_maps.rb
 
-     # Step 3: Write new map.yml to tmp/ (transient build artifact)
-     File.write(map_yml_path, new_map_yaml)
-     Rails.logger.info "Map data changed, regenerating maps"
+**New standalone script** (can run without Rails):
 
-     # Step 4: Capture ERB file mtimes before generation
-     erb_files = {
-       'us' => 'app/views/event/_usmap.html.erb',
-       'eu' => 'app/views/event/_eumap.html.erb',
-       'au' => 'app/views/event/_aumap.html.erb',
-       'jp' => 'app/views/event/_jpmap.html.erb'
-     }
+```ruby
+#!/usr/bin/env ruby
 
-     before_mtimes = erb_files.transform_values do |path|
-       File.exist?(path) ? File.mtime(path) : Time.at(0)
-     end
+require 'json'
+require 'yaml'
+require 'fileutils'
+require 'open3'
 
-     # Step 5: Run makemaps.js to add x,y coords and generate ERB files
-     # Note: makemaps.js reads/writes tmp/map.yml (configured in utils/mapper/files.yml)
-     unless system('node utils/mapper/makemaps.js')
-       raise "Map generation failed"
-     end
+# This script runs standalone (no Rails dependency)
+# It's called by:
+# - script/config-update (before syncing index.sqlite3)
+# - locations_controller.rb (after location updates)
 
-     # Step 6: Upload only changed ERB files to S3
-     # makemaps.js only rewrites files that changed (line 176 check)
-     uploaded = []
-     erb_files.each do |region, local_path|
-       after_mtime = File.exist?(local_path) ? File.mtime(local_path) : Time.at(0)
+# Ensure tmp directory exists
+FileUtils.mkdir_p('tmp')
 
-       if after_mtime > before_mtimes[region]
-         s3_path = "views/event/#{File.basename(local_path)}"
-         Rails.logger.info "Uploading #{local_path} to S3 (#{region} map changed)"
-         S3Sync.upload(local_path, s3_path)
-         uploaded << region
-       else
-         Rails.logger.info "Skipping #{local_path} (#{region} map unchanged)"
-       end
-     end
+puts "Generating and uploading map files..."
+puts "=" * 70
 
-     Rails.logger.info "Map generation complete. Uploaded: #{uploaded.join(', ')}"
-   end
-   ```
+# Load configuration
+git_path = File.realpath(File.expand_path('..', __dir__))
+dbpath = ENV.fetch('RAILS_DB_VOLUME') { "#{git_path}/db" }
+index_db = File.join(dbpath, 'index.sqlite3')
 
-   **File organization:**
-   - `tmp/map.yml` - Transient build artifact (generated from DB, consumed by makemaps.js)
-   - `app/views/event/_*map.html.erb` - Generated ERB templates (uploaded to S3)
+unless File.exist?(index_db)
+  puts "ERROR: index.sqlite3 not found at #{index_db}"
+  exit 1
+end
 
-   **Optimization layers:**
-   1. **Early exit:** Compare new map_data with existing tmp/map.yml, return if unchanged
-   2. **Selective upload:** Only upload ERB files that were modified by makemaps.js
+# Step 1: Generate map data from database
+puts "\nStep 1: Generating map.yml from index.sqlite3..."
+puts "-" * 70
 
-   **Typical scenarios:**
-   - Update non-location field (showcase name, etc.) → Early exit, 0 files
-   - Update location in Virginia → Only `_usmap.html.erb` uploads (1 file)
-   - Update location in Sydney → Only `_aumap.html.erb` uploads (1 file)
-   - Add new location → Affected map updates (1 file)
+# Option A: Use Rails (if available)
+# Option B: Direct SQLite query (standalone)
+# For now, use Rails since we need RegionConfiguration module
+
+# Set database environment
+ENV['DATABASE_URL'] = "sqlite3:#{index_db}"
+
+# Load minimal Rails environment
+require_relative '../config/environment'
+
+# Generate map data using shared module
+map_data = RegionConfiguration.generate_map_data
+
+puts "   → Found #{map_data['regions'].size} deployed regions"
+puts "   → Found #{map_data['studios'].size} studio locations"
+
+# Write YAML to tmp directory
+map_yml_path = File.join(git_path, 'tmp/map.yml')
+new_map_yaml = YAML.dump(map_data)
+
+# Check if map data actually changed (Layer 1 optimization)
+if File.exist?(map_yml_path)
+  old_map_yaml = File.read(map_yml_path)
+  if old_map_yaml == new_map_yaml
+    puts "   ✓ Map data unchanged, skipping generation and upload"
+    exit 0  # Early exit - nothing to do
+  end
+end
+
+File.write(map_yml_path, new_map_yaml)
+puts "   ✓ Map data changed, wrote tmp/map.yml"
+
+# Step 2: Run makemaps.js to add x,y coordinates
+puts "\nStep 2: Running makemaps.js to add x,y coordinates..."
+puts "-" * 70
+
+# Capture ERB file mtimes before generation (Layer 3 optimization)
+erb_files = {
+  'us' => File.join(git_path, 'app/views/event/_usmap.html.erb'),
+  'eu' => File.join(git_path, 'app/views/event/_eumap.html.erb'),
+  'au' => File.join(git_path, 'app/views/event/_aumap.html.erb'),
+  'jp' => File.join(git_path, 'app/views/event/_jpmap.html.erb')
+}
+
+before_mtimes = erb_files.transform_values do |path|
+  File.exist?(path) ? File.mtime(path) : Time.at(0)
+end
+
+# Run makemaps.js (reads/writes tmp/map.yml per utils/mapper/files.yml)
+# makemaps.js has built-in change detection (Layer 2 optimization)
+Dir.chdir(git_path) do
+  stdout, stderr, status = Open3.capture3('node', 'utils/mapper/makemaps.js')
+  puts stdout unless stdout.empty?
+  $stderr.puts stderr unless stderr.empty?
+
+  unless status.success?
+    puts "ERROR: makemaps.js failed with exit code #{status.exitstatus}"
+    exit 1
+  end
+end
+
+puts "   ✓ makemaps.js completed successfully"
+
+# Step 3: Upload changed ERB files to S3
+puts "\nStep 3: Uploading changed map ERB files to S3..."
+puts "-" * 70
+
+# Check which files actually changed (Layer 3 optimization)
+uploaded = []
+skipped = []
+
+erb_files.each do |region, local_path|
+  after_mtime = File.exist?(local_path) ? File.mtime(local_path) : Time.at(0)
+
+  if after_mtime > before_mtimes[region]
+    s3_path = "views/event/#{File.basename(local_path)}"
+    puts "   → Uploading #{File.basename(local_path)} (#{region} map changed)"
+
+    # Use S3Sync module (requires Rails)
+    S3Sync.upload(local_path, s3_path)
+    uploaded << region
+  else
+    skipped << region
+  end
+end
+
+puts "\n" + "=" * 70
+if uploaded.any?
+  puts "SUCCESS: Uploaded #{uploaded.length} map(s): #{uploaded.join(', ')}"
+else
+  puts "SUCCESS: All maps up to date (0 uploads)"
+end
+puts "   Skipped: #{skipped.join(', ')}" if skipped.any?
+puts "=" * 70
+```
+
+#### Integration Points
+
+**1. Update script/config-update**
+
+Add map generation at the beginning (before Step 1):
+
+```ruby
+# Step 0: Generate and upload maps
+puts "Step 0: Generating and uploading map files..."
+puts "=" * 50
+
+script_path = File.expand_path('generate_and_upload_maps.rb', __dir__)
+
+if options[:dry_run]
+  puts "Would run: ruby #{script_path}"
+else
+  ruby_path = RbConfig.ruby
+  stdout, stderr, status = Open3.capture3(ruby_path, script_path)
+
+  puts stdout
+  puts stderr unless stderr.empty?
+
+  unless status.success?
+    puts "Error: Map generation failed with exit code #{status.exitstatus}"
+    exit 1
+  end
+end
+
+puts "\n"
+
+# Step 1: Sync index database (existing code)
+# ...
+```
+
+**2. Update locations_controller.rb**
+
+Add after location save:
+
+```ruby
+# app/controllers/locations_controller.rb
+def update
+  @location.update!(location_params)
+
+  # Generate and upload maps
+  system('ruby', Rails.root.join('script/generate_and_upload_maps.rb').to_s)
+
+  # Trigger config update on production
+  # (This is already handled by user clicking "Update Configuration" button)
+
+  redirect_to admin_regions_path, notice: 'Location updated'
+end
+```
+
+**Alternative:** Call from admin_controller.rb's generate_map method:
+
+```ruby
+# app/controllers/concerns/configurator.rb
+def generate_map
+  # Call standalone script instead of inline generation
+  script_path = Rails.root.join('script/generate_and_upload_maps.rb')
+  system('ruby', script_path.to_s)
+end
+```
+
+This means existing calls to `generate_map` (in admin#create_region, admin#destroy_region) automatically upload maps.
 
 ### Phase 3: Production Workflow (Download + Prerender)
 
@@ -388,7 +578,7 @@ ruby bin/prepare.rb (reads tmp/tenants.list)
 
 The prerender task will automatically pick up the new ERB templates and regenerate static HTML files.
 
-### Phase 4: Remove Git-Tracked Files and Update Configuration
+### Phase 4: Remove Git-Tracked Files, Update Configuration, Delete Obsolete Scripts
 
 1. **Update utils/mapper/files.yml**
    Change map_yaml path from config/tenant to tmp:
@@ -413,7 +603,35 @@ The prerender task will automatically pick up the new ERB templates and regenera
    git commit -m "Remove git-tracked map files - now generated from S3"
    ```
 
-4. **Update bin/apply-changes.rb**
+4. **Delete script/reconfig**
+   ```bash
+   git rm script/reconfig
+   ```
+
+   **Why:** This script is now redundant. It performed:
+   - Regenerated tmp/regions.json and tmp/deployed.json → Still needed, but rarely used
+   - Regenerated map files → Now handled by script/generate_and_upload_maps.rb
+   - Regenerated showcases files → Already in admin_controller.rb's generate_showcases
+   - Did NOT upload to S3 or trigger production updates → Incomplete workflow
+
+   **Replacement workflow:**
+   ```bash
+   # Old way (script/reconfig):
+   script/reconfig  # Generate everything locally, no S3, no production update
+
+   # New way (explicit steps):
+   # 1. Regenerate region data (if needed):
+   #    - tmp/regions.json: flyctl platform regions --json
+   #    - tmp/deployed.json: flyctl regions list --json
+   # 2. Generate and upload maps:
+   ruby script/generate_and_upload_maps.rb
+   # 3. Trigger production update:
+   ruby script/config-update  # Generates showcases, uploads index.sqlite3, triggers production
+   ```
+
+   **Note:** Region JSON regeneration is rarely needed (only when Fly.io adds new regions). Can be done manually or added to a new script if needed.
+
+5. **Update bin/apply-changes.rb**
    Remove the map.yml copy and makemaps.js call (lines 62-69):
    ```ruby
    # DELETE THIS SECTION:
@@ -426,10 +644,43 @@ The prerender task will automatically pick up the new ERB templates and regenera
    end
    ```
 
-   Maps are now uploaded to S3 by locations_controller.rb
+   **Why:** Maps are now uploaded to S3 by script/generate_and_upload_maps.rb (called by script/config-update).
 
-5. **Clean up old references**
-   Search codebase for `config/tenant/map.yml` and update to `tmp/map.yml` if needed
+   **Note:** bin/apply-changes.rb still handles:
+   - Creating/destroying Fly.io machines (region changes)
+   - Deploying code changes (fly deploy)
+   - Committing/pushing git changes
+
+   But it will now call script/config-update (which calls generate_and_upload_maps) instead of generating maps inline.
+
+6. **Remove configuration drift detection from admin#apply**
+
+   **File:** app/controllers/admin_controller.rb (lines 162-165)
+
+   ```ruby
+   # DELETE THIS SECTION:
+   # Detect drift between deployed snapshot and git-tracked file
+   if File.exist?('db/deployed-showcases.yml')
+     git_showcases = YAML.load_file('config/tenant/showcases.yml').values.reduce {|a, b| a.merge(b)}
+     @showcases_drift = (before != git_showcases)
+   end
+   ```
+
+   **Why:** With S3-based workflow, there is no "git-tracked file" to drift from. S3 is the source of truth.
+
+   **View changes:** Remove showcases drift warning from app/views/admin/apply.html.erb
+
+7. **Clean up old references**
+   Search codebase for `config/tenant/map.yml` and update to `tmp/map.yml` if needed:
+
+   ```bash
+   # Find remaining references
+   git grep "config/tenant/map.yml"
+
+   # Expected remaining references:
+   # - lib/region_configuration.rb (Map#determine_papersize) - reads map to determine region papersize
+   #   This should be updated to read from tmp/map.yml or directly from S3
+   ```
 
 ## Benefits After Migration
 
@@ -480,27 +731,61 @@ The prerender task will automatically pick up the new ERB templates and regenera
 
 ## Complete Workflow After Implementation
 
-**Admin updates a location:**
-1. Edit location in Rails admin UI (updates `db/index.sqlite3`)
-2. Click "Update Configuration" button
-3. Admin machine:
-   - Generates `db/map.yml` from database
-   - Runs `node utils/mapper/makemaps.js` to add x,y coords + generate ERB files
-   - Uploads 4 ERB files to S3 (map.yml stays local, only used by makemaps.js)
-   - Uploads `index.sqlite3` to S3
-   - Posts to `/showcase/update_config` on each production region
+### Scenario 1: Admin updates a location
 
-4. Production machines (via CGI + hooks):
-   - Download `index.sqlite3` from S3
-   - Download 4 ERB files from S3
-   - Generate `showcases.yml` from `index.sqlite3`
-   - Generate `navigator.yml`
-   - Touch `navigator.yml` to trigger config reload
-   - Navigator detects change, runs ready hook
-   - Ready hook runs `bin/prerender` which regenerates static HTML
+1. Edit location in Rails admin UI (updates `db/index.sqlite3`)
+2. Save → Automatically calls `script/generate_and_upload_maps.rb`
+   - Generates `tmp/map.yml` from database
+   - Runs `node utils/mapper/makemaps.js` to add x,y coords + generate ERB files
+   - Uploads only changed ERB files to S3 (map.yml stays local)
+3. Click "Update Configuration" button → Triggers ConfigUpdateJob
+4. ConfigUpdateJob runs `script/config-update`:
+   - Step 0: Calls `script/generate_and_upload_maps.rb` again (ensures maps are current)
+   - Step 1: Uploads `index.sqlite3` to S3
+   - Step 2: Gets list of Fly.io machines
+   - Step 3: Posts to `/showcase/update_config` on each production region
+
+5. Production machines (via CGI + hooks):
+   - CGI script (`script/update_configuration.rb`) runs:
+     - Download `index.sqlite3` from S3
+     - Download changed ERB files from S3 (mtime comparison)
+     - Update `htpasswd` from `index.sqlite3`
+     - Generate `showcases.yml` from `index.sqlite3`
+     - Generate `navigator.yml`
+     - Touch `navigator.yml` to trigger config reload
+   - Navigator detects change, runs ready hook (`script/ready.sh`):
+     - `bin/prerender` regenerates static HTML from new ERB templates
+     - `bin/prepare.rb` updates event databases
    - Updated maps now visible on all regions
 
 **Total time:** ~30-60 seconds (vs 5-10 minutes for full deployment)
+
+### Scenario 2: Admin adds/removes region
+
+1. Click "Add Region" or "Remove Region" in admin UI
+2. Admin controller calls `generate_map` (updated to call `script/generate_and_upload_maps.rb`)
+   - Uploads changed map files to S3
+3. Click "Apply Changes" button → Runs `bin/apply-changes.rb`
+   - Calls `script/config-update` (which calls `generate_and_upload_maps.rb` again)
+   - Creates/destroys Fly.io machines as needed
+   - Deploys code if needed (fly deploy)
+   - Commits/pushes git changes
+
+**Total time:** ~5-10 minutes (includes machine provisioning and optional deployment)
+
+### Scenario 3: Admin updates showcase (not location)
+
+1. Edit showcase in Rails admin UI (updates `db/index.sqlite3`)
+2. Click "Update Configuration" button → Triggers ConfigUpdateJob
+3. ConfigUpdateJob runs `script/config-update`:
+   - Step 0: Calls `script/generate_and_upload_maps.rb`
+     - **Early exit:** Map data unchanged, skips generation/upload (0 files)
+   - Step 1: Uploads `index.sqlite3` to S3
+   - Step 2-3: Updates production machines
+
+4. Production machines download index.sqlite3, regenerate showcases.yml and navigator.yml
+
+**Total time:** ~20-30 seconds (faster due to early exit optimization)
 
 ## Rollback Plan
 
@@ -517,11 +802,32 @@ Before Phase 4, rollback is even simpler:
 ## Timeline Estimate
 
 **Option B (Recommended):**
-- Phase 1: 1 hour (S3 bucket structure planning)
-- Phase 2: 2-3 hours (admin upload logic, integrate with locations_controller)
-- Phase 3: 2-3 hours (production download logic, integrate with update_configuration.rb)
-- Phase 4: 1 hour (remove from git, update .gitignore)
-- **Total:** 6-8 hours
+- Phase 1: 1 hour (S3 bucket structure planning, test uploads/downloads)
+- Phase 2: 3-4 hours (create script/generate_and_upload_maps.rb, integrate with script/config-update and controllers)
+- Phase 3: 2-3 hours (production download logic in update_configuration.rb, testing with CGI + hooks)
+- Phase 4: 2-3 hours (remove from git, delete script/reconfig, update bin/apply-changes.rb, remove drift detection, clean up references)
+- **Total:** 8-11 hours
+
+**Breakdown of Phase 2 changes:**
+- Create script/generate_and_upload_maps.rb: 1-2 hours
+  - Standalone script that loads Rails, generates maps, uploads to S3
+  - Four-layer optimization (early exit, selective generation, selective upload, selective download)
+- Integrate with script/config-update: 30 minutes
+  - Add Step 0 that calls generate_and_upload_maps.rb before syncing index.sqlite3
+- Update locations_controller.rb or admin_controller.rb: 30 minutes
+  - Call generate_and_upload_maps.rb after location save
+- Update admin_controller.rb's generate_map method: 30 minutes
+  - Replace inline generation with call to script
+- Testing and debugging: 1 hour
+
+**Breakdown of Phase 4 changes:**
+- Delete script/reconfig: 15 minutes
+- Update bin/apply-changes.rb: 30 minutes (remove map generation section)
+- Remove drift detection from admin#apply: 30 minutes (controller + view)
+- Update utils/mapper/files.yml: 15 minutes
+- Update .gitignore and git rm files: 15 minutes
+- Clean up config/tenant/map.yml references: 30 minutes (search codebase, update determine_papersize)
+- Testing: 1 hour
 
 **Note:** No file permission changes needed - both update_configuration.rb CGI script and ready hook run as root, so they can write to /rails/app/views/event/ directly.
 
