@@ -921,6 +921,13 @@
       cinderella-medal-ball:
         :name: Cinderella Medal Ball
         :date: 2025-11-14 - 2025-11-14
+  wildwood:
+    :name: Wildwood
+    :region: iad
+    :events:
+      jubilee-2025:
+        :name: Jubilee 2025
+        :date: 2025-12-01 - 2025-12-13
   woodlands:
     :name: Woodlands
     :region: dfw
