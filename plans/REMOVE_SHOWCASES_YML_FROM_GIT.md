@@ -21,12 +21,14 @@ When an admin creates a showcase:
 
 ## Dependencies on config/tenant/showcases.yml
 
-### Critical Dependencies (Must migrate before removal)
+### Critical Dependencies (NONE REMAINING)
 
-1. **nginx-config.rb** (line 31)
-   - `showcases = YAML.load_file("#{__dir__}/showcases.yml")`
+1. ~~**nginx-config.rb**~~ **(OBSOLETE - can be removed)**
+   - config/tenant/nginx-config.rb:31 reads from config/tenant/showcases.yml
    - Generates nginx server blocks for each showcase
-   - **Blocker until Kamal migration complete** (see `plans/KAMAL_MIGRATION_PLAN.md`)
+   - **Status**: No longer used - both Fly.io and Hetzner/Kamal deployments use Navigator, not nginx
+   - Called from bin/deploy but writes to non-existent `/etc/nginx/sites-enabled/` (falls back to `tmp/showcase.conf` which is never read)
+   - Can be safely deleted along with config/tenant/showcases.yml
 
 ### Application Code Dependencies (Can migrate now)
 
@@ -245,21 +247,38 @@ All application code now uses `ShowcasesLoader.load` instead of directly reading
 **Prerequisites:**
 - ✅ Phase 1 complete (deployed state tracking working)
 - ✅ Phase 2 complete (all application code migrated)
-- ✅ Kamal migration complete (nginx no longer needs it)
+- ✅ nginx-config.rb verified obsolete (both Fly.io and Hetzner use Navigator)
 
 **Steps:**
 
 1. **Verify no remaining dependencies**
    ```bash
    grep -r "config/tenant/showcases.yml" app/ lib/ script/ config/
-   # Should only show nginx-config.rb (if Kamal not done) or nothing
+   # Should show only nginx-config.rb (obsolete, can be removed)
    ```
 
-2. **Remove from git**
+2. **Remove obsolete files from git**
    ```bash
-   git rm config/tenant/showcases.yml
-   git commit -m "Remove showcases.yml from git - now generated from DB"
+   git rm \
+     config/tenant/showcases.yml \
+     config/tenant/nginx-config.rb \
+     bin/passenger-hook \
+     bin/deploy \
+     config/deploy.fly \
+     config/build.fly \
+     config/dockerfile.yml
+
+   git commit -m "Remove obsolete Passenger/nginx deployment files - now use Navigator"
    ```
+
+   **Files being removed:**
+   - `config/tenant/showcases.yml` - Git-tracked file replaced by db/showcases.yml
+   - `config/tenant/nginx-config.rb` - Generates nginx config that's never used
+   - `bin/passenger-hook` - Only referenced by nginx-config.rb
+   - `bin/deploy` - Not called by Dockerfile, fly.toml, or Kamal (Navigator handles deployment)
+   - `config/deploy.fly` - Only referenced by unused config/dockerfile.yml
+   - `config/build.fly` - Only referenced by unused config/dockerfile.yml
+   - `config/dockerfile.yml` - Not used to generate actual Dockerfile (which is hand-crafted for Navigator)
 
 3. **Update documentation**
    - Update CLAUDE.md to explain new approach
@@ -271,7 +290,7 @@ All application code now uses `ShowcasesLoader.load` instead of directly reading
    - Remove bootstrap code that copies from config/tenant
    - Assume `db/deployed-showcases.yml` always exists
 
-**Status:** ⏳ Not started (blocked by Phases 1, 2, and Kamal migration)
+**Status:** ✅ Ready to proceed (all blockers resolved - nginx-config.rb verified obsolete)
 
 ### Phase 4: Admin Server Map Generation and S3 Upload
 
@@ -400,5 +419,51 @@ If problems arise, revisit this decision.
 
 ## References
 
-- Related: `plans/KAMAL_MIGRATION_PLAN.md` (nginx dependency blocker)
 - Related: `plans/AUTOMATED_SHOWCASE_REQUESTS.md` (depends on this for accurate change detection)
+
+## Verification of Obsolete Passenger/nginx Deployment Files
+
+Investigation confirmed (2025-11-18):
+
+**Deployment verification:**
+- Fly.io deployment: Runs Navigator (Dockerfile CMD: `navigator config/navigator-maintenance.yml`)
+- Hetzner/Kamal deployment: Runs Navigator (`ps aux` shows Navigator PID 1), uses kamal-proxy not nginx
+- No deployment uses Passenger or nginx server blocks - all use Navigator configuration
+- Container logs show Navigator hooks running, no mention of bin/deploy
+
+**File-by-file analysis:**
+
+1. **config/tenant/nginx-config.rb**
+   - Called from bin/deploy (lines 158-173) but bin/deploy is never executed
+   - Writes to `/etc/nginx/sites-enabled/showcase.conf` which doesn't exist in containers
+   - Falls back to `tmp/showcase.conf` which is never read
+   - References bin/passenger-hook (line 258)
+
+2. **bin/passenger-hook**
+   - Only referenced in nginx-config.rb
+   - Reads `/etc/nginx/sites-enabled/showcase.conf` which doesn't exist
+   - Calls `passenger-status` but Passenger is not installed in containers
+
+3. **bin/deploy**
+   - Referenced in config/dockerfile.yml but that file is not used
+   - Not called by actual Dockerfile (which has CMD: `navigator ...`)
+   - Not called by fly.toml (no deploy hooks configured)
+   - Not called by Kamal hooks (.kamal/hooks/* only have echo statements)
+   - Container logs show no execution of this script
+
+4. **config/deploy.fly**
+   - Only referenced in config/dockerfile.yml line 29
+   - Contains Passenger sudoers configuration
+   - Not used by actual hand-crafted Dockerfile
+
+5. **config/build.fly**
+   - Only referenced in config/dockerfile.yml line 28
+   - Not used by actual hand-crafted Dockerfile
+
+6. **config/dockerfile.yml**
+   - Configuration for dockerfile-rails gem
+   - Actual Dockerfile is hand-crafted and doesn't use this config
+   - No "generated by dockerfile-rails" comment in Dockerfile
+   - References all the above obsolete files
+
+**Conclusion:** All seven files are remnants from old Passenger+nginx deployment. Safe to delete together.
