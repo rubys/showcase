@@ -47,6 +47,11 @@ class ActiveSupport::TestCase
   # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
   fixtures :all
 
+  # Reset Event.current before each test to ensure test isolation
+  setup do
+    Event.current = nil
+  end
+
   # Add more helper methods to be used by all tests here...
   
   # Helper to suppress stdout during operations that produce unwanted output
