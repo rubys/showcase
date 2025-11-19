@@ -39,7 +39,7 @@ class ConfigUpdateJob < ApplicationJob
           broadcast(user_id, database, 'processing', 30, "Found #{machine_count} machines to update...")
         elsif line.include?('Step 3: Triggering configuration update')
           broadcast(user_id, database, 'processing', 40, 'Updating machines...')
-        elsif line =~ /^\s+\S+\.\.\. ✓ Success/
+        elsif line.include?('✓ Success')
           machines_updated += 1
           if machine_count > 0
             progress = 40 + (machines_updated.to_f / machine_count * 50).to_i
