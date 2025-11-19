@@ -125,19 +125,16 @@
 <div class="mt-6">
   <% if changes %>
     <% if @pending['add'].present? || @pending['delete'].present? || @code_changes %>
-      <h3 class="text-xl font-bold text-center text-red-600">⚠️ Full Deployment Recommended</h3>
-      <p class="text-sm text-gray-600 mb-4 text-center">Region or code changes detected</p>
+      <p class="text-sm text-gray-600 mb-4 text-center">Region or code changes detected - full deployment recommended</p>
     <% else %>
-      <h3 class="text-xl font-bold text-center">Choose Update Method</h3>
-      <p class="text-sm text-gray-600 mb-4 text-center">Configuration changes only - fast update recommended</p>
+      <p class="text-sm text-gray-600 mb-4 text-center">Configuration changes detected</p>
     <% end %>
   <% else %>
-    <h3 class="text-xl font-bold text-center">Configuration Update</h3>
-    <p class="text-sm text-gray-600 mb-4 text-center">No changes detected - update available for sync/recovery</p>
+    <p class="text-sm text-gray-600 mb-4 text-center">No changes detected</p>
   <% end %>
 
   <div class="flex flex-col md:flex-row gap-4 justify-center items-center my-4">
-    <!-- Fast configuration update (always available) -->
+    <!-- Fast configuration update -->
     <div class="flex flex-col items-center">
       <button type="button"
               data-action="click->config-update#triggerUpdate"
@@ -147,16 +144,14 @@
       <p class="text-xs text-gray-500 mt-1">Fast (~30 seconds)</p>
     </div>
 
-    <!-- Full deployment (only show if changes exist) -->
-    <% if changes %>
-      <div class="flex flex-col items-center">
-        <button data-submit-target="submit" data-command-type="apply"
-          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">
-          Full Deployment
-        </button>
-        <p class="text-xs text-gray-500 mt-1">Complete (~2-3 minutes)</p>
-      </div>
-    <% end %>
+    <!-- Full deployment -->
+    <div class="flex flex-col items-center">
+      <button data-submit-target="submit" data-command-type="apply"
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">
+        Full Deployment
+      </button>
+      <p class="text-xs text-gray-500 mt-1">Complete (~2-3 minutes)</p>
+    </div>
   </div>
 
   <!-- Progress indicator for configuration update (hidden initially) -->
