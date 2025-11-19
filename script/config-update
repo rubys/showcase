@@ -27,6 +27,25 @@ end
 
 puts "\n"
 
+# Step 0.5: Sync showcase dates from event databases
+puts "Step 0.5: Syncing showcase dates..."
+puts "=" * 50
+
+require_relative '../lib/showcase_date_sync'
+result = ShowcaseDateSync.sync(quiet: false)
+
+if result[:updated].any?
+  puts "Updated #{result[:updated].length} date(s)"
+else
+  puts "All dates up to date"
+end
+
+if result[:errors].any?
+  puts "#{result[:errors].length} error(s) occurred"
+end
+
+puts "\n"
+
 # Parse command line options
 options = { verbose: false, dry_run: false, target: 'fly' }
 OptionParser.new do |opts|

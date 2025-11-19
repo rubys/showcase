@@ -8,6 +8,11 @@ fly = File.join(Dir.home, '.fly/bin/flyctl')
 
 primary_region = Tomlrb.parse(IO.read 'fly.toml')['primary_region']
 
+# Sync showcase dates from event databases to index.sqlite3
+require_relative '../lib/showcase_date_sync'
+result = ShowcaseDateSync.sync(quiet: true)
+puts "Updated #{result[:updated].length} showcase date(s)" if result[:updated].any?
+
 # index.sqlite3
 # Check if remote index is older than local index
 local_index_path = 'db/index.sqlite3'

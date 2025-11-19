@@ -45,53 +45,9 @@ module ShowcaseInventory
       File.write('tmp/inventory.json', json)
     end
 
-    if showcases
-      # read inventory files for event dates
-      inventory = {}
-      dbpath = ENV.fetch("RAILS_DB_VOLUME", Rails.root.join('db').to_s)
-      # Check both possible inventory locations:
-      # - Fly.io: /data/inventory (sibling of /data/db)
-      # - Kamal/Hetzner: /data/db/inventory (child of db)
-      inventory_paths = [
-        "#{File.dirname(dbpath)}/inventory",
-        "#{dbpath}/inventory"
-      ]
-      inventory_paths.each do |inventory_path|
-        if Dir.exist?(inventory_path)
-          Dir["#{inventory_path}/*.json"].each do |file|
-            inventory.merge! JSON.parse(File.read(file)) rescue nil
-          end
-          break  # Use first found location
-        end
-      end
-
-      this_year = Time.now.year
-
-      # Update showcases with event dates from inventory
-      showcases.each do |year, sites|
-        sites.each do |token, info|
-          if info[:events]
-            info[:events].each do |name, info|
-              next unless info["date"].blank?
-              db = "#{year}-#{token}-#{name}.sqlite3"
-              if inventory[db] && inventory[db]['date']
-                info["date"] = inventory[db]['date']
-              elsif year.to_i >= this_year
-                info["date"] = "TBD"
-              end
-            end
-          else
-            next unless info["date"].blank?
-            db = "#{year}-#{token}.sqlite3"
-            if inventory[db] && inventory[db]['date']
-              info["date"] = inventory[db]['date']
-            elsif year.to_i >= this_year
-              info["date"] = "TBD"
-            end
-          end
-        end
-      end
-    end
+    # Dates are now included in showcases.yml from the showcases table
+    # (synced by ShowcaseDateSync from individual event databases)
+    # No need to read inventory files for dates anymore
 
     events
   end
