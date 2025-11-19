@@ -68,12 +68,17 @@ task :prerender => "prerender:env" do
 
   # Load showcases and get prerenderable paths using shared module
   require_relative '../prerender_configuration'
+  require Rails.root.join('lib/region_configuration')
 
-  showcases = YAML.load_file(File.join(Rails.application.root, 'config/tenant/showcases.yml'))
+  # Generate showcases.yml from index.sqlite3 (authoritative source)
+  # This ensures prerendering uses the same data as runtime
+  showcases_path = File.join(Rails.application.root, 'db/showcases.yml')
+  showcases = RegionConfiguration.generate_showcases_data
+  RegionConfiguration.write_yaml_if_changed(showcases_path, showcases)
+
   paths = PrerenderConfiguration.prerenderable_paths(showcases)
 
   # Add studios from database that don't have events
-  require Rails.root.join('lib/region_configuration')
   map_data = RegionConfiguration.generate_map_data
   map_data["studios"]&.each do |studio, info|
     paths[:studios] << studio unless paths[:studios].include?(studio)

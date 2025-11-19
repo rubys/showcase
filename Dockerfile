@@ -50,7 +50,7 @@ RUN ls /usr/local/bin && bundle exec bootsnap precompile app/ lib/
 # Precompiling assets for production without requiring secret RAILS_MASTER_KEY
 RUN SECRET_KEY_BASE=DUMMY ./bin/rails assets:precompile
 
-# Prerender static HTML pages (requires showcases.yml, map.yml, and index.sqlite3)
+# Prerender static HTML pages (generates showcases.yml from index.sqlite3)
 # This runs during build so static pages are baked into the image
 # Eliminates need to start index tenant on first request
 # Note: index.sqlite3 is included via .dockerignore exception
