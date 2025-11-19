@@ -36,7 +36,7 @@ module MapDownloader
       secret_access_key: ENV['AWS_SECRET_ACCESS_KEY']
     )
 
-    bucket = ENV.fetch('AWS_S3_BUCKET', 'showcase-data')
+    bucket = ENV.fetch('AWS_S3_BUCKET', 'showcase')
 
     MAP_FILES.each do |map_name|
       s3_key = "views/event/#{map_name}.html.erb"
