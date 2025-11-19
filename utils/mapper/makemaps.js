@@ -196,7 +196,7 @@ for (let files of allfiles.maps) {
       // Generate region circle with ERB link (only show if region is deployed)
       const name = point.name || token
       circles.push(`<% if @regions && @regions['${token}'] %>
-<a xlink:title="${name}" href="<%= region_path('${token}') %>">
+<a xlink:title="${name}" href="<%= region_path('${token}') %>" class="region-marker">
   <circle cx="${x}" cy="${y}" r="16" fill="#ffd700" stroke="#ffffff" style="cursor: pointer;" stroke-width="1" opacity="0.8"/>
 </a>
 <% end %>`)

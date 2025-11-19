@@ -8,7 +8,7 @@
 <path title="Australian Capital Territory" fill="#e5ecf9" stroke="#AAA" stroke-width="1" d="M509,386h2v2h1h-1h1v1h1h-3v2h-1l1,1h-1h1h-1v3h-1v1h-1v-2h-1h1v-1h-1v1v-2h-1h1v-4h1v-1h2v-1"/>
 <path title="Other Territories" fill="#e5ecf9" stroke="#AAA" stroke-width="1" d="M527,389M527,388h1h-1h1h-1v1h-1h1h-1v-1h1M528,388"/>
 <% if @regions && @regions['syd'] %>
-<a xlink:title="Sydney, Australia" href="<%= region_path('syd') %>">
+<a xlink:title="Sydney, Australia" href="<%= region_path('syd') %>" class="region-marker">
   <circle cx="535" cy="373" r="16" fill="#ffd700" stroke="#ffffff" style="cursor: pointer;" stroke-width="1" opacity="0.8"/>
 </a>
 <% end %>

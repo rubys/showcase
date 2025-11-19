@@ -5,6 +5,9 @@
     shown = @map['regions'][ENV['FLY_REGION']]['map'] || 'us'
   end
 %>
+<% unless ENV['RAILS_PROXY_HOST']&.include?('.fly.dev') %>
+<style>.region-marker { display: none; }</style>
+<% end %>
 <div style="width: 100%">
 
 <% %w{us eu au jp}.each do |map| %>
