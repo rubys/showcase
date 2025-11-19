@@ -89,6 +89,13 @@ export default class extends Controller {
         active.style.color = "red";
         let dot = findDot(studio.getAttribute("href"));
         if (dot) {
+          // Switch to the map containing this dot
+          let dotMap = dot.closest("svg");
+          if (dotMap && dotMap.style.display === 'none') {
+            this.maps.forEach(map => {
+              map.style.display = map === dotMap ? 'block' : 'none';
+            });
+          }
           dot.parentElement.appendChild(dot);
           dot.firstElementChild.style.fill = "red";
         }
