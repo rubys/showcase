@@ -158,12 +158,6 @@ class AdminController < ApplicationController
     before = ShowcasesLoader.load_deployed.values.reduce {|a, b| a.merge(b)}
     after = ShowcasesLoader.load.values.reduce {|a, b| a.merge(b)}
 
-    # Detect drift between deployed snapshot and git-tracked file
-    if File.exist?('db/deployed-showcases.yml')
-      git_showcases = YAML.load_file('config/tenant/showcases.yml').values.reduce {|a, b| a.merge(b)}
-      @showcases_drift = (before != git_showcases)
-    end
-
     @move = {}
     after.to_a.sort.each do |site, info|
       was = before[site]

@@ -5,11 +5,7 @@ export default class extends Controller {
   static values = { userId: Number, database: String, redirectUrl: String, stream: String }
 
   connect() {
-    // Auto-start progress tracking if user ID is set (indicates a progress page after form submission)
-    // Check that userId is not just present but also not empty
-    if (this.hasUserIdValue && this.userIdValue) {
-      this.startProgressTracking()
-    }
+    // Progress tracking is started by triggerUpdate when the user clicks the button
   }
 
   startProgressTracking() {
