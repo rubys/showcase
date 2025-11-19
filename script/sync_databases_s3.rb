@@ -527,6 +527,48 @@ unless options[:dry_run]
   end
 end
 
+# Upload map ERB files if index was uploaded
+# Maps are only uploaded from Rubix (admin server), not from Fly.io regions
+if !options[:dry_run] && uploads.any? { |u| u[:name] == 'index.sqlite3' } && !ENV['FLY_REGION']
+  puts "Uploading map ERB files..." unless options[:quiet]
+
+  require_relative "#{git_path}/lib/map_downloader"
+
+  map_uploads = []
+  MapDownloader::MAP_FILES.each do |map_name|
+    local_path = File.join(git_path, 'app/views/event', "#{map_name}.html.erb")
+    s3_key = "views/event/#{map_name}.html.erb"
+
+    if File.exist?(local_path)
+      begin
+        local_mtime = File.mtime(local_path)
+        File.open(local_path, 'rb') do |file|
+          s3_client.put_object(
+            bucket: bucket_name,
+            key: s3_key,
+            body: file,
+            content_type: 'text/html',
+            metadata: {
+              'last-modified' => local_mtime.utc.iso8601
+            }
+          )
+        end
+        map_uploads << map_name
+        puts "  Uploaded: #{map_name}.html.erb" if options[:verbose]
+      rescue => e
+        puts "  Error uploading #{map_name}.html.erb: #{e.message}"
+        if ENV["SENTRY_DSN"]
+          Sentry.capture_message("Error uploading map #{map_name}: #{e.message}", level: :error)
+        end
+      end
+    else
+      puts "  Missing: #{map_name}.html.erb" if options[:verbose]
+    end
+  end
+
+  puts "Map uploads: #{map_uploads.size}" unless options[:quiet]
+end
+
 # Call webhook if something was uploaded
 if !options[:dry_run] && uploads.size > 0
   begin

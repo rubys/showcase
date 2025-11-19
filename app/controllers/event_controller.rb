@@ -544,9 +544,9 @@ class EventController < ApplicationController
 
     @showcases.select! {|year, sites| !sites.empty?}
     if @showcases.empty?
-      # Check if location exists in database or in map.yml
+      # Check if location exists in database
       unless @location
-        @map = YAML.load_file('config/tenant/map.yml')
+        @map = RegionConfiguration.generate_map_data
         unless @map['studios'] && @map['studios'][@city]
           raise ActiveRecord::RecordNotFound
         end
@@ -616,7 +616,7 @@ class EventController < ApplicationController
     @list ||= 'studios'
 
     showcases = ShowcasesLoader.load
-    @map = YAML.load_file('config/tenant/map.yml')
+    @map = RegionConfiguration.generate_map_data
 
     @regions = {}
     @cities = {}

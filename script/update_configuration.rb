@@ -69,6 +69,26 @@ begin
     exit 1
   end
 
+  # Operation 1.5: Download map ERB templates
+  log ""
+  log "Operation 1.5/4: Downloading map ERB templates"
+  log "-" * 70
+
+  begin
+    require Rails.root.join('lib/map_downloader').to_s
+    result = MapDownloader.download(rails_root: Rails.root.to_s)
+
+    if result[:downloaded].any?
+      log "SUCCESS: Downloaded #{result[:downloaded].length} map(s): #{result[:downloaded].join(', ')}"
+    else
+      log "INFO: Maps up to date (#{result[:skipped].length} skipped)"
+    end
+  rescue => e
+    log "WARNING: Map download failed: #{e.message}"
+    log "Continuing with existing maps..."
+    # Don't fail the update - maps are optional and fallback to git-tracked versions
+  end
+
   # Operation 2: htpasswd update
   log ""
   log "Operation 2/4: Updating htpasswd file"
@@ -102,9 +122,6 @@ begin
     showcases_data = RegionConfiguration.generate_showcases_data
     showcases_file = File.join(dbpath, 'showcases.yml')
     File.write(showcases_file, YAML.dump(showcases_data))
-
-    # Note: Not regenerating map.yml here - using pre-built one from Docker image
-    # (would need node/makemaps.js to add projection coordinates)
 
     log "SUCCESS: Showcases configuration generated"
   rescue => e

@@ -76,12 +76,36 @@ end
 # Run independent operations in parallel for faster startup
 threads = []
 
-# Thread 1: S3 sync (slowest operation, ~3s) - Fly.io only
+# Thread 1: S3 sync and map download (slowest operation, ~3s) - Fly.io only
 if fly_io?
   threads << Thread.new do
     puts "Syncing databases from S3..."
     system "ruby #{git_path}/script/sync_databases_s3.rb --index-only --safe --quiet"
     puts "  ✓ S3 sync complete"
+
+    # Download map ERB templates from S3
+    puts "Downloading map ERB templates..."
+    require_relative "#{git_path}/lib/map_downloader"
+    result = MapDownloader.download(rails_root: git_path)
+    if result[:downloaded].any?
+      puts "  ✓ Downloaded #{result[:downloaded].length} map(s): #{result[:downloaded].join(', ')}"
+    else
+      puts "  ✓ Maps up to date"
+    end
+  end
+end
+
+# Thread 1b: Map download from /data/db - Kamal/Hetzner only
+if kamal?
+  threads << Thread.new do
+    puts "Copying maps from /data/db..."
+    require_relative "#{git_path}/lib/map_downloader"
+    result = MapDownloader.download(rails_root: git_path)
+    if result[:downloaded].any?
+      puts "  ✓ Copied #{result[:downloaded].length} map(s): #{result[:downloaded].join(', ')}"
+    else
+      puts "  ✓ Maps up to date (or using git fallback)"
+    end
   end
 end
 
@@ -97,8 +121,6 @@ threads.each(&:join)
 
 # Generate showcases.yml (depends on S3 sync completing)
 # This is critical: navigator config needs this file
-# Note: We don't regenerate map.yml here - using the pre-built one from Docker image
-# (would need node/makemaps.js to add projection coordinates, addressing that separately)
 puts "Generating showcases configuration..."
 require_relative '../lib/region_configuration'
 require 'yaml'

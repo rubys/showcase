@@ -50,9 +50,9 @@ if [[ $# -gt 0 ]]; then
       mv ~/git/showcase/db/$RAILS_APP_DB.sqlite3 ~/tmp
       sqlite3 ~/git/showcase/db/$RAILS_APP_DB.sqlite3 < ~/tmp/$RAILS_APP_DB.sqlite3.in
     elif [[ $2 = "fetch" ]]; then
-      # Load region from map.yml and fetch from fly.io
+      # Load region from database and fetch from fly.io
       SITE=$(echo $RAILS_APP_DB | sed -E 's/^[0-9]+-([^-]+)-.*/\1/')
-      REGION=$(ruby -ryaml -e "puts YAML.load_file('config/tenant/map.yml').dig('studios', '$SITE', 'region')")
+      REGION=$(ruby -rsqlite3 -e "db = SQLite3::Database.new('db/index.sqlite3'); puts db.get_first_value('SELECT region FROM locations WHERE key = ?', '$SITE')")
 
       if [[ -n "$REGION" ]]; then
         echo "Fetching $RAILS_APP_DB.sqlite3 from $REGION..."

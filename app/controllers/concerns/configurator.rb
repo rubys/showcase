@@ -291,9 +291,14 @@ module Configurator
 
     # Add region-specific public paths that need regex for all regions
     if ENV['FLY_REGION']
-      # Get list of all regions from map.yml
-      map_file = File.join(Rails.root, 'config/tenant/map.yml')
-      regions = File.exist?(map_file) ? (YAML.load_file(map_file).dig('regions')&.keys || []) : []
+      # Get list of all regions from showcases
+      regions = Set.new
+      showcases.each do |_year, sites|
+        sites.each do |_token, info|
+          regions << info[:region] if info[:region]
+        end
+      end
+      regions = regions.to_a
 
       # Create alternation pattern for all regions
       regions_pattern = regions.map { |r| Regexp.escape(r) }.join('|')
@@ -764,10 +769,8 @@ module Configurator
     region = ENV['FLY_REGION']
     return 'letter' unless region
 
-    maps_file = File.join(Rails.root, 'config/tenant/map.yml')
-    return 'letter' unless File.exist?(maps_file)
-
-    map = YAML.load_file(maps_file).dig('regions', region, 'map') rescue 'us'
+    map_data = RegionConfiguration.generate_map_data
+    map = map_data.dig('regions', region, 'map') rescue 'us'
     (map || 'us') == 'us' ? 'letter' : 'a4'
   end
 

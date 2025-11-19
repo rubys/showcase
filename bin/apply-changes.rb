@@ -58,15 +58,9 @@ end
   exit 1 unless system *cmd
 end
 
-# create map, update showcases
-if File.exist? 'db/map.yml'
-  new_map = IO.read('db/map.yml')
-  if new_map != IO.read('config/tenant/map.yml')
-    IO.write('config/tenant/map.yml', new_map)
-  end
-
-  exit 1 unless system 'node utils/mapper/makemaps.js'
-end
+# Map generation is now handled by script/config-update which calls
+# script/generate_and_upload_maps.rb. Maps are uploaded to S3 and
+# downloaded by production machines.
 
 if File.exist? 'db/showcases.yml'
   new_showcases = IO.read('db/showcases.yml')

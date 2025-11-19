@@ -9,6 +9,24 @@ require 'optparse'
 # Disable output buffering for real-time progress updates
 $stdout.sync = true
 
+# Step 0: Generate and prepare maps (before syncing)
+puts "Step 0: Generating map files..."
+puts "=" * 50
+
+script_path = File.expand_path('generate_and_upload_maps.rb', __dir__)
+ruby_path = RbConfig.ruby
+stdout, stderr, status = Open3.capture3(ruby_path, script_path)
+
+puts stdout unless stdout.empty?
+puts stderr unless stderr.empty?
+
+unless status.success?
+  puts "Error: Map generation failed with exit code #{status.exitstatus}"
+  exit 1
+end
+
+puts "\n"
+
 # Parse command line options
 options = { verbose: false, dry_run: false, target: 'fly' }
 OptionParser.new do |opts|

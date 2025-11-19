@@ -72,15 +72,13 @@ task :prerender => "prerender:env" do
   showcases = YAML.load_file(File.join(Rails.application.root, 'config/tenant/showcases.yml'))
   paths = PrerenderConfiguration.prerenderable_paths(showcases)
 
-  # Add studios from map.yml that don't have events
-  map_file = File.join(Rails.application.root, 'config/tenant/map.yml')
-  if File.exist?(map_file)
-    map_data = YAML.load_file(map_file)
-    map_data["studios"].each do |studio, info|
-      paths[:studios] << studio unless paths[:studios].include?(studio)
-    end
-    paths[:studios].sort!
+  # Add studios from database that don't have events
+  require Rails.root.join('lib/region_configuration')
+  map_data = RegionConfiguration.generate_map_data
+  map_data["studios"]&.each do |studio, info|
+    paths[:studios] << studio unless paths[:studios].include?(studio)
   end
+  paths[:studios].sort!
 
   # Start with the index.html and regions/index.html files
   files = [
