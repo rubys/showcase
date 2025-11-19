@@ -832,8 +832,10 @@ module Configurator
       }
     }
 
-    # Add system configuration and htpasswd update hooks on server start if running on Fly.io
+    # Add hooks based on deployment environment
     if ENV['FLY_REGION']
+      # Fly.io deployment - full hook suite with S3 sync
+
       # System configuration (Redis memory overcommit, etc.)
       hooks['server']['start'] << {
         'command' => '/rails/script/hook_navigator_start.sh',
@@ -885,6 +887,33 @@ module Configurator
         'args' => [],
         'timeout' => '2m'
       }
+    elsif ENV['KAMAL_CONTAINER_NAME']
+      # Kamal/Hetzner deployment - limited hooks (no S3, no suspend/resume)
+
+      # System configuration (storage config copy, Redis memory)
+      hooks['server']['start'] << {
+        'command' => '/rails/script/hook_navigator_start.sh',
+        'args' => [],
+        'timeout' => '10s'
+      }
+
+      # Update htpasswd from index database
+      hooks['server']['start'] << {
+        'command' => '/rails/script/update_htpasswd.rb',
+        'args' => [],
+        'timeout' => '30s'
+      }
+
+      # Add ready hook for prerendering and database migrations
+      # bin/prepare.rb gracefully skips S3 when credentials aren't available
+      hooks['server']['ready'] << {
+        'command' => '/rails/script/ready.sh',
+        'args' => [],
+        'timeout' => '10m'
+      }
+
+      # No idle/stop hooks - no S3 to sync to
+      # No resume hook - no suspend/resume on Hetzner
     end
 
     hooks
