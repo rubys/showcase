@@ -49,10 +49,19 @@ module ShowcaseInventory
       # read inventory files for event dates
       inventory = {}
       dbpath = ENV.fetch("RAILS_DB_VOLUME", Rails.root.join('db').to_s)
-      inventory_path = "#{File.dirname(dbpath)}/inventory"
-      if Dir.exist?(inventory_path)
-        Dir["#{inventory_path}/*.json"].each do |file|
-          inventory.merge! JSON.parse(File.read(file)) rescue nil
+      # Check both possible inventory locations:
+      # - Fly.io: /data/inventory (sibling of /data/db)
+      # - Kamal/Hetzner: /data/db/inventory (child of db)
+      inventory_paths = [
+        "#{File.dirname(dbpath)}/inventory",
+        "#{dbpath}/inventory"
+      ]
+      inventory_paths.each do |inventory_path|
+        if Dir.exist?(inventory_path)
+          Dir["#{inventory_path}/*.json"].each do |file|
+            inventory.merge! JSON.parse(File.read(file)) rescue nil
+          end
+          break  # Use first found location
         end
       end
 
