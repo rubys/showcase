@@ -241,6 +241,29 @@ class ScoresController < ApplicationController
               end
             end
 
+            # Determine name display order based on event's column_order preference
+            # column_order: 1 = Lead/Follow, 2 = Student/Partner
+            column_order = event.column_order || 1
+            if column_order == 1
+              first_name = entry.lead.display_name
+              second_name = entry.follow.display_name
+            elsif student_role
+              # Category scoring with amateur couples - show student being evaluated first
+              if student_role == 'lead'
+                first_name = entry.lead.display_name
+                second_name = entry.follow.display_name
+              else
+                first_name = entry.follow.display_name
+                second_name = entry.lead.display_name
+              end
+            elsif entry.lead.type == 'Student'
+              first_name = entry.lead.display_name
+              second_name = entry.follow.display_name
+            else
+              first_name = entry.follow.display_name
+              second_name = entry.lead.display_name
+            end
+
             {
               id: heat.id,
               number: heat.number,
@@ -252,6 +275,8 @@ class ScoresController < ApplicationController
               # Pre-computed display values to avoid replicating Ruby logic in JavaScript
               subject_category: entry.subject_category(event.track_ages),
               subject_lvlcat: entry.subject_lvlcat(event.track_ages),
+              first_name: first_name,
+              second_name: second_name,
               lead: {
                 id: entry.lead.id,
                 name: entry.lead.name,

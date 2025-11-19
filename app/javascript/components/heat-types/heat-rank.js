@@ -275,15 +275,9 @@ export class HeatRank extends HTMLElement {
           const subcat = this.getSubjectCategory(entry);
           const isScratched = subject.number <= 0;
 
-          // Determine names order
-          let firstName, secondName;
-          if (columnOrder === 1 || subject.lead.type === 'Student') {
-            firstName = subject.lead.display_name || subject.lead.name;
-            secondName = subject.follow.display_name || subject.follow.name;
-          } else {
-            firstName = subject.follow.display_name || subject.follow.name;
-            secondName = subject.lead.display_name || subject.lead.name;
-          }
+          // Use pre-computed names from server
+          const firstName = subject.first_name;
+          const secondName = subject.second_name;
 
           // Category display
           let categoryDisplay = subcat;

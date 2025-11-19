@@ -289,7 +289,6 @@ export class HeatTable extends HTMLElement {
    */
   buildRows() {
     const ballroomsCount = this.heatData.dance.ballrooms || this.eventData.ballrooms;
-    const columnOrder = this.judgeData.column_order !== undefined ? this.judgeData.column_order : 1;
     const ballroomsData = this.ballrooms;
     const colSpan = 5 + (ballroomsCount > 1 ? 1 : 0) + (this.scores?.length || 0);
 
@@ -331,27 +330,9 @@ export class HeatTable extends HTMLElement {
         lastCat = subcat;
         lastAssign = assign;
 
-        // Determine names order
-        let firstName, secondName;
-        if (columnOrder === 1) {
-          firstName = subject.lead.display_name || subject.lead.name;
-          secondName = subject.follow.display_name || subject.follow.name;
-        } else if (subject.student_role) {
-          // Category scoring with amateur couples - show student being evaluated first
-          if (subject.student_role === 'lead') {
-            firstName = subject.lead.display_name || subject.lead.name;
-            secondName = subject.follow.display_name || subject.follow.name;
-          } else {
-            firstName = subject.follow.display_name || subject.follow.name;
-            secondName = subject.lead.display_name || subject.lead.name;
-          }
-        } else if (subject.lead.type === 'Student') {
-          firstName = subject.lead.display_name || subject.lead.name;
-          secondName = subject.follow.display_name || subject.follow.name;
-        } else {
-          firstName = subject.follow.display_name || subject.follow.name;
-          secondName = subject.lead.display_name || subject.lead.name;
-        }
+        // Use pre-computed names from server
+        const firstName = subject.first_name;
+        const secondName = subject.second_name;
 
         // Category display
         let categoryDisplay = subcat;
