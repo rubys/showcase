@@ -81,48 +81,14 @@ export class HeatTable extends HTMLElement {
     return this.eventData.heat_range_cat === 1;
   }
 
-  get trackAges() {
-    return this.eventData.track_ages;
-  }
-
   /**
    * Get subject category display
-   * Matches Entry#subject_category logic from app/models/entry.rb
+   * Uses pre-computed value from server to avoid replicating Ruby logic
    */
-  getSubjectCategory(entry) {
-    if (entry.pro) return 'Pro';
-
-    const ageCategory = entry.age?.category || '';
-    const levelInitials = entry.level?.initials || '';
-    const followIsPro = entry.follow?.type === 'Professional';
-    const leadIsPro = entry.lead?.type === 'Professional';
-    const proAm = this.eventData.pro_am;
-
-    let prefix;
-    if (proAm === 'G') {
-      if (followIsPro) {
-        prefix = 'G';
-      } else if (leadIsPro) {
-        prefix = 'L';
-      } else {
-        prefix = 'AC';
-      }
-    } else {
-      if (followIsPro) {
-        prefix = 'L';
-      } else if (leadIsPro) {
-        prefix = 'F';
-      } else {
-        prefix = 'AC';
-      }
-    }
-
-    // Build the category string
-    if (this.trackAges && ageCategory) {
-      return `${prefix} - ${ageCategory} - ${levelInitials}`;
-    }
-
-    return `${prefix} - ${levelInitials}`;
+  getSubjectCategory(subject) {
+    if (subject.pro) return 'Pro';
+    // Use pre-computed subject_lvlcat from server (includes level initials)
+    return subject.subject_lvlcat || '';
   }
 
   /**

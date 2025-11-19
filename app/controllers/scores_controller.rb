@@ -243,11 +243,15 @@ class ScoresController < ApplicationController
 
             {
               id: heat.id,
+              number: heat.number,
               dance_id: heat.dance_id,
               entry_id: heat.entry_id,
               pro: entry.pro,
               student_id: category_scoring_enabled ? student_id : nil,  # Add for amateur couples
               student_role: category_scoring_enabled ? student_role : nil,  # Track which student
+              # Pre-computed display values to avoid replicating Ruby logic in JavaScript
+              subject_category: entry.subject_category(event.track_ages),
+              subject_lvlcat: entry.subject_lvlcat(event.track_ages),
               lead: {
                 id: entry.lead.id,
                 name: entry.lead.name,

@@ -57,27 +57,21 @@ export class HeatCards extends HTMLElement {
     return this.eventData.backnums;
   }
 
-  get trackAges() {
-    return this.eventData.track_ages;
-  }
-
   get combineOpenAndClosed() {
     return this.eventData.heat_range_cat === 1;
   }
 
   /**
    * Get subject category display
+   * Uses pre-computed value from server to avoid replicating Ruby logic
    */
-  getSubjectCategory(entry) {
-    if (!entry.age) return '';
-
-    const ageCategory = entry.age?.category || '';
-
-    if (this.trackAges && ageCategory) {
-      return ageCategory;
-    }
-
-    return '';
+  getSubjectCategory(subject) {
+    // Use pre-computed subject_category which has just the prefix and age (e.g., "L - Adult")
+    // We only want the age part for cards display
+    const category = subject.subject_category || '';
+    // Extract just the age part after the prefix
+    const match = category.match(/- ([^-]+)$/);
+    return match ? match[1].trim() : '';
   }
 
   /**

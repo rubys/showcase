@@ -51,24 +51,17 @@ export class HeatRank extends HTMLElement {
     return this.eventData.heat_range_cat === 1;
   }
 
-  get trackAges() {
-    return this.eventData.track_ages;
-  }
-
   /**
    * Get subject category display
+   * Uses pre-computed value from server to avoid replicating Ruby logic
    */
-  getSubjectCategory(entry) {
-    if (entry.pro) return 'Pro';
-
-    const ageCategory = entry.age?.category || '';
-    const levelInitials = entry.level?.initials || '';
-
-    if (this.trackAges && ageCategory) {
-      return `${ageCategory} - ${levelInitials}`;
-    }
-
-    return levelInitials;
+  getSubjectCategory(subject) {
+    if (subject.pro) return 'Pro';
+    // Use pre-computed subject_lvlcat, but strip the prefix (G/L/F/AC - )
+    // since heat-rank shows just age-level without the pro-am prefix
+    const lvlcat = subject.subject_lvlcat || '';
+    // Remove prefix like "L - " or "AC - " from start
+    return lvlcat.replace(/^[A-Z]+ - /, '');
   }
 
   /**
