@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 # Helper module to load showcases from the appropriate location based on environment
-# Provides safe fallbacks during migration from git-tracked to generated showcases.yml
 module ShowcasesLoader
   # Get the root directory - works both inside and outside Rails
   def self.root_path
@@ -20,14 +19,8 @@ module ShowcasesLoader
     file = File.join(dbpath, 'showcases.yml')
     YAML.load_file(file)
   rescue Errno::ENOENT
-    # Fallback to git-tracked file during migration
-    fallback_file = File.join(root_path, 'config/tenant/showcases.yml')
-    if File.exist?(fallback_file)
-      YAML.load_file(fallback_file)
-    else
-      # For tests or initial setup
-      {}
-    end
+    # For tests or initial setup when no showcases.yml exists yet
+    {}
   end
 
   # Load deployed state for comparison (admin machine only)
@@ -35,7 +28,7 @@ module ShowcasesLoader
     file = File.join(root_path, 'db/deployed-showcases.yml')
     YAML.load_file(file)
   rescue Errno::ENOENT
-    # Fallback to git-tracked file if no deployed snapshot exists yet
-    YAML.load_file(File.join(root_path, 'config/tenant/showcases.yml'))
+    # For initial setup: use current state as baseline
+    load
   end
 end

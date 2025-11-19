@@ -51,11 +51,12 @@ cd Showcase
 bundle install
 rm config/credentials.yml.enc
 bin/rails credentials:edit
-$EDITOR config/tenant/showcases.yml
 docker compose build
 docker compose up
 docker compose exec web bin/bootstrap
 ```
+
+Note: Showcase configuration is managed via the admin interface at `/admin`, which stores data in `db/index.sqlite3` and generates `db/showcases.yml` automatically.
 
 Visit http://localhost:9999/showcase/ to see the list of events.
 

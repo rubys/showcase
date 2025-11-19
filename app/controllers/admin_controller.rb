@@ -31,7 +31,7 @@ class AdminController < ApplicationController
       return
     end
 
-    showcases = YAML.load_file('config/tenant/showcases.yml')
+    showcases = ShowcasesLoader.load
 
     cities = Set.new
     @events = 0
@@ -166,11 +166,7 @@ class AdminController < ApplicationController
       @move[site] = {from: was[:region], to: info[:region]}
     end
 
-    # Determine which file to use for previous state
-    previous_file = File.exist?('db/deployed-showcases.yml') ?
-      'db/deployed-showcases.yml' : 'config/tenant/showcases.yml'
-
-    previous = parse_showcases(previous_file)
+    previous = parse_showcases('db/deployed-showcases.yml')
     showcases = parse_showcases('db/showcases.yml')
     @showcases_modified = showcases - previous
     @showcases_removed = previous - showcases - @showcases_modified

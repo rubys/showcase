@@ -74,10 +74,6 @@ if File.exist? 'db/showcases.yml'
   if !File.exist?(deployed_file) || new_showcases != IO.read(deployed_file)
     IO.write(deployed_file, new_showcases)
   end
-  # Also update git-tracked file for now (will be removed in Phase 3)
-  if new_showcases != IO.read('config/tenant/showcases.yml')
-    IO.write('config/tenant/showcases.yml', new_showcases)
-  end
 end
 
 # deploy changes

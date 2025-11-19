@@ -1,6 +1,6 @@
 # Remove config/tenant/showcases.yml from Git
 
-## Status: 📋 Planning
+## Status: ✅ Phase 3 Complete
 
 ## Overview
 
@@ -290,7 +290,24 @@ All application code now uses `ShowcasesLoader.load` instead of directly reading
    - Remove bootstrap code that copies from config/tenant
    - Assume `db/deployed-showcases.yml` always exists
 
-**Status:** ✅ Ready to proceed (all blockers resolved - nginx-config.rb verified obsolete)
+**Status:** ✅ Complete
+
+**Completed (2025-11-19):**
+- Removed fallback code in ShowcasesLoader.load and load_deployed
+- Updated admin_controller#index to use ShowcasesLoader.load
+- Updated admin_controller#apply to only use db/deployed-showcases.yml
+- Updated bin/apply-changes.rb to stop writing to git-tracked file
+- Updated script/nav_initialization.rb bootstrap to use generated showcases.yml
+- Removed obsolete files from git:
+  - config/tenant/showcases.yml
+  - config/tenant/nginx-config.rb
+  - bin/passenger-hook
+  - bin/deploy
+  - config/deploy.fly
+  - config/build.fly
+  - config/dockerfile.yml
+- Updated README.md documentation
+- All tests pass (1129 runs, 5346 assertions, 0 failures)
 
 ### Phase 4: Admin Server Map Generation and S3 Upload
 
