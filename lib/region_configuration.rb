@@ -2,6 +2,7 @@
 
 require 'sqlite3'
 require 'json'
+require_relative 'showcases_loader'
 
 # Shared module for region configuration logic used by:
 # - script/reconfig
@@ -13,13 +14,9 @@ require 'json'
 module RegionConfiguration
   extend self
 
-  # Get git root path
+  # Delegate path resolution to ShowcasesLoader for consistency
   def git_root
-    if defined?(Rails)
-      Rails.root.to_s
-    else
-      File.realpath(File.expand_path('../../', __FILE__))
-    end
+    ShowcasesLoader.root_path
   end
 
   # File path helper methods (not constants since Rails may not be loaded)
@@ -39,8 +36,7 @@ module RegionConfiguration
       Rails.configuration.database_configuration[Rails.env]['database']
     else
       # Production/development: use index.sqlite3
-      dbpath = ENV.fetch('RAILS_DB_VOLUME') { File.join(git_root, 'db') }
-      File.join(dbpath, 'index.sqlite3')
+      File.join(ShowcasesLoader.db_path, 'index.sqlite3')
     end
   end
 

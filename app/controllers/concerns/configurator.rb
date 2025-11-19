@@ -2,9 +2,6 @@
 require 'set'
 
 module Configurator
-  # Path constants
-  DBPATH = ENV['RAILS_DB_VOLUME'] || Rails.root.join('db').to_s
-
   # Timeout and memory constants
   IDLE_TIMEOUT = '15m'
   STARTUP_TIMEOUT = '5s'
@@ -13,13 +10,13 @@ module Configurator
 
   def generate_map
     map_data = RegionConfiguration.generate_map_data
-    file = File.join(DBPATH, 'map.yml')
+    file = File.join(ShowcasesLoader.db_path, 'map.yml')
     RegionConfiguration.write_yaml_if_changed(file, map_data)
   end
 
   def generate_showcases
     showcases_data = RegionConfiguration.generate_showcases_data
-    file = File.join(DBPATH, 'showcases.yml')
+    file = File.join(ShowcasesLoader.db_path, 'showcases.yml')
     RegionConfiguration.write_yaml_if_changed(file, showcases_data)
   end
 
@@ -271,7 +268,7 @@ module Configurator
   end
 
   def build_auth_config
-    htpasswd_path = File.join(DBPATH, 'htpasswd')
+    htpasswd_path = File.join(ShowcasesLoader.db_path, 'htpasswd')
     root = determine_root_path
 
     # Only return auth config if htpasswd file exists

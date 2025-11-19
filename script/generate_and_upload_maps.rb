@@ -14,10 +14,15 @@ require 'yaml'
 require 'fileutils'
 require 'open3'
 
-# Load configuration
-git_path = File.realpath(File.expand_path('..', __dir__))
+# Load ShowcasesLoader for centralized path resolution
+require_relative '../lib/showcases_loader'
+
+# Set volume path if available
 ENV["RAILS_DB_VOLUME"] = "/data/db" if Dir.exist? "/data/db"
-dbpath = ENV.fetch('RAILS_DB_VOLUME') { "#{git_path}/db" }
+
+# Use centralized path helpers
+git_path = ShowcasesLoader.root_path
+dbpath = ShowcasesLoader.db_path
 index_db = File.join(dbpath, 'index.sqlite3')
 
 puts "Generating and uploading map files..."

@@ -8,6 +8,7 @@ begin
   require 'bundler/setup'
   require 'fileutils'
   require_relative '../lib/htpasswd_updater'
+  require_relative '../lib/showcases_loader'
 
 # Environment detection
 def fly_io?
@@ -32,10 +33,10 @@ if fly_io?
   end
 end
 
-# Setup directories
-git_path = File.realpath(File.expand_path('..', __dir__))
+# Setup directories using centralized path helpers
 ENV["RAILS_DB_VOLUME"] = "/data/db" if Dir.exist? "/data/db"
-dbpath = ENV.fetch('RAILS_DB_VOLUME') { "#{git_path}/db" }
+git_path = ShowcasesLoader.root_path
+dbpath = ShowcasesLoader.db_path
 FileUtils.mkdir_p dbpath
 # Ensure proper ownership for both Fly.io and Kamal deployments
 system "chown rails:rails #{dbpath}" if fly_io? || kamal?

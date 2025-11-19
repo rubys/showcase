@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 # Helper module to load showcases from the appropriate location based on environment
+# Also provides centralized path resolution for database and git root directories
 module ShowcasesLoader
-  # Get the root directory - works both inside and outside Rails
+  # Get the git root directory - works both inside and outside Rails
   def self.root_path
     if defined?(Rails)
       Rails.root.to_s
@@ -11,12 +12,18 @@ module ShowcasesLoader
     end
   end
 
+  # Get the database directory path
+  # Production: /data/db (via RAILS_DB_VOLUME)
+  # Development/Admin: {root}/db
+  def self.db_path
+    ENV['RAILS_DB_VOLUME'] || File.join(root_path, 'db')
+  end
+
   # Load showcases from the appropriate location based on environment
   # Admin machine: db/showcases.yml
   # Production: /data/db/showcases.yml (via RAILS_DB_VOLUME)
   def self.load
-    dbpath = ENV['RAILS_DB_VOLUME'] || File.join(root_path, 'db')
-    file = File.join(dbpath, 'showcases.yml')
+    file = File.join(db_path, 'showcases.yml')
     YAML.load_file(file)
   rescue Errno::ENOENT
     # For tests or initial setup when no showcases.yml exists yet
@@ -30,5 +37,16 @@ module ShowcasesLoader
   rescue Errno::ENOENT
     # For initial setup: use current state as baseline
     load
+  end
+
+  # Flatten showcases by year into a single hash of all studios
+  # Useful for comparison operations that don't need year grouping
+  def self.all_showcases
+    load.values.reduce({}) { |a, b| a.merge(b) }
+  end
+
+  # Flatten deployed showcases by year into a single hash
+  def self.deployed_showcases
+    load_deployed.values.reduce({}) { |a, b| a.merge(b) }
   end
 end

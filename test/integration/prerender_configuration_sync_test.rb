@@ -9,7 +9,7 @@ require "test_helper"
 class PrerenderConfigurationSyncTest < ActiveSupport::TestCase
   include Configurator
 
-  # Ensure tests run in serial to avoid conflicts with shared Configurator::DBPATH
+  # Ensure tests run in serial to avoid conflicts with RAILS_DB_VOLUME env var
   parallelize(workers: 1)
 
   setup do
@@ -23,17 +23,21 @@ class PrerenderConfigurationSyncTest < ActiveSupport::TestCase
     # Using bcrypt format: $2y$05$... is bcrypt hash for "test"
     File.write(@test_htpasswd_path, "test:$2y$05$CCCCCCCCCCCCCCCCCCCCC.eJ8bJ/qJW/m0l2mZz0V3lN5VK7xQKuq\n")
 
-    # Mock Configurator::DBPATH to point to tmp directory so build_auth_config finds our test htpasswd
-    @original_dbpath = Configurator::DBPATH
-    silence_warnings { Configurator.const_set(:DBPATH, Rails.root.join('tmp').to_s) }
+    # Set RAILS_DB_VOLUME to tmp directory so ShowcasesLoader.db_path finds our test htpasswd
+    @original_db_volume = ENV['RAILS_DB_VOLUME']
+    ENV['RAILS_DB_VOLUME'] = Rails.root.join('tmp').to_s
   end
 
   teardown do
     # Clean up mock htpasswd file
     File.delete(@test_htpasswd_path) if File.exist?(@test_htpasswd_path)
 
-    # Restore original Configurator::DBPATH
-    silence_warnings { Configurator.const_set(:DBPATH, @original_dbpath) }
+    # Restore original RAILS_DB_VOLUME
+    if @original_db_volume
+      ENV['RAILS_DB_VOLUME'] = @original_db_volume
+    else
+      ENV.delete('RAILS_DB_VOLUME')
+    end
   end
 
   # ===== STUDIO INDEX PAGE TESTS =====

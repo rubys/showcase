@@ -154,9 +154,9 @@ class AdminController < ApplicationController
   def apply
     generate_showcases
 
-    # Use helper methods for safe loading
-    before = ShowcasesLoader.load_deployed.values.reduce {|a, b| a.merge(b)}
-    after = ShowcasesLoader.load.values.reduce {|a, b| a.merge(b)}
+    # Compare deployed vs current showcases
+    before = ShowcasesLoader.deployed_showcases
+    after = ShowcasesLoader.all_showcases
 
     @move = {}
     after.to_a.sort.each do |site, info|

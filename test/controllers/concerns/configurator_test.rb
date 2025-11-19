@@ -185,9 +185,9 @@ class ConfiguratorTest < ActiveSupport::TestCase
   
   # ===== INTEGRATION TESTS =====
   
-  test "dbpath constant is defined" do
-    assert_not_nil Configurator::DBPATH
-    assert Configurator::DBPATH.is_a?(String)
+  test "db_path method returns valid path" do
+    assert_not_nil ShowcasesLoader.db_path
+    assert ShowcasesLoader.db_path.is_a?(String)
   end
   
   test "configurator uses fixtures in test environment" do
@@ -239,9 +239,8 @@ class ConfiguratorTest < ActiveSupport::TestCase
   
   # ===== HELPER METHOD TESTS =====
   
-  test "constants are properly defined" do
-    assert defined?(Configurator::DBPATH)
-    assert Configurator::DBPATH.include?('db')
+  test "db_path includes db directory" do
+    assert ShowcasesLoader.db_path.include?('db')
   end
   
   # ===== ERROR HANDLING TESTS =====
