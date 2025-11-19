@@ -421,8 +421,14 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
     event = Event.current
     event.update!(date: '2025-11-08', heat_length: 75, include_times: true)
 
-    # Clear existing heats and categories
+    # Clear existing heats, extensions, and categories
     Heat.destroy_all
+    CatExtension.destroy_all
+    # Clear dance category references before destroying categories
+    Dance.update_all(
+      open_category_id: nil, closed_category_id: nil, solo_category_id: nil, multi_category_id: nil,
+      pro_open_category_id: nil, pro_closed_category_id: nil, pro_solo_category_id: nil, pro_multi_category_id: nil
+    )
     Category.destroy_all
 
     # Create categories: WARM-UP (20 min), SMOOTH (with heats), BREAK (15 min), RHYTHM (with heats)
