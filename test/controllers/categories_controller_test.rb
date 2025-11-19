@@ -417,11 +417,7 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
   # ===== BREAK AND WARM-UP DURATION TESTS =====
 
   test "categories with duration but no heats should display times" do
-    # Set up event with date and heat_length for time calculations
-    event = Event.current
-    event.update!(date: '2025-11-08', heat_length: 75, include_times: true)
-
-    # Clear existing heats, extensions, and categories
+    # Clear existing heats, extensions, and categories first
     Heat.destroy_all
     CatExtension.destroy_all
     # Clear dance category references before destroying categories
@@ -430,6 +426,11 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
       pro_open_category_id: nil, pro_closed_category_id: nil, pro_solo_category_id: nil, pro_multi_category_id: nil
     )
     Category.destroy_all
+
+    # Set up event with date and heat_length for time calculations
+    # Do this after clearing categories to avoid any caching issues
+    event = Event.first || Event.create!
+    event.update!(date: '2025-11-08', heat_length: 75, include_times: true)
 
     # Create categories: WARM-UP (20 min), SMOOTH (with heats), BREAK (15 min), RHYTHM (with heats)
     warmup = Category.create!(name: 'WARM-UP', order: 1, time: '10:00', duration: 20)
