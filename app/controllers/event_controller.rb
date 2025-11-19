@@ -612,7 +612,7 @@ class EventController < ApplicationController
     return redirect_to root_path(db: params[:db]) if params[:db]
 
     @list = params[:list]
-    @list ||= 'regions' if ENV['FLY_REGION']
+    @list ||= 'regions' if ENV['FLY_REGION'] || action_name == 'regions'
     @list ||= 'studios'
 
     showcases = ShowcasesLoader.load

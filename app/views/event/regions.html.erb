@@ -38,13 +38,15 @@ can click on it to see helpful hints.</li>
 <% if @list == 'regions' %>
 <div id="region-list" class="w-full">
 <table class="table-auto mt-8 w-full">
+<tbody>
 <% @regions.to_a.sort.each do |region, cities| %>
   <tr class="w-full">
-    <td><img src="https://fly.io/phx/ui/images/<%= region %>.svg" width="20">
-    <td><span class="w-14 text-2xl inline-block ml-4 cursor-pointer"><%= link_to region, region_path(region), title: @map['regions'][region]["name"] %></span>
-    <td><span class="text-slate-500"><%= cities.map {|city| link_to city, studio_events_path(@cities[city]), class: "cursor-pointer"}.join(", ").html_safe %></span>
+    <td><img src="https://fly.io/phx/ui/images/<%= region %>.svg" width="20"></td>
+    <td><span class="w-14 text-2xl inline-block ml-4 cursor-pointer"><%= link_to region, region_path(region), title: @map['regions'][region]["name"] %></span></td>
+    <td><span class="text-slate-500"><%= cities.map {|city| link_to city, studio_events_path(@cities[city]), class: "cursor-pointer"}.join(", ").html_safe %></span></td>
   </tr>
 <% end %>
+</tbody>
 </table>
 </div>
 <% else -%>

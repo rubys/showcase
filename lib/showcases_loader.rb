@@ -22,12 +22,14 @@ module ShowcasesLoader
   # Load showcases from the appropriate location based on environment
   # Admin machine: db/showcases.yml
   # Production: /data/db/showcases.yml (via RAILS_DB_VOLUME)
+  # Development: falls back to deployed-showcases.yml if showcases.yml doesn't exist
   def self.load
     file = File.join(db_path, 'showcases.yml')
     YAML.load_file(file)
   rescue Errno::ENOENT
-    # For tests or initial setup when no showcases.yml exists yet
-    {}
+    # Fall back to deployed-showcases.yml for development
+    # Returns {} if that file also doesn't exist
+    load_deployed
   end
 
   # Load deployed state for comparison (admin machine only)
