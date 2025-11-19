@@ -174,31 +174,11 @@ for (let files of allfiles.maps) {
 
   let svg = paths.join("\n")
 
-  // Generate studio circles for this map
+  // Generate circles - regions first (larger, yellow), then studios (smaller, blue)
+  // This way studios overlay regions when they're in the same location
   let circles = []
-  for (let [token, point] of Object.entries(map.studios || {})) {
-    if (!point.lat || !point.lon) continue
-    if (point.lat < files.min_lat || point.lat > files.max_lat) continue
-    if (point.lon < files.min_lon || point.lon > files.max_lon) continue
 
-    let dot = projection([point.lon, point.lat])
-    if (dot) {
-      let [x, y] = dot.map(n => Math.round(n))
-      // Store coordinates in map data for reference
-      point.map = files.projection
-      point.x = x
-      point.y = y
-      delete point.transform
-
-      // Generate circle with ERB link
-      const name = point.name || token
-      circles.push(`<a xlink:title="${name}" href="<%= studio_path('${token}') %>">
-  <circle cx="${x}" cy="${y}" r="8" fill="#000080" stroke="#ffffff" style="cursor: pointer;" stroke-width="1"/>
-</a>`)
-    }
-  }
-
-  // Generate region circles for this map
+  // Generate region circles for this map (rendered first, underneath)
   for (let [token, point] of Object.entries(map.regions || {})) {
     if (!point.lat || !point.lon) continue
     if (point.lat < files.min_lat || point.lat > files.max_lat) continue
@@ -220,6 +200,29 @@ for (let files of allfiles.maps) {
   <circle cx="${x}" cy="${y}" r="16" fill="#ffd700" stroke="#ffffff" style="cursor: pointer;" stroke-width="1" opacity="0.8"/>
 </a>
 <% end %>`)
+    }
+  }
+
+  // Generate studio circles for this map (rendered last, on top)
+  for (let [token, point] of Object.entries(map.studios || {})) {
+    if (!point.lat || !point.lon) continue
+    if (point.lat < files.min_lat || point.lat > files.max_lat) continue
+    if (point.lon < files.min_lon || point.lon > files.max_lon) continue
+
+    let dot = projection([point.lon, point.lat])
+    if (dot) {
+      let [x, y] = dot.map(n => Math.round(n))
+      // Store coordinates in map data for reference
+      point.map = files.projection
+      point.x = x
+      point.y = y
+      delete point.transform
+
+      // Generate circle with ERB link
+      const name = point.name || token
+      circles.push(`<a xlink:title="${name}" href="<%= studio_path('${token}') %>">
+  <circle cx="${x}" cy="${y}" r="8" fill="#000080" stroke="#ffffff" style="cursor: pointer;" stroke-width="1"/>
+</a>`)
     }
   }
 
