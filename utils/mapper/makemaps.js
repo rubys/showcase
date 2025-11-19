@@ -173,18 +173,64 @@ for (let files of allfiles.maps) {
   }
 
   let svg = paths.join("\n")
-  if (!fs.existsSync(files.map_svg) || fs.readFileSync(files.map_svg, "utf-8") != svg) {
-    fs.writeFileSync(files.map_svg, svg)
-  }
 
-  for (let point of Object.values(points)) {
+  // Generate studio circles for this map
+  let circles = []
+  for (let [token, point] of Object.entries(map.studios || {})) {
     if (!point.lat || !point.lon) continue
     if (point.lat < files.min_lat || point.lat > files.max_lat) continue
     if (point.lon < files.min_lon || point.lon > files.max_lon) continue
-    point.map = files.projection
+
     let dot = projection([point.lon, point.lat])
-    if (dot) [point.x, point.y] = dot
-    delete point.transform
+    if (dot) {
+      let [x, y] = dot.map(n => Math.round(n))
+      // Store coordinates in map data for reference
+      point.map = files.projection
+      point.x = x
+      point.y = y
+      delete point.transform
+
+      // Generate circle with ERB link
+      const name = point.name || token
+      circles.push(`<a xlink:title="${name}" href="<%= studio_path('${token}') %>">
+  <circle cx="${x}" cy="${y}" r="8" fill="#000080" stroke="#ffffff" style="cursor: pointer;" stroke-width="1"/>
+</a>`)
+    }
+  }
+
+  // Generate region circles for this map
+  for (let [token, point] of Object.entries(map.regions || {})) {
+    if (!point.lat || !point.lon) continue
+    if (point.lat < files.min_lat || point.lat > files.max_lat) continue
+    if (point.lon < files.min_lon || point.lon > files.max_lon) continue
+
+    let dot = projection([point.lon, point.lat])
+    if (dot) {
+      let [x, y] = dot.map(n => Math.round(n))
+      // Store coordinates in map data for reference
+      point.map = files.projection
+      point.x = x
+      point.y = y
+      delete point.transform
+
+      // Generate region circle with ERB link (only show if region is deployed)
+      const name = point.name || token
+      circles.push(`<% if @regions && @regions['${token}'] %>
+<a xlink:title="${name}" href="<%= region_path('${token}') %>">
+  <circle cx="${x}" cy="${y}" r="16" fill="#ffd700" stroke="#ffffff" style="cursor: pointer;" stroke-width="1" opacity="0.8"/>
+</a>
+<% end %>`)
+    }
+  }
+
+  // Combine paths and circles
+  let fullSvg = svg
+  if (circles.length > 0) {
+    fullSvg += "\n" + circles.join("\n")
+  }
+
+  if (!fs.existsSync(files.map_svg) || fs.readFileSync(files.map_svg, "utf-8") != fullSvg) {
+    fs.writeFileSync(files.map_svg, fullSvg)
   }
 }
 

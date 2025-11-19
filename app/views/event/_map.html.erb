@@ -1,7 +1,8 @@
-<% 
+<%
+  # Determine which map to show based on region
   shown = 'us'
-  if ENV['FLY_REGION']
-    shown = @map['regions'][ENV['FLY_REGION']]['map']
+  if ENV['FLY_REGION'] && @map && @map['regions'] && @map['regions'][ENV['FLY_REGION']]
+    shown = @map['regions'][ENV['FLY_REGION']]['map'] || 'us'
   end
 %>
 <div style="width: 100%">
@@ -9,26 +10,6 @@
 <% %w{us eu au jp}.each do |map| %>
 <svg version="1.1" width="100%" xmlns="http://www.w3.org/2000/svg" style="overflow: hidden; position: relative; left: -0.5px; display: <%= map == shown ? 'block' : 'none' %>" viewBox="<%= map == 'us' ? "50 -30 900 530" : "50 0 600 500" %>" preserveAspectRatio="xMinYMin" xmlns:xlink="http://www.w3.org/1999/xlink">
    <%= render "#{map}map" %>
-   <% @map['regions'].each do |token, region| -%>
-   <% 
-     next unless ENV['FLY_REGION']
-     next unless @regions[token]
-     point = @map['regions'][token]
-     next unless point and point['x'] and point['map'] == map
-   %>
-   <a xlink:title="<%= region['name'] %>" href="<%= region_path(token) %>">
-     <circle cx="<%= point['x'] %>" cy="<%= point['y'] %>" r="16" fill="#ffd700" stroke="#ffffff" style="cursor: pointer;" stroke-width="1" opacity="0.8"></rect>
-   </a>
-   <% end %>
-   <% @cities.sort.each do |name, token| -%>
-   <% 
-     point = @map['studios'][token]
-     next unless point and point['x'] and point['map'] == map
-   %>
-   <a xlink:title="<%= name %>" href="<%= studio_path(token) %>">
-     <circle cx="<%= point['x'] %>" cy="<%= point['y'] %>" r="8" fill="#000080" stroke="#ffffff" style="cursor: pointer;" stroke-width="1" %>"/>
-   </a>
-   <% end %>
 </svg>
 <% end %>
 
