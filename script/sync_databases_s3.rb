@@ -166,13 +166,17 @@ begin
     puts
   end
 
-# Initialize S3 client
+# Initialize S3 client with timeouts to prevent hanging
 s3_client = Aws::S3::Client.new(
   region: ENV['AWS_REGION'] || 'auto',
   access_key_id: ENV['AWS_ACCESS_KEY_ID'],
   secret_access_key: ENV['AWS_SECRET_ACCESS_KEY'],
   endpoint: ENV['AWS_ENDPOINT_URL_S3'],
-  force_path_style: true
+  force_path_style: true,
+  http_open_timeout: 15,      # timeout for opening connection
+  http_read_timeout: 60,      # timeout for reading response
+  http_idle_timeout: 5,       # timeout for idle connections in pool
+  http_continue_timeout: 1    # timeout for 100-continue response on uploads
 )
 
 # Extract bucket name from endpoint or use default
