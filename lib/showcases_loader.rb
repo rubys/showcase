@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'yaml'
+
 # Helper module to load showcases from the appropriate location based on environment
 # Also provides centralized path resolution for database and git root directories
 module ShowcasesLoader
