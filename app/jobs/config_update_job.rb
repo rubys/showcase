@@ -21,6 +21,10 @@ class ConfigUpdateJob < ApplicationJob
     cmd_args = [RbConfig.ruby, script_path]
     cmd_args += ['--target', target.to_s] if target != 'fly'
 
+    # Disconnect database connections before spawning subprocess
+    # This prevents inherited connections from causing hangs in child processes
+    ActiveRecord::Base.connection_pool.disconnect!
+
     # Stream the output and parse it for progress
     Open3.popen3(*cmd_args) do |stdin, stdout, stderr, wait_thr|
       stdin.close

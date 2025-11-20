@@ -9,9 +9,11 @@ require 'open3'
 require 'json'
 require 'yaml'
 
-# Set up Rails environment for model/lib access
+# Set up Rails environment variable (but don't load Rails)
 ENV['RAILS_ENV'] ||= 'production'
-require_relative '../config/environment'
+
+# Use manual path resolution - no Rails dependency
+SCRIPT_ROOT = File.realpath(File.expand_path('..', __dir__))
 
 # CGI response helpers
 def cgi_header(content_type = 'text/plain')
@@ -57,7 +59,7 @@ begin
   log "Operation 1/4: Fetching index database from S3"
   log "-" * 70
 
-  script_path = Rails.root.join('script', 'sync_databases_s3.rb').to_s
+  script_path = File.join(SCRIPT_ROOT, 'script', 'sync_databases_s3.rb')
   unless run_command(
     "Database sync",
     'ruby', script_path, '--index-only'
@@ -75,8 +77,8 @@ begin
   log "-" * 70
 
   begin
-    require Rails.root.join('lib/map_downloader').to_s
-    result = MapDownloader.download(rails_root: Rails.root.to_s)
+    require File.join(SCRIPT_ROOT, 'lib/map_downloader')
+    result = MapDownloader.download(rails_root: SCRIPT_ROOT)
 
     if result[:downloaded].any?
       log "SUCCESS: Downloaded #{result[:downloaded].length} map(s): #{result[:downloaded].join(', ')}"
@@ -95,7 +97,7 @@ begin
   log "-" * 70
 
   begin
-    require Rails.root.join('lib/htpasswd_updater').to_s
+    require File.join(SCRIPT_ROOT, 'lib/htpasswd_updater')
     HtpasswdUpdater.update
     log "SUCCESS: htpasswd updated"
   rescue => e
@@ -114,9 +116,9 @@ begin
   log "-" * 70
 
   begin
-    require Rails.root.join('lib/region_configuration').to_s
+    require File.join(SCRIPT_ROOT, 'lib/region_configuration')
 
-    dbpath = ENV.fetch('RAILS_DB_VOLUME') { Rails.root.join('db').to_s }
+    dbpath = ENV.fetch('RAILS_DB_VOLUME') { File.join(SCRIPT_ROOT, 'db') }
 
     # Generate showcases.yml
     showcases_data = RegionConfiguration.generate_showcases_data
@@ -140,8 +142,8 @@ begin
   log "-" * 70
 
   begin
-    configurator = AdminController.new
-    configurator.generate_navigator_config
+    require File.join(SCRIPT_ROOT, 'lib/navigator_config_generator')
+    NavigatorConfigGenerator.generate_navigator_config
     log "SUCCESS: Navigator configuration generated"
   rescue => e
     log "ERROR: Navigator config generation failed: #{e.message}"
