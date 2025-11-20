@@ -37,8 +37,9 @@ module ShowcasesLoader
     file = File.join(root_path, 'db/deployed-showcases.yml')
     YAML.load_file(file)
   rescue Errno::ENOENT
-    # For initial setup: use current state as baseline
-    load
+    # Fall back to current state if showcases.yml exists
+    # Return empty hash otherwise to avoid infinite recursion
+    File.exist?(File.join(db_path, 'showcases.yml')) ? load : {}
   end
 
   # Flatten showcases by year into a single hash of all studios
