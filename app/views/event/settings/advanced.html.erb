@@ -39,7 +39,7 @@ and heats that you have entered so far.</span>
 <%= link_to 'Levels', levels_event_index_path, class: 'btn-grey' %>
 <%= link_to 'Dances', dances_event_index_path, class: 'btn-grey' %>
 
-<% if %w(+).include? @event.open_scoring %>
+<% if %w(+ & @).include? @event.open_scoring %>
   <%= link_to 'Feedback', feedbacks_path, class: 'btn-grey' %>
 <% end %>
 
