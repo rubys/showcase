@@ -1,57 +1,54 @@
+<% user = @user || User.find_by(userid: @authuser) %>
 <div class="mx-auto md:w-2/3 w-full"
      data-controller="config-update"
-     <% if @show_progress %>
-     data-config-update-user-id-value="<%= @user&.id %>"
+     data-config-update-user-id-value="<%= user&.id %>"
      data-config-update-database-value="<%= ENV['RAILS_APP_DB'] %>"
-     data-config-update-stream-value="config_update_<%= ENV['RAILS_APP_DB'] %>_<%= @user&.id %>"
-     data-config-update-redirect-url-value="<%= @user&.link.presence || Showcase.canonical_url %>"
-     <% end %>>
-  <% if @show_progress %>
-    <%= turbo_stream_from "config_update_#{ENV['RAILS_APP_DB']}_#{@user&.id}" %>
-  <% end %>
+     data-config-update-stream-value="config_update_<%= ENV['RAILS_APP_DB'] %>_<%= user&.id %>"
+     data-config-update-redirect-url-value="<%= user&.link.presence || Showcase.canonical_url %>">
+  <%= turbo_stream_from "config_update_#{ENV['RAILS_APP_DB']}_#{user&.id}" %>
 
-  <h1 class="font-bold text-4xl"><%= @show_progress ? 'Updating Password' : 'User Reset' %></h1>
+  <div id="password-form-container">
+    <h1 class="font-bold text-4xl"><%= @show_progress ? 'Updating Password' : 'User Reset' %></h1>
 
-  <% if @user %>
-    <% if @show_progress %>
-      <div class="content my-8">
-        <p class="text-gray-600">Updating configuration across all servers...</p>
-        <p class="text-gray-600 mt-2">This will take approximately one minute...</p>
-      </div>
-    <% else %>
-      <%= render "form", user: @user %>
-    <% end %>
+    <% if @user %>
+      <% if @show_progress %>
+        <div class="content my-8">
+          <p class="text-gray-600">Updating configuration across all servers...</p>
+          <p class="text-gray-600 mt-2">This will take approximately one minute...</p>
+        </div>
 
-    <!-- Progress indicator (hidden initially) -->
-    <div data-config-update-target="progress" class="hidden my-8">
-      <div class="mb-2">
-        <div class="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
-          <div data-config-update-target="progressBar"
-               class="bg-blue-500 h-full text-xs font-medium text-white text-center p-0.5 leading-5 transition-all duration-300"
-               style="width: 0%">
-            0%
+        <!-- Progress indicator (hidden initially, will be shown by controller) -->
+        <div data-config-update-target="progress" class="hidden my-8">
+          <div class="mb-2">
+            <div class="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
+              <div data-config-update-target="progressBar"
+                   class="bg-blue-500 h-full text-xs font-medium text-white text-center p-0.5 leading-5 transition-all duration-300"
+                   style="width: 0%">
+                0%
+              </div>
+            </div>
           </div>
+          <p data-config-update-target="message" class="text-sm text-gray-600">
+            Updating configuration...
+          </p>
+        </div>
+      <% else %>
+        <%= render "form", user: @user %>
+
+        <div class="mt-8 grid grid-cols-3 gap-1">
+          <input type="submit" class="btn-blue" form="user-form" value="Update User">
+          <%= link_to "Back to Index", root_path, class: "btn-grey" %>
+        </div>
+      <% end %>
+    <% else %>
+      <div role="alert" class="my-8">
+        <div class="bg-red-500 text-white font-bold rounded-t px-4 py-2">
+          Error
+        </div>
+        <div class="border border-t-0 border-red-400 rounded-b bg-red-100 px-4 py-3 text-red-700">
+          <p>Password reset request expired or not valid.</p>
         </div>
       </div>
-      <p data-config-update-target="message" class="text-sm text-gray-600">
-        Updating configuration...
-      </p>
-    </div>
-
-    <% if !@show_progress %>
-      <div class="mt-8 grid grid-cols-3 gap-1">
-        <input type="submit" class="btn-blue" form="user-form" value="Update User">
-        <%= link_to "Back to Index", root_path, class: "btn-grey" %>
-      </div>
     <% end %>
-  <% else %>
-    <div role="alert" class="my-8">
-      <div class="bg-red-500 text-white font-bold rounded-t px-4 py-2">
-        Error
-      </div>
-      <div class="border border-t-0 border-red-400 rounded-b bg-red-100 px-4 py-3 text-red-700">
-        <p>Password reset request expired or not valid.</p>
-      </div>
-    </div>
-  <% end %>
+  </div>
 </div>

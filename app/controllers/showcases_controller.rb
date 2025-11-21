@@ -156,7 +156,14 @@ class ShowcasesController < ApplicationController
 
           logger.info "[#{request.request_id}] Showcase request submitted: #{@showcase.name}. Will redirect to: #{@return_to}"
 
-          # Render new_request view which now has progress bar
+          # Return Turbo Stream or HTML based on request
+          format.turbo_stream do
+            render turbo_stream: turbo_stream.replace(
+              "showcase-form-container",
+              partial: "showcases/showcase_progress",
+              locals: { showcase: @showcase, location_key: @location_key }
+            )
+          end
           format.html { render :new_request, status: :ok }
         end
 
@@ -172,6 +179,22 @@ class ShowcasesController < ApplicationController
 
         @location_key = @showcase.location&.key if @return_to
 
+        format.turbo_stream do
+          if @return_to
+            render turbo_stream: turbo_stream.replace(
+              "showcase-form-container",
+              partial: "showcases/showcase_form_with_errors",
+              locals: { showcase: @showcase, location_key: @location_key, location: @location }
+            ), status: :unprocessable_entity
+          else
+            # For non-studio-request forms, render the standard new form
+            render turbo_stream: turbo_stream.replace(
+              "showcase-form-container",
+              partial: "showcases/form",
+              locals: { showcase: @showcase }
+            ), status: :unprocessable_entity
+          end
+        end
         format.html { render @return_to ? :new_request : :new, status: :unprocessable_content }
         format.json { render json: @showcase.errors, status: :unprocessable_content }
       end

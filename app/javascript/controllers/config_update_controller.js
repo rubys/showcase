@@ -1,18 +1,19 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = [ "progress", "message", "progressBar" ]
-  static values = { userId: Number, database: String, redirectUrl: String, stream: String }
-
-  connect() {
-    // Progress tracking is started by triggerUpdate when the user clicks the button
+  static targets = [ "progress", "message", "progressBar", "form" ]
+  static values = {
+    userId: Number,
+    database: String,
+    redirectUrl: String,
+    stream: String,
+    formId: String,
+    submitUrl: String
   }
 
-  startProgressTracking() {
-    this.progressTarget.classList.remove("hidden")
-    this.updateProgress(0, "Connecting...")
-
-    // Listen for custom JSON events from TurboCable
+  connect() {
+    // Start listening for progress updates immediately when page loads
+    // This ensures WebSocket is connected before any form submission
     this.boundHandleMessage = this.handleMessage.bind(this)
     document.addEventListener('turbo:stream-message', this.boundHandleMessage)
   }
@@ -26,6 +27,53 @@ export default class extends Controller {
     this.handleProgressUpdate(data)
   }
 
+  // Intercept form submission to use fetch + Turbo Stream
+  async submitForm(event) {
+    event.preventDefault()
+
+    const form = event.target
+    const formData = new FormData(form)
+    const submitButton = form.querySelector('[type="submit"]')
+
+    // Disable submit button
+    if (submitButton) {
+      submitButton.disabled = true
+    }
+
+    try {
+      const response = await fetch(form.action, {
+        method: form.method || 'POST',
+        headers: {
+          "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content,
+          "Accept": "text/vnd.turbo-stream.html"
+        },
+        body: formData
+      })
+
+      if (response.ok) {
+        // Process the Turbo Stream response
+        const html = await response.text()
+        Turbo.renderStreamMessage(html)
+      } else if (response.status === 422) {
+        // Validation errors - render the Turbo Stream with errors
+        const html = await response.text()
+        Turbo.renderStreamMessage(html)
+        // Re-enable button for retry
+        if (submitButton) {
+          submitButton.disabled = false
+        }
+      } else {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error)
+      alert("Failed to submit form. Please try again.")
+      if (submitButton) {
+        submitButton.disabled = false
+      }
+    }
+  }
+
   async triggerUpdate(event) {
     // Show progress indicator immediately
     this.progressTarget.classList.remove("hidden")
@@ -33,10 +81,6 @@ export default class extends Controller {
 
     // Disable button
     event.target.disabled = true
-
-    // Listen for progress updates from TurboCable
-    this.boundHandleMessage = this.handleMessage.bind(this)
-    document.addEventListener('turbo:stream-message', this.boundHandleMessage)
 
     // Trigger the ConfigUpdateJob
     try {

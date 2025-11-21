@@ -2,16 +2,14 @@
 
 <div class="mx-auto md:w-2/3 w-full"
      data-controller="config-update"
-     <% if @show_progress %>
      data-config-update-user-id-value="<%= user&.id %>"
      data-config-update-database-value="<%= ENV['RAILS_APP_DB'] %>"
      data-config-update-stream-value="config_update_<%= ENV['RAILS_APP_DB'] %>_<%= user&.id %>"
-     data-config-update-redirect-url-value="<%= @return_to %>"
-     <% end %>>
-  <% if @show_progress %>
-    <%= turbo_stream_from "config_update_#{ENV['RAILS_APP_DB']}_#{user&.id}" %>
-  <% end %>
-  <h1 class="font-bold text-4xl"><%= @show_progress ? 'Creating Showcase' : 'Create a Showcase Event' %></h1>
+     data-config-update-redirect-url-value="<%= @return_to %>">
+  <%= turbo_stream_from "config_update_#{ENV['RAILS_APP_DB']}_#{user&.id}" %>
+
+  <div id="showcase-form-container">
+    <h1 class="font-bold text-4xl"><%= @show_progress ? 'Creating Showcase' : 'Create a Showcase Event' %></h1>
 
   <% if @show_progress %>
     <div class="content my-8">
@@ -35,7 +33,7 @@
       </ul>
     </div>
 
-    <%= form_with(model: @showcase, url: studio_request_path(@location_key), class: "contents", id: 'showcase-form', data: {controller: 'name-to-token', turbo: false}) do |form| %>
+    <%= form_with(model: @showcase, url: studio_request_path(@location_key), class: "contents", id: 'showcase-form', data: {controller: 'name-to-token', turbo: false, action: 'submit->config-update#submitForm'}) do |form| %>
     <% if @showcase.errors.any? %>
       <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
         <h2><%= pluralize(@showcase.errors.count, "error") %> prohibited this showcase from being saved:</h2>
@@ -104,4 +102,5 @@
       <%= link_to "Back to studio", "/showcase/studios/#{@location_key}", class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
     </div>
   <% end %>
+  </div>
 </div>

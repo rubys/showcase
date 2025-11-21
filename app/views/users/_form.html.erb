@@ -1,4 +1,4 @@
-<% form_data_attrs = {turbo: false, controller: 'logout'} %>
+<% form_data_attrs = {turbo: false, controller: 'logout', action: (@verify ? 'submit->config-update#submitForm' : nil)} %>
 <%= form_with(model: user, url: @studios ? nil : password_verify_path(token: @user.token), method: @studios ? nil : :patch, class: "contents", id: "user-form", data: form_data_attrs) do |form| %>
   <% if user.errors.any? %>
     <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">

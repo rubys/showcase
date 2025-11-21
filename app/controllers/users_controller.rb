@@ -192,16 +192,51 @@ class UsersController < ApplicationController
         @user.token = ""
         @user.save!
 
-        # Show progress bar with real-time updates
-        @show_progress = true
-        render :reset, status: :ok
+        respond_to do |format|
+          format.turbo_stream do
+            # Return Turbo Stream that replaces form with progress UI
+            @show_progress = true
+            render turbo_stream: turbo_stream.replace(
+              "password-form-container",
+              partial: "users/password_progress",
+              locals: { user: @user }
+            )
+          end
+          format.html do
+            # Fallback for non-Turbo requests
+            @show_progress = true
+            render :reset, status: :ok
+          end
+        end
       else
-        # Validation failed - render reset view with errors
-        render :reset, status: :unprocessable_content
+        respond_to do |format|
+          format.turbo_stream do
+            # Return Turbo Stream with validation errors
+            render turbo_stream: turbo_stream.replace(
+              "password-form-container",
+              partial: "users/password_form_with_errors",
+              locals: { user: @user }
+            ), status: :unprocessable_entity
+          end
+          format.html do
+            render :reset, status: :unprocessable_content
+          end
+        end
       end
     else
       @user.errors.add(:password, "can't be blank") if params[:user] && params[:user][:password].blank?
-      render :reset, status: :unprocessable_content
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(
+            "password-form-container",
+            partial: "users/password_form_with_errors",
+            locals: { user: @user }
+          ), status: :unprocessable_entity
+        end
+        format.html do
+          render :reset, status: :unprocessable_content
+        end
+      end
     end
   end
 

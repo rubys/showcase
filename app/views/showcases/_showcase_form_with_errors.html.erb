@@ -1,0 +1,61 @@
+<h1 class="font-bold text-4xl">Create a Showcase Event</h1>
+
+<div data-controller="info-box">
+  <div class="info-button">&#x24D8;</div>
+  <ul class="info-box">
+    <li>Requests can only be made by studio owners.</li>
+    <li>Requests generally will be processed on the same day.</li>
+    <li>Contact Sam Ruby directly if you have special requirements.</li>
+  </ul>
+</div>
+
+<%= form_with(model: showcase, url: studio_request_path(location_key), class: "contents", id: 'showcase-form', data: {controller: 'name-to-token', turbo: false, action: 'submit->config-update#submitForm'}) do |form| %>
+<% if showcase.errors.any? %>
+  <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-lg mt-3">
+    <h2><%= pluralize(showcase.errors.count, "error") %> prohibited this showcase from being saved:</h2>
+
+    <ul>
+      <% showcase.errors.each do |error| %>
+        <li><%= error.full_message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<div class="my-5">
+  <%= form.label :location_id, 'Studio' %>
+  <%= form.select :location_id, [[location.name, location.id]], {},
+    {readonly: true, class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full bg-gray-100"} %>
+  <%= form.hidden_field :location_id, value: location.id %>
+</div>
+
+<div class="my-5">
+  <%= form.label :name %>
+  <%= form.text_field :name, data: {"name-to-token-target" => "name"}, required: true,
+    class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+</div>
+
+<%= form.hidden_field :key, data: {"name-to-token-target" => "token"} %>
+<%= hidden_field_tag :return_to, Showcase.url + "/showcase/studios/#{location_key}" %>
+
+<div data-controller="date-range">
+  <div class="my-5">
+    <%= form.label :start_date, 'Start Date' %>
+    <%= form.date_field :start_date, value: showcase.start_date, required: true,
+      data: { "date-range-target": "startDate" },
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+  <div class="my-5">
+    <% end_date = showcase.end_date %>
+    <%= form.label :end_date, 'End Date' %>
+    <%= form.date_field :end_date, value: end_date.blank? || (showcase.start_date && end_date < showcase.start_date) ? showcase.start_date : end_date,
+      data: { "date-range-target": "endDate" },
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
+</div>
+<% end %>
+
+<div class="mx-auto flex">
+  <input type="submit" class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" form="showcase-form" value="Create Event">
+  <%= link_to "Back to studio", "/showcase/studios/#{location_key}", class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+</div>
