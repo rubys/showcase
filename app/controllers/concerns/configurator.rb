@@ -360,9 +360,9 @@ module Configurator
 
   def build_cache_control(root)
     {
+      'default' => '0',  # Always revalidate HTML pages with If-Modified-Since
       'overrides' => [
-        { 'path' => "#{root}/assets/", 'max_age' => '24h' },
-        { 'path' => "#{root}/", 'max_age' => '24h' }
+        { 'path' => "#{root}/assets/", 'max_age' => '24h' }
       ]
     }
   end
