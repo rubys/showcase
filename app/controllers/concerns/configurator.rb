@@ -362,7 +362,11 @@ module Configurator
     {
       'default' => '0',  # Always revalidate HTML pages with If-Modified-Since
       'overrides' => [
-        { 'path' => "#{root}/assets/", 'max_age' => '24h' }
+        {
+          'path' => "#{root}/assets/",
+          'max_age' => '1y',     # Fingerprinted assets: cache for 1 year
+          'immutable' => true    # Fingerprinted assets never change
+        }
       ]
     }
   end
