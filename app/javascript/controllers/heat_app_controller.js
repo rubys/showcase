@@ -2,6 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 // Main controller for the heat scoring app
 // Manages navigation between heat list and individual heat views
+// Uses ERB-to-JS converted templates for rendering
 export default class extends Controller {
   static values = {
     judge: Number,
@@ -17,6 +18,15 @@ export default class extends Controller {
       style: this.styleValue
     })
 
+    // Load converted ERB templates
+    try {
+      this.templates = await this.loadTemplates()
+    } catch (error) {
+      console.error('Failed to load templates:', error)
+      this.showError(`Failed to load templates: ${error.message}`)
+      return
+    }
+
     // If heat number is provided, show that heat; otherwise show list
     if (this.hasHeatValue) {
       await this.showHeat(this.heatValue)
@@ -25,13 +35,31 @@ export default class extends Controller {
     }
   }
 
+  async loadTemplates() {
+    console.log('Loading converted ERB templates...')
+    const response = await fetch('/templates/scoring.js')
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    const code = await response.text()
+
+    // Parse the ES module code to extract template functions
+    // The module exports: soloHeat, rankHeat, tableHeat, cardsHeat
+    const module = await import(`data:text/javascript,${encodeURIComponent(code)}`)
+
+    console.log('Templates loaded successfully')
+    return module
+  }
+
   async showHeatList() {
     console.log('Loading heat list...')
 
     try {
       // Fetch heat list data from JSON endpoint
       const response = await fetch(
-        `${this.basePathValue}/scores/${this.judgeValue}/heats.json`
+        `${this.basePathValue}/scores/${this.judgeValue}/heats`
       )
 
       if (!response.ok) {
@@ -41,7 +69,7 @@ export default class extends Controller {
       const data = await response.json()
       console.log('Heat list data loaded:', data)
 
-      // Render heat list (TODO: implement heat list rendering)
+      // TODO: Render heat list using converted template
       this.element.innerHTML = '<h1>Heat List</h1><p>Coming soon...</p>'
 
     } catch (error) {
@@ -54,10 +82,11 @@ export default class extends Controller {
     console.log(`Loading heat ${heatNumber}...`)
 
     try {
-      // Fetch heat data from JSON endpoint
-      const response = await fetch(
-        `${this.basePathValue}/scores/${this.judgeValue}/heat/${heatNumber}.json?style=${this.styleValue}`
-      )
+      // Fetch heat data from new JSON endpoint
+      const url = `${this.basePathValue}/scores/${this.judgeValue}/heats/${heatNumber}?style=${this.styleValue}`
+      console.log('Fetching:', url)
+
+      const response = await fetch(url)
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
@@ -66,8 +95,27 @@ export default class extends Controller {
       const data = await response.json()
       console.log('Heat data loaded:', data)
 
-      // Render heat (TODO: implement heat rendering)
-      this.element.innerHTML = '<h1>Heat View</h1><p>Coming soon...</p>'
+      // Select appropriate template based on heat data
+      let html
+      if (data.heat.category === 'Solo') {
+        console.log('Rendering solo heat')
+        html = this.templates.render(data)  // soloHeat template
+      } else if (data.final) {
+        console.log('Rendering finals (rank heat)')
+        html = this.templates.render(data)  // rankHeat template
+      } else if (data.style !== 'cards' || !data.scores || data.scores.length === 0) {
+        console.log('Rendering table heat')
+        html = this.templates.render(data)  // tableHeat template
+      } else {
+        console.log('Rendering cards heat')
+        html = this.templates.render(data)  // cardsHeat template
+      }
+
+      // Replace loading div with rendered heat
+      this.element.innerHTML = html
+
+      // Stimulus controllers (score, open-feedback, drop) will auto-attach!
+      console.log('Heat rendered, Stimulus controllers should auto-attach')
 
     } catch (error) {
       console.error('Failed to load heat:', error)

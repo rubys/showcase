@@ -814,6 +814,53 @@ class ScoresController < ApplicationController
     @feedbacks = Feedback.all
   end
 
+  # GET /scores/:judge/heats/:heat - JSON endpoint for Stimulus-based SPA
+  def heats_show
+    # Call the existing heat action to set all instance variables
+    heat
+
+    # Return JSON with all data needed by converted ERB templates
+    render json: {
+      event: {
+        open_scoring: @event.open_scoring,
+        closed_scoring: @event.closed_scoring,
+        multi_scoring: @event.multi_scoring,
+        heat_range_cat: @event.heat_range_cat,
+        column_order: @event.column_order,
+        backnums: @event.backnums,
+        track_ages: @event.track_ages,
+        student_judge_assignments: @event.student_judge_assignments,
+        assign_judges: @event.assign_judges
+      },
+      judge: @judge,
+      number: @number,
+      slot: @slot,
+      style: @style,
+      subjects: @subjects,
+      heat: @heat,
+      dance: @dance,
+      scores: @scores,
+      scoring: @scoring,
+      ballrooms: @ballrooms,
+      ballrooms_count: @ballrooms_count,
+      results: @results,
+      combine_open_and_closed: @combine_open_and_closed,
+      column_order: @column_order,
+      track_ages: @track_ages,
+      backnums: @backnums,
+      assign_judges: @assign_judges,
+      category_scoring_enabled: @category_scoring_enabled,
+      category_score_assignments: @category_score_assignments,
+      feedbacks: @feedbacks,
+      final: @final,
+      callbacks: @callbacks,
+      message: @message,
+      # Additional fields that might be needed
+      show: @show,
+      sort: @sort
+    }
+  end
+
   def post
     judge = Person.find(params[:judge].to_i)
     heat = Heat.find(params[:heat].to_i)
