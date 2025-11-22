@@ -103,6 +103,19 @@ class ErbPrismConverter
       return
     end
 
+    # Check for mutating methods that need to be converted to assignments
+    if node.name.to_s.end_with?('!') && node.receiver
+      # Mutating methods like map!, select!, etc. need reassignment in JavaScript
+      receiver_js = ruby_to_js(node.receiver)
+      # Convert the call but strip the ! from the method name
+      method_without_bang = node.name.to_s.chomp('!')
+      modified_node = node.dup
+      modified_node.instance_variable_set(:@name, method_without_bang.to_sym)
+      call_js = ruby_to_js(modified_node)
+      add_line("#{receiver_js} = #{call_js};")
+      return
+    end
+
     # Other statement-level calls (assignments, etc.)
     js_expr = ruby_to_js(node)
     add_line("#{js_expr};")
@@ -361,6 +374,21 @@ class ErbPrismConverter
       # Constant reference like Turbo or JSON
       node.name.to_s
 
+    when Prism::RangeNode
+      # Ruby range: 1..10 or 1...10
+      # Convert to array generation in JavaScript
+      left = ruby_to_js(node.left)
+      right = ruby_to_js(node.right)
+
+      # Check if it's exclusive (...)  or inclusive (..)
+      if node.exclude_end?
+        # Exclusive range: 1...10 -> [1,2,3,...,9]
+        "Array.from({length: #{right} - #{left}}, (_, i) => #{left} + i)"
+      else
+        # Inclusive range: 1..10 -> [1,2,3,...,10]
+        "Array.from({length: #{right} - #{left} + 1}, (_, i) => #{left} + i)"
+      end
+
     else
       "/* TODO: #{node.class.name} */"
     end
@@ -370,6 +398,15 @@ class ErbPrismConverter
     receiver = node.receiver ? ruby_to_js(node.receiver) : nil
     method = node.name.to_s
     args = node.arguments ? node.arguments.arguments.map { |a| ruby_to_js(a) } : []
+
+    # Check for block argument (e.g., &:method_name)
+    if node.block.is_a?(Prism::BlockArgumentNode)
+      # Pattern: &:method_name -> x => x.method_name
+      if node.block.expression.is_a?(Prism::SymbolNode)
+        method_name = node.block.expression.unescaped
+        args << "x => x.#{method_name}"
+      end
+    end
 
     # Check for safe navigation
     flags = node.instance_variable_get(:@flags)
@@ -381,6 +418,9 @@ class ErbPrismConverter
     case method
     when "[]"
       "#{receiver}[#{args[0]}]"
+    when "[]="
+      # Array/hash assignment: arr[index] = value
+      "#{receiver}[#{args[0]}] = #{args[1]}"
     when "<<"
       # Array append: arr << item -> arr.push(item)
       "#{receiver}.push(#{args[0]})"
@@ -408,6 +448,8 @@ class ErbPrismConverter
       "#{receiver} == null || #{receiver}.length === 0"
     when "empty?"
       "#{receiver}.length === 0"
+    when "any?"
+      "#{receiver}.length > 0"
     when "nil?"
       "#{receiver} == null"
     when "include?"
@@ -424,8 +466,22 @@ class ErbPrismConverter
       "#{receiver}[#{receiver}.length - 1]"
     when "keys"
       "Object.keys(#{receiver})"
+    when "respond_to?"
+      # Check if object has a method/property
+      # respond_to?(:method) -> 'method' in receiver
+      if args.length == 1
+        # Strip quotes from the method name if it's a string
+        method_name = args[0].gsub(/^['"]|['"]$/, '')
+        "#{method_name} in #{receiver}"
+      else
+        "#{receiver}.respond_to?(#{args.join(', ')})"  # Fallback
+      end
     when "gsub"
       "#{receiver}.replace(#{args.join(', ')})"
+    when "map!"
+      # Mutating map - JavaScript doesn't have this, use regular map
+      # Note: This will be used in an assignment context
+      "#{receiver}.map(#{args.join(', ')})"
     when "!"
       # Unary not
       "!#{receiver}"
@@ -457,7 +513,9 @@ class ErbPrismConverter
   end
 
   def add_output(expr)
-    add_line("html += (#{expr} ?? '');")
+    # Wrap expression to handle nil/undefined, but ensure proper precedence
+    # Use || instead of ?? to avoid precedence issues with existing || in expr
+    add_line("html += (#{expr}) || '';")
   end
 
   def add_line(code)

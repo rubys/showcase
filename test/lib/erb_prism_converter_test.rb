@@ -12,7 +12,7 @@ class ErbPrismConverterTest < ActiveSupport::TestCase
     js = convert(erb)
 
     assert_match /html \+= `<div>`;/, js
-    assert_match /html \+= \(data\.title \?\? ''\);/, js
+    assert_match /html \+= \(data\.title\) \|\| '';/, js
     assert_match /html \+= `<\/div>`;/, js
   end
 
@@ -104,9 +104,9 @@ class ErbPrismConverterTest < ActiveSupport::TestCase
     js = convert(erb)
 
     # item should not have data. prefix (it's a loop variable)
-    assert_match /html \+= \(item \?\? ''\);/, js
+    assert_match /html \+= \(item\) \|\| '';/, js
     # item should appear without data. prefix in output
-    refute_match /html \+= \(data\.item \?\? ''\);/, js
+    refute_match /html \+= \(data\.item\) \|\| '';/, js
   end
 
   test "converts variable assignment" do
@@ -118,7 +118,7 @@ class ErbPrismConverterTest < ActiveSupport::TestCase
     js = convert(erb)
 
     assert_match /const name = data\.person\.name;/, js
-    assert_match /html \+= \(name \?\? ''\);/, js
+    assert_match /html \+= \(name\) \|\| '';/, js
   end
 
   test "converts string interpolation" do
@@ -127,7 +127,7 @@ class ErbPrismConverterTest < ActiveSupport::TestCase
 
     # ERB compiles interpolation into separate output statements, not template literals
     assert_match /html \+= `<div class="heat-`;/, js
-    assert_match /html \+= \(data\.number \?\? ''\);/, js
+    assert_match /html \+= \(data\.number\) \|\| '';/, js
     assert_match /html \+= `">Content<\/div>`;/, js
   end
 
