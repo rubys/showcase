@@ -27,11 +27,11 @@ server:
     - ".htm"
     normalize_trailing_slashes: true
     cache_control:
+      default: '0'
       overrides:
       - path: "/showcase/assets/"
-        max_age: 24h
-      - path: "/showcase/"
-        max_age: 24h
+        max_age: 1y
+        immutable: true
   health_check:
     path: "/up"
     response:
