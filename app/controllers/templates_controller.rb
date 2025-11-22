@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative '../../lib/erb_to_js_converter'
+require_relative '../../lib/erb_prism_converter'
 
 # Serves ERB templates converted to JavaScript functions
 # GET /templates/scoring.js returns all scoring templates as JS module
@@ -19,7 +19,7 @@ class TemplatesController < ApplicationController
 
     SCORING_TEMPLATES.each do |name, path|
       erb_content = File.read(Rails.root.join(path))
-      converter = ErbToJsConverter.new(erb_content)
+      converter = ErbPrismConverter.new(erb_content)
       js_code = converter.convert
 
       # Rename the function from 'render' to the template name
