@@ -101,7 +101,8 @@ class ErbToJsConverter
       vars = $2.split(',').map(&:strip)
       # Convert the collection expression
       js_collection = ruby_to_js(collection)
-      js_collection += '?' if has_safe_nav
+      # Wrap in || [] for safe navigation instead of optional chaining on iteration
+      js_collection = "(#{js_collection} || [])" if has_safe_nav
       # each_with_index passes (item, index) but JS entries() returns [index, item]
       add_line("for (const [#{vars[1]}, #{vars[0]}] of #{js_collection}.entries()) {")
       @indent_level += 1
@@ -111,8 +112,8 @@ class ErbToJsConverter
       vars = $2.split(',').map(&:strip)
       # Convert the collection expression (handles @results[score]&.each)
       js_collection = ruby_to_js(collection)
-      # Add safe navigation if it was present
-      js_collection += '?' if has_safe_nav
+      # Wrap in || [] for safe navigation instead of optional chaining on iteration
+      js_collection = "(#{js_collection} || [])" if has_safe_nav
       if vars.length > 1
         add_line("for (const [#{vars.join(', ')}] of Object.entries(#{js_collection})) {")
       else
@@ -136,6 +137,9 @@ class ErbToJsConverter
 
     # Handle instance variables - convert @var to data.var
     js.gsub!(/@(\w+)/, 'data.\1')
+
+    # Handle params[:key] -> data.key
+    js.gsub!(/params\[:(\w+)\]/, 'data.\1')
 
     # String interpolation: "text #{expr}" -> `text ${expr}`
     # Need to convert double-quoted strings with #{...} to template literals
@@ -180,6 +184,16 @@ class ErbToJsConverter
     # Rails helpers - handle both with and without parens
     js.gsub!(/dom_id\s+(\w+)/, 'domId(\1)')
     js.gsub!(/dom_id\(([^)]+)\)/, 'domId(\1)')
+
+    # Rails path helpers: convert_path(judge: @judge) -> `${data.basePath}/scores/${data.judge.id}/convert`
+    # This is a simplified conversion - may need adjustment for complex cases
+    js.gsub!(/(\w+)_path\(judge:\s*([^)]+)\)/) do
+      path_name = $1
+      judge_expr = $2
+      # Convert snake_case to kebab-case for URL path
+      url_path = path_name.gsub('_', '-')
+      "`${data.basePath}/scores/${#{judge_expr}.id}/#{url_path}`"
+    end
     js.gsub!(/raw\(([^)]+)\)/, '\1')  # raw() just returns unescaped
 
     # .html_safe - remove it (we're building strings anyway)
