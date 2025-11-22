@@ -163,6 +163,8 @@ class ErbToJsConverter
     # Match full object path (e.g., subject.entry.lead.back)
     js.gsub!(/!([\w.]+)\.blank\?/, '!(\1 == null || \1.length === 0)')
     js.gsub!(/([\w.]+)\.blank\?/, '\1 == null || \1.length === 0')
+    # Handle .empty? with ! operator
+    js.gsub!(/!([\w.]+)\.empty\?/, '!(\1.length === 0)')
     js.gsub!(/\.empty\?/, '.length === 0')
     js.gsub!(/(\w+)\.to_s/, 'String(\1)')
     # Convert .include? to .includes() - add parens if missing
@@ -185,6 +187,9 @@ class ErbToJsConverter
 
     # Comparison: == is same, but .nil? -> == null
     js.gsub!(/\.nil\?/, ' == null')
+
+    # Ruby nil literal -> JavaScript null
+    js.gsub!(/\bnil\b/, 'null')
 
     js
   end

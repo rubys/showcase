@@ -365,4 +365,18 @@ class ErbToJsConverterTest < ActiveSupport::TestCase
 
     assert_includes js, "html += (`Category: ${subject.entry.level.initials}` ?? '');"
   end
+
+  test "converts nil to null" do
+    erb = "<% value = nil %><%= value %>"
+    js = convert(erb)
+
+    assert_includes js, "const value = null;"
+  end
+
+  test "handles negation with empty?" do
+    erb = "<% if !items.empty? %><p>Has items</p><% end %>"
+    js = convert(erb)
+
+    assert_includes js, "if (!(items.length === 0)) {"
+  end
 end
