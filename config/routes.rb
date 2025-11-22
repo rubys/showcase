@@ -211,6 +211,7 @@ Rails.application.routes.draw do
       delete 'reset', on: :collection
     end
 
+    get '/templates/scoring.js', to: 'templates#scoring', as: 'scoring_templates'
     get '/scores/:judge/heatlist', to: 'scores#heatlist', as: 'judge_heatlist'
     get '/scores/:judge/heats', to: 'scores#heats_json', defaults: { format: :json }, as: 'judge_heats_json'
     get '/scores/:judge/spa', to: 'scores#spa', as: 'judge_spa'
