@@ -95,13 +95,18 @@ class ErbToJsConverter
     when /^end$/
       @indent_level -= 1
       add_line("}")
-    when /^(.+?)\.each\s+do\s+\|(.+?)\|$/
+    when /^(.+?)&?\.each\s+do\s+\|(.+?)\|$/
       collection = $1
+      has_safe_nav = code.include?('&.')
       vars = $2.split(',').map(&:strip)
+      # Convert the collection expression (handles @results[score]&.each)
+      js_collection = ruby_to_js(collection)
+      # Add safe navigation if it was present
+      js_collection += '?' if has_safe_nav
       if vars.length > 1
-        add_line("for (const [#{vars.join(', ')}] of Object.entries(#{ruby_to_js(collection)})) {")
+        add_line("for (const [#{vars.join(', ')}] of Object.entries(#{js_collection})) {")
       else
-        add_line("for (const #{vars[0]} of #{ruby_to_js(collection)}) {")
+        add_line("for (const #{vars[0]} of #{js_collection}) {")
       end
       @indent_level += 1
     when /^next\s+if\s+(.+)$/
@@ -128,10 +133,22 @@ class ErbToJsConverter
     # Array word syntax: %w(a b c) -> ['a', 'b', 'c']
     js.gsub!(/%w\(([^)]+)\)/) { "[#{$1.split.map { |w| "'#{w}'" }.join(', ')}]" }
 
+    # Boolean operators: 'and' -> '&&', 'or' -> '||', 'not' -> '!'
+    # Do this BEFORE .blank? conversion so we can detect ! prefix
+    js.gsub!(/\band\b/, '&&')
+    js.gsub!(/\bor\b/, '||')
+    js.gsub!(/\bnot\s+/, '!')  # 'not ' -> '!' (with space handling)
+
     # Method calls - order matters! Do .blank? before other checks
-    js.gsub!(/(\w+)\.blank\?/, '\1 == null || \1.length === 0')
+    # Wrap .blank? in parens when used with '!' operator
+    # Match full object path (e.g., subject.entry.lead.back)
+    js.gsub!(/!([\w.]+)\.blank\?/, '!(\1 == null || \1.length === 0)')
+    js.gsub!(/([\w.]+)\.blank\?/, '\1 == null || \1.length === 0')
     js.gsub!(/\.empty\?/, '.length === 0')
     js.gsub!(/(\w+)\.to_s/, 'String(\1)')
+    # Convert .include? to .includes() - add parens if missing
+    # Match full object path (e.g., subject.category)
+    js.gsub!(/\.include\?\s+([\w.]+)/, '.includes(\1)')
     js.gsub!(/\.include\?/, '.includes')
     js.gsub!(/(\w+)\.first/, '\1[0]')
     js.gsub!(/(\w+)\.last/, '\1[\1.length - 1]')
@@ -139,17 +156,13 @@ class ErbToJsConverter
     # String methods
     js.gsub!(/\.gsub\(([^,]+),\s*([^)]+)\)/, '.replace(\1, \2)')
 
-    # Rails helpers
+    # Rails helpers - handle both with and without parens
+    js.gsub!(/dom_id\s+(\w+)/, 'domId(\1)')
     js.gsub!(/dom_id\(([^)]+)\)/, 'domId(\1)')
     js.gsub!(/raw\(([^)]+)\)/, '\1')  # raw() just returns unescaped
 
     # .html_safe - remove it (we're building strings anyway)
     js.gsub!(/\.html_safe/, '')
-
-    # Boolean operators: 'and' -> '&&', 'or' -> '||', 'not' -> '!'
-    js.gsub!(/\band\b/, '&&')
-    js.gsub!(/\bor\b/, '||')
-    js.gsub!(/\bnot\s+/, '!')  # Fix: 'not ' -> '!' (with space handling)
 
     # Comparison: == is same, but .nil? -> == null
     js.gsub!(/\.nil\?/, ' == null')

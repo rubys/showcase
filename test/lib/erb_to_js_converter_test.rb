@@ -284,4 +284,60 @@ class ErbToJsConverterTest < ActiveSupport::TestCase
     assert_includes js, "html += (score ?? '');"
     assert_includes js, "html += `</td></tr>`;"
   end
+
+  test "converts method calls with parentheses" do
+    erb = '<%= subject.method(arg) %>'
+    js = convert(erb)
+
+    assert_includes js, "html += (subject.method(arg) ?? '');"
+  end
+
+  test "converts safe navigation on array access" do
+    erb = '<% items[key]&.each do |item| %><p><%= item %></p><% end %>'
+    js = convert(erb)
+
+    assert_includes js, "for (const item of items[key]?) {"
+  end
+
+  test "handles dom_id with argument" do
+    erb = '<div id="<%= dom_id(subject) %>">Content</div>'
+    js = convert(erb)
+
+    assert_includes js, "html += (domId(subject) ?? '');"
+  end
+
+  test "handles gsub with string arguments" do
+    erb = "<%= text.gsub(' ', '-') %>"
+    js = convert(erb)
+
+    assert_includes js, "html += (text.replace(' ', '-') ?? '');"
+  end
+
+  test "converts method call without parentheses in output" do
+    erb = '<div id="<%= dom_id subject %>">Content</div>'
+    js = convert(erb)
+
+    assert_includes js, "html += (domId(subject) ?? '');"
+  end
+
+  test "converts chained method calls with arguments" do
+    erb = "<%= category.gsub(' ', '').upcase %>"
+    js = convert(erb)
+
+    assert_includes js, "html += (category.replace(' ', '').upcase ?? '');"
+  end
+
+  test "converts complex blank check in conditional" do
+    erb = "<% if active and not value.blank? %><p>Show</p><% end %>"
+    js = convert(erb)
+
+    assert_includes js, "if (active && !(value == null || value.length === 0)) {"
+  end
+
+  test "handles includes with method call without parens" do
+    erb = "<% if %w(Open Closed).include? category %><p>Match</p><% end %>"
+    js = convert(erb)
+
+    assert_includes js, "if (['Open', 'Closed'].includes(category)) {"
+  end
 end
