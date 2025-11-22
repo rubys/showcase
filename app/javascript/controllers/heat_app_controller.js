@@ -99,16 +99,16 @@ export default class extends Controller {
       let html
       if (data.heat.category === 'Solo') {
         console.log('Rendering solo heat')
-        html = this.templates.render(data)  // soloHeat template
+        html = this.templates.soloHeat(data)
       } else if (data.final) {
         console.log('Rendering finals (rank heat)')
-        html = this.templates.render(data)  // rankHeat template
+        html = this.templates.rankHeat(data)
       } else if (data.style !== 'cards' || !data.scores || data.scores.length === 0) {
         console.log('Rendering table heat')
-        html = this.templates.render(data)  // tableHeat template
+        html = this.templates.tableHeat(data)
       } else {
         console.log('Rendering cards heat')
-        html = this.templates.render(data)  // cardsHeat template
+        html = this.templates.cardsHeat(data)
       }
 
       // Replace loading div with rendered heat
