@@ -340,4 +340,29 @@ class ErbToJsConverterTest < ActiveSupport::TestCase
 
     assert_includes js, "if (['Open', 'Closed'].includes(category)) {"
   end
+
+  test "converts each_with_index loop" do
+    erb = <<~ERB
+      <% items.each_with_index do |item, index| %>
+      <p><%= index %>: <%= item %></p>
+      <% end %>
+    ERB
+    js = convert(erb)
+
+    assert_includes js, "for (const [index, item] of items.entries()) {"
+  end
+
+  test "converts string interpolation" do
+    erb = '<%= "Hello #{name}, age #{age}" %>'
+    js = convert(erb)
+
+    assert_includes js, "html += (`Hello ${name}, age ${age}` ?? '');"
+  end
+
+  test "converts string interpolation with method calls" do
+    erb = '<%= "Category: #{subject.entry.level.initials}" %>'
+    js = convert(erb)
+
+    assert_includes js, "html += (`Category: ${subject.entry.level.initials}` ?? '');"
+  end
 end

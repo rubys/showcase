@@ -95,6 +95,16 @@ class ErbToJsConverter
     when /^end$/
       @indent_level -= 1
       add_line("}")
+    when /^(.+?)&?\.each_with_index\s+do\s+\|(.+?)\|$/
+      collection = $1
+      has_safe_nav = code.include?('&.')
+      vars = $2.split(',').map(&:strip)
+      # Convert the collection expression
+      js_collection = ruby_to_js(collection)
+      js_collection += '?' if has_safe_nav
+      # each_with_index passes (item, index) but JS entries() returns [index, item]
+      add_line("for (const [#{vars[1]}, #{vars[0]}] of #{js_collection}.entries()) {")
+      @indent_level += 1
     when /^(.+?)&?\.each\s+do\s+\|(.+?)\|$/
       collection = $1
       has_safe_nav = code.include?('&.')
@@ -126,6 +136,15 @@ class ErbToJsConverter
 
     # Handle instance variables - convert @var to data.var
     js.gsub!(/@(\w+)/, 'data.\1')
+
+    # String interpolation: "text #{expr}" -> `text ${expr}`
+    # Need to convert double-quoted strings with #{...} to template literals
+    js.gsub!(/"([^"]*#\{[^}]+\}[^"]*)"/) do
+      content = $1
+      # Convert #{...} to ${...}
+      content.gsub!(/\#\{/, '${')
+      "`#{content}`"
+    end
 
     # Safe navigation: obj&.method -> obj?.method
     js.gsub!(/&\./, '?.')
