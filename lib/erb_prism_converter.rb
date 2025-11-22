@@ -26,10 +26,20 @@ class ErbPrismConverter
       raise "Prism failed to parse compiled ERB: #{result.errors.map(&:message).join(', ')}"
     end
 
-    # Step 3: Generate JavaScript
+    # Step 3: Scan for all local variables (for hoisting)
+    scan_for_local_vars(result.value.statements.body)
+
+    # Step 4: Generate JavaScript
     result_lines = []
     result_lines << "export function render(data) {"
     result_lines << "  let html = '';"
+
+    # Hoist local variable declarations to avoid block-scoping issues
+    unless @local_vars.empty?
+      hoisted_vars = @local_vars.to_a.sort.join(', ')
+      result_lines << "  let #{hoisted_vars};"
+    end
+
     result_lines << ""
 
     # Process each top-level statement
@@ -47,6 +57,54 @@ class ErbPrismConverter
 
   private
 
+  # Scan AST to find all local variable assignments (for hoisting)
+  def scan_for_local_vars(statements)
+    statements.each do |stmt|
+      scan_statement_for_vars(stmt)
+    end
+  end
+
+  def scan_statement_for_vars(stmt)
+    case stmt
+    when Prism::LocalVariableWriteNode
+      # Track this variable (skip _erbout)
+      @local_vars.add(stmt.name) unless stmt.name == :_erbout
+
+    when Prism::IfNode
+      # Scan if body
+      stmt.statements&.body&.each { |s| scan_statement_for_vars(s) }
+      # Scan elsif/else
+      scan_consequent_for_vars(stmt.subsequent) if stmt.subsequent
+
+    when Prism::UnlessNode
+      stmt.statements&.body&.each { |s| scan_statement_for_vars(s) }
+      stmt.else_clause&.statements&.body&.each { |s| scan_statement_for_vars(s) }
+
+    when Prism::CallNode
+      # Scan each loops for assignments in their bodies
+      if stmt.name == :each && stmt.block
+        # Track loop parameters as local variables
+        block_params = stmt.block.parameters
+        if block_params && block_params.parameters
+          param_nodes = block_params.parameters.requireds || []
+          param_nodes.each { |param| @local_vars.add(param.name) }
+        end
+        # Scan loop body for assignments
+        stmt.block.body&.body&.each { |s| scan_statement_for_vars(s) }
+      end
+    end
+  end
+
+  def scan_consequent_for_vars(consequent)
+    case consequent
+    when Prism::ElseNode
+      consequent.statements&.body&.each { |s| scan_statement_for_vars(s) }
+    when Prism::IfNode
+      consequent.statements&.body&.each { |s| scan_statement_for_vars(s) }
+      scan_consequent_for_vars(consequent.subsequent) if consequent.subsequent
+    end
+  end
+
   def process_statement(stmt)
     case stmt
     when Prism::LocalVariableWriteNode
@@ -54,9 +112,9 @@ class ErbPrismConverter
       return if stmt.name == :_erbout
 
       # Regular variable assignment
-      @local_vars.add(stmt.name)
+      # Variable is already hoisted, so just do assignment (not declaration)
       js_value = ruby_to_js(stmt.value)
-      add_line("const #{stmt.name} = #{js_value};")
+      add_line("#{stmt.name} = #{js_value};")
 
     when Prism::CallNode
       process_call_statement(stmt)
@@ -239,11 +297,18 @@ class ErbPrismConverter
 
       if param_names.length == 1
         # Simple each: items.each do |item|
-        add_line("for (const #{param_names[0]} of #{collection}) {")
+        # Don't use 'const' since variable is hoisted
+        add_line("for (#{param_names[0]} of #{collection}) {")
       else
         # each with multiple params (hash iteration, each_with_index, etc.)
-        # For now, assume Object.entries for 2 params
-        add_line("for (const [#{param_names.join(', ')}] of Object.entries(#{collection})) {")
+        # Use temporary for destructuring, then assign to hoisted variables
+        temp_var = "_temp_#{param_names.join('_')}"
+        add_line("for (const #{temp_var} of Object.entries(#{collection})) {")
+        @indent_level += 1
+        param_names.each_with_index do |name, idx|
+          add_line("#{name} = #{temp_var}[#{idx}];")
+        end
+        @indent_level -= 1
       end
     else
       # No parameters - shouldn't happen, but handle it
@@ -288,8 +353,11 @@ class ErbPrismConverter
       convert_call(node)
 
     when Prism::LocalVariableReadNode
+      # Check for JavaScript global objects
+      if node.name == :console
+        "console"
       # Check if it's a known local variable
-      if @local_vars.include?(node.name)
+      elsif @local_vars.include?(node.name)
         node.name.to_s
       else
         # Assume it's from template data
@@ -395,8 +463,20 @@ class ErbPrismConverter
   end
 
   def convert_call(node)
-    receiver = node.receiver ? ruby_to_js(node.receiver) : nil
     method = node.name.to_s
+
+    # Handle JavaScript globals (console, etc.) when called without receiver
+    if node.receiver.nil? && method == "console"
+      return "console"
+    end
+
+    # Handle Rails helper methods when called without receiver
+    if node.receiver.nil? && method == "dom_id"
+      args = node.arguments ? node.arguments.arguments.map { |a| ruby_to_js(a) } : []
+      return "domId(#{args.join(', ')})"
+    end
+
+    receiver = node.receiver ? ruby_to_js(node.receiver) : nil
     args = node.arguments ? node.arguments.arguments.map { |a| ruby_to_js(a) } : []
 
     # Check for block argument (e.g., &:method_name)
@@ -470,8 +550,10 @@ class ErbPrismConverter
       # Check if object has a method/property
       # respond_to?(:method) -> 'method' in receiver
       if args.length == 1
-        # Strip quotes from the method name if it's a string
-        method_name = args[0].gsub(/^['"]|['"]$/, '')
+        # Ensure the method name is a quoted string
+        method_name = args[0]
+        # If it doesn't have quotes, add them (shouldn't happen with proper conversion)
+        method_name = "\"#{method_name}\"" unless method_name.start_with?('"', "'")
         "#{method_name} in #{receiver}"
       else
         "#{receiver}.respond_to?(#{args.join(', ')})"  # Fallback

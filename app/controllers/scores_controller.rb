@@ -820,6 +820,73 @@ class ScoresController < ApplicationController
     heat
 
     # Return JSON with all data needed by converted ERB templates
+    # Match the structure that ERB templates expect
+
+    # Serialize subjects with all associations
+    serialized_subjects = @subjects.map { |subject|
+        # Handle both Heat records and OpenStruct objects (for category scoring)
+        if subject.is_a?(OpenStruct)
+          # OpenStruct already has all properties, just convert to hash
+          entry_json = subject.entry&.as_json(
+            methods: [:pro],
+            include: {
+              level: { only: [:id, :name], methods: [:initials] },
+              lead: { only: [:id, :name] },
+              follow: { only: [:id, :name] }
+            }
+          )
+          # Add subject_category computed with track_ages parameter
+          entry_json['subject_category'] = subject.entry.subject_category(@track_ages) if subject.entry
+
+          subject.to_h.merge(
+            'dance' => subject.dance.as_json(only: [:id, :name]),
+            'entry' => entry_json,
+            'lead' => subject.lead&.as_json(only: [:id, :name]),
+            'follow' => subject.follow&.as_json(only: [:id, :name]),
+            'subject' => subject.subject&.as_json(
+              only: [:id, :name],
+              include: { studio: { only: [:id, :name] } }
+            ),
+            'scores' => subject.scores&.map { |s| s.as_json(only: [:id, :judge_id, :value, :good, :bad]) }
+          )
+        else
+          # Regular Heat record
+          heat_json = subject.as_json(
+            include: {
+              entry: {
+                methods: [:pro],
+                include: {
+                  level: { only: [:id, :name], methods: [:initials] },
+                  lead: { only: [:id, :name] },
+                  follow: { only: [:id, :name] }
+                }
+              },
+              dance: { only: [:id, :name] },
+              scores: { only: [:id, :judge_id, :value, :good, :bad] }
+            }
+          )
+          # Add subject_category computed with track_ages parameter
+          heat_json['entry']['subject_category'] = subject.entry.subject_category(@track_ages) if subject.entry
+
+          heat_json.merge(
+            'lead' => subject.lead.as_json(only: [:id, :name]),
+            'follow' => subject.follow.as_json(only: [:id, :name]),
+            'subject' => subject.subject.as_json(
+              only: [:id, :name],
+              include: { studio: { only: [:id, :name] } }
+            )
+          )
+        end
+    }
+
+    # Create a lookup map for serialized subjects by id
+    # Note: OpenStruct.to_h creates symbol keys, Heat.as_json creates string keys
+    subject_map = serialized_subjects.each_with_object({}) do |s, map|
+      id = s['id'] || s[:id]
+      map[id.to_s] = s if id  # Store with string key for consistency
+      map[id] = s if id        # Also store with integer key
+    end
+
     render json: {
       event: {
         open_scoring: @event.open_scoring,
@@ -833,15 +900,27 @@ class ScoresController < ApplicationController
         assign_judges: @event.assign_judges
       },
       judge: @judge,
+      post_feedback_path: post_feedback_path(judge: @judge),
       number: @number,
       slot: @slot,
       style: @style,
-      subjects: @subjects,
-      heat: @heat,
-      dance: @dance,
+      subjects: serialized_subjects,
+      heat: @heat.as_json(include: {
+        dance: {
+          methods: [:semi_finals, :uses_scrutineering?],
+          only: [:id, :name, :order]
+        }
+      }),
+      dance: @dance,  # Keep string for backward compatibility
       scores: @scores,
       scoring: @scoring,
-      ballrooms: @ballrooms,
+      # Serialize ballrooms - each value is an array of subjects (Heat objects or OpenStructs)
+      ballrooms: @ballrooms.transform_values { |subjects|
+        subjects.map { |subject|
+          # Look up the pre-serialized version (handles both string and integer ids)
+          subject_map[subject.id.to_s] || subject_map[subject.id]
+        }.compact
+      },
       ballrooms_count: @ballrooms_count,
       results: @results,
       combine_open_and_closed: @combine_open_and_closed,
@@ -854,6 +933,9 @@ class ScoresController < ApplicationController
       feedbacks: @feedbacks,
       final: @final,
       callbacks: @callbacks,
+      value: @value&.transform_keys { |k| k.is_a?(OpenStruct) ? k.id : k },
+      good: @good&.transform_keys { |k| k.is_a?(OpenStruct) ? k.id : k },
+      bad: @bad&.transform_keys { |k| k.is_a?(OpenStruct) ? k.id : k },
       message: @message,
       # Additional fields that might be needed
       show: @show,

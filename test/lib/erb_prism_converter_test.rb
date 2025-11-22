@@ -50,7 +50,8 @@ class ErbPrismConverterTest < ActiveSupport::TestCase
 
     js = convert(erb)
 
-    assert_match /for \(const item of data\.items\)/, js
+    # Loop variable is hoisted, so no 'const' in for loop
+    assert_match /for \(item of data\.items\)/, js
     assert_match /item\.name/, js
   end
 
@@ -63,7 +64,8 @@ class ErbPrismConverterTest < ActiveSupport::TestCase
 
     js = convert(erb)
 
-    assert_match /for \(const result of \(data\.results \|\| \[\]\)\)/, js
+    # Loop variable is hoisted, so no 'const' in for loop
+    assert_match /for \(result of \(data\.results \|\| \[\]\)\)/, js
   end
 
   test "converts method calls" do
@@ -117,7 +119,10 @@ class ErbPrismConverterTest < ActiveSupport::TestCase
 
     js = convert(erb)
 
-    assert_match /const name = data\.person\.name;/, js
+    # Variable should be hoisted to top
+    assert_match /let name;/, js
+    # Assignment should be without 'let'
+    assert_match /name = data\.person\.name;/, js
     assert_match /html \+= \(name\) \|\| '';/, js
   end
 
@@ -155,5 +160,18 @@ class ErbPrismConverterTest < ActiveSupport::TestCase
 
     # Dollar signs should be escaped in template literals
     assert_match /\\\$\{dollar\}/, js
+  end
+
+  test "converts console.debug as JavaScript global" do
+    erb = <<~ERB
+      <% console.debug("test:", @value) %>
+      <div>Content</div>
+    ERB
+
+    js = convert(erb)
+
+    # console should remain as global, not data.console
+    assert_match /console\.debug\("test:", data\.value\);/, js
+    refute_match /data\.console/, js
   end
 end
