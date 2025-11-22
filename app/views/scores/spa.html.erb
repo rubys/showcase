@@ -11,20 +11,23 @@
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
-
-    <script type="module">
-      import { HeatPage } from 'components/heat-page';
-    </script>
   </head>
 
-  <body data-controller="turbo-streams" data-controller='post-console-log' data-turbo-prefetch="false" data-locale="en-US">
+  <body data-controller="turbo-streams post-console-log" data-turbo-prefetch="false" data-locale="en-US">
     <main class="mx-0 px-5 print:mx-0">
-      <heat-page
-        judge-id="<%= @judge.id %>"
-        <% if @heat_number %>heat-number="<%= @heat_number %>"<% end %>
-        scoring-style="<%= @style %>"
-        base-path="<%= [Rails.application.config.relative_url_root, ENV['RAILS_APP_SCOPE']].compact.join('/') %>">
-      </heat-page>
+      <div id="heat-app"
+           data-controller="heat-app"
+           data-heat-app-judge-value="<%= @judge.id %>"
+           <% if @heat_number %>data-heat-app-heat-value="<%= @heat_number %>"<% end %>
+           data-heat-app-style-value="<%= @style %>"
+           data-heat-app-base-path-value="<%= [Rails.application.config.relative_url_root, ENV['RAILS_APP_SCOPE']].compact.join('/') %>">
+        <div class="flex items-center justify-center h-screen">
+          <div class="text-center">
+            <div class="text-2xl mb-4">Loading...</div>
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          </div>
+        </div>
+      </div>
     </main>
   </body>
 </html>
