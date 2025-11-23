@@ -531,7 +531,7 @@ class ErbPrismConverter
     when "blank?"
       "#{receiver} == null || #{receiver}.length === 0"
     when "empty?"
-      "#{receiver}.length === 0"
+      "(#{receiver}.length === 0)"
     when "any?"
       "#{receiver}.length > 0"
     when "nil?"
