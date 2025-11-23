@@ -831,8 +831,8 @@ class ScoresController < ApplicationController
             methods: [:pro],
             include: {
               level: { only: [:id, :name], methods: [:initials] },
-              lead: { only: [:id, :name] },
-              follow: { only: [:id, :name] }
+              lead: { only: [:id, :name, :back, :type], methods: [:display_name] },
+              follow: { only: [:id, :name, :back, :type], methods: [:display_name] }
             }
           )
           # Add subject_category computed with track_ages parameter
@@ -841,8 +841,8 @@ class ScoresController < ApplicationController
           subject.to_h.merge(
             'dance' => subject.dance.as_json(only: [:id, :name]),
             'entry' => entry_json,
-            'lead' => subject.lead&.as_json(only: [:id, :name]),
-            'follow' => subject.follow&.as_json(only: [:id, :name]),
+            'lead' => subject.lead&.as_json(only: [:id, :name, :back, :type], methods: [:display_name]),
+            'follow' => subject.follow&.as_json(only: [:id, :name, :back, :type], methods: [:display_name]),
             'subject' => subject.subject&.as_json(
               only: [:id, :name],
               include: { studio: { only: [:id, :name] } }
@@ -857,8 +857,8 @@ class ScoresController < ApplicationController
                 methods: [:pro],
                 include: {
                   level: { only: [:id, :name], methods: [:initials] },
-                  lead: { only: [:id, :name] },
-                  follow: { only: [:id, :name] }
+                  lead: { only: [:id, :name, :back, :type], methods: [:display_name] },
+                  follow: { only: [:id, :name, :back, :type], methods: [:display_name] }
                 }
               },
               dance: { only: [:id, :name] },
@@ -869,8 +869,8 @@ class ScoresController < ApplicationController
           heat_json['entry']['subject_category'] = subject.entry.subject_category(@track_ages) if subject.entry
 
           heat_json.merge(
-            'lead' => subject.lead.as_json(only: [:id, :name]),
-            'follow' => subject.follow.as_json(only: [:id, :name]),
+            'lead' => subject.lead.as_json(only: [:id, :name, :back, :type], methods: [:display_name]),
+            'follow' => subject.follow.as_json(only: [:id, :name, :back, :type], methods: [:display_name]),
             'subject' => subject.subject.as_json(
               only: [:id, :name],
               include: { studio: { only: [:id, :name] } }
@@ -897,7 +897,8 @@ class ScoresController < ApplicationController
         backnums: @event.backnums,
         track_ages: @event.track_ages,
         student_judge_assignments: @event.student_judge_assignments,
-        assign_judges: @event.assign_judges
+        assign_judges: @event.assign_judges,
+        judge_comments: @event.judge_comments
       },
       judge: @judge,
       post_feedback_path: post_feedback_path(judge: @judge),
@@ -936,6 +937,7 @@ class ScoresController < ApplicationController
       value: @value&.transform_keys { |k| k.is_a?(OpenStruct) ? k.id : k },
       good: @good&.transform_keys { |k| k.is_a?(OpenStruct) ? k.id : k },
       bad: @bad&.transform_keys { |k| k.is_a?(OpenStruct) ? k.id : k },
+      comments: @comments,
       message: @message,
       # Additional fields that might be needed
       show: @show,
