@@ -3,12 +3,16 @@
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
 
-  <%= render 'heat_header' %>
+  <div class="flex-shrink-0">
+    <%= render 'heat_header' %>
+  </div>
 
-  <%= render 'info_box' %>
+  <div class="flex-shrink-0">
+    <%= render 'info_box' %>
+  </div>
 
-  <div class="h-full flex flex-col max-h-[85%]"
-    data-controller="score" data-drop-action="<%=  post_score_path(judge: @judge) %>" 
+  <div class="flex-1 flex flex-col overflow-hidden"
+    data-controller="score" data-drop-action="<%=  post_score_path(judge: @judge) %>"
     data-start-action="<%= start_heat_event_index_path %>" data-heat="<%= @number %>"
     <% if @callbacks %>data-callbacks="<%= @callbacks %>"<% end %>
     <% if @slot %>data-slot="<%= @slot %>"<% end %>
@@ -26,5 +30,7 @@
       <% end %>
     </div>
 
-    <%= render 'navigation_footer' %>
+    <div class="flex-shrink-0">
+      <%= render 'navigation_footer' %>
+    </div>
   </div>
