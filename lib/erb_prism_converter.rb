@@ -559,10 +559,24 @@ class ErbPrismConverter
         return "''"
       when "image_tag"
         # image_tag src, options -> generate stub <img> tag
-        args = node.arguments ? node.arguments.arguments.map { |a| ruby_to_js(a) } : []
+        args = node.arguments ? node.arguments.arguments : []
         if args.length > 0
-          src = args[0]
-          return "`<img src=\"${#{src}}\" />`"
+          src = ruby_to_js(args[0])
+
+          # Check for options hash (second argument)
+          class_attr = ""
+          if args.length > 1 && args[1].is_a?(Prism::KeywordHashNode)
+            # Extract class from hash
+            args[1].elements.each do |assoc|
+              if assoc.is_a?(Prism::AssocNode) && assoc.key.is_a?(Prism::SymbolNode) && assoc.key.unescaped == "class"
+                class_value = ruby_to_js(assoc.value)
+                class_attr = " class=\"${#{class_value}}\""
+                break
+              end
+            end
+          end
+
+          return "`<img#{class_attr} src=\"${#{src}}\" />`"
         else
           return "''"
         end

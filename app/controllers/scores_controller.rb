@@ -894,6 +894,12 @@ class ScoresController < ApplicationController
 
     # Pre-compute showcase_logo
     @showcase_logo = "/#{EventController.logo}"
+
+    # Pre-compute navigation footer data
+    @judge_display_name = @judge.display_name
+    @judge_present = @judge.present?
+    @judge_person_path = person_path(@judge)
+    @judge_toggle_present_path = @assign_judges ? toggle_present_person_path(@judge) : nil
   end
 
   # GET /scores/:judge/heats/:heat - JSON endpoint for Stimulus-based SPA
@@ -982,8 +988,14 @@ class ScoresController < ApplicationController
         assign_judges: @event.assign_judges,
         judge_comments: @event.judge_comments
       },
-      judge: @judge,
+      judge: @judge.as_json(methods: [:display_name, :present?]),
+      judge_display_name: @judge.display_name,
+      judge_present: @judge.present?,
+      judge_person_path: person_path(@judge),
+      judge_toggle_present_path: @assign_judges ? toggle_present_person_path(@judge) : nil,
       post_feedback_path: post_feedback_path(judge: @judge),
+      prev: @prev,
+      next: @next,
       number: @number,
       slot: @slot,
       style: @style,
@@ -1037,6 +1049,10 @@ class ScoresController < ApplicationController
       scoring_instructions: @scoring_instructions,
       navigation_instructions: @navigation_instructions,
       showcase_logo: @showcase_logo,
+      judge_display_name: @judge_display_name,
+      judge_present: @judge_present,
+      judge_person_path: @judge_person_path,
+      judge_toggle_present_path: @judge_toggle_present_path,
       song: @song ? {
         url: @song.song_file.url,
         content_type: @song.song_file.content_type,
