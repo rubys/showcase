@@ -129,6 +129,10 @@ class ErbPrismConverter
       # Final _erbout → skip
       return if stmt.name == :_erbout
 
+    when Prism::NextNode
+      # Ruby 'next' in a loop → JavaScript 'continue'
+      add_line("continue;")
+
     else
       add_line("// TODO: #{stmt.class.name}")
     end
