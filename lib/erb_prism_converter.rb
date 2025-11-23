@@ -483,12 +483,34 @@ class ErbPrismConverter
     receiver = node.receiver ? ruby_to_js(node.receiver) : nil
     args = node.arguments ? node.arguments.arguments.map { |a| ruby_to_js(a) } : []
 
-    # Check for block argument (e.g., &:method_name)
+    # Check for block argument (e.g., &:method_name or {|x| ... })
     if node.block.is_a?(Prism::BlockArgumentNode)
       # Pattern: &:method_name -> x => x.method_name
       if node.block.expression.is_a?(Prism::SymbolNode)
         method_name = node.block.expression.unescaped
         args << "x => x.#{method_name}"
+      end
+    elsif node.block.is_a?(Prism::BlockNode)
+      # Regular block: {|param| body} -> param => body
+      block_params = node.block.parameters
+      param_names = []
+
+      if block_params && block_params.parameters
+        param_nodes = block_params.parameters.requireds || []
+        param_names = param_nodes.map(&:name)
+      end
+
+      # Convert block body to JavaScript expression
+      if node.block.body && node.block.body.body && node.block.body.body.length > 0
+        # For now, handle single-expression blocks
+        block_body = node.block.body.body.first
+        body_js = ruby_to_js(block_body)
+
+        if param_names.empty?
+          args << "() => #{body_js}"
+        else
+          args << "#{param_names.join(', ')} => #{body_js}"
+        end
       end
     end
 
@@ -548,6 +570,10 @@ class ErbPrismConverter
       "#{receiver}[0]"
     when "last"
       "#{receiver}[#{receiver}.length - 1]"
+    when "max"
+      "Math.max(...#{receiver})"
+    when "min"
+      "Math.min(...#{receiver})"
     when "keys"
       "Object.keys(#{receiver})"
     when "respond_to?"
