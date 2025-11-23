@@ -32,7 +32,7 @@
           <th class="row-head">Judges</th>
         </tr>
       </thead>
-      <% # Sort by callback count, then by back number %>
+      <%# Sort by callback count, then by back number %>
       <% results = entries.sort_by {|entry, results| [-results['callbacks'], entry.lead.back.to_i]} %>
       <% results.each do |entry, results| %>
         <tr class="<%= results['called_back'] ? 'bg-green-50' : '' %>">

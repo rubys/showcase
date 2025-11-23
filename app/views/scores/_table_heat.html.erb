@@ -115,7 +115,8 @@
       <% end %>
       <% end %>
     </tr>
-    <% if @style != 'emcee' and !%w(1 G #).include?(@scoring) # and @scores.empty? %>
+    <%# Display feedback rows for all scoring types except emcee mode and specific scoring types %>
+    <% if @style != 'emcee' and !%w(1 G #).include?(@scoring) %>
     <tr data-controller="open-feedback" class="open-fb-row" data-heat="<%= subject.id %>" data-feedback-action="<%= @post_feedback_path %>">
     <td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) %>">
     <% if @scoring == '&' %>
