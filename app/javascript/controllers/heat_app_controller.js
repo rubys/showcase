@@ -95,21 +95,9 @@ export default class extends Controller {
       const data = await response.json()
       console.log('Heat data loaded:', data)
 
-      // Select appropriate template based on heat data
-      let html
-      if (data.heat.category === 'Solo') {
-        console.log('Rendering solo heat')
-        html = this.templates.soloHeat(data)
-      } else if (data.final) {
-        console.log('Rendering finals (rank heat)')
-        html = this.templates.rankHeat(data)
-      } else if (data.style !== 'cards' || !data.scores || data.scores.length === 0) {
-        console.log('Rendering table heat')
-        html = this.templates.tableHeat(data)
-      } else {
-        console.log('Rendering cards heat')
-        html = this.templates.cardsHeat(data)
-      }
+      // Use the full heat template which will call appropriate partials
+      console.log('Rendering full heat view with heat() template')
+      const html = this.templates.heat(data)
 
       // Replace loading div with rendered heat
       this.element.innerHTML = html
