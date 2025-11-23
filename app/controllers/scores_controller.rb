@@ -457,7 +457,8 @@ class ScoresController < ApplicationController
         dance_id: heat.dance_id,
         entry_id: heat.entry_id,
         solo_id: heat.solo&.id,
-        category: heat.category
+        category: heat.category,
+        ballroom: heat.ballroom
       }
     end
 
@@ -501,7 +502,8 @@ class ScoresController < ApplicationController
         name: dance.name,
         order: dance.order,
         heat_length: dance.heat_length,
-        semi_finals: dance.semi_finals
+        semi_finals: dance.semi_finals,
+        uses_scrutineering: dance.uses_scrutineering?
       }
     end
 
@@ -587,7 +589,8 @@ class ScoresController < ApplicationController
       levels: levels_data,
       solos: solos_data,
       formations: formations_data,
-      scores: scores_data
+      scores: scores_data,
+      feedbacks: Feedback.all.map { |f| { id: f.id, value: f.value, abbr: f.abbr } }
     }
 
     render json: data
