@@ -371,6 +371,228 @@ class ScoresController < ApplicationController
     render json: data
   end
 
+  # GET /scores/:judge/heats/data - Returns normalized data for SPA (all entities in separate tables)
+  def heats_data
+    event = Event.current
+    judge = Person.find(params[:judge].to_i)
+
+    # Load all heats with associations
+    all_heats = Heat.where(number: 1..).includes(
+      :dance, :entry, :solo, :scores
+    ).order(:number).to_a
+
+    # Collect all unique entities
+    people_set = {}
+    studios_set = {}
+    entries_set = {}
+    dances_set = {}
+    ages_set = {}
+    levels_set = {}
+    categories_set = {}
+    solos_set = {}
+    formations_set = {}
+    scores_set = {}
+
+    # Process all heats and extract entities
+    all_heats.each do |heat|
+      # Collect dance
+      if heat.dance
+        dances_set[heat.dance.id] = heat.dance
+      end
+
+      # Collect entry and related people
+      if heat.entry
+        entry = heat.entry
+        entries_set[entry.id] = entry
+
+        # Collect lead
+        if entry.lead
+          people_set[entry.lead.id] = entry.lead
+          studios_set[entry.lead.studio_id] = entry.lead.studio if entry.lead.studio
+        end
+
+        # Collect follow
+        if entry.follow
+          people_set[entry.follow.id] = entry.follow
+          studios_set[entry.follow.studio_id] = entry.follow.studio if entry.follow.studio
+        end
+
+        # Collect instructor
+        if entry.instructor
+          people_set[entry.instructor.id] = entry.instructor
+          studios_set[entry.instructor.studio_id] = entry.instructor.studio if entry.instructor.studio
+        end
+
+        # Collect age and level
+        ages_set[entry.age.id] = entry.age if entry.age
+        levels_set[entry.level.id] = entry.level if entry.level
+      end
+
+      # Collect solo and formations
+      if heat.solo
+        solo = heat.solo
+        solos_set[solo.id] = solo
+
+        # Load formations for this solo
+        solo.formations.each do |formation|
+          formations_set[formation.id] = formation
+          if formation.person
+            people_set[formation.person.id] = formation.person
+            studios_set[formation.person.studio_id] = formation.person.studio if formation.person.studio
+          end
+        end
+      end
+
+      # Collect scores
+      heat.scores.each do |score|
+        scores_set[score.id] = score
+      end
+    end
+
+    # Serialize heats (just IDs and foreign keys)
+    heats_data = all_heats.map do |heat|
+      {
+        id: heat.id,
+        number: heat.number,
+        dance_id: heat.dance_id,
+        entry_id: heat.entry_id,
+        solo_id: heat.solo&.id,
+        category: heat.category
+      }
+    end
+
+    # Serialize people (with computed fields)
+    people_data = people_set.transform_values do |person|
+      {
+        id: person.id,
+        name: person.name,
+        display_name: person.display_name,
+        back: person.back,
+        type: person.type,
+        studio_id: person.studio_id
+      }
+    end
+
+    # Serialize studios
+    studios_data = studios_set.transform_values do |studio|
+      {
+        id: studio.id,
+        name: studio.name
+      }
+    end
+
+    # Serialize entries
+    entries_data = entries_set.transform_values do |entry|
+      {
+        id: entry.id,
+        lead_id: entry.lead_id,
+        follow_id: entry.follow_id,
+        instructor_id: entry.instructor_id,
+        studio_id: entry.studio_id,
+        age_id: entry.age_id,
+        level_id: entry.level_id
+      }
+    end
+
+    # Serialize dances
+    dances_data = dances_set.transform_values do |dance|
+      {
+        id: dance.id,
+        name: dance.name,
+        order: dance.order,
+        heat_length: dance.heat_length,
+        semi_finals: dance.semi_finals
+      }
+    end
+
+    # Serialize ages
+    ages_data = ages_set.transform_values do |age|
+      {
+        id: age.id,
+        category: age.category
+      }
+    end
+
+    # Serialize levels
+    levels_data = levels_set.transform_values do |level|
+      {
+        id: level.id,
+        name: level.name,
+        initials: level.initials
+      }
+    end
+
+    # Serialize solos
+    solos_data = solos_set.transform_values do |solo|
+      {
+        id: solo.id,
+        combo_dance_id: solo.combo_dance_id
+      }
+    end
+
+    # Serialize formations
+    formations_data = formations_set.transform_values do |formation|
+      {
+        id: formation.id,
+        solo_id: formation.solo_id,
+        person_id: formation.person_id,
+        on_floor: formation.on_floor
+      }
+    end
+
+    # Serialize scores
+    scores_data = scores_set.transform_values do |score|
+      {
+        id: score.id,
+        heat_id: score.heat_id,
+        judge_id: score.judge_id,
+        value: score.value,
+        good: score.good,
+        bad: score.bad
+      }
+    end
+
+    # Return normalized data structure
+    data = {
+      event: {
+        id: event.id,
+        name: event.name,
+        open_scoring: event.open_scoring,
+        closed_scoring: event.closed_scoring,
+        multi_scoring: event.multi_scoring,
+        solo_scoring: event.solo_scoring,
+        heat_range_cat: event.heat_range_cat,
+        assign_judges: event.assign_judges,
+        backnums: event.backnums,
+        track_ages: event.track_ages,
+        ballrooms: event.ballrooms,
+        column_order: event.column_order,
+        judge_comments: event.judge_comments,
+        pro_am: event.pro_am
+      },
+      judge: {
+        id: judge.id,
+        name: judge.name,
+        display_name: judge.display_name,
+        sort_order: judge.sort_order || 'back',
+        show_assignments: judge.show_assignments || 'first',
+        review_solos: judge&.judge&.review_solos&.downcase
+      },
+      heats: heats_data,
+      people: people_data,
+      studios: studios_data,
+      entries: entries_data,
+      dances: dances_data,
+      ages: ages_data,
+      levels: levels_data,
+      solos: solos_data,
+      formations: formations_data,
+      scores: scores_data
+    }
+
+    render json: data
+  end
+
   # GET /scores/:judge/version/:heat - Lightweight version check for sync strategy
   def version_check
     heat_number = params[:heat].to_f
