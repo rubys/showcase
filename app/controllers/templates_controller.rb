@@ -8,6 +8,10 @@ class TemplatesController < ApplicationController
   skip_before_action :verify_authenticity_token
 
   SCORING_TEMPLATES = {
+    'heat' => 'app/views/scores/heat.html.erb',
+    'heatHeader' => 'app/views/scores/_heat_header.html.erb',
+    'infoBox' => 'app/views/scores/_info_box.html.erb',
+    'navigationFooter' => 'app/views/scores/_navigation_footer.html.erb',
     'cardsHeat' => 'app/views/scores/_cards_heat.html.erb',
     'rankHeat' => 'app/views/scores/_rank_heat.html.erb',
     'soloHeat' => 'app/views/scores/_solo_heat.html.erb',

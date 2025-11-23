@@ -174,4 +174,34 @@ class ErbPrismConverterTest < ActiveSupport::TestCase
     assert_match /console\.debug\("test:", data\.value\);/, js
     refute_match /data\.console/, js
   end
+
+  test "converts all scoring templates without errors" do
+    # All templates should now convert since Rails-specific logic has been moved to the controller
+    templates = {
+      'heat' => 'app/views/scores/heat.html.erb',
+      'heat_header' => 'app/views/scores/_heat_header.html.erb',
+      'info_box' => 'app/views/scores/_info_box.html.erb',
+      'navigation_footer' => 'app/views/scores/_navigation_footer.html.erb',
+      'cards_heat' => 'app/views/scores/_cards_heat.html.erb',
+      'rank_heat' => 'app/views/scores/_rank_heat.html.erb',
+      'solo_heat' => 'app/views/scores/_solo_heat.html.erb',
+      'table_heat' => 'app/views/scores/_table_heat.html.erb'
+    }
+
+    templates.each do |name, path|
+      erb_content = File.read(Rails.root.join(path))
+
+      # Should not raise any errors
+      js = nil
+      begin
+        js = convert(erb_content)
+      rescue => e
+        flunk "Failed to convert #{name}: #{e.message}"
+      end
+
+      # Should generate valid JavaScript function
+      assert_match /export function render\(data\)/, js, "#{name} should export a render function"
+      assert_match /return html;/, js, "#{name} should return html"
+    end
+  end
 end

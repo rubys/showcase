@@ -15,9 +15,8 @@ class ErbPrismConverter
   end
 
   def convert
-    # Step 1: Compile ERB to Ruby
-    erb = ERB.new(@template, trim_mode: '-')
-    ruby_code = erb.src
+    # Step 1: Compile ERB to Ruby using Rails' ERB handler
+    ruby_code = compile_with_rails_handler(@template)
 
     # Step 2: Parse with Prism
     result = Prism.parse(ruby_code)
@@ -81,8 +80,8 @@ class ErbPrismConverter
       stmt.else_clause&.statements&.body&.each { |s| scan_statement_for_vars(s) }
 
     when Prism::CallNode
-      # Scan each loops for assignments in their bodies
-      if stmt.name == :each && stmt.block
+      # Scan each/each_with_index loops for assignments in their bodies
+      if (stmt.name == :each || stmt.name == :each_with_index) && stmt.block
         # Track loop parameters as local variables
         block_params = stmt.block.parameters
         if block_params && block_params.parameters
@@ -129,6 +128,10 @@ class ErbPrismConverter
       # Final _erbout → skip
       return if stmt.name == :_erbout
 
+    when Prism::InstanceVariableReadNode
+      # Final @output_buffer → skip (Rails ERB format)
+      return if stmt.name == :@output_buffer
+
     when Prism::NextNode
       # Ruby 'next' in a loop → JavaScript 'continue'
       add_line("continue;")
@@ -139,7 +142,7 @@ class ErbPrismConverter
   end
 
   def process_call_statement(node)
-    # Check if this is _erbout.<< ... (output statement)
+    # Check if this is _erbout.<< ... (output statement) - old ERB format
     if node.name == :<<
       if node.receiver.is_a?(Prism::LocalVariableReadNode) && node.receiver.name == :_erbout
         process_output(node.arguments.arguments[0])
@@ -147,9 +150,25 @@ class ErbPrismConverter
       end
     end
 
-    # Check if this is a .each loop at statement level
-    if node.name == :each && node.block
+    # Check if this is @output_buffer.safe_append= or @output_buffer.append= - Rails ERB format
+    if node.name == :safe_append= || node.name == :append=
+      if node.receiver.is_a?(Prism::InstanceVariableReadNode) && node.receiver.name == :@output_buffer
+        process_output(node.arguments.arguments[0])
+        return
+      end
+    end
+
+    # Check if this is a .each or .each_with_index loop at statement level
+    if (node.name == :each || node.name == :each_with_index) && node.block
       process_each_loop(node)
+      return
+    end
+
+    # Check if this is link_to with a block - stub it out for SPA
+    if node.name == :link_to && node.block
+      # Just render the block contents without the link wrapper
+      # The SPA will handle navigation differently
+      node.block.body&.body&.each { |stmt| process_statement(stmt) }
       return
     end
 
@@ -191,7 +210,10 @@ class ErbPrismConverter
 
     when Prism::CallNode
       # Could be dynamic output or string interpolation
-      if arg.name == :to_s && arg.receiver.is_a?(Prism::ParenthesesNode)
+      if arg.name == :link_to && arg.block
+        # link_to with block -> just render the block contents, skip the link wrapper
+        arg.block.body&.body&.each { |stmt| process_statement(stmt) }
+      elsif arg.name == :to_s && arg.receiver.is_a?(Prism::ParenthesesNode)
         # Pattern: _erbout.<<(( expr ).to_s)
         inner_expr = arg.receiver.body.body[0]
         js_expr = ruby_to_js(inner_expr)
@@ -303,8 +325,18 @@ class ErbPrismConverter
         # Simple each: items.each do |item|
         # Don't use 'const' since variable is hoisted
         add_line("for (#{param_names[0]} of #{collection}) {")
+      elsif node.name == :each_with_index
+        # each_with_index: items.each_with_index do |item, index|
+        # Use .entries() to get [index, value] pairs
+        temp_var = "_temp_#{param_names.join('_')}"
+        add_line("for (const #{temp_var} of #{collection}.entries()) {")
+        @indent_level += 1
+        # entries() returns [index, value], so assign appropriately
+        add_line("#{param_names[1]} = #{temp_var}[0];") # index
+        add_line("#{param_names[0]} = #{temp_var}[1];") # value
+        @indent_level -= 1
       else
-        # each with multiple params (hash iteration, each_with_index, etc.)
+        # each with multiple params (hash iteration, etc.)
         # Use temporary for destructuring, then assign to hoisted variables
         temp_var = "_temp_#{param_names.join('_')}"
         add_line("for (const #{temp_var} of Object.entries(#{collection})) {")
@@ -431,12 +463,26 @@ class ErbPrismConverter
         "{#{pairs.join(', ')}}"
       end
 
+    when Prism::KeywordHashNode
+      # Keyword arguments in method calls (e.g., link_to "text", path, class: "btn")
+      if node.elements.empty?
+        "{}"
+      else
+        pairs = node.elements.map do |assoc|
+          key = ruby_to_js(assoc.key)
+          value = ruby_to_js(assoc.value)
+          "#{key}: #{value}"
+        end
+        "{#{pairs.join(', ')}}"
+      end
+
     when Prism::IfNode
       # Ternary operator
+      # Double parentheses to protect from operator precedence issues (e.g., 5 + (cond ? 1 : 0))
       condition = ruby_to_js(node.predicate)
       true_val = node.statements ? ruby_to_js(node.statements.body[0]) : "null"
       false_val = node.subsequent ? ruby_to_js(node.subsequent.statements.body[0]) : "null"
-      "(#{condition}) ? #{true_val} : #{false_val}"
+      "((#{condition}) ? #{true_val} : #{false_val})"
 
     when Prism::ParenthesesNode
       # Just unwrap the parentheses
@@ -478,6 +524,63 @@ class ErbPrismConverter
     if node.receiver.nil? && method == "dom_id"
       args = node.arguments ? node.arguments.arguments.map { |a| ruby_to_js(a) } : []
       return "domId(#{args.join(', ')})"
+    end
+
+    # Handle render partial calls
+    if node.receiver.nil? && method == "render"
+      args = node.arguments ? node.arguments.arguments.map { |a| ruby_to_js(a) } : []
+      # Convert Rails partial name to function name
+      # e.g., "heat_header" -> heatHeader
+      if args.length > 0
+        partial_name = args[0].gsub(/^["']|["']$/, '') # Remove quotes
+        function_name = partial_name.split('_').map.with_index { |part, i| i == 0 ? part : part.capitalize }.join
+        return "#{function_name}(data)"
+      end
+      return "/* Unknown render call */"
+    end
+
+    # Stub Rails view helpers for SPA (navigation will be reimplemented later)
+    if node.receiver.nil?
+      case method
+      when "link_to"
+        # link_to text, url, options -> return just the text for now
+        # Block form will be handled by the block parameter
+        if node.block
+          # link_to(url, options) do ... end -> render block content
+          # For now, just return empty string - block will be evaluated separately
+          return "''"
+        else
+          # link_to text, url -> return text
+          args = node.arguments ? node.arguments.arguments.map { |a| ruby_to_js(a) } : []
+          if args.length > 0
+            return args[0]
+          end
+        end
+        return "''"
+      when "image_tag"
+        # image_tag src, options -> generate stub <img> tag
+        args = node.arguments ? node.arguments.arguments.map { |a| ruby_to_js(a) } : []
+        if args.length > 0
+          src = args[0]
+          return "`<img src=\"${#{src}}\" />`"
+        else
+          return "''"
+        end
+      when "raw"
+        # raw(html) in Rails marks string as safe - in JS just return the string
+        args = node.arguments ? node.arguments.arguments.map { |a| ruby_to_js(a) } : []
+        if args.length > 0
+          return args[0]
+        else
+          return "''"
+        end
+      when "judge_heatlist_path", "post_score_path", "start_heat_event_index_path", "toggle_present_person_path", "person_path", "root_path"
+        # Path helpers -> return '#' (SPA will handle navigation differently)
+        return "'#'"
+      when "judge_backs_display", "heat_dance_slot_display", "heat_multi_dance_names"
+        # Custom helper methods -> return empty string stub
+        return "''"
+      end
     end
 
     receiver = node.receiver ? ruby_to_js(node.receiver) : nil
@@ -552,6 +655,8 @@ class ErbPrismConverter
       "#{receiver} / #{args[0]}"
     when "blank?"
       "#{receiver} == null || #{receiver}.length === 0"
+    when "present?"
+      "#{receiver} != null && #{receiver}.length > 0"
     when "empty?"
       "(#{receiver}.length === 0)"
     when "any?"
@@ -599,10 +704,13 @@ class ErbPrismConverter
       "!#{receiver}"
     else
       if receiver
+        # Strip trailing ? from boolean methods (e.g., assign_judges? -> assign_judges)
+        js_method = method.to_s.end_with?('?') ? method.to_s.chomp('?') : method.to_s
+
         if args.empty?
-          "#{receiver}#{op}#{method}"
+          "#{receiver}#{op}#{js_method}"
         else
-          "#{receiver}#{op}#{method}(#{args.join(', ')})"
+          "#{receiver}#{op}#{js_method}(#{args.join(', ')})"
         end
       elsif is_var_call && args.empty?
         # Bare identifier - check if it's local or data
@@ -641,5 +749,21 @@ class ErbPrismConverter
 
   def escape_js_string(text)
     text.gsub('\\', '\\\\').gsub('"', '\\"').gsub("\n", '\\n').gsub("\r", '\\r')
+  end
+
+  def compile_with_rails_handler(template_source)
+    # Use Rails' ERB handler which produces valid Ruby with @output_buffer
+    require 'action_view'
+
+    template = ActionView::Template.new(
+      template_source,
+      'template',
+      ActionView::Template.handler_for_extension(:erb),
+      format: :html,
+      locals: []
+    )
+
+    handler = ActionView::Template::Handlers::ERB.new
+    handler.call(template, template_source)
   end
 end

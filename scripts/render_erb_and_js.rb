@@ -117,22 +117,9 @@ begin
   js_file.write(<<~JAVASCRIPT)
     #{regular_code}
 
-    // Select appropriate template based on data
+    // Render using the main heat template which will call the appropriate partials
     const data = #{data.to_json};
-
-    let templateFn;
-    if (data.heat.category === 'Solo') {
-      templateFn = soloHeat;
-    } else if (data.final) {
-      templateFn = rankHeat;
-    } else if (data.style !== 'cards' || !data.scores || data.scores.length === 0) {
-      templateFn = tableHeat;
-    } else {
-      templateFn = cardsHeat;
-    }
-
-    // Render and output
-    const html = templateFn(data);
+    const html = heat(data);
     console.log(html);
   JAVASCRIPT
 

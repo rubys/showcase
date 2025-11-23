@@ -6,13 +6,8 @@
       <% end %>
       </span>
     <% end %>
-    <% if @event.assign_judges? && @show == 'mixed' && @judge && @style != 'emcee' %>
-      <% heats = Heat.joins(:scores).includes(entry: :lead).where(number: @heat.number, scores: {judge_id: @judge.id}).to_a
-         unassigned = Heat.where(number: @heat.number).includes(entry: :lead).left_joins(:scores).where(scores: { id: nil }).to_a
-         early = Heat.includes(entry: :lead).joins(:scores).where(scores: { updated_at: ...Event.current.date}).distinct.to_a
-         heats = (heats + early + unassigned).uniq.sort_by {|heat| heat.entry.lead.back || Float::INFINITY}
-      %>
-      <div class="text-2xl"><%= judge_backs_display(heats, unassigned, early) %></div>
+    <% if @judge_backs_html %>
+      <div class="text-2xl"><%= raw @judge_backs_html %></div>
     <% end %>
     <% if @style == 'emcee' and @heat.category != 'Solo' %>
       <div class="font-normal"><%= @subjects.length %> <%= 'couple'.pluralize @subjects.length %> on the floor</div>
@@ -24,10 +19,10 @@
       <% end %>
     <% end %>
 
-    <% if @heat.dance.heat_length %>
+    <% if @heat_slot_display %>
       <div class="text-2xl font-normal">
-        <%= heat_dance_slot_display(@heat, @slot, @final) %>
-        <%= heat_multi_dance_names(@heat, @slot) %>
+        <%= @heat_slot_display %>
+        <%= @multi_dance_names %>
         <% if @callbacks %>
           <span>(Callback <%= @callbacks %>)</span>
         <% end %>

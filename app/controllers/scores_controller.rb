@@ -812,6 +812,88 @@ class ScoresController < ApplicationController
     @assign_judges = @style != 'emcee' && @event.assign_judges > 0 && @heat.category != 'Solo' && Person.where(type: 'Judge').count > 1
 
     @feedbacks = Feedback.all
+
+    # Pre-compute data for heat_header partial
+    if @event.assign_judges? && @show == 'mixed' && @judge && @style != 'emcee'
+      heats = Heat.joins(:scores).includes(entry: :lead).where(number: @heat.number, scores: {judge_id: @judge.id}).to_a
+      unassigned = Heat.where(number: @heat.number).includes(entry: :lead).left_joins(:scores).where(scores: { id: nil }).to_a
+      early = Heat.includes(entry: :lead).joins(:scores).where(scores: { updated_at: ...Event.current.date}).distinct.to_a
+      heats = (heats + early + unassigned).uniq.sort_by {|heat| heat.entry.lead.back || Float::INFINITY}
+
+      # Compute judge_backs_display
+      @judge_backs_html = heats.map do |heat|
+        color = if unassigned.include?(heat)
+          "text-red-400"
+        elsif early.include?(heat)
+          "text-gray-400"
+        else
+          "text-black"
+        end
+        "<a href='#heat_#{heat.id}' class='#{color}'>#{heat.entry.lead.back}</a>"
+      end.join(' ')
+    end
+
+    # Pre-compute heat_dance_slot_display
+    if @heat.dance.heat_length
+      @heat_slot_display = if !@heat.dance.semi_finals
+        "Dance #{@slot} of #{@heat.dance.heat_length}:"
+      elsif !@final
+        "Semi-final #{@slot} of #{@heat.dance.heat_length}:"
+      else
+        slot_number = @slot > @heat.dance.heat_length ? @slot - @heat.dance.heat_length : @slot
+        "Final #{slot_number} of #{@heat.dance.heat_length}:"
+      end
+    end
+
+    # Pre-compute heat_multi_dance_names
+    if @slot
+      slots = @heat.dance.multi_children.group_by(&:slot)
+      if slots.length > 1 && slots[@slot]
+        @multi_dance_names = slots[@slot].sort_by { |multi| multi.dance.order }.map { |multi| multi.dance.name }.join(' / ')
+      elsif slots.values.last&.length == @heat.dance.heat_length
+        multi = slots.values.last.sort_by { |multi| multi.dance.order }[(@slot - 1) % @heat.dance.heat_length]
+        @multi_dance_names = multi&.dance&.name
+      elsif slots.values.last
+        @multi_dance_names = slots.values.last.sort_by { |multi| multi.dance.order }.map { |multi| multi.dance.name }.join(' / ')
+      end
+    end
+
+    # Pre-compute scoring_instruction_text
+    @scoring_instructions = if @heat.category == 'Solo'
+      "Tab to or click on comments or score to edit.  Press escape or click elsewhere to save."
+    elsif @style != 'radio'
+      <<~HTML.strip
+        Scoring can be done multiple ways:
+        <ul class="list-disc ml-4">
+          <li>Drag and drop: Drag an entry box to the desired score.</li>
+          <li>Point and click: Clicking on a entry back and then clicking on score.  Clicking on the back number again unselects it.</li>
+          <li>Keyboard: tab to the desired entry back, then move it up and down using the keyboard.  Clicking on escape unselects the back.</li>
+        </ul>
+      HTML
+    elsif @event.open_scoring == '#'
+      "Enter scores in the right most column.  Tab to move to the next entry."
+    elsif @event.open_scoring == '+'
+      <<~HTML.strip
+        Buttons on the left are used to indicated areas where the couple did well and will show up as <span class="good mx-0"><span class="open-fb selected px-2 mx-0">green</span></span> when selected.</li>
+        <li>Buttons on the right are used to indicate areas where the couple need improvement and will show up as <span class="bad mx-0"><span class="open-fb selected px-2 mx-0">red</span></span> when selected.
+      HTML
+    else
+      "Click on the <em>radio</em> buttons on the right to score a couple.  The last column, with a dash (<code>-</code>), means the couple hasn't been scored / didn't participate."
+    end
+
+    # Pre-compute navigation_instruction_text
+    base_text = "Clicking on the arrows at the bottom corners will advance you to the next or previous heats. Left and right arrows on the keyboard may also be used"
+    suffix = if @heat.category == 'Solo'
+      " when not editing comments or score"
+    elsif @event.open_scoring == '#'
+      " when not entering scores"
+    else
+      ""
+    end
+    @navigation_instructions = "#{base_text}#{suffix}. Swiping left and right on mobile devices and tablets also work."
+
+    # Pre-compute showcase_logo
+    @showcase_logo = "/#{EventController.logo}"
   end
 
   # GET /scores/:judge/heats/:heat - JSON endpoint for Stimulus-based SPA
@@ -910,6 +992,12 @@ class ScoresController < ApplicationController
         dance: {
           methods: [:semi_finals, :uses_scrutineering?],
           only: [:id, :name, :order]
+        },
+        solo: {
+          only: [:id],
+          include: {
+            combo_dance: { only: [:id, :name] }
+          }
         }
       }),
       dance: @dance,  # Keep string for backward compatibility
@@ -941,7 +1029,20 @@ class ScoresController < ApplicationController
       message: @message,
       # Additional fields that might be needed
       show: @show,
-      sort: @sort
+      sort: @sort,
+      # Pre-computed helper data for templates
+      judge_backs_html: @judge_backs_html,
+      heat_slot_display: @heat_slot_display,
+      multi_dance_names: @multi_dance_names,
+      scoring_instructions: @scoring_instructions,
+      navigation_instructions: @navigation_instructions,
+      showcase_logo: @showcase_logo,
+      song: @song ? {
+        url: @song.song_file.url,
+        content_type: @song.song_file.content_type,
+        title: @song.title,
+        artist: @song.artist
+      } : nil
     }
   end
 
