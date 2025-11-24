@@ -830,7 +830,7 @@ class ScoresController < ApplicationController
       if slots.length > 1 && slots[@slot]
         @multi_dance_names = slots[@slot].sort_by { |multi| multi.dance.order }.map { |multi| multi.dance.name }.join(' / ')
       elsif slots.values.last&.length == @heat.dance.heat_length
-        multi = slots.values.last.sort_by { |multi| multi.dance.order }[(@slot - 1) % @heat.dance.heat_length]
+        multi = slots.values.last&.sort_by { |multi| multi.dance.order }&.[]((@slot - 1) % @heat.dance.heat_length)
         @multi_dance_names = multi&.dance&.name
       elsif slots.values.last
         @multi_dance_names = slots.values.last.sort_by { |multi| multi.dance.order }.map { |multi| multi.dance.name }.join(' / ')

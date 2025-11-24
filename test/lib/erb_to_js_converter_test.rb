@@ -296,7 +296,8 @@ class ErbToJsConverterTest < ActiveSupport::TestCase
     erb = '<% items[key]&.each do |item| %><p><%= item %></p><% end %>'
     js = convert(erb)
 
-    assert_includes js, "for (const item of items[key]?) {"
+    # Converter uses defensive fallback pattern instead of optional chaining
+    assert_includes js, "for (const item of (items[key] || [])) {"
   end
 
   test "handles dom_id with argument" do
