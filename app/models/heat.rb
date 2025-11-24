@@ -67,8 +67,16 @@ class Heat < ApplicationRecord
     entry.lead
   end
 
+  def lead_id
+    entry.lead_id
+  end
+
   def follow
     entry.follow
+  end
+
+  def follow_id
+    entry.follow_id
   end
 
   def partner(person)

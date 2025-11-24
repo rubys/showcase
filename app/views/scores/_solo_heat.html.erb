@@ -1,14 +1,28 @@
     <%
-    if @heat.lead.id == 0
+    # Hydrate lead and follow from subjects (for JS rendering)
+    lead = @subjects.first&.entry&.lead || @heat.lead
+    follow = @subjects.first&.entry&.follow || @heat.follow
+
+    if lead.id == 0
       dancers = []
-    elsif @column_order == 1 or @heat.follow.type == 'Professional'
-      dancers = [@heat.lead, @heat.follow]
+    elsif @column_order == 1 or follow.type == 'Professional'
+      dancers = [lead, follow]
     else
-      dancers = [@heat.follow, @heat.lead]
+      dancers = [follow, lead]
+    end
+
+    # Build person lookup from subjects for hydration
+    people_by_id = {}
+    @subjects.each do |subject|
+      people_by_id[subject.entry.lead.id] = subject.entry.lead if subject.entry.lead
+      people_by_id[subject.entry.follow.id] = subject.entry.follow if subject.entry.follow
     end
 
     @heat.solo.formations.each do |formation|
-      dancers << formation.person if formation.on_floor
+      if formation.on_floor
+        person = people_by_id[formation.person_id] || formation.person
+        dancers << person
+      end
     end
 
     if dancers.first

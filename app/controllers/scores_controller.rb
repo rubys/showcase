@@ -1160,8 +1160,16 @@ class ScoresController < ApplicationController
             methods: [:pro],
             include: {
               level: { only: [:id, :name], methods: [:initials] },
-              lead: { only: [:id, :name, :back, :type], methods: [:display_name] },
-              follow: { only: [:id, :name, :back, :type], methods: [:display_name] }
+              lead: {
+                only: [:id, :name, :back, :type],
+                methods: [:display_name],
+                include: { studio: { only: [:id, :name] } }
+              },
+              follow: {
+                only: [:id, :name, :back, :type],
+                methods: [:display_name],
+                include: { studio: { only: [:id, :name] } }
+              }
             }
           )
           # Add subject_category computed with track_ages parameter
@@ -1186,8 +1194,16 @@ class ScoresController < ApplicationController
                 methods: [:pro],
                 include: {
                   level: { only: [:id, :name], methods: [:initials] },
-                  lead: { only: [:id, :name, :back, :type], methods: [:display_name] },
-                  follow: { only: [:id, :name, :back, :type], methods: [:display_name] }
+                  lead: {
+                    only: [:id, :name, :back, :type],
+                    methods: [:display_name],
+                    include: { studio: { only: [:id, :name] } }
+                  },
+                  follow: {
+                    only: [:id, :name, :back, :type],
+                    methods: [:display_name],
+                    include: { studio: { only: [:id, :name] } }
+                  }
                 }
               },
               dance: { only: [:id, :name] },
@@ -1241,18 +1257,24 @@ class ScoresController < ApplicationController
       slot: @slot,
       style: @style,
       subjects: serialized_subjects,
-      heat: @heat.as_json(include: {
-        dance: {
-          methods: [:semi_finals, :uses_scrutineering?],
-          only: [:id, :name, :order]
-        },
-        solo: {
-          only: [:id],
-          include: {
-            combo_dance: { only: [:id, :name] }
+      heat: @heat.as_json(
+        methods: [:lead_id, :follow_id],
+        include: {
+          dance: {
+            methods: [:semi_finals, :uses_scrutineering?],
+            only: [:id, :name, :order]
+          },
+          solo: {
+            only: [:id],
+            include: {
+              combo_dance: { only: [:id, :name] },
+              formations: {
+                only: [:id, :person_id, :on_floor]
+              }
+            }
           }
         }
-      }),
+      ),
       dance: @dance,  # Keep string for backward compatibility
       scores: @scores,
       scoring: @scoring,
