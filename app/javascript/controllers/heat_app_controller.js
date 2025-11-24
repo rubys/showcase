@@ -11,7 +11,7 @@ export default class extends Controller {
   }
 
   async connect() {
-    console.log('HeatApp controller connected', {
+    console.debug('HeatApp controller connected', {
       judge: this.judgeValue,
       heat: this.heatValue,
       style: this.styleValue
@@ -44,7 +44,7 @@ export default class extends Controller {
   }
 
   async loadTemplates() {
-    console.log('Loading converted ERB templates...')
+    console.debug('Loading converted ERB templates...')
     const response = await fetch('/templates/scoring.js')
 
     if (!response.ok) {
@@ -54,12 +54,12 @@ export default class extends Controller {
     const code = await response.text()
     const module = await import(`data:text/javascript,${encodeURIComponent(code)}`)
 
-    console.log('Templates loaded successfully')
+    console.debug('Templates loaded successfully')
     return module
   }
 
   async loadAllData() {
-    console.log('Loading normalized data...')
+    console.debug('Loading normalized data...')
     const response = await fetch(
       `${this.basePathValue}/scores/${this.judgeValue}/heats/data`
     )
@@ -69,7 +69,7 @@ export default class extends Controller {
     }
 
     const data = await response.json()
-    console.log('Normalized data loaded:', {
+    console.debug('Normalized data loaded:', {
       heats: data.heats.length,
       people: Object.keys(data.people).length,
       studios: Object.keys(data.studios).length,
@@ -84,7 +84,7 @@ export default class extends Controller {
     // Build lookup tables for fast access
     this.buildLookupTables()
 
-    console.log('Data hydration complete')
+    console.debug('Data hydration complete')
   }
 
   buildLookupTables() {
@@ -202,14 +202,14 @@ export default class extends Controller {
   }
 
   showHeatList() {
-    console.log('Rendering heat list...')
+    console.debug('Rendering heat list...')
     // TODO: Implement heat list view
     this.element.innerHTML = '<h1>Heat List</h1><p>Coming soon...</p>'
   }
 
   showHeat(heatNumber) {
-    console.log(`Rendering heat ${heatNumber}...`)
-    console.log(`Type of heatNumber: ${typeof heatNumber}, value: ${heatNumber}`)
+    console.debug(`Rendering heat ${heatNumber}...`)
+    console.debug(`Type of heatNumber: ${typeof heatNumber}, value: ${heatNumber}`)
 
     try {
       // Find heats with this number
@@ -225,16 +225,111 @@ export default class extends Controller {
         throw new Error(`Heat ${heatNumber} not found`)
       }
 
-      // Hydrate all heats with this number
-      const hydratedHeats = heats.map(h => this.hydrateHeat(h))
+      // Hydrate all heats with this number (basic hydration only)
+      let hydratedHeats = heats.map(h => this.hydrateHeat(h))
 
       // Get primary heat for main properties
       const primaryHeat = hydratedHeats[0]
       const event = this.rawData.event
       const dance = primaryHeat.dance
+      const category = primaryHeat.category
+
+      // === CATEGORY SCORING LOGIC ===
+      // Determine which category_id to use based on heat category
+      let categoryId = null
+      if (category === 'Closed') {
+        categoryId = dance.closed_category_id
+      } else if (category === 'Open') {
+        categoryId = dance.open_category_id || dance.pro_open_category_id
+      } else if (category === 'Solo') {
+        categoryId = dance.solo_category_id || dance.pro_solo_category_id
+      } else if (category === 'Multi') {
+        categoryId = dance.multi_category_id || dance.pro_multi_category_id
+      }
+
+      // Check if category scoring is enabled (server provides this)
+      const categoryRecord = categoryId && this.rawData.categories ? this.rawData.categories[categoryId] : null
+      const categoryScoringEnabled = event.student_judge_assignments && categoryRecord?.use_category_scoring
+
+      console.debug(`Category scoring check: category=${category}, categoryId=${categoryId}, use_category_scoring=${categoryRecord?.use_category_scoring}, student_judge_assignments=${event.student_judge_assignments}, enabled=${categoryScoringEnabled}`)
+
+      // Apply category scoring expansion if enabled
+      if (categoryScoringEnabled) {
+        const expandedSubjects = []
+
+        // Build lookup for category scores: heat_id = -category_id, keyed by person_id
+        const categoryScores = {}
+        if (categoryId) {
+          Object.values(this.scores).forEach(score => {
+            if (score.heat_id === -categoryId && score.judge_id === this.rawData.judge.id && score.person_id) {
+              categoryScores[score.person_id] = [score]
+            }
+          })
+        }
+
+        hydratedHeats.forEach(subject => {
+          const students = []
+
+          // Identify students in this couple
+          if (subject.lead && subject.lead.type === 'Student') {
+            students.push({ student: subject.lead, role: 'lead' })
+          }
+          if (subject.follow && subject.follow.type === 'Student') {
+            students.push({ student: subject.follow, role: 'follow' })
+          }
+
+          if (students.length === 2) {
+            // Amateur couple - create two entries, one for each student
+            students.forEach(studentInfo => {
+              const studentScores = categoryScores[studentInfo.student.id] || []
+
+              expandedSubjects.push({
+                ...subject,
+                subject: studentInfo.student,       // The student being scored
+                student_role: studentInfo.role,     // 'lead' or 'follow'
+                scores: studentScores               // Category score for this student
+              })
+            })
+          } else if (students.length === 1) {
+            // Single student - keep as-is but mark the student
+            const studentScores = categoryScores[students[0].student.id] || []
+
+            expandedSubjects.push({
+              ...subject,
+              subject: students[0].student,
+              student_role: students[0].role,
+              scores: studentScores
+            })
+          } else {
+            // Pro/Am - no students, keep as-is
+            expandedSubjects.push(subject)
+          }
+        })
+
+        hydratedHeats = expandedSubjects
+        console.debug(`Category scoring expanded: ${heats.length} heats -> ${hydratedHeats.length} subjects`)
+      }
+
+      // Build category score assignments (student IDs that have category scores in THIS heat)
+      const allCategoryAssignments = categoryId && this.rawData.category_score_assignments && this.rawData.category_score_assignments[categoryId]
+        ? new Set(this.rawData.category_score_assignments[categoryId])
+        : new Set()
+
+      const categoryScoreAssignments = []
+      hydratedHeats.forEach(subject => {
+        const studentId = subject.subject?.id
+        if (studentId && allCategoryAssignments.has(studentId)) {
+          if (!categoryScoreAssignments.includes(studentId)) {
+            categoryScoreAssignments.push(studentId)
+          }
+        }
+      })
+
+      console.debug(`Category score assignments: ${categoryScoreAssignments.length} students in this heat`)
+
+      // === END CATEGORY SCORING LOGIC ===
 
       // Determine scoring type (matches logic from heats_show)
-      const category = primaryHeat.category
       let scoring
       if (category === 'Solo') {
         scoring = event.solo_scoring
@@ -267,7 +362,7 @@ export default class extends Controller {
       const currentIndex = allHeatNumbers.indexOf(parseFloat(heatNumber))
       const prev = currentIndex > 0 ? allHeatNumbers[currentIndex - 1] : null
       const next = currentIndex < allHeatNumbers.length - 1 ? allHeatNumbers[currentIndex + 1] : null
-      console.log(`Navigation: prev=${prev}, next=${next}, currentIndex=${currentIndex}, total=${allHeatNumbers.length}`)
+      console.debug(`Navigation: prev=${prev}, next=${next}, currentIndex=${currentIndex}, total=${allHeatNumbers.length}`)
 
       // Build score lookup objects (value, good, bad, comments by subject id)
       const value = {}
@@ -320,20 +415,29 @@ export default class extends Controller {
         track_ages: event.track_ages,
         backnums: event.backnums,
         assign_judges: event.assign_judges,
-        feedbacks: this.rawData.feedbacks || []
-        // TODO: Add these when needed
-        // results, combine_open_and_closed, category_scoring_enabled,
-        // category_score_assignments, message, etc.
+        feedbacks: this.rawData.feedbacks || [],
+        showcase_logo: this.rawData.event.showcase_logo || '/intertwingly.png',
+        show: this.rawData.judge.show_assignments || 'first',
+        category_scoring_enabled: categoryScoringEnabled,
+        category_score_assignments: categoryScoreAssignments,
+        judge_present: this.rawData.judge.present || false
       }
 
-      console.log('Rendering heat with hydrated data')
+      console.debug('Rendering heat with hydrated data')
+      console.debug(`Data summary: subjects=${data.subjects.length}, show=${data.show}, assign_judges=${data.assign_judges}, category_scoring=${data.category_scoring_enabled}, assignments=${data.category_score_assignments.length}`)
+      console.debug(`First few subjects:`, data.subjects.slice(0, 3).map(s => ({
+        id: s.id,
+        subject_id: s.subject?.id,
+        subject_name: s.subject?.name,
+        scores: s.scores?.length || 0
+      })))
       const html = this.templates.heat(data)
 
       // Replace content with rendered heat
       this.element.innerHTML = html
 
       // Stimulus controllers (score, open-feedback, drop) will auto-attach!
-      console.log('Heat rendered successfully')
+      console.debug('Heat rendered successfully')
 
     } catch (error) {
       console.error('Failed to render heat:', error)

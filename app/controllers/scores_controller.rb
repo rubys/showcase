@@ -140,7 +140,8 @@ class ScoresController < ApplicationController
         ballrooms: event.ballrooms,
         column_order: event.column_order,
         judge_comments: event.judge_comments,
-        pro_am: event.pro_am
+        pro_am: event.pro_am,
+        student_judge_assignments: event.student_judge_assignments
       },
       judge: {
         id: judge.id,
@@ -148,7 +149,8 @@ class ScoresController < ApplicationController
         display_name: judge.display_name,
         sort_order: judge.sort_order || 'back',
         show_assignments: judge.show_assignments || 'first',
-        review_solos: judge&.judge&.review_solos&.downcase
+        review_solos: judge&.judge&.review_solos&.downcase,
+        present: judge.present?
       },
       heats: heats.group_by(&:number).map do |number, heat_group|
         first_heat = heat_group.first
@@ -353,7 +355,7 @@ class ScoresController < ApplicationController
           subjects: subjects
         }
       end,
-      feedbacks: Feedback.all.map { |f| { id: f.id, value: f.value, abbr: f.abbr } },
+      feedbacks: Feedback.all.map { |f| { id: f.id, value: f.value, abbr: f.abbr, order: f.order } },
       score_options: {
         "Open" => get_scores_for_type(event.open_scoring).tap { |s| s << '' unless s.empty? },
         "Closed" => get_scores_for_type(event.closed_scoring == '=' ? event.open_scoring : event.closed_scoring).tap { |s| s << '' unless s.empty? },
@@ -491,7 +493,10 @@ class ScoresController < ApplicationController
         instructor_id: entry.instructor_id,
         studio_id: entry.studio_id,
         age_id: entry.age_id,
-        level_id: entry.level_id
+        level_id: entry.level_id,
+        pro: entry.pro,
+        subject_lvlcat: entry.subject_lvlcat(event.track_ages),
+        subject_category: entry.subject_category(event.track_ages)
       }
     end
 
@@ -503,7 +508,14 @@ class ScoresController < ApplicationController
         order: dance.order,
         heat_length: dance.heat_length,
         semi_finals: dance.semi_finals,
-        uses_scrutineering: dance.uses_scrutineering?
+        uses_scrutineering: dance.uses_scrutineering?,
+        closed_category_id: dance.closed_category_id,
+        open_category_id: dance.open_category_id,
+        solo_category_id: dance.solo_category_id,
+        multi_category_id: dance.multi_category_id,
+        pro_open_category_id: dance.pro_open_category_id,
+        pro_solo_category_id: dance.pro_solo_category_id,
+        pro_multi_category_id: dance.pro_multi_category_id
       }
     end
 
@@ -570,7 +582,8 @@ class ScoresController < ApplicationController
         ballrooms: event.ballrooms,
         column_order: event.column_order,
         judge_comments: event.judge_comments,
-        pro_am: event.pro_am
+        pro_am: event.pro_am,
+        student_judge_assignments: event.student_judge_assignments
       },
       judge: {
         id: judge.id,
@@ -578,7 +591,8 @@ class ScoresController < ApplicationController
         display_name: judge.display_name,
         sort_order: judge.sort_order || 'back',
         show_assignments: judge.show_assignments || 'first',
-        review_solos: judge&.judge&.review_solos&.downcase
+        review_solos: judge&.judge&.review_solos&.downcase,
+        present: judge.present?
       },
       heats: heats_data,
       people: people_data,
@@ -590,7 +604,12 @@ class ScoresController < ApplicationController
       solos: solos_data,
       formations: formations_data,
       scores: scores_data,
-      feedbacks: Feedback.all.map { |f| { id: f.id, value: f.value, abbr: f.abbr } }
+      feedbacks: Feedback.all.map { |f| { id: f.id, value: f.value, abbr: f.abbr, order: f.order } },
+      categories: Category.all.map { |c| [c.id, { id: c.id, name: c.name, use_category_scoring: c.use_category_scoring }] }.to_h,
+      category_score_assignments: Category.all.map { |cat|
+        student_ids = Score.where(heat_id: -cat.id, judge_id: judge.id).where.not(person_id: nil).pluck(:person_id).uniq
+        [cat.id, student_ids]
+      }.to_h
     }
 
     render json: data
