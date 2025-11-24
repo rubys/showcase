@@ -557,7 +557,7 @@ class ErbPrismConverter
 
           # Build attributes from options hash (third argument)
           attrs = []
-          attrs << "href=\"' + #{href} + '\""
+          attrs << "href=\"' + (#{href}) + '\""
 
           if args.length > 2 && args[2].is_a?(Prism::KeywordHashNode)
             args[2].elements.each do |assoc|
@@ -592,7 +592,7 @@ class ErbPrismConverter
             end
           end
 
-          return "'<a #{attrs.join(' ')}>' + #{text} + '</a>'"
+          return "'<a #{attrs.join(' ')}>' + (#{text}) + '</a>'"
         end
       when "image_tag"
         # image_tag src, options -> generate stub <img> tag
