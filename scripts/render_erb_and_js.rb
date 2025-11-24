@@ -93,6 +93,12 @@ end
 
 js_code = response.body.force_encoding('utf-8')
 
+# Save templates for debugging
+templates_file = "/tmp/scoring_templates.js"
+File.write(templates_file, js_code)
+puts "✓ Templates fetched: #{js_code.length} bytes"
+puts "  Saved to: #{templates_file}"
+
 # Fetch bulk data from the SPA endpoint (what the actual SPA uses)
 heats_data_env = {
   "PATH_INFO" => "/scores/#{judge_id}/heats/data",
@@ -192,9 +198,12 @@ puts ""
 puts "Files saved to /tmp/ for analysis:"
 puts ""
 puts "  HTML outputs:"
-puts "    /tmp/erb_rendered.html      - ERB template output"
-puts "    /tmp/js_rendered.html       - JavaScript template output"
+puts "    /tmp/erb_rendered.html         - ERB template output"
+puts "    /tmp/js_rendered.html          - JavaScript template output"
+puts ""
+puts "  JavaScript (for debugging):"
+puts "    /tmp/scoring_templates.js      - Converted templates from /templates/scoring.js"
 puts ""
 puts "  JSON data (for debugging):"
-puts "    /tmp/heats_data.json        - Raw normalized data from /heats/data endpoint"
-puts "    /tmp/js_template_data.json  - Complete template data (after buildHeatTemplateData)"
+puts "    /tmp/heats_data.json           - Raw normalized data from /heats/data endpoint"
+puts "    /tmp/js_template_data.json     - Complete template data (after buildHeatTemplateData)"
