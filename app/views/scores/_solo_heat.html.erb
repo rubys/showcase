@@ -25,6 +25,7 @@
       end
     end
 
+
     if dancers.first
       studio = dancers.first.studio.name
     elsif @heat.entry.instructor
@@ -34,7 +35,14 @@
     end
 
     if dancers.length == 2
-      dancers = dancers.first.join(dancers.last)
+      # Inline Person.join() logic for JS compatibility
+      first_dancer = dancers.first
+      last_dancer = dancers.last
+      if first_dancer.name.split(',').first == last_dancer.name.split(',').first
+        dancers = "#{first_dancer.first_name} and #{last_dancer.display_name}"
+      else
+        dancers = "#{first_dancer.display_name} and #{last_dancer.display_name}"
+      end
     elsif dancers.length > 0
       dancers.map! &:display_name
       dancers[-1] = "and #{dancers.last}"
@@ -66,9 +74,9 @@
   <% end %>
   <% else %>
   <label><b>Comments:</b></label>
-  <textarea disabled data-score-target="comments" data-heat="<%= @heat.id %>" 
+  <textarea disabled data-score-target="comments" data-heat="<%= @heat.id %>"
     class="grow block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full"
-  ><%= @comments %></textarea>
+  ><%= (@comments && @comments[@subjects.first.id]) || '' %></textarea>
 
   <div>
   <div class="float-right mt-4">
@@ -77,7 +85,8 @@
   <input disabled data-score-target="score" value="<%= @results.keys.first %>" type="number" min="0" max="100"
     class="border-2 border-black invalid:border-red-600 w-40 h-24 text-6xl text-center"/>
   <% else %>
-  <% results = @results.keys.first.start_with?('{') ? JSON.parse(@results.keys.first) : {} %>
+  <% result_key = @results.keys.first %>
+  <% results = result_key && result_key.start_with?('{') ? JSON.parse(result_key) : {} %>
   <div class="grid grid-cols-4 gap-2">
   <div>
   <div class="text-center">Technique</div>

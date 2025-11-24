@@ -1264,6 +1264,18 @@ class ScoresController < ApplicationController
             methods: [:semi_finals, :uses_scrutineering?],
             only: [:id, :name, :order]
           },
+          entry: {
+            methods: [:level_name],
+            only: [:id],
+            include: {
+              instructor: {
+                only: [:id, :name],
+                include: {
+                  studio: { only: [:id, :name] }
+                }
+              }
+            }
+          },
           solo: {
             only: [:id],
             include: {

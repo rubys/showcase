@@ -109,25 +109,27 @@ export default class extends Controller {
   }
 
   buildLookupTables() {
-    // Store lookup tables for O(1) access
-    this.people = this.rawData.people
-    this.studios = this.rawData.studios
-    this.entries = this.rawData.entries
-    this.dances = this.rawData.dances
-    this.ages = this.rawData.ages
-    this.levels = this.rawData.levels
-    this.solos = this.rawData.solos
-    this.formations = this.rawData.formations
-    this.scores = this.rawData.scores
+    // Store lookup tables for O(1) access - provide defaults for missing data
+    this.people = this.rawData.people || {}
+    this.studios = this.rawData.studios || {}
+    this.entries = this.rawData.entries || {}
+    this.dances = this.rawData.dances || {}
+    this.ages = this.rawData.ages || {}
+    this.levels = this.rawData.levels || {}
+    this.solos = this.rawData.solos || {}
+    this.formations = this.rawData.formations || {}
+    this.scores = this.rawData.scores || {}
 
     // Build heats by number for easy lookup
     this.heatsByNumber = {}
-    this.rawData.heats.forEach(heat => {
-      if (!this.heatsByNumber[heat.number]) {
-        this.heatsByNumber[heat.number] = []
-      }
-      this.heatsByNumber[heat.number].push(heat)
-    })
+    if (this.rawData.heats) {
+      this.rawData.heats.forEach(heat => {
+        if (!this.heatsByNumber[heat.number]) {
+          this.heatsByNumber[heat.number] = []
+        }
+        this.heatsByNumber[heat.number].push(heat)
+      })
+    }
   }
 
   // Hydrate a single heat - convert IDs to full objects
@@ -140,8 +142,11 @@ export default class extends Controller {
     }
 
     // Hydrate entry
-    if (heat.entry_id && this.entries[heat.entry_id]) {
-      const entry = { ...this.entries[heat.entry_id] }
+    if (heat.entry_id) {
+      // Use entry from lookup table if available, otherwise use embedded entry from heat
+      const entryData = this.entries[heat.entry_id] || heat.entry
+      if (entryData) {
+        const entry = { ...entryData }
 
       // Hydrate lead
       if (entry.lead_id && this.people[entry.lead_id]) {
@@ -178,41 +183,62 @@ export default class extends Controller {
         entry.level = this.levels[entry.level_id]
       }
 
-      hydrated.entry = entry
+        hydrated.entry = entry
 
-      // Add lead/follow/subject at top level for template compatibility
-      if (entry.lead) {
-        hydrated.lead = entry.lead
-      }
-      if (entry.follow) {
-        hydrated.follow = entry.follow
-      }
-      // Subject is the student in student/professional pairings
-      if (entry.lead && entry.lead.type === 'Student') {
-        hydrated.subject = entry.lead
-      } else if (entry.follow && entry.follow.type === 'Student') {
-        hydrated.subject = entry.follow
+        // Add lead/follow/subject at top level for template compatibility
+        if (entry.lead) {
+          hydrated.lead = entry.lead
+        }
+        if (entry.follow) {
+          hydrated.follow = entry.follow
+        }
+        // Subject is the student in student/professional pairings
+        if (entry.lead && entry.lead.type === 'Student') {
+          hydrated.subject = entry.lead
+        } else if (entry.follow && entry.follow.type === 'Student') {
+          hydrated.subject = entry.follow
+        }
       }
     }
 
     // Hydrate solo
-    if (heat.solo_id && this.solos[heat.solo_id]) {
-      hydrated.solo = { ...this.solos[heat.solo_id] }
+    if (heat.solo_id) {
+      // Use solo from lookup table if available, otherwise use embedded solo from heat
+      const soloData = this.solos[heat.solo_id] || heat.solo
+      if (soloData) {
+        hydrated.solo = { ...soloData }
 
-      // Hydrate formations for this solo
-      hydrated.solo.formations = Object.values(this.formations)
-        .filter(f => f.solo_id === heat.solo_id)
-        .map(formation => {
-          const f = { ...formation }
-          if (f.person_id && this.people[f.person_id]) {
-            const person = { ...this.people[f.person_id] }
-            if (person.studio_id && this.studios[person.studio_id]) {
-              person.studio = this.studios[person.studio_id]
+        // Hydrate formations - use embedded formations if available, otherwise lookup
+        if (hydrated.solo.formations) {
+          // Formations already embedded (from per-heat endpoint), just hydrate person refs
+          hydrated.solo.formations = hydrated.solo.formations.map(formation => {
+            const f = { ...formation }
+            if (f.person_id && this.people[f.person_id]) {
+              const person = { ...this.people[f.person_id] }
+              if (person.studio_id && this.studios[person.studio_id]) {
+                person.studio = this.studios[person.studio_id]
+              }
+              f.person = person
             }
-            f.person = person
-          }
-          return f
-        })
+            return f
+          })
+        } else {
+          // Lookup formations from global table (from bulk endpoint)
+          hydrated.solo.formations = Object.values(this.formations)
+            .filter(f => f.solo_id === heat.solo_id)
+            .map(formation => {
+              const f = { ...formation }
+              if (f.person_id && this.people[f.person_id]) {
+                const person = { ...this.people[f.person_id] }
+                if (person.studio_id && this.studios[person.studio_id]) {
+                  person.studio = this.studios[person.studio_id]
+                }
+                f.person = person
+              }
+              return f
+            })
+        }
+      }
     }
 
     // Hydrate scores
@@ -289,6 +315,11 @@ export default class extends Controller {
         }
 
         hydratedHeats.forEach(subject => {
+          if (!subject) {
+            console.warn('Skipping undefined subject in category scoring')
+            return
+          }
+
           const students = []
 
           // Identify students in this couple
@@ -441,17 +472,13 @@ export default class extends Controller {
         show: this.rawData.judge.show_assignments || 'first',
         category_scoring_enabled: categoryScoringEnabled,
         category_score_assignments: categoryScoreAssignments,
-        judge_present: this.rawData.judge.present || false
+        judge_present: this.rawData.judge.present || false,
+        results: {}  // Empty results object for solo scoring
       }
 
       console.debug('Rendering heat with hydrated data')
       console.debug(`Data summary: subjects=${data.subjects.length}, show=${data.show}, assign_judges=${data.assign_judges}, category_scoring=${data.category_scoring_enabled}, assignments=${data.category_score_assignments.length}`)
-      console.debug(`First few subjects:`, data.subjects.slice(0, 3).map(s => ({
-        id: s.id,
-        subject_id: s.subject?.id,
-        subject_name: s.subject?.name,
-        scores: s.scores?.length || 0
-      })))
+
       const html = this.templates.heat(data)
 
       // Replace content with rendered heat
