@@ -92,21 +92,43 @@ end
 
 js_code = response.body.force_encoding('utf-8')
 
-# Fetch the heat data JSON
-json_env = {
-  "PATH_INFO" => "/scores/#{judge_id}/heats/#{heat_number}",
+# Fetch normalized data from /scores/:judge/heats/data (same as SPA uses)
+data_env = {
+  "PATH_INFO" => "/scores/#{judge_id}/heats/data",
   "REQUEST_METHOD" => "GET",
   "QUERY_STRING" => "style=#{style}"
 }
 
-code, headers, response = Rails.application.routes.call(json_env)
+code, headers, response = Rails.application.routes.call(data_env)
 if code != 200
-  puts "Error fetching heat data: HTTP #{code}"
+  puts "Error fetching normalized data: HTTP #{code}"
   exit 1
 end
 
-json_data = response.body.force_encoding('utf-8')
-data = JSON.parse(json_data)
+normalized_json = response.body.force_encoding('utf-8')
+normalized_data = JSON.parse(normalized_json)
+
+puts "Loaded #{normalized_data['heats'].length} heats for #{normalized_data['judge']['display_name']}"
+
+# Transform using HeatDataAdapter (matches production SPA code)
+# We'll use the standalone hydration script to transform the data
+# Redirect stderr to /dev/null to get clean JSON on stdout
+hydration_result = `node scripts/hydrate_heats.mjs #{judge_id} #{style} #{database} 2>/dev/null`
+unless $?.success?
+  puts "Error running hydration script (exit code: #{$?.exitstatus})"
+  exit 1
+end
+
+# Find the specific heat we want
+all_hydrated = JSON.parse(hydration_result)
+heat_data = all_hydrated['heats'].find { |h| h['number'] == heat_number.to_f }
+
+unless heat_data
+  puts "Error: Heat #{heat_number} not found in hydrated data"
+  exit 1
+end
+
+puts "Transformed heat #{heat_number} for rendering"
 
 # Write JavaScript code to temp file
 js_file = Tempfile.new(['template', '.mjs'])
@@ -117,8 +139,11 @@ begin
   js_file.write(<<~JAVASCRIPT)
     #{regular_code}
 
-    // Render using the main heat template which will call the appropriate partials
-    const data = #{data.to_json};
+    // Data from hydration (normalized → denormalized transformation)
+    // This matches what HeatDataAdapter does in production SPA code
+    const data = #{heat_data.to_json};
+
+    // Render using the main heat template
     const html = heat(data);
     console.log(html);
   JAVASCRIPT
