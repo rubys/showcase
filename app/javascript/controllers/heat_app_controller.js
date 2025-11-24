@@ -17,6 +17,10 @@ export default class extends Controller {
       style: this.styleValue
     })
 
+    // Listen for browser back/forward navigation
+    this.popstateHandler = this.handlePopState.bind(this)
+    window.addEventListener('popstate', this.popstateHandler)
+
     // Load converted ERB templates
     try {
       this.templates = await this.loadTemplates()
@@ -40,6 +44,23 @@ export default class extends Controller {
       this.showHeat(this.heatValue)
     } else {
       this.showHeatList()
+    }
+  }
+
+  disconnect() {
+    // Clean up event listener
+    window.removeEventListener('popstate', this.popstateHandler)
+  }
+
+  handlePopState(event) {
+    // Handle browser back/forward buttons
+    const url = new URL(window.location)
+    const heatParam = url.searchParams.get('heat')
+
+    if (heatParam) {
+      const heatNumber = parseFloat(heatParam)
+      this.heatValue = heatNumber
+      this.showHeat(heatNumber)
     }
   }
 
@@ -457,5 +478,45 @@ export default class extends Controller {
         </div>
       </div>
     `
+  }
+
+  // Navigation methods for prev/next heat links
+  navigatePrev(event) {
+    event.preventDefault()
+    const allHeatNumbers = Object.keys(this.heatsByNumber).map(n => parseFloat(n)).sort((a, b) => a - b)
+    const currentHeat = parseFloat(this.heatValue)
+    const currentIndex = allHeatNumbers.indexOf(currentHeat)
+
+    if (currentIndex > 0) {
+      const prevHeat = allHeatNumbers[currentIndex - 1]
+      this.navigateToHeat(prevHeat)
+    }
+  }
+
+  navigateNext(event) {
+    event.preventDefault()
+    const allHeatNumbers = Object.keys(this.heatsByNumber).map(n => parseFloat(n)).sort((a, b) => a - b)
+    const currentHeat = parseFloat(this.heatValue)
+    const currentIndex = allHeatNumbers.indexOf(currentHeat)
+
+    if (currentIndex < allHeatNumbers.length - 1) {
+      const nextHeat = allHeatNumbers[currentIndex + 1]
+      this.navigateToHeat(nextHeat)
+    }
+  }
+
+  navigateToHeat(heatNumber) {
+    console.debug(`Navigating to heat ${heatNumber}`)
+
+    // Update the URL
+    const url = new URL(window.location)
+    url.searchParams.set('heat', heatNumber)
+    window.history.pushState({}, '', url)
+
+    // Update the Stimulus value which will trigger re-render
+    this.heatValue = heatNumber
+
+    // Render the new heat
+    this.showHeat(heatNumber)
   }
 }

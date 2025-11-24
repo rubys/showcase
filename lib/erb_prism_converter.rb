@@ -543,20 +543,57 @@ class ErbPrismConverter
     if node.receiver.nil?
       case method
       when "link_to"
-        # link_to text, url, options -> return just the text for now
-        # Block form will be handled by the block parameter
+        # link_to text, url, options -> generate <a> tag with attributes
         if node.block
           # link_to(url, options) do ... end -> render block content
           # For now, just return empty string - block will be evaluated separately
           return "''"
         else
-          # link_to text, url -> return text
-          args = node.arguments ? node.arguments.arguments.map { |a| ruby_to_js(a) } : []
-          if args.length > 0
-            return args[0]
+          # link_to text, url, options -> generate <a href="url" ...attrs>text</a>
+          args = node.arguments ? node.arguments.arguments : []
+
+          text = args.length > 0 ? ruby_to_js(args[0]) : "''"
+          href = args.length > 1 ? ruby_to_js(args[1]) : "'#'"
+
+          # Build attributes from options hash (third argument)
+          attrs = []
+          attrs << "href=\"' + #{href} + '\""
+
+          if args.length > 2 && args[2].is_a?(Prism::KeywordHashNode)
+            args[2].elements.each do |assoc|
+              key_name = case assoc.key
+              when Prism::SymbolNode
+                assoc.key.unescaped
+              when Prism::StringNode
+                assoc.key.unescaped
+              else
+                assoc.key.slice
+              end
+
+              value = ruby_to_js(assoc.value)
+
+              # Handle special data attribute (hash)
+              if key_name == 'data' && assoc.value.is_a?(Prism::HashNode)
+                assoc.value.elements.each do |data_assoc|
+                  data_key = case data_assoc.key
+                  when Prism::SymbolNode
+                    data_assoc.key.unescaped
+                  when Prism::StringNode
+                    data_assoc.key.unescaped
+                  else
+                    data_assoc.key.slice
+                  end
+                  data_value = ruby_to_js(data_assoc.value)
+                  attrs << "data-#{data_key}=\"' + #{data_value} + '\""
+                end
+              else
+                attrs << "#{key_name}=\"' + #{value} + '\""
+              end
+            end
           end
+
+          return "'<a #{attrs.join(' ')}>' + #{text} + '</a>'"
         end
-        return "''"
       when "image_tag"
         # image_tag src, options -> generate stub <img> tag
         args = node.arguments ? node.arguments.arguments : []

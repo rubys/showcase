@@ -1,7 +1,7 @@
     <div class="flex flex-row w-full flex-shrink-0">
       <div class="align-middle">
         <% if @prev %>
-        <%= link_to '<<', @prev, class: 'text-2xl lg:text-4xl', rel: 'prev' %>
+        <%= link_to '<<', @prev, class: 'text-2xl lg:text-4xl', rel: 'prev', data: { action: 'click->heat-app#navigatePrev' } %>
         <% end %>
       </div>
 
@@ -22,7 +22,7 @@
 
       <div class="align-middle">
         <% if @next %>
-        <%= link_to '>>', @next, class: 'text-2xl lg:text-4xl', rel: 'next' %>
+        <%= link_to '>>', @next, class: 'text-2xl lg:text-4xl', rel: 'next', data: { action: 'click->heat-app#navigateNext' } %>
         <% end %>
       </div>
     </div>
