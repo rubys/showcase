@@ -383,6 +383,23 @@ class ScoresController < ApplicationController
       :dance, :entry, :solo, :scores
     ).order(:number).to_a
 
+    # Apply sorting logic per heat number to match ERB behavior
+    # Group heats by number, sort within each group, then flatten
+    sorted_heats = all_heats.group_by(&:number).flat_map do |heat_number, heats_for_number|
+      # Get judge's preferences for sorting
+      sort_order = judge.sort_order || 'back'
+      show = judge.show_assignments || 'first'
+      show = 'mixed' unless event.assign_judges > 0 && show != 'mixed' && Person.where(type: 'Judge').count > 1
+
+      # Apply same sorting logic as heat action
+      _ballrooms_count, ballrooms = sort_and_group_subjects(heats_for_number, judge, event, heat_number, sort_order, show, false)
+
+      # Flatten ballrooms back to array in sorted order
+      ballrooms.values.flatten
+    end
+
+    all_heats = sorted_heats
+
     # Collect all unique entities
     people_set = {}
     studios_set = {}
@@ -934,29 +951,9 @@ class ScoresController < ApplicationController
     @sort = @judge.sort_order || 'back' unless @final
     @show = @judge.show_assignments || 'first'
     @show = 'mixed' unless @event.assign_judges > 0 and @show != 'mixed' && Person.where(type: 'Judge').count > 1
-    
-    # Apply assignment sorting first, before ballroom assignment
-    if @show != 'mixed'
-      @subjects.sort_by! do |subject|
-        assignment_priority = subject.scores.any? {|score| score.judge_id == @judge.id} ? 0 : 1
-        [assignment_priority, subject.dance_id, subject.entry.lead.back || 0]
-      end
-    else
-      @subjects.sort_by! {|heat| [heat.dance_id, heat.entry.lead.back || 0]}
-    end
-    
-    @ballrooms_count = @subjects.first&.dance_category&.ballrooms || @event.ballrooms
-    @ballrooms = assign_rooms(@ballrooms_count, @subjects, @number, preserve_order: @show != 'mixed')
 
-    if @sort == 'level'
-      @ballrooms.each do |ballroom, subjects|
-        subjects.sort_by! do |subject|
-          entry = subject.entry
-          assignment_priority = @show != 'mixed' && subject.scores.any? {|score| score.judge_id == @judge.id} ? 0 : 1
-          [assignment_priority, entry.level_id || 0, entry.age_id || 0, entry.lead.back || 0]
-        end
-      end
-    end
+    # Sort and group subjects by ballroom
+    @ballrooms_count, @ballrooms = sort_and_group_subjects(@subjects, @judge, @event, @number, @sort, @show, @final)
 
     @scores << '' unless @scores.length == 0
 
@@ -2444,5 +2441,34 @@ class ScoresController < ApplicationController
       end
 
       scores.to_a.sort_by {|score| score.value.to_i}
+    end
+
+    # Sort and group subjects by ballroom
+    # Returns [ballrooms_count, ballrooms_hash]
+    def sort_and_group_subjects(subjects, judge, event, number, sort_order, show, is_final)
+      # Apply assignment sorting first, before ballroom assignment
+      if show != 'mixed'
+        subjects.sort_by! do |subject|
+          assignment_priority = subject.scores.any? {|score| score.judge_id == judge.id} ? 0 : 1
+          [assignment_priority, subject.dance_id, subject.entry.lead.back || 0]
+        end
+      else
+        subjects.sort_by! {|heat| [heat.dance_id, heat.entry.lead.back || 0]}
+      end
+
+      ballrooms_count = subjects.first&.dance_category&.ballrooms || event.ballrooms
+      ballrooms = assign_rooms(ballrooms_count, subjects, number, preserve_order: show != 'mixed')
+
+      if sort_order == 'level'
+        ballrooms.each do |ballroom, ballroom_subjects|
+          ballroom_subjects.sort_by! do |subject|
+            entry = subject.entry
+            assignment_priority = show != 'mixed' && subject.scores.any? {|score| score.judge_id == judge.id} ? 0 : 1
+            [assignment_priority, entry.level_id || 0, entry.age_id || 0, entry.lead.back || 0]
+          end
+        end
+      end
+
+      [ballrooms_count, ballrooms]
     end
 end
