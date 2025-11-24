@@ -214,7 +214,8 @@ Rails.application.routes.draw do
     get '/templates/scoring.js', to: 'templates#scoring', as: 'scoring_templates'
     get '/scores/:judge/heatlist', to: 'scores#heatlist', as: 'judge_heatlist'
     get '/scores/:judge/heats/data', to: 'scores#heats_data', defaults: { format: :json }, as: 'judge_heats_data'
-    get '/scores/:judge/spa', to: 'scores#spa', as: 'judge_spa'
+    get '/scores/:judge/heats/:heat', to: 'scores#spa', as: 'judge_spa_heat', heat: /\d+\.?\d*/
+    get '/scores/:judge/heats', to: 'scores#spa', as: 'judge_spa'
     get '/scores/:judge/version/:heat', to: 'scores#version_check', defaults: { format: :json }, as: 'judge_version_check', heat: /\d+\.?\d*/
     post '/scores/:judge/batch', to: 'scores#batch_scores', defaults: { format: :json }, as: 'judge_batch_scores'
     get '/scores/:judge/heat/:heat', to: 'scores#heat', as: 'judge_heat', heat: /\d+\.?\d*/

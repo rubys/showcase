@@ -136,33 +136,33 @@ class HeatNavigator {
     let prevUrl = '';
     let nextUrl = '';
 
-    // Previous (use SPA route format)
+    // Previous (use SPA route format with path parameters)
     if (this.heatPage.slot > 1) {
-      prevUrl = `${this.heatPage.basePath}/scores/${this.heatPage.judgeId}/spa?heat=${this.heatPage.currentHeatNumber}&slot=${this.heatPage.slot - 1}&style=${this.heatPage.scoringStyle}`;
+      prevUrl = `${this.heatPage.basePath}/scores/${this.heatPage.judgeId}/heats/${this.heatPage.currentHeatNumber}?slot=${this.heatPage.slot - 1}&style=${this.heatPage.scoringStyle}`;
     } else if (currentIndex > 0) {
       const prevHeat = heats[currentIndex - 1];
       if (prevHeat.dance.heat_length) {
         const maxSlots = prevHeat.dance.heat_length * (prevHeat.dance.uses_scrutineering ? 2 : 1);
-        prevUrl = `${this.heatPage.basePath}/scores/${this.heatPage.judgeId}/spa?heat=${prevHeat.number}&slot=${maxSlots}&style=${this.heatPage.scoringStyle}`;
+        prevUrl = `${this.heatPage.basePath}/scores/${this.heatPage.judgeId}/heats/${prevHeat.number}?slot=${maxSlots}&style=${this.heatPage.scoringStyle}`;
       } else {
-        prevUrl = `${this.heatPage.basePath}/scores/${this.heatPage.judgeId}/spa?heat=${prevHeat.number}&style=${this.heatPage.scoringStyle}`;
+        prevUrl = `${this.heatPage.basePath}/scores/${this.heatPage.judgeId}/heats/${prevHeat.number}?style=${this.heatPage.scoringStyle}`;
       }
     }
 
-    // Next (use SPA route format)
+    // Next (use SPA route format with path parameters)
     if (heat && heat.dance.heat_length && this.heatPage.slot > 0) {
       const maxSlots = heat.dance.heat_length * (heat.dance.uses_scrutineering ? 2 : 1);
       if (this.heatPage.slot < maxSlots) {
-        nextUrl = `${this.heatPage.basePath}/scores/${this.heatPage.judgeId}/spa?heat=${this.heatPage.currentHeatNumber}&slot=${this.heatPage.slot + 1}&style=${this.heatPage.scoringStyle}`;
+        nextUrl = `${this.heatPage.basePath}/scores/${this.heatPage.judgeId}/heats/${this.heatPage.currentHeatNumber}?slot=${this.heatPage.slot + 1}&style=${this.heatPage.scoringStyle}`;
       }
     }
 
     if (!nextUrl && currentIndex >= 0 && currentIndex < heats.length - 1) {
       const nextHeat = heats[currentIndex + 1];
       if (nextHeat.dance.heat_length) {
-        nextUrl = `${this.heatPage.basePath}/scores/${this.heatPage.judgeId}/spa?heat=${nextHeat.number}&slot=1&style=${this.heatPage.scoringStyle}`;
+        nextUrl = `${this.heatPage.basePath}/scores/${this.heatPage.judgeId}/heats/${nextHeat.number}?slot=1&style=${this.heatPage.scoringStyle}`;
       } else {
-        nextUrl = `${this.heatPage.basePath}/scores/${this.heatPage.judgeId}/spa?heat=${nextHeat.number}&style=${this.heatPage.scoringStyle}`;
+        nextUrl = `${this.heatPage.basePath}/scores/${this.heatPage.judgeId}/heats/${nextHeat.number}?style=${this.heatPage.scoringStyle}`;
       }
     }
 

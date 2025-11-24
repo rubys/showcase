@@ -364,7 +364,7 @@ export class HeatList extends HTMLElement {
     }
 
     // Build heat URL (include base-path for scoped routes)
-    const url = `${this.basePath}/scores/${this.judgeId}/spa?heat=${heat.number}&style=${this.scoringStyle}`;
+    const url = `${this.basePath}/scores/${this.judgeId}/heats/${heat.number}?style=${this.scoringStyle}`;
 
     return `
       ${categoryHeader}

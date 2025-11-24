@@ -19,7 +19,7 @@ describe('Client-Side Navigation', () => {
   beforeEach(() => {
     // Create a fresh DOM for each test
     dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
-      url: 'http://localhost:3000/scores/40/spa?style=radio'
+      url: 'http://localhost:3000/scores/40/spa&style=radio'
     })
     window = dom.window
     document = window.document
@@ -40,8 +40,8 @@ describe('Client-Side Navigation', () => {
         <table>
           <tbody>
             <tr>
-              <td><a href="/scores/40/spa?heat=1&style=radio">1</a></td>
-              <td><a href="/scores/40/spa?heat=1&style=radio">Solo Tango</a></td>
+              <td><a href="/scores/40/heats/1?style=radio">1</a></td>
+              <td><a href="/scores/40/heats/1?style=radio">Solo Tango</a></td>
             </tr>
           </tbody>
         </table>
@@ -72,7 +72,7 @@ describe('Client-Side Navigation', () => {
         <table>
           <tbody>
             <tr>
-              <td><a href="/scores/40/spa?heat=1&style=radio">Solo Tango</a></td>
+              <td><a href="/scores/40/heats/1?style=radio">Solo Tango</a></td>
             </tr>
           </tbody>
         </table>
@@ -94,7 +94,7 @@ describe('Client-Side Navigation', () => {
       expect(window.history.pushState).toHaveBeenCalledWith(
         {},
         '',
-        '/scores/40/spa?heat=1&style=radio'
+        '/scores/40/heats/1?style=radio'
       )
     })
 
@@ -104,7 +104,7 @@ describe('Client-Side Navigation', () => {
           <table>
             <tbody>
               <tr>
-                <td><a href="/scores/40/spa?heat=42&style=radio">Heat 42</a></td>
+                <td><a href="/scores/40/heats/42&style=radio">Heat 42</a></td>
               </tr>
             </tbody>
           </table>
@@ -151,40 +151,40 @@ describe('Client-Side Navigation', () => {
           desc: 'simple next heat',
           heat: 5,
           slot: 0,
-          expected: `${basePath}/scores/${judgeId}/spa?heat=5&style=${style}`
+          expected: `${basePath}/scores/${judgeId}/heats/5&style=${style}`
         },
         {
           desc: 'multi-dance with slot',
           heat: 10,
           slot: 2,
-          expected: `${basePath}/scores/${judgeId}/spa?heat=10&slot=2&style=${style}`
+          expected: `${basePath}/scores/${judgeId}/heats/10?slot=2&style=${style}`
         }
       ]
 
       testCases.forEach(({ desc, heat, slot, expected }) => {
         let url
         if (slot > 0) {
-          url = `${basePath}/scores/${judgeId}/spa?heat=${heat}&slot=${slot}&style=${style}`
+          url = `${basePath}/scores/${judgeId}/heats/${heat}?slot=${slot}&style=${style}`
         } else {
-          url = `${basePath}/scores/${judgeId}/spa?heat=${heat}&style=${style}`
+          url = `${basePath}/scores/${judgeId}/heats/${heat}?style=${style}`
         }
 
         expect(url).toBe(expected)
       })
     })
 
-    it('does not include /heat/ path segment (old ERB format)', () => {
+    it('uses /heats/ path segment (new SPA format)', () => {
       const basePath = ''
       const judgeId = 40
       const heat = 15
       const style = 'radio'
 
-      const correctUrl = `${basePath}/scores/${judgeId}/spa?heat=${heat}&style=${style}`
-      const wrongUrl = `/scores/${judgeId}/heat/${heat}`
+      const correctUrl = `${basePath}/scores/${judgeId}/heats/${heat}?style=${style}`
+      const oldUrl = `/scores/${judgeId}/heat/${heat}`
 
-      expect(correctUrl).not.toContain('/heat/')
-      expect(correctUrl).toContain('/spa?')
-      expect(wrongUrl).toContain('/heat/') // This is the OLD format we're replacing
+      expect(correctUrl).toContain('/heats/')
+      expect(correctUrl).not.toContain('/spa')
+      expect(oldUrl).toContain('/heat/') // This is the old ERB format
     })
   })
 
@@ -193,7 +193,7 @@ describe('Client-Side Navigation', () => {
       const testStyles = ['radio', 'cards']
 
       testStyles.forEach(style => {
-        const url = `/scores/40/spa?heat=1&style=${style}`
+        const url = `/scores/40/heats/1?style=${style}`
         const parsedUrl = new URL(url, 'http://localhost:3000')
 
         expect(parsedUrl.searchParams.get('style')).toBe(style)
@@ -201,8 +201,8 @@ describe('Client-Side Navigation', () => {
     })
 
     it('handles optional slot parameter correctly', () => {
-      const urlWithSlot = new URL('/scores/40/spa?heat=10&slot=3&style=radio', 'http://localhost:3000')
-      const urlWithoutSlot = new URL('/scores/40/spa?heat=10&style=radio', 'http://localhost:3000')
+      const urlWithSlot = new URL('/scores/40/heats/10?slot=3&style=radio', 'http://localhost:3000')
+      const urlWithoutSlot = new URL('/scores/40/heats/10?style=radio', 'http://localhost:3000')
 
       expect(urlWithSlot.searchParams.get('slot')).toBe('3')
       expect(urlWithoutSlot.searchParams.get('slot')).toBeNull()
@@ -212,7 +212,7 @@ describe('Client-Side Navigation', () => {
   describe('Base Path Support', () => {
     it('includes base-path in generated URLs for scoped routes', () => {
       const basePath = '/showcase/2025/city/event'
-      const url = `${basePath}/scores/40/spa?heat=1&style=radio`
+      const url = `${basePath}/scores/40/heats/1?style=radio`
 
       expect(url).toContain(basePath)
       expect(url).toMatch(/^\/showcase\/2025\/city\/event\/scores/)
@@ -220,9 +220,9 @@ describe('Client-Side Navigation', () => {
 
     it('handles empty base-path for development environment', () => {
       const basePath = ''
-      const url = `${basePath}/scores/40/spa?heat=1&style=radio`
+      const url = `${basePath}/scores/40/heats/1?style=radio`
 
-      expect(url).toBe('/scores/40/spa?heat=1&style=radio')
+      expect(url).toBe('/scores/40/heats/1?style=radio')
       expect(url).not.toContain('undefined')
       expect(url).not.toContain('null')
     })
@@ -238,7 +238,7 @@ describe('Client-Side Navigation', () => {
           <table>
             <tbody>
               <tr>
-                <td><a href="/scores/40/spa?heat=1&style=radio">Heat 1</a></td>
+                <td><a href="/scores/40/heats/1?style=radio">Heat 1</a></td>
               </tr>
             </tbody>
           </table>
@@ -283,7 +283,7 @@ describe('Client-Side Navigation', () => {
           <table>
             <tbody>
               <tr>
-                <td><a href="/scores/40/spa?heat=1&style=radio">Heat 1</a></td>
+                <td><a href="/scores/40/heats/1?style=radio">Heat 1</a></td>
               </tr>
             </tbody>
           </table>

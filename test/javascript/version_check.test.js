@@ -20,7 +20,7 @@ describe('Version Check', () => {
   beforeEach(async () => {
     // Create a fresh DOM for each test
     dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
-      url: 'http://localhost:3000/scores/40/spa?style=radio'
+      url: 'http://localhost:3000/scores/40/heats?style=radio'
     })
     window = dom.window
     document = window.document
