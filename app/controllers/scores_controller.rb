@@ -503,8 +503,8 @@ class ScoresController < ApplicationController
     # Get max updated_at from heats table
     max_updated_at = Heat.where('number >= ?', 1).maximum(:updated_at)
 
-    # Get total heat count
-    heat_count = Heat.where('number >= ?', 1).distinct.count(:number)
+    # Get total heat count (total number of heat records, not unique numbers)
+    heat_count = Heat.where('number >= ?', 1).count
 
     render json: {
       heat_number: heat_number,

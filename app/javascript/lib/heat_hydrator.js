@@ -165,36 +165,6 @@ export function hydrateHeat(heat, lookups) {
 }
 
 /**
- * Hydrate a specific heat number from normalized data
- * Returns an object with number, category, dance, and subjects array
- */
-export function hydrateHeatNumber(heatNumber, rawData) {
-  const lookups = buildLookupTables(rawData)
-
-  // Find all heats with this number
-  const heatsWithNumber = lookups.heatsByNumber[heatNumber] ||
-                          lookups.heatsByNumber[parseFloat(heatNumber)] ||
-                          lookups.heatsByNumber[String(heatNumber)]
-
-  if (!heatsWithNumber || heatsWithNumber.length === 0) {
-    throw new Error(`Heat ${heatNumber} not found`)
-  }
-
-  // Hydrate all heats with this number
-  const hydratedHeats = heatsWithNumber.map(h => hydrateHeat(h, lookups))
-
-  // Get primary heat for main properties
-  const primaryHeat = hydratedHeats[0]
-
-  return {
-    number: primaryHeat.number,
-    category: primaryHeat.category,
-    dance: primaryHeat.dance,
-    subjects: hydratedHeats
-  }
-}
-
-/**
  * Build complete template data for a heat
  * This matches the exact logic from heat_app_controller.js showHeat method
  * Used by both browser and Node.js scripts to ensure identical rendering
