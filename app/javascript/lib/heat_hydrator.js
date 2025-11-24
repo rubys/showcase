@@ -1,5 +1,20 @@
 // Shared heat data hydration logic
 // Used by both the browser (heat_app_controller.js) and Node.js scripts
+//
+// ARCHITECTURAL PRINCIPLE: Server computes, hydration joins, template filters
+//
+// - Server (ScoresController#heats_data): Computes all derived/display values (e.g., dance_string = "Closed Milonga")
+//   and serializes them in the JSON response. Performs business logic, aggregations, and formatting.
+//
+// - Hydration (this file): Joins normalized data by resolving IDs to full objects.
+//   Converts { dance_id: 5 } to { dance: { id: 5, name: "Milonga" } }.
+//   Does NOT compute business logic or derived values.
+//
+// - Templates (ERB/JS): Filter and format data for display (e.g., truncate, titleize, pluralize).
+//   Present data that has already been computed and joined.
+//
+// This separation ensures consistent behavior between ERB and JS views, with a single source of truth
+// for business logic (the server) and clear responsibilities for each layer.
 
 /**
  * Build lookup tables from raw normalized data
@@ -364,7 +379,7 @@ export function buildHeatTemplateData(heatNumber, rawData, style) {
     style: style,
     subjects: hydratedHeats,
     heat: primaryHeat,
-    dance: dance.name,  // String for backward compatibility
+    dance: primaryHeat.dance_string,  // Use pre-computed dance string from server (e.g., "Closed Milonga")
     scoring: scoring,
     final: final,
     callbacks: callbacks,

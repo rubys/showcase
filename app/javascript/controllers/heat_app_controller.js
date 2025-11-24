@@ -141,10 +141,19 @@ export default class extends Controller {
     console.debug('Rendering heat list...')
 
     try {
-      // Use raw data directly - no hydration needed for list view
-      const data = this.rawData
+      // Use raw data but group heats by number (matching ERB .group(:number) behavior)
+      const data = { ...this.rawData }
 
-      console.debug(`Rendering heat list with ${data.heats.length} heats`)
+      // Group heats by number and take first heat for each number
+      const heatsByNumber = {}
+      data.heats.forEach(heat => {
+        if (!heatsByNumber[heat.number]) {
+          heatsByNumber[heat.number] = heat
+        }
+      })
+      data.heats = Object.values(heatsByNumber)
+
+      console.debug(`Rendering heat list with ${data.heats.length} unique heat numbers`)
 
       // Render using converted heatlist template
       const html = this.templates.heatlist(data)

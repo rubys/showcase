@@ -188,7 +188,16 @@ begin
       #{regular_code}
 
       // Data from heats/data endpoint
-      const data = #{template_data.to_json};
+      const rawData = #{template_data.to_json};
+
+      // Group heats by number (matching ERB .group(:number) and Stimulus controller behavior)
+      const heatsByNumber = {};
+      rawData.heats.forEach(heat => {
+        if (!heatsByNumber[heat.number]) {
+          heatsByNumber[heat.number] = heat;
+        }
+      });
+      const data = { ...rawData, heats: Object.values(heatsByNumber) };
 
       // Render using the heat list template
       const html = heatlist(data);

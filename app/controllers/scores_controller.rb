@@ -115,6 +115,22 @@ class ScoresController < ApplicationController
   end
 
   # GET /scores/:judge/heats/data - Returns normalized data for SPA (all entities in separate tables)
+  #
+  # ARCHITECTURAL PRINCIPLE: Server computes, hydration joins, template filters
+  #
+  # - Server (this action): Compute all derived/display values (e.g., dance_string = "Closed Milonga")
+  #   and serialize them in the JSON response. Perform business logic, aggregations, and formatting here.
+  #
+  # - Hydration (heat_hydrator.js): Join normalized data by resolving IDs to full objects.
+  #   Convert { dance_id: 5 } to { dance: { id: 5, name: "Milonga" } }.
+  #   Do NOT compute business logic or derived values here.
+  #
+  # - Templates (ERB/JS): Filter and format data for display (e.g., truncate, titleize, pluralize).
+  #   Present data that has already been computed and joined.
+  #
+  # This separation ensures consistent behavior between ERB and JS views, with a single source of truth
+  # for business logic (the server) and clear responsibilities for each layer.
+  #
   def heats_data
     event = Event.current
     judge = Person.find(params[:judge].to_i)
@@ -209,12 +225,26 @@ class ScoresController < ApplicationController
       end
     end
 
-    # Serialize heats with display names for heat list
-    # Group by number to show one heat per heat number (matching heatlist action behavior)
-    heats_by_number = all_heats.group_by(&:number)
-    heats_data = heats_by_number.map do |number, heats_with_same_number|
-      # Take the first heat for each heat number (matching .group(:number) behavior)
-      heat = heats_with_same_number.first
+    # Serialize ALL heats with display names
+    # NOTE: Do NOT group by number here - individual heat rendering needs all heats
+    # The heat list template will handle grouping if needed
+    combine_open_and_closed = event.heat_range_cat == 1
+
+    heats_data = all_heats.map do |heat|
+      # Compute dance string (matching logic from heat action lines 600-621)
+      # Group heats by number to check if all have same dance_id
+      heats_same_number = all_heats.select { |h| h.number == heat.number }
+      dance_string = if heats_same_number.first.dance_id == heats_same_number.last.dance_id
+        "#{heat.category} #{heat.dance.name}"
+      else
+        "#{heat.category} #{heat.dance_category.name}"
+      end
+
+      # Remove category prefix if combining open and closed
+      if combine_open_and_closed && %w(Open Closed).include?(heat.category)
+        dance_string = dance_string.sub(/^\w+ /, '')
+      end
+
       {
         id: heat.id,
         number: heat.number,
@@ -223,6 +253,7 @@ class ScoresController < ApplicationController
         solo_id: heat.solo&.id,
         category: heat.category,
         ballroom: heat.ballroom,
+        dance_string: dance_string,  # Computed dance display string
         # Add display fields for heat list template
         dance: {
           id: heat.dance_id,
