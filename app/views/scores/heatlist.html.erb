@@ -1,5 +1,7 @@
 <div class="mx-auto w-full md:w-2/3">
+<% if @browser_warn %>
 <%= render 'shared/server_warnings', browser_warn: @browser_warn, show_backup_warning: false %>
+<% end %>
 
   <% if notice.present? %>
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
@@ -7,7 +9,7 @@
 
   <div data-controller="info-box">
   <div class="info-button">&#x24D8;</div>
-  <ul class="info-box<% if @style != 'emcee' and !Score.any? %> block<% end %>">
+  <ul class="info-box<% if @style != 'emcee' and @scored.empty? %> block<% end %>">
     <li>Be sure to do a dry run before the event.
 <% if @style == 'recordings' %>
     <li>Students can later visit the studio, scan a QRCode, and hear these comments for themselves.
@@ -25,8 +27,8 @@
 
   <h1 class="font-bold text-4xl"><%= link_to @judge.display_name, person_path(@judge) %></h1>
 
-  <div class="float-right w-60" title="<%= judge_heatlist_url(@judge, style: @style, sort: @sort) %>">
-  <%= RQRCode::QRCode.new(judge_heatlist_url(@judge, style: @style)).as_svg(viewbox: true).html_safe %>
+  <div class="float-right w-60" title="<%= @heatlist_url || judge_heatlist_url(@judge, style: @style, sort: @sort) %>">
+  <%= raw @qr_code %>
 
   <% unless @style == 'emcee' %>
   <h2 class="mt-12 font-bold text-2xl">Sort order</h2>
@@ -74,7 +76,7 @@
       <% @heats.each do |heat| %>
         <% next if heat.number == 0 %>
         <% if @agenda[heat.number] %>
-        <tr class="text-<%= @unassigned.include?(heat.number.to_f) ? "red-500" : (@scored.include?(heat.number) ? 'slate-400' : 'black') %>">
+        <tr class="text-<%= @unassigned.include?(heat.number.to_f) ? "red-500" : (@scored[heat.number] ? 'slate-400' : 'black') %>">
           <td colspan="2" class="py-4 text-xl"><%= @agenda[heat.number] %></td>
         </tr>
         <% end %>

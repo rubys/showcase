@@ -4,9 +4,14 @@
 # Render both ERB and JavaScript-converted versions for comparison
 #
 # Usage:
-#   scripts/render_erb_and_js.rb DATABASE judge_id heat_number [style]
+#   scripts/render_erb_and_js.rb DATABASE judge_id [heat_number] [style]
 #
 # Examples:
+#   # Heat list
+#   scripts/render_erb_and_js.rb db/2025-barcelona-november.sqlite3 83
+#   RAILS_APP_DB=2025-barcelona-november scripts/render_erb_and_js.rb 83
+#
+#   # Individual heat
 #   scripts/render_erb_and_js.rb db/2025-barcelona-november.sqlite3 83 123 radio
 #   RAILS_APP_DB=2025-barcelona-november scripts/render_erb_and_js.rb 83 123
 
@@ -22,19 +27,27 @@ elsif ENV['RAILS_APP_DB']
   database = ENV['RAILS_APP_DB']
 end
 
-if database.nil? || ARGV.length < 2
-  puts "Usage: #{$0} DATABASE judge_id heat_number [style]"
-  puts "   or: RAILS_APP_DB=database #{$0} judge_id heat_number [style]"
+if database.nil? || ARGV.length < 1
+  puts "Usage: #{$0} DATABASE judge_id [heat_number] [style]"
+  puts "   or: RAILS_APP_DB=database #{$0} judge_id [heat_number] [style]"
   puts ""
   puts "Examples:"
-  puts "  #{$0} db/2025-barcelona-november.sqlite3 83 123 radio"
-  puts "  RAILS_APP_DB=2025-barcelona-november #{$0} 83 123"
+  puts "  Heat list:"
+  puts "    #{$0} db/2025-barcelona-november.sqlite3 83"
+  puts "    RAILS_APP_DB=2025-barcelona-november #{$0} 83"
+  puts ""
+  puts "  Individual heat:"
+  puts "    #{$0} db/2025-barcelona-november.sqlite3 83 123 radio"
+  puts "    RAILS_APP_DB=2025-barcelona-november #{$0} 83 123"
   exit 1
 end
 
 judge_id = ARGV[0]
-heat_number = ARGV[1]
+heat_number = ARGV[1]  # nil for heat list
 style = ARGV[2] || 'radio'
+
+# Determine if we're rendering a heat list or individual heat
+is_heat_list = heat_number.nil?
 
 # Set up Rails environment
 script_dir = Pathname.new(__FILE__).dirname.realpath
@@ -50,12 +63,18 @@ ENV['RAILS_STORAGE'] = File.join(rails_root, 'storage')
 require File.expand_path('config/environment', rails_root)
 
 puts "="*80
-puts "Rendering ERB version..."
+puts is_heat_list ? "Rendering Heat List ERB version..." : "Rendering Individual Heat ERB version..."
 puts "="*80
 
 # Render ERB version
+erb_path = if is_heat_list
+  "/scores/#{judge_id}/heatlist"
+else
+  "/scores/#{judge_id}/heat/#{heat_number}"
+end
+
 erb_env = {
-  "PATH_INFO" => "/scores/#{judge_id}/heat/#{heat_number}",
+  "PATH_INFO" => erb_path,
   "REQUEST_METHOD" => "GET",
   "QUERY_STRING" => "style=#{style}"
 }
@@ -115,31 +134,46 @@ end
 heats_json = response.body.force_encoding('utf-8')
 all_data = JSON.parse(heats_json)
 
-# Save the normalized data to a temp file for the hydration script
+# Save the normalized data to a temp file
 heats_data_file = "/tmp/heats_data.json"
 File.write(heats_data_file, heats_json)
+puts "✓ Bulk data fetched: #{heats_json.length} bytes (#{all_data['heats'].length} heats)"
+puts "  Saved to: #{heats_data_file}"
 
-# Use the hydration script to convert normalized data to per-heat structure
-hydrate_script = File.join(rails_root, 'scripts', 'hydrate_heats.mjs')
-# Capture only stdout (not stderr) to avoid Node.js warnings polluting JSON
-hydrated_json = `node #{hydrate_script} #{judge_id} #{heat_number} #{style} #{heats_data_file}`
-
-if $?.success?
-  # The hydration script now returns complete template data (uses same logic as browser)
-  heat_data = JSON.parse(hydrated_json)
+if is_heat_list
+  # For heat list, we don't need hydration - just use the bulk data directly
+  template_data = all_data
 
   # Save template data for debugging
   template_data_file = "/tmp/js_template_data.json"
-  File.write(template_data_file, JSON.pretty_generate(heat_data))
+  File.write(template_data_file, JSON.pretty_generate(template_data))
 
-  puts "✓ Heat #{heat_number} hydrated with #{heat_data['subjects'].length} subjects"
+  puts "✓ Using bulk data directly for heat list"
   puts "  Saved template data to: #{template_data_file}"
 else
-  puts "Error hydrating heat data:"
-  # Show error output
-  error_output = `node #{hydrate_script} #{judge_id} #{heat_number} #{style} #{heats_data_file} 2>&1`
-  puts error_output
-  exit 1
+  # For individual heat, use the hydration script
+  hydrate_script = File.join(rails_root, 'scripts', 'hydrate_heats.mjs')
+
+  # Capture only stdout (not stderr) to avoid Node.js warnings polluting JSON
+  hydrated_json = `node #{hydrate_script} #{judge_id} #{heat_number} #{style} #{heats_data_file}`
+
+  if $?.success?
+    # The hydration script returns complete template data
+    template_data = JSON.parse(hydrated_json)
+
+    # Save template data for debugging
+    template_data_file = "/tmp/js_template_data.json"
+    File.write(template_data_file, JSON.pretty_generate(template_data))
+
+    puts "✓ Heat #{heat_number} hydrated with #{template_data['subjects'].length} subjects"
+    puts "  Saved template data to: #{template_data_file}"
+  else
+    puts "Error hydrating heat data:"
+    # Show error output
+    error_output = `node #{hydrate_script} #{judge_id} #{heat_number} #{style} #{heats_data_file} 2>&1`
+    puts error_output
+    exit 1
+  end
 end
 
 # Write JavaScript code to temp file
@@ -148,16 +182,31 @@ begin
   # Strip export keywords
   regular_code = js_code.gsub(/^export /m, '')
 
-  js_file.write(<<~JAVASCRIPT)
-    #{regular_code}
+  if is_heat_list
+    # Render heat list
+    js_file.write(<<~JAVASCRIPT)
+      #{regular_code}
 
-    // Data from per-heat endpoint (same as ERB uses)
-    const data = #{heat_data.to_json};
+      // Data from heats/data endpoint
+      const data = #{template_data.to_json};
 
-    // Render using the main heat template
-    const html = heat(data);
-    console.log(html);
-  JAVASCRIPT
+      // Render using the heat list template
+      const html = heatlist(data);
+      console.log(html);
+    JAVASCRIPT
+  else
+    # Render individual heat
+    js_file.write(<<~JAVASCRIPT)
+      #{regular_code}
+
+      // Data from per-heat endpoint (same as ERB uses)
+      const data = #{template_data.to_json};
+
+      // Render using the main heat template
+      const html = heat(data);
+      console.log(html);
+    JAVASCRIPT
+  end
 
   js_file.close
 
@@ -206,4 +255,8 @@ puts "    /tmp/scoring_templates.js      - Converted templates from /templates/s
 puts ""
 puts "  JSON data (for debugging):"
 puts "    /tmp/heats_data.json           - Raw normalized data from /heats/data endpoint"
-puts "    /tmp/js_template_data.json     - Complete template data (after buildHeatTemplateData)"
+if is_heat_list
+  puts "    /tmp/js_template_data.json     - Bulk data used for heat list rendering"
+else
+  puts "    /tmp/js_template_data.json     - Complete template data (after buildHeatTemplateData)"
+end

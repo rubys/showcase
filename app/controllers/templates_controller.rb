@@ -9,6 +9,7 @@ class TemplatesController < ApplicationController
 
   SCORING_TEMPLATES = {
     'heat' => 'app/views/scores/heat.html.erb',
+    'heatlist' => 'app/views/scores/heatlist.html.erb',
     'heatHeader' => 'app/views/scores/_heat_header.html.erb',
     'infoBox' => 'app/views/scores/_info_box.html.erb',
     'navigationFooter' => 'app/views/scores/_navigation_footer.html.erb',
@@ -51,6 +52,33 @@ class TemplatesController < ApplicationController
     output << "    return `heat_${object.id}`;"
     output << "  }"
     output << "  return String(object);"
+    output << "}"
+    output << ""
+    output << "// Path helper stubs for generating URLs (will be intercepted by SPA navigation)"
+    output << "function judge_heat_path(options) {"
+    output << "  const judgeId = (typeof options.judge === 'object') ? options.judge.id : options.judge;"
+    output << "  return `/scores/${judgeId}/heat/${options.heat}?style=${options.style || 'radio'}`;"
+    output << "}"
+    output << "function judge_heat_slot_path(options) {"
+    output << "  const judgeId = (typeof options.judge === 'object') ? options.judge.id : options.judge;"
+    output << "  return `/scores/${judgeId}/heat/${options.heat}/slot/${options.slot}?style=${options.style || 'radio'}`;"
+    output << "}"
+    output << "function recording_heat_path(options) {"
+    output << "  const judgeId = (typeof options.judge === 'object') ? options.judge.id : options.judge;"
+    output << "  return `/recordings/${judgeId}/heat/${options.heat}`;"
+    output << "}"
+    output << "function recording_heat_slot_path(options) {"
+    output << "  const judgeId = (typeof options.judge === 'object') ? options.judge.id : options.judge;"
+    output << "  return `/recordings/${judgeId}/heat/${options.heat}/slot/${options.slot}`;"
+    output << "}"
+    output << "function person_path(person) {"
+    output << "  return `/people/${person.id || person}`;"
+    output << "}"
+    output << "function sort_scores_path() {"
+    output << "  return '/scores/sort';"
+    output << "}"
+    output << "function show_assignments_person_path(person) {"
+    output << "  return `/people/${person.id || person}/show_assignments`;"
     output << "}"
     output << ""
 

@@ -67,14 +67,8 @@ export default class extends Controller {
 
   async loadTemplates() {
     console.debug('Loading converted ERB templates...')
-    const response = await fetch('/templates/scoring.js')
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-
-    const code = await response.text()
-    const module = await import(`data:text/javascript,${encodeURIComponent(code)}`)
+    // Use full URL path instead of bare specifier
+    const module = await import(`${this.basePathValue}/templates/scoring.js`)
 
     console.debug('Templates loaded successfully')
     return module
@@ -145,8 +139,46 @@ export default class extends Controller {
 
   showHeatList() {
     console.debug('Rendering heat list...')
-    // TODO: Implement heat list view
-    this.element.innerHTML = '<h1>Heat List</h1><p>Coming soon...</p>'
+
+    try {
+      // Use raw data directly - no hydration needed for list view
+      const data = this.rawData
+
+      console.debug(`Rendering heat list with ${data.heats.length} heats`)
+
+      // Render using converted heatlist template
+      const html = this.templates.heatlist(data)
+
+      // Replace content
+      this.element.innerHTML = html
+
+      // Intercept clicks on heat links to navigate within SPA
+      this.attachHeatListListeners()
+
+      console.debug('Heat list rendered successfully')
+
+    } catch (error) {
+      console.error('Failed to render heat list:', error)
+      this.showError(`Failed to render heat list: ${error.message}`)
+    }
+  }
+
+  attachHeatListListeners() {
+    // Intercept clicks on heat links to navigate within SPA
+    this.element.querySelectorAll('a[href*="/heat/"]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault()
+        const url = new URL(link.href, window.location.origin)
+        const heatMatch = url.pathname.match(/\/heat\/(\d+\.?\d*)/)
+        if (heatMatch) {
+          const heatNumber = parseFloat(heatMatch[1])
+          this.navigateToHeat(heatNumber)
+        }
+      })
+    })
+
+    // Forms and other links remain functional via Turbo (will cause page navigation)
+    // This is acceptable - forms don't need to work offline
   }
 
   showHeat(heatNumber) {

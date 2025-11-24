@@ -400,6 +400,10 @@ class ErbPrismConverter
         "data.#{node.name}"
       end
 
+    when Prism::ItLocalVariableReadNode
+      # Ruby 3.4+ numbered parameter: `it` is the implicit block parameter
+      "it"
+
     when Prism::StringNode
       "\"#{escape_js_string(node.unescaped)}\""
 
@@ -646,12 +650,19 @@ class ErbPrismConverter
       end
     elsif node.block.is_a?(Prism::BlockNode)
       # Regular block: {|param| body} -> param => body
+      # Or numbered parameter: {it...} -> it => body (Ruby 3.4+)
       block_params = node.block.parameters
       param_names = []
 
-      if block_params && block_params.parameters
-        param_nodes = block_params.parameters.requireds || []
-        param_names = param_nodes.map(&:name)
+      if block_params
+        if block_params.is_a?(Prism::ItParametersNode)
+          # Numbered parameter: `it` is the implicit parameter name
+          param_names = ['it']
+        elsif block_params.parameters
+          # Traditional block parameters: |x, y|
+          param_nodes = block_params.parameters.requireds || []
+          param_names = param_nodes.map(&:name)
+        end
       end
 
       # Convert block body to JavaScript expression

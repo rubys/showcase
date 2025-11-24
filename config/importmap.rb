@@ -10,8 +10,9 @@ pin_all_from "app/javascript/channels", under: "channels"
 pin_all_from "app/javascript/helpers", under: "helpers", preload: true
 pin_all_from "app/javascript/components", under: "components"
 pin_all_from "app/javascript/lib", under: "lib"
+pin "templates/scoring", to: "templates/scoring.js", preload: false
 pin "trix"
 pin "@rails/actiontext", to: "actiontext.js"
-pin "@xterm/xterm", to: "@xterm--xterm.js" # @5.5.0
-pin "pdfjs-dist", to: "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.mjs"
-pin "pdfjs-dist/build/pdf.worker.min.mjs", to: "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs"
+pin "@xterm/xterm", to: "@xterm--xterm.js", preload: false # @5.5.0
+pin "pdfjs-dist", to: "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.mjs", preload: false
+pin "pdfjs-dist/build/pdf.worker.min.mjs", to: "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs", preload: false

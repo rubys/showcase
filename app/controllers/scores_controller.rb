@@ -78,6 +78,9 @@ class ScoresController < ApplicationController
 
     @show_solos = @judge&.judge&.review_solos&.downcase
 
+    @qr_code = RQRCode::QRCode.new(judge_heatlist_url(@judge, style: @style)).as_svg(viewbox: true)
+    @heatlist_url = judge_heatlist_url(@judge, style: @style, sort: @sort)
+
     @browser_warn = browser_warn
 
     # Find unassigned heats, excluding category-scored categories
@@ -206,8 +209,12 @@ class ScoresController < ApplicationController
       end
     end
 
-    # Serialize heats (just IDs and foreign keys)
-    heats_data = all_heats.map do |heat|
+    # Serialize heats with display names for heat list
+    # Group by number to show one heat per heat number (matching heatlist action behavior)
+    heats_by_number = all_heats.group_by(&:number)
+    heats_data = heats_by_number.map do |number, heats_with_same_number|
+      # Take the first heat for each heat number (matching .group(:number) behavior)
+      heat = heats_with_same_number.first
       {
         id: heat.id,
         number: heat.number,
@@ -215,7 +222,17 @@ class ScoresController < ApplicationController
         entry_id: heat.entry_id,
         solo_id: heat.solo&.id,
         category: heat.category,
-        ballroom: heat.ballroom
+        ballroom: heat.ballroom,
+        # Add display fields for heat list template
+        dance: {
+          id: heat.dance_id,
+          name: heat.dance.name
+        },
+        solo: heat.solo ? {
+          id: heat.solo.id,
+          combo_dance_id: heat.solo.combo_dance_id,
+          combo_dance: heat.solo.combo_dance ? { name: heat.solo.combo_dance.name } : nil
+        } : nil
       }
     end
 
@@ -322,6 +339,71 @@ class ScoresController < ApplicationController
       }
     end
 
+    # Compute heat list specific data (from heatlist action)
+    assign_judges = event.assign_judges? && params[:style] != 'emcee' && Person.where(type: 'Judge').count > 1
+
+    # Build agenda hash for category headers - show category at first occurrence
+    agenda = {}
+    last_category = nil
+    combine_open_and_closed = event.heat_range_cat == 1
+
+    all_heats.each do |heat|
+      # Use same category logic as heatlist.html.erb
+      category = if combine_open_and_closed
+        heat.dance.open_category || heat.dance.closed_category || heat.dance.solo_category
+      else
+        case heat.category
+        when 'Open' then heat.dance.open_category
+        when 'Closed' then heat.dance.closed_category
+        when 'Solo' then heat.dance.solo_category
+        when 'Multi' then heat.dance.multi_category
+        end
+      end
+
+      if category != last_category
+        cat_name = category&.name || 'Uncategorized'
+        agenda[heat.number] = cat_name
+        last_category = category
+      end
+    end
+
+    # Compute scored heats (heats with actual score data from this judge)
+    scored = Score.includes(:heat).where(judge: judge).
+      select {|score| score.heat_id.positive? && (score.value || score.comments || score.good || score.bad)}.
+      group_by {|score| score.heat.number.to_f}
+
+    count = all_heats.group_by(&:number).transform_values(&:count)
+
+    # Compute missed heats (heats judge should have scored but didn't)
+    if assign_judges && Score.where(judge: judge).any?
+      missed = Score.includes(:heat).where(judge: judge, good: nil, bad: nil, value: nil).distinct.pluck(:number)
+      missed += Solo.includes(:heat).pluck(:number).select {|number| !scored[number]}
+    else
+      missed = all_heats.map(&:number).uniq.select do |number|
+        number_float = number.to_i == number ? number.to_i : number
+        !scored[number_float] || scored[number_float].length != count[number_float]
+      end
+    end
+
+    # Find unassigned heats (heats with no scores), excluding category-scored categories
+    if assign_judges
+      # Get category IDs that use category scoring
+      category_scored_ids = event.student_judge_assignments ?
+        Category.where(use_category_scoring: true).pluck(:id) : []
+
+      # Build query to find heats with no scores
+      query = Heat.includes(:scores).where(category: ['Open', 'Closed'], scores: { id: nil })
+
+      # Exclude heats in category-scored categories
+      if category_scored_ids.any?
+        query = query.joins(:dance).where.not(dances: { closed_category_id: category_scored_ids })
+      end
+
+      unassigned = query.distinct.pluck(:number).select {|it| it > 0}
+    else
+      unassigned = []
+    end
+
     # Return normalized data structure
     data = {
       event: {
@@ -365,7 +447,19 @@ class ScoresController < ApplicationController
       category_score_assignments: Category.all.map { |cat|
         student_ids = Score.where(heat_id: -cat.id, judge_id: judge.id).where.not(person_id: nil).pluck(:person_id).uniq
         [cat.id, student_ids]
-      }.to_h
+      }.to_h,
+      # Heat list specific data
+      agenda: agenda,
+      unassigned: unassigned,
+      scored: scored.transform_keys(&:to_s),  # Convert float keys to strings for JSON
+      missed: missed,
+      style: params[:style] || 'radio',
+      sort: judge.sort_order || 'back',
+      show: judge.show_assignments || 'first',
+      combine_open_and_closed: combine_open_and_closed,
+      assign_judges_enabled: assign_judges,
+      qr_code: RQRCode::QRCode.new(judge_heatlist_url(judge, style: params[:style] || 'radio')).as_svg(viewbox: true),
+      heatlist_url: judge_heatlist_url(judge, style: params[:style] || 'radio', sort: judge.sort_order || 'back')
     }
 
     render json: data
