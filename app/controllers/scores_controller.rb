@@ -250,6 +250,7 @@ class ScoresController < ApplicationController
         age_id: entry.age_id,
         level_id: entry.level_id,
         pro: entry.pro,
+        level_name: entry.level_name,  # Computed field for JavaScript templates
         subject_lvlcat: entry.subject_lvlcat(event.track_ages),
         subject_category: entry.subject_category(event.track_ages)
       }

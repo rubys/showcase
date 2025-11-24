@@ -93,25 +93,48 @@ end
 
 js_code = response.body.force_encoding('utf-8')
 
-# Fetch per-heat data from the same endpoint as the ERB uses
-# This is the "gold standard" that's already proven to work
-heat_data_env = {
-  "PATH_INFO" => "/scores/#{judge_id}/heats/#{heat_number}",
+# Fetch bulk data from the SPA endpoint (what the actual SPA uses)
+heats_data_env = {
+  "PATH_INFO" => "/scores/#{judge_id}/heats/data",
   "REQUEST_METHOD" => "GET",
-  "QUERY_STRING" => "style=#{style}",
   "HTTP_ACCEPT" => "application/json"
 }
 
-code, headers, response = Rails.application.routes.call(heat_data_env)
+code, headers, response = Rails.application.routes.call(heats_data_env)
 if code != 200
-  puts "Error fetching heat data: HTTP #{code}"
+  puts "Error fetching heats data: HTTP #{code}"
   exit 1
 end
 
-heat_json = response.body.force_encoding('utf-8')
-heat_data = JSON.parse(heat_json)
+heats_json = response.body.force_encoding('utf-8')
+all_data = JSON.parse(heats_json)
 
-puts "Loaded heat #{heat_number} with #{heat_data['subjects'].length} subjects"
+# Save the normalized data to a temp file for the hydration script
+heats_data_file = "/tmp/heats_data.json"
+File.write(heats_data_file, heats_json)
+
+# Use the hydration script to convert normalized data to per-heat structure
+hydrate_script = File.join(rails_root, 'scripts', 'hydrate_heats.mjs')
+# Capture only stdout (not stderr) to avoid Node.js warnings polluting JSON
+hydrated_json = `node #{hydrate_script} #{judge_id} #{heat_number} #{style} #{heats_data_file}`
+
+if $?.success?
+  # The hydration script now returns complete template data (uses same logic as browser)
+  heat_data = JSON.parse(hydrated_json)
+
+  # Save template data for debugging
+  template_data_file = "/tmp/js_template_data.json"
+  File.write(template_data_file, JSON.pretty_generate(heat_data))
+
+  puts "✓ Heat #{heat_number} hydrated with #{heat_data['subjects'].length} subjects"
+  puts "  Saved template data to: #{template_data_file}"
+else
+  puts "Error hydrating heat data:"
+  # Show error output
+  error_output = `node #{hydrate_script} #{judge_id} #{heat_number} #{style} #{heats_data_file} 2>&1`
+  puts error_output
+  exit 1
+end
 
 # Write JavaScript code to temp file
 js_file = Tempfile.new(['template', '.mjs'])
@@ -166,6 +189,12 @@ else
 end
 
 puts ""
-puts "Files saved to /tmp/ for comparison:"
-puts "  /tmp/erb_rendered.html"
-puts "  /tmp/js_rendered.html"
+puts "Files saved to /tmp/ for analysis:"
+puts ""
+puts "  HTML outputs:"
+puts "    /tmp/erb_rendered.html      - ERB template output"
+puts "    /tmp/js_rendered.html       - JavaScript template output"
+puts ""
+puts "  JSON data (for debugging):"
+puts "    /tmp/heats_data.json        - Raw normalized data from /heats/data endpoint"
+puts "    /tmp/js_template_data.json  - Complete template data (after buildHeatTemplateData)"
