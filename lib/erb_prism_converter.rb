@@ -629,9 +629,13 @@ class ErbPrismConverter
         else
           return "''"
         end
-      when "judge_heatlist_path", "post_score_path", "start_heat_event_index_path", "toggle_present_person_path", "person_path", "root_path"
+      when "judge_heatlist_path", "toggle_present_person_path", "root_path"
         # Path helpers -> return '#' (SPA will handle navigation differently)
         return "'#'"
+      when "post_score_path", "update_rank_path", "start_heat_event_index_path", "person_path"
+        # Path helpers that generate actual URLs for API calls
+        args = node.arguments ? node.arguments.arguments.map { |a| ruby_to_js(a) } : []
+        return "#{method}(#{args.join(', ')})"
       when "judge_backs_display", "heat_dance_slot_display", "heat_multi_dance_names"
         # Custom helper methods -> return empty string stub
         return "''"
@@ -757,6 +761,9 @@ class ErbPrismConverter
       end
     when "gsub"
       "#{receiver}.replace(#{args.join(', ')})"
+    when "html_safe"
+      # In JavaScript, strings are already "safe" - just return the receiver
+      receiver
     when "map!"
       # Mutating map - JavaScript doesn't have this, use regular map
       # Note: This will be used in an assignment context

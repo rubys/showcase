@@ -319,7 +319,9 @@ export function buildHeatTemplateData(heatNumber, rawData, style) {
   const prev = currentIndex > 0 ? allHeatNumbers[currentIndex - 1] : null
   const next = currentIndex < allHeatNumbers.length - 1 ? allHeatNumbers[currentIndex + 1] : null
 
-  // Build score lookup objects (value, good, bad, comments by subject id)
+  // Build score lookup objects (value, good, bad, comments)
+  // For category scoring: key by student's person ID (subject.id on the expanded subject)
+  // For per-heat scoring: key by heat.id
   const value = {}
   const good = {}
   const bad = {}
@@ -329,7 +331,10 @@ export function buildHeatTemplateData(heatNumber, rawData, style) {
   hydratedHeats.forEach(heat => {
     if (heat.scores && heat.scores.length > 0) {
       heat.scores.forEach(score => {
-        const subjectId = heat.id
+        // For category scoring, use student's person ID (heat.subject.id)
+        // For per-heat scoring, use heat.id
+        const subjectId = (categoryScoringEnabled && heat.subject) ? heat.subject.id : heat.id
+
         value[subjectId] = score.value
         good[subjectId] = score.good
         bad[subjectId] = score.bad
@@ -375,6 +380,8 @@ export function buildHeatTemplateData(heatNumber, rawData, style) {
     category_scoring_enabled: categoryScoringEnabled,
     category_score_assignments: categoryScoreAssignments,
     judge_present: judge.present || false,
-    results: {}  // Empty results object for solo scoring
+    results: {},  // Empty results object for solo scoring
+    // API paths for scoring
+    post_feedback_path: `/scores/${judge.id}/post-feedback`
   }
 }

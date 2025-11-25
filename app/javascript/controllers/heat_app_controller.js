@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { buildLookupTables, hydrateHeat, buildHeatTemplateData } from "lib/heat_hydrator"
+import { heatDataManager } from "helpers/heat_data_manager"
 
 // Main controller for the heat scoring SPA
 // Loads normalized data once, then handles navigation client-side
@@ -21,6 +22,13 @@ export default class extends Controller {
     // Listen for browser back/forward navigation
     this.popstateHandler = this.handlePopState.bind(this)
     window.addEventListener('popstate', this.popstateHandler)
+
+    // Listen for score updates to keep local data in sync
+    this.scoreUpdatedHandler = this.handleScoreUpdated.bind(this)
+    document.addEventListener('score-updated', this.scoreUpdatedHandler)
+
+    // Set up navigation guards for offline mode
+    this.setupNavigationGuards()
 
     // Load converted ERB templates
     try {
@@ -49,19 +57,50 @@ export default class extends Controller {
   }
 
   disconnect() {
-    // Clean up event listener
+    // Clean up event listeners
     window.removeEventListener('popstate', this.popstateHandler)
+    document.removeEventListener('score-updated', this.scoreUpdatedHandler)
+    this.teardownNavigationGuards()
   }
 
   handlePopState(event) {
     // Handle browser back/forward buttons
     const url = new URL(window.location)
-    const heatParam = url.searchParams.get('heat')
 
-    if (heatParam) {
-      const heatNumber = parseFloat(heatParam)
+    // Check for path-based heat number: /scores/:judge/heats/:heat
+    const heatMatch = url.pathname.match(/\/heats\/(\d+\.?\d*)/)
+    if (heatMatch) {
+      const heatNumber = parseFloat(heatMatch[1])
       this.heatValue = heatNumber
       this.showHeat(heatNumber)
+    } else {
+      // No heat in path - show heat list
+      this.heatValue = null
+      this.showHeatList()
+    }
+  }
+
+  handleScoreUpdated(event) {
+    // Update local data when a score is saved
+    const { score } = event.detail
+    if (!score || !this.rawData) return
+
+    // Find or create the score in rawData.scores
+    // Category scores have negative heat_id, keyed by score.id
+    const scoreId = score.id
+    if (scoreId && this.rawData.scores) {
+      this.rawData.scores[scoreId] = {
+        id: scoreId,
+        heat_id: score.heat_id,
+        judge_id: score.judge_id,
+        person_id: score.person_id,
+        value: score.value,
+        good: score.good,
+        bad: score.bad
+      }
+      // Rebuild lookup tables to reflect the updated score
+      this.buildLookupTables()
+      console.debug('[HeatApp] Local data updated with score', scoreId)
     }
   }
 
@@ -256,15 +295,90 @@ export default class extends Controller {
   navigateToHeat(heatNumber) {
     console.debug(`Navigating to heat ${heatNumber}`)
 
-    // Update the URL
-    const url = new URL(window.location)
-    url.searchParams.set('heat', heatNumber)
-    window.history.pushState({}, '', url)
+    // Update the URL using path-based routing: /scores/:judge/heats/:heat
+    const basePath = `${this.basePathValue}/scores/${this.judgeValue}/heats`
+    const newUrl = `${basePath}/${heatNumber}?style=${this.styleValue}`
+    window.history.pushState({}, '', newUrl)
 
     // Update the Stimulus value which will trigger re-render
     this.heatValue = heatNumber
 
     // Render the new heat
     this.showHeat(heatNumber)
+  }
+
+  navigateToHeatList() {
+    console.debug('Navigating to heat list')
+
+    // Update the URL to heat list
+    const basePath = `${this.basePathValue}/scores/${this.judgeValue}/heats`
+    const newUrl = `${basePath}?style=${this.styleValue}`
+    window.history.pushState({}, '', newUrl)
+
+    // Clear heat value and show list
+    this.heatValue = null
+    this.showHeatList()
+  }
+
+  // Navigation guard methods to prevent data loss while offline
+  setupNavigationGuards() {
+    // Intercept Turbo navigation
+    this.turboBeforeVisitHandler = this.handleTurboBeforeVisit.bind(this)
+    document.addEventListener('turbo:before-visit', this.turboBeforeVisitHandler)
+
+    // Intercept hard navigation (closing tab, typing new URL, etc.)
+    this.beforeUnloadHandler = this.handleBeforeUnload.bind(this)
+    window.addEventListener('beforeunload', this.beforeUnloadHandler)
+  }
+
+  teardownNavigationGuards() {
+    if (this.turboBeforeVisitHandler) {
+      document.removeEventListener('turbo:before-visit', this.turboBeforeVisitHandler)
+    }
+    if (this.beforeUnloadHandler) {
+      window.removeEventListener('beforeunload', this.beforeUnloadHandler)
+    }
+  }
+
+  handleTurboBeforeVisit(event) {
+    // Allow navigation within SPA
+    const targetUrl = new URL(event.detail.url, window.location.origin)
+    if (this.isSPARoute(targetUrl.pathname)) {
+      return
+    }
+
+    // Check if we should warn about leaving
+    if (!navigator.onLine) {
+      const confirmed = confirm(
+        "You're offline. Leaving this page may prevent you from " +
+        "returning until you're back online. Continue?"
+      )
+      if (!confirmed) {
+        event.preventDefault()
+      }
+    }
+  }
+
+  async handleBeforeUnload(event) {
+    // Only warn if offline AND have pending scores
+    if (!navigator.onLine) {
+      try {
+        await heatDataManager.init()
+        const pendingCount = await heatDataManager.getDirtyScoreCount(this.judgeValue)
+        if (pendingCount > 0) {
+          // Standard beforeunload pattern
+          event.preventDefault()
+          event.returnValue = ''
+        }
+      } catch (error) {
+        console.debug('[HeatApp] Failed to check pending scores:', error)
+      }
+    }
+  }
+
+  isSPARoute(pathname) {
+    // Check if the pathname is within our SPA routes
+    const spaPattern = new RegExp(`/scores/${this.judgeValue}/heats`)
+    return spaPattern.test(pathname)
   }
 }

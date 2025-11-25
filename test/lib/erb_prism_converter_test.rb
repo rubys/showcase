@@ -175,6 +175,15 @@ class ErbPrismConverterTest < ActiveSupport::TestCase
     refute_match /data\.console/, js
   end
 
+  test "converts html_safe to no-op" do
+    erb = '<%= @safe_string.html_safe %>'
+    js = convert(erb)
+
+    # html_safe should be stripped - just output the receiver
+    assert_match /html \+= \(data\.safe_string\) \|\| '';/, js
+    refute_match /html_safe/, js
+  end
+
   test "converts all scoring templates without errors" do
     # All templates should now convert since Rails-specific logic has been moved to the controller
     templates = {

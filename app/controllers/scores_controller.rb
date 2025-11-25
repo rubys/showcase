@@ -109,7 +109,7 @@ class ScoresController < ApplicationController
   # GET /scores/:judge/spa - SPA test page
   def spa
     @judge = Person.find(params[:judge].to_i)
-    @heat_number = params[:heat]&.to_i  # nil if not provided - shows heatlist
+    @heat_number = params[:heat]  # nil if not provided - shows heatlist; keep as string for fractional heats
     @style = params[:style] || 'radio'
     render layout: false
   end
@@ -219,10 +219,17 @@ class ScoresController < ApplicationController
         end
       end
 
-      # Collect scores
+      # Collect scores (per-heat scores)
       heat.scores.each do |score|
         scores_set[score.id] = score
       end
+    end
+
+    # Also collect category scores for this judge (scores with negative heat_id)
+    # These are stored with heat_id = -category_id and person_id = student_id
+    category_scores = Score.where(judge_id: judge.id).where('heat_id < 0')
+    category_scores.each do |score|
+      scores_set[score.id] = score
     end
 
     # Serialize ALL heats with display names
@@ -364,6 +371,7 @@ class ScoresController < ApplicationController
         id: score.id,
         heat_id: score.heat_id,
         judge_id: score.judge_id,
+        person_id: score.person_id,  # Used for category scores
         value: score.value,
         good: score.good,
         bad: score.bad
@@ -578,6 +586,7 @@ class ScoresController < ApplicationController
     @slot = params[:slot]&.to_i
     @style = params[:style]
     @style = 'radio' if @style.blank?
+    @post_feedback_path = post_feedback_path(judge: @judge)
     @subjects = Heat.where(number: @number).includes(
       dance: [:multi_children],
       entry: [:age, :level, :lead, :follow],
@@ -803,9 +812,9 @@ class ScoresController < ApplicationController
       @bad = {}
       @value = {}
       scores.each do |score|
-        # For category scoring, score.heat is the subject wrapper (OpenStruct)
-        # For per-heat scoring, score.heat is a Heat model, so use heat_id
-        key = score.heat.is_a?(OpenStruct) ? score.heat : score.heat_id
+        # For category scoring, score.heat is the subject wrapper (OpenStruct) - use student's person ID
+        # For per-heat scoring, score.heat is a Heat model - use heat_id
+        key = score.heat.is_a?(OpenStruct) ? score.heat.subject.id : score.heat_id
         @good[key] = score.good
         @bad[key] = score.bad
         @value[key] = score.value

@@ -77,10 +77,10 @@ export default class extends Controller {
 
               let sections = button.parentElement.parentElement.children;
               for (let section of sections) {
-                let feedbackType = section.classList.contains("good") ? "good" : 
+                let feedbackType = section.classList.contains("good") ? "good" :
                   (section.classList.contains("bad") ? "bad" : "value");
                 let feedback = (response[feedbackType] || "").split(" ");
-            
+
                 for (let button of section.querySelectorAll("button")) {
                   if (feedback.includes(button.querySelector("abbr").textContent)) {
                     button.classList.add("selected");
@@ -89,6 +89,14 @@ export default class extends Controller {
                   }
                 }
               }
+
+              // Notify SPA to update its local data cache
+              document.dispatchEvent(new CustomEvent('score-updated', {
+                detail: {
+                  score: response,
+                  studentId: feedback.student_id
+                }
+              }));
             } else {
               error.textContent = response.error;
               error.style.display = "block";
