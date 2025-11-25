@@ -1,6 +1,6 @@
 ---
 name: fly-ssh
-description: Best practices for using fly ssh console to inspect Fly.io machines. Use when debugging production issues, checking memory usage, inspecting processes, or examining files on deployed machines.
+description: Use when asked to run "fly ssh console", SSH into Fly.io machines, inspect files on production machines, check processes on Fly.io, or examine deployed machine state. Covers critical pitfalls like no shell support and Debian vs macOS command differences.
 ---
 
 # Fly SSH Console Usage
