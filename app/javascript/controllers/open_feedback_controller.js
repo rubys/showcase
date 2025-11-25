@@ -25,9 +25,8 @@ export default class extends Controller {
       });
     }
 
+    // Always mark existing selections (even when disabled)
     for (let button of this.element.querySelectorAll("button")) {
-      button.disabled = false;
-      
       let span = button.querySelector("span");
       let abbr = button.querySelector("abbr");
       if (span && abbr) {
@@ -37,6 +36,15 @@ export default class extends Controller {
           button.classList.add("selected");
         }
       }
+    }
+
+    // Skip enabling buttons and adding click handlers if feedback validation failed
+    if (this.element.dataset.feedbackDisabled === "true") {
+      return;
+    }
+
+    for (let button of this.element.querySelectorAll("button")) {
+      button.disabled = false;
 
       button.addEventListener("click", _event => {
         const token = document.querySelector('meta[name="csrf-token"]').content;

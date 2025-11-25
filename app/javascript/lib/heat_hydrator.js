@@ -375,6 +375,7 @@ export function buildHeatTemplateData(heatNumber, rawData, style) {
     backnums: event.backnums,
     assign_judges: event.assign_judges,
     feedbacks: rawData.feedbacks || [],
+    feedback_errors: rawData.feedback_errors || [],  // Server-computed validation errors
     showcase_logo: event.showcase_logo || '/intertwingly.png',
     show: judge.show_assignments || 'first',
     category_scoring_enabled: categoryScoringEnabled,

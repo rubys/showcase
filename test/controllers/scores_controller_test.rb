@@ -2300,4 +2300,136 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     assert_equal 15.5, data['heat_number'].to_f
   end
 
+  # ===== FEEDBACK VALIDATION TESTS =====
+  # These tests verify that feedback configuration errors (duplicate/empty abbreviations)
+  # are properly detected and included in the heats_data JSON response.
+  # The validation follows the "Server computes" principle - business logic lives in Ruby.
+
+  test "heats_data includes feedback_errors for duplicate abbreviations" do
+    # Setup: Create feedbacks with duplicate abbreviations
+    Feedback.destroy_all
+    Feedback.create!(value: "Frame", abbr: "F", order: 1)
+    Feedback.create!(value: "Footwork", abbr: "F", order: 2)  # Duplicate!
+
+    get judge_heats_data_path(judge: @judge), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+
+    assert data.key?("feedback_errors"), "Response should include feedback_errors key"
+    assert_equal 1, data["feedback_errors"].length, "Should have exactly one error"
+    assert_includes data["feedback_errors"].first, "Duplicate abbreviation"
+    assert_includes data["feedback_errors"].first, "Frame"
+    assert_includes data["feedback_errors"].first, "Footwork"
+  end
+
+  test "heats_data includes feedback_errors for empty abbreviations" do
+    Feedback.destroy_all
+    Feedback.create!(value: "Frame", abbr: "", order: 1)
+
+    get judge_heats_data_path(judge: @judge), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+
+    assert data.key?("feedback_errors")
+    assert_equal 1, data["feedback_errors"].length
+    assert_includes data["feedback_errors"].first, "empty abbreviation"
+    assert_includes data["feedback_errors"].first, "Frame"
+  end
+
+  test "heats_data includes feedback_errors for nil abbreviations" do
+    Feedback.destroy_all
+    Feedback.create!(value: "Posture", abbr: nil, order: 1)
+
+    get judge_heats_data_path(judge: @judge), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+
+    assert data.key?("feedback_errors")
+    assert_equal 1, data["feedback_errors"].length
+    assert_includes data["feedback_errors"].first, "empty abbreviation"
+  end
+
+  test "heats_data feedback_errors is empty array when feedbacks are valid" do
+    Feedback.destroy_all
+    Feedback.create!(value: "Frame", abbr: "F", order: 1)
+    Feedback.create!(value: "Posture", abbr: "P", order: 2)
+    Feedback.create!(value: "Timing", abbr: "T", order: 3)
+
+    get judge_heats_data_path(judge: @judge), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+
+    assert data.key?("feedback_errors")
+    assert_equal [], data["feedback_errors"], "Valid feedbacks should produce no errors"
+  end
+
+  test "heats_data feedback_errors detects multiple issues" do
+    Feedback.destroy_all
+    Feedback.create!(value: "Frame", abbr: "F", order: 1)
+    Feedback.create!(value: "Footwork", abbr: "F", order: 2)   # Duplicate F
+    Feedback.create!(value: "Posture", abbr: "", order: 3)     # Empty
+    Feedback.create!(value: "Hip", abbr: "H", order: 4)
+    Feedback.create!(value: "Head", abbr: "H", order: 5)       # Duplicate H
+
+    get judge_heats_data_path(judge: @judge), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+
+    assert data.key?("feedback_errors")
+    assert_equal 3, data["feedback_errors"].length, "Should detect all three issues"
+
+    # Check for each type of error
+    errors_text = data["feedback_errors"].join(" ")
+    assert_includes errors_text, "Duplicate"
+    assert_includes errors_text, "empty abbreviation"
+  end
+
+  test "validate_feedbacks helper detects duplicate abbreviations" do
+    feedbacks = [
+      Feedback.new(value: "Frame", abbr: "F"),
+      Feedback.new(value: "Footwork", abbr: "F")
+    ]
+
+    controller = ScoresController.new
+    errors = controller.send(:validate_feedbacks, feedbacks)
+
+    assert_equal 1, errors.length
+    assert_includes errors.first, "Duplicate abbreviation"
+    assert_includes errors.first, "\"F\""
+    assert_includes errors.first, "Frame"
+    assert_includes errors.first, "Footwork"
+  end
+
+  test "validate_feedbacks helper detects empty abbreviations" do
+    feedbacks = [
+      Feedback.new(value: "Frame", abbr: "F"),
+      Feedback.new(value: "Posture", abbr: ""),
+      Feedback.new(value: "Timing", abbr: nil)
+    ]
+
+    controller = ScoresController.new
+    errors = controller.send(:validate_feedbacks, feedbacks)
+
+    assert_equal 2, errors.length
+    assert errors.all? { |e| e.include?("empty abbreviation") }
+  end
+
+  test "validate_feedbacks helper returns empty array for valid feedbacks" do
+    feedbacks = [
+      Feedback.new(value: "Frame", abbr: "F"),
+      Feedback.new(value: "Posture", abbr: "P"),
+      Feedback.new(value: "Timing", abbr: "T")
+    ]
+
+    controller = ScoresController.new
+    errors = controller.send(:validate_feedbacks, feedbacks)
+
+    assert_equal [], errors
+  end
+
 end

@@ -8,7 +8,6 @@ pin_all_from "app/javascript/controllers", under: "controllers"
 pin "@rails/actioncable", to: "actioncable.esm.js"
 pin_all_from "app/javascript/channels", under: "channels"
 pin_all_from "app/javascript/helpers", under: "helpers", preload: true
-pin_all_from "app/javascript/components", under: "components"
 pin_all_from "app/javascript/lib", under: "lib"
 pin "templates/scoring", to: "templates/scoring.js", preload: false
 pin "trix"

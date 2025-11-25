@@ -106,7 +106,7 @@ class ScoresController < ApplicationController
     render :heatlist, status: (@browser_warn ? :upgrade_required : :ok)
   end
 
-  # GET /scores/:judge/spa - SPA test page
+  # GET /scores/:judge/heats - ERB-to-JS SPA for offline support
   def spa
     @judge = Person.find(params[:judge].to_i)
     @heat_number = params[:heat]  # nil if not provided - shows heatlist; keep as string for fractional heats
@@ -114,7 +114,7 @@ class ScoresController < ApplicationController
     render layout: false
   end
 
-  # GET /scores/:judge/heats/data - Returns normalized data for SPA (all entities in separate tables)
+  # GET /scores/:judge/heats/data - Returns normalized data for offline support (all entities in separate tables)
   #
   # ARCHITECTURAL PRINCIPLE: Server computes, hydration joins, template filters
   #
@@ -482,6 +482,7 @@ class ScoresController < ApplicationController
       formations: formations_data,
       scores: scores_data,
       feedbacks: Feedback.all.map { |f| { id: f.id, value: f.value, abbr: f.abbr, order: f.order } },
+      feedback_errors: validate_feedbacks(Feedback.all),
       categories: Category.all.map { |c| [c.id, { id: c.id, name: c.name, use_category_scoring: c.use_category_scoring }] }.to_h,
       category_score_assignments: Category.all.map { |cat|
         student_ids = Score.where(heat_id: -cat.id, judge_id: judge.id).where.not(person_id: nil).pluck(:person_id).uniq
@@ -926,6 +927,7 @@ class ScoresController < ApplicationController
     @assign_judges = @style != 'emcee' && @event.assign_judges > 0 && @heat.category != 'Solo' && Person.where(type: 'Judge').count > 1
 
     @feedbacks = Feedback.all
+    @feedback_errors = validate_feedbacks(@feedbacks)
 
     # Pre-compute data for heat_header partial
     if @event.assign_judges? && @show == 'mixed' && @judge && @style != 'emcee'
@@ -2183,5 +2185,23 @@ class ScoresController < ApplicationController
       end
 
       [ballrooms_count, ballrooms]
+    end
+
+    # Validate feedback configuration for duplicate/empty abbreviations
+    def validate_feedbacks(feedbacks)
+      errors = []
+      abbrs = {}
+
+      feedbacks.each do |feedback|
+        if feedback.abbr.blank?
+          errors << "Feedback \"#{feedback.value}\" has an empty abbreviation"
+        elsif abbrs[feedback.abbr]
+          errors << "Duplicate abbreviation \"#{feedback.abbr}\" used by both \"#{abbrs[feedback.abbr]}\" and \"#{feedback.value}\""
+        else
+          abbrs[feedback.abbr] = feedback.value
+        end
+      end
+
+      errors
     end
 end

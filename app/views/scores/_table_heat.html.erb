@@ -117,7 +117,7 @@
     </tr>
     <%# Display feedback rows for all scoring types except emcee mode and specific scoring types %>
     <% if @style != 'emcee' and !%w(1 G #).include?(@scoring) %>
-    <tr data-controller="open-feedback" class="open-fb-row" data-heat="<%= subject.id %>" data-feedback-action="<%= @post_feedback_path %>">
+    <tr data-controller="open-feedback" class="open-fb-row" data-heat="<%= subject.id %>" data-feedback-action="<%= @post_feedback_path %>"<%= @feedback_errors&.any? ? ' data-feedback-disabled="true"' : '' %>>
     <td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) %>">
     <% if @scoring == '&' %>
     <div class="grid value w-full" data-value="<%= @category_scoring_enabled && subject.respond_to?(:subject) ? @value[subject] : @value[subject.id] %>" style="grid-template-columns: 100px repeat(5, 1fr)">
