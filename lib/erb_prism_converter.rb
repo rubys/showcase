@@ -771,6 +771,9 @@ class ErbPrismConverter
     when "!"
       # Unary not
       "!#{receiver}"
+    when "subject_category", "subject_lvlcat"
+      # Pre-computed by server in heats_data - strip arguments and use as property
+      "#{receiver}#{op}#{method}"
     else
       if receiver
         # Strip trailing ? from boolean methods (e.g., assign_judges? -> assign_judges)

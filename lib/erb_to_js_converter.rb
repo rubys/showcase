@@ -181,6 +181,11 @@ class ErbToJsConverter
     # String methods
     js.gsub!(/\.gsub\(([^,]+),\s*([^)]+)\)/, '.replace(\1, \2)')
 
+    # Pre-computed method calls - server computes these values in heats_data,
+    # so convert method calls to property access
+    js.gsub!(/\.subject_category\([^)]*\)/, '.subject_category')
+    js.gsub!(/\.subject_lvlcat\([^)]*\)/, '.subject_lvlcat')
+
     # Rails helpers - handle both with and without parens
     js.gsub!(/dom_id\s+(\w+)/, 'domId(\1)')
     js.gsub!(/dom_id\(([^)]+)\)/, 'domId(\1)')

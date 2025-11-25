@@ -135,9 +135,18 @@ class ScoresController < ApplicationController
     event = Event.current
     judge = Person.find(params[:judge].to_i)
 
-    # Load all heats with associations
+    # Load all heats with comprehensive eager loading to prevent N+1 queries
+    # This loads: dance with all category associations, entry with people/studios/age/level,
+    # solo with formations and people, and scores
     all_heats = Heat.where(number: 1..).includes(
-      :dance, :entry, :solo, :scores
+      dance: [
+        :open_category, :closed_category, :solo_category, :multi_category,
+        :pro_open_category, :pro_solo_category, :pro_multi_category,
+        :multi_children, { multi_dances: :parent }
+      ],
+      entry: [:age, :level, { lead: :studio, follow: :studio, instructor: :studio }],
+      solo: [{ formations: { person: :studio } }, :category_override, :combo_dance],
+      scores: []
     ).order(:number).to_a
 
     # Apply sorting logic per heat number to match ERB behavior
@@ -443,6 +452,23 @@ class ScoresController < ApplicationController
       unassigned = []
     end
 
+    # Pre-load supporting data to avoid N+1 queries in the response hash
+    feedbacks_list = Feedback.all.to_a
+    categories_list = Category.all.to_a
+
+    # Batch load category score assignments with a single query instead of one per category
+    category_scores_raw = Score.where(judge_id: judge.id)
+      .where('heat_id < 0')
+      .where.not(person_id: nil)
+      .pluck(:heat_id, :person_id)
+    category_score_assignments_data = categories_list.each_with_object({}) do |cat, hash|
+      # heat_id = -category_id, so we filter for heat_id = -cat.id
+      hash[cat.id] = category_scores_raw
+        .select { |heat_id, _| heat_id == -cat.id }
+        .map { |_, person_id| person_id }
+        .uniq
+    end
+
     # Return normalized data structure
     data = {
       event: {
@@ -481,13 +507,10 @@ class ScoresController < ApplicationController
       solos: solos_data,
       formations: formations_data,
       scores: scores_data,
-      feedbacks: Feedback.all.map { |f| { id: f.id, value: f.value, abbr: f.abbr, order: f.order } },
-      feedback_errors: validate_feedbacks(Feedback.all),
-      categories: Category.all.map { |c| [c.id, { id: c.id, name: c.name, use_category_scoring: c.use_category_scoring }] }.to_h,
-      category_score_assignments: Category.all.map { |cat|
-        student_ids = Score.where(heat_id: -cat.id, judge_id: judge.id).where.not(person_id: nil).pluck(:person_id).uniq
-        [cat.id, student_ids]
-      }.to_h,
+      feedbacks: feedbacks_list.map { |f| { id: f.id, value: f.value, abbr: f.abbr, order: f.order } },
+      feedback_errors: validate_feedbacks(feedbacks_list),
+      categories: categories_list.map { |c| [c.id, { id: c.id, name: c.name, use_category_scoring: c.use_category_scoring }] }.to_h,
+      category_score_assignments: category_score_assignments_data,
       # Heat list specific data
       agenda: agenda,
       unassigned: unassigned,
