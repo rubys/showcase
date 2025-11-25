@@ -2038,197 +2038,6 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  # === JSON API Endpoint Tests ===
-
-  test "heats_json returns JSON with event, judge, and heats data" do
-    get judge_heats_json_path(judge: @judge.id), as: :json
-
-    assert_response :success
-    assert_equal 'application/json; charset=utf-8', @response.content_type
-
-    data = JSON.parse(@response.body)
-
-    # Check top-level structure
-    assert_includes data.keys, 'event'
-    assert_includes data.keys, 'judge'
-    assert_includes data.keys, 'heats'
-    assert_includes data.keys, 'feedbacks'
-    assert_includes data.keys, 'score_options'
-    assert_includes data.keys, 'timestamp'
-  end
-
-  test "heats_json includes event configuration" do
-    get judge_heats_json_path(judge: @judge.id), as: :json
-
-    data = JSON.parse(@response.body)
-    event_data = data['event']
-
-    assert_equal @event.id, event_data['id']
-    assert_equal @event.name, event_data['name']
-    assert_equal @event.open_scoring, event_data['open_scoring']
-    assert_equal @event.closed_scoring, event_data['closed_scoring']
-    assert_equal @event.multi_scoring, event_data['multi_scoring']
-    assert_equal @event.solo_scoring, event_data['solo_scoring']
-  end
-
-  test "heats_json includes judge information" do
-    get judge_heats_json_path(judge: @judge.id), as: :json
-
-    data = JSON.parse(@response.body)
-    judge_data = data['judge']
-
-    assert_equal @judge.id, judge_data['id']
-    assert_equal @judge.name, judge_data['name']
-    assert_equal @judge.sort_order || 'back', judge_data['sort_order']
-  end
-
-  test "heats_json includes heats with subjects" do
-    get judge_heats_json_path(judge: @judge.id), as: :json
-
-    data = JSON.parse(@response.body)
-    heats = data['heats']
-
-    assert heats.is_a?(Array)
-    assert heats.length > 0, "Expected at least one heat in JSON response"
-
-    first_heat = heats.first
-    assert_includes first_heat.keys, 'number'
-    assert_includes first_heat.keys, 'category'
-    assert_includes first_heat.keys, 'scoring'
-    assert_includes first_heat.keys, 'dance'
-    assert_includes first_heat.keys, 'subjects'
-  end
-
-  test "heats_json includes subject details" do
-    get judge_heats_json_path(judge: @judge.id), as: :json
-
-    data = JSON.parse(@response.body)
-    heats = data['heats']
-
-    # Find a heat with subjects
-    heat_with_subjects = heats.find { |h| h['subjects'].any? }
-    assert heat_with_subjects, "Expected at least one heat with subjects"
-
-    subject = heat_with_subjects['subjects'].first
-    assert_includes subject.keys, 'id'
-    assert_includes subject.keys, 'lead'
-    assert_includes subject.keys, 'follow'
-    assert_includes subject['lead'].keys, 'name'
-    assert_includes subject['follow'].keys, 'name'
-  end
-
-  test "heats_json includes dance information" do
-    get judge_heats_json_path(judge: @judge.id), as: :json
-
-    data = JSON.parse(@response.body)
-    heats = data['heats']
-
-    first_heat = heats.first
-    dance = first_heat['dance']
-
-    assert_includes dance.keys, 'id'
-    assert_includes dance.keys, 'name'
-    assert_includes dance.keys, 'heat_length'
-    assert_includes dance.keys, 'uses_scrutineering'
-  end
-
-  test "heats_json includes existing scores for judge" do
-    # Create a score for the judge
-    score = Score.create!(
-      judge: @judge,
-      heat: @test_heat,
-      value: 'B'
-    )
-
-    get judge_heats_json_path(judge: @judge.id), as: :json
-
-    data = JSON.parse(@response.body)
-    heats = data['heats']
-
-    # Find the heat with our test_heat
-    test_heat_data = heats.find { |h| h['number'] == @test_heat.number }
-    assert test_heat_data, "Expected to find test heat in JSON"
-
-    # Check that the subject has the score
-    subject = test_heat_data['subjects'].find { |s| s['id'] == @test_heat.id }
-    assert subject, "Expected to find subject in heat"
-
-    scores = subject['scores']
-    assert scores.any?, "Expected scores for this subject"
-
-    judge_score = scores.find { |s| s['judge_id'] == @judge.id }
-    assert judge_score, "Expected to find judge's score"
-    assert_not_nil judge_score['value'], "Score value should not be nil"
-  end
-
-  test "heats_json includes score_options" do
-    get judge_heats_json_path(judge: @judge.id), as: :json
-
-    data = JSON.parse(@response.body)
-    score_options = data['score_options']
-
-    assert_includes score_options.keys, 'Open'
-    assert_includes score_options.keys, 'Closed'
-    assert_includes score_options.keys, 'Solo'
-    assert_includes score_options.keys, 'Multi'
-  end
-
-  test "heats_json includes feedbacks" do
-    get judge_heats_json_path(judge: @judge.id), as: :json
-
-    data = JSON.parse(@response.body)
-    feedbacks = data['feedbacks']
-
-    assert feedbacks.is_a?(Array)
-
-    if feedbacks.any?
-      first_feedback = feedbacks.first
-      assert_includes first_feedback.keys, 'id'
-      assert_includes first_feedback.keys, 'value'
-      assert_includes first_feedback.keys, 'abbr'
-    end
-  end
-
-  test "heats_json includes timestamp" do
-    get judge_heats_json_path(judge: @judge.id), as: :json
-
-    data = JSON.parse(@response.body)
-
-    assert data['timestamp'].is_a?(Integer)
-    assert data['timestamp'] > 0
-    assert data['timestamp'] <= Time.current.to_i
-  end
-
-  # === SPA-Specific Endpoint Tests ===
-
-  test "spa endpoint renders spa view with heat-page custom element" do
-    get judge_spa_path(@judge)
-
-    assert_response :success
-    assert_select 'heat-page'
-  end
-
-  test "spa endpoint passes judge-id attribute" do
-    get judge_spa_path(@judge)
-
-    assert_response :success
-    assert_select "heat-page[judge-id='#{@judge.id}']"
-  end
-
-  test "spa endpoint passes heat-number when provided" do
-    get judge_spa_path(@judge, heat: 42)
-
-    assert_response :success
-    assert_select "heat-page[heat-number='42']"
-  end
-
-  test "spa endpoint passes style attribute" do
-    get judge_spa_path(@judge, style: 'radio')
-
-    assert_response :success
-    assert_select "heat-page[scoring-style='radio']"
-  end
-
   # === Version Check Endpoint Tests ===
 
   test "version_check returns max_updated_at and heat_count" do
@@ -2489,6 +2298,190 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     data = JSON.parse(@response.body)
 
     assert_equal 15.5, data['heat_number'].to_f
+  end
+
+  test "version_check includes judge updated_at in max_updated_at calculation" do
+    # Touch the judge to update their timestamp
+    @judge.touch
+
+    get judge_version_check_path(@judge, @test_heat.number), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+
+    # max_updated_at should be at least as recent as judge's updated_at
+    max_updated = Time.parse(data['max_updated_at'])
+    assert max_updated >= @judge.reload.updated_at - 1.second, "max_updated_at should include judge's updated_at"
+  end
+
+  test "version_check includes event updated_at in max_updated_at calculation" do
+    # Touch the event to update its timestamp
+    Event.first.touch
+
+    get judge_version_check_path(@judge, @test_heat.number), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+
+    # max_updated_at should be at least as recent as event's updated_at
+    max_updated = Time.parse(data['max_updated_at'])
+    assert max_updated >= Event.first.reload.updated_at - 1.second, "max_updated_at should include event's updated_at"
+  end
+
+  test "heats_data includes max_updated_at for staleness detection" do
+    get judge_heats_data_path(judge: @judge), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+
+    assert data.key?("max_updated_at"), "heats_data should include max_updated_at"
+    assert data["max_updated_at"].present?, "max_updated_at should not be blank"
+
+    # Verify it's a valid ISO8601 timestamp
+    assert_nothing_raised { Time.parse(data["max_updated_at"]) }
+  end
+
+  test "heats_data max_updated_at matches version_check max_updated_at" do
+    get judge_heats_data_path(judge: @judge), as: :json
+    heats_data = JSON.parse(@response.body)
+
+    get judge_version_check_path(@judge, @test_heat.number), as: :json
+    version_data = JSON.parse(@response.body)
+
+    assert_equal heats_data["max_updated_at"], version_data["max_updated_at"],
+      "max_updated_at should be consistent between heats_data and version_check"
+  end
+
+  # ===== FEEDBACK VALIDATION TESTS =====
+  # These tests verify that feedback configuration errors (duplicate/empty abbreviations)
+  # are properly detected and included in the heats_data JSON response.
+  # The validation follows the "Server computes" principle - business logic lives in Ruby.
+
+  test "heats_data includes feedback_errors for duplicate abbreviations" do
+    # Setup: Create feedbacks with duplicate abbreviations
+    Feedback.destroy_all
+    Feedback.create!(value: "Frame", abbr: "F", order: 1)
+    Feedback.create!(value: "Footwork", abbr: "F", order: 2)  # Duplicate!
+
+    get judge_heats_data_path(judge: @judge), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+
+    assert data.key?("feedback_errors"), "Response should include feedback_errors key"
+    assert_equal 1, data["feedback_errors"].length, "Should have exactly one error"
+    assert_includes data["feedback_errors"].first, "Duplicate abbreviation"
+    assert_includes data["feedback_errors"].first, "Frame"
+    assert_includes data["feedback_errors"].first, "Footwork"
+  end
+
+  test "heats_data includes feedback_errors for empty abbreviations" do
+    Feedback.destroy_all
+    Feedback.create!(value: "Frame", abbr: "", order: 1)
+
+    get judge_heats_data_path(judge: @judge), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+
+    assert data.key?("feedback_errors")
+    assert_equal 1, data["feedback_errors"].length
+    assert_includes data["feedback_errors"].first, "empty abbreviation"
+    assert_includes data["feedback_errors"].first, "Frame"
+  end
+
+  test "heats_data includes feedback_errors for nil abbreviations" do
+    Feedback.destroy_all
+    Feedback.create!(value: "Posture", abbr: nil, order: 1)
+
+    get judge_heats_data_path(judge: @judge), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+
+    assert data.key?("feedback_errors")
+    assert_equal 1, data["feedback_errors"].length
+    assert_includes data["feedback_errors"].first, "empty abbreviation"
+  end
+
+  test "heats_data feedback_errors is empty array when feedbacks are valid" do
+    Feedback.destroy_all
+    Feedback.create!(value: "Frame", abbr: "F", order: 1)
+    Feedback.create!(value: "Posture", abbr: "P", order: 2)
+    Feedback.create!(value: "Timing", abbr: "T", order: 3)
+
+    get judge_heats_data_path(judge: @judge), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+
+    assert data.key?("feedback_errors")
+    assert_equal [], data["feedback_errors"], "Valid feedbacks should produce no errors"
+  end
+
+  test "heats_data feedback_errors detects multiple issues" do
+    Feedback.destroy_all
+    Feedback.create!(value: "Frame", abbr: "F", order: 1)
+    Feedback.create!(value: "Footwork", abbr: "F", order: 2)   # Duplicate F
+    Feedback.create!(value: "Posture", abbr: "", order: 3)     # Empty
+    Feedback.create!(value: "Hip", abbr: "H", order: 4)
+    Feedback.create!(value: "Head", abbr: "H", order: 5)       # Duplicate H
+
+    get judge_heats_data_path(judge: @judge), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+
+    assert data.key?("feedback_errors")
+    assert_equal 3, data["feedback_errors"].length, "Should detect all three issues"
+
+    # Check for each type of error
+    errors_text = data["feedback_errors"].join(" ")
+    assert_includes errors_text, "Duplicate"
+    assert_includes errors_text, "empty abbreviation"
+  end
+
+  test "validate_feedbacks helper detects duplicate abbreviations" do
+    feedbacks = [
+      Feedback.new(value: "Frame", abbr: "F"),
+      Feedback.new(value: "Footwork", abbr: "F")
+    ]
+
+    controller = ScoresController.new
+    errors = controller.send(:validate_feedbacks, feedbacks)
+
+    assert_equal 1, errors.length
+    assert_includes errors.first, "Duplicate abbreviation"
+    assert_includes errors.first, "\"F\""
+    assert_includes errors.first, "Frame"
+    assert_includes errors.first, "Footwork"
+  end
+
+  test "validate_feedbacks helper detects empty abbreviations" do
+    feedbacks = [
+      Feedback.new(value: "Frame", abbr: "F"),
+      Feedback.new(value: "Posture", abbr: ""),
+      Feedback.new(value: "Timing", abbr: nil)
+    ]
+
+    controller = ScoresController.new
+    errors = controller.send(:validate_feedbacks, feedbacks)
+
+    assert_equal 2, errors.length
+    assert errors.all? { |e| e.include?("empty abbreviation") }
+  end
+
+  test "validate_feedbacks helper returns empty array for valid feedbacks" do
+    feedbacks = [
+      Feedback.new(value: "Frame", abbr: "F"),
+      Feedback.new(value: "Posture", abbr: "P"),
+      Feedback.new(value: "Timing", abbr: "T")
+    ]
+
+    controller = ScoresController.new
+    errors = controller.send(:validate_feedbacks, feedbacks)
+
+    assert_equal [], errors
   end
 
 end

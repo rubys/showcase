@@ -1,13 +1,24 @@
+  <% if @feedback_errors&.any? %>
+  <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+    <strong class="font-bold">Feedback Configuration Error</strong>
+    <p class="mb-2">Please fix these issues in <a href="/feedbacks" class="underline">Feedback Settings</a> before scoring:</p>
+    <ul class="list-disc list-inside">
+      <% @feedback_errors.each do |error| %>
+        <li><%= error %></li>
+      <% end %>
+    </ul>
+  </div>
+  <% end %>
   <div data-controller="info-box">
     <div class="info-button top-2">&#x24D8;</div>
     <ul class="info-box">
-      <li><%= raw scoring_instruction_text(@heat, @style, @event) %></li>
+      <li><%= raw @scoring_instructions %></li>
       <% unless @heat.category == 'Solo' || @style == 'emcee' %>
         <% if @style != 'radio' %>
           <li>Dragging an entry back to the unlabelled box at the right returns the participant to the unscored state.</li>
         <% end %>
       <% end %>
-      <li><%= raw navigation_instruction_text(@heat, @event) %></li>
+      <li><%= raw @navigation_instructions %></li>
       <li>Clicking on the heat information at the top center of the page will return you to the heat list where you can quickly scroll and select a different heat.</li>
     </ul>
   </div>

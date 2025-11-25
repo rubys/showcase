@@ -46,7 +46,7 @@ class ScoresTest < ApplicationSystemTestCase
     # Wait for data to load and verify heat list appears
     # Heat list renders as table rows with links
     assert_selector "heat-list table tbody tr", wait: 5
-    assert_selector "heat-list a[href*='/scores/#{judge.id}/spa?heat=']"
+    assert_selector "heat-list a[href*='/scores/#{judge.id}/heats/']"
   end
 
   test "SPA displays heat scoring interface" do

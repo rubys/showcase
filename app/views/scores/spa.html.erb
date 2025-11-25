@@ -11,20 +11,50 @@
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
-
-    <script type="module">
-      import { HeatPage } from 'components/heat-page';
-    </script>
   </head>
 
-  <body data-controller="turbo-streams" data-controller='post-console-log' data-turbo-prefetch="false" data-locale="en-US">
+  <body data-controller="turbo-streams post-console-log" data-turbo-prefetch="false" data-locale="en-US">
+    <!-- Connection status indicator with logo -->
+    <div data-controller="connection-status"
+         data-connection-status-judge-value="<%= @judge.id %>"
+         class="absolute right-4 top-4 flex items-center gap-2">
+      <span class="flex items-center">
+        <span data-connection-status-target="pending" class="text-red-500 font-bold mr-1"></span>
+        <!-- Online WiFi icon -->
+        <svg data-connection-status-target="onlineIcon" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+          <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+          <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+          <circle cx="12" cy="20" r="1"></circle>
+        </svg>
+        <!-- Offline WiFi icon (hidden by default) -->
+        <svg data-connection-status-target="offlineIcon" class="h-8 w-8 text-red-500 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+          <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+          <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+          <circle cx="12" cy="20" r="1"></circle>
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+        </svg>
+      </span>
+      <a href="<%= [Rails.application.config.relative_url_root, ENV['RAILS_APP_SCOPE']].compact.join('/') %>/" class="flex items-center">
+        <img class="h-8" src="/intertwingly.png" />
+      </a>
+    </div>
+
     <main class="mx-0 px-5 print:mx-0">
-      <heat-page
-        judge-id="<%= @judge.id %>"
-        <% if @heat_number %>heat-number="<%= @heat_number %>"<% end %>
-        scoring-style="<%= @style %>"
-        base-path="<%= [Rails.application.config.relative_url_root, ENV['RAILS_APP_SCOPE']].compact.join('/') %>">
-      </heat-page>
+      <div id="heat-app"
+           data-controller="heat-app"
+           data-heat-app-judge-value="<%= @judge.id %>"
+           <% if @heat_number %>data-heat-app-heat-value="<%= @heat_number %>"<% end %>
+           data-heat-app-style-value="<%= @style %>"
+           data-heat-app-base-path-value="<%= [Rails.application.config.relative_url_root, ENV['RAILS_APP_SCOPE']].compact.join('/') %>">
+        <div class="flex items-center justify-center h-screen">
+          <div class="text-center">
+            <div class="text-2xl mb-4">Loading...</div>
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          </div>
+        </div>
+      </div>
     </main>
   </body>
 </html>

@@ -78,6 +78,9 @@ class ScoresController < ApplicationController
 
     @show_solos = @judge&.judge&.review_solos&.downcase
 
+    @qr_code = RQRCode::QRCode.new(judge_heatlist_url(@judge, style: @style)).as_svg(viewbox: true)
+    @heatlist_url = judge_heatlist_url(@judge, style: @style, sort: @sort)
+
     @browser_warn = browser_warn
 
     # Find unassigned heats, excluding category-scored categories
@@ -103,28 +106,344 @@ class ScoresController < ApplicationController
     render :heatlist, status: (@browser_warn ? :upgrade_required : :ok)
   end
 
-  # GET /scores/:judge/spa - SPA test page
+  # GET /scores/:judge/heats - ERB-to-JS SPA for offline support
   def spa
     @judge = Person.find(params[:judge].to_i)
-    @heat_number = params[:heat]&.to_i  # nil if not provided - shows heatlist
+    @heat_number = params[:heat]  # nil if not provided - shows heatlist; keep as string for fractional heats
     @style = params[:style] || 'radio'
     render layout: false
   end
 
-  # GET /scores/:judge/heats.json - Returns all heats data for SPA rendering
-  def heats_json
+  # GET /scores/:judge/heats/data - Returns normalized data for offline support (all entities in separate tables)
+  #
+  # ARCHITECTURAL PRINCIPLE: Server computes, hydration joins, template filters
+  #
+  # - Server (this action): Compute all derived/display values (e.g., dance_string = "Closed Milonga")
+  #   and serialize them in the JSON response. Perform business logic, aggregations, and formatting here.
+  #
+  # - Hydration (heat_hydrator.js): Join normalized data by resolving IDs to full objects.
+  #   Convert { dance_id: 5 } to { dance: { id: 5, name: "Milonga" } }.
+  #   Do NOT compute business logic or derived values here.
+  #
+  # - Templates (ERB/JS): Filter and format data for display (e.g., truncate, titleize, pluralize).
+  #   Present data that has already been computed and joined.
+  #
+  # This separation ensures consistent behavior between ERB and JS views, with a single source of truth
+  # for business logic (the server) and clear responsibilities for each layer.
+  #
+  def heats_data
     event = Event.current
     judge = Person.find(params[:judge].to_i)
 
-    # Load all heats with necessary associations
-    heats = Heat.where(number: 1..).order(:number).includes(
-      dance: [:open_category, :closed_category, :multi_category, :solo_category, :multi_children, :multi_dances, :songs],
-      entry: [:age, :level, :lead, :follow, :instructor, :studio],
-      solo: [:formations, :category_override],
-      scores: []
-    ).to_a
+    # Load all heats with associations
+    all_heats = Heat.where(number: 1..).includes(
+      :dance, :entry, :solo, :scores
+    ).order(:number).to_a
 
-    # Build the response data structure
+    # Apply sorting logic per heat number to match ERB behavior
+    # Group heats by number, sort within each group, then flatten
+    sorted_heats = all_heats.group_by(&:number).flat_map do |heat_number, heats_for_number|
+      # Get judge's preferences for sorting
+      sort_order = judge.sort_order || 'back'
+      show = judge.show_assignments || 'first'
+      show = 'mixed' unless event.assign_judges > 0 && show != 'mixed' && Person.where(type: 'Judge').count > 1
+
+      # Apply same sorting logic as heat action
+      _ballrooms_count, ballrooms = sort_and_group_subjects(heats_for_number, judge, event, heat_number, sort_order, show, false)
+
+      # Flatten ballrooms back to array in sorted order
+      ballrooms.values.flatten
+    end
+
+    all_heats = sorted_heats
+
+    # Collect all unique entities
+    people_set = {}
+    studios_set = {}
+    entries_set = {}
+    dances_set = {}
+    ages_set = {}
+    levels_set = {}
+    categories_set = {}
+    solos_set = {}
+    formations_set = {}
+    scores_set = {}
+
+    # Process all heats and extract entities
+    all_heats.each do |heat|
+      # Collect dance
+      if heat.dance
+        dances_set[heat.dance.id] = heat.dance
+      end
+
+      # Collect entry and related people
+      if heat.entry
+        entry = heat.entry
+        entries_set[entry.id] = entry
+
+        # Collect lead
+        if entry.lead
+          people_set[entry.lead.id] = entry.lead
+          studios_set[entry.lead.studio_id] = entry.lead.studio if entry.lead.studio
+        end
+
+        # Collect follow
+        if entry.follow
+          people_set[entry.follow.id] = entry.follow
+          studios_set[entry.follow.studio_id] = entry.follow.studio if entry.follow.studio
+        end
+
+        # Collect instructor
+        if entry.instructor
+          people_set[entry.instructor.id] = entry.instructor
+          studios_set[entry.instructor.studio_id] = entry.instructor.studio if entry.instructor.studio
+        end
+
+        # Collect age and level
+        ages_set[entry.age.id] = entry.age if entry.age
+        levels_set[entry.level.id] = entry.level if entry.level
+      end
+
+      # Collect solo and formations
+      if heat.solo
+        solo = heat.solo
+        solos_set[solo.id] = solo
+
+        # Load formations for this solo
+        solo.formations.each do |formation|
+          formations_set[formation.id] = formation
+          if formation.person
+            people_set[formation.person.id] = formation.person
+            studios_set[formation.person.studio_id] = formation.person.studio if formation.person.studio
+          end
+        end
+      end
+
+      # Collect scores (per-heat scores)
+      heat.scores.each do |score|
+        scores_set[score.id] = score
+      end
+    end
+
+    # Also collect category scores for this judge (scores with negative heat_id)
+    # These are stored with heat_id = -category_id and person_id = student_id
+    category_scores = Score.where(judge_id: judge.id).where('heat_id < 0')
+    category_scores.each do |score|
+      scores_set[score.id] = score
+    end
+
+    # Serialize ALL heats with display names
+    # NOTE: Do NOT group by number here - individual heat rendering needs all heats
+    # The heat list template will handle grouping if needed
+    combine_open_and_closed = event.heat_range_cat == 1
+
+    heats_data = all_heats.map do |heat|
+      # Compute dance string (matching logic from heat action lines 600-621)
+      # Group heats by number to check if all have same dance_id
+      heats_same_number = all_heats.select { |h| h.number == heat.number }
+      dance_string = if heats_same_number.first.dance_id == heats_same_number.last.dance_id
+        "#{heat.category} #{heat.dance.name}"
+      else
+        "#{heat.category} #{heat.dance_category.name}"
+      end
+
+      # Remove category prefix if combining open and closed
+      if combine_open_and_closed && %w(Open Closed).include?(heat.category)
+        dance_string = dance_string.sub(/^\w+ /, '')
+      end
+
+      {
+        id: heat.id,
+        number: heat.number,
+        dance_id: heat.dance_id,
+        entry_id: heat.entry_id,
+        solo_id: heat.solo&.id,
+        category: heat.category,
+        ballroom: heat.ballroom,
+        dance_string: dance_string,  # Computed dance display string
+        # Add display fields for heat list template
+        dance: {
+          id: heat.dance_id,
+          name: heat.dance.name
+        },
+        solo: heat.solo ? {
+          id: heat.solo.id,
+          combo_dance_id: heat.solo.combo_dance_id,
+          combo_dance: heat.solo.combo_dance ? { name: heat.solo.combo_dance.name } : nil
+        } : nil
+      }
+    end
+
+    # Serialize people (with computed fields)
+    people_data = people_set.transform_values do |person|
+      {
+        id: person.id,
+        name: person.name,
+        display_name: person.display_name,
+        back: person.back,
+        type: person.type,
+        studio_id: person.studio_id
+      }
+    end
+
+    # Serialize studios
+    studios_data = studios_set.transform_values do |studio|
+      {
+        id: studio.id,
+        name: studio.name
+      }
+    end
+
+    # Serialize entries
+    entries_data = entries_set.transform_values do |entry|
+      {
+        id: entry.id,
+        lead_id: entry.lead_id,
+        follow_id: entry.follow_id,
+        instructor_id: entry.instructor_id,
+        studio_id: entry.studio_id,
+        age_id: entry.age_id,
+        level_id: entry.level_id,
+        pro: entry.pro,
+        level_name: entry.level_name,  # Computed field for JavaScript templates
+        subject_lvlcat: entry.subject_lvlcat(event.track_ages),
+        subject_category: entry.subject_category(event.track_ages)
+      }
+    end
+
+    # Serialize dances
+    dances_data = dances_set.transform_values do |dance|
+      {
+        id: dance.id,
+        name: dance.name,
+        order: dance.order,
+        heat_length: dance.heat_length,
+        semi_finals: dance.semi_finals,
+        uses_scrutineering: dance.uses_scrutineering?,
+        closed_category_id: dance.closed_category_id,
+        open_category_id: dance.open_category_id,
+        solo_category_id: dance.solo_category_id,
+        multi_category_id: dance.multi_category_id,
+        pro_open_category_id: dance.pro_open_category_id,
+        pro_solo_category_id: dance.pro_solo_category_id,
+        pro_multi_category_id: dance.pro_multi_category_id
+      }
+    end
+
+    # Serialize ages
+    ages_data = ages_set.transform_values do |age|
+      {
+        id: age.id,
+        category: age.category
+      }
+    end
+
+    # Serialize levels
+    levels_data = levels_set.transform_values do |level|
+      {
+        id: level.id,
+        name: level.name,
+        initials: level.initials
+      }
+    end
+
+    # Serialize solos
+    solos_data = solos_set.transform_values do |solo|
+      {
+        id: solo.id,
+        combo_dance_id: solo.combo_dance_id
+      }
+    end
+
+    # Serialize formations
+    formations_data = formations_set.transform_values do |formation|
+      {
+        id: formation.id,
+        solo_id: formation.solo_id,
+        person_id: formation.person_id,
+        on_floor: formation.on_floor
+      }
+    end
+
+    # Serialize scores
+    scores_data = scores_set.transform_values do |score|
+      {
+        id: score.id,
+        heat_id: score.heat_id,
+        judge_id: score.judge_id,
+        person_id: score.person_id,  # Used for category scores
+        value: score.value,
+        good: score.good,
+        bad: score.bad
+      }
+    end
+
+    # Compute heat list specific data (from heatlist action)
+    assign_judges = event.assign_judges? && params[:style] != 'emcee' && Person.where(type: 'Judge').count > 1
+
+    # Build agenda hash for category headers - show category at first occurrence
+    agenda = {}
+    last_category = nil
+    combine_open_and_closed = event.heat_range_cat == 1
+
+    all_heats.each do |heat|
+      # Use same category logic as heatlist.html.erb
+      category = if combine_open_and_closed
+        heat.dance.open_category || heat.dance.closed_category || heat.dance.solo_category
+      else
+        case heat.category
+        when 'Open' then heat.dance.open_category
+        when 'Closed' then heat.dance.closed_category
+        when 'Solo' then heat.dance.solo_category
+        when 'Multi' then heat.dance.multi_category
+        end
+      end
+
+      if category != last_category
+        cat_name = category&.name || 'Uncategorized'
+        agenda[heat.number] = cat_name
+        last_category = category
+      end
+    end
+
+    # Compute scored heats (heats with actual score data from this judge)
+    scored = Score.includes(:heat).where(judge: judge).
+      select {|score| score.heat_id.positive? && (score.value || score.comments || score.good || score.bad)}.
+      group_by {|score| score.heat.number.to_f}
+
+    count = all_heats.group_by(&:number).transform_values(&:count)
+
+    # Compute missed heats (heats judge should have scored but didn't)
+    if assign_judges && Score.where(judge: judge).any?
+      missed = Score.includes(:heat).where(judge: judge, good: nil, bad: nil, value: nil).distinct.pluck(:number)
+      missed += Solo.includes(:heat).pluck(:number).select {|number| !scored[number]}
+    else
+      missed = all_heats.map(&:number).uniq.select do |number|
+        number_float = number.to_i == number ? number.to_i : number
+        !scored[number_float] || scored[number_float].length != count[number_float]
+      end
+    end
+
+    # Find unassigned heats (heats with no scores), excluding category-scored categories
+    if assign_judges
+      # Get category IDs that use category scoring
+      category_scored_ids = event.student_judge_assignments ?
+        Category.where(use_category_scoring: true).pluck(:id) : []
+
+      # Build query to find heats with no scores
+      query = Heat.includes(:scores).where(category: ['Open', 'Closed'], scores: { id: nil })
+
+      # Exclude heats in category-scored categories
+      if category_scored_ids.any?
+        query = query.joins(:dance).where.not(dances: { closed_category_id: category_scored_ids })
+      end
+
+      unassigned = query.distinct.pluck(:number).select {|it| it > 0}
+    else
+      unassigned = []
+    end
+
+    # Return normalized data structure
     data = {
       event: {
         id: event.id,
@@ -140,7 +459,8 @@ class ScoresController < ApplicationController
         ballrooms: event.ballrooms,
         column_order: event.column_order,
         judge_comments: event.judge_comments,
-        pro_am: event.pro_am
+        pro_am: event.pro_am,
+        student_judge_assignments: event.student_judge_assignments
       },
       judge: {
         id: judge.id,
@@ -148,224 +468,40 @@ class ScoresController < ApplicationController
         display_name: judge.display_name,
         sort_order: judge.sort_order || 'back',
         show_assignments: judge.show_assignments || 'first',
-        review_solos: judge&.judge&.review_solos&.downcase
+        review_solos: judge&.judge&.review_solos&.downcase,
+        present: judge.present?
       },
-      heats: heats.group_by(&:number).map do |number, heat_group|
-        first_heat = heat_group.first
-        category = first_heat.category
-        dance = first_heat.dance
-
-        # Determine scoring type
-        scoring = if category == 'Solo'
-          event.solo_scoring
-        elsif category == 'Multi'
-          event.multi_scoring
-        elsif category == 'Open' || (category == 'Closed' && event.closed_scoring == '=') || event.heat_range_cat > 0
-          event.open_scoring
-        else
-          event.closed_scoring
-        end
-
-        # Check if category scoring is enabled for this heat
-        dance_category = first_heat.dance_category
-        category_scoring_enabled = event.student_judge_assignments &&
-          dance_category&.use_category_scoring
-
-        # Pre-load category scores if needed
-        category_scores_by_person = {}
-        if category_scoring_enabled
-          category_id = dance_category.id
-          # Collect ALL students (both lead and follow for amateur couples)
-          student_ids = heat_group.flat_map do |heat|
-            entry = heat.entry
-            students = []
-            students << entry.lead.id if entry.lead.type == 'Student'
-            students << entry.follow.id if entry.follow.type == 'Student'
-            students
-          end.uniq
-
-          Score.where(
-            heat_id: -category_id,
-            judge_id: judge.id,
-            person_id: student_ids
-          ).each do |score|
-            category_scores_by_person[score.person_id] = score
-          end
-        end
-
-        # Build subjects list
-        subjects = heat_group.flat_map do |heat|
-          entry = heat.entry
-
-          # Collect all students in this heat
-          students = []
-          students << { student: entry.lead, role: 'lead' } if entry.lead.type == 'Student'
-          students << { student: entry.follow, role: 'follow' } if entry.follow.type == 'Student'
-
-          # For amateur couples (both students), create two subject entries
-          # For single student, create one entry
-          students.map do |student_info|
-            student = student_info[:student]
-            student_id = student.id
-            student_role = student_info[:role]
-
-            # Get scores for this subject
-            subject_scores = if category_scoring_enabled && student_id && category_scores_by_person[student_id]
-              # Use category score
-              cat_score = category_scores_by_person[student_id]
-              [{
-                id: cat_score.id,
-                judge_id: cat_score.judge_id,
-                heat_id: heat.id,  # Use actual heat ID for frontend
-                slot: nil,
-                good: cat_score.good,
-                bad: cat_score.bad,
-                value: cat_score.good,  # Category score value is in 'good' field
-                comments: cat_score.comments,
-                person_id: student_id,
-                category_scoring: true
-              }]
-            else
-              # Use per-heat scores
-              heat.scores.select { |s| s.judge_id == judge.id }.map do |score|
-                {
-                  id: score.id,
-                  judge_id: score.judge_id,
-                  heat_id: score.heat_id,
-                  slot: score.slot,
-                  good: score.good,
-                  bad: score.bad,
-                  value: score.value,
-                  comments: score.comments
-                }
-              end
-            end
-
-            # Determine name display order based on event's column_order preference
-            # column_order: 1 = Lead/Follow, 2 = Student/Partner
-            column_order = event.column_order || 1
-            if column_order == 1
-              first_name = entry.lead.display_name
-              second_name = entry.follow.display_name
-            elsif student_role
-              # Category scoring with amateur couples - show student being evaluated first
-              if student_role == 'lead'
-                first_name = entry.lead.display_name
-                second_name = entry.follow.display_name
-              else
-                first_name = entry.follow.display_name
-                second_name = entry.lead.display_name
-              end
-            elsif entry.lead.type == 'Student'
-              first_name = entry.lead.display_name
-              second_name = entry.follow.display_name
-            else
-              first_name = entry.follow.display_name
-              second_name = entry.lead.display_name
-            end
-
-            {
-              id: heat.id,
-              number: heat.number,
-              dance_id: heat.dance_id,
-              entry_id: heat.entry_id,
-              pro: entry.pro,
-              student_id: category_scoring_enabled ? student_id : nil,  # Add for amateur couples
-              student_role: category_scoring_enabled ? student_role : nil,  # Track which student
-              # Pre-computed display values to avoid replicating Ruby logic in JavaScript
-              subject_category: entry.subject_category(event.track_ages),
-              subject_lvlcat: entry.subject_lvlcat(event.track_ages),
-              first_name: first_name,
-              second_name: second_name,
-              lead: {
-                id: entry.lead.id,
-                name: entry.lead.name,
-                display_name: entry.lead.display_name,
-                back: entry.lead.back,
-                type: entry.lead.type,
-                studio: entry.lead.studio ? {
-                  id: entry.lead.studio.id,
-                  name: entry.lead.studio.name
-                } : nil
-              },
-              follow: {
-                id: entry.follow.id,
-                name: entry.follow.name,
-                display_name: entry.follow.display_name,
-                back: entry.follow.back,
-                type: entry.follow.type,
-                studio: entry.follow.studio ? {
-                  id: entry.follow.studio.id,
-                  name: entry.follow.studio.name
-                } : nil
-              },
-              instructor: entry.instructor ? {
-                id: entry.instructor.id,
-                name: entry.instructor.name
-              } : nil,
-              studio: entry.invoice_studio,  # Use calculated invoice studio for display
-              age: entry.age ? {
-                id: entry.age.id,
-                category: entry.age.category
-              } : nil,
-              level: entry.level ? {
-                id: entry.level.id,
-                name: entry.level.name,
-                initials: entry.level.initials
-              } : nil,
-              solo: heat.solo ? {
-                id: heat.solo.id,
-                order: heat.solo.order,
-                formations: heat.solo.formations.map do |formation|
-                  {
-                    id: formation.id,
-                    person_id: formation.person_id,
-                    person_name: formation.person.display_name,
-                    on_floor: formation.on_floor
-                  }
-                end
-              } : nil,
-              scores: subject_scores
-            }
-          end
-        end
-
-        {
-          number: number,
-          category: category,
-          scoring: scoring,
-          updated_at: heat_group.map(&:updated_at).compact.max&.iso8601(3),
-          dance: {
-            id: dance.id,
-            name: dance.name,
-            heat_length: dance.heat_length,
-            uses_scrutineering: dance.uses_scrutineering?,
-            multi_children: dance.multi_children.map { |c| { id: c.dance.id, name: c.dance.name } },
-            multi_parent: dance.multi_dances.first&.parent ? {
-              id: dance.multi_dances.first.parent.id,
-              name: dance.multi_dances.first.parent.name,
-              heat_length: dance.multi_dances.first.parent.heat_length
-            } : nil,
-            category_name: first_heat.dance_category&.name,
-            ballrooms: first_heat.dance_category&.ballrooms || event.ballrooms,
-            songs: dance.songs.map { |s| { id: s.id, title: s.title } }
-          },
-          subjects: subjects
-        }
-      end,
-      feedbacks: Feedback.all.map { |f| { id: f.id, value: f.value, abbr: f.abbr } },
-      score_options: {
-        "Open" => get_scores_for_type(event.open_scoring).tap { |s| s << '' unless s.empty? },
-        "Closed" => get_scores_for_type(event.closed_scoring == '=' ? event.open_scoring : event.closed_scoring).tap { |s| s << '' unless s.empty? },
-        "Solo" => get_scores_for_type(event.solo_scoring).tap { |s| s << '' unless s.empty? },
-        "Multi" => get_scores_for_type(event.multi_scoring).tap { |s| s << '' unless s.empty? }
-      },
-      qr_code: {
-        url: judge_spa_url(judge),
-        svg: RQRCode::QRCode.new(judge_spa_url(judge)).as_svg(viewbox: true)
-      },
-      assign_judges: event.assign_judges > 0,
-      timestamp: Time.current.to_i
+      heats: heats_data,
+      people: people_data,
+      studios: studios_data,
+      entries: entries_data,
+      dances: dances_data,
+      ages: ages_data,
+      levels: levels_data,
+      solos: solos_data,
+      formations: formations_data,
+      scores: scores_data,
+      feedbacks: Feedback.all.map { |f| { id: f.id, value: f.value, abbr: f.abbr, order: f.order } },
+      feedback_errors: validate_feedbacks(Feedback.all),
+      categories: Category.all.map { |c| [c.id, { id: c.id, name: c.name, use_category_scoring: c.use_category_scoring }] }.to_h,
+      category_score_assignments: Category.all.map { |cat|
+        student_ids = Score.where(heat_id: -cat.id, judge_id: judge.id).where.not(person_id: nil).pluck(:person_id).uniq
+        [cat.id, student_ids]
+      }.to_h,
+      # Heat list specific data
+      agenda: agenda,
+      unassigned: unassigned,
+      scored: scored.transform_keys(&:to_s),  # Convert float keys to strings for JSON
+      missed: missed,
+      style: params[:style] || 'radio',
+      sort: judge.sort_order || 'back',
+      show: judge.show_assignments || 'first',
+      combine_open_and_closed: combine_open_and_closed,
+      assign_judges_enabled: assign_judges,
+      qr_code: RQRCode::QRCode.new(judge_heatlist_url(judge, style: params[:style] || 'radio')).as_svg(viewbox: true),
+      heatlist_url: judge_heatlist_url(judge, style: params[:style] || 'radio', sort: judge.sort_order || 'back'),
+      # Version metadata for staleness detection (matches version_check endpoint)
+      max_updated_at: judge.scoring_version_metadata[:max_updated_at]
     }
 
     render json: data
@@ -374,17 +510,13 @@ class ScoresController < ApplicationController
   # GET /scores/:judge/version/:heat - Lightweight version check for sync strategy
   def version_check
     heat_number = params[:heat].to_f
-
-    # Get max updated_at from heats table
-    max_updated_at = Heat.where('number >= ?', 1).maximum(:updated_at)
-
-    # Get total heat count
-    heat_count = Heat.where('number >= ?', 1).distinct.count(:number)
+    judge = Person.find_by(id: params[:judge].to_i)
+    version = judge&.scoring_version_metadata || {}
 
     render json: {
       heat_number: heat_number,
-      max_updated_at: max_updated_at&.iso8601(3),
-      heat_count: heat_count
+      max_updated_at: version[:max_updated_at],
+      heat_count: version[:heat_count]
     }
   end
 
@@ -453,6 +585,7 @@ class ScoresController < ApplicationController
     @slot = params[:slot]&.to_i
     @style = params[:style]
     @style = 'radio' if @style.blank?
+    @post_feedback_path = post_feedback_path(judge: @judge)
     @subjects = Heat.where(number: @number).includes(
       dance: [:multi_children],
       entry: [:age, :level, :lead, :follow],
@@ -678,9 +811,9 @@ class ScoresController < ApplicationController
       @bad = {}
       @value = {}
       scores.each do |score|
-        # For category scoring, score.heat is the subject wrapper (OpenStruct)
-        # For per-heat scoring, score.heat is a Heat model, so use heat_id
-        key = score.heat.is_a?(OpenStruct) ? score.heat : score.heat_id
+        # For category scoring, score.heat is the subject wrapper (OpenStruct) - use student's person ID
+        # For per-heat scoring, score.heat is a Heat model - use heat_id
+        key = score.heat.is_a?(OpenStruct) ? score.heat.subject.id : score.heat_id
         @good[key] = score.good
         @bad[key] = score.bad
         @value[key] = score.value
@@ -690,29 +823,9 @@ class ScoresController < ApplicationController
     @sort = @judge.sort_order || 'back' unless @final
     @show = @judge.show_assignments || 'first'
     @show = 'mixed' unless @event.assign_judges > 0 and @show != 'mixed' && Person.where(type: 'Judge').count > 1
-    
-    # Apply assignment sorting first, before ballroom assignment
-    if @show != 'mixed'
-      @subjects.sort_by! do |subject|
-        assignment_priority = subject.scores.any? {|score| score.judge_id == @judge.id} ? 0 : 1
-        [assignment_priority, subject.dance_id, subject.entry.lead.back || 0]
-      end
-    else
-      @subjects.sort_by! {|heat| [heat.dance_id, heat.entry.lead.back || 0]}
-    end
-    
-    @ballrooms_count = @subjects.first&.dance_category&.ballrooms || @event.ballrooms
-    @ballrooms = assign_rooms(@ballrooms_count, @subjects, @number, preserve_order: @show != 'mixed')
 
-    if @sort == 'level'
-      @ballrooms.each do |ballroom, subjects|
-        subjects.sort_by! do |subject|
-          entry = subject.entry
-          assignment_priority = @show != 'mixed' && subject.scores.any? {|score| score.judge_id == @judge.id} ? 0 : 1
-          [assignment_priority, entry.level_id || 0, entry.age_id || 0, entry.lead.back || 0]
-        end
-      end
-    end
+    # Sort and group subjects by ballroom
+    @ballrooms_count, @ballrooms = sort_and_group_subjects(@subjects, @judge, @event, @number, @sort, @show, @final)
 
     @scores << '' unless @scores.length == 0
 
@@ -812,6 +925,95 @@ class ScoresController < ApplicationController
     @assign_judges = @style != 'emcee' && @event.assign_judges > 0 && @heat.category != 'Solo' && Person.where(type: 'Judge').count > 1
 
     @feedbacks = Feedback.all
+    @feedback_errors = validate_feedbacks(@feedbacks)
+
+    # Pre-compute data for heat_header partial
+    if @event.assign_judges? && @show == 'mixed' && @judge && @style != 'emcee'
+      heats = Heat.joins(:scores).includes(entry: :lead).where(number: @heat.number, scores: {judge_id: @judge.id}).to_a
+      unassigned = Heat.where(number: @heat.number).includes(entry: :lead).left_joins(:scores).where(scores: { id: nil }).to_a
+      early = Heat.includes(entry: :lead).joins(:scores).where(scores: { updated_at: ...Event.current.date}).distinct.to_a
+      heats = (heats + early + unassigned).uniq.sort_by {|heat| heat.entry.lead.back || Float::INFINITY}
+
+      # Compute judge_backs_display
+      @judge_backs_html = heats.map do |heat|
+        color = if unassigned.include?(heat)
+          "text-red-400"
+        elsif early.include?(heat)
+          "text-gray-400"
+        else
+          "text-black"
+        end
+        "<a href='#heat_#{heat.id}' class='#{color}'>#{heat.entry.lead.back}</a>"
+      end.join(' ')
+    end
+
+    # Pre-compute heat_dance_slot_display
+    if @heat.dance.heat_length
+      @heat_slot_display = if !@heat.dance.semi_finals
+        "Dance #{@slot} of #{@heat.dance.heat_length}:"
+      elsif !@final
+        "Semi-final #{@slot} of #{@heat.dance.heat_length}:"
+      else
+        slot_number = @slot > @heat.dance.heat_length ? @slot - @heat.dance.heat_length : @slot
+        "Final #{slot_number} of #{@heat.dance.heat_length}:"
+      end
+    end
+
+    # Pre-compute heat_multi_dance_names
+    if @slot
+      slots = @heat.dance.multi_children.group_by(&:slot)
+      if slots.length > 1 && slots[@slot]
+        @multi_dance_names = slots[@slot].sort_by { |multi| multi.dance.order }.map { |multi| multi.dance.name }.join(' / ')
+      elsif slots.values.last&.length == @heat.dance.heat_length
+        multi = slots.values.last&.sort_by { |multi| multi.dance.order }&.[]((@slot - 1) % @heat.dance.heat_length)
+        @multi_dance_names = multi&.dance&.name
+      elsif slots.values.last
+        @multi_dance_names = slots.values.last.sort_by { |multi| multi.dance.order }.map { |multi| multi.dance.name }.join(' / ')
+      end
+    end
+
+    # Pre-compute scoring_instruction_text
+    @scoring_instructions = if @heat.category == 'Solo'
+      "Tab to or click on comments or score to edit.  Press escape or click elsewhere to save."
+    elsif @style != 'radio'
+      <<~HTML.strip
+        Scoring can be done multiple ways:
+        <ul class="list-disc ml-4">
+          <li>Drag and drop: Drag an entry box to the desired score.</li>
+          <li>Point and click: Clicking on a entry back and then clicking on score.  Clicking on the back number again unselects it.</li>
+          <li>Keyboard: tab to the desired entry back, then move it up and down using the keyboard.  Clicking on escape unselects the back.</li>
+        </ul>
+      HTML
+    elsif @event.open_scoring == '#'
+      "Enter scores in the right most column.  Tab to move to the next entry."
+    elsif @event.open_scoring == '+'
+      <<~HTML.strip
+        Buttons on the left are used to indicated areas where the couple did well and will show up as <span class="good mx-0"><span class="open-fb selected px-2 mx-0">green</span></span> when selected.</li>
+        <li>Buttons on the right are used to indicate areas where the couple need improvement and will show up as <span class="bad mx-0"><span class="open-fb selected px-2 mx-0">red</span></span> when selected.
+      HTML
+    else
+      "Click on the <em>radio</em> buttons on the right to score a couple.  The last column, with a dash (<code>-</code>), means the couple hasn't been scored / didn't participate."
+    end
+
+    # Pre-compute navigation_instruction_text
+    base_text = "Clicking on the arrows at the bottom corners will advance you to the next or previous heats. Left and right arrows on the keyboard may also be used"
+    suffix = if @heat.category == 'Solo'
+      " when not editing comments or score"
+    elsif @event.open_scoring == '#'
+      " when not entering scores"
+    else
+      ""
+    end
+    @navigation_instructions = "#{base_text}#{suffix}. Swiping left and right on mobile devices and tablets also work."
+
+    # Pre-compute showcase_logo
+    @showcase_logo = "/#{EventController.logo}"
+
+    # Pre-compute navigation footer data
+    @judge_display_name = @judge.display_name
+    @judge_present = @judge.present?
+    @judge_person_path = person_path(@judge)
+    @judge_toggle_present_path = @assign_judges ? toggle_present_person_path(@judge) : nil
   end
 
   def post
@@ -1952,5 +2154,52 @@ class ScoresController < ApplicationController
       end
 
       scores.to_a.sort_by {|score| score.value.to_i}
+    end
+
+    # Sort and group subjects by ballroom
+    # Returns [ballrooms_count, ballrooms_hash]
+    def sort_and_group_subjects(subjects, judge, event, number, sort_order, show, is_final)
+      # Apply assignment sorting first, before ballroom assignment
+      if show != 'mixed'
+        subjects.sort_by! do |subject|
+          assignment_priority = subject.scores.any? {|score| score.judge_id == judge.id} ? 0 : 1
+          [assignment_priority, subject.dance_id, subject.entry.lead.back || 0]
+        end
+      else
+        subjects.sort_by! {|heat| [heat.dance_id, heat.entry.lead.back || 0]}
+      end
+
+      ballrooms_count = subjects.first&.dance_category&.ballrooms || event.ballrooms
+      ballrooms = assign_rooms(ballrooms_count, subjects, number, preserve_order: show != 'mixed')
+
+      if sort_order == 'level'
+        ballrooms.each do |ballroom, ballroom_subjects|
+          ballroom_subjects.sort_by! do |subject|
+            entry = subject.entry
+            assignment_priority = show != 'mixed' && subject.scores.any? {|score| score.judge_id == judge.id} ? 0 : 1
+            [assignment_priority, entry.level_id || 0, entry.age_id || 0, entry.lead.back || 0]
+          end
+        end
+      end
+
+      [ballrooms_count, ballrooms]
+    end
+
+    # Validate feedback configuration for duplicate/empty abbreviations
+    def validate_feedbacks(feedbacks)
+      errors = []
+      abbrs = {}
+
+      feedbacks.each do |feedback|
+        if feedback.abbr.blank?
+          errors << "Feedback \"#{feedback.value}\" has an empty abbreviation"
+        elsif abbrs[feedback.abbr]
+          errors << "Duplicate abbreviation \"#{feedback.abbr}\" used by both \"#{abbrs[feedback.abbr]}\" and \"#{feedback.value}\""
+        else
+          abbrs[feedback.abbr] = feedback.value
+        end
+      end
+
+      errors
     end
 end

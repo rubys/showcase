@@ -1,4 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
+import { heatDataManager } from "helpers/heat_data_manager";
+import { connectivityTracker } from "helpers/connectivity_tracker";
 
 const HIGHLIGHT = "bg-yellow-200";
 
@@ -191,28 +193,73 @@ export default class extends Controller {
     });
   }
 
-  post = results => {
-    return fetch(this.element.dataset.dropAction, {
-      method: "POST",
-      headers: window.inject_region({
-        "X-CSRF-Token": this.token,
-        "Content-Type": "application/json"
-      }),
-      credentials: "same-origin",
-      redirect: "follow",
-      body: JSON.stringify(results)
-    }).then(response => {
-      let error = this.errorTarget;
+  post = async results => {
+    const error = this.errorTarget;
+
+    // Extract judge ID from dropAction URL (e.g., /scores/83/post)
+    const judgeMatch = this.element.dataset.dropAction?.match(/\/scores\/(\d+)\//);
+    const judgeId = judgeMatch ? parseInt(judgeMatch[1]) : null;
+
+    try {
+      const response = await fetch(this.element.dataset.dropAction, {
+        method: "POST",
+        headers: window.inject_region({
+          "X-CSRF-Token": this.token,
+          "Content-Type": "application/json"
+        }),
+        credentials: "same-origin",
+        redirect: "follow",
+        body: JSON.stringify(results)
+      });
 
       if (response.ok) {
         error.style.display = "none";
+
+        // Update connectivity tracker - triggers batch upload if transitioning online
+        if (judgeId) {
+          connectivityTracker.updateConnectivity(
+            true,
+            judgeId,
+            (id) => heatDataManager.batchUploadDirtyScores(id),
+            () => {}
+          );
+        }
       } else {
         error.textContent = response.statusText;
         error.style.display = "block";
       }
 
       return response;
-    });
+    } catch (networkError) {
+      // Network failed - queue for offline
+      console.debug('[ScoreController] Network error, queuing offline:', networkError);
+
+      // Update connectivity tracker - marks as offline
+      connectivityTracker.updateConnectivity(false);
+
+      if (judgeId) {
+        const scoreData = {
+          score: results.score || '',
+          comments: results.comments || '',
+          good: results.good || '',
+          bad: results.bad || ''
+        };
+
+        await heatDataManager.addDirtyScore(judgeId, results.heat, results.slot || null, scoreData);
+
+        // Show offline indicator
+        error.textContent = "Offline - score queued";
+        error.style.display = "block";
+        error.classList.add("text-yellow-600");
+        error.classList.remove("text-red-600");
+
+        // Dispatch event for pending count update
+        document.dispatchEvent(new CustomEvent('pending-count-changed', { bubbles: true }));
+      }
+
+      // Return a mock response that indicates queued status
+      return { ok: true, queued: true };
+    }
   };
 
   moveUp() {
@@ -288,11 +335,43 @@ export default class extends Controller {
     document.body.removeEventListener("touchstart", this.touchstart);
     document.body.removeEventListener("touchend", this.touchend);
     window.removeEventListener("beforeunload", this.beforeUnload);
+    window.removeEventListener("online", this.onlineHandler);
     document.documentElement.removeEventListener("turbo:before-visit", this.beforeVisit);
   }
 
   connect() {
     this.token = document.querySelector('meta[name="csrf-token"]').content;
+
+    // Initialize offline queue for score persistence
+    heatDataManager.init().catch(err => {
+      console.warn('[ScoreController] Failed to initialize offline queue:', err);
+    });
+
+    // Extract judge ID for reconnection handling
+    const judgeMatch = this.element.dataset.dropAction?.match(/\/scores\/(\d+)\//);
+    this.judgeId = judgeMatch ? parseInt(judgeMatch[1]) : null;
+
+    // Listen for browser online event to trigger batch upload
+    this.onlineHandler = () => {
+      if (this.judgeId) {
+        console.debug('[ScoreController] Browser online event - checking for pending scores');
+        heatDataManager.batchUploadDirtyScores(this.judgeId).then(result => {
+          if (result.succeeded && result.succeeded.length > 0) {
+            console.debug('[ScoreController] Reconnection sync:', result.succeeded.length, 'scores uploaded');
+            document.dispatchEvent(new CustomEvent('pending-count-changed', { bubbles: true }));
+
+            // Clear offline indicator if shown
+            const error = this.errorTarget;
+            if (error.textContent?.includes('Offline')) {
+              error.style.display = "none";
+            }
+          }
+        }).catch(err => {
+          console.debug('[ScoreController] Reconnection sync failed:', err);
+        });
+      }
+    };
+    window.addEventListener('online', this.onlineHandler);
 
     this.subjects = [...this.element.querySelectorAll("*[draggable=true]")];
 

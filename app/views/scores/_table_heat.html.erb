@@ -115,8 +115,9 @@
       <% end %>
       <% end %>
     </tr>
-    <% if @style != 'emcee' and !%w(1 G #).include?(@scoring) # and @scores.empty? %>
-    <tr data-controller="open-feedback" class="open-fb-row" data-heat="<%= subject.id %>" data-feedback-action="<%= post_feedback_path(judge: @judge) %>">
+    <%# Display feedback rows for all scoring types except emcee mode and specific scoring types %>
+    <% if @style != 'emcee' and !%w(1 G #).include?(@scoring) %>
+    <tr data-controller="open-feedback" class="open-fb-row" data-heat="<%= subject.id %>" data-feedback-action="<%= @post_feedback_path %>"<%= @feedback_errors&.any? ? ' data-feedback-disabled="true"' : '' %>>
     <td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) %>">
     <% if @scoring == '&' %>
     <div class="grid value w-full" data-value="<%= @category_scoring_enabled && subject.respond_to?(:subject) ? @value[subject] : @value[subject.id] %>" style="grid-template-columns: 100px repeat(5, 1fr)">
@@ -138,7 +139,7 @@
     <% end %>
     <% if !@feedbacks.empty? %>
     <div class="grid grid-cols-2 w-full divide-x-2 divide-black">
-      <div class="grid grid-cols-5 good" data-value="<%= @category_scoring_enabled && subject.respond_to?(:subject) ? @good[subject] : @good[subject.id] %>" title="Good Job With">
+      <div class="grid grid-cols-5 good" data-value="<%= @category_scoring_enabled && subject.respond_to?(:subject) ? @good[subject.subject.id] : @good[subject.id] %>" title="Good Job With">
         <% (1..@feedbacks.map(&:order).max).each do |order| %>
         <% feedback = @feedbacks.find {|feedback| feedback.order == order } %>
         <% if feedback %>
@@ -148,7 +149,7 @@
         <% end %>
         <% end %>
       </div>
-      <div class="grid grid-cols-5 bad"  data-value="<%= @category_scoring_enabled && subject.respond_to?(:subject) ? @bad[subject] : @bad[subject.id] %>" title="Needs Work On">
+      <div class="grid grid-cols-5 bad"  data-value="<%= @category_scoring_enabled && subject.respond_to?(:subject) ? @bad[subject.subject.id] : @bad[subject.id] %>" title="Needs Work On">
         <% (1..@feedbacks.map(&:order).max).each do |order| %>
         <% feedback = @feedbacks.find {|feedback| feedback.order == order } %>
         <% if feedback %>
