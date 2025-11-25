@@ -161,7 +161,7 @@ class ShowcasesController < ApplicationController
             render turbo_stream: turbo_stream.replace(
               "showcase-form-container",
               partial: "showcases/showcase_progress",
-              locals: { showcase: @showcase, location_key: @location_key }
+              locals: { showcase: @showcase, location_key: @location_key, redirect_url: @return_to }
             )
           end
           format.html { render :new_request, status: :ok }

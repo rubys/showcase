@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = [ "progress", "message", "progressBar", "form" ]
+  static targets = [ "progress", "message", "progressBar", "form", "redirectUrl" ]
   static values = {
     userId: Number,
     database: String,
@@ -117,8 +117,14 @@ export default class extends Controller {
 
       // Auto-redirect after a brief delay
       setTimeout(() => {
-        if (this.hasRedirectUrlValue && this.redirectUrlValue) {
-          window.location.href = this.redirectUrlValue
+        // Check for redirect URL from target element first (set by Turbo Stream partial),
+        // then fall back to data attribute value (set on initial page load)
+        const redirectUrl = this.hasRedirectUrlTarget
+          ? this.redirectUrlTarget.dataset.url
+          : this.redirectUrlValue
+
+        if (redirectUrl) {
+          window.location.href = redirectUrl
         }
       }, 1000)
     } else if (data.status === "error") {
