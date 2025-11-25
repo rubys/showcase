@@ -2300,6 +2300,58 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     assert_equal 15.5, data['heat_number'].to_f
   end
 
+  test "version_check includes judge updated_at in max_updated_at calculation" do
+    # Touch the judge to update their timestamp
+    @judge.touch
+
+    get judge_version_check_path(@judge, @test_heat.number), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+
+    # max_updated_at should be at least as recent as judge's updated_at
+    max_updated = Time.parse(data['max_updated_at'])
+    assert max_updated >= @judge.reload.updated_at - 1.second, "max_updated_at should include judge's updated_at"
+  end
+
+  test "version_check includes event updated_at in max_updated_at calculation" do
+    # Touch the event to update its timestamp
+    Event.first.touch
+
+    get judge_version_check_path(@judge, @test_heat.number), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+
+    # max_updated_at should be at least as recent as event's updated_at
+    max_updated = Time.parse(data['max_updated_at'])
+    assert max_updated >= Event.first.reload.updated_at - 1.second, "max_updated_at should include event's updated_at"
+  end
+
+  test "heats_data includes max_updated_at for staleness detection" do
+    get judge_heats_data_path(judge: @judge), as: :json
+
+    assert_response :success
+    data = JSON.parse(@response.body)
+
+    assert data.key?("max_updated_at"), "heats_data should include max_updated_at"
+    assert data["max_updated_at"].present?, "max_updated_at should not be blank"
+
+    # Verify it's a valid ISO8601 timestamp
+    assert_nothing_raised { Time.parse(data["max_updated_at"]) }
+  end
+
+  test "heats_data max_updated_at matches version_check max_updated_at" do
+    get judge_heats_data_path(judge: @judge), as: :json
+    heats_data = JSON.parse(@response.body)
+
+    get judge_version_check_path(@judge, @test_heat.number), as: :json
+    version_data = JSON.parse(@response.body)
+
+    assert_equal heats_data["max_updated_at"], version_data["max_updated_at"],
+      "max_updated_at should be consistent between heats_data and version_check"
+  end
+
   # ===== FEEDBACK VALIDATION TESTS =====
   # These tests verify that feedback configuration errors (duplicate/empty abbreviations)
   # are properly detected and included in the heats_data JSON response.

@@ -292,7 +292,7 @@ export default class extends Controller {
     }
   }
 
-  navigateToHeat(heatNumber) {
+  async navigateToHeat(heatNumber) {
     console.debug(`Navigating to heat ${heatNumber}`)
 
     // Update the URL using path-based routing: /scores/:judge/heats/:heat
@@ -303,8 +303,78 @@ export default class extends Controller {
     // Update the Stimulus value which will trigger re-render
     this.heatValue = heatNumber
 
+    // Check version and conditionally refetch data
+    await this.checkVersionAndRefetch(heatNumber)
+
     // Render the new heat
     this.showHeat(heatNumber)
+  }
+
+  /**
+   * Check server version and refetch data if stale.
+   * Also triggers batch upload if connectivity is restored.
+   * Fails silently - navigation proceeds with cached data if offline.
+   */
+  async checkVersionAndRefetch(heatNumber) {
+    const versionUrl = `${this.basePathValue}/scores/${this.judgeValue}/version/${heatNumber}`
+
+    try {
+      const response = await fetch(versionUrl, {
+        headers: window.inject_region ? window.inject_region({ 'Accept': 'application/json' }) : { 'Accept': 'application/json' },
+        credentials: 'same-origin'
+      })
+
+      if (!response.ok) {
+        console.debug('[HeatApp] Version check failed, continuing with cached data')
+        return
+      }
+
+      const serverVersion = await response.json()
+      console.debug('[HeatApp] Version check succeeded:', serverVersion)
+
+      // Connectivity restored - trigger batch upload of any pending scores
+      this.triggerBatchUpload()
+
+      // Check if data is stale by comparing timestamps
+      const cachedMaxUpdatedAt = this.rawData?.max_updated_at
+      const serverMaxUpdatedAt = serverVersion.max_updated_at
+
+      // Also check heat count in case heats were added/removed
+      const cachedHeatCount = this.rawData?.heats?.length || 0
+      const serverHeatCount = serverVersion.heat_count
+
+      const isStale = (serverMaxUpdatedAt && serverMaxUpdatedAt !== cachedMaxUpdatedAt) ||
+                      (serverHeatCount !== cachedHeatCount)
+
+      if (isStale) {
+        console.debug('[HeatApp] Data is stale, refetching...', {
+          cachedMaxUpdatedAt,
+          serverMaxUpdatedAt,
+          cachedHeatCount,
+          serverHeatCount
+        })
+        await this.loadAllData()
+      }
+
+    } catch (error) {
+      // Network error - continue with cached data (offline mode)
+      console.debug('[HeatApp] Version check network error, continuing offline:', error.message)
+    }
+  }
+
+  /**
+   * Trigger batch upload of pending scores (connectivity restored)
+   */
+  async triggerBatchUpload() {
+    try {
+      const result = await heatDataManager.batchUploadDirtyScores(this.judgeValue)
+      if (result.succeeded && result.succeeded.length > 0) {
+        console.debug('[HeatApp] Batch upload succeeded:', result.succeeded.length, 'scores')
+        document.dispatchEvent(new CustomEvent('pending-count-changed', { bubbles: true }))
+      }
+    } catch (error) {
+      console.debug('[HeatApp] Batch upload failed:', error.message)
+    }
   }
 
   navigateToHeatList() {

@@ -215,24 +215,44 @@ class Person < ApplicationRecord
 
     person
   end
-  
+
+  # Compute version metadata for SPA staleness detection
+  # Used by both version_check and heats_data endpoints to ensure consistency
+  # Includes heats, this judge's updated_at, and event updated_at
+  # @return [Hash] Version metadata with :max_updated_at and :heat_count
+  def scoring_version_metadata
+    event = Event.current
+    heats_updated_at = Heat.where('number >= ?', 1).maximum(:updated_at)
+    heat_count = Heat.where('number >= ?', 1).count
+
+    # Include judge and event updated_at in the max calculation
+    # This detects changes to judge preferences or event settings
+    timestamps = [heats_updated_at, updated_at, event&.updated_at].compact
+    max_updated_at = timestamps.max
+
+    {
+      max_updated_at: max_updated_at&.iso8601(3),
+      heat_count: heat_count
+    }
+  end
+
   private
-  
+
   def cleanup_orphaned_options
     return unless package_id_was.present? # Only if person had a package before
-    
+
     old_package = Billable.find_by(id: package_id_was)
     return unless old_package
-    
+
     # Get options that were included in the old package
     old_package_option_ids = old_package.package_includes.pluck(:option_id)
-    
+
     # Get options that are included in the new package (if any)
     new_package_option_ids = package&.package_includes&.pluck(:option_id) || []
-    
+
     # Options that were in old package but not in new package
     removed_option_ids = old_package_option_ids - new_package_option_ids
-    
+
     # Clean up PersonOption records for removed options
     removed_option_ids.each do |option_id|
       person_option = options.find_by(option_id: option_id)

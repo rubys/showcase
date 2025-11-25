@@ -57,7 +57,7 @@
     <tr><td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) + (@scores&.length || 0) %>" class="bg-gray-400"></td></tr>
     <% dance = subject.dance_id %>
     <% end %>
-    <% subcat = subject.entry.pro ? 'Pro' : "#{subject.entry.subject_category} - #{subject.entry.level.initials}" %>
+    <% subcat = subject.entry.pro ? 'Pro' : "#{subject.entry.subject_category(@track_ages)} - #{subject.entry.level.initials}" %>
     <% if (@sort == 'level' and lastcat and subcat != lastcat) || (@assign_judges && assign != lastassign && lastcat) %>
     <tr>
       <td class="<% if @event.judge_comments %>h-12<% elsif @sort == 'level' %>h-6<% else %>h-4<% end %>"></td>

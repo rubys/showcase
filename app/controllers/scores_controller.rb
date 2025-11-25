@@ -499,7 +499,9 @@ class ScoresController < ApplicationController
       combine_open_and_closed: combine_open_and_closed,
       assign_judges_enabled: assign_judges,
       qr_code: RQRCode::QRCode.new(judge_heatlist_url(judge, style: params[:style] || 'radio')).as_svg(viewbox: true),
-      heatlist_url: judge_heatlist_url(judge, style: params[:style] || 'radio', sort: judge.sort_order || 'back')
+      heatlist_url: judge_heatlist_url(judge, style: params[:style] || 'radio', sort: judge.sort_order || 'back'),
+      # Version metadata for staleness detection (matches version_check endpoint)
+      max_updated_at: judge.scoring_version_metadata[:max_updated_at]
     }
 
     render json: data
@@ -508,17 +510,13 @@ class ScoresController < ApplicationController
   # GET /scores/:judge/version/:heat - Lightweight version check for sync strategy
   def version_check
     heat_number = params[:heat].to_f
-
-    # Get max updated_at from heats table
-    max_updated_at = Heat.where('number >= ?', 1).maximum(:updated_at)
-
-    # Get total heat count (total number of heat records, not unique numbers)
-    heat_count = Heat.where('number >= ?', 1).count
+    judge = Person.find_by(id: params[:judge].to_i)
+    version = judge&.scoring_version_metadata || {}
 
     render json: {
       heat_number: heat_number,
-      max_updated_at: max_updated_at&.iso8601(3),
-      heat_count: heat_count
+      max_updated_at: version[:max_updated_at],
+      heat_count: version[:heat_count]
     }
   end
 
