@@ -85,7 +85,16 @@ if code != 200
   exit 1
 end
 
-erb_html = response.body.force_encoding('utf-8')
+erb_full_html = response.body.force_encoding('utf-8')
+
+# Extract just the <main> content to match what JS templates produce
+# ERB renders a full HTML document; JS templates render just the content
+erb_html = if erb_full_html =~ /<main[^>]*>(.*?)<\/main>/m
+  $1.strip
+else
+  erb_full_html
+end
+
 erb_file = "/tmp/erb_rendered.html"
 File.write(erb_file, erb_html)
 erb_rows = erb_html.scan(/<tr/).length
