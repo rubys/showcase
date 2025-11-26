@@ -266,6 +266,26 @@ class ScoresController < ApplicationController
         dance_string = dance_string.sub(/^\w+ /, '')
       end
 
+      # Determine category_id for category scoring (avoids duplicating logic in hydrator)
+      category_scoring_category_id = case heat.category
+        when 'Closed' then heat.dance.closed_category_id
+        when 'Open' then heat.dance.open_category_id || heat.dance.pro_open_category_id
+        when 'Solo' then heat.dance.solo_category_id || heat.dance.pro_solo_category_id
+        when 'Multi' then heat.dance.multi_category_id || heat.dance.pro_multi_category_id
+        end
+
+      # Determine scoring type (avoids duplicating logic in hydrator)
+      effective_category = heat.category
+      effective_category = 'Open' if heat.category == 'Closed' && event.closed_scoring == '='
+      effective_category = 'Open' if event.heat_range_cat > 0
+      scoring_type = case effective_category
+        when 'Solo' then event.solo_scoring
+        when 'Multi' then event.multi_scoring
+        when 'Open' then event.open_scoring
+        when 'Closed' then event.closed_scoring
+        else '1'
+        end
+
       {
         id: heat.id,
         number: heat.number,
@@ -275,6 +295,8 @@ class ScoresController < ApplicationController
         category: heat.category,
         ballroom: heat.ballroom,
         dance_string: dance_string,  # Computed dance display string
+        category_scoring_category_id: category_scoring_category_id,  # For category scoring lookup
+        scoring_type: scoring_type,  # Pre-computed scoring type
         # Add display fields for heat list template
         dance: {
           id: heat.dance_id,

@@ -192,17 +192,8 @@ export function buildHeatTemplateData(heatNumber, rawData, style) {
   const category = primaryHeat.category
 
   // === CATEGORY SCORING LOGIC ===
-  // Determine which category_id to use based on heat category
-  let categoryId = null
-  if (category === 'Closed') {
-    categoryId = dance.closed_category_id
-  } else if (category === 'Open') {
-    categoryId = dance.open_category_id || dance.pro_open_category_id
-  } else if (category === 'Solo') {
-    categoryId = dance.solo_category_id || dance.pro_solo_category_id
-  } else if (category === 'Multi') {
-    categoryId = dance.multi_category_id || dance.pro_multi_category_id
-  }
+  // Use server-computed category_id (avoids duplicating business logic)
+  const categoryId = primaryHeat.category_scoring_category_id
 
   // Check if category scoring is enabled (server provides this)
   const categoryRecord = categoryId && rawData.categories ? rawData.categories[categoryId] : null
@@ -285,17 +276,8 @@ export function buildHeatTemplateData(heatNumber, rawData, style) {
 
   // === END CATEGORY SCORING LOGIC ===
 
-  // Determine scoring type (matches logic from heats_show)
-  let scoring
-  if (category === 'Solo') {
-    scoring = event.solo_scoring
-  } else if (category === 'Multi') {
-    scoring = event.multi_scoring
-  } else if (category === 'Open' || (category === 'Closed' && event.closed_scoring === '=') || event.heat_range_cat > 0) {
-    scoring = event.open_scoring
-  } else {
-    scoring = event.closed_scoring
-  }
+  // Use server-computed scoring type (avoids duplicating business logic)
+  const scoring = primaryHeat.scoring_type
 
   // Group subjects by ballroom (matches logic from heat controller action)
   const ballrooms = {}
