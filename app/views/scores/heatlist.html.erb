@@ -25,14 +25,14 @@
   </ul>
   </div>
 
-  <h1 class="font-bold text-4xl"><%= link_to @judge.display_name, person_path(@judge) %></h1>
+  <h1 class="font-bold text-4xl"><%= link_to @judge.display_name, @judge_person_path %></h1>
 
-  <div class="float-right w-60" title="<%= @heatlist_url || judge_heatlist_url(@judge, style: @style, sort: @sort) %>">
+  <div class="float-right w-60" title="<%= @heatlist_url %>">
   <%= raw @qr_code %>
 
   <% unless @style == 'emcee' %>
   <h2 class="mt-12 font-bold text-2xl">Sort order</h2>
-  <form method="post" data-controller="auto-submit" action="<%= sort_scores_path %>">
+  <form method="post" data-controller="auto-submit" action="<%= @sort_scores_path %>">
     <input type="hidden" name="style" value="<%= @style %>">
     <input type="hidden" name="show" value="<%= @show %>">
     <div>
@@ -47,7 +47,7 @@
 
   <% if @assign_judges %>
   <h2 class="mt-12 font-bold text-2xl">Show assignments</h2>
-  <form method="post" data-controller="auto-submit" action="<%= show_assignments_person_path(@judge) %>">
+  <form method="post" data-controller="auto-submit" action="<%= @show_assignments_path %>">
     <input type="hidden" name="style" value="<%= @style %>">
     <input type="hidden" name="sort" value="<%= @sort %>">
     <div>

@@ -1,5 +1,5 @@
   <h1 class="grow font-bold text-4xl pt-1 pb-3 text-center mx-8">
-    <%= link_to judge_heatlist_path(judge: @judge, anchor: dom_id(@heat), style: @style), rel: 'up' do %>
+    <%= link_to "#{@judge_heatlist_path}##{dom_id(@heat)}", rel: 'up' do %>
       <span>Heat <%= @number %>:<br class="block sm:hidden"> <%= @dance %>
       <% if @heat.solo&.combo_dance_id %>
       / <%= @heat.solo.combo_dance.name %>

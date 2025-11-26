@@ -6,13 +6,13 @@
       </div>
 
       <% if @assign_judges %>
-        <h1 class="font-bold text-2xl pt-1 pb-3 flex-1 text-center" data-controller="assign-judges", data-present-url=<%= @judge_toggle_present_path || toggle_present_person_path(@judge) %>>
+        <h1 class="font-bold text-2xl pt-1 pb-3 flex-1 text-center" data-controller="assign-judges", data-present-url=<%= @judge_toggle_present_path %>>
         <input type='checkbox' name="active" <% if @judge_present.nil? ? @judge.present? : @judge_present %>checked <% end %>class="w-6 h-6 mr-3">
       <% else %>
         <h1 class="font-bold text-2xl pt-1 pb-3 flex-1 text-center">
       <% end %>
-        <%= link_to (@judge_display_name || @judge.display_name), (@judge_person_path || person_path(@judge)) %>
-        <%= link_to root_path.chomp('/') + '/' do %>
+        <%= link_to (@judge_display_name || @judge.display_name), @judge_person_path %>
+        <%= link_to @root_path.to_s.chomp('/') + '/' do %>
           <%= image_tag @showcase_logo, class: "absolute right-4 top-4 h-8" %>
         <% end %>
         <% if false and @assign_judges %>

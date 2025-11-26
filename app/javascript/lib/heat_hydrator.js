@@ -382,7 +382,17 @@ export function buildHeatTemplateData(heatNumber, rawData, style) {
     category_score_assignments: categoryScoreAssignments,
     judge_present: judge.present || false,
     results: {},  // Empty results object for solo scoring
-    // API paths for scoring
-    post_feedback_path: `/scores/${judge.id}/post-feedback`
+    // Server-computed paths (respects RAILS_APP_SCOPE)
+    feedbacks_path: rawData.paths?.feedbacks,
+    post_score_path: rawData.paths?.post_score,
+    post_feedback_path: rawData.paths?.post_feedback,
+    update_rank_path: rawData.paths?.update_rank,
+    start_heat_path: rawData.paths?.start_heat,
+    sort_scores_path: rawData.paths?.sort_scores,
+    judge_person_path: rawData.paths?.judge_person,
+    judge_toggle_present_path: rawData.paths?.judge_toggle_present,
+    show_assignments_path: rawData.paths?.show_assignments,
+    root_path: rawData.paths?.root,
+    judge_heatlist_path: rawData.paths?.judge_heatlist
   }
 }

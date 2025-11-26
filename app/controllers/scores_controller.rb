@@ -81,6 +81,11 @@ class ScoresController < ApplicationController
     @qr_code = RQRCode::QRCode.new(judge_heatlist_url(@judge, style: @style)).as_svg(viewbox: true)
     @heatlist_url = judge_heatlist_url(@judge, style: @style, sort: @sort)
 
+    # Server-computed paths (respects RAILS_APP_SCOPE)
+    @judge_person_path = person_path(@judge)
+    @sort_scores_path = sort_scores_path
+    @show_assignments_path = show_assignments_person_path(@judge)
+
     @browser_warn = browser_warn
 
     # Find unassigned heats, excluding category-scored categories
@@ -524,7 +529,23 @@ class ScoresController < ApplicationController
       qr_code: RQRCode::QRCode.new(judge_heatlist_url(judge, style: params[:style] || 'radio')).as_svg(viewbox: true),
       heatlist_url: judge_heatlist_url(judge, style: params[:style] || 'radio', sort: judge.sort_order || 'back'),
       # Version metadata for staleness detection (matches version_check endpoint)
-      max_updated_at: judge.scoring_version_metadata[:max_updated_at]
+      max_updated_at: judge.scoring_version_metadata[:max_updated_at],
+      # Server-computed paths (respects RAILS_APP_SCOPE)
+      # These are used for action URLs (POST targets, data-* attributes)
+      # Navigation links use path helpers in templates but are intercepted by SPA
+      paths: {
+        feedbacks: feedbacks_path,
+        post_score: post_score_path(judge: judge),
+        post_feedback: post_feedback_path(judge: judge),
+        update_rank: post_score_path(judge: judge),  # Same endpoint as post_score
+        start_heat: start_heat_event_index_path,
+        sort_scores: sort_scores_path,
+        judge_person: person_path(judge),
+        judge_toggle_present: toggle_present_person_path(judge),
+        show_assignments: show_assignments_person_path(judge),
+        root: root_path,
+        judge_heatlist: judge_heatlist_path(judge: judge)
+      }
     }
 
     render json: data
@@ -608,7 +629,15 @@ class ScoresController < ApplicationController
     @slot = params[:slot]&.to_i
     @style = params[:style]
     @style = 'radio' if @style.blank?
+    # Server-computed paths (respects RAILS_APP_SCOPE)
     @post_feedback_path = post_feedback_path(judge: @judge)
+    @post_score_path = post_score_path(judge: @judge)
+    @update_rank_path = post_score_path(judge: @judge)  # Same endpoint
+    @start_heat_path = start_heat_event_index_path
+    @feedbacks_path = feedbacks_path
+    @judge_person_path = person_path(@judge)
+    @judge_toggle_present_path = toggle_present_person_path(@judge)
+    @root_path = root_path
     @subjects = Heat.where(number: @number).includes(
       dance: [:multi_children],
       entry: [:age, :level, :lead, :follow],
@@ -1035,8 +1064,8 @@ class ScoresController < ApplicationController
     # Pre-compute navigation footer data
     @judge_display_name = @judge.display_name
     @judge_present = @judge.present?
-    @judge_person_path = person_path(@judge)
-    @judge_toggle_present_path = @assign_judges ? toggle_present_person_path(@judge) : nil
+    # @judge_person_path and @judge_toggle_present_path are set earlier in the action
+    @judge_heatlist_path = judge_heatlist_path(judge: @judge, style: @style)
   end
 
   def post
