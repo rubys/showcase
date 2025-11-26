@@ -8,14 +8,9 @@
   <% if @region %>
   <h1 class="mt-8 text-center font-bold text-4xl mb-8"><span class="text-blue-600"><%= @region %></span> Region</h1>
   <% elsif @city %>
-  <div class="flex w-full items-center mt-8 mb-8">
+  <div class="flex w-full mt-8 mb-8">
     <div class="flex-auto">
-      <h1 class="text-center font-bold text-4xl"><span class="text-blue-600"><%= @city %></span> Events</h1>
-    </div>
-    <div class="flex-none">
-      <%= link_to 'New Event', studio_request_path(@city), class: 'btn-green' %>
-    </div>
-  </div>
+      <h1 class="text-center font-bold text-4xl mb-8"><span class="text-blue-600"><%= @city %></span> Events</h1>
   <% else %>
   <%= render 'shared/environment_banner' %>
   <h1 class="mt-8 text-center font-bold text-4xl mb-8">Index of Showcases</h1>
@@ -97,6 +92,15 @@ can click on it to see helpful hints.</li>
 
 <p class="mt-4">Click on the <span class="text-emerald-600">&#x24D8;</span> in the top
     left corner of this page to see helpful hints.</p>
+
+<% if @city %>
+    </div>
+    <div class="flex-none flex flex-col">
+      <%= link_to 'New Event', studio_request_path(@city), class: 'btn-green' %>
+      <%= link_to 'Auth', studio_auth_path(@city), class: 'btn-blue mt-2' %>
+    </div>
+  </div>
+<% end %>
 
 <p class="mt-4 text-right">
   See:

@@ -64,6 +64,13 @@ module Configurator
         'headers' => {
           'X-Forwarded-Host' => '$host'
         }
+      },
+      {
+        'path' => '^/showcase/studios/([a-z]*)/auth$',
+        'target' => 'https://rubix.intertwingly.net/showcase/studios/$1/auth',
+        'headers' => {
+          'X-Forwarded-Host' => '$host'
+        }
       }
     ]
   end

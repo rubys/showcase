@@ -21,6 +21,8 @@ Rails.application.routes.draw do
       get "/studios/", to: "event#regions", trailing_slash: true, defaults: { list: 'studios' }
       get "/events/", to: "event#showcases", trailing_slash: true
       get "/studios/:studio/", to: 'event#showcases', as: 'studio_events', trailing_slash: true
+      get "/studios/:studio/auth", to: 'locations#auth', as: 'studio_auth'
+      post "/studios/:studio/auth", to: 'locations#update_auth'
 
       if Rails.env.development?
          get "/:year/:city/:event", to: 'event#select', year: /\d+/

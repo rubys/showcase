@@ -2,8 +2,11 @@ class LocationsController < ApplicationController
   include Configurator
   include DbQuery
 
-  before_action :set_location, only: %i[ show edit events auth add_auth sisters update destroy ]
-  before_action :admin_home
+  before_action :set_location, only: %i[ show edit events auth update_auth sisters update destroy ]
+  before_action :admin_home, unless: -> { params[:studio].present? }
+
+  skip_before_action :authenticate_user, only: %i[ auth update_auth ], if: -> { params[:studio].present? }
+  before_action :authenticate_site_owner, only: %i[ auth update_auth ], if: -> { params[:studio].present? }
 
   # GET /locations or /locations.json
   def index
@@ -79,6 +82,15 @@ class LocationsController < ApplicationController
   def auth
     edit
 
+    # Set paths based on whether accessed via /studios/:studio or /locations/:id
+    if params[:studio]
+      @back_path = studio_events_path(params[:studio])
+      @save_path = studio_auth_path(params[:studio])
+    else
+      @back_path = edit_location_path(@location)
+      @save_path = locations_users_path
+    end
+
     studios = []
     dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
     Dir["#{dbpath}/20*.sqlite3"].each do |db|
@@ -147,6 +159,49 @@ class LocationsController < ApplicationController
     @available_users = @users.reject { |label, id| auth_ids.include?(id) }
 
     render :auth
+  end
+
+  def update_auth
+    # If Add button was clicked, add user to form and re-render (no DB save)
+    if params[:commit] == 'Add'
+      return add_auth
+    end
+
+    # Otherwise, save changes to DB
+    added = 0
+    removed = 0
+
+    params[:auth]&.each do |user_id, auth|
+      user = User.find(user_id)
+      sites = user.sites.to_s.split(',')
+
+      if auth == "0"
+        if sites.include? @location.name
+          sites.delete(@location.name)
+          user.sites = sites.join(',')
+          user.save!
+          removed += 1
+        end
+      else
+        unless sites.include? @location.name
+          sites.push(@location.name)
+          user.sites = sites.join(',')
+          user.save!
+          added += 1
+        end
+      end
+    end
+
+    notices = []
+    notices << "#{added} #{"site".pluralize(added)} added" if added > 0
+    notices << "#{removed} #{"site".pluralize(removed)} removed" if removed > 0
+    notices << "Auth didn't change" if notices.length == 0
+
+    if (added > 0 || removed > 0) && Rails.env.production?
+      ConfigUpdateJob.perform_later
+    end
+
+    redirect_to studio_events_path(params[:studio]), notice: notices.join(' and ')
   end
 
   def sisters
@@ -303,7 +358,11 @@ class LocationsController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_location
-      @location = Location.find(params[:id])
+      if params[:studio]
+        @location = Location.find_by!(key: params[:studio])
+      else
+        @location = Location.find(params[:id])
+      end
     end
 
     # Only allow a list of trusted parameters through.

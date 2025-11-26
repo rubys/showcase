@@ -1,8 +1,23 @@
 <div class="mx-auto md:w-2/3 w-full">
   <h1 class="mt-8 font-bold text-4xl" id="authorization"><%= @location.name %> - Authorization</h1>
 
-  <%= form_with url: locations_users_path do |form| %>
+<% if params[:studio] %>
+<div data-controller="info-box">
+  <div class="info-button">&#x24D8;</div>
+  <ul class="info-box">
+  <li>This page controls who can access events for <%= @location.name %>.</li>
+  <li>Check a box to grant access, uncheck to revoke access.</li>
+  <li>Use the Add button to add someone not already listed.</li>
+  <li>Changes are not saved until you click Save.</li>
+  </ul>
+</div>
+<% end %>
+
+  <%= form_with url: @save_path, data: { turbo: false } do |form| %>
   <%= form.hidden_field :location, value: @location.id %>
+  <% unless params[:studio] %>
+  <%= form.hidden_field :back_path, value: @back_path %>
+  <% end %>
   <% @auth.each do |user| %>
   <div class="my-5 flex items-center">
     <%= form.check_box "auth[#{user.id}]", class: 'entry-count h-8', checked: @checked[user.id] %>
@@ -12,12 +27,12 @@
 
   <% unless @available_users.empty? %>
   <div class="my-5 flex items-center gap-2">
-    <button type="submit" formaction="<%= add_auth_location_path(@location) %>" class="btn-grey">Add</button>
+    <%= form.submit 'Add', class: 'btn-grey' %>
     <%= form.select :add_user_id, @available_users, {}, class: "shadow rounded-md border border-gray-200 outline-none px-3 py-2" %>
   </div>
   <% end %>
 
   <%= form.submit 'Save', class: "btn-blue" %>
-  <%= link_to 'Back to Studio', edit_location_path(@location), class: 'btn-grey' %>
+  <%= link_to 'Back to Studio', @back_path, class: 'btn-grey' %>
   <% end %>
 </div>
