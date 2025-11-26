@@ -288,6 +288,7 @@ Rails.application.routes.draw do
       get 'first-event', on: :collection
       get 'events', on: :member
       get 'auth', on: :member
+      post 'add_auth', on: :member
       get 'sisters', on: :member
       post 'update_sisters', on: :member
       get 'locale', on: :collection

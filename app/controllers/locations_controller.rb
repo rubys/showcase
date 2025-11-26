@@ -2,7 +2,7 @@ class LocationsController < ApplicationController
   include Configurator
   include DbQuery
 
-  before_action :set_location, only: %i[ show edit events auth sisters update destroy ]
+  before_action :set_location, only: %i[ show edit events auth add_auth sisters update destroy ]
   before_action :admin_home
 
   # GET /locations or /locations.json
@@ -27,7 +27,7 @@ class LocationsController < ApplicationController
 
     @users = User.order(:userid).pluck(:userid, :name1, :name2, :id).
     map do |userid, name1, name2, id|
-      if name2.empty?
+      if name2.blank?
         ["#{userid}: #{name1}", id]
       else
         ["#{userid}: #{name1}/#{name2}", id]
@@ -105,6 +105,48 @@ class LocationsController < ApplicationController
         false
       end
     end
+
+    # Build list of users not already in @auth for the add dropdown
+    auth_ids = @auth.map(&:id)
+    @available_users = @users.reject { |label, id| auth_ids.include?(id) }
+  end
+
+  def add_auth
+    auth
+
+    # Restore checkbox state from params and add any users not in the original list
+    if params[:auth].present?
+      auth_ids = @auth.map(&:id)
+      @checked = {}
+      params[:auth].each do |user_id, checked|
+        id = user_id.to_i
+        @checked[id] = true if checked == '1'
+        unless auth_ids.include?(id)
+          user = User.find_by(id: id)
+          @auth << user if user
+        end
+      end
+    end
+
+    # Add the selected user
+    if params[:add_user_id].present?
+      new_user_id = params[:add_user_id].to_i
+      unless @auth.any? { |u| u.id == new_user_id }
+        new_user = User.find_by(id: new_user_id)
+        if new_user
+          @auth << new_user
+          @checked[new_user_id] = true
+        end
+      end
+    end
+
+    @auth = @auth.sort_by(&:userid)
+
+    # Rebuild available users after adding
+    auth_ids = @auth.map(&:id)
+    @available_users = @users.reject { |label, id| auth_ids.include?(id) }
+
+    render :auth
   end
 
   def sisters

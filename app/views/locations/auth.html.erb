@@ -9,6 +9,14 @@
     <label class="text-xl pt-2" for="auth[<%= user.id %>]"><span class="inline-block min-w-40"><%= user.userid %></span><span class="ml-4"><%= user.name1 %></span></label>
   </div>
   <% end %>
+
+  <% unless @available_users.empty? %>
+  <div class="my-5 flex items-center gap-2">
+    <button type="submit" formaction="<%= add_auth_location_path(@location) %>" class="btn-grey">Add</button>
+    <%= form.select :add_user_id, @available_users, {}, class: "shadow rounded-md border border-gray-200 outline-none px-3 py-2" %>
+  </div>
+  <% end %>
+
   <%= form.submit 'Save', class: "btn-blue" %>
   <%= link_to 'Back to Studio', edit_location_path(@location), class: 'btn-grey' %>
   <% end %>
