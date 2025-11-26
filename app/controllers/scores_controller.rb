@@ -223,6 +223,11 @@ class ScoresController < ApplicationController
         solo = heat.solo
         solos_set[solo.id] = solo
 
+        # Collect combo_dance if present (needed for hydration)
+        if solo.combo_dance
+          dances_set[solo.combo_dance.id] = solo.combo_dance
+        end
+
         # Load formations for this solo
         solo.formations.each do |formation|
           formations_set[formation.id] = formation
@@ -296,17 +301,8 @@ class ScoresController < ApplicationController
         ballroom: heat.ballroom,
         dance_string: dance_string,  # Computed dance display string
         category_scoring_category_id: category_scoring_category_id,  # For category scoring lookup
-        scoring_type: scoring_type,  # Pre-computed scoring type
-        # Add display fields for heat list template
-        dance: {
-          id: heat.dance_id,
-          name: heat.dance.name
-        },
-        solo: heat.solo ? {
-          id: heat.solo.id,
-          combo_dance_id: heat.solo.combo_dance_id,
-          combo_dance: heat.solo.combo_dance ? { name: heat.solo.combo_dance.name } : nil
-        } : nil
+        scoring_type: scoring_type  # Pre-computed scoring type
+        # Note: dance and solo objects removed - use dance_id/solo_id with lookups
       }
     end
 

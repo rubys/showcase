@@ -124,6 +124,11 @@ export function hydrateHeat(heat, lookups) {
     if (soloData) {
       hydrated.solo = { ...soloData }
 
+      // Hydrate combo_dance if present
+      if (hydrated.solo.combo_dance_id && lookups.dances[hydrated.solo.combo_dance_id]) {
+        hydrated.solo.combo_dance = lookups.dances[hydrated.solo.combo_dance_id]
+      }
+
       // Hydrate formations - use embedded formations if available, otherwise lookup
       if (hydrated.solo.formations) {
         // Formations already embedded (from per-heat endpoint), just hydrate person refs
@@ -376,5 +381,28 @@ export function buildHeatTemplateData(heatNumber, rawData, style) {
     show_assignments_path: rawData.paths?.show_assignments,
     root_path: rawData.paths?.root,
     judge_heatlist_path: rawData.paths?.judge_heatlist
+  }
+}
+
+/**
+ * Build complete template data for the heat list
+ * Groups heats by number and hydrates each heat
+ * Used by both browser (heat_app_controller.js) and Node.js scripts
+ */
+export function buildHeatListTemplateData(rawData) {
+  const lookups = buildLookupTables(rawData)
+
+  // Group heats by number, take first heat for each number, and hydrate
+  const heatsByNumber = {}
+  rawData.heats.forEach(heat => {
+    if (!heatsByNumber[heat.number]) {
+      heatsByNumber[heat.number] = hydrateHeat(heat, lookups)
+    }
+  })
+
+  // Return data with hydrated heats replacing raw heats
+  return {
+    ...rawData,
+    heats: Object.values(heatsByNumber)
   }
 }

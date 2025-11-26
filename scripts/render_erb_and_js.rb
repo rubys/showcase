@@ -192,21 +192,21 @@ begin
   regular_code = js_code.gsub(/^export /m, '')
 
   if is_heat_list
-    # Render heat list
+    # Render heat list - use buildHeatListTemplateData from hydrator
+    hydrator_path = File.join(rails_root, 'app', 'javascript', 'lib', 'heat_hydrator.js')
+    hydrator_code = File.read(hydrator_path).gsub(/^export /m, '')
+
     js_file.write(<<~JAVASCRIPT)
       #{regular_code}
+
+      // Hydration functions (from heat_hydrator.js)
+      #{hydrator_code}
 
       // Data from heats/data endpoint
       const rawData = #{template_data.to_json};
 
-      // Group heats by number (matching ERB .group(:number) and Stimulus controller behavior)
-      const heatsByNumber = {};
-      rawData.heats.forEach(heat => {
-        if (!heatsByNumber[heat.number]) {
-          heatsByNumber[heat.number] = heat;
-        }
-      });
-      const data = { ...rawData, heats: Object.values(heatsByNumber) };
+      // Build template data using shared function (same as heat_app_controller.js)
+      const data = buildHeatListTemplateData(rawData);
 
       // Render using the heat list template
       const html = heatlist(data);

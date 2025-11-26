@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { buildLookupTables, hydrateHeat, buildHeatTemplateData } from "lib/heat_hydrator"
+import { buildLookupTables, hydrateHeat, buildHeatTemplateData, buildHeatListTemplateData } from "lib/heat_hydrator"
 import { heatDataManager } from "helpers/heat_data_manager"
 
 // Main controller for the heat scoring SPA
@@ -180,17 +180,8 @@ export default class extends Controller {
     console.debug('Rendering heat list...')
 
     try {
-      // Use raw data but group heats by number (matching ERB .group(:number) behavior)
-      const data = { ...this.rawData }
-
-      // Group heats by number and take first heat for each number
-      const heatsByNumber = {}
-      data.heats.forEach(heat => {
-        if (!heatsByNumber[heat.number]) {
-          heatsByNumber[heat.number] = heat
-        }
-      })
-      data.heats = Object.values(heatsByNumber)
+      // Build template data (groups by number and hydrates each heat)
+      const data = buildHeatListTemplateData(this.rawData)
 
       console.debug(`Rendering heat list with ${data.heats.length} unique heat numbers`)
 
