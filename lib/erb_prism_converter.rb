@@ -535,8 +535,11 @@ class ErbPrismConverter
       args = node.arguments ? node.arguments.arguments.map { |a| ruby_to_js(a) } : []
       # Convert Rails partial name to function name
       # e.g., "heat_header" -> heatHeader
+      # e.g., "scores/heatlist_content" -> heatlistContent (strip directory)
       if args.length > 0
         partial_name = args[0].gsub(/^["']|["']$/, '') # Remove quotes
+        # Strip directory path - only use the partial name itself
+        partial_name = partial_name.split('/').last
         function_name = partial_name.split('_').map.with_index { |part, i| i == 0 ? part : part.capitalize }.join
         return "#{function_name}(data)"
       end
@@ -724,9 +727,11 @@ class ErbPrismConverter
     when "present?"
       "#{receiver} != null && #{receiver}.length > 0"
     when "empty?"
-      "(#{receiver}.length === 0)"
+      # Handle both arrays (.length) and objects (Object.keys)
+      "(Array.isArray(#{receiver}) ? #{receiver}.length === 0 : Object.keys(#{receiver} || {}).length === 0)"
     when "any?"
-      "#{receiver}.length > 0"
+      # Handle both arrays (.length) and objects (Object.keys)
+      "(Array.isArray(#{receiver}) ? #{receiver}.length > 0 : Object.keys(#{receiver} || {}).length > 0)"
     when "nil?"
       "#{receiver} == null"
     when "include?"

@@ -48,12 +48,16 @@
            <% if @heat_number %>data-heat-app-heat-value="<%= @heat_number %>"<% end %>
            data-heat-app-style-value="<%= @style %>"
            data-heat-app-base-path-value="<%= [Rails.application.config.relative_url_root, ENV['RAILS_APP_SCOPE']].compact.join('/') %>">
-        <div class="flex items-center justify-center h-screen">
-          <div class="text-center">
-            <div class="text-2xl mb-4">Loading...</div>
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+        <% if @heats %>
+          <%= render template: 'scores/heatlist' %>
+        <% else %>
+          <div class="flex items-center justify-center h-screen">
+            <div class="text-center">
+              <div class="text-2xl mb-4">Loading...</div>
+              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+            </div>
           </div>
-        </div>
+        <% end %>
       </div>
     </main>
   </body>

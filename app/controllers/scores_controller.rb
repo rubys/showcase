@@ -35,79 +35,7 @@ class ScoresController < ApplicationController
 
   # GET /scores or /scores.json
   def heatlist
-    event = Event.current
-    @judge = Person.find(params[:judge].to_i)
-    @style = params[:style]
-    @sort = @judge.sort_order
-    @show = @judge.show_assignments
-    @assign_judges = event.assign_judges? && params[:style] != 'emcee' && Person.where(type: 'Judge').count > 1
-
-    @heats = Heat.all.where(number: 1..).order(:number).group(:number).includes(
-      dance: [:open_category, :closed_category, :multi_category, {solo_category: :extensions}],
-      entry: %i[lead follow],
-      solo: %i[category_override]
-    ).to_a.sort_by(&:number)
-    @combine_open_and_closed = Event.current.heat_range_cat == 1
-
-    # Build agenda hash for category headers - show category at first occurrence
-    @agenda = {}
-    last_category = nil
-    @heats.each do |heat|
-      category = heat.dance_category
-      if category != last_category
-        cat_name = category&.name || 'Uncategorized'
-        @agenda[heat.number] = cat_name
-        last_category = category
-      end
-    end
-
-    @scored = Score.includes(:heat).where(judge: @judge).
-      select {|score| score.heat_id.positive? && (score.value || score.comments || score.good || score.bad)}.
-      group_by {|score| score.heat.number.to_f}
-    @count = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance).count
-
-    if @assign_judges and Score.where(judge: @judge).any?
-      @missed = Score.includes(:heat).where(judge: @judge, good: nil, bad: nil, value: nil).distinct.pluck(:number)
-      @missed += Solo.includes(:heat).pluck(:number).select {|number| !@scored[number]}
-    else
-      @missed = Heat.distinct.pluck(:number).select do |number|
-        number = number.to_i == number ? number.to_i : number
-        !@scored[number] || @scored[number].length != @count[number.to_f]
-      end
-    end
-
-    @show_solos = @judge&.judge&.review_solos&.downcase
-
-    @heatlist_url = judge_heatlist_url(@judge, style: @style, sort: @sort)
-    @qrcode_path = judge_heatlist_qrcode_path(@judge, style: @style)
-
-    # Server-computed paths (respects RAILS_APP_SCOPE)
-    @judge_person_path = person_path(@judge)
-    @sort_scores_path = sort_scores_path
-    @show_assignments_path = show_assignments_person_path(@judge)
-
-    @browser_warn = browser_warn
-
-    # Find unassigned heats, excluding category-scored categories
-    if @assign_judges
-      # Get category IDs that use category scoring
-      event = Event.current
-      category_scored_ids = event.student_judge_assignments ?
-        Category.where(use_category_scoring: true).pluck(:id) : []
-
-      # Build query to find heats with no scores
-      query = Heat.includes(:scores).where(category: ['Open', 'Closed'], scores: { id: nil })
-
-      # Exclude heats in category-scored categories
-      if category_scored_ids.any?
-        query = query.joins(:dance).where.not(dances: { closed_category_id: category_scored_ids })
-      end
-
-      @unassigned = query.distinct.pluck(:number).select {|it| it > 0}
-    else
-      @unassigned = []
-    end
-
+    setup_heatlist_data
     render :heatlist, status: (@browser_warn ? :upgrade_required : :ok)
   end
 
@@ -116,6 +44,10 @@ class ScoresController < ApplicationController
     @judge = Person.find(params[:judge].to_i)
     @heat_number = params[:heat]  # nil if not provided - shows heatlist; keep as string for fractional heats
     @style = params[:style] || 'radio'
+
+    # Pre-render heatlist so user sees content immediately (JS will re-render when ready)
+    setup_heatlist_data unless @heat_number
+
     render layout: false
   end
 
@@ -2002,6 +1934,81 @@ class ScoresController < ApplicationController
   end
 
   private
+    # Setup instance variables for heatlist view (shared by heatlist and spa actions)
+    def setup_heatlist_data
+      event = Event.current
+      @judge ||= Person.find(params[:judge].to_i)
+      @style ||= params[:style]
+      @sort = @judge.sort_order
+      @show = @judge.show_assignments
+      @assign_judges = event.assign_judges? && @style != 'emcee' && Person.where(type: 'Judge').count > 1
+
+      @heats = Heat.all.where(number: 1..).order(:number).group(:number).includes(
+        dance: [:open_category, :closed_category, :multi_category, {solo_category: :extensions}],
+        entry: %i[lead follow],
+        solo: %i[category_override]
+      ).to_a.sort_by(&:number)
+      @combine_open_and_closed = event.heat_range_cat == 1
+
+      # Build agenda hash for category headers - show category at first occurrence
+      @agenda = {}
+      last_category = nil
+      @heats.each do |heat|
+        category = heat.dance_category
+        if category != last_category
+          cat_name = category&.name || 'Uncategorized'
+          @agenda[heat.number] = cat_name
+          last_category = category
+        end
+      end
+
+      @scored = Score.includes(:heat).where(judge: @judge).
+        select {|score| score.heat_id.positive? && (score.value || score.comments || score.good || score.bad)}.
+        group_by {|score| score.heat.number.to_f}
+      @count = Heat.all.where(number: 1..).order(:number).group(:number).includes(:dance).count
+
+      if @assign_judges and Score.where(judge: @judge).any?
+        @missed = Score.includes(:heat).where(judge: @judge, good: nil, bad: nil, value: nil).distinct.pluck(:number)
+        @missed += Solo.includes(:heat).pluck(:number).select {|number| !@scored[number]}
+      else
+        @missed = Heat.distinct.pluck(:number).select do |number|
+          number = number.to_i == number ? number.to_i : number
+          !@scored[number] || @scored[number].length != @count[number.to_f]
+        end
+      end
+
+      @show_solos = @judge&.judge&.review_solos&.downcase
+
+      @heatlist_url = judge_heatlist_url(@judge, style: @style, sort: @sort)
+      @qrcode_path = judge_heatlist_qrcode_path(@judge, style: @style)
+
+      # Server-computed paths (respects RAILS_APP_SCOPE)
+      @judge_person_path = person_path(@judge)
+      @sort_scores_path = sort_scores_path
+      @show_assignments_path = show_assignments_person_path(@judge)
+
+      @browser_warn = browser_warn
+
+      # Find unassigned heats, excluding category-scored categories
+      if @assign_judges
+        # Get category IDs that use category scoring
+        category_scored_ids = event.student_judge_assignments ?
+          Category.where(use_category_scoring: true).pluck(:id) : []
+
+        # Build query to find heats with no scores
+        query = Heat.includes(:scores).where(category: ['Open', 'Closed'], scores: { id: nil })
+
+        # Exclude heats in category-scored categories
+        if category_scored_ids.any?
+          query = query.joins(:dance).where.not(dances: { closed_category_id: category_scored_ids })
+        end
+
+        @unassigned = query.distinct.pluck(:number).select {|it| it > 0}
+      else
+        @unassigned = []
+      end
+    end
+
     # Use callbacks to share common setup or constraints between actions.
     def set_score
       @score = Score.find(params[:id])
