@@ -28,7 +28,7 @@
   <h1 class="font-bold text-4xl"><%= link_to @judge.display_name, @judge_person_path %></h1>
 
   <div class="float-right w-60" title="<%= @heatlist_url %>">
-  <%= raw @qr_code %>
+  <img src="<%= @qrcode_path %>" alt="QR Code" class="w-full">
 
   <% unless @style == 'emcee' %>
   <h2 class="mt-12 font-bold text-2xl">Sort order</h2>

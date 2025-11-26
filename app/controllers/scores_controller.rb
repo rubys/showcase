@@ -78,8 +78,8 @@ class ScoresController < ApplicationController
 
     @show_solos = @judge&.judge&.review_solos&.downcase
 
-    @qr_code = RQRCode::QRCode.new(judge_heatlist_url(@judge, style: @style)).as_svg(viewbox: true)
     @heatlist_url = judge_heatlist_url(@judge, style: @style, sort: @sort)
+    @qrcode_path = judge_heatlist_qrcode_path(@judge, style: @style)
 
     # Server-computed paths (respects RAILS_APP_SCOPE)
     @judge_person_path = person_path(@judge)
@@ -117,6 +117,22 @@ class ScoresController < ApplicationController
     @heat_number = params[:heat]  # nil if not provided - shows heatlist; keep as string for fractional heats
     @style = params[:style] || 'radio'
     render layout: false
+  end
+
+  # GET /scores/:judge/heatlist/qrcode - Returns QR code SVG for the heatlist URL
+  # Cacheable forever since the URL contains all inputs (judge ID and style)
+  def heatlist_qrcode
+    judge = Person.find(params[:judge].to_i)
+    style = params[:style] || 'radio'
+
+    # Generate QR code for the heatlist URL
+    url = judge_heatlist_url(judge, style: style)
+    svg = RQRCode::QRCode.new(url).as_svg(viewbox: true)
+
+    # Cache forever - same URL always produces same QR code
+    response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+
+    render inline: svg, content_type: 'image/svg+xml'
   end
 
   # GET /scores/:judge/heats/data - Returns normalized data for offline support (all entities in separate tables)
@@ -544,7 +560,7 @@ class ScoresController < ApplicationController
       show: judge.show_assignments || 'first',
       combine_open_and_closed: combine_open_and_closed,
       assign_judges_enabled: assign_judges,
-      qr_code: RQRCode::QRCode.new(judge_heatlist_url(judge, style: params[:style] || 'radio')).as_svg(viewbox: true),
+      qrcode_path: judge_heatlist_qrcode_path(judge, style: params[:style] || 'radio'),
       heatlist_url: judge_heatlist_url(judge, style: params[:style] || 'radio', sort: judge.sort_order || 'back'),
       # Version metadata for staleness detection (matches version_check endpoint)
       max_updated_at: judge.scoring_version_metadata[:max_updated_at],

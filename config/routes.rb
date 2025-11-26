@@ -215,6 +215,7 @@ Rails.application.routes.draw do
 
     get '/templates/scoring.js', to: 'templates#scoring', as: 'scoring_templates'
     get '/scores/:judge/heatlist', to: 'scores#heatlist', as: 'judge_heatlist'
+    get '/scores/:judge/heatlist/qrcode', to: 'scores#heatlist_qrcode', as: 'judge_heatlist_qrcode'
     get '/scores/:judge/heats/data', to: 'scores#heats_data', defaults: { format: :json }, as: 'judge_heats_data'
     get '/scores/:judge/heats/:heat', to: 'scores#spa', as: 'judge_spa_heat', heat: /\d+\.?\d*/
     get '/scores/:judge/heats', to: 'scores#spa', as: 'judge_spa'
