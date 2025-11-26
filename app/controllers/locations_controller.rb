@@ -197,11 +197,36 @@ class LocationsController < ApplicationController
     notices << "#{removed} #{"site".pluralize(removed)} removed" if removed > 0
     notices << "Auth didn't change" if notices.length == 0
 
-    if (added > 0 || removed > 0) && Rails.env.production?
-      ConfigUpdateJob.perform_later
-    end
+    if added > 0 || removed > 0
+      if Rails.env.production?
+        # Get user for progress tracking
+        current_user = User.find_by(userid: @authuser)
 
-    redirect_to studio_events_path(params[:studio]), notice: notices.join(' and ')
+        # Kick off the config update job with user_id for progress tracking
+        ConfigUpdateJob.perform_later(current_user&.id)
+
+        # Return Turbo Stream response with progress UI
+        respond_to do |format|
+          format.turbo_stream do
+            render turbo_stream: turbo_stream.replace(
+              'auth-form-container',
+              partial: 'locations/auth_progress',
+              locals: {
+                location: @location,
+                added: added,
+                removed: removed,
+                redirect_url: studio_events_path(params[:studio])
+              }
+            )
+          end
+          format.html { redirect_to studio_events_path(params[:studio]), notice: notices.join(' and ') }
+        end
+      else
+        redirect_to studio_events_path(params[:studio]), notice: notices.join(' and ')
+      end
+    else
+      redirect_to studio_events_path(params[:studio]), notice: notices.join(' and ')
+    end
   end
 
   def sisters

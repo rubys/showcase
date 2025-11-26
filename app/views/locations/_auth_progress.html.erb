@@ -1,0 +1,36 @@
+<h1 class="font-bold text-4xl"><%= location.name %> - Authorization</h1>
+
+<!-- Hidden element with redirect URL for Stimulus controller to read after Turbo Stream update -->
+<div data-config-update-target="redirectUrl" data-url="<%= redirect_url %>" class="hidden"></div>
+
+<div class="content my-8">
+  <p class="text-lg mb-4">Your authorization changes are being processed:</p>
+
+  <ul class="list-disc ml-6 mb-6">
+    <li><strong>Location:</strong> <%= location.name %></li>
+    <% if added > 0 %>
+    <li><strong>Added:</strong> <%= added %> <%= "site".pluralize(added) %></li>
+    <% end %>
+    <% if removed > 0 %>
+    <li><strong>Removed:</strong> <%= removed %> <%= "site".pluralize(removed) %></li>
+    <% end %>
+  </ul>
+
+  <p class="text-gray-600">Updating configuration across all servers...</p>
+</div>
+
+<!-- Progress indicator (will be shown by controller) -->
+<div data-config-update-target="progress" class="my-8">
+  <div class="mb-2">
+    <div class="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
+      <div data-config-update-target="progressBar"
+           class="bg-blue-500 h-full text-xs font-medium text-white text-center p-0.5 leading-5 transition-all duration-300"
+           style="width: 0%">
+        0%
+      </div>
+    </div>
+  </div>
+  <p data-config-update-target="message" class="text-sm text-gray-600">
+    Updating authorization and configuration...
+  </p>
+</div>

@@ -1,5 +1,19 @@
-<div class="mx-auto md:w-2/3 w-full">
-  <h1 class="mt-8 font-bold text-4xl" id="authorization"><%= @location.name %> - Authorization</h1>
+<% user = User.find_by(userid: @authuser) if params[:studio] %>
+
+<div class="mx-auto md:w-2/3 w-full"
+  <% if params[:studio] %>
+     data-controller="config-update"
+     data-config-update-user-id-value="<%= user&.id %>"
+     data-config-update-database-value="<%= ENV['RAILS_APP_DB'] %>"
+     data-config-update-stream-value="config_update_<%= ENV['RAILS_APP_DB'] %>_<%= user&.id %>"
+     data-config-update-redirect-url-value="<%= @back_path %>"
+  <% end %>>
+  <% if params[:studio] %>
+  <%= turbo_stream_from "config_update_#{ENV['RAILS_APP_DB']}_#{user&.id}" %>
+  <% end %>
+
+  <div id="auth-form-container">
+    <h1 class="mt-8 font-bold text-4xl" id="authorization"><%= @location.name %> - Authorization</h1>
 
 <% if params[:studio] %>
 <div data-controller="info-box">
@@ -13,7 +27,7 @@
 </div>
 <% end %>
 
-  <%= form_with url: @save_path, data: { turbo: false } do |form| %>
+  <%= form_with url: @save_path, id: 'auth-form', data: params[:studio] ? { action: 'submit->config-update#submitForm' } : { turbo: false } do |form| %>
   <%= form.hidden_field :location, value: @location.id %>
   <% unless params[:studio] %>
   <%= form.hidden_field :back_path, value: @back_path %>
@@ -27,12 +41,31 @@
 
   <% unless @available_users.empty? %>
   <div class="my-5 flex items-center gap-2">
-    <%= form.submit 'Add', class: 'btn-grey' %>
+    <%= form.submit 'Add', class: 'btn-grey', data: { skip_turbo_stream: true } %>
     <%= form.select :add_user_id, @available_users, {}, class: "shadow rounded-md border border-gray-200 outline-none px-3 py-2" %>
   </div>
   <% end %>
 
   <%= form.submit 'Save', class: "btn-blue" %>
   <%= link_to 'Back to Studio', @back_path, class: 'btn-grey' %>
+  <% end %>
+  </div>
+
+  <% if params[:studio] %>
+  <!-- Progress indicator (hidden initially) -->
+  <div data-config-update-target="progress" class="hidden my-8">
+    <div class="mb-2">
+      <div class="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
+        <div data-config-update-target="progressBar"
+             class="bg-blue-500 h-full text-xs font-medium text-white text-center p-0.5 leading-5 transition-all duration-300"
+             style="width: 0%">
+          0%
+        </div>
+      </div>
+    </div>
+    <p data-config-update-target="message" class="text-sm text-gray-600">
+      Updating authorization and configuration...
+    </p>
+  </div>
   <% end %>
 </div>

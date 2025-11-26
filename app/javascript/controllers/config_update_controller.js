@@ -29,11 +29,18 @@ export default class extends Controller {
 
   // Intercept form submission to use fetch + Turbo Stream
   async submitForm(event) {
+    const form = event.target
+    const submitter = event.submitter
+
+    // If the submitter has data-skip-turbo-stream, let the form submit normally
+    if (submitter && submitter.dataset.skipTurboStream) {
+      return // Don't prevent default, let form submit normally
+    }
+
     event.preventDefault()
 
-    const form = event.target
     const formData = new FormData(form)
-    const submitButton = form.querySelector('[type="submit"]')
+    const submitButton = submitter || form.querySelector('[type="submit"]')
 
     // Disable submit button
     if (submitButton) {
