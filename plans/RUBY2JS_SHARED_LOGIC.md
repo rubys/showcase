@@ -382,8 +382,14 @@ Ruby2JS currently uses the `parser` gem. Migrate to Prism (Ruby 3.3+ standard pa
 - Replace `parser` gem AST nodes with Prism equivalents
 - Update ~60 handlers in `lib/ruby2js/converter/`
 - The migration is mechanical—different class names, similar structure
-- Ensure existing Ruby2JS test suite passes
+- Ensure existing Ruby2JS test suite passes (API unchanged, tests should pass or fail for understood reasons)
 - Contribute upstream or maintain as fork
+
+**Online Demo Considerations:**
+The ruby2js.com demo currently uses Opal to run Ruby2JS in the browser. Options for Prism compatibility (in priority order):
+1. Self-hosting: Ruby2JS transpiles itself to JS, uses `@prism-ruby/prism` npm module directly
+2. Replace Opal with ruby.wasm (runs CRuby + native Prism in browser)
+3. Create `parser` → Prism AST adapter, continue using Opal
 
 **New/Enhanced Filters:**
 
