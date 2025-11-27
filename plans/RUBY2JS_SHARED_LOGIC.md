@@ -376,29 +376,31 @@ The generator extracts this proc and:
 
 ### Stage 1: Ruby2JS Modernization
 
-Ruby2JS currently uses the `parser` gem. Migrate to Prism (Ruby 3.3+ standard parser) for consistency with `ErbPrismConverter`.
+**Status: Prism migration complete** (see [ruby2js prism-migration branch](https://github.com/ruby2js/ruby2js))
 
-**Prism Migration:**
-- Replace `parser` gem AST nodes with Prism equivalents
-- Update ~60 handlers in `lib/ruby2js/converter/`
-- The migration is mechanical—different class names, similar structure
-- Ensure existing Ruby2JS test suite passes (API unchanged, tests should pass or fail for understood reasons)
-- Contribute upstream or maintain as fork
+Ruby2JS now supports Prism via `Prism::Translation::Parser`, which translates Prism's AST into whitequark parser-compatible format. This approach:
+
+- Requires no changes to existing handlers or filters
+- Auto-detects Prism on Ruby 3.3+, falls back to parser gem on older Ruby
+- All 1302 tests pass with both parsers
+- Maintains full backwards compatibility
+
+**Remaining Stage 1 work:**
+
+| Task | Status |
+|------|--------|
+| Prism support via translation layer | ✅ Complete |
+| `group_by`, `sort_by`, `max_by`, `min_by` filters | Pending |
+| `erb` filter (extract from `ErbPrismConverter`) | Pending |
+| `rails_helpers` filter | Pending |
+| `web_components` filter | Pending |
+| Online demo update | Pending |
 
 **Online Demo Considerations:**
 The ruby2js.com demo currently uses Opal to run Ruby2JS in the browser. Options for Prism compatibility (in priority order):
 1. Self-hosting: Ruby2JS transpiles itself to JS, uses `@prism-ruby/prism` npm module directly
 2. Replace Opal with ruby.wasm (runs CRuby + native Prism in browser)
-3. Create `parser` → Prism AST adapter, continue using Opal
-
-**New/Enhanced Filters:**
-
-| Filter | Description |
-|--------|-------------|
-| `group_by`, `sort_by`, `max_by`, `min_by` | Add to `functions` filter for complete Ruby enumerable coverage |
-| `erb` | Extract `ErbPrismConverter` as reusable filter for template conversion |
-| `rails_helpers` | Convert common Rails view helpers (`pluralize`, `content_tag`, etc.) |
-| `web_components` | Support for custom elements, shadow DOM patterns |
+3. Continue using Opal with parser gem (no changes needed - translation layer means existing code works)
 
 **Outcome:** Modern Ruby2JS that benefits the broader community and provides foundation for Stage 2.
 
