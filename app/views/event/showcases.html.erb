@@ -97,7 +97,9 @@ can click on it to see helpful hints.</li>
     </div>
     <div class="flex-none flex flex-col">
       <%= link_to 'New Event', studio_request_path(@city), class: 'btn-green' %>
+      <% unless ENV['FLY_APP_NAME'] == 'smooth' %>
       <%= link_to 'Auth', studio_auth_path(@city), class: 'btn-blue mt-2' %>
+      <% end %>
     </div>
   </div>
 <% end %>
@@ -118,7 +120,7 @@ can click on it to see helpful hints.</li>
 <%= link_to 'Status', region_status_path(@region), class: 'btn-orange' %>
 <% end %>
 
-<% if @up == '.' %>
+<% if @up == '.' && !@city %>
 <%= link_to 'Admin', admin_path, class: 'btn-orange' %>
 <% end %>
 </div>
