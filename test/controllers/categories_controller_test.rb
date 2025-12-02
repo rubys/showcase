@@ -177,6 +177,59 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
     assert main_rows.length > 0, "Some rows should be draggable when unlocked"
   end
 
+  test "unlocked event should display categories in definition order" do
+    Event.current.update(locked: false)
+
+    get categories_url
+    assert_response :success
+
+    # Extract category names (excluding Unscheduled/Uncategorized)
+    doc = Nokogiri::HTML(response.body)
+    displayed = doc.css('tbody tr td:first-child a').map(&:text)
+    displayed.reject! { |name| %w[Unscheduled Uncategorized].include?(name) }
+
+    # Get categories in definition order
+    definition_order = (Category.all.to_a + CatExtension.all.to_a).sort_by(&:order).map(&:name)
+
+    # The displayed order should follow definition order (base categories first, then their continued sections)
+    # Extract just the base category names for comparison
+    displayed_bases = displayed.map { |name| name.sub(/ \(continued.*\)$/, '') }
+    first_occurrence = displayed_bases.each_with_index.to_h { |name, i| [name, i] }.invert
+
+    # Categories should appear in definition order (first occurrence of each)
+    displayed_unique = displayed_bases.uniq
+    expected_order = definition_order.select { |name| displayed_unique.include?(name) }
+    assert_equal expected_order, displayed_unique, "Unlocked: categories should display in definition order"
+  end
+
+  test "locked event should display categories in agenda order matching heats page" do
+    Event.current.update(locked: true)
+
+    get categories_url
+    assert_response :success
+
+    # Extract category names (excluding Unscheduled/Uncategorized)
+    doc = Nokogiri::HTML(response.body)
+    categories_displayed = doc.css('tbody tr td:first-child a').map(&:text)
+    categories_displayed.reject! { |name| %w[Unscheduled Uncategorized].include?(name) }
+
+    # Get the heats page order for comparison
+    get heats_url
+    assert_response :success
+
+    heats_doc = Nokogiri::HTML(response.body)
+    heats_displayed = heats_doc.css('table tr td:first-child a').map(&:text)
+    heats_displayed.reject! { |name| %w[Unscheduled Uncategorized].include?(name) }
+
+    # Categories that appear on both pages should be in the same order
+    common = categories_displayed & heats_displayed
+    categories_common = categories_displayed.select { |c| common.include?(c) }
+    heats_common = heats_displayed.select { |c| common.include?(c) }
+
+    assert_equal heats_common, categories_common,
+      "Locked: categories should display in same order as heats page (agenda order)"
+  end
+
   # ===== CONTINUED CATEGORY PLACEMENT TESTS =====
 
   test "should show continued category sections when categories are interleaved" do
