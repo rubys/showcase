@@ -162,9 +162,13 @@ exit_code = 0
 
 # Render each path
 paths.each do |path|
+  # Split path and query string if present
+  path_info, query_string = path.split('?', 2)
+
   env = {
-    "PATH_INFO" => path,
-    "REQUEST_METHOD" => "GET"
+    "PATH_INFO" => path_info,
+    "REQUEST_METHOD" => "GET",
+    "QUERY_STRING" => query_string || ""
   }
 
   begin

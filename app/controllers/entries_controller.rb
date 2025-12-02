@@ -2,6 +2,7 @@ class EntriesController < ApplicationController
   before_action :set_entry, only: %i[ show edit update destroy ]
   include EntryForm
   include DanceLimitCalculator
+  include MultiLevelSplitter
 
   permit_site_owners :new, :edit, :create, :update, :destroy, :split_multi,
     trust_level: 50
@@ -79,18 +80,37 @@ class EntriesController < ApplicationController
         # Get all dances with this name
         all_dances = Dance.where(name: @dance_name)
 
-        # Get all multi_levels for these dances
-        @multi_levels = MultiLevel.where(dance: all_dances).order(:start_level).to_a
+        # Get all multi_levels for these dances, ordered by level then age then couple_type
+        @multi_levels = MultiLevel.where(dance: all_dances)
+          .order(:start_level, :start_age, :couple_type).to_a
 
-        # Get the range of levels shown on this page
+        # Get the range of levels and ages shown on this page
         if @heats.any?
           level_ids = @heats.map { |h| h.entry.level_id }.uniq.sort
           @min_level = level_ids.min
           @max_level = level_ids.max
           @level_ids = level_ids
+
+          age_ids = @heats.map { |h| h.entry.age_id }.uniq.sort
+          @min_age = age_ids.min
+          @max_age = age_ids.max
+          @age_ids = age_ids
+
+          # Determine couple types present
+          @couple_types_present = []
+          @heats.each do |h|
+            couple_type = determine_couple_type(h.entry)
+            @couple_types_present << couple_type unless @couple_types_present.include?(couple_type)
+          end
         else
           @level_ids = []
+          @age_ids = []
+          @couple_types_present = []
         end
+
+        # Check if age or couple splits are active
+        @has_age_splits = @multi_levels.any? { |ml| ml.start_age.present? }
+        @has_couple_splits = @multi_levels.any? { |ml| ml.couple_type.present? }
       end
     end
   end
@@ -367,22 +387,37 @@ class EntriesController < ApplicationController
   # POST /entries/split_multi
   def split_multi
     multi_level_id = params[:multi_level_id]
-    new_stop = params[:stop_level].to_i
     dance_id = params[:dance_id].to_i
     new_name = params[:name]
 
-    if multi_level_id.blank?
-      # Creating initial split
-      perform_initial_split(dance_id, new_stop)
-    else
-      # Updating existing split
-      if new_stop.present? && new_stop > 0
-        perform_update_split(multi_level_id.to_i, new_stop)
-      elsif new_name.present?
-        # Just updating the name
-        multi_level = MultiLevel.find(multi_level_id.to_i)
-        multi_level.update!(name: new_name)
+    # Determine which type of split operation this is
+    if params[:stop_level].present? && params[:stop_level].to_i > 0
+      # Level split
+      if multi_level_id.blank?
+        perform_initial_split(dance_id, params[:stop_level].to_i)
+      else
+        perform_update_split(multi_level_id.to_i, params[:stop_level].to_i)
       end
+    elsif params[:stop_age].present? && params[:stop_age].to_i > 0
+      # Age split
+      if multi_level_id.blank?
+        # Initial age split (no multi_levels exist yet)
+        perform_initial_age_split(dance_id, params[:stop_age].to_i)
+      else
+        perform_age_split(multi_level_id.to_i, params[:stop_age].to_i)
+      end
+    elsif params[:couple_split].present? && params[:couple_split].present?
+      # Couple type split
+      if multi_level_id.blank?
+        # Initial couple split (no multi_levels exist yet)
+        perform_initial_couple_split(dance_id, params[:couple_split])
+      else
+        perform_couple_split(multi_level_id.to_i, params[:couple_split])
+      end
+    elsif new_name.present? && multi_level_id.present?
+      # Just updating the name
+      multi_level = MultiLevel.find(multi_level_id.to_i)
+      multi_level.update!(name: new_name)
     end
 
     # Redirect back to the entries page with the same query params
@@ -396,223 +431,6 @@ class EntriesController < ApplicationController
   end
 
   private
-
-    def format_multi_level_name(start_level_obj, stop_level_obj)
-      if start_level_obj.id == stop_level_obj.id
-        start_level_obj.name
-      else
-        "#{start_level_obj.name} - #{stop_level_obj.name}"
-      end
-    end
-
-    def perform_initial_split(dance_id, split_level)
-      original_dance = Dance.find(dance_id)
-      all_levels = Level.order(:id).all
-
-      # Get level range from heats
-      heats = Heat.where(dance_id: dance_id).includes(entry: :level)
-      level_ids = heats.map { |h| h.entry.level_id }.uniq.sort
-      min_level = level_ids.min
-      max_level = level_ids.max
-
-      return if split_level >= max_level # No split needed
-
-      # Create new dance with negative order
-      new_order = [Dance.minimum(:order), 0].min - 1
-      new_dance = Dance.create!(
-        name: original_dance.name,
-        order: new_order,
-        heat_length: original_dance.heat_length,
-        semi_finals: original_dance.semi_finals,
-        open_category_id: original_dance.open_category_id,
-        closed_category_id: original_dance.closed_category_id,
-        solo_category_id: original_dance.solo_category_id,
-        multi_category_id: original_dance.multi_category_id,
-        pro_open_category_id: original_dance.pro_open_category_id,
-        pro_closed_category_id: original_dance.pro_closed_category_id,
-        pro_solo_category_id: original_dance.pro_solo_category_id,
-        pro_multi_category_id: original_dance.pro_multi_category_id
-      )
-
-      # Copy multi_children to new dance
-      original_dance.multi_children.each do |child|
-        Multi.create!(parent_id: new_dance.id, dance_id: child.dance_id)
-      end
-
-      # Create first multi_level
-      first_level = all_levels.find { |l| l.id == min_level }
-      split_level_obj = all_levels.find { |l| l.id == split_level }
-      MultiLevel.create!(
-        name: format_multi_level_name(first_level, split_level_obj),
-        dance: original_dance,
-        start_level: min_level,
-        stop_level: split_level
-      )
-
-      # Create second multi_level
-      next_level = all_levels.find { |l| l.id == split_level + 1 }
-      last_level = all_levels.find { |l| l.id == max_level }
-      MultiLevel.create!(
-        name: format_multi_level_name(next_level, last_level),
-        dance: new_dance,
-        start_level: split_level + 1,
-        stop_level: max_level
-      )
-
-      # Move heats to new dance
-      heats.each do |heat|
-        if heat.entry.level_id > split_level
-          heat.update!(dance_id: new_dance.id)
-        end
-      end
-    end
-
-    def perform_update_split(multi_level_id, new_stop)
-      multi_level = MultiLevel.find(multi_level_id)
-      old_stop = multi_level.stop_level
-      dance = multi_level.dance
-      all_levels = Level.order(:id).all
-
-      # Get all multi_levels for this dance set (same name)
-      all_dances = Dance.where(name: dance.name)
-      all_multi_levels = MultiLevel.where(dance: all_dances).order(:start_level).to_a
-
-      current_index = all_multi_levels.index(multi_level)
-
-      if new_stop < old_stop
-        # Shrinking this range - need to handle heats and possibly create new split
-        handle_shrink(multi_level, new_stop, old_stop, all_multi_levels, current_index, all_levels)
-      elsif new_stop > old_stop
-        # Expanding this range - adjust next multi_level
-        handle_expand(multi_level, new_stop, old_stop, all_multi_levels, current_index, all_levels)
-      end
-    end
-
-    def handle_shrink(multi_level, new_stop, old_stop, all_multi_levels, current_index, all_levels)
-      # Update this multi_level
-      multi_level.update!(stop_level: new_stop)
-
-      first_level = all_levels.find { |l| l.id == multi_level.start_level }
-      new_stop_level = all_levels.find { |l| l.id == new_stop }
-      multi_level.update!(name: format_multi_level_name(first_level, new_stop_level))
-
-      # Check if there's a next multi_level
-      if current_index < all_multi_levels.length - 1
-        next_multi = all_multi_levels[current_index + 1]
-
-        # Adjust next multi_level's start
-        next_multi.update!(start_level: new_stop + 1)
-        next_start_level = all_levels.find { |l| l.id == new_stop + 1 }
-        next_stop_level = all_levels.find { |l| l.id == next_multi.stop_level }
-        next_multi.update!(name: format_multi_level_name(next_start_level, next_stop_level))
-
-        # Move heats from current dance to next dance if they're outside the new range
-        Heat.where(dance: multi_level.dance).includes(entry: :level).each do |heat|
-          if heat.entry.level_id > new_stop
-            heat.update!(dance_id: next_multi.dance_id)
-          end
-        end
-      else
-        # This is the last multi_level, need to create a new one
-        original_dance = Dance.find_by(name: multi_level.dance.name, order: 0..)
-
-        new_order = [Dance.minimum(:order), 0].min - 1
-        new_dance = Dance.create!(
-          name: multi_level.dance.name,
-          order: new_order,
-          heat_length: original_dance.heat_length,
-          semi_finals: original_dance.semi_finals,
-          open_category_id: original_dance.open_category_id,
-          closed_category_id: original_dance.closed_category_id,
-          solo_category_id: original_dance.solo_category_id,
-          multi_category_id: original_dance.multi_category_id,
-          pro_open_category_id: original_dance.pro_open_category_id,
-          pro_closed_category_id: original_dance.pro_closed_category_id,
-          pro_solo_category_id: original_dance.pro_solo_category_id,
-          pro_multi_category_id: original_dance.pro_multi_category_id
-        )
-
-        # Copy multi_children
-        original_dance.multi_children.each do |child|
-          Multi.create!(parent_id: new_dance.id, dance_id: child.dance_id)
-        end
-
-        # Create new multi_level
-        next_start_level = all_levels.find { |l| l.id == new_stop + 1 }
-        last_level = all_levels.find { |l| l.id == old_stop }
-        MultiLevel.create!(
-          name: format_multi_level_name(next_start_level, last_level),
-          dance: new_dance,
-          start_level: new_stop + 1,
-          stop_level: old_stop
-        )
-
-        # Move heats
-        Heat.where(dance: multi_level.dance).includes(entry: :level).each do |heat|
-          if heat.entry.level_id > new_stop
-            heat.update!(dance_id: new_dance.id)
-          end
-        end
-      end
-    end
-
-    def handle_expand(multi_level, new_stop, old_stop, all_multi_levels, current_index, all_levels)
-      # Update this multi_level
-      multi_level.update!(stop_level: new_stop)
-
-      first_level = all_levels.find { |l| l.id == multi_level.start_level }
-      new_stop_level = all_levels.find { |l| l.id == new_stop }
-      multi_level.update!(name: format_multi_level_name(first_level, new_stop_level))
-
-      # Process all subsequent multi_levels that fall within the new range
-      (current_index + 1...all_multi_levels.length).each do |idx|
-        next_multi = all_multi_levels[idx]
-
-        # Move heats from next dance to current dance if they fall within new stop level
-        Heat.where(dance: next_multi.dance).includes(entry: :level).each do |heat|
-          if heat.entry.level_id <= new_stop
-            heat.update!(dance_id: multi_level.dance_id)
-          end
-        end
-
-        # If this multi_level is completely subsumed by the expansion
-        if next_multi.stop_level <= new_stop
-          # Delete this multi_level and its dance if it has negative order
-          next_dance = next_multi.dance
-          next_multi.destroy!
-
-          if next_dance.order < 0
-            next_dance.destroy!
-          end
-        elsif next_multi.start_level <= new_stop
-          # This multi_level is partially subsumed - adjust its start
-          next_multi.update!(start_level: new_stop + 1)
-
-          # Update the name
-          next_start_level = all_levels.find { |l| l.id == next_multi.start_level }
-          next_stop_level = all_levels.find { |l| l.id == next_multi.stop_level }
-          next_multi.update!(name: format_multi_level_name(next_start_level, next_stop_level))
-
-          # Stop processing - we've adjusted the adjacent split
-          break
-        else
-          # This multi_level is completely beyond the new stop - stop processing
-          break
-        end
-      end
-
-      # Check if we're back to a single multi_level
-      all_dances = Dance.where(name: multi_level.dance.name)
-      remaining_multi_levels = MultiLevel.where(dance: all_dances).to_a
-
-      if remaining_multi_levels.length == 1
-        # Delete the last multi_level
-        remaining_multi_levels.first.destroy!
-
-        # Delete any dances with negative order
-        all_dances.where(order: ...0).destroy_all
-      end
-    end
     # Use callbacks to share common setup or constraints between actions.
     def set_entry
       @entry = Entry.find(params[:id])
