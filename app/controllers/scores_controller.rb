@@ -1041,7 +1041,7 @@ class ScoresController < ApplicationController
     heat = Heat.find(params[:heat].to_i)
     slot = params[:slot]&.to_i
 
-    if heat.dance.uses_scrutineering?
+    if heat.dance.uses_scrutineering? && slot
       # For multi-dance events, use parent dance's heat_length
       parent_dance = heat.dance.multi_dances.first&.parent || heat.dance
       heat_length = parent_dance.heat_length
