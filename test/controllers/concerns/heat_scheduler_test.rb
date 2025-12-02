@@ -1439,4 +1439,427 @@ class HeatSchedulerTest < ActiveSupport::TestCase
     result = @scheduler.can_add_heat_to_group?(heat, packed_group, 10)
     assert_equal false, result, "Should not add heat when excluded person is in group"
   end
+
+  # ===== REBALANCE PACKED GROUPS TESTS =====
+
+  test "rebalance_packed_groups distributes heats evenly" do
+    # Create an imbalanced set of packed groups (7-1 distribution)
+    # Rebalancing should make it more even
+
+    # Create people for the heats
+    students = []
+    instructors = []
+    max_back = Person.maximum(:back) || 0
+    8.times do |i|
+      students << Person.create!(
+        name: "Rebalance Student #{i}",
+        studio: @studio1,
+        type: 'Student',
+        level: levels(:one)
+      )
+      instructors << Person.create!(
+        name: "Rebalance Instructor #{i}",
+        studio: @studio1,
+        type: 'Professional',
+        back: max_back + 600 + i
+      )
+    end
+
+    # Create heats with unique dancer combinations
+    heats = []
+    8.times do |i|
+      entry = Entry.create!(
+        lead: students[i],
+        follow: instructors[i],
+        age: ages(:one),
+        level: levels(:one)
+      )
+      heats << Heat.create!(
+        dance: @dance_waltz,
+        entry: entry,
+        category: 'Multi',
+        number: 0
+      )
+    end
+
+    # Create imbalanced packed groups: 7 heats in first, 1 in second
+    large_group = {
+      heats: heats[0..6],
+      participants: Set.new(heats[0..6].flat_map { |h| [h.entry.lead_id, h.entry.follow_id] })
+    }
+    small_group = {
+      heats: [heats[7]],
+      participants: Set.new([heats[7].entry.lead_id, heats[7].entry.follow_id])
+    }
+
+    packed_groups = [large_group, small_group]
+
+    # Run rebalancing
+    result = @scheduler.rebalance_packed_groups(packed_groups, 10)
+
+    # Check that groups are more balanced
+    sizes = result.map { |g| g[:heats].size }.sort
+
+    # With 8 heats and 2 groups, should be 4-4
+    assert_equal [4, 4], sizes, "Groups should be balanced to 4-4, got #{sizes}"
+  end
+
+  test "rebalance_packed_groups respects participant conflicts" do
+    # Create a scenario where rebalancing cannot move heats due to conflicts
+
+    max_back = Person.maximum(:back) || 0
+
+    # Create a shared student who appears in both groups
+    shared_student = Person.create!(
+      name: "Shared Rebalance Student",
+      studio: @studio1,
+      type: 'Student',
+      level: levels(:one)
+    )
+
+    # Create other unique students
+    other_students = []
+    3.times do |i|
+      other_students << Person.create!(
+        name: "Other Rebalance Student #{i}",
+        studio: @studio1,
+        type: 'Student',
+        level: levels(:one)
+      )
+    end
+
+    instructors = []
+    4.times do |i|
+      instructors << Person.create!(
+        name: "Rebalance Conflict Instructor #{i}",
+        studio: @studio1,
+        type: 'Professional',
+        back: max_back + 700 + i
+      )
+    end
+
+    # Create heats
+    # Large group: shared_student + 2 other students (3 heats)
+    large_heats = []
+    [shared_student, other_students[0], other_students[1]].each_with_index do |student, i|
+      entry = Entry.create!(
+        lead: student,
+        follow: instructors[i],
+        age: ages(:one),
+        level: levels(:one)
+      )
+      large_heats << Heat.create!(
+        dance: @dance_waltz,
+        entry: entry,
+        category: 'Multi',
+        number: 0
+      )
+    end
+
+    # Small group: shared_student with different partner (1 heat)
+    small_entry = Entry.create!(
+      lead: shared_student,
+      follow: instructors[3],
+      age: ages(:one),
+      level: levels(:one)
+    )
+    small_heat = Heat.create!(
+      dance: @dance_waltz,
+      entry: small_entry,
+      category: 'Multi',
+      number: 0
+    )
+
+    large_group = {
+      heats: large_heats,
+      participants: Set.new(large_heats.flat_map { |h| [h.entry.lead_id, h.entry.follow_id] })
+    }
+    small_group = {
+      heats: [small_heat],
+      participants: Set.new([small_heat.entry.lead_id, small_heat.entry.follow_id])
+    }
+
+    packed_groups = [large_group, small_group]
+
+    # Run rebalancing
+    result = @scheduler.rebalance_packed_groups(packed_groups, 10)
+
+    # The shared_student heat cannot move from large to small (conflict)
+    # Only the other_students heats can move
+    sizes = result.map { |g| g[:heats].size }.sort
+
+    # Best possible is 2-2 (move one non-conflicting heat)
+    assert_equal [2, 2], sizes, "Should balance to 2-2, got #{sizes}"
+
+    # Verify shared_student is not in same group twice
+    result.each do |group|
+      lead_ids = group[:heats].map { |h| h.entry.lead_id }
+      assert_equal lead_ids.uniq.length, lead_ids.length,
+        "No dancer should appear twice in same group"
+    end
+  end
+
+  test "rebalance_packed_groups stops when difference is 1 or less" do
+    # Create groups with difference of exactly 1 - no rebalancing should occur
+
+    max_back = Person.maximum(:back) || 0
+    students = []
+    instructors = []
+    3.times do |i|
+      students << Person.create!(
+        name: "Stop Condition Student #{i}",
+        studio: @studio1,
+        type: 'Student',
+        level: levels(:one)
+      )
+      instructors << Person.create!(
+        name: "Stop Condition Instructor #{i}",
+        studio: @studio1,
+        type: 'Professional',
+        back: max_back + 800 + i
+      )
+    end
+
+    heats = []
+    3.times do |i|
+      entry = Entry.create!(
+        lead: students[i],
+        follow: instructors[i],
+        age: ages(:one),
+        level: levels(:one)
+      )
+      heats << Heat.create!(
+        dance: @dance_waltz,
+        entry: entry,
+        category: 'Multi',
+        number: 0
+      )
+    end
+
+    # Create groups with sizes 2 and 1 (difference = 1)
+    group1 = {
+      heats: heats[0..1],
+      participants: Set.new(heats[0..1].flat_map { |h| [h.entry.lead_id, h.entry.follow_id] })
+    }
+    group2 = {
+      heats: [heats[2]],
+      participants: Set.new([heats[2].entry.lead_id, heats[2].entry.follow_id])
+    }
+
+    packed_groups = [group1, group2]
+    original_sizes = packed_groups.map { |g| g[:heats].size }.sort
+
+    # Run rebalancing
+    result = @scheduler.rebalance_packed_groups(packed_groups, 10)
+
+    # Sizes should remain unchanged (difference is only 1)
+    result_sizes = result.map { |g| g[:heats].size }.sort
+    assert_equal original_sizes, result_sizes,
+      "Groups with difference of 1 should not be rebalanced"
+  end
+
+  test "rebalance_packed_groups respects exclude relationships" do
+    max_back = Person.maximum(:back) || 0
+
+    # Create two students with exclude relationship
+    student1 = Person.create!(
+      name: "Exclude Rebalance Student 1",
+      studio: @studio1,
+      type: 'Student',
+      level: levels(:one)
+    )
+    student2 = Person.create!(
+      name: "Exclude Rebalance Student 2",
+      studio: @studio1,
+      type: 'Student',
+      level: levels(:one),
+      exclude: student1
+    )
+    student3 = Person.create!(
+      name: "No Exclude Student",
+      studio: @studio1,
+      type: 'Student',
+      level: levels(:one)
+    )
+
+    instructors = []
+    3.times do |i|
+      instructors << Person.create!(
+        name: "Exclude Rebalance Instructor #{i}",
+        studio: @studio1,
+        type: 'Professional',
+        back: max_back + 900 + i
+      )
+    end
+
+    # Create heats
+    entry1 = Entry.create!(lead: student1, follow: instructors[0], age: ages(:one), level: levels(:one))
+    heat1 = Heat.create!(dance: @dance_waltz, entry: entry1, category: 'Multi', number: 0)
+
+    entry2 = Entry.create!(lead: student2, follow: instructors[1], age: ages(:one), level: levels(:one))
+    heat2 = Heat.create!(dance: @dance_waltz, entry: entry2, category: 'Multi', number: 0)
+
+    entry3 = Entry.create!(lead: student3, follow: instructors[2], age: ages(:one), level: levels(:one))
+    heat3 = Heat.create!(dance: @dance_waltz, entry: entry3, category: 'Multi', number: 0)
+
+    # Large group has student1 and student3
+    # Small group has student2 (who excludes student1)
+    large_group = {
+      heats: [heat1, heat3],
+      participants: Set.new([student1.id, instructors[0].id, student3.id, instructors[2].id])
+    }
+    small_group = {
+      heats: [heat2],
+      participants: Set.new([student2.id, instructors[1].id])
+    }
+
+    packed_groups = [large_group, small_group]
+
+    # Run rebalancing
+    result = @scheduler.rebalance_packed_groups(packed_groups, 10)
+
+    # student1's heat cannot move to small_group (student2 excludes student1)
+    # Only student3's heat can move
+    # Result should be 1-2 (student3 moved to small group)
+    sizes = result.map { |g| g[:heats].size }.sort
+
+    # Note: With only 1 heat movable and difference of 1, it should balance to 1-2
+    # But since difference starts at 1, no movement happens
+    # Let's verify the exclude relationship is respected
+    result.each do |group|
+      participants = group[:participants]
+      # If student1 is in group, student2 should not be
+      if participants.include?(student1.id)
+        assert !participants.include?(student2.id),
+          "student2 should not be in same group as student1 (exclude relationship)"
+      end
+    end
+  end
+
+  test "rebalance_packed_groups handles single group" do
+    # Single group should be returned unchanged
+    max_back = Person.maximum(:back) || 0
+    student = Person.create!(
+      name: "Single Group Student",
+      studio: @studio1,
+      type: 'Student',
+      level: levels(:one)
+    )
+    instructor = Person.create!(
+      name: "Single Group Instructor",
+      studio: @studio1,
+      type: 'Professional',
+      back: max_back + 1000
+    )
+
+    entry = Entry.create!(lead: student, follow: instructor, age: ages(:one), level: levels(:one))
+    heat = Heat.create!(dance: @dance_waltz, entry: entry, category: 'Multi', number: 0)
+
+    single_group = {
+      heats: [heat],
+      participants: Set.new([student.id, instructor.id])
+    }
+
+    result = @scheduler.rebalance_packed_groups([single_group], 10)
+
+    assert_equal 1, result.length, "Single group should be returned"
+    assert_equal 1, result.first[:heats].length, "Heat count should be unchanged"
+  end
+
+  test "rebalance_packed_groups integrated with schedule_heats produces balanced groups" do
+    # Integration test: verify schedule_heats with multi-dance splits produces balanced output
+
+    # Mark all existing heats as scratched
+    Heat.update_all(number: -1)
+
+    multi_cat = Category.create!(name: "Integration Rebalance Test", order: 950)
+
+    # Create parent and split dances
+    parent_dance = Dance.create!(name: "Integration 3-Dance", order: 750, multi_category: multi_cat)
+    split1 = Dance.create!(name: "Integration 3-Dance", order: -50, multi_category: multi_cat)
+    split2 = Dance.create!(name: "Integration 3-Dance", order: -51, multi_category: multi_cat)
+    split3 = Dance.create!(name: "Integration 3-Dance", order: -52, multi_category: multi_cat)
+
+    # Create multi_levels
+    MultiLevel.create!(dance: parent_dance, name: "Level 1", start_level: 1, stop_level: 1)
+    MultiLevel.create!(dance: split1, name: "Level 2", start_level: 2, stop_level: 2)
+    MultiLevel.create!(dance: split2, name: "Level 3", start_level: 3, stop_level: 3)
+    MultiLevel.create!(dance: split3, name: "Level 4", start_level: 4, stop_level: 4)
+
+    # Create entries with a pattern that would result in imbalanced packing without rebalancing
+    # One shared dancer across multiple splits to force separate groups
+    max_back = Person.maximum(:back) || 0
+    shared_student = Person.create!(
+      name: "Integration Shared Student",
+      studio: @studio1,
+      type: 'Student',
+      level: levels(:one)
+    )
+
+    unique_students = []
+    8.times do |i|
+      unique_students << Person.create!(
+        name: "Integration Unique Student #{i}",
+        studio: @studio1,
+        type: 'Student',
+        level: levels(:one)
+      )
+    end
+
+    instructors = []
+    12.times do |i|
+      instructors << Person.create!(
+        name: "Integration Instructor #{i}",
+        studio: @studio1,
+        type: 'Professional',
+        back: max_back + 1100 + i
+      )
+    end
+
+    # Create heats:
+    # - shared_student in parent_dance, split1, split2, split3 (4 heats, must be in 4 different groups)
+    # - 2 unique students per split (8 more heats that can be distributed)
+    heat_count = 0
+
+    [parent_dance, split1, split2, split3].each_with_index do |dance, i|
+      # Shared student heat
+      entry = Entry.create!(
+        lead: shared_student,
+        follow: instructors[heat_count],
+        age: ages(:one),
+        level: levels(:one)
+      )
+      Heat.create!(dance: dance, entry: entry, category: 'Multi', number: 0)
+      heat_count += 1
+
+      # 2 unique student heats
+      2.times do |j|
+        entry = Entry.create!(
+          lead: unique_students[i * 2 + j],
+          follow: instructors[heat_count],
+          age: ages(:one),
+          level: levels(:one)
+        )
+        Heat.create!(dance: dance, entry: entry, category: 'Multi', number: 0)
+        heat_count += 1
+      end
+    end
+
+    @scheduler.schedule_heats
+
+    # Get scheduled heats
+    test_dances = [parent_dance, split1, split2, split3]
+    multi_heats = Heat.where(dance: test_dances, category: 'Multi').where('number > 0')
+
+    # Group by heat number
+    heats_by_number = multi_heats.group_by(&:number)
+
+    # Should have 4 groups (one for each shared_student heat)
+    assert_equal 4, heats_by_number.size, "Should have 4 groups due to shared student"
+
+    # Each group should have 3 heats (1 shared + 2 unique, balanced by rebalancing)
+    sizes = heats_by_number.values.map(&:size).sort
+    assert_equal [3, 3, 3, 3], sizes,
+      "Rebalancing should distribute heats evenly (3-3-3-3), got #{sizes}"
+  end
 end

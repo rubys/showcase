@@ -627,6 +627,9 @@ module HeatScheduler
       end
     end
 
+    # Rebalance: move heats from larger groups to smaller ones when possible
+    packed_groups = rebalance_packed_groups(packed_groups, max_size)
+
     # Convert packed groups back to Group objects
     packed_groups.map do |pg|
       new_group = Group.new(pg[:heats])
@@ -634,6 +637,46 @@ module HeatScheduler
       new_group.instance_variable_set(:@agenda_category, pg[:agenda_category])
       new_group
     end
+  end
+
+  # Rebalance packed groups to distribute heats more evenly
+  def rebalance_packed_groups(packed_groups, max_size)
+    return packed_groups if packed_groups.length <= 1
+
+    # Keep trying to rebalance until no more moves are possible
+    changed = true
+    while changed
+      changed = false
+
+      # Sort by size descending to find largest groups first
+      packed_groups.sort_by! { |g| -g[:heats].size }
+
+      largest = packed_groups.first
+      smallest = packed_groups.last
+
+      # Only rebalance if difference is > 1
+      next unless largest[:heats].size - smallest[:heats].size > 1
+
+      # Try to move a heat from largest to smallest
+      largest[:heats].each do |heat|
+        if can_add_heat_to_group?(heat, smallest, max_size)
+          # Move the heat
+          largest[:heats].delete(heat)
+          largest[:participants].delete(heat.entry.lead_id) unless largest[:heats].any? { |h| h.entry.lead_id == heat.entry.lead_id }
+          largest[:participants].delete(heat.entry.follow_id) unless largest[:heats].any? { |h| h.entry.follow_id == heat.entry.follow_id }
+
+          smallest[:heats] << heat
+          smallest[:participants].add(heat.entry.lead_id) if heat.entry.lead_id != 0
+          smallest[:participants].add(heat.entry.follow_id) if heat.entry.follow_id != 0
+
+          changed = true
+          break
+        end
+      end
+    end
+
+    # Remove any empty groups (shouldn't happen, but safety check)
+    packed_groups.reject { |g| g[:heats].empty? }
   end
 
   # Check if a heat can be added to a packed group
