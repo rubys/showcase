@@ -270,6 +270,9 @@ module HeatScheduler
     # Note: Availability ordering is now handled during initial heat sorting,
     # not as a post-processing step
 
+    # Pack multi-dance split groups to reduce heat count
+    groups = pack_multi_dance_splits(groups)
+
     ActiveRecord::Base.transaction do
       heat_number = 1
 
@@ -516,6 +519,143 @@ module HeatScheduler
     end
 
     cats.values.flatten
+  end
+
+  # Pack consecutive multi-dance split groups to reduce heat count.
+  # Only applies to multi-dances that have multi_level splits.
+  # Groups can be combined if:
+  # 1. They are for the same multi-dance (same dance name, category Multi)
+  # 2. No dancer would appear twice in the combined group
+  # 3. Combined size doesn't exceed max heat size
+  def pack_multi_dance_splits(groups)
+    return groups if groups.empty?
+
+    event = Event.current
+
+    # Identify which dance names have multi_level splits
+    dances_with_splits = Set.new
+    Dance.joins(:multi_levels).where(order: 1..).distinct.pluck(:name).each do |name|
+      dances_with_splits.add(name)
+    end
+
+    return groups if dances_with_splits.empty?
+
+    packed = []
+    i = 0
+
+    while i < groups.length
+      group = groups[i]
+      heat = group.first
+
+      # Check if this is a Multi heat for a dance with splits
+      if heat&.category == 'Multi' && dances_with_splits.include?(heat.dance.name)
+        # Find consecutive groups for the same multi-dance
+        run_start = i
+        run_end = i
+
+        while run_end + 1 < groups.length
+          next_group = groups[run_end + 1]
+          next_heat = next_group.first
+          break unless next_heat&.category == 'Multi' &&
+                       next_heat.dance.name == heat.dance.name &&
+                       next_group.agenda_category == group.agenda_category
+
+          run_end += 1
+        end
+
+        if run_end > run_start
+          # We have multiple groups that could potentially be combined
+          run_groups = groups[run_start..run_end]
+          packed_run = pack_group_run(run_groups, event)
+          packed.concat(packed_run)
+          i = run_end + 1
+        else
+          # Single group, no packing possible
+          packed << group
+          i += 1
+        end
+      else
+        # Not a packable group
+        packed << group
+        i += 1
+      end
+    end
+
+    packed
+  end
+
+  # Pack a run of groups for the same multi-dance
+  def pack_group_run(run_groups, event)
+    return run_groups if run_groups.length <= 1
+
+    # Get max heat size (use first group's category or event default)
+    first_heat = run_groups.first.first
+    agenda_cat = first_heat&.dance_category
+    max_size = agenda_cat&.max_heat_size || event.max_heat_size || 9999
+
+    # Collect all heats from all groups
+    all_heats = run_groups.flat_map { |g| g.each.to_a }
+
+    # Greedy bin-packing: try to fit heats into as few groups as possible
+    packed_groups = []
+
+    all_heats.each do |heat|
+      placed = false
+
+      # Try to add to an existing packed group
+      packed_groups.each do |packed_group|
+        if can_add_heat_to_group?(heat, packed_group, max_size)
+          packed_group[:heats] << heat
+          packed_group[:participants].add(heat.entry.lead_id) if heat.entry.lead_id != 0
+          packed_group[:participants].add(heat.entry.follow_id) if heat.entry.follow_id != 0
+          placed = true
+          break
+        end
+      end
+
+      # If not placed, create a new group
+      unless placed
+        participants = Set.new
+        participants.add(heat.entry.lead_id) if heat.entry.lead_id != 0
+        participants.add(heat.entry.follow_id) if heat.entry.follow_id != 0
+
+        packed_groups << {
+          heats: [heat],
+          participants: participants,
+          agenda_category: run_groups.first.agenda_category
+        }
+      end
+    end
+
+    # Convert packed groups back to Group objects
+    packed_groups.map do |pg|
+      new_group = Group.new(pg[:heats])
+      # Copy agenda_category to the new group
+      new_group.instance_variable_set(:@agenda_category, pg[:agenda_category])
+      new_group
+    end
+  end
+
+  # Check if a heat can be added to a packed group
+  def can_add_heat_to_group?(heat, packed_group, max_size)
+    # Check size limit
+    return false if packed_group[:heats].size >= max_size
+
+    # Check for participant conflicts (skip Nobody with id=0)
+    lead_id = heat.entry.lead_id
+    follow_id = heat.entry.follow_id
+
+    return false if lead_id != 0 && packed_group[:participants].include?(lead_id)
+    return false if follow_id != 0 && packed_group[:participants].include?(follow_id)
+
+    # Check exclude relationships
+    lead = heat.entry.lead
+    follow = heat.entry.follow
+
+    return false if lead.exclude_id && packed_group[:participants].include?(lead.exclude_id)
+    return false if follow.exclude_id && packed_group[:participants].include?(follow.exclude_id)
+
+    true
   end
 
   class Group

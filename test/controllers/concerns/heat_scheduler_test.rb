@@ -1104,4 +1104,339 @@ class HeatSchedulerTest < ActiveSupport::TestCase
     assert_equal false, block_dance.semi_finals
     assert_not_nil block_dance.id
   end
+
+  # ===== MULTI-DANCE SPLIT PACKING TESTS =====
+
+  test "pack_multi_dance_splits reduces heat count for multi-dances with splits" do
+    # Mark all existing heats as scratched
+    Heat.update_all(number: -1)
+
+    # Create a multi category
+    multi_cat = Category.create!(name: "Multi Dance Pack Test", order: 900)
+
+    # Create a parent multi-dance with split levels
+    parent_dance = Dance.create!(name: "Pack Test 3-Dance", order: 700, multi_category: multi_cat)
+
+    # Create split dances (different level splits)
+    split1 = Dance.create!(name: "Pack Test 3-Dance", order: -1, multi_category: multi_cat)
+    split2 = Dance.create!(name: "Pack Test 3-Dance", order: -2, multi_category: multi_cat)
+
+    # Create multi_levels to mark this as having splits
+    MultiLevel.create!(dance: parent_dance, name: "Level 1", start_level: 1, stop_level: 1)
+    MultiLevel.create!(dance: split1, name: "Level 2", start_level: 2, stop_level: 2)
+    MultiLevel.create!(dance: split2, name: "Level 3", start_level: 3, stop_level: 3)
+
+    # Create child dances for the multi
+    child1 = Dance.create!(name: "Pack Child Waltz", order: 701)
+    child2 = Dance.create!(name: "Pack Child Tango", order: 702)
+    child3 = Dance.create!(name: "Pack Child Foxtrot", order: 703)
+
+    Multi.create!(parent_id: parent_dance.id, dance_id: child1.id)
+    Multi.create!(parent_id: parent_dance.id, dance_id: child2.id)
+    Multi.create!(parent_id: parent_dance.id, dance_id: child3.id)
+
+    # Create entries and heats for different splits with different dancers
+    # (no overlapping dancers between groups)
+    students = []
+    6.times do |i|
+      students << Person.create!(
+        name: "Pack Student #{i}",
+        studio: @studio1,
+        type: 'Student',
+        level: levels(:one)
+      )
+    end
+
+    max_back = Person.maximum(:back) || 0
+    instructors = [@instructor1, @instructor2]
+    instructors << Person.create!(name: "Pack Instructor 3", studio: @studio1, type: 'Professional', back: max_back + 200)
+    instructors << Person.create!(name: "Pack Instructor 4", studio: @studio1, type: 'Professional', back: max_back + 201)
+    instructors << Person.create!(name: "Pack Instructor 5", studio: @studio1, type: 'Professional', back: max_back + 202)
+    instructors << Person.create!(name: "Pack Instructor 6", studio: @studio1, type: 'Professional', back: max_back + 203)
+
+    # Group 1: students 0,1 with split1 dance
+    [0, 1].each do |i|
+      entry = Entry.create!(
+        lead: students[i],
+        follow: instructors[i],
+        age: ages(:one),
+        level: levels(:one)
+      )
+      Heat.create!(dance: split1, entry: entry, category: 'Multi', number: 0)
+    end
+
+    # Group 2: students 2,3 with split2 dance
+    [2, 3].each do |i|
+      entry = Entry.create!(
+        lead: students[i],
+        follow: instructors[i],
+        age: ages(:one),
+        level: levels(:one)
+      )
+      Heat.create!(dance: split2, entry: entry, category: 'Multi', number: 0)
+    end
+
+    # Group 3: students 4,5 with parent_dance
+    [4, 5].each do |i|
+      entry = Entry.create!(
+        lead: students[i],
+        follow: instructors[i],
+        age: ages(:one),
+        level: levels(:one)
+      )
+      Heat.create!(dance: parent_dance, entry: entry, category: 'Multi', number: 0)
+    end
+
+    @scheduler.schedule_heats
+
+    # Get all scheduled Multi heats for our test dances
+    test_dances = [parent_dance, split1, split2]
+    multi_heats = Heat.where(dance: test_dances, category: 'Multi').where('number > 0')
+
+    # Verify all 6 heats were scheduled
+    assert_equal 6, multi_heats.count, "All 6 heats should be scheduled"
+
+    # Since no dancers overlap, all heats could be packed into fewer groups
+    heat_numbers = multi_heats.pluck(:number).uniq
+    assert heat_numbers.size < 6, "Heats should be packed (got #{heat_numbers.size} groups for 6 heats)"
+  end
+
+  test "pack_multi_dance_splits respects max heat size" do
+    # Mark all existing heats as scratched
+    Heat.update_all(number: -1)
+
+    # Set a small max heat size
+    @event.update!(max_heat_size: 3)
+    Event.current = @event
+
+    # Create a multi category
+    multi_cat = Category.create!(name: "Multi Max Size Test", order: 901)
+
+    # Create parent and split dances
+    parent_dance = Dance.create!(name: "Max Size 3-Dance", order: 710, multi_category: multi_cat)
+    split1 = Dance.create!(name: "Max Size 3-Dance", order: -10, multi_category: multi_cat)
+
+    # Create multi_levels
+    MultiLevel.create!(dance: parent_dance, name: "Level 1", start_level: 1, stop_level: 1)
+    MultiLevel.create!(dance: split1, name: "Level 2", start_level: 2, stop_level: 2)
+
+    # Create 6 entries with unique dancers
+    students = []
+    instructors = []
+    max_back = Person.maximum(:back) || 0
+    6.times do |i|
+      students << Person.create!(
+        name: "Max Size Student #{i}",
+        studio: @studio1,
+        type: 'Student',
+        level: levels(:one)
+      )
+      instructors << Person.create!(
+        name: "Max Size Instructor #{i}",
+        studio: @studio1,
+        type: 'Professional',
+        back: max_back + 300 + i
+      )
+    end
+
+    # Create heats alternating between dances
+    6.times do |i|
+      entry = Entry.create!(
+        lead: students[i],
+        follow: instructors[i],
+        age: ages(:one),
+        level: levels(:one)
+      )
+      dance = i.even? ? parent_dance : split1
+      Heat.create!(dance: dance, entry: entry, category: 'Multi', number: 0)
+    end
+
+    @scheduler.schedule_heats
+
+    # With max_heat_size=3 and 6 heats, we should have at least 2 groups
+    test_dances = [parent_dance, split1]
+    multi_heats = Heat.where(dance: test_dances, category: 'Multi').where('number > 0')
+
+    heats_by_number = multi_heats.group_by(&:number)
+
+    # Each group should have at most 3 heats
+    heats_by_number.each do |number, heats|
+      assert heats.size <= 3, "Heat #{number} has #{heats.size} entries, expected <= 3"
+    end
+
+    # Should have at least 2 groups
+    assert heats_by_number.size >= 2, "Expected at least 2 groups, got #{heats_by_number.size}"
+  end
+
+  test "pack_multi_dance_splits prevents same dancer in same heat" do
+    # Mark all existing heats as scratched
+    Heat.update_all(number: -1)
+
+    # Create a multi category
+    multi_cat = Category.create!(name: "Multi Conflict Test", order: 902)
+
+    # Create parent and split dances
+    parent_dance = Dance.create!(name: "Conflict 3-Dance", order: 720, multi_category: multi_cat)
+    split1 = Dance.create!(name: "Conflict 3-Dance", order: -20, multi_category: multi_cat)
+
+    # Create multi_levels
+    MultiLevel.create!(dance: parent_dance, name: "Level 1", start_level: 1, stop_level: 1)
+    MultiLevel.create!(dance: split1, name: "Level 2", start_level: 2, stop_level: 2)
+
+    # Create entries where the same student appears in both splits
+    shared_student = Person.create!(
+      name: "Shared Student",
+      studio: @studio1,
+      type: 'Student',
+      level: levels(:one)
+    )
+
+    other_student = Person.create!(
+      name: "Other Student",
+      studio: @studio1,
+      type: 'Student',
+      level: levels(:one)
+    )
+
+    # Shared student dances in both splits
+    entry1 = Entry.create!(
+      lead: shared_student,
+      follow: @instructor1,
+      age: ages(:one),
+      level: levels(:one)
+    )
+    Heat.create!(dance: parent_dance, entry: entry1, category: 'Multi', number: 0)
+
+    entry2 = Entry.create!(
+      lead: shared_student,
+      follow: @instructor2,
+      age: ages(:one),
+      level: levels(:one)
+    )
+    Heat.create!(dance: split1, entry: entry2, category: 'Multi', number: 0)
+
+    # Other student only in one split
+    max_back = Person.maximum(:back) || 0
+    entry3 = Entry.create!(
+      lead: other_student,
+      follow: Person.create!(name: "Conflict Instructor 3", studio: @studio1, type: 'Professional', back: max_back + 400),
+      age: ages(:one),
+      level: levels(:one)
+    )
+    Heat.create!(dance: parent_dance, entry: entry3, category: 'Multi', number: 0)
+
+    @scheduler.schedule_heats
+
+    # Heats with shared_student must be in different groups
+    heat1 = Heat.find_by(entry: entry1)
+    heat2 = Heat.find_by(entry: entry2)
+
+    assert heat1.number > 0, "Heat 1 should be scheduled"
+    assert heat2.number > 0, "Heat 2 should be scheduled"
+    assert_not_equal heat1.number, heat2.number,
+      "Heats with same dancer should not be in same group"
+  end
+
+  test "pack_multi_dance_splits only applies to Multi category" do
+    # Mark all existing heats as scratched
+    Heat.update_all(number: -1)
+
+    # Create categories
+    multi_cat = Category.create!(name: "Multi Only Test", order: 903)
+    closed_cat = Category.create!(name: "Closed Only Test", order: 904)
+
+    # Create dances with splits but for Closed category (not Multi)
+    parent_dance = Dance.create!(name: "Closed Split Dance", order: 730, closed_category: closed_cat)
+    split1 = Dance.create!(name: "Closed Split Dance", order: -30, closed_category: closed_cat)
+
+    # Create multi_levels (but this is a closed dance, not multi)
+    MultiLevel.create!(dance: parent_dance, name: "Level 1", start_level: 1, stop_level: 1)
+    MultiLevel.create!(dance: split1, name: "Level 2", start_level: 2, stop_level: 2)
+
+    # Create heats as Closed category (not Multi)
+    students = []
+    instructors = []
+    max_back = Person.maximum(:back) || 0
+    4.times do |i|
+      students << Person.create!(
+        name: "Closed Split Student #{i}",
+        studio: @studio1,
+        type: 'Student',
+        level: levels(:one)
+      )
+      instructors << Person.create!(
+        name: "Closed Split Instructor #{i}",
+        studio: @studio1,
+        type: 'Professional',
+        back: max_back + 500 + i
+      )
+    end
+
+    4.times do |i|
+      entry = Entry.create!(
+        lead: students[i],
+        follow: instructors[i],
+        age: ages(:one),
+        level: levels(:one)
+      )
+      dance = i.even? ? parent_dance : split1
+      Heat.create!(dance: dance, entry: entry, category: 'Closed', number: 0)
+    end
+
+    @scheduler.schedule_heats
+
+    # Closed heats should not be packed by pack_multi_dance_splits
+    # (they may still be grouped by normal scheduling logic)
+    test_dances = [parent_dance, split1]
+    closed_heats = Heat.where(dance: test_dances, category: 'Closed').where('number > 0')
+
+    assert_equal 4, closed_heats.count, "All 4 closed heats should be scheduled"
+  end
+
+  test "pack_multi_dance_splits handles empty groups" do
+    # This tests the edge case where there are no multi-dance splits
+    result = @scheduler.pack_multi_dance_splits([])
+    assert_equal [], result
+  end
+
+  test "can_add_heat_to_group respects exclude relationships" do
+    # Create people with exclude relationship
+    person1 = Person.create!(
+      name: "Exclude Person 1",
+      studio: @studio1,
+      type: 'Student',
+      level: levels(:one)
+    )
+    person2 = Person.create!(
+      name: "Exclude Person 2",
+      studio: @studio1,
+      type: 'Student',
+      level: levels(:one),
+      exclude: person1
+    )
+
+    entry = Entry.create!(
+      lead: person2,
+      follow: @instructor1,
+      age: ages(:one),
+      level: levels(:one)
+    )
+
+    heat = Heat.create!(
+      dance: @dance_waltz,
+      entry: entry,
+      category: 'Multi',
+      number: 0
+    )
+
+    # Create a packed group that already contains person1
+    packed_group = {
+      heats: [],
+      participants: Set.new([person1.id])
+    }
+
+    # person2 excludes person1, so should not be added
+    result = @scheduler.can_add_heat_to_group?(heat, packed_group, 10)
+    assert_equal false, result, "Should not add heat when excluded person is in group"
+  end
 end
