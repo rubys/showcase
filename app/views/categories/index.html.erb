@@ -51,12 +51,13 @@ another heat is still possible, even when the agenda is locked.</li>
     </thead>
     <% if @agenda['Unscheduled'] %>
     <% entry_count += (count = @agenda['Unscheduled'].first.last.map {|ballroom, heats| heats.length}.sum) %>
-    <% heat_count += @agenda['Unscheduled'].count %>
+    <% unique_unscheduled = @agenda['Unscheduled'].map(&:first).uniq.length %>
+    <% heat_count += unique_unscheduled %>
     <tbody>
     <tr>
       <td class="row text-red-600"><%= link_to 'Unscheduled', heats_path(anchor: 'cat-unscheduled') %></td>
       <td class="row text-right"><%= count %></td>
-      <td class="row text-right"><%= @agenda['Unscheduled'].count %></td>
+      <td class="row text-right"><%= unique_unscheduled %></td>
     </tr>
     </tbody>
     <% end %>
@@ -71,9 +72,10 @@ another heat is still possible, even when the agenda is locked.</li>
         <td class="row text-black font-medium"><%= link_to cat.name, edit_category_path(cat.id, part: cat.part) %></td>
         <% if heats %>
         <% entry_count += (count = heats.map {|number, ballrooms| ballrooms.values.flatten.length}.sum) %>
-        <% heat_count += heats.length %>
+        <% unique_heats = heats.map(&:first).uniq.length %>
+        <% heat_count += unique_heats %>
         <td class="row text-right"><%= count %></td>
-        <td class="row text-right"><%= heats.length %></td>
+        <td class="row text-right"><%= unique_heats %></td>
         <% if @start and @cat_start[cat.name] %>
         <% unless @oneday %>
         <td class="row"><%= Date::DAYNAMES[@cat_start[cat.name]&.wday || 7] %></td>
@@ -98,9 +100,10 @@ another heat is still possible, even when the agenda is locked.</li>
         <td class="row text-black font-medium pl-8"><%= link_to continued_name, edit_category_path(cat.id, part: cat.part) %></td>
         <% if continued_heats %>
         <% entry_count += (count = continued_heats.map {|number, ballrooms| ballrooms.values.flatten.length}.sum) %>
-        <% heat_count += continued_heats.length %>
+        <% unique_continued_heats = continued_heats.map(&:first).uniq.length %>
+        <% heat_count += unique_continued_heats %>
         <td class="row text-right"><%= count %></td>
-        <td class="row text-right"><%= continued_heats.length %></td>
+        <td class="row text-right"><%= unique_continued_heats %></td>
         <% if @start and @cat_start[continued_name] %>
         <% unless @oneday %>
         <td class="row"><%= Date::DAYNAMES[@cat_start[continued_name]&.wday || 7] %></td>
@@ -120,11 +123,12 @@ another heat is still possible, even when the agenda is locked.</li>
     </tbody>
     <% if @agenda['Uncategorized'] %>
     <% entry_count += (count = @agenda['Uncategorized'].map {|heat| heat.last.map {|ballroom, heats| heats.length}.sum}.sum) %>
+    <% unique_uncategorized = @agenda['Uncategorized'].map(&:first).uniq.length %>
     <tbody>
     <tr>
       <td class="row text-red-600"><%= link_to 'Uncategorized', heats_path(anchor: 'cat-uncategorized'), data: { turbo: false } %></td>
       <td class="row text-right"><%= count %></td>
-      <td class="row text-right"><%= @agenda['Uncategorized'].count %></td>
+      <td class="row text-right"><%= unique_uncategorized %></td>
     </tr>
     </tbody>
     <% end %>
