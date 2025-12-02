@@ -184,6 +184,12 @@ class AdminController < ApplicationController
   end
 
   def trigger_config_update
+    # Touch index.sqlite3 to ensure mtime is current before sync
+    # (SQLite writes don't always update file mtime reliably)
+    dbpath = ENV.fetch('RAILS_DB_VOLUME') { Rails.root.join('db').to_s }
+    index_db = File.join(dbpath, 'index.sqlite3')
+    FileUtils.touch(index_db) if File.exist?(index_db)
+
     # Find the current user's ID for WebSocket broadcasting
     user = User.find_by(userid: @authuser)
 
