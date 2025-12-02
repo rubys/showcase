@@ -1,4 +1,6 @@
 class Dance < ApplicationRecord
+  include ActionView::Helpers::TextHelper
+
   normalizes :name, with: -> name { name.strip }
 
   # Rails 8.0 compatible ordering scopes
@@ -107,7 +109,7 @@ class Dance < ApplicationRecord
     
     if explanations
       explanations[:setup] << "Processing #{name} with #{entries.count} entries"
-      explanations[:setup] << "Found #{judges.length} judges and #{dance_slots.length} dance slots"
+      explanations[:setup] << "Found #{pluralize(judges.length, 'judge')} and #{pluralize(dance_slots.length, 'dance slot')}"
       explanations[:setup] << "Dance slots being used: #{dance_slots.join(', ')}"
     end
     

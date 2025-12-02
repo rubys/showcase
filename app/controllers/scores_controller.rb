@@ -598,7 +598,7 @@ class ScoresController < ApplicationController
     # Server-computed paths (respects RAILS_APP_SCOPE)
     @post_feedback_path = post_feedback_path(judge: @judge)
     @post_score_path = post_score_path(judge: @judge)
-    @update_rank_path = post_score_path(judge: @judge)  # Same endpoint
+    @update_rank_path = update_rank_path(judge: @judge)
     @start_heat_path = start_heat_event_index_path
     @feedbacks_path = feedbacks_path
     @judge_person_path = person_path(@judge)
@@ -993,6 +993,8 @@ class ScoresController < ApplicationController
     # Pre-compute scoring_instruction_text
     @scoring_instructions = if @heat.category == 'Solo'
       "Tab to or click on comments or score to edit.  Press escape or click elsewhere to save."
+    elsif @final
+      "Drag and drop entries to rank them from first to last place. The order shown is the current ranking."
     elsif @style != 'radio'
       <<~HTML.strip
         Scoring can be done multiple ways:
@@ -1206,13 +1208,14 @@ class ScoresController < ApplicationController
       end
     end
 
-    # Reload heat data and render updated partial      
+    # Reload heat data and render updated partial
     @track_ages = Event.current.track_ages
     @column_order = Event.current.column_order
     @combine_open_and_closed = Event.current.heat_range_cat == 1
-    
-    render turbo_stream: turbo_stream.replace("rank-heat-container", 
-      partial: "scores/rank_heat", 
+    @update_rank_path = update_rank_path(judge: @judge)
+
+    render turbo_stream: turbo_stream.replace("rank-heat-container",
+      partial: "scores/rank_heat",
       locals: { judge: @judge, subjects: @subjects, column_order: @column_order, combine_open_and_closed: @combine_open_and_closed })
   end
 
@@ -2252,14 +2255,17 @@ class ScoresController < ApplicationController
     # Sort and group subjects by ballroom
     # Returns [ballrooms_count, ballrooms_hash]
     def sort_and_group_subjects(subjects, judge, event, number, sort_order, show, is_final)
-      # Apply assignment sorting first, before ballroom assignment
-      if show != 'mixed'
-        subjects.sort_by! do |subject|
-          assignment_priority = subject.scores.any? {|score| score.judge_id == judge.id} ? 0 : 1
-          [assignment_priority, subject.dance_id, subject.entry.lead.back || 0]
+      # For finals, preserve the rank order from final_scores (don't re-sort)
+      unless is_final
+        # Apply assignment sorting first, before ballroom assignment
+        if show != 'mixed'
+          subjects.sort_by! do |subject|
+            assignment_priority = subject.scores.any? {|score| score.judge_id == judge.id} ? 0 : 1
+            [assignment_priority, subject.dance_id, subject.entry.lead.back || 0]
+          end
+        else
+          subjects.sort_by! {|heat| [heat.dance_id, heat.entry.lead.back || 0]}
         end
-      else
-        subjects.sort_by! {|heat| [heat.dance_id, heat.entry.lead.back || 0]}
       end
 
       ballrooms_count = subjects.first&.dance_category&.ballrooms || event.ballrooms
