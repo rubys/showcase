@@ -140,6 +140,7 @@ Rails.application.routes.draw do
       post 'form-update', on: :collection, as: 'update_form'
       post 'agenda', on: :collection
       get 'heats', on: :member
+      get 'trophies', on: :collection
     end
 
     resources :categories do

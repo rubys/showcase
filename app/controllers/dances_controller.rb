@@ -199,6 +199,59 @@ class DancesController < ApplicationController
     @max_heat_sizes = [@dance.closed_category&.max_heat_size, @dance.open_category&.max_heat_size].compact.uniq
   end
 
+  def trophies
+    # Get all multi-dances (dances with heat_length set)
+    multi_dances = Dance.where(order: 1.., heat_length: 1..).ordered
+
+    @trophy_counts = []
+
+    multi_dances.each do |dance|
+      # Get all splits for this dance (including itself)
+      all_splits = Dance.where(name: dance.name).pluck(:id)
+
+      dance_data = {
+        name: dance.name,
+        splits: []
+      }
+
+      all_splits.each do |split_id|
+        # Count entries for this split
+        entry_count = Heat.where(dance_id: split_id, category: 'Multi').where('number > 0').count
+
+        next if entry_count == 0
+
+        # Get split name from MultiLevel if exists
+        ml = MultiLevel.find_by(dance_id: split_id)
+        split_name = ml&.name
+
+        # Calculate trophy counts based on number of entries
+        # 1 entry = 1 first place
+        # 2 entries = 1 first, 1 second
+        # 3+ entries = 1 first, 1 second, 1 third
+        first_place = entry_count >= 1 ? 1 : 0
+        second_place = entry_count >= 2 ? 1 : 0
+        third_place = entry_count >= 3 ? 1 : 0
+
+        dance_data[:splits] << {
+          name: split_name,
+          entries: entry_count,
+          first: first_place,
+          second: second_place,
+          third: third_place
+        }
+      end
+
+      @trophy_counts << dance_data if dance_data[:splits].any?
+    end
+
+    # Calculate totals
+    @totals = {
+      first: @trophy_counts.sum { |d| d[:splits].sum { |s| s[:first] } },
+      second: @trophy_counts.sum { |d| d[:splits].sum { |s| s[:second] } },
+      third: @trophy_counts.sum { |d| d[:splits].sum { |s| s[:third] } }
+    }
+  end
+
   private
     def form_init
       @event = Event.current

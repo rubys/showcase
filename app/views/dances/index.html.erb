@@ -121,6 +121,9 @@ using the Arrange button at the bottom of this page.</li>
   <%= up_link 'New multi-dance', new_multi_path, class: "btn-blue" %>
   <%= link_to 'Arrange', form_dances_path, class: "btn-green" %>
   <%= link_to 'Categories', categories_path, class: "btn-green" %>
+  <% if @dances.any? { |dance| dance.heat_length } %>
+    <%= link_to 'Trophies', trophies_dances_path, class: "btn-green" %>
+  <% end %>
   <%= link_to "Back to Event", root_path, class: "btn-green" %>
 </div>
 </div>

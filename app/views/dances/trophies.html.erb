@@ -1,0 +1,54 @@
+<div class="mx-auto max-w-4xl">
+  <h1 class="text-center font-bold text-4xl mb-8">Trophy Order</h1>
+
+  <% if @trophy_counts.empty? %>
+    <p class="text-center text-gray-600">No multi-dance entries found.</p>
+  <% else %>
+    <table class="mx-auto table-auto border-collapse">
+      <thead>
+        <tr>
+          <th class="row-head text-left">Multi-Dance</th>
+          <th class="row-head text-left">Split</th>
+          <th class="row-head text-right">Entries</th>
+          <th class="row-head text-right">1st</th>
+          <th class="row-head text-right">2nd</th>
+          <th class="row-head text-right">3rd</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @trophy_counts.each do |dance_data| %>
+          <% dance_data[:splits].each_with_index do |split, index| %>
+            <tr class="hover:bg-yellow-200">
+              <% if index == 0 %>
+                <td class="row font-medium" rowspan="<%= dance_data[:splits].size %>">
+                  <%= dance_data[:name] %>
+                </td>
+              <% end %>
+              <td class="row"><%= split[:name] || '&mdash;'.html_safe %></td>
+              <td class="row text-right"><%= split[:entries] %></td>
+              <td class="row text-right"><%= split[:first] %></td>
+              <td class="row text-right"><%= split[:second] %></td>
+              <td class="row text-right"><%= split[:third] %></td>
+            </tr>
+          <% end %>
+        <% end %>
+        <tr class="border-t-2 border-gray-400 font-bold">
+          <td colspan="3" class="row text-right">Total:</td>
+          <td class="row text-right"><%= @totals[:first] %></td>
+          <td class="row text-right"><%= @totals[:second] %></td>
+          <td class="row text-right"><%= @totals[:third] %></td>
+        </tr>
+        <tr class="font-bold bg-blue-50">
+          <td colspan="3" class="row text-right">Grand Total:</td>
+          <td colspan="3" class="row text-center text-xl">
+            <%= @totals[:first] + @totals[:second] + @totals[:third] %> trophies
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  <% end %>
+
+  <div class="mt-8 text-center">
+    <%= link_to 'Back to Dances', dances_path, class: "btn-green" %>
+  </div>
+</div>

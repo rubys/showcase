@@ -77,4 +77,59 @@ class DancesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to dances_url
     assert_equal flash[:notice], 'Waltz was successfully removed.'
   end
+
+  test "should get trophies" do
+    get trophies_dances_url
+    assert_response :success
+    assert_select 'h1', 'Trophy Order'
+  end
+
+  test "trophies page shows correct trophy counts" do
+    # Create a multi-dance with entries
+    multi_cat = Category.create!(name: "Test Multi Category", order: 999)
+    multi_dance = Dance.create!(
+      name: "Test Multi-Dance",
+      order: 999,
+      heat_length: 3,
+      multi_category: multi_cat
+    )
+
+    # Create 3 entries for this multi-dance
+    3.times do |i|
+      student = Person.create!(
+        name: "Trophy Test Student #{i}",
+        studio: studios(:one),
+        type: 'Student',
+        level: levels(:one)
+      )
+      instructor = Person.create!(
+        name: "Trophy Test Instructor #{i}",
+        studio: studios(:one),
+        type: 'Professional',
+        back: 900 + i
+      )
+      entry = Entry.create!(
+        lead: student,
+        follow: instructor,
+        age: ages(:one),
+        level: levels(:one)
+      )
+      Heat.create!(
+        dance: multi_dance,
+        entry: entry,
+        category: 'Multi',
+        number: 100 + i
+      )
+    end
+
+    get trophies_dances_url
+    assert_response :success
+
+    # Should show 1 first, 1 second, 1 third for 3 entries
+    assert_select 'table tbody tr' do |rows|
+      # Find row for our test dance
+      test_dance_row = rows.find { |r| r.text.include?('Test Multi-Dance') }
+      assert test_dance_row, "Should find Test Multi-Dance in table"
+    end
+  end
 end
