@@ -178,7 +178,12 @@ class UsersController < ApplicationController
     @verify = true
 
     if request.get?
-      render :reset
+      if @user.nil?
+        render :reset, status: :gone
+      else
+        Rails.logger.info "Password verify for userid=#{@user.userid}, link=#{@user.link}"
+        render :reset
+      end
     elsif @user and not params[:user][:password].blank?
       # note: packet sniffers could pick up the token from the url and get past this
       # point, but will be blocked by the authenticity token later in the processing.
