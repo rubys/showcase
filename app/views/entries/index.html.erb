@@ -132,6 +132,26 @@
   <% end %>
 
   <% if @heats.any? %>
+  <%
+    # Build tally of lead/follow appearances within each split
+    # Key: split_index (or nil for no split), Value: hash of person_id => count
+    split_tallies = {}
+    @heats.select { |h| h.number > 0 }.each do |heat|
+      entry = heat.entry
+      split_index = nil
+      if @is_multi && @multi_levels&.any?
+        @multi_levels.each_with_index do |ml, idx|
+          if entry.level_id >= ml.start_level && entry.level_id <= ml.stop_level
+            split_index = idx
+            break
+          end
+        end
+      end
+      split_tallies[split_index] ||= Hash.new(0)
+      split_tallies[split_index][entry.lead_id] += 1
+      split_tallies[split_index][entry.follow_id] += 1
+    end
+  %>
   <table class="mx-auto">
     <thead>
       <th><%= link_to "lead", entries_path(dance: @dance, couple: @couple, level: @level, age: @age, sort: "lead"), data: { turbo: false } %>
@@ -151,7 +171,7 @@
         <%
           # Determine which split this heat belongs to
           split_index = nil
-          if @is_multi && @multi_levels.any?
+          if @is_multi && @multi_levels&.any?
             @multi_levels.each_with_index do |ml, idx|
               if entry.level_id >= ml.start_level && entry.level_id <= ml.stop_level
                 split_index = idx
@@ -159,6 +179,9 @@
               end
             end
           end
+
+          # Get the tally for this split
+          tally = split_tallies[split_index] || {}
 
           # Build CSS classes
           row_classes = ["group"]
@@ -168,10 +191,14 @@
           if split_index
             row_classes << (split_index.even? ? "bg-green-50" : "bg-yellow-50")
           end
+
+          # Determine if lead/follow appear multiple times in this split
+          lead_duplicate = entry.lead_id > 0 && tally[entry.lead_id] > 1
+          follow_duplicate = entry.follow_id > 0 && tally[entry.follow_id] > 1
         %>
         <tr class="<%= row_classes.join(' ') %>">
-          <td class="row"><%= link_to entry.lead.display_name, entry.lead %>
-          <td class="row"><%= link_to entry.follow.display_name, entry.follow %>
+          <td class="row <%= lead_duplicate ? 'text-white bg-red-600' : '' %>"><%= link_to entry.lead.display_name, entry.lead %>
+          <td class="row <%= follow_duplicate ? 'text-white bg-red-600' : '' %>"><%= link_to entry.follow.display_name, entry.follow %>
           <% unless @dance_name %>
           <td class="row"><%= link_to heat.dance.name, heat.dance %>
           <% end %>
