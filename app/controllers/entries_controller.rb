@@ -229,10 +229,10 @@ class EntriesController < ApplicationController
 
     event = Event.current
     if params[:entry][:entries]
-      if event.include_open && !event.include_closed
+      if event.include_open && !event.include_closed && params[:entry][:entries]['Open']
         params[:entry][:entries]['Closed'] ||= {}
         params[:entry][:entries]['Open'].each {|dance, count| params[:entry][:entries]['Closed'][dance] = 0}
-      elsif !event.include_open && event.include_closed
+      elsif !event.include_open && event.include_closed && params[:entry][:entries]['Closed']
         params[:entry][:entries]['Open'] ||= {}
         params[:entry][:entries]['Closed'].each {|dance, count| params[:entry][:entries]['Open'][dance] = 0}
       end
