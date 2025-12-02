@@ -2484,4 +2484,194 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     assert_equal [], errors
   end
 
+  # === Packed Multi-Dance Split Tests ===
+
+  test "packed multi-dance heat shows separate rankings for each split" do
+    studio = studios(:one)
+
+    # Create a multi category
+    multi_cat = Category.create!(name: 'Packed Split Test Category', order: 8000)
+
+    # Create parent multi-dance with semi_finals
+    parent_dance = Dance.create!(
+      name: 'Packed Split 3-Dance',
+      semi_finals: true,
+      heat_length: 1,
+      order: 8000,
+      multi_category: multi_cat
+    )
+
+    # Create split dances (same name, different dance_ids)
+    split1 = Dance.create!(name: 'Packed Split 3-Dance', order: -1, multi_category: multi_cat)
+    split2 = Dance.create!(name: 'Packed Split 3-Dance', order: -2, multi_category: multi_cat)
+
+    # Create multi_levels for each split
+    MultiLevel.create!(dance: parent_dance, name: 'Newcomer', start_level: 1, stop_level: 1)
+    MultiLevel.create!(dance: split1, name: 'Bronze', start_level: 2, stop_level: 2)
+    MultiLevel.create!(dance: split2, name: 'Silver', start_level: 3, stop_level: 3)
+
+    # Create entries and heats for different splits
+    max_back = Person.maximum(:back) || 0
+    entries = []
+
+    # 2 entries for parent_dance (Newcomer)
+    2.times do |i|
+      student = Person.create!(name: "Newcomer Student #{i}", studio: studio, type: 'Student', level: @level)
+      instructor = Person.create!(name: "Newcomer Instructor #{i}", studio: studio, type: 'Professional', back: max_back + 100 + i)
+      entry = Entry.create!(lead: student, follow: instructor, age: @age, level: @level)
+      Heat.create!(number: 200, dance: parent_dance, entry: entry, category: 'Multi')
+      entries << entry
+    end
+
+    # 2 entries for split1 (Bronze)
+    2.times do |i|
+      student = Person.create!(name: "Bronze Student #{i}", studio: studio, type: 'Student', level: @level)
+      instructor = Person.create!(name: "Bronze Instructor #{i}", studio: studio, type: 'Professional', back: max_back + 200 + i)
+      entry = Entry.create!(lead: student, follow: instructor, age: @age, level: @level)
+      Heat.create!(number: 200, dance: split1, entry: entry, category: 'Multi')
+      entries << entry
+    end
+
+    # 1 entry for split2 (Silver)
+    student = Person.create!(name: "Silver Student", studio: studio, type: 'Student', level: @level)
+    instructor = Person.create!(name: "Silver Instructor", studio: studio, type: 'Professional', back: max_back + 300)
+    entry = Entry.create!(lead: student, follow: instructor, age: @age, level: @level)
+    Heat.create!(number: 200, dance: split2, entry: entry, category: 'Multi')
+    entries << entry
+
+    # Visit heat as judge for finals (slot 2 > heat_length 1)
+    get judge_heat_path(@judge, 200, slot: 2)
+
+    assert_response :success
+
+    # Should show split headers
+    assert_select 'h3', text: 'Newcomer'
+    assert_select 'h3', text: 'Bronze'
+    assert_select 'h3', text: 'Silver'
+
+    # Each split should have its own ranking starting from 1
+    # Newcomer split: 2 entries, ranks 1 and 2
+    # Bronze split: 2 entries, ranks 1 and 2
+    # Silver split: 1 entry, rank 1
+
+    # Verify scores were created with per-split rankings
+    heats = Heat.where(number: 200)
+
+    parent_heats = heats.where(dance: parent_dance)
+    split1_heats = heats.where(dance: split1)
+    split2_heats = heats.where(dance: split2)
+
+    # Check that each split has ranks starting from 1
+    parent_scores = Score.where(judge: @judge, heat: parent_heats, slot: 2)
+    split1_scores = Score.where(judge: @judge, heat: split1_heats, slot: 2)
+    split2_scores = Score.where(judge: @judge, heat: split2_heats, slot: 2)
+
+    assert_equal [1, 2].sort, parent_scores.map { |s| s.value.to_i }.sort
+    assert_equal [1, 2].sort, split1_scores.map { |s| s.value.to_i }.sort
+    assert_equal [1], split2_scores.map { |s| s.value.to_i }
+  end
+
+  test "update_rank prevents reordering across different splits" do
+    studio = studios(:one)
+
+    # Create a multi category
+    multi_cat = Category.create!(name: 'Cross Split Test Category', order: 8100)
+
+    # Create parent multi-dance with semi_finals
+    parent_dance = Dance.create!(
+      name: 'Cross Split 3-Dance',
+      semi_finals: true,
+      heat_length: 1,
+      order: 8100,
+      multi_category: multi_cat
+    )
+
+    # Create split dance
+    split1 = Dance.create!(name: 'Cross Split 3-Dance', order: -1, multi_category: multi_cat)
+
+    # Create multi_levels
+    MultiLevel.create!(dance: parent_dance, name: 'Newcomer', start_level: 1, stop_level: 1)
+    MultiLevel.create!(dance: split1, name: 'Bronze', start_level: 2, stop_level: 2)
+
+    max_back = Person.maximum(:back) || 0
+
+    # Create entry for parent_dance
+    student1 = Person.create!(name: "Cross Student 1", studio: studio, type: 'Student', level: @level)
+    instructor1 = Person.create!(name: "Cross Instructor 1", studio: studio, type: 'Professional', back: max_back + 400)
+    entry1 = Entry.create!(lead: student1, follow: instructor1, age: @age, level: @level)
+    heat1 = Heat.create!(number: 201, dance: parent_dance, entry: entry1, category: 'Multi')
+
+    # Create entry for split1
+    student2 = Person.create!(name: "Cross Student 2", studio: studio, type: 'Student', level: @level)
+    instructor2 = Person.create!(name: "Cross Instructor 2", studio: studio, type: 'Professional', back: max_back + 401)
+    entry2 = Entry.create!(lead: student2, follow: instructor2, age: @age, level: @level)
+    heat2 = Heat.create!(number: 201, dance: split1, entry: entry2, category: 'Multi')
+
+    # Create initial scores
+    Score.create!(judge: @judge, heat: heat1, slot: 2, value: '1')
+    Score.create!(judge: @judge, heat: heat2, slot: 2, value: '1')
+
+    # Attempt to reorder across splits (should be ignored)
+    post update_rank_path(judge: @judge), params: {
+      source: heat1.id,
+      target: heat2.id,
+      id: 'slot-2'
+    }
+
+    # Should return OK but not change anything
+    assert_response :success
+
+    # Scores should remain unchanged (both still rank 1 in their respective splits)
+    assert_equal '1', Score.find_by(judge: @judge, heat: heat1, slot: 2).value
+    assert_equal '1', Score.find_by(judge: @judge, heat: heat2, slot: 2).value
+  end
+
+  test "update_rank allows reordering within same split" do
+    studio = studios(:one)
+
+    # Create a multi category
+    multi_cat = Category.create!(name: 'Same Split Test Category', order: 8200)
+
+    # Create parent multi-dance with semi_finals
+    parent_dance = Dance.create!(
+      name: 'Same Split 3-Dance',
+      semi_finals: true,
+      heat_length: 1,
+      order: 8200,
+      multi_category: multi_cat
+    )
+
+    MultiLevel.create!(dance: parent_dance, name: 'Newcomer', start_level: 1, stop_level: 1)
+
+    max_back = Person.maximum(:back) || 0
+
+    # Create two entries for same split
+    student1 = Person.create!(name: "Same Split Student 1", studio: studio, type: 'Student', level: @level)
+    instructor1 = Person.create!(name: "Same Split Instructor 1", studio: studio, type: 'Professional', back: max_back + 500)
+    entry1 = Entry.create!(lead: student1, follow: instructor1, age: @age, level: @level)
+    heat1 = Heat.create!(number: 202, dance: parent_dance, entry: entry1, category: 'Multi')
+
+    student2 = Person.create!(name: "Same Split Student 2", studio: studio, type: 'Student', level: @level)
+    instructor2 = Person.create!(name: "Same Split Instructor 2", studio: studio, type: 'Professional', back: max_back + 501)
+    entry2 = Entry.create!(lead: student2, follow: instructor2, age: @age, level: @level)
+    heat2 = Heat.create!(number: 202, dance: parent_dance, entry: entry2, category: 'Multi')
+
+    # Create initial scores (heat1 rank 1, heat2 rank 2)
+    Score.create!(judge: @judge, heat: heat1, slot: 2, value: '1')
+    Score.create!(judge: @judge, heat: heat2, slot: 2, value: '2')
+
+    # Reorder within same split (move heat2 to rank 1)
+    post update_rank_path(judge: @judge), params: {
+      source: heat2.id,
+      target: heat1.id,
+      id: 'slot-2'
+    }
+
+    assert_response :success
+
+    # Scores should be swapped
+    assert_equal '2', Score.find_by(judge: @judge, heat: heat1, slot: 2).value
+    assert_equal '1', Score.find_by(judge: @judge, heat: heat2, slot: 2).value
+  end
+
 end

@@ -1,60 +1,113 @@
 <div id="rank-heat-container" class="grow flex flex-col border-2 border-slate-400 overflow-y-auto">
-  <div class="grow flex flex-col border-2 border-slate-400 overflow-y-auto" 
+  <div class="grow flex flex-col border-2 border-slate-400 overflow-y-auto"
        data-controller="drop"
        data-drop-action="<%= @update_rank_path %>"
        id="slot-<%= @slot %>">
   <div class="hidden text-red-600 text-4xl" data-score-target="error"></div>
   <%= @message %>
-  <table class="table-auto border-separate border-spacing-y-1 mx-4">
-  <thead>
-    <tr>
-      <th class="text-left border-b-2 border-black" rowspan="2">Rank</th>
-      <th class="text-left border-b-2 border-black" rowspan="2">Back</th>
-      <% if @column_order == 1 %>
-      <th class="text-left border-b-2 border-black" rowspan="2">Lead</th>
-      <th class="text-left border-b-2 border-black" rowspan="2">Follow</th>
-      <% else %>
-      <th class="text-left border-b-2 border-black" rowspan="2">Student</th>
-      <th class="text-left border-b-2 border-black" rowspan="2">Instructor</th>
-      <% end %>
-      <th class="text-left border-b-2 border-black" rowspan="2">Category</th>
-      <th class="text-left border-b-2 border-black" rowspan="2">Studio</th>
-    </tr>
-  </thead>
-  
-  <% @subjects.each_with_index do |subject, index| %>
-    <% subcat = subject.entry.pro ? 'Pro' : "#{subject.entry.subject_category(@track_ages)} - #{subject.entry.level.initials}" %>
-    <% if subject.number > 0 %>
-    <tr class="hover:bg-yellow-200 cursor-move transition-colors duration-200" id="<%= dom_id subject %>" 
-        draggable="true" 
-        data-drag-id="<%= subject.id %>"
-        data-rank="<%= index + 1 %>"
-        ondragenter="this.classList.add('bg-blue-100')"
-        ondragleave="this.classList.remove('bg-blue-100')"
-        ondrop="this.classList.remove('bg-blue-100')">
-    <% else %>
-    <tr class="hover:bg-yellow-200 line-through opacity-50">
+  <% if @packed_splits && @splits %>
+    <%# Packed multi-dance heat: display each split as a separate competition %>
+    <% @splits.each do |dance_id, split_subjects| %>
+      <div class="mb-6 border-b-2 border-gray-300 pb-4">
+        <h3 class="text-lg font-bold mx-4 mb-2 bg-blue-100 px-2 py-1 rounded"><%= @split_names[dance_id] %></h3>
+        <table class="w-full table-auto border-separate border-spacing-y-1 px-4">
+        <thead>
+          <tr>
+            <th class="text-left border-b-2 border-black">Rank</th>
+            <th class="text-left border-b-2 border-black">Back</th>
+            <% if @column_order == 1 %>
+            <th class="text-left border-b-2 border-black">Lead</th>
+            <th class="text-left border-b-2 border-black">Follow</th>
+            <% else %>
+            <th class="text-left border-b-2 border-black">Student</th>
+            <th class="text-left border-b-2 border-black">Instructor</th>
+            <% end %>
+            <th class="text-left border-b-2 border-black">Studio</th>
+          </tr>
+        </thead>
+        <tbody data-split-id="<%= dance_id %>">
+        <% split_subjects.sort_by { |s| Score.find_by(judge: @judge, heat: s, slot: @slot)&.value.to_i }.each_with_index do |subject, index| %>
+          <% if subject.number > 0 %>
+          <tr class="hover:bg-yellow-200 cursor-move transition-colors duration-200" id="<%= dom_id subject %>"
+              draggable="true"
+              data-drag-id="<%= subject.id %>"
+              data-split-id="<%= dance_id %>"
+              data-rank="<%= index + 1 %>"
+              ondragenter="this.classList.add('bg-blue-100')"
+              ondragleave="this.classList.remove('bg-blue-100')"
+              ondrop="this.classList.remove('bg-blue-100')">
+          <% else %>
+          <tr class="hover:bg-yellow-200 line-through opacity-50">
+          <% end %>
+            <td class="text-2xl font-bold px-2"><%= index + 1 %></td>
+            <td class="<% if @sort != 'level' %>py-2 <% end %>text-xl"><span><%= subject.lead.back %></span></td>
+            <% if @column_order == 1 || subject.lead.type == 'Student' %>
+            <td><%= subject.lead.display_name %></td>
+            <td><%= subject.follow.display_name %></td>
+            <% else %>
+            <td><%= subject.follow.display_name %></td>
+            <td><%= subject.lead.display_name %></td>
+            <% end %>
+            <td><%= subject.subject.studio.name %></td>
+          </tr>
+        <% end %>
+        </tbody>
+        </table>
+      </div>
     <% end %>
-      <td class="text-2xl font-bold px-2"><%= index + 1 %></td>
-      <td class="<% if @sort != 'level' %>py-2 <% end %>text-xl"><span><%= subject.lead.back %></span></td>
-      <% if @column_order == 1 || subject.lead.type == 'Student' %>
-      <td><%= subject.lead.display_name %></td>
-      <td><%= subject.follow.display_name %></td>
+  <% else %>
+    <%# Original single-competition display %>
+    <table class="table-auto border-separate border-spacing-y-1 mx-4">
+    <thead>
+      <tr>
+        <th class="text-left border-b-2 border-black" rowspan="2">Rank</th>
+        <th class="text-left border-b-2 border-black" rowspan="2">Back</th>
+        <% if @column_order == 1 %>
+        <th class="text-left border-b-2 border-black" rowspan="2">Lead</th>
+        <th class="text-left border-b-2 border-black" rowspan="2">Follow</th>
+        <% else %>
+        <th class="text-left border-b-2 border-black" rowspan="2">Student</th>
+        <th class="text-left border-b-2 border-black" rowspan="2">Instructor</th>
+        <% end %>
+        <th class="text-left border-b-2 border-black" rowspan="2">Category</th>
+        <th class="text-left border-b-2 border-black" rowspan="2">Studio</th>
+      </tr>
+    </thead>
+
+    <% @subjects.each_with_index do |subject, index| %>
+      <% subcat = subject.entry.pro ? 'Pro' : "#{subject.entry.subject_category(@track_ages)} - #{subject.entry.level.initials}" %>
+      <% if subject.number > 0 %>
+      <tr class="hover:bg-yellow-200 cursor-move transition-colors duration-200" id="<%= dom_id subject %>"
+          draggable="true"
+          data-drag-id="<%= subject.id %>"
+          data-rank="<%= index + 1 %>"
+          ondragenter="this.classList.add('bg-blue-100')"
+          ondragleave="this.classList.remove('bg-blue-100')"
+          ondrop="this.classList.remove('bg-blue-100')">
       <% else %>
-      <td><%= subject.follow.display_name %></td>
-      <td><%= subject.lead.display_name %></td>
+      <tr class="hover:bg-yellow-200 line-through opacity-50">
       <% end %>
-      <td><% if @combine_open_and_closed and %w(Open Closed).include? subject.category %><%= subject.category %> - <% end %><%= subcat %></td>
-      <td><%= subject.subject.studio.name %></td>
-    </tr>
+        <td class="text-2xl font-bold px-2"><%= index + 1 %></td>
+        <td class="<% if @sort != 'level' %>py-2 <% end %>text-xl"><span><%= subject.lead.back %></span></td>
+        <% if @column_order == 1 || subject.lead.type == 'Student' %>
+        <td><%= subject.lead.display_name %></td>
+        <td><%= subject.follow.display_name %></td>
+        <% else %>
+        <td><%= subject.follow.display_name %></td>
+        <td><%= subject.lead.display_name %></td>
+        <% end %>
+        <td><% if @combine_open_and_closed and %w(Open Closed).include? subject.category %><%= subject.category %> - <% end %><%= subcat %></td>
+        <td><%= subject.subject.studio.name %></td>
+      </tr>
+    <% end %>
+
+    <% if @subjects.empty? %>
+      <tr>
+        <td colspan="5"><p class="m-5">No couples on the floor for this heat.</p></td>
+      </tr>
+    <% end %>
+    </table>
   <% end %>
-  
-  <% if @subjects.empty? %>
-    <tr>
-      <td colspan="5"><p class="m-5">No couples on the floor for this heat.</p></td>
-    </tr>
-  <% end %>
-  </table>
   <% if params[:style] == 'emcee' && Event.current.current_heat != @number %>
   <div class="text-center mt-2">
     <button data-action="click->score#startHeat" data-score-target="startButton" class="btn-green text-sm">

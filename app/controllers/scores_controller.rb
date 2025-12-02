@@ -1166,7 +1166,15 @@ class ScoresController < ApplicationController
     end
 
     from_heat = Heat.find_by(id: from_heat_id)
+    to_heat = Heat.find_by(id: to_heat_id)
     @number = from_heat&.number || 0
+
+    # Check if source and target are in the same split (for packed multi-dance heats)
+    if from_heat && to_heat && from_heat.dance_id != to_heat.dance_id
+      # Cannot reorder across splits - silently ignore
+      head :ok
+      return
+    end
 
     retry_transaction do
       @subjects = Heat.where(number: @number).includes(
@@ -1177,15 +1185,21 @@ class ScoresController < ApplicationController
       @heat = @subjects.first
 
       scores = final_scores
-    
-      # Find the scores 
+
+      # For packed splits, only consider scores within the same split
+      if @packed_splits && from_heat
+        split_heat_ids = @splits[from_heat.dance_id]&.map(&:id) || []
+        scores = scores.select { |s| split_heat_ids.include?(s.heat_id) }
+      end
+
+      # Find the scores
       from_score = scores.find { |score| score.heat_id == from_heat_id }
       to_score = scores.find { |score| score.heat_id == to_heat_id }
-      
+
       if from_score && to_score
         from_rank = from_score.value.to_i
         to_rank = to_score.value.to_i
-        
+
         # Get scores in the affected range and rotate their ranks
         if from_rank > to_rank
           # Moving up (e.g., 5 to 2)
@@ -1196,15 +1210,21 @@ class ScoresController < ApplicationController
           affected_scores = scores.select { |s| s.value.to_i >= from_rank && s.value.to_i <= to_rank }
           new_ranks = affected_scores.map { |s| s.value.to_i }.rotate(-1)
         end
-        
+
         # Update all affected scores with their new ranks
         affected_scores.zip(new_ranks).each do |score, new_rank|
           score.update!(value: new_rank.to_s)
         end
 
-        # Re-sort subjects by score
-        @subjects = scores.to_a.map {|score| [score.value.to_i, score]}.sort
-          .map {|value, score| score.heat}.uniq
+        # Re-sort subjects by score (respecting splits if packed)
+        if @packed_splits
+          # Re-run final_scores to get properly ordered subjects
+          final_scores
+          @subjects = @splits.values.flatten
+        else
+          @subjects = scores.to_a.map {|score| [score.value.to_i, score]}.sort
+            .map {|value, score| score.heat}.uniq
+        end
       end
     end
 
@@ -2230,6 +2250,20 @@ class ScoresController < ApplicationController
       called_back = determine_callbacks(@number, @subjects, ..heat_length)
       @subjects.select! {|heat| called_back.include? heat.entry_id}
 
+      # Check if this is a packed multi-dance heat (multiple dance_ids in same heat number)
+      dance_ids = @subjects.map(&:dance_id).uniq
+      @packed_splits = dance_ids.length > 1 && @subjects.first&.category == 'Multi'
+
+      if @packed_splits
+        # For packed heats, score each split separately
+        final_scores_by_split
+      else
+        # Original logic for non-packed heats
+        final_scores_single
+      end
+    end
+
+    def final_scores_single
       # find scores for finals, or create them in random order if they don't exist
       scores = Score.joins(:heat)
         .where(judge: @judge, heats: {number: @number}, slot: @slot)
@@ -2250,6 +2284,53 @@ class ScoresController < ApplicationController
       end
 
       scores.to_a.sort_by {|score| score.value.to_i}
+    end
+
+    def final_scores_by_split
+      # Group subjects by dance_id (each dance_id is a separate split/competition)
+      @splits = @subjects.group_by(&:dance_id)
+
+      # Get MultiLevel names for each split
+      @split_names = {}
+      @splits.keys.each do |dance_id|
+        ml = MultiLevel.find_by(dance_id: dance_id)
+        @split_names[dance_id] = ml&.name || Dance.find(dance_id).name
+      end
+
+      # Sort splits by dance order (negative orders come after positive)
+      @splits = @splits.sort_by { |dance_id, _| Dance.find(dance_id).order }.to_h
+
+      all_scores = []
+
+      @splits.each do |dance_id, split_subjects|
+        # find scores for this split
+        split_heat_ids = split_subjects.map(&:id)
+        scores = Score.where(judge: @judge, heat_id: split_heat_ids, slot: @slot)
+
+        # remove scores for subjects no longer in this split
+        remove = scores.select { |score| !split_heat_ids.include?(score.heat_id) }
+        remove.each(&:destroy)
+        scores = scores.to_a - remove
+
+        # filter out invalid ranks
+        scores.select! { |score| score.value.to_i <= split_subjects.length }
+
+        # assign ranks to pending subjects
+        pending = split_subjects.select { |heat| !scores.any? { |score| score.heat_id == heat.id } }.shuffle
+        existing_ranks = scores.map { |s| s.value.to_i }
+        ranks = (1..split_subjects.length).to_a - existing_ranks
+
+        pending.zip(ranks).each do |heat, rank|
+          score = Score.find_or_create_by(judge: @judge, heat: heat, slot: @slot)
+          score.value = rank.to_s
+          score.save
+          scores << score
+        end
+
+        all_scores.concat(scores.sort_by { |score| score.value.to_i })
+      end
+
+      all_scores
     end
 
     # Sort and group subjects by ballroom
