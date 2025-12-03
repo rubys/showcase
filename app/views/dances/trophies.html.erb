@@ -16,9 +16,9 @@
         </tr>
       </thead>
       <tbody>
-        <% @trophy_counts.each do |dance_data| %>
+        <% @trophy_counts.each_with_index do |dance_data, dance_index| %>
           <% dance_data[:splits].each_with_index do |split, index| %>
-            <tr class="hover:bg-yellow-200">
+            <tr class="hover:bg-yellow-200<%= ' border-t-2 border-gray-300' if index == 0 && dance_index > 0 %>">
               <% if index == 0 %>
                 <td class="row font-medium" rowspan="<%= dance_data[:splits].size %>">
                   <%= dance_data[:name] %>
