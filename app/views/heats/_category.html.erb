@@ -47,7 +47,8 @@
     <% last_number = number %>
     <% heats = ballrooms.map(&:last).flatten %>
     <% tally = heats.select {|heat| heat.number > 0}.map {|heat| e=heat.entry; [e.lead_id, e.follow_id]}.flatten.tally %>
-    <% dance = heats.first.dance_id == heats.last.dance_id ? heats.first.dance_id : 0 %>
+    <% # Set dance to 0 to force showing split name if: different dances OR first dance has a multi_level name %>
+    <% dance = (heats.first.dance_id == heats.last.dance_id && !heats.first.dance.multi_levels.first) ? heats.first.dance_id : 0 %>
     <table class="break-inside-avoid text-sm mt-4 table-fixed">
       <colgroup>
         <% if number == 0 && heats.first.dance_id == heats.last.dance_id %>
@@ -121,7 +122,7 @@
            <tr>
              <td></td>
              <td></td>
-             <td colspan="8" class="text-s pt-2"><%= heat.dance.name %></td>
+             <td colspan="8" class="text-s pt-2"><%= heat.dance.multi_levels.first&.name || heat.dance.name %></td>
           </tr>
           <% dance = heat.dance_id %>
          <% end %>
