@@ -214,7 +214,14 @@ if options[:html]
     puts "Error: --html mode only works with a single path"
     exit 1
   else
-    puts "Error: Page failed to render"
+    result = results.first
+    if result[:error]
+      puts "Error: #{result[:error]}"
+    elsif result[:code]
+      puts "Error: HTTP #{result[:code]}"
+    else
+      puts "Error: Page failed to render"
+    end
     exit 1
   end
 

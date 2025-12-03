@@ -144,19 +144,27 @@ end
     <% end %>
   </table>
 
-  <% @agenda.each do |cat, heats| %>
-  <% next if heats.empty? %>
+  <% @agenda.each do |cat, cat_heats| %>
+  <% next if cat_heats.empty? %>
   <div class="page break-before-page"></div>
 
   <div class="w-full">
 
-  <% unless @type == 'judge' and heats.all? {|number, ballrooms| ballrooms.values.flatten.first.category == 'Solo'} %>
+  <% unless @type == 'judge' and cat_heats.all? {|number, ballrooms| ballrooms.values.flatten.first.category == 'Solo'} %>
   <div class="mt-8 mb-2 flex justify-between items-center" id="cat-<%= cat.downcase.gsub(' ', '-') %>">
     <h1 class="font-bold text-4xl"><%= cat %></h1>
   </div>
   <% end %>
 
-    <% heats.each do |number, ballrooms| %>
+    <% last_number = nil %>
+    <% cat_heats.each do |number, ballrooms| %>
+    <% # Skip duplicate heat numbers (for multi-heats) %>
+    <% if last_number == number %>
+      <% next %>
+    <% end %>
+    <% last_number = number %>
+    <% # Collect ALL heats with this number (across all dance variations) %>
+    <% all_heats_for_number = cat_heats.select { |n, _| n == number }.flat_map { |_, b| b.values.flatten } %>
     <% heats = ballrooms.values.flatten %>
     <% heats = heats.select {|heat| @assignments[heat.id] == @judge.display_name} if @judge && %w(Open Closed).include?(heats.first&.category) %>
     <% heat = heats.first %>
@@ -212,7 +220,11 @@ end
         <td></td>
         <td colspan="9" class="text-lg">Heat <%= number %>:
           <% unless @combine_open_and_closed && %w(Open Closed).include?(heats.first.category) && heats.first.dance.open_category_id == heats.first.dance.closed_category_id %><%= heats.first.category %><% end %>
-          <% if heats.first.dance_id == heats.last.dance_id %>
+          <% # Don't show dance name if: different dances, different child dance names (expanded multi), or has multi_levels (splits) %>
+          <% same_dance = all_heats_for_number.first.dance_id == all_heats_for_number.last.dance_id &&
+                          all_heats_for_number.first.child_dance_name == all_heats_for_number.last.child_dance_name &&
+                          !all_heats_for_number.first.dance.multi_levels.first %>
+          <% if same_dance %>
           <%= heats.first.display_dance_name %>
           <% if heats.first.category == 'Solo' and heats.first.solo.combo_dance and !heats.first.child_dance_name %>
           / <%= heats.first.solo.combo_dance.name %>
@@ -239,12 +251,13 @@ end
            <td colspan="8" class="text-xs pt-2">Ballroom <%= ballroom %></td>
          </tr>
          <% end %>
-         <% dance = heats.first.dance_id == heats.last.dance_id ? heats.first.dance_id : 0 %>
+         <% # Set dance to 0 to force showing split name if: different dances OR first dance has a multi_level name %>
+         <% dance = (heats.first.dance_id == heats.last.dance_id && !heats.first.dance.multi_levels.first) ? heats.first.dance_id : 0 %>
          <% heats.each do |heat| %>
           <% if heat.dance_id != dance %>
            <tr>
              <td>
-             <td colspan="8" class="text-s pt-2"><%= heat.display_dance_name %></td>
+             <td colspan="8" class="text-s pt-2"><%= heat.dance.multi_levels.first&.name || heat.display_dance_name %></td>
           </tr>
           <% dance = heat.dance_id %>
          <% end %>
