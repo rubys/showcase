@@ -1399,7 +1399,7 @@ class HeatSchedulerTest < ActiveSupport::TestCase
     assert_equal [], result
   end
 
-  test "can_add_heat_to_group respects exclude relationships" do
+  test "can_add_group_to_packed respects exclude relationships" do
     # Create people with exclude relationship
     person1 = Person.create!(
       name: "Exclude Person 1",
@@ -1429,24 +1429,33 @@ class HeatSchedulerTest < ActiveSupport::TestCase
       number: 0
     )
 
+    # Group of heats to add (a split)
+    group_heats = [heat]
+    group_participants = Set.new([person2.id, @instructor1.id])
+
     # Create a packed group that already contains person1
     packed_group = {
       heats: [],
       participants: Set.new([person1.id])
     }
 
-    # person2 excludes person1, so should not be added
-    result = @scheduler.can_add_heat_to_group?(heat, packed_group, 10)
-    assert_equal false, result, "Should not add heat when excluded person is in group"
+    # person2 excludes person1, so the group should not be added
+    result = @scheduler.can_add_group_to_packed?(group_heats, group_participants, packed_group, 10)
+    assert_equal false, result, "Should not add group when excluded person is in packed group"
   end
 
   # ===== REBALANCE PACKED GROUPS TESTS =====
 
-  test "rebalance_packed_groups distributes heats evenly" do
-    # Create an imbalanced set of packed groups (7-1 distribution)
-    # Rebalancing should make it more even
+  test "rebalance_packed_groups distributes splits evenly" do
+    # Create an imbalanced set of packed groups where splits can be moved
+    # Rebalancing moves entire splits (same dance_id), not individual heats
 
-    # Create people for the heats
+    # Create multiple dances to have multiple splits
+    dance1 = Dance.create!(name: "Rebalance Dance 1", order: 800)
+    dance2 = Dance.create!(name: "Rebalance Dance 2", order: 801)
+    dance3 = Dance.create!(name: "Rebalance Dance 3", order: 802)
+    dance4 = Dance.create!(name: "Rebalance Dance 4", order: 803)
+
     students = []
     instructors = []
     max_back = Person.maximum(:back) || 0
@@ -1465,9 +1474,9 @@ class HeatSchedulerTest < ActiveSupport::TestCase
       )
     end
 
-    # Create heats with unique dancer combinations
+    # Create heats with different dances (4 splits, 2 heats each)
     heats = []
-    8.times do |i|
+    [dance1, dance1, dance2, dance2, dance3, dance3, dance4, dance4].each_with_index do |dance, i|
       entry = Entry.create!(
         lead: students[i],
         follow: instructors[i],
@@ -1475,21 +1484,21 @@ class HeatSchedulerTest < ActiveSupport::TestCase
         level: levels(:one)
       )
       heats << Heat.create!(
-        dance: @dance_waltz,
+        dance: dance,
         entry: entry,
         category: 'Multi',
         number: 0
       )
     end
 
-    # Create imbalanced packed groups: 7 heats in first, 1 in second
+    # Create imbalanced packed groups: 6 heats (3 splits) in first, 2 heats (1 split) in second
     large_group = {
-      heats: heats[0..6],
-      participants: Set.new(heats[0..6].flat_map { |h| [h.entry.lead_id, h.entry.follow_id] })
+      heats: heats[0..5],  # dance1, dance2, dance3
+      participants: Set.new(heats[0..5].flat_map { |h| [h.entry.lead_id, h.entry.follow_id] })
     }
     small_group = {
-      heats: [heats[7]],
-      participants: Set.new([heats[7].entry.lead_id, heats[7].entry.follow_id])
+      heats: heats[6..7],  # dance4
+      participants: Set.new(heats[6..7].flat_map { |h| [h.entry.lead_id, h.entry.follow_id] })
     }
 
     packed_groups = [large_group, small_group]
@@ -1500,12 +1509,19 @@ class HeatSchedulerTest < ActiveSupport::TestCase
     # Check that groups are more balanced
     sizes = result.map { |g| g[:heats].size }.sort
 
-    # With 8 heats and 2 groups, should be 4-4
+    # With 4 splits of 2 heats each, best balance is 4-4 (2 splits each)
     assert_equal [4, 4], sizes, "Groups should be balanced to 4-4, got #{sizes}"
   end
 
   test "rebalance_packed_groups respects participant conflicts" do
-    # Create a scenario where rebalancing cannot move heats due to conflicts
+    # Create a scenario where rebalancing cannot move a split due to conflicts
+    # Rebalancing moves entire splits, so if any participant in a split conflicts,
+    # the entire split cannot be moved
+
+    # Create different dances for different splits
+    dance1 = Dance.create!(name: "Conflict Dance 1", order: 810)
+    dance2 = Dance.create!(name: "Conflict Dance 2", order: 811)
+    dance3 = Dance.create!(name: "Conflict Dance 3", order: 812)
 
     max_back = Person.maximum(:back) || 0
 
@@ -1538,37 +1554,25 @@ class HeatSchedulerTest < ActiveSupport::TestCase
       )
     end
 
-    # Create heats
-    # Large group: shared_student + 2 other students (3 heats)
+    # Create heats with different dances (different splits)
+    # Large group: 3 heats in 2 splits
+    # - Split 1 (dance1): shared_student (cannot move due to conflict)
+    # - Split 2 (dance2): other_student[0], other_student[1] (can move)
     large_heats = []
-    [shared_student, other_students[0], other_students[1]].each_with_index do |student, i|
-      entry = Entry.create!(
-        lead: student,
-        follow: instructors[i],
-        age: ages(:one),
-        level: levels(:one)
-      )
-      large_heats << Heat.create!(
-        dance: @dance_waltz,
-        entry: entry,
-        category: 'Multi',
-        number: 0
-      )
-    end
 
-    # Small group: shared_student with different partner (1 heat)
-    small_entry = Entry.create!(
-      lead: shared_student,
-      follow: instructors[3],
-      age: ages(:one),
-      level: levels(:one)
-    )
-    small_heat = Heat.create!(
-      dance: @dance_waltz,
-      entry: small_entry,
-      category: 'Multi',
-      number: 0
-    )
+    # Split 1: shared_student
+    entry = Entry.create!(lead: shared_student, follow: instructors[0], age: ages(:one), level: levels(:one))
+    large_heats << Heat.create!(dance: dance1, entry: entry, category: 'Multi', number: 0)
+
+    # Split 2: two other students
+    entry = Entry.create!(lead: other_students[0], follow: instructors[1], age: ages(:one), level: levels(:one))
+    large_heats << Heat.create!(dance: dance2, entry: entry, category: 'Multi', number: 0)
+    entry = Entry.create!(lead: other_students[1], follow: instructors[2], age: ages(:one), level: levels(:one))
+    large_heats << Heat.create!(dance: dance2, entry: entry, category: 'Multi', number: 0)
+
+    # Small group: 1 heat with shared_student (different dance/split)
+    small_entry = Entry.create!(lead: shared_student, follow: instructors[3], age: ages(:one), level: levels(:one))
+    small_heat = Heat.create!(dance: dance3, entry: small_entry, category: 'Multi', number: 0)
 
     large_group = {
       heats: large_heats,
@@ -1584,12 +1588,14 @@ class HeatSchedulerTest < ActiveSupport::TestCase
     # Run rebalancing
     result = @scheduler.rebalance_packed_groups(packed_groups, 10)
 
-    # The shared_student heat cannot move from large to small (conflict)
-    # Only the other_students heats can move
+    # Split 1 (dance1 with shared_student) cannot move - shared_student is in small group
+    # Split 2 (dance2 with other_students) CAN move - no conflicts
+    # Moving split 2 (2 heats) to small group: large becomes 1, small becomes 3
+    # This is still imbalanced (diff > 1), but now small is larger so no more moves
     sizes = result.map { |g| g[:heats].size }.sort
 
-    # Best possible is 2-2 (move one non-conflicting heat)
-    assert_equal [2, 2], sizes, "Should balance to 2-2, got #{sizes}"
+    # Best possible: move split 2 to small group -> [1, 3]
+    assert_equal [1, 3], sizes, "Should balance to [1, 3], got #{sizes}"
 
     # Verify shared_student is not in same group twice
     result.each do |group|
@@ -1861,5 +1867,107 @@ class HeatSchedulerTest < ActiveSupport::TestCase
     sizes = heats_by_number.values.map(&:size).sort
     assert_equal [3, 3, 3, 3], sizes,
       "Rebalancing should distribute heats evenly (3-3-3-3), got #{sizes}"
+  end
+
+  test "pack_multi_dance_splits keeps each split in a single heat" do
+    # This test verifies that all heats within a split (same dance_id) are
+    # scheduled together in one heat number, never split across multiple heats.
+    # This is critical for judging - all competitors in a split must dance
+    # together to be fairly ranked against each other.
+
+    Heat.update_all(number: -1)
+
+    multi_cat = Category.create!(name: "Split Integrity Test", order: 960)
+
+    # Create parent and split dances
+    parent_dance = Dance.create!(name: "Integrity 3-Dance", order: 760, multi_category: multi_cat)
+    split1 = Dance.create!(name: "Integrity 3-Dance", order: -60, multi_category: multi_cat)
+    split2 = Dance.create!(name: "Integrity 3-Dance", order: -61, multi_category: multi_cat)
+
+    MultiLevel.create!(dance: parent_dance, name: "Newcomer", start_level: 1, stop_level: 1)
+    MultiLevel.create!(dance: split1, name: "Bronze", start_level: 2, stop_level: 2)
+    MultiLevel.create!(dance: split2, name: "Silver", start_level: 3, stop_level: 3)
+
+    max_back = Person.maximum(:back) || 0
+
+    # Create 3 entries for parent_dance (Newcomer split)
+    newcomer_heats = []
+    3.times do |i|
+      student = Person.create!(
+        name: "Newcomer Integrity Student #{i}",
+        studio: @studio1,
+        type: 'Student',
+        level: levels(:one)
+      )
+      instructor = Person.create!(
+        name: "Newcomer Integrity Instructor #{i}",
+        studio: @studio1,
+        type: 'Professional',
+        back: max_back + 1200 + i
+      )
+      entry = Entry.create!(lead: student, follow: instructor, age: ages(:one), level: levels(:one))
+      newcomer_heats << Heat.create!(dance: parent_dance, entry: entry, category: 'Multi', number: 0)
+    end
+
+    # Create 2 entries for split1 (Bronze split)
+    bronze_heats = []
+    2.times do |i|
+      student = Person.create!(
+        name: "Bronze Integrity Student #{i}",
+        studio: @studio1,
+        type: 'Student',
+        level: levels(:one)
+      )
+      instructor = Person.create!(
+        name: "Bronze Integrity Instructor #{i}",
+        studio: @studio1,
+        type: 'Professional',
+        back: max_back + 1210 + i
+      )
+      entry = Entry.create!(lead: student, follow: instructor, age: ages(:one), level: levels(:one))
+      bronze_heats << Heat.create!(dance: split1, entry: entry, category: 'Multi', number: 0)
+    end
+
+    # Create 2 entries for split2 (Silver split)
+    silver_heats = []
+    2.times do |i|
+      student = Person.create!(
+        name: "Silver Integrity Student #{i}",
+        studio: @studio1,
+        type: 'Student',
+        level: levels(:one)
+      )
+      instructor = Person.create!(
+        name: "Silver Integrity Instructor #{i}",
+        studio: @studio1,
+        type: 'Professional',
+        back: max_back + 1220 + i
+      )
+      entry = Entry.create!(lead: student, follow: instructor, age: ages(:one), level: levels(:one))
+      silver_heats << Heat.create!(dance: split2, entry: entry, category: 'Multi', number: 0)
+    end
+
+    @scheduler.schedule_heats
+
+    # Verify each split has all its heats in exactly one heat number
+    newcomer_heats.each(&:reload)
+    bronze_heats.each(&:reload)
+    silver_heats.each(&:reload)
+
+    newcomer_numbers = newcomer_heats.map(&:number).uniq
+    bronze_numbers = bronze_heats.map(&:number).uniq
+    silver_numbers = silver_heats.map(&:number).uniq
+
+    assert_equal 1, newcomer_numbers.size,
+      "All Newcomer heats should be in one heat number, got #{newcomer_numbers}"
+    assert_equal 1, bronze_numbers.size,
+      "All Bronze heats should be in one heat number, got #{bronze_numbers}"
+    assert_equal 1, silver_numbers.size,
+      "All Silver heats should be in one heat number, got #{silver_numbers}"
+
+    # Also verify the heats are scheduled (positive number)
+    assert newcomer_numbers.first > 0, "Newcomer heats should be scheduled"
+    assert bronze_numbers.first > 0, "Bronze heats should be scheduled"
+    assert silver_numbers.first > 0, "Silver heats should be scheduled"
   end
 end

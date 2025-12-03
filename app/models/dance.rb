@@ -136,6 +136,7 @@ class Dance < ApplicationRecord
         rankings = Heat.rank_placement(numbers, slot, judges.length/2+1, entry_map: entry_by_id)
       end
       rankings.each do |entry, rank|
+        next unless entry # Skip entries not in our entry_map (from other split dances)
         summary[entry.lead.back][dance_name] = rank
       end
     end

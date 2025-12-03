@@ -585,6 +585,8 @@ module HeatScheduler
   end
 
   # Pack a run of groups for the same multi-dance
+  # Each group represents a split (dance_id) and must stay together as a unit.
+  # We combine entire splits into the same heat, never breaking up a split.
   def pack_group_run(run_groups, event)
     return run_groups if run_groups.length <= 1
 
@@ -593,41 +595,41 @@ module HeatScheduler
     agenda_cat = first_heat&.dance_category
     max_size = agenda_cat&.max_heat_size || event.max_heat_size || 9999
 
-    # Collect all heats from all groups
-    all_heats = run_groups.flat_map { |g| g.each.to_a }
-
-    # Greedy bin-packing: try to fit heats into as few groups as possible
+    # Greedy bin-packing: try to fit entire groups (splits) into as few packed groups as possible
     packed_groups = []
 
-    all_heats.each do |heat|
+    run_groups.each do |group|
+      # Get all heats and participants for this split
+      group_heats = group.each.to_a
+      group_participants = Set.new
+      group_heats.each do |heat|
+        group_participants.add(heat.entry.lead_id) if heat.entry.lead_id != 0
+        group_participants.add(heat.entry.follow_id) if heat.entry.follow_id != 0
+      end
+
       placed = false
 
-      # Try to add to an existing packed group
+      # Try to add entire group to an existing packed group
       packed_groups.each do |packed_group|
-        if can_add_heat_to_group?(heat, packed_group, max_size)
-          packed_group[:heats] << heat
-          packed_group[:participants].add(heat.entry.lead_id) if heat.entry.lead_id != 0
-          packed_group[:participants].add(heat.entry.follow_id) if heat.entry.follow_id != 0
+        if can_add_group_to_packed?(group_heats, group_participants, packed_group, max_size)
+          packed_group[:heats].concat(group_heats)
+          packed_group[:participants].merge(group_participants)
           placed = true
           break
         end
       end
 
-      # If not placed, create a new group
+      # If not placed, create a new packed group
       unless placed
-        participants = Set.new
-        participants.add(heat.entry.lead_id) if heat.entry.lead_id != 0
-        participants.add(heat.entry.follow_id) if heat.entry.follow_id != 0
-
         packed_groups << {
-          heats: [heat],
-          participants: participants,
+          heats: group_heats,
+          participants: group_participants,
           agenda_category: run_groups.first.agenda_category
         }
       end
     end
 
-    # Rebalance: move heats from larger groups to smaller ones when possible
+    # Rebalance: move entire splits from larger groups to smaller ones when possible
     packed_groups = rebalance_packed_groups(packed_groups, max_size)
 
     # Convert packed groups back to Group objects
@@ -639,9 +641,52 @@ module HeatScheduler
     end
   end
 
-  # Rebalance packed groups to distribute heats more evenly
+  # Check if an entire group (split) can be added to a packed group
+  def can_add_group_to_packed?(group_heats, group_participants, packed_group, max_size)
+    # Check size limit
+    return false if packed_group[:heats].size + group_heats.size > max_size
+
+    # Check for participant conflicts
+    return false unless (group_participants & packed_group[:participants]).empty?
+
+    # Check exclude relationships
+    group_heats.each do |heat|
+      lead = heat.entry.lead
+      follow = heat.entry.follow
+
+      return false if lead.exclude_id && packed_group[:participants].include?(lead.exclude_id)
+      return false if follow.exclude_id && packed_group[:participants].include?(follow.exclude_id)
+    end
+
+    # Also check reverse: existing participants' excludes against new group
+    packed_group[:heats].each do |heat|
+      lead = heat.entry.lead
+      follow = heat.entry.follow
+
+      return false if lead.exclude_id && group_participants.include?(lead.exclude_id)
+      return false if follow.exclude_id && group_participants.include?(follow.exclude_id)
+    end
+
+    true
+  end
+
+  # Rebalance packed groups by moving entire splits to distribute heats more evenly.
+  # Unlike the old rebalance which moved individual heats (breaking splits),
+  # this moves complete splits as atomic units.
   def rebalance_packed_groups(packed_groups, max_size)
     return packed_groups if packed_groups.length <= 1
+
+    # Track which heats belong to each split (dance_id)
+    # so we can move them together as a unit
+    splits_in_groups = packed_groups.map do |pg|
+      splits = pg[:heats].group_by(&:dance_id)
+      splits.transform_values do |heats|
+        {
+          heats: heats,
+          participants: Set.new(heats.flat_map { |h| [h.entry.lead_id, h.entry.follow_id] }.reject(&:zero?))
+        }
+      end
+    end
 
     # Keep trying to rebalance until no more moves are possible
     changed = true
@@ -649,25 +694,40 @@ module HeatScheduler
       changed = false
 
       # Sort by size descending to find largest groups first
-      packed_groups.sort_by! { |g| -g[:heats].size }
+      sorted_indices = packed_groups.each_index.sort_by { |i| -packed_groups[i][:heats].size }
+      largest_idx = sorted_indices.first
+      smallest_idx = sorted_indices.last
 
-      largest = packed_groups.first
-      smallest = packed_groups.last
+      largest = packed_groups[largest_idx]
+      smallest = packed_groups[smallest_idx]
 
       # Only rebalance if difference is > 1
       next unless largest[:heats].size - smallest[:heats].size > 1
 
-      # Try to move a heat from largest to smallest
-      largest[:heats].each do |heat|
-        if can_add_heat_to_group?(heat, smallest, max_size)
-          # Move the heat
-          largest[:heats].delete(heat)
-          largest[:participants].delete(heat.entry.lead_id) unless largest[:heats].any? { |h| h.entry.lead_id == heat.entry.lead_id }
-          largest[:participants].delete(heat.entry.follow_id) unless largest[:heats].any? { |h| h.entry.follow_id == heat.entry.follow_id }
+      # Try to move an entire split from largest to smallest
+      splits_in_groups[largest_idx].each do |dance_id, split_data|
+        split_heats = split_data[:heats]
+        split_participants = split_data[:participants]
 
-          smallest[:heats] << heat
-          smallest[:participants].add(heat.entry.lead_id) if heat.entry.lead_id != 0
-          smallest[:participants].add(heat.entry.follow_id) if heat.entry.follow_id != 0
+        # Check if moving this split would help (not make smallest bigger than largest)
+        new_largest_size = largest[:heats].size - split_heats.size
+        new_smallest_size = smallest[:heats].size + split_heats.size
+
+        next if new_smallest_size > new_largest_size + 1  # Would reverse the imbalance
+        next if new_smallest_size > max_size  # Would exceed max size
+
+        # Check if split can be added to smallest group
+        if can_add_group_to_packed?(split_heats, split_participants, smallest, max_size)
+          # Move the entire split
+          split_heats.each { |heat| largest[:heats].delete(heat) }
+          largest[:participants] -= split_participants
+
+          smallest[:heats].concat(split_heats)
+          smallest[:participants].merge(split_participants)
+
+          # Update splits tracking
+          splits_in_groups[smallest_idx][dance_id] = split_data
+          splits_in_groups[largest_idx].delete(dance_id)
 
           changed = true
           break
@@ -675,30 +735,8 @@ module HeatScheduler
       end
     end
 
-    # Remove any empty groups (shouldn't happen, but safety check)
+    # Remove any empty groups
     packed_groups.reject { |g| g[:heats].empty? }
-  end
-
-  # Check if a heat can be added to a packed group
-  def can_add_heat_to_group?(heat, packed_group, max_size)
-    # Check size limit
-    return false if packed_group[:heats].size >= max_size
-
-    # Check for participant conflicts (skip Nobody with id=0)
-    lead_id = heat.entry.lead_id
-    follow_id = heat.entry.follow_id
-
-    return false if lead_id != 0 && packed_group[:participants].include?(lead_id)
-    return false if follow_id != 0 && packed_group[:participants].include?(follow_id)
-
-    # Check exclude relationships
-    lead = heat.entry.lead
-    follow = heat.entry.follow
-
-    return false if lead.exclude_id && packed_group[:participants].include?(lead.exclude_id)
-    return false if follow.exclude_id && packed_group[:participants].include?(follow.exclude_id)
-
-    true
   end
 
   class Group

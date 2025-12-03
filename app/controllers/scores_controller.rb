@@ -1604,59 +1604,73 @@ class ScoresController < ApplicationController
     setup_score_view_params
     event = Event.current
     @multi_scoring = event.multi_scoring
-    dances = Dance.where.not(multi_category_id: nil).
-      includes(multi_children: :dance, heats: [{entry: [:lead, :follow]}, :scores]).
-      ordered
+
+    # Get canonical multi-dances (positive order) to establish the dance groups
+    canonical_dances = Dance.where.not(multi_category_id: nil).where(order: 1..).ordered
 
     @score_range = get_scores_for_type(@multi_scoring)
 
     @scores = {}
     @scrutineering_results = {}
-    
-    dances.each do |dance|
-      @scores[dance] = {}
-      
-      # Check if this dance uses semi-finals
-      if dance.semi_finals?
-        # Check if there are any scores for this dance
-        total_scores = dance.heats.joins(:scores).count
-        
-        if total_scores > 0
-          # Use scrutineering rankings
-          summary, ranks = dance.scrutineering
-          @scrutineering_results[dance] = {
-            summary: summary,
-            ranks: ranks
-          }
-          
-          # Only show entries that have been ranked and have complete summary data
-          # Filter out entries with no ranking, invalid ranks, or empty summaries
-          ranks.select { |entry_id, rank| rank && rank > 0 && rank < 999 && summary[entry_id] && !summary[entry_id].empty? }.each do |entry_id, rank|
-            entry = Entry.find(entry_id)
+    @split_names = {}
+
+    canonical_dances.each do |canonical_dance|
+      # Find all splits for this dance (including itself)
+      all_splits = Dance.where(name: canonical_dance.name)
+        .includes(multi_children: :dance, heats: [{entry: [:lead, :follow]}, :scores])
+
+      all_splits.each do |dance|
+        # Skip dances with no heats
+        next unless dance.heats.where.not(number: ..0).exists?
+
+        @scores[dance] = {}
+
+        # Get split name from MultiLevel if exists
+        ml = MultiLevel.find_by(dance_id: dance.id)
+        @split_names[dance.id] = ml&.name
+
+        # Check if this dance uses semi-finals
+        if dance.semi_finals?
+          # Check if there are any scores for this dance
+          total_scores = dance.heats.joins(:scores).count
+
+          if total_scores > 0
+            # Use scrutineering rankings
+            summary, ranks = dance.scrutineering
+            @scrutineering_results[dance] = {
+              summary: summary,
+              ranks: ranks
+            }
+
+            # Only show entries that have been ranked and have complete summary data
+            # Filter out entries with no ranking, invalid ranks, or empty summaries
+            ranks.select { |entry_id, rank| rank && rank > 0 && rank < 999 && summary[entry_id] && !summary[entry_id].empty? }.each do |entry_id, rank|
+              entry = Entry.find(entry_id)
+              @scores[dance][entry] = {
+                'Multi' => @score_range.map {0},
+                'points' => 0,
+                'rank' => rank,
+                'summary' => summary[entry_id] || {}
+              }
+            end
+          end
+        else
+          # Use regular scoring
+          dance.heats.map(&:scores).flatten.group_by {|score| score.heat.entry}.map do |entry, scores|
             @scores[dance][entry] = {
               'Multi' => @score_range.map {0},
-              'points' => 0,
-              'rank' => rank,
-              'summary' => summary[entry_id] || {}
+              'points' => 0
             }
-          end
-        end
-      else
-        # Use regular scoring
-        dance.heats.map(&:scores).flatten.group_by {|score| score.heat.entry}.map do |entry, scores|
-          @scores[dance][entry] = {
-            'Multi' => @score_range.map {0},
-            'points' => 0
-          }
 
-          scores.each do |score|
-            if @multi_scoring == '#'
-              @scores[dance][entry]['points'] += score.value.to_i
-            else
-              value = @score_range.index score.value
-              if value
-                @scores[dance][entry]['Multi'][value] += 1
-                @scores[dance][entry]['points'] += WEIGHTS[value]
+            scores.each do |score|
+              if @multi_scoring == '#'
+                @scores[dance][entry]['points'] += score.value.to_i
+              else
+                value = @score_range.index score.value
+                if value
+                  @scores[dance][entry]['Multi'][value] += 1
+                  @scores[dance][entry]['points'] += WEIGHTS[value]
+                end
               end
             end
           end
