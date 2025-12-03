@@ -156,6 +156,7 @@ class Heat < ApplicationRecord
         else
           places.each do |entry_id, count|
             entry = entry_map[entry_id]
+            next unless entry  # Skip entries from other split dances
             explanations << "  - ##{entry.lead.back}: #{count} marks for place #{examining} or better"
           end
         end
@@ -176,6 +177,7 @@ class Heat < ApplicationRecord
           # if there is only one entry in this group, we can assign it a rank (Rule 6)
           entry_id = entries.first
           entry = entry_map[entry_id]
+          next unless entry  # Skip entries from other split dances
           if explanations
             explanations << "  Rule 6: ##{entry.lead.back} has clear majority (#{count} marks) - assigned rank #{rank}"
           end
@@ -195,6 +197,7 @@ class Heat < ApplicationRecord
             if entries.length == 1
               entry_id = entries.first
               entry = entry_map[entry_id]
+              next unless entry  # Skip entries from other split dances
               if explanations
                 explanations << "  Rule 7(a): ##{entry.lead.back} has lowest sum (#{score}) - assigned rank #{rank}"
               end
@@ -205,7 +208,8 @@ class Heat < ApplicationRecord
               # if there are two or more entries in this group, we need to focus only on these entries
               # and examine the next place mark (Rule 7 part 2)
               if explanations
-                entry_backs = entries.map { |id| "##{entry_map[id].lead.back}" }.join(", ")
+                valid_entries = entries.select { |id| entry_map[id] }
+                entry_backs = valid_entries.map { |id| "##{entry_map[id].lead.back}" }.join(", ")
                 explanations << "  Rule 7(b): Tie between #{entry_backs} (sum=#{score}) - examining next place"
               end
               runoff.call(entries, examining + 1, true)
@@ -213,11 +217,13 @@ class Heat < ApplicationRecord
               # We have a tie, so we need to assign the same rank to all entries in this group
               # (rule 7 part 3)
               if explanations
-                entry_backs = entries.map { |id| "##{entry_map[id].lead.back}" }.join(", ")
+                valid_entries = entries.select { |id| entry_map[id] }
+                entry_backs = valid_entries.map { |id| "##{entry_map[id].lead.back}" }.join(", ")
                 tied_rank = rank + (entries.length-1) / 2.0
                 explanations << "  Rule 7(c): Unbreakable tie between #{entry_backs} - all assigned rank #{tied_rank}"
               end
               entries.each do |entry_id|
+                next unless entry_map[entry_id]  # Skip entries from other split dances
                 rankings[entry_map[entry_id]] = rank + (entries.length-1) / 2.0
                 scores.delete entry_id
               end

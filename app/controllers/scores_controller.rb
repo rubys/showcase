@@ -1725,6 +1725,9 @@ class ScoresController < ApplicationController
     @dance.multi_children.includes(:dance).each_with_index do |child, index|
       @dance_names[child.dance.name] = child.dance.name
     end
+
+    # Get split name if this is a split dance
+    @split_name = @dance.multi_levels.first&.name
     
     # Handle POST requests for live updates
     if request.post?
