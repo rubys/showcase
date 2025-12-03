@@ -148,8 +148,9 @@ class Heat < ApplicationRecord
       # find all entries that have a majority of scores less than or equal to the current place we are examining
       places = scores.select { |entry_id, scores| entries.include? entry_id }.
         map { |entry_id, scores| [entry_id, scores.count {|score| score <= examining}] }.
-        select { |entry_id, count| count >= majority }
-        
+        select { |entry_id, count| count >= majority }.
+        select { |entry_id, count| entry_map[entry_id] }  # Filter to only entries in this split
+
       if explanations
         if places.empty?
           explanations << "  - No competitors have a majority (#{majority} marks) at place #{examining}"
@@ -185,8 +186,10 @@ class Heat < ApplicationRecord
           scores.delete entry_id
           rank += 1
         else
-          # if two or more couples have an equal majority of scores, add together the place marks 
-          subscores = entries.map { |entry_id| [entry_id, scores[entry_id]] }.to_h
+          # if two or more couples have an equal majority of scores, add together the place marks
+          # Filter entries to only those in this split
+          valid_entry_ids = entries.select { |entry_id| entry_map[entry_id] }
+          subscores = valid_entry_ids.map { |entry_id| [entry_id, scores[entry_id]] }.to_h
           totals = subscores.
             map {|entry_id, scores| [entry_id, scores.select {|score| score <= examining}.sum]}.
             group_by {|entry_id, score| score}.sort_by {|score, entries| score}.

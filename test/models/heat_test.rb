@@ -573,4 +573,176 @@ class HeatTest < ActiveSupport::TestCase
 
     assert_equal final_example[:ranks], ranks
   end
+
+  # ===== SPLIT DANCE SCRUTINEERING TESTS =====
+  # Tests for correct handling when multiple splits share the same heat number
+
+  test "rank_placement with entry_map filters entries from other splits" do
+    # Scenario: Two splits share heat number 300
+    # Split A has couples 201, 202 (entry_map includes only these)
+    # Split B has couples 203, 204 (scores exist but not in entry_map)
+    # Verify that split A's ranking ignores split B's entries
+
+    staff = Studio.find(0)
+    judges = {}
+    %i(j1 j2 j3).each do |name|
+      judges[name] = Person.create!(name: name, type: "Judge", studio: staff)
+    end
+
+    studio = studios(:one)
+    heat_number = 300
+    entries = {}
+
+    # Create 4 couples - 2 per split
+    [501, 502, 503, 504].each do |back_number|
+      leader = Person.create!(name: "Leader#{back_number}", type: "Leader", studio: studio, back: back_number)
+      entry = Entry.create!(
+        lead: leader,
+        follow: people(:Kathryn),
+        instructor: people(:Arthur),
+        age: ages(:A),
+        level: levels(:FB)
+      )
+      entries[back_number] = entry
+
+      heat = Heat.create!(
+        number: heat_number,
+        entry: entry,
+        dance: dances(:waltz)
+      )
+
+      # All 4 couples get scores in the same heat
+      judges.each_value do |judge|
+        # Split A: 501 gets 1st, 502 gets 2nd
+        # Split B: 503 gets 1st, 504 gets 2nd
+        value = case back_number
+                when 501 then 1
+                when 502 then 2
+                when 503 then 1
+                when 504 then 2
+                end
+        Score.create!(heat_id: heat.id, judge_id: judge.id, value: value)
+      end
+    end
+
+    # Create entry_map for Split A only (couples 501, 502)
+    split_a_entries = [entries[501], entries[502]]
+    entry_map = split_a_entries.index_by(&:id)
+
+    # Run rank_placement with the filtered entry_map
+    rankings = Heat.rank_placement(heat_number, nil, 2, split_a_entries, nil, entry_map: entry_map)
+
+    # Verify only split A entries are ranked
+    assert_equal 2, rankings.size, "Should only rank entries in split A"
+    assert_equal 1, rankings[entries[501]], "Couple 501 should be ranked 1st"
+    assert_equal 2, rankings[entries[502]], "Couple 502 should be ranked 2nd"
+    assert_nil rankings[entries[503]], "Couple 503 should not be in rankings"
+    assert_nil rankings[entries[504]], "Couple 504 should not be in rankings"
+  end
+
+  test "rank_placement with single entry in split assigns rank 1 not fractional" do
+    # Scenario: A split has only one couple, but shares heat with other splits
+    # The single couple should get rank 1 (Rule 6), not a fractional rank from tie logic
+
+    staff = Studio.find(0)
+    judge = Person.create!(name: "solo_judge", type: "Judge", studio: staff)
+
+    studio = studios(:one)
+    heat_number = 301
+    entries = {}
+
+    # Create 3 couples - 1 in split A, 2 in split B
+    [601, 602, 603].each do |back_number|
+      leader = Person.create!(name: "Leader#{back_number}", type: "Leader", studio: studio, back: back_number)
+      entry = Entry.create!(
+        lead: leader,
+        follow: people(:Kathryn),
+        instructor: people(:Arthur),
+        age: ages(:A),
+        level: levels(:FB)
+      )
+      entries[back_number] = entry
+
+      heat = Heat.create!(
+        number: heat_number,
+        entry: entry,
+        dance: dances(:waltz)
+      )
+
+      # All get 1st place marks (would cause tie if not filtered)
+      Score.create!(heat_id: heat.id, judge_id: judge.id, value: 1)
+    end
+
+    # Create entry_map for Split A only (single couple 601)
+    split_a_entries = [entries[601]]
+    entry_map = split_a_entries.index_by(&:id)
+
+    # Run rank_placement with the filtered entry_map
+    rankings = Heat.rank_placement(heat_number, nil, 1, split_a_entries, nil, entry_map: entry_map)
+
+    # Verify single entry gets rank 1, not a fractional rank
+    assert_equal 1, rankings.size, "Should only rank the one entry in split A"
+    assert_equal 1, rankings[entries[601]], "Single couple should get rank 1, not fractional"
+  end
+
+  test "rank_placement explanations reference only entries in split" do
+    # Verify that explanation text only mentions couples in the current split
+
+    staff = Studio.find(0)
+    judges = {}
+    %i(j1 j2 j3).each do |name|
+      judges[name] = Person.create!(name: name, type: "Judge", studio: staff)
+    end
+
+    studio = studios(:one)
+    heat_number = 302
+    entries = {}
+
+    # Create 4 couples across 2 splits
+    [701, 702, 703, 704].each do |back_number|
+      leader = Person.create!(name: "Leader#{back_number}", type: "Leader", studio: studio, back: back_number)
+      entry = Entry.create!(
+        lead: leader,
+        follow: people(:Kathryn),
+        instructor: people(:Arthur),
+        age: ages(:A),
+        level: levels(:FB)
+      )
+      entries[back_number] = entry
+
+      heat = Heat.create!(
+        number: heat_number,
+        entry: entry,
+        dance: dances(:waltz)
+      )
+
+      judges.each_value do |judge|
+        value = case back_number
+                when 701 then 1
+                when 702 then 2
+                when 703 then 1
+                when 704 then 2
+                end
+        Score.create!(heat_id: heat.id, judge_id: judge.id, value: value)
+      end
+    end
+
+    # Create entry_map for Split A only
+    split_a_entries = [entries[701], entries[702]]
+    entry_map = split_a_entries.index_by(&:id)
+
+    # Run rank_placement with explanations
+    rankings, explanations = Heat.rank_placement(heat_number, nil, 2, split_a_entries, nil,
+                                                  with_explanations: true, entry_map: entry_map)
+
+    explanation_text = explanations.join("\n")
+
+    # Verify explanations mention split A couples
+    assert_match /#701/, explanation_text, "Should mention couple 701"
+    assert_match /#702/, explanation_text, "Should mention couple 702"
+
+    # Verify explanations do NOT mention split B couples
+    refute_match /#703/, explanation_text, "Should not mention couple 703 from other split"
+    refute_match /#704/, explanation_text, "Should not mention couple 704 from other split"
+  end
 end
