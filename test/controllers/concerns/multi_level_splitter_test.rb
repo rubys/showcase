@@ -360,6 +360,46 @@ class MultiLevelSplitterTest < ActionDispatch::IntegrationTest
     assert_nil remaining.first.stop_age
   end
 
+  test "perform_age_split on multi_level with nil age ranges sets both start_age and stop_age" do
+    # Create a multi_level with nil age ranges (no age restriction)
+    # This simulates the scenario where a level split exists but no age split yet
+    entry1 = create_proam_entry(@instructor, @student_follow, level: @level_one, age: @age_one)
+    entry2 = create_proam_entry(@instructor, @student_follow, level: @level_one, age: @age_two)
+
+    Heat.create!(number: 1, entry: entry1, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 2, entry: entry2, dance: @multi_dance, category: 'Multi')
+
+    # Create multi_level with nil age ranges (level split only)
+    ml = MultiLevel.create!(
+      name: @level_one.name,
+      dance: @multi_dance,
+      start_level: @level_one.id,
+      stop_level: @level_one.id,
+      start_age: nil,
+      stop_age: nil
+    )
+
+    controller = create_controller_with_concern
+
+    # Shrink by age - this should set BOTH start_age and stop_age
+    # The bug was that only stop_age was set, violating the validation
+    controller.send(:perform_age_split, ml.id, @age_one.id)
+
+    # Should now have two multi_levels
+    multi_levels = MultiLevel.where(dance: Dance.where(name: 'Test Multi')).order(:start_age)
+    assert_equal 2, multi_levels.count
+
+    # First should have valid age range (both start and stop set)
+    first_ml = multi_levels.first
+    assert_equal @age_one.id, first_ml.start_age
+    assert_equal @age_one.id, first_ml.stop_age
+
+    # Second should have valid age range
+    second_ml = multi_levels.second
+    assert_equal @age_two.id, second_ml.start_age
+    assert_equal @age_two.id, second_ml.stop_age
+  end
+
   # ===== COUPLE TYPE SPLIT TESTS =====
 
   test "perform_initial_couple_split splits pro_am vs amateur_couple" do

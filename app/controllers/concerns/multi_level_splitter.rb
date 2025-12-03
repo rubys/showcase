@@ -460,8 +460,8 @@ module MultiLevelSplitter
     def handle_age_shrink(multi_level, new_stop_age, old_stop_age, min_age, level_siblings, all_ages, original_dance, dance)
       current_index = level_siblings.index(multi_level)
 
-      # Update this multi_level
-      multi_level.update!(stop_age: new_stop_age)
+      # Update this multi_level (must set both start_age and stop_age together for validation)
+      multi_level.update!(start_age: min_age, stop_age: new_stop_age)
       first_age = all_ages.find { |a| a.id == min_age }
       new_stop_age_obj = all_ages.find { |a| a.id == new_stop_age }
       multi_level.update!(name: format_split_name(multi_level, first_age, new_stop_age_obj, :age))
@@ -520,8 +520,8 @@ module MultiLevelSplitter
       current_index = level_siblings.index(multi_level)
       return unless current_index
 
-      # Update this multi_level's stop_age
-      multi_level.update!(stop_age: new_stop_age)
+      # Update this multi_level's age range (must set both start_age and stop_age together for validation)
+      multi_level.update!(start_age: min_age, stop_age: new_stop_age)
       first_age = all_ages.find { |a| a.id == min_age }
       new_stop_age_obj = all_ages.find { |a| a.id == new_stop_age }
       multi_level.update!(name: format_split_name(multi_level, first_age, new_stop_age_obj, :age))
