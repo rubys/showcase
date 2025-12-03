@@ -201,7 +201,7 @@ bin/rails db:fixtures:load
 - `Solo` - Individual performances/routines. Belongs to heat, has attached song_file. **Solos can have formations** which identify additional people on the floor beyond the lead/follow
 - `Formation` - Individual participants in group performances. Belongs to person and solo. Has `on_floor` attribute indicating if they're dancing or just receiving credit. Note: while the formation controller represents a solo with multiple participants, the Formation model represents a single participant
 - `Multi` - Multi-dance competitions linking parent dance to child dances
-- `MultiLevel` - Level restrictions for multi-dance events
+- `MultiLevel` - Defines splits for multi-dance events. Each MultiLevel belongs to a Dance and specifies a `name` (e.g., "Newcomer", "Full Bronze 65+"), optional level range (`start_level`/`stop_level`), optional age range (`start_age`/`stop_age`), and optional `couple_type`. When a multi-dance has MultiLevel records, the scheduler packs compatible splits into the same heat while keeping each split's entries together as an atomic unit for judging. The `name` is displayed in scoring views to identify which competition a judge is ranking
 
 #### Judging & Scoring Models
 - `Judge` - Judge information for a person, has many recordings
