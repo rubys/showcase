@@ -438,13 +438,7 @@ class EntriesController < ApplicationController
     end
 
     # Redirect back to the entries page with the same query params
-    redirect_to entries_path(
-      dance: params[:dance],
-      couple: params[:couple],
-      level: params[:level],
-      age: params[:age],
-      sort: params[:sort]
-    )
+    redirect_to dance_entries_path(params[:dance])
   end
 
   private
