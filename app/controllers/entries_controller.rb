@@ -55,8 +55,20 @@ class EntriesController < ApplicationController
     selected = selected.or(plus) if plus
     selected = selected.includes(entry: [:lead, :follow, :level, :age], dance: [])
 
+    # Check if this is a multi-dance to determine default sort
+    # A dance is considered multi if it has multi_children OR has heat_length set
+    is_multi_dance = false
+    if @dance_name
+      main_dance = Dance.find_by(id: params[:dance])
+      is_multi_dance = main_dance&.multi_children&.any? || main_dance&.heat_length.to_i > 0
+    end
+
     # Apply sorting based on the sort parameter
-    case params[:sort]
+    # Default to 'level' sort for multi-dance views to match Competition Splits table
+    sort_param = params[:sort]
+    sort_param = 'level' if sort_param.blank? && is_multi_dance
+
+    case sort_param
     when 'lead'
       selected = selected.joins(entry: :lead).order('people.name')
     when 'follow'
@@ -79,46 +91,44 @@ class EntriesController < ApplicationController
     @heats = selected.all
 
     # Gather multi-level information if this is a multi-dance
-    if @dance_name
-      main_dance = Dance.find_by(id: params[:dance])
-      @is_multi = main_dance&.multi_children&.any?
+    # (reuse is_multi_dance computed above for default sort)
+    @is_multi = is_multi_dance
 
-      if @is_multi
-        # Get all dances with this name
-        all_dances = Dance.where(name: @dance_name)
+    if @is_multi
+      # Get all dances with this name
+      all_dances = Dance.where(name: @dance_name)
 
-        # Get all multi_levels for these dances, ordered by level then age then couple_type
-        @multi_levels = MultiLevel.where(dance: all_dances)
-          .order(:start_level, :start_age, :couple_type).to_a
+      # Get all multi_levels for these dances, ordered by level then age then couple_type
+      @multi_levels = MultiLevel.where(dance: all_dances)
+        .order(:start_level, :start_age, :couple_type).to_a
 
-        # Get the range of levels and ages shown on this page
-        if @heats.any?
-          level_ids = @heats.map { |h| h.entry.level_id }.uniq.sort
-          @min_level = level_ids.min
-          @max_level = level_ids.max
-          @level_ids = level_ids
+      # Get the range of levels and ages shown on this page
+      if @heats.any?
+        level_ids = @heats.map { |h| h.entry.level_id }.uniq.sort
+        @min_level = level_ids.min
+        @max_level = level_ids.max
+        @level_ids = level_ids
 
-          age_ids = @heats.map { |h| h.entry.age_id }.uniq.sort
-          @min_age = age_ids.min
-          @max_age = age_ids.max
-          @age_ids = age_ids
+        age_ids = @heats.map { |h| h.entry.age_id }.uniq.sort
+        @min_age = age_ids.min
+        @max_age = age_ids.max
+        @age_ids = age_ids
 
-          # Determine couple types present
-          @couple_types_present = []
-          @heats.each do |h|
-            couple_type = determine_couple_type(h.entry)
-            @couple_types_present << couple_type unless @couple_types_present.include?(couple_type)
-          end
-        else
-          @level_ids = []
-          @age_ids = []
-          @couple_types_present = []
+        # Determine couple types present
+        @couple_types_present = []
+        @heats.each do |h|
+          couple_type = determine_couple_type(h.entry)
+          @couple_types_present << couple_type unless @couple_types_present.include?(couple_type)
         end
-
-        # Check if age or couple splits are active
-        @has_age_splits = @multi_levels.any? { |ml| ml.start_age.present? }
-        @has_couple_splits = @multi_levels.any? { |ml| ml.couple_type.present? }
+      else
+        @level_ids = []
+        @age_ids = []
+        @couple_types_present = []
       end
+
+      # Check if age or couple splits are active
+      @has_age_splits = @multi_levels.any? { |ml| ml.start_age.present? }
+      @has_couple_splits = @multi_levels.any? { |ml| ml.couple_type.present? }
     end
   end
 

@@ -86,7 +86,7 @@
                   <%= f.hidden_field :age, value: @age %>
                   <%= f.hidden_field :sort, value: params[:sort] %>
                   <%= f.select :stop_level,
-                      @levels.select { |name, id| @level_ids.include?(id) && id > @min_level }.map { |name, id| [name, id] },
+                      @levels.select { |name, id| @level_ids.include?(id) && id >= @min_level }.map { |name, id| [name, id] },
                       { selected: @max_level },
                       class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1" %>
                 <% end %>
@@ -105,7 +105,7 @@
                   <%= f.hidden_field :age, value: @age %>
                   <%= f.hidden_field :sort, value: params[:sort] %>
                   <%= f.select :stop_age,
-                      @ages.select { |desc, id| @age_ids.include?(id) && id > @min_age }.map { |desc, id| [desc, id] },
+                      @ages.select { |desc, id| @age_ids.include?(id) && id >= @min_age }.map { |desc, id| [desc, id] },
                       { selected: @max_age },
                       class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1" %>
                 <% end %>
@@ -354,7 +354,7 @@
                 <%= f.hidden_field :age, value: @age %>
                 <%= f.hidden_field :sort, value: params[:sort] %>
                 <%= f.select :stop_level,
-                    @levels.select { |name, id| @level_ids.include?(id) && id > @min_level }.map { |name, id| [name, id] },
+                    @levels.select { |name, id| @level_ids.include?(id) && id >= @min_level }.map { |name, id| [name, id] },
                     { selected: @max_level },
                     class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1 text-sm" %>
               <% end %>
@@ -375,7 +375,7 @@
                 <%= f.hidden_field :age, value: @age %>
                 <%= f.hidden_field :sort, value: params[:sort] %>
                 <%= f.select :stop_age,
-                    @ages.select { |desc, id| @age_ids.include?(id) && id > @min_age }.map { |desc, id| [desc, id] },
+                    @ages.select { |desc, id| @age_ids.include?(id) && id >= @min_age }.map { |desc, id| [desc, id] },
                     { selected: @max_age },
                     class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1 text-sm" %>
               <% end %>

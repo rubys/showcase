@@ -32,6 +32,8 @@
     <%= slots.values.last.sort_by {|multi| multi.dance.order}[(@slot - 1) % @heat.dance.heat_length].dance.name %>
     <% elsif slots.values.last %>
     <%= slots.values.last.sort_by {|multi| multi.dance.order}.map {|multi| multi.dance.name}.join(' / ') %>
+    <% else %>
+    DJ's choice
     <% end %>
     </div>
     <% end %>

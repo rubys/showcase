@@ -987,6 +987,8 @@ class ScoresController < ApplicationController
         @multi_dance_names = multi&.dance&.name
       elsif slots.values.last
         @multi_dance_names = slots.values.last.sort_by { |multi| multi.dance.order }.map { |multi| multi.dance.name }.join(' / ')
+      elsif @heat.dance.heat_length
+        @multi_dance_names = "DJ's choice"
       end
     end
 
