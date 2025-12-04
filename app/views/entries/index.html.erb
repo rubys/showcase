@@ -144,7 +144,31 @@
                   if ml.start_age.present? && ml.stop_age.present?
                     next false unless e.age_id >= ml.start_age && e.age_id <= ml.stop_age
                   end
-                  # Couple type matching would go here if implemented
+                  # Couple type matching
+                  if ml.couple_type.present?
+                    lead_type = e.lead.type
+                    follow_type = e.follow.type
+                    entry_couple_type = if lead_type == 'Student' && follow_type == 'Professional'
+                      'Amateur Lead'
+                    elsif lead_type == 'Professional' && follow_type == 'Student'
+                      'Amateur Follow'
+                    elsif lead_type == 'Student' && follow_type == 'Student'
+                      'Amateur Couple'
+                    else
+                      'Professional'
+                    end
+
+                    case ml.couple_type
+                    when 'Pro-Am'
+                      next false unless ['Amateur Lead', 'Amateur Follow'].include?(entry_couple_type)
+                    when 'Amateur Couple'
+                      next false unless entry_couple_type == 'Amateur Couple'
+                    when 'Amateur Lead'
+                      next false unless entry_couple_type == 'Amateur Lead'
+                    when 'Amateur Follow'
+                      next false unless entry_couple_type == 'Amateur Follow'
+                    end
+                  end
                   true
                 end
               %>
@@ -386,6 +410,31 @@
               if ml.start_age.present? && ml.stop_age.present?
                 next false unless e.age_id >= ml.start_age && e.age_id <= ml.stop_age
               end
+              # Couple type matching
+              if ml.couple_type.present?
+                lead_type = e.lead.type
+                follow_type = e.follow.type
+                entry_couple_type = if lead_type == 'Student' && follow_type == 'Professional'
+                  'Amateur Lead'
+                elsif lead_type == 'Professional' && follow_type == 'Student'
+                  'Amateur Follow'
+                elsif lead_type == 'Student' && follow_type == 'Student'
+                  'Amateur Couple'
+                else
+                  'Professional'
+                end
+
+                case ml.couple_type
+                when 'Pro-Am'
+                  next false unless ['Amateur Lead', 'Amateur Follow'].include?(entry_couple_type)
+                when 'Amateur Couple'
+                  next false unless entry_couple_type == 'Amateur Couple'
+                when 'Amateur Lead'
+                  next false unless entry_couple_type == 'Amateur Lead'
+                when 'Amateur Follow'
+                  next false unless entry_couple_type == 'Amateur Follow'
+                end
+              end
               true
             end
 
@@ -575,7 +624,7 @@
         case ml.couple_type
         when 'Pro-Am'
           # Pro-Am matches both Amateur Lead and Amateur Follow
-          return false unless %w[Amateur Lead Amateur Follow].include?(entry_couple_type)
+          return false unless ['Amateur Lead', 'Amateur Follow'].include?(entry_couple_type)
         when 'Amateur Couple'
           return false unless entry_couple_type == 'Amateur Couple'
         when 'Amateur Lead'

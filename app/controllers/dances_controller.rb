@@ -206,10 +206,18 @@ class DancesController < ApplicationController
     @trophy_counts = []
 
     multi_dances.each do |dance|
-      # Get all splits for this dance (including itself)
-      all_splits = Dance.where(name: dance.name).pluck(:id)
+      # Get all splits for this dance, ordered to match entries index display
+      # Order by start_level, start_age, couple_type (same as MultiLevel ordering in entries controller)
+      all_splits = MultiLevel.joins(:dance)
+        .where(dances: { name: dance.name })
+        .order(:start_level, :start_age, :couple_type)
+        .pluck(:dance_id)
+
+      # If no MultiLevel records exist, fall back to the main dance
+      all_splits = [dance.id] if all_splits.empty?
 
       dance_data = {
+        id: dance.id,
         name: dance.name,
         splits: []
       }

@@ -1,4 +1,13 @@
 <div class="mx-auto max-w-4xl">
+  <div data-controller="info-box">
+    <div class="info-button">&#x24D8;</div>
+    <ul class="info-box">
+      <li>This page helps you determine how many trophies or medals to order before an event.</li>
+      <li>Trophy counts are based on the number of entries: 1 entry = 1st place only, 2 entries = 1st and 2nd, 3+ entries = 1st, 2nd, and 3rd.</li>
+      <li>Click a multi-dance name to view its entries and competition splits.</li>
+    </ul>
+  </div>
+
   <h1 class="text-center font-bold text-4xl mb-8">Trophy Order</h1>
 
   <% if @trophy_counts.empty? %>
@@ -21,7 +30,7 @@
             <tr class="hover:bg-yellow-200<%= ' border-t-2 border-gray-300' if index == 0 && dance_index > 0 %>">
               <% if index == 0 %>
                 <td class="row font-medium" rowspan="<%= dance_data[:splits].size %>">
-                  <%= dance_data[:name] %>
+                  <%= link_to dance_data[:name], entries_path(dance: dance_data[:id], sort: :level) %>
                 </td>
               <% end %>
               <td class="row"><%= split[:name] || '&mdash;'.html_safe %></td>
