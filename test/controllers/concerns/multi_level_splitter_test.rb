@@ -353,11 +353,12 @@ class MultiLevelSplitterTest < ActionDispatch::IntegrationTest
     # Expand to include all ages
     controller.send(:perform_age_split, ml.id, @age_two.id)
 
-    # Should have one multi_level with no age range
+    # Should have no multi_levels - back to initial state (like level splits)
     remaining = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
-    assert_equal 1, remaining.count
-    assert_nil remaining.first.start_age
-    assert_nil remaining.first.stop_age
+    assert_equal 0, remaining.count
+
+    # Should have no negative order dances
+    assert_equal 0, Dance.where(name: 'Test Multi', order: ...0).count
   end
 
   test "perform_age_split on multi_level with nil age ranges sets both start_age and stop_age" do
@@ -630,6 +631,206 @@ class MultiLevelSplitterTest < ActionDispatch::IntegrationTest
 
     # Should have same multi_children count
     assert_equal @multi_dance.multi_children.count, split_dance.multi_children.count
+  end
+
+  # ===== COUPLE TYPE COLLAPSE TESTS =====
+
+  test "perform_couple_collapse merges couple type splits back to one" do
+    # Create Pro-Am entry and Amateur Couple entry
+    entry1 = create_proam_entry(@instructor, @student_follow, level: @level_one)
+    entry2 = create_amateur_entry(@student_lead, @student_follow, level: @level_one)
+
+    heat1 = Heat.create!(number: 1, entry: entry1, dance: @multi_dance, category: 'Multi')
+    heat2 = Heat.create!(number: 2, entry: entry2, dance: @multi_dance, category: 'Multi')
+
+    controller = create_controller_with_concern
+
+    # First create the couple split
+    controller.send(:perform_initial_couple_split, @multi_dance.id, 'pro_am_vs_amateur')
+
+    # Verify split was created
+    multi_levels = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+    assert_equal 2, multi_levels.count
+
+    # Get one of the multi_levels to collapse from
+    ml = multi_levels.first
+
+    # Collapse the couple splits
+    controller.send(:perform_couple_collapse, ml.id)
+
+    # Should have no multi_levels - back to initial state
+    remaining = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+    assert_equal 0, remaining.count
+
+    # Should have no negative order dances
+    assert_equal 0, Dance.where(name: 'Test Multi', order: ...0).count
+
+    # All heats should be back on the original dance
+    heat1.reload
+    heat2.reload
+    assert_equal @multi_dance.id, heat1.dance_id
+    assert_equal @multi_dance.id, heat2.dance_id
+  end
+
+  test "perform_couple_collapse within level split preserves level split" do
+    # Create entries with different levels AND different couple types
+    entry1 = create_proam_entry(@instructor, @student_follow, level: @level_one)
+    entry2 = create_amateur_entry(@student_lead, @student_follow, level: @level_one)
+    entry3 = create_proam_entry(@instructor, @student_follow, level: @level_two)
+
+    heat1 = Heat.create!(number: 1, entry: entry1, dance: @multi_dance, category: 'Multi')
+    heat2 = Heat.create!(number: 2, entry: entry2, dance: @multi_dance, category: 'Multi')
+    heat3 = Heat.create!(number: 3, entry: entry3, dance: @multi_dance, category: 'Multi')
+
+    controller = create_controller_with_concern
+
+    # First create level split
+    controller.send(:perform_initial_split, @multi_dance.id, @level_one.id)
+    assert_equal 2, MultiLevel.where(dance: Dance.where(name: 'Test Multi')).count
+
+    # Get the first level's multi_level
+    level_one_ml = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+                             .find { |ml| ml.stop_level == @level_one.id }
+
+    # Now add couple split within the first level
+    controller.send(:perform_couple_split, level_one_ml.id, 'pro_am_vs_amateur')
+
+    # Should now have 3 multi_levels (2 for level one with couple types, 1 for level two)
+    multi_levels = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+    assert_equal 3, multi_levels.count
+
+    # Get one of the couple-split multi_levels
+    couple_ml = multi_levels.find { |ml| ml.couple_type.present? }
+
+    # Collapse the couple split
+    controller.send(:perform_couple_collapse, couple_ml.id)
+
+    # Should have 2 multi_levels remaining (back to just level split)
+    remaining = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+    assert_equal 2, remaining.count
+
+    # Neither should have couple_type set
+    remaining.each do |ml|
+      assert_nil ml.couple_type
+    end
+  end
+
+  test "perform_couple_collapse via split_multi action" do
+    # Create Pro-Am entry and Amateur Couple entry
+    entry1 = create_proam_entry(@instructor, @student_follow, level: @level_one)
+    entry2 = create_amateur_entry(@student_lead, @student_follow, level: @level_one)
+
+    Heat.create!(number: 1, entry: entry1, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 2, entry: entry2, dance: @multi_dance, category: 'Multi')
+
+    # First create the couple split via action
+    post split_multi_entries_url, params: {
+      dance_id: @multi_dance.id,
+      dance: @multi_dance.id,
+      couple_split: 'pro_am_vs_amateur',
+      sort: 'level'
+    }
+    assert_response :redirect
+
+    # Verify split was created
+    multi_levels = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+    assert_equal 2, multi_levels.count
+
+    # Get one of the multi_levels
+    ml = multi_levels.first
+
+    # Collapse via action (empty couple_split means collapse)
+    post split_multi_entries_url, params: {
+      multi_level_id: ml.id,
+      dance: @multi_dance.id,
+      couple_split: '',
+      sort: 'level'
+    }
+    assert_response :redirect
+
+    # Should have no multi_levels - back to initial state
+    remaining = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+    assert_equal 0, remaining.count
+  end
+
+  # ===== AGE COLLAPSE TO INITIAL STATE TESTS =====
+
+  test "handle_age_expand removes all splits when back to single multi_level overall" do
+    # This tests that age collapse also checks for single multi_level overall
+    # (not just single age split within a level group)
+    entry1 = create_proam_entry(@instructor, @student_follow, level: @level_one, age: @age_one)
+    entry2 = create_proam_entry(@instructor, @student_follow, level: @level_one, age: @age_two)
+
+    heat1 = Heat.create!(number: 1, entry: entry1, dance: @multi_dance, category: 'Multi')
+    heat2 = Heat.create!(number: 2, entry: entry2, dance: @multi_dance, category: 'Multi')
+
+    controller = create_controller_with_concern
+    controller.send(:perform_initial_age_split, @multi_dance.id, @age_one.id)
+
+    # Verify split was created
+    assert_equal 2, MultiLevel.where(dance: Dance.where(name: 'Test Multi')).count
+
+    # Get the first multi_level
+    ml = MultiLevel.where(dance: @multi_dance).first
+
+    # Expand to include all ages
+    controller.send(:perform_age_split, ml.id, @age_two.id)
+
+    # Should have no multi_levels - back to initial state
+    remaining = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+    assert_equal 0, remaining.count
+
+    # Should have no negative order dances
+    assert_equal 0, Dance.where(name: 'Test Multi', order: ...0).count
+
+    # All heats should be back on original dance
+    heat1.reload
+    heat2.reload
+    assert_equal @multi_dance.id, heat1.dance_id
+    assert_equal @multi_dance.id, heat2.dance_id
+  end
+
+  test "age collapse within level split preserves level split" do
+    # Create entries with different levels AND different ages within level one
+    entry1 = create_proam_entry(@instructor, @student_follow, level: @level_one, age: @age_one)
+    entry2 = create_proam_entry(@instructor, @student_follow, level: @level_one, age: @age_two)
+    entry3 = create_proam_entry(@instructor, @student_follow, level: @level_two, age: @age_one)
+
+    heat1 = Heat.create!(number: 1, entry: entry1, dance: @multi_dance, category: 'Multi')
+    heat2 = Heat.create!(number: 2, entry: entry2, dance: @multi_dance, category: 'Multi')
+    heat3 = Heat.create!(number: 3, entry: entry3, dance: @multi_dance, category: 'Multi')
+
+    controller = create_controller_with_concern
+
+    # First create level split
+    controller.send(:perform_initial_split, @multi_dance.id, @level_one.id)
+    assert_equal 2, MultiLevel.where(dance: Dance.where(name: 'Test Multi')).count
+
+    # Get the first level's multi_level
+    level_one_ml = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+                             .find { |ml| ml.stop_level == @level_one.id }
+
+    # Add age split within the first level
+    controller.send(:perform_age_split, level_one_ml.id, @age_one.id)
+
+    # Should now have 3 multi_levels
+    multi_levels = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+    assert_equal 3, multi_levels.count
+
+    # Get one of the age-split multi_levels
+    age_ml = multi_levels.find { |ml| ml.start_age.present? && ml.stop_age == @age_one.id }
+
+    # Expand age to collapse the age split
+    controller.send(:perform_age_split, age_ml.id, @age_two.id)
+
+    # Should have 2 multi_levels remaining (back to just level split)
+    remaining = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+    assert_equal 2, remaining.count
+
+    # The level_one multi_level should have nil age ranges
+    level_one_remaining = remaining.find { |ml| ml.stop_level == @level_one.id }
+    assert_nil level_one_remaining.start_age
+    assert_nil level_one_remaining.stop_age
   end
 
   private

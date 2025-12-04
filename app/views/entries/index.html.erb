@@ -288,7 +288,28 @@
                 <% if @couple_types_present&.length.to_i > 1 %>
                 <td class="px-4 py-2 border">
                   <% if ml.couple_type.present? %>
-                    <%= ml.couple_type %>
+                    <%
+                      # Show dropdown to allow collapsing back to "All"
+                      couple_siblings = @multi_levels.select { |m|
+                        m.start_level == ml.start_level && m.stop_level == ml.stop_level &&
+                        m.start_age == ml.start_age && m.stop_age == ml.stop_age &&
+                        m.couple_type.present?
+                      }
+                      # Build options: All plus the current couple types
+                      couple_options = [['All', '']] + couple_siblings.map { |m| [m.couple_type, m.couple_type] }
+                    %>
+                    <%= form_with url: split_multi_entries_path, method: :post, data: { controller: "auto-submit" } do |f| %>
+                      <%= f.hidden_field :multi_level_id, value: ml.id %>
+                      <%= f.hidden_field :dance, value: @dance %>
+                      <%= f.hidden_field :couple, value: @couple %>
+                      <%= f.hidden_field :level, value: @level %>
+                      <%= f.hidden_field :age, value: @age %>
+                      <%= f.hidden_field :sort, value: params[:sort] %>
+                      <%= f.select :couple_split,
+                          couple_options,
+                          { selected: ml.couple_type },
+                          class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1" %>
+                    <% end %>
                   <% else %>
                     <%
                       # Only show couple split option if this is the last split without couple type
@@ -552,7 +573,27 @@
               <div class="flex justify-between items-center">
                 <span class="text-gray-600">Couple:</span>
                 <% if ml.couple_type.present? %>
-                  <span><%= ml.couple_type %></span>
+                  <%
+                    # Show dropdown to allow collapsing back to "All"
+                    couple_siblings = @multi_levels.select { |m|
+                      m.start_level == ml.start_level && m.stop_level == ml.stop_level &&
+                      m.start_age == ml.start_age && m.stop_age == ml.stop_age &&
+                      m.couple_type.present?
+                    }
+                    couple_options = [['All', '']] + couple_siblings.map { |m| [m.couple_type, m.couple_type] }
+                  %>
+                  <%= form_with url: split_multi_entries_path, method: :post, data: { controller: "auto-submit" } do |f| %>
+                    <%= f.hidden_field :multi_level_id, value: ml.id %>
+                    <%= f.hidden_field :dance, value: @dance %>
+                    <%= f.hidden_field :couple, value: @couple %>
+                    <%= f.hidden_field :level, value: @level %>
+                    <%= f.hidden_field :age, value: @age %>
+                    <%= f.hidden_field :sort, value: params[:sort] %>
+                    <%= f.select :couple_split,
+                        couple_options,
+                        { selected: ml.couple_type },
+                        class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1 text-sm" %>
+                  <% end %>
                 <% else %>
                   <%
                     siblings_without_couple = @multi_levels.select { |m|

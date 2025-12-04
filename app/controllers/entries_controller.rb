@@ -423,7 +423,7 @@ class EntriesController < ApplicationController
       else
         perform_age_split(multi_level_id.to_i, params[:stop_age].to_i)
       end
-    elsif params[:couple_split].present? && params[:couple_split].present?
+    elsif params[:couple_split].present?
       # Couple type split
       if multi_level_id.blank?
         # Initial couple split (no multi_levels exist yet)
@@ -431,6 +431,9 @@ class EntriesController < ApplicationController
       else
         perform_couple_split(multi_level_id.to_i, params[:couple_split])
       end
+    elsif params.key?(:couple_split) && params[:couple_split].blank? && multi_level_id.present?
+      # Couple type collapse - user selected "All" for a multi_level with couple_type
+      perform_couple_collapse(multi_level_id.to_i)
     elsif new_name.present? && multi_level_id.present?
       # Just updating the name
       multi_level = MultiLevel.find(multi_level_id.to_i)

@@ -571,6 +571,16 @@ module MultiLevelSplitter
           Level.find(remaining.stop_level)
         )
         remaining.update!(name: level_name)
+
+        # Check if we're back to a single multi_level overall (like handle_expand does for levels)
+        remaining_multi_levels = MultiLevel.where(dance: all_dances).to_a
+        if remaining_multi_levels.length == 1
+          # Delete the last multi_level
+          remaining_multi_levels.first.destroy!
+
+          # Delete any dances with negative order
+          all_dances.where(order: ...0).destroy_all
+        end
       end
     end
 
@@ -754,6 +764,55 @@ module MultiLevelSplitter
         # Move heats to new dance
         heats_by_type[ct].each do |heat|
           heat.update!(dance_id: new_dance.id)
+        end
+      end
+    end
+
+    # Collapse couple type splits back to a single group
+    def perform_couple_collapse(multi_level_id)
+      multi_level = MultiLevel.find(multi_level_id)
+      dance = multi_level.dance
+
+      # Get all dances with the same name
+      all_dances = Dance.where(name: dance.name)
+
+      # Get all siblings with same level/age ranges but different couple types
+      siblings = MultiLevel.where(dance: all_dances)
+        .where(start_level: multi_level.start_level, stop_level: multi_level.stop_level)
+        .where(start_age: multi_level.start_age, stop_age: multi_level.stop_age)
+        .where.not(couple_type: nil)
+        .to_a
+
+      return if siblings.empty?
+
+      # Move all heats from sibling dances to this dance
+      siblings.each do |sibling|
+        next if sibling == multi_level  # Skip self
+        Heat.where(dance: sibling.dance).update_all(dance_id: multi_level.dance_id)
+
+        # Delete the sibling's dance if it has negative order
+        sibling_dance = sibling.dance
+        sibling.destroy!
+        sibling_dance.destroy! if sibling_dance.order < 0
+      end
+
+      # Remove couple_type from the remaining multi_level and update name
+      multi_level.update!(couple_type: nil)
+      new_name = base_name_without_couple(multi_level)
+      multi_level.update!(name: new_name)
+
+      # Check if we're back to a single multi_level overall
+      remaining_multi_levels = MultiLevel.where(dance: all_dances).to_a
+      if remaining_multi_levels.length == 1
+        remaining = remaining_multi_levels.first
+
+        # If this multi_level has no age range either, we're back to initial state
+        if remaining.start_age.nil? && remaining.stop_age.nil?
+          # Delete the last multi_level
+          remaining.destroy!
+
+          # Delete any dances with negative order
+          all_dances.where(order: ...0).destroy_all
         end
       end
     end
