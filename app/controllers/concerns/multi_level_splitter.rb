@@ -15,6 +15,8 @@ module MultiLevelSplitter
 
   private
 
+    # ===== HELPER METHODS =====
+
     # Format a multi-level name from level range
     def format_multi_level_name(start_level_obj, stop_level_obj)
       if start_level_obj.id == stop_level_obj.id
@@ -24,27 +26,23 @@ module MultiLevelSplitter
       end
     end
 
-    # Format split name including age
-    def format_split_name(multi_level, start_obj, stop_obj, type)
-      level_part = format_multi_level_name(
-        Level.find(multi_level.start_level),
-        Level.find(multi_level.stop_level)
-      )
+    # Format level name from level IDs
+    def format_level_name_from_ids(start_level_id, stop_level_id)
+      format_multi_level_name(Level.find(start_level_id), Level.find(stop_level_id))
+    end
 
-      if type == :age
-        age_part = start_obj.id == stop_obj.id ? start_obj.description : "#{start_obj.description} - #{stop_obj.description}"
-        "#{level_part} #{age_part}"
+    # Format age range name from age objects
+    def format_age_range_name(start_age_obj, stop_age_obj)
+      if start_age_obj.id == stop_age_obj.id
+        start_age_obj.description
       else
-        level_part
+        "#{start_age_obj.description} - #{stop_age_obj.description}"
       end
     end
 
-    # Format split name for new multi_level
-    def format_split_name_for_new(multi_level, start_obj, stop_obj, type)
-      level_part = format_multi_level_name(
-        Level.find(multi_level.start_level),
-        Level.find(multi_level.stop_level)
-      )
+    # Format split name including age
+    def format_split_name(multi_level, start_obj, stop_obj, type)
+      level_part = format_level_name_from_ids(multi_level.start_level, multi_level.stop_level)
 
       if type == :age
         age_part = start_obj.id == stop_obj.id ? start_obj.description : "#{start_obj.description} - #{stop_obj.description}"
@@ -61,11 +59,16 @@ module MultiLevelSplitter
       name.sub(/ - (Pro-Am|Amateur Couple|Amateur Lead|Amateur Follow)$/, '')
     end
 
-    # Helper to create a split dance (copy of original with negative order)
-    def create_split_dance(original_dance, new_order)
+    # Calculate next negative order for split dances
+    def next_negative_order
+      [Dance.minimum(:order), 0].min - 1
+    end
+
+    # Create a split dance (copy of original with negative order)
+    def create_split_dance(original_dance)
       Dance.create!(
         name: original_dance.name,
-        order: new_order,
+        order: next_negative_order,
         heat_length: original_dance.heat_length,
         semi_finals: original_dance.semi_finals,
         open_category_id: original_dance.open_category_id,
@@ -77,6 +80,68 @@ module MultiLevelSplitter
         pro_solo_category_id: original_dance.pro_solo_category_id,
         pro_multi_category_id: original_dance.pro_multi_category_id
       )
+    end
+
+    # Copy multi_children from one dance to another
+    def copy_multi_children(from_dance, to_dance)
+      from_dance.multi_children.each do |child|
+        Multi.create!(parent_id: to_dance.id, dance_id: child.dance_id)
+      end
+    end
+
+    # Create a split dance with multi_children copied
+    def create_split_dance_with_children(original_dance)
+      new_dance = create_split_dance(original_dance)
+      copy_multi_children(original_dance, new_dance)
+      new_dance
+    end
+
+    # Check if we're back to a single multi_level and clean up if so
+    def cleanup_if_single_remaining(all_dances, check_age_range: false)
+      remaining_multi_levels = MultiLevel.where(dance: all_dances).to_a
+
+      if remaining_multi_levels.length == 1
+        remaining = remaining_multi_levels.first
+
+        # If check_age_range is true, only cleanup if age range is nil
+        if !check_age_range || (remaining.start_age.nil? && remaining.stop_age.nil?)
+          remaining.destroy!
+          all_dances.where(order: ...0).destroy_all
+          return true
+        end
+      end
+      false
+    end
+
+    # Group heats by couple type based on split type
+    def group_heats_by_couple_type(heats, couple_split_type)
+      heats_by_type = {}
+      heats.each do |heat|
+        ct = determine_couple_type(heat.entry)
+        mapped_type = case ct
+        when 'Amateur Lead'
+          couple_split_type == 'amateur_lead_follow' ? 'Amateur Lead' : 'Pro-Am'
+        when 'Amateur Follow'
+          couple_split_type == 'amateur_lead_follow' ? 'Amateur Follow' : 'Pro-Am'
+        when 'Amateur Couple'
+          'Amateur Couple'
+        else
+          'Pro-Am'
+        end
+        heats_by_type[mapped_type] ||= []
+        heats_by_type[mapped_type] << heat
+      end
+      heats_by_type
+    end
+
+    # Get split couple types based on split type parameter
+    def split_couple_types_for(couple_split_type)
+      case couple_split_type
+      when 'pro_am_vs_amateur'
+        ['Pro-Am', 'Amateur Couple']
+      when 'amateur_lead_follow'
+        ['Amateur Lead', 'Amateur Follow', 'Amateur Couple']
+      end
     end
 
     # Determine the couple type for an entry
@@ -140,7 +205,6 @@ module MultiLevelSplitter
     # Initial level split when no multi_levels exist yet
     def perform_initial_split(dance_id, split_level)
       original_dance = Dance.find(dance_id)
-      all_levels = Level.order(:id).all
 
       # Get level range from heats
       heats = Heat.where(dance_id: dance_id).includes(entry: :level)
@@ -150,43 +214,20 @@ module MultiLevelSplitter
 
       return if split_level >= max_level # No split needed
 
-      # Create new dance with negative order
-      new_order = [Dance.minimum(:order), 0].min - 1
-      new_dance = Dance.create!(
-        name: original_dance.name,
-        order: new_order,
-        heat_length: original_dance.heat_length,
-        semi_finals: original_dance.semi_finals,
-        open_category_id: original_dance.open_category_id,
-        closed_category_id: original_dance.closed_category_id,
-        solo_category_id: original_dance.solo_category_id,
-        multi_category_id: original_dance.multi_category_id,
-        pro_open_category_id: original_dance.pro_open_category_id,
-        pro_closed_category_id: original_dance.pro_closed_category_id,
-        pro_solo_category_id: original_dance.pro_solo_category_id,
-        pro_multi_category_id: original_dance.pro_multi_category_id
-      )
-
-      # Copy multi_children to new dance
-      original_dance.multi_children.each do |child|
-        Multi.create!(parent_id: new_dance.id, dance_id: child.dance_id)
-      end
+      # Create new dance with multi_children
+      new_dance = create_split_dance_with_children(original_dance)
 
       # Create first multi_level
-      first_level = all_levels.find { |l| l.id == min_level }
-      split_level_obj = all_levels.find { |l| l.id == split_level }
       MultiLevel.create!(
-        name: format_multi_level_name(first_level, split_level_obj),
+        name: format_level_name_from_ids(min_level, split_level),
         dance: original_dance,
         start_level: min_level,
         stop_level: split_level
       )
 
       # Create second multi_level
-      next_level = all_levels.find { |l| l.id == split_level + 1 }
-      last_level = all_levels.find { |l| l.id == max_level }
       MultiLevel.create!(
-        name: format_multi_level_name(next_level, last_level),
+        name: format_level_name_from_ids(split_level + 1, max_level),
         dance: new_dance,
         start_level: split_level + 1,
         stop_level: max_level
@@ -225,10 +266,7 @@ module MultiLevelSplitter
     def handle_shrink(multi_level, new_stop, old_stop, all_multi_levels, current_index, all_levels)
       # Update this multi_level
       multi_level.update!(stop_level: new_stop)
-
-      first_level = all_levels.find { |l| l.id == multi_level.start_level }
-      new_stop_level = all_levels.find { |l| l.id == new_stop }
-      multi_level.update!(name: format_multi_level_name(first_level, new_stop_level))
+      multi_level.update!(name: format_level_name_from_ids(multi_level.start_level, new_stop))
 
       # Check if there's a next multi_level
       if current_index < all_multi_levels.length - 1
@@ -236,9 +274,7 @@ module MultiLevelSplitter
 
         # Adjust next multi_level's start
         next_multi.update!(start_level: new_stop + 1)
-        next_start_level = all_levels.find { |l| l.id == new_stop + 1 }
-        next_stop_level = all_levels.find { |l| l.id == next_multi.stop_level }
-        next_multi.update!(name: format_multi_level_name(next_start_level, next_stop_level))
+        next_multi.update!(name: format_level_name_from_ids(new_stop + 1, next_multi.stop_level))
 
         # Move heats from current dance to next dance if they're outside the new range
         Heat.where(dance: multi_level.dance).includes(entry: :level).each do |heat|
@@ -249,33 +285,11 @@ module MultiLevelSplitter
       else
         # This is the last multi_level, need to create a new one
         original_dance = Dance.find_by(name: multi_level.dance.name, order: 0..)
-
-        new_order = [Dance.minimum(:order), 0].min - 1
-        new_dance = Dance.create!(
-          name: multi_level.dance.name,
-          order: new_order,
-          heat_length: original_dance.heat_length,
-          semi_finals: original_dance.semi_finals,
-          open_category_id: original_dance.open_category_id,
-          closed_category_id: original_dance.closed_category_id,
-          solo_category_id: original_dance.solo_category_id,
-          multi_category_id: original_dance.multi_category_id,
-          pro_open_category_id: original_dance.pro_open_category_id,
-          pro_closed_category_id: original_dance.pro_closed_category_id,
-          pro_solo_category_id: original_dance.pro_solo_category_id,
-          pro_multi_category_id: original_dance.pro_multi_category_id
-        )
-
-        # Copy multi_children
-        original_dance.multi_children.each do |child|
-          Multi.create!(parent_id: new_dance.id, dance_id: child.dance_id)
-        end
+        new_dance = create_split_dance_with_children(original_dance)
 
         # Create new multi_level
-        next_start_level = all_levels.find { |l| l.id == new_stop + 1 }
-        last_level = all_levels.find { |l| l.id == old_stop }
         MultiLevel.create!(
-          name: format_multi_level_name(next_start_level, last_level),
+          name: format_level_name_from_ids(new_stop + 1, old_stop),
           dance: new_dance,
           start_level: new_stop + 1,
           stop_level: old_stop
@@ -293,10 +307,7 @@ module MultiLevelSplitter
     def handle_expand(multi_level, new_stop, old_stop, all_multi_levels, current_index, all_levels)
       # Update this multi_level
       multi_level.update!(stop_level: new_stop)
-
-      first_level = all_levels.find { |l| l.id == multi_level.start_level }
-      new_stop_level = all_levels.find { |l| l.id == new_stop }
-      multi_level.update!(name: format_multi_level_name(first_level, new_stop_level))
+      multi_level.update!(name: format_level_name_from_ids(multi_level.start_level, new_stop))
 
       # Process all subsequent multi_levels that fall within the new range
       (current_index + 1...all_multi_levels.length).each do |idx|
@@ -314,18 +325,11 @@ module MultiLevelSplitter
           # Delete this multi_level and its dance if it has negative order
           next_dance = next_multi.dance
           next_multi.destroy!
-
-          if next_dance.order < 0
-            next_dance.destroy!
-          end
+          next_dance.destroy! if next_dance.order < 0
         elsif next_multi.start_level <= new_stop
           # This multi_level is partially subsumed - adjust its start
           next_multi.update!(start_level: new_stop + 1)
-
-          # Update the name
-          next_start_level = all_levels.find { |l| l.id == next_multi.start_level }
-          next_stop_level = all_levels.find { |l| l.id == next_multi.stop_level }
-          next_multi.update!(name: format_multi_level_name(next_start_level, next_stop_level))
+          next_multi.update!(name: format_level_name_from_ids(next_multi.start_level, next_multi.stop_level))
 
           # Stop processing - we've adjusted the adjacent split
           break
@@ -337,15 +341,7 @@ module MultiLevelSplitter
 
       # Check if we're back to a single multi_level
       all_dances = Dance.where(name: multi_level.dance.name)
-      remaining_multi_levels = MultiLevel.where(dance: all_dances).to_a
-
-      if remaining_multi_levels.length == 1
-        # Delete the last multi_level
-        remaining_multi_levels.first.destroy!
-
-        # Delete any dances with negative order
-        all_dances.where(order: ...0).destroy_all
-      end
+      cleanup_if_single_remaining(all_dances)
     end
 
     #
@@ -356,7 +352,6 @@ module MultiLevelSplitter
     def perform_initial_age_split(dance_id, split_age)
       original_dance = Dance.find(dance_id)
       all_ages = Age.order(:id).all
-      all_levels = Level.order(:id).all
 
       # Get heats and determine ranges
       heats = Heat.where(dance_id: dance_id).includes(entry: [:level, :age])
@@ -372,23 +367,14 @@ module MultiLevelSplitter
 
       return if split_age >= max_age # No split needed
 
-      # Create new dance with negative order
-      new_order = [Dance.minimum(:order), 0].min - 1
-      new_dance = create_split_dance(original_dance, new_order)
-
-      # Copy multi_children to new dance
-      original_dance.multi_children.each do |child|
-        Multi.create!(parent_id: new_dance.id, dance_id: child.dance_id)
-      end
+      # Create new dance with multi_children
+      new_dance = create_split_dance_with_children(original_dance)
 
       # Create first multi_level (for ages up to split_age)
       first_age = all_ages.find { |a| a.id == min_age }
       split_age_obj = all_ages.find { |a| a.id == split_age }
-      level_name = format_multi_level_name(
-        all_levels.find { |l| l.id == min_level },
-        all_levels.find { |l| l.id == max_level }
-      )
-      age_name = first_age.id == split_age_obj.id ? first_age.description : "#{first_age.description} - #{split_age_obj.description}"
+      level_name = format_level_name_from_ids(min_level, max_level)
+      age_name = format_age_range_name(first_age, split_age_obj)
 
       MultiLevel.create!(
         name: "#{level_name} #{age_name}",
@@ -402,7 +388,7 @@ module MultiLevelSplitter
       # Create second multi_level (for ages after split_age)
       next_age = all_ages.find { |a| a.id == split_age + 1 }
       last_age = all_ages.find { |a| a.id == max_age }
-      age_name2 = next_age.id == last_age.id ? next_age.description : "#{next_age.description} - #{last_age.description}"
+      age_name2 = format_age_range_name(next_age, last_age)
 
       MultiLevel.create!(
         name: "#{level_name} #{age_name2}",
@@ -486,17 +472,12 @@ module MultiLevelSplitter
         end
       else
         # This is the last sibling, need to create a new one
-        new_order = [Dance.minimum(:order), 0].min - 1
-        new_dance = create_split_dance(original_dance, new_order)
-
-        original_dance.multi_children.each do |child|
-          Multi.create!(parent_id: new_dance.id, dance_id: child.dance_id)
-        end
+        new_dance = create_split_dance_with_children(original_dance)
 
         next_age = all_ages.find { |a| a.id == new_stop_age + 1 }
         last_age = all_ages.find { |a| a.id == old_stop_age }
         MultiLevel.create!(
-          name: format_split_name_for_new(multi_level, next_age, last_age, :age),
+          name: format_split_name(multi_level, next_age, last_age, :age),
           dance: new_dance,
           start_level: multi_level.start_level,
           stop_level: multi_level.stop_level,
@@ -565,22 +546,10 @@ module MultiLevelSplitter
         # Remove age range to indicate no age split
         remaining = remaining_siblings.first
         remaining.update!(start_age: nil, stop_age: nil)
-        # Update name to remove age part
-        level_name = format_multi_level_name(
-          Level.find(remaining.start_level),
-          Level.find(remaining.stop_level)
-        )
-        remaining.update!(name: level_name)
+        remaining.update!(name: format_level_name_from_ids(remaining.start_level, remaining.stop_level))
 
-        # Check if we're back to a single multi_level overall (like handle_expand does for levels)
-        remaining_multi_levels = MultiLevel.where(dance: all_dances).to_a
-        if remaining_multi_levels.length == 1
-          # Delete the last multi_level
-          remaining_multi_levels.first.destroy!
-
-          # Delete any dances with negative order
-          all_dances.where(order: ...0).destroy_all
-        end
+        # Check if we're back to a single multi_level overall
+        cleanup_if_single_remaining(all_dances)
       end
     end
 
@@ -591,7 +560,6 @@ module MultiLevelSplitter
     # Initial couple split when no multi_levels exist yet
     def perform_initial_couple_split(dance_id, couple_split_type)
       original_dance = Dance.find(dance_id)
-      all_levels = Level.order(:id).all
 
       # Get heats and determine ranges
       heats = Heat.where(dance_id: dance_id).includes(entry: [:lead, :follow, :level, :age])
@@ -602,41 +570,15 @@ module MultiLevelSplitter
       min_level = level_ids.min
       max_level = level_ids.max
 
-      # Determine split types
-      case couple_split_type
-      when 'pro_am_vs_amateur'
-        split_couple_types = ['Pro-Am', 'Amateur Couple']
-      when 'amateur_lead_follow'
-        split_couple_types = ['Amateur Lead', 'Amateur Follow', 'Amateur Couple']
-      else
-        return
-      end
+      split_couple_types = split_couple_types_for(couple_split_type)
+      return unless split_couple_types
 
-      # Group heats by couple type
-      heats_by_type = {}
-      heats.each do |heat|
-        ct = determine_couple_type(heat.entry)
-        mapped_type = case ct
-        when 'Amateur Lead'
-          couple_split_type == 'amateur_lead_follow' ? 'Amateur Lead' : 'Pro-Am'
-        when 'Amateur Follow'
-          couple_split_type == 'amateur_lead_follow' ? 'Amateur Follow' : 'Pro-Am'
-        when 'Amateur Couple'
-          'Amateur Couple'
-        else
-          'Pro-Am'
-        end
-        heats_by_type[mapped_type] ||= []
-        heats_by_type[mapped_type] << heat
-      end
+      heats_by_type = group_heats_by_couple_type(heats, couple_split_type)
 
       # Only proceed if we have heats in multiple categories
       return if heats_by_type.keys.length < 2
 
-      level_name = format_multi_level_name(
-        all_levels.find { |l| l.id == min_level },
-        all_levels.find { |l| l.id == max_level }
-      )
+      level_name = format_level_name_from_ids(min_level, max_level)
 
       # Create multi_level for first type that has heats
       first_type = split_couple_types.find { |t| heats_by_type[t]&.any? }
@@ -655,12 +597,7 @@ module MultiLevelSplitter
         next if ct == first_type
         next unless heats_by_type[ct]&.any?
 
-        new_order = [Dance.minimum(:order), 0].min - 1
-        new_dance = create_split_dance(original_dance, new_order)
-
-        original_dance.multi_children.each do |child|
-          Multi.create!(parent_id: new_dance.id, dance_id: child.dance_id)
-        end
+        new_dance = create_split_dance_with_children(original_dance)
 
         MultiLevel.create!(
           name: "#{level_name} - #{ct}",
@@ -688,43 +625,11 @@ module MultiLevelSplitter
 
       return if heats.empty?
 
-      # Determine what couple types to split into based on couple_split_type
-      # Note: determine_couple_type returns:
-      #   'Amateur Lead' = Pro-Am where student leads
-      #   'Amateur Follow' = Pro-Am where student follows
-      #   'Amateur Couple' = Student + Student
-      case couple_split_type
-      when 'pro_am_vs_amateur'
-        # Split into Pro-Am (Amateur Lead + Amateur Follow) vs Amateur Couple
-        split_couple_types = ['Pro-Am', 'Amateur Couple']
-      when 'amateur_lead_follow'
-        # Split into Amateur Lead vs Amateur Follow vs Amateur Couple
-        split_couple_types = ['Amateur Lead', 'Amateur Follow', 'Amateur Couple']
-      else
-        return
-      end
+      split_couple_types = split_couple_types_for(couple_split_type)
+      return unless split_couple_types
 
       original_dance = Dance.find_by(name: dance.name, order: 0..) || dance
-
-      # Group heats by couple type
-      heats_by_type = {}
-      heats.each do |heat|
-        ct = determine_couple_type(heat.entry)
-        # Map to split categories
-        mapped_type = case ct
-        when 'Amateur Lead'
-          couple_split_type == 'amateur_lead_follow' ? 'Amateur Lead' : 'Pro-Am'
-        when 'Amateur Follow'
-          couple_split_type == 'amateur_lead_follow' ? 'Amateur Follow' : 'Pro-Am'
-        when 'Amateur Couple'
-          'Amateur Couple'
-        else
-          # Professional couples - group with Pro-Am for now
-          'Pro-Am'
-        end
-        heats_by_type[mapped_type] ||= []
-        heats_by_type[mapped_type] << heat
-      end
+      heats_by_type = group_heats_by_couple_type(heats, couple_split_type)
 
       # Only proceed if we have heats in multiple categories
       return if heats_by_type.keys.length < 2
@@ -743,13 +648,7 @@ module MultiLevelSplitter
         next if ct == first_type  # Skip the first type (already assigned to current multi_level)
         next unless heats_by_type[ct]&.any?
 
-        new_order = [Dance.minimum(:order), 0].min - 1
-        new_dance = create_split_dance(original_dance, new_order)
-
-        # Copy multi_children to new dance
-        original_dance.multi_children.each do |child|
-          Multi.create!(parent_id: new_dance.id, dance_id: child.dance_id)
-        end
+        new_dance = create_split_dance_with_children(original_dance)
 
         MultiLevel.create!(
           name: "#{base_name_without_couple(multi_level)} - #{ct}",
@@ -798,22 +697,9 @@ module MultiLevelSplitter
 
       # Remove couple_type from the remaining multi_level and update name
       multi_level.update!(couple_type: nil)
-      new_name = base_name_without_couple(multi_level)
-      multi_level.update!(name: new_name)
+      multi_level.update!(name: base_name_without_couple(multi_level))
 
       # Check if we're back to a single multi_level overall
-      remaining_multi_levels = MultiLevel.where(dance: all_dances).to_a
-      if remaining_multi_levels.length == 1
-        remaining = remaining_multi_levels.first
-
-        # If this multi_level has no age range either, we're back to initial state
-        if remaining.start_age.nil? && remaining.stop_age.nil?
-          # Delete the last multi_level
-          remaining.destroy!
-
-          # Delete any dances with negative order
-          all_dances.where(order: ...0).destroy_all
-        end
-      end
+      cleanup_if_single_remaining(all_dances, check_age_range: true)
     end
 end
