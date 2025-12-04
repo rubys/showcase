@@ -64,13 +64,14 @@ class EntriesController < ApplicationController
     when 'dance'
       selected = selected.joins(:dance).order('dances.name')
     when 'level'
-      # Order by level, then couple type, then age (to match multi-level splits display)
+      # Order by level, then age, then couple type (to match multi-level splits display)
+      # MultiLevels are ordered by start_level, start_age, couple_type
       # Couple type order: Amateur Couple (Student+Student) before Pro-Am (has Professional)
       # Professional < Student alphabetically, so DESC puts Student first (Amateur Couple before Pro-Am)
       selected = selected.joins(entry: [:level, :age])
         .joins("INNER JOIN people AS leads ON leads.id = entries.lead_id")
         .joins("INNER JOIN people AS follows ON follows.id = entries.follow_id")
-        .order('levels.id, leads.type DESC, follows.type DESC, ages.id')
+        .order('levels.id, ages.id, leads.type DESC, follows.type DESC')
     when 'age'
       selected = selected.joins(entry: :age).order('ages.id')
     end
