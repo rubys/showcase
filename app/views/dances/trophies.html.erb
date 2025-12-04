@@ -30,7 +30,7 @@
             <tr class="hover:bg-yellow-200<%= ' border-t-2 border-gray-300' if index == 0 && dance_index > 0 %>">
               <% if index == 0 %>
                 <td class="row font-medium" rowspan="<%= dance_data[:splits].size %>">
-                  <%= link_to dance_data[:name], entries_path(dance: dance_data[:id], sort: :level) %>
+                  <%= link_to dance_data[:name], dance_entries_path(dance_data[:id]) %>
                 </td>
               <% end %>
               <td class="row"><%= split[:name] || '&mdash;'.html_safe %></td>

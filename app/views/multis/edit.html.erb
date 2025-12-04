@@ -4,7 +4,7 @@
   <%= render "form", dance: @dance %>
 
   <% if @dance.id %>
-  <%= link_to "Show entries", entries_path(dance: @dance, sort: "level"), class: "btn-green" %>
+  <%= link_to "Show entries", dance_entries_path(@dance), class: "btn-green" %>
   <%= link_to "Remove this multi", 
     multi_path(@dance), class: 'btn-grey',
     data: { turbo_method: :delete, turbo_confirm: 'Are you sure?' } %>

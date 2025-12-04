@@ -6,12 +6,17 @@
   <div data-controller="info-box">
     <div class="info-button">&#x24D8;</div>
     <ul class="info-box">
+      <% if @is_multi %>
+      <li>Split competitions into divisions by level, then age, then couple type. Splits are layered - first split by level, then within each level by age, then within each level+age by couple type.
+      <% else %>
       <li>This page shows all entries (scheduled heats) filtered by your selections. Use dropdown filters to narrow the view.
-      <li><strong>Couple Type</strong>: Filter by Pro-Am (instructor/student), Same-Sex (student/student), or All Skate (other combinations).
+      <ul>
       <li><strong>Level</strong>: Filter by dance level (Newcomer, Bronze, Silver, Gold, etc.). Leave blank to see all levels.
       <li><strong>Age</strong>: Filter by age category if age tracking is enabled for your event.
-      <li><strong>Competition Splits</strong>: For multi-dances, split competitions into divisions by level, then age, then couple type. Splits are layered - first split by level, then within each level by age, then within each level+age by couple type.
-      <li><strong>Color coding</strong>: Green and yellow rows indicate different splits. <span class="text-white bg-red-600 px-1">Red highlighting</span> indicates dancers appearing multiple times within the same split.
+      <li><strong>Couple Type</strong>: Filter by Pro-Am (instructor/student), Amateur Couple (student/student), or Professional (instructor/instructor).
+      </ul>
+      <% end %>
+      <li>Green and yellow rows indicate different splits. <span class="text-white bg-red-600 px-1">Red highlighting</span> indicates dancers appearing multiple times within the same split.
       <li>Click column headings (lead, follow, dance, level, age) to sort entries by that column.
       <li>Hover over any entry and click "Edit" to modify that specific heat. Crossed-out entries have been scratched.
     </ul>
@@ -21,12 +26,9 @@
     <h1 class="font-bold text-4xl text-center mb-4"><%= @dance_name || "Entries" %></h1>
   </div>
 
+  <% unless @is_multi %>
   <div class="flex align-center justify-center mb-4">
   <form class="flex columns-3 gap-4" data-controller="auto-submit">
-    <div>
-      <%= select_tag "couple", options_for_select(@couple_types, @couple), prompt: "Couple Type",
-        class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-40" %>
-    </div>
     <div>
       <%= select_tag "level", options_for_select(@levels, @level), prompt: "Level",
         class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-40" %>
@@ -36,11 +38,16 @@
       <%= select_tag "age", options_for_select(@ages, @age), prompt: "Age",
         class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-40" %>
     </div>
+    <div>
+      <%= select_tag "couple", options_for_select(@couple_types, @couple), prompt: "Couple Type",
+        class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-40" %>
+    </div>
     <% end %>
     <input type="hidden" name="dance" value="<%= @dance %>">
     <button type="submit" class="hidden">Filter</button>
   </form>
   </div>
+  <% end %>
 
   <% if @is_multi %>
   <div class="mb-6">
@@ -685,7 +692,7 @@
           end
 
           # Get the tally for this split
-          tally = split_tallies[split_index] || {}
+          tally = @is_multi ? (split_tallies[split_index] || {}) : {}
 
           # Build CSS classes
           row_classes = ["group"]

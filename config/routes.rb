@@ -133,6 +133,7 @@ Rails.application.routes.draw do
     end
 
     get '/dances/:dance/songs', to: 'songs#dancelist', as: 'dance_songlist'
+    get '/dances/:dance/entries', to: 'entries#index', as: 'dance_entries'
     post '/dances/:dance/upload-songs', to: 'songs#upload', as: 'dance_song_upload'
     resources :dances do
       post 'drop', on: :collection
