@@ -648,8 +648,8 @@
           end
 
           # Determine if lead/follow appear multiple times in this split
-          lead_duplicate = entry.lead_id > 0 && tally[entry.lead_id] > 1
-          follow_duplicate = entry.follow_id > 0 && tally[entry.follow_id] > 1
+          lead_duplicate = entry.lead_id > 0 && (tally[entry.lead_id] || 0) > 1
+          follow_duplicate = entry.follow_id > 0 && (tally[entry.follow_id] || 0) > 1
         %>
         <tr class="<%= row_classes.join(' ') %>">
           <td class="row <%= lead_duplicate ? 'text-white bg-red-600' : '' %>"><%= link_to entry.lead.display_name, entry.lead %>
