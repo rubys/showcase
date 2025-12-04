@@ -240,7 +240,7 @@
                           end
                           selected_age = ml.stop_age
                         else
-                          available_ages = @ages.select { |desc, id| level_age_ids.include?(id) && id > level_min_age }
+                          available_ages = @ages.select { |desc, id| level_age_ids.include?(id) && id >= level_min_age }
                           selected_age = level_max_age
                         end
                       %>
@@ -477,7 +477,7 @@
                           end
                           selected_age = ml.stop_age
                         else
-                          available_ages = @ages.select { |desc, id| level_age_ids.include?(id) && id > level_min_age }
+                          available_ages = @ages.select { |desc, id| level_age_ids.include?(id) && id >= level_min_age }
                           selected_age = level_max_age
                         end
                       %>
