@@ -31,16 +31,22 @@ class Heat < ApplicationRecord
     super value
   end
 
-  def dance_category
-    cat = if dance.heat_length or category == 'Multi'
+  # Returns the base category for this heat (without considering extensions).
+  # Use this during scheduling when heat numbers haven't been assigned yet.
+  def base_dance_category
+    if dance.heat_length or category == 'Multi'
       entry.pro ? dance.pro_multi_category || dance.multi_category : dance.multi_category
     elsif category == "Open"
       entry.pro ? dance.pro_open_category || dance.open_category : dance.open_category
     elsif category == "Solo"
-      solo.category_override || (entry.pro ? dance.pro_solo_category || dance.solo_category : dance.solo_category)
+      solo&.category_override || (entry.pro ? dance.pro_solo_category || dance.solo_category : dance.solo_category)
     else
       dance.closed_category
     end
+  end
+
+  def dance_category
+    cat = base_dance_category
 
     return unless cat
     return cat if cat.split.blank?

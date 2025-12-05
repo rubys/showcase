@@ -108,7 +108,8 @@ module HeatScheduler
 
         # Only block amateur open and closed heats
         if !heat.entry.pro && ['Open', 'Closed'].include?(heat.category)
-          agenda_cat = heat.dance_category
+          # Use base_dance_category to avoid dependency on stale heat numbers
+          agenda_cat = heat.base_dance_category
           next unless agenda_cat # Skip if no agenda category
 
           # Create unique key for this block: entry_id + heat_category + agenda_category_id
@@ -871,7 +872,8 @@ module HeatScheduler
 
         @dance = dance
         @dcat = dcat
-        @agenda_category = heat.dance_category
+        # Use base_dance_category to avoid dependency on stale heat numbers
+        @agenda_category = heat.base_dance_category
       end
 
       unless @@skating.include? heat.dance_id
@@ -895,8 +897,8 @@ module HeatScheduler
       return false unless (age-@max_age).abs <= @@age
       return false unless (age-@min_age).abs <= @@age
 
-      # Check agenda category compatibility
-      heat_agenda_cat = heat.dance_category
+      # Check agenda category compatibility (use base category to avoid stale numbers)
+      heat_agenda_cat = heat.base_dance_category
       return false unless @agenda_category == heat_agenda_cat
 
       @participants.add heat.lead
@@ -1030,6 +1032,10 @@ module HeatScheduler
     end
 
     def dance_category
+      @agenda_category
+    end
+
+    def base_dance_category
       @agenda_category
     end
 

@@ -1970,4 +1970,175 @@ class HeatSchedulerTest < ActiveSupport::TestCase
     assert bronze_numbers.first > 0, "Bronze heats should be scheduled"
     assert silver_numbers.first > 0, "Silver heats should be scheduled"
   end
+
+  # ===== DETERMINISTIC CATEGORY SPLITTING TESTS =====
+
+  test "schedule_heats produces deterministic results with category splits" do
+    # Mark all existing heats as scratched
+    Heat.update_all(number: -1)
+
+    # Create a solo category with split
+    solo_category = Category.create!(name: "Deterministic Solo Test", order: 50, split: "3")
+    waltz = Dance.create!(name: "Deterministic Waltz", order: 50, solo_category: solo_category)
+    tango = Dance.create!(name: "Deterministic Tango", order: 51, solo_category: solo_category)
+    foxtrot = Dance.create!(name: "Deterministic Foxtrot", order: 52, solo_category: solo_category)
+
+    # Get a unique base for solo orders
+    solo_order_base = (Solo.maximum(:order) || 0) + 100
+
+    # Create 9 solos (should split into 3 groups of 3)
+    heats = []
+    9.times do |i|
+      student = Person.create!(
+        name: "Deterministic Student #{i}",
+        studio: @studio1,
+        type: 'Student',
+        level: levels(:one)
+      )
+
+      entry = Entry.create!(
+        lead: student,
+        follow: @instructor1,
+        age: ages(:one),
+        level: levels(:one)
+      )
+
+      dance = [waltz, tango, foxtrot][i % 3]
+      heat = Heat.create!(dance: dance, entry: entry, category: 'Solo', number: 0)
+      Solo.create!(heat: heat, order: solo_order_base + i + 1)
+      heats << heat
+    end
+
+    # Run scheduling multiple times and verify same result
+    results = []
+    3.times do
+      @scheduler.schedule_heats
+      heats.each(&:reload)
+      results << heats.map(&:number).map(&:to_i)
+    end
+
+    # All runs should produce identical results
+    assert_equal 1, results.uniq.size,
+      "Scheduling should be deterministic. Got different results: #{results.inspect}"
+  end
+
+  test "schedule_heats maintains solo order within category splits" do
+    # Mark all existing heats as scratched
+    Heat.update_all(number: -1)
+
+    # Create a solo category with split
+    solo_category = Category.create!(name: "Solo Order Test", order: 55, split: "2")
+    waltz = Dance.create!(name: "Order Test Waltz", order: 55, solo_category: solo_category)
+
+    # Get a unique base for solo orders
+    solo_order_base = (Solo.maximum(:order) || 0) + 200
+
+    # Create 4 solos with specific order values (relative to base)
+    heats = []
+    [3, 1, 4, 2].each_with_index do |solo_order, i|
+      student = Person.create!(
+        name: "Order Student #{i}",
+        studio: @studio1,
+        type: 'Student',
+        level: levels(:one)
+      )
+
+      entry = Entry.create!(
+        lead: student,
+        follow: @instructor1,
+        age: ages(:one),
+        level: levels(:one)
+      )
+
+      heat = Heat.create!(dance: waltz, entry: entry, category: 'Solo', number: 0)
+      Solo.create!(heat: heat, order: solo_order_base + solo_order)
+      heats << heat
+    end
+
+    @scheduler.schedule_heats
+    heats.each(&:reload)
+
+    # Get heat numbers sorted by solo.order
+    heat_numbers_by_solo_order = heats.sort_by { |h| h.solo.order }.map { |h| h.number.to_i }
+
+    # Solos should be in increasing heat number order when sorted by solo.order
+    # (within each split group)
+    assert heat_numbers_by_solo_order == heat_numbers_by_solo_order.sort,
+      "Solos should be scheduled in solo.order sequence. Got: #{heat_numbers_by_solo_order}"
+  end
+
+  test "Block class has base_dance_category method" do
+    rhythm_cat = Category.create!(name: "Block Base Cat Test", order: 900)
+
+    entry = Entry.create!(
+      lead: @student1,
+      follow: @instructor1,
+      age: ages(:one),
+      level: levels(:one)
+    )
+
+    block = HeatScheduler::Block.new(entry, 'Open', rhythm_cat)
+
+    # Block should have base_dance_category that returns the agenda_category
+    assert_respond_to block, :base_dance_category
+    assert_equal rhythm_cat, block.base_dance_category
+    assert_equal block.dance_category, block.base_dance_category
+  end
+
+  test "Group uses base_dance_category for agenda category assignment" do
+    # This test verifies that the Group class uses base_dance_category
+    # which doesn't depend on stale heat numbers
+
+    # Mark all existing heats as scratched
+    Heat.update_all(number: -1)
+
+    # Create a category with split and extensions
+    test_category = Category.create!(name: "Group Base Cat Test", order: 60, split: "2")
+    ext = CatExtension.create!(category: test_category, order: 600, part: 2, start_heat: 3)
+
+    waltz = Dance.create!(name: "Group Test Waltz", order: 60, open_category: test_category)
+
+    # Create heats with stale numbers that would put them in the extension
+    # if dance_category (not base_dance_category) was used
+    heats = []
+    4.times do |i|
+      student = Person.create!(
+        name: "Group Test Student #{i}",
+        studio: @studio1,
+        type: 'Student',
+        level: levels(:one)
+      )
+
+      entry = Entry.create!(
+        lead: student,
+        follow: @instructor1,
+        age: ages(:one),
+        level: levels(:one)
+      )
+
+      # Set stale number above extension start_heat
+      heat = Heat.create!(dance: waltz, entry: entry, category: 'Open', number: 10 + i)
+      heats << heat
+    end
+
+    # Schedule - this should use base_dance_category, not the stale numbers
+    @scheduler.schedule_heats
+    heats.each(&:reload)
+
+    # All heats should be scheduled (positive numbers)
+    heats.each do |heat|
+      assert heat.number > 0, "Heat should be scheduled with positive number"
+    end
+
+    # Run again to verify determinism despite different "stale" numbers
+    first_result = heats.map(&:number).map(&:to_i)
+
+    @scheduler.schedule_heats
+    heats.each(&:reload)
+
+    second_result = heats.map(&:number).map(&:to_i)
+
+    assert_equal first_result, second_result,
+      "Results should be identical regardless of previous heat numbers"
+  end
 end

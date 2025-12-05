@@ -178,12 +178,81 @@ class HeatTest < ActiveSupport::TestCase
     @heat.update!(number: 50, category: 'Open')
     category = categories(:two)
     @dance.update!(open_category: category)
-    
+
     # Would need to create extensions to fully test this
     # For now, just ensure the basic logic works
     assert_equal category, @heat.dance_category
   end
-  
+
+  # ===== BASE_DANCE_CATEGORY TESTS =====
+
+  test "base_dance_category returns base category regardless of heat number" do
+    # Create a fresh category to avoid conflicts
+    category = Category.create!(name: "Base Cat Test Category", order: 500, split: "10")
+    @dance.update!(open_category: category)
+    @heat.update!(category: 'Open')
+
+    # Create an extension
+    extension = CatExtension.create!(category: category, order: 5000, part: 2, start_heat: 10)
+
+    # Set heat number above extension start_heat
+    @heat.update!(number: 15)
+
+    # dance_category should return the extension
+    assert_equal extension, @heat.dance_category
+
+    # base_dance_category should always return the base category
+    assert_equal category, @heat.base_dance_category
+  end
+
+  test "base_dance_category returns same as dance_category when no extensions" do
+    category = Category.create!(name: "No Extensions Test", order: 501)
+    @dance.update!(open_category: category)
+    @heat.update!(category: 'Open', number: 5)
+
+    assert_equal @heat.dance_category, @heat.base_dance_category
+  end
+
+  test "base_dance_category returns solo category for solo heats" do
+    solo_category = Category.create!(name: "Test Solo Category", order: 502)
+    @dance.update!(solo_category: solo_category)
+    @heat.update!(category: 'Solo')
+
+    # Create a solo for this heat - use a unique order value
+    solo = Solo.create!(heat: @heat, order: (Solo.maximum(:order) || 0) + 1)
+
+    assert_equal solo_category, @heat.base_dance_category
+  end
+
+  test "base_dance_category returns category override for solo with override" do
+    solo_category = Category.create!(name: "Test Solo Category 2", order: 503)
+    override_category = Category.create!(name: "Override Category", order: 504)
+    @dance.update!(solo_category: solo_category)
+    @heat.update!(category: 'Solo')
+
+    # Create a solo with category override - use unique order
+    solo = Solo.create!(heat: @heat, order: (Solo.maximum(:order) || 0) + 1, category_override: override_category)
+
+    assert_equal override_category, @heat.base_dance_category
+  end
+
+  test "base_dance_category does not depend on stale heat numbers" do
+    category = Category.create!(name: "Stale Numbers Test", order: 505, split: "5")
+    @dance.update!(open_category: category)
+    @heat.update!(category: 'Open')
+
+    # Create extensions
+    ext1 = CatExtension.create!(category: category, order: 5050, part: 2, start_heat: 5)
+    ext2 = CatExtension.create!(category: category, order: 5051, part: 3, start_heat: 10)
+
+    # Test with various heat numbers - base_dance_category should always return the same
+    [nil, 1, 5, 10, 100].each do |num|
+      @heat.update!(number: num)
+      assert_equal category, @heat.base_dance_category,
+        "base_dance_category should return base category regardless of number=#{num}"
+    end
+  end
+
   # ===== DELEGATED METHOD TESTS =====
   
   test "lead delegates to entry lead" do
