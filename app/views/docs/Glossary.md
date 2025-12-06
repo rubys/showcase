@@ -18,7 +18,9 @@ This glossary defines common terms used in ballroom dance showcases and competit
 
 **Heat** - A competitive dance event where multiple couples dance the same dance simultaneously, typically lasting 1-2 minutes
 
-**Multi** - A competition where dancers perform multiple dances in sequence (e.g., a 3-dance Latin multi)
+**Multi (Multi-Dance)** - A competition where dancers perform multiple dances in sequence (e.g., a 3-dance Latin multi). Also known as "all arounds", "triple threats", or "championships". See [Multi-Dance](./tasks/Multi-Dance)
+
+**Competition Split** - A division within a multi-dance that creates separate rankings for different groups of competitors. Splits can be based on level (e.g., Bronze vs Silver), age (e.g., Under 50 vs 50+), or couple type (Pro-Am vs Amateur Couple). Splits are layered: level first, then age, then couple type
 
 **Package** - A pre-defined set of dances offered at a bundled price
 

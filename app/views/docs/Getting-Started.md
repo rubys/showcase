@@ -56,7 +56,7 @@ This guide assumes you have:
    - "Open Smooth"
    - "Closed Rhythm" 
    - "Solos and Formations"
-   - "Multi heats"
+   - "[Multi heats](./tasks/Multi-Dance)"
 
 3. **Assign Dances** to appropriate categories
 4. **Set Start Times** for automatic scheduling

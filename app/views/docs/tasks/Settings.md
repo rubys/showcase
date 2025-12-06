@@ -15,7 +15,7 @@ The information you enter in this section is used largely for the printed materi
 * Open Scoring - typically open scoring is 1/2/3/F, but you can elect to change this to match closed scoring (GH/G/S/B), a
 number, or feedback on areas that are particularly notable or need improvement (e.g. Dance Frame, Footwork, Timing), or a combination of number of feedback.
 
-* Multi Scoring - similar options are available for mulit-heats (which go various names: all arounds, triple threats, threepeats...), except for feedback.
+* Multi Scoring - similar options are available for [multi-heats](./Multi-Dance) (which go various names: all arounds, triple threats, threepeats...), except for feedback.
 
 * Closed scoring generally is GH/G/S/B, but can be the same as open.
 

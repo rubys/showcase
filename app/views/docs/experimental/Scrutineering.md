@@ -6,7 +6,7 @@ The [rules for rankings are complex](./skating_system_algorithm.md), but compute
 
 To enable scrutineering for a multi-heat, check the **Scrutineering?** button on that dance. When checked:
 
-* All entries for this dance will be treated as a single heat, with semi-final rounds when needed. This means participants (particularly instructors) can only select one partner for this dance. If you want Newcomers not to be in the same heat as Gold, you will need to define multiple dances.
+* All entries for this dance will be treated as a single heat, with semi-final rounds when needed. This means participants (particularly instructors) can only select one partner for this dance. If you want Newcomers not to be in the same heat as Gold, you can use [Competition Splits](../tasks/Multi-Dance#competition-splits-divisions) to divide competitors into separate divisions by level, age, or couple type.
 * If a semi-final round is needed, judges will see checkboxes to select couples to be called back. They can change their selections, but cannot exceed the allotted number of callbacks.
 * For final rounds, judges will see a list of couples in rank order. They can use drag and drop to reorder the list, which is initially shown in a random order for each judge.
 * Results can be found by going to the Summary page and selecting **Multi-Scores**. Clicking on **All Scores** will show the rankings for each dance in the multi-dance. From there, clicking on **Calculations** shows how the final results were determined, including the application of skating rules to each heat and the overall placement. Clicking on **Callbacks** shows how callbacks were determined.

@@ -37,6 +37,7 @@ Think of the application like a calculator with buttons you may never use.  That
  * [Ballrooms](./tasks/Ballrooms) - choosing when, and if, to split the ballroom floor
  * [Counter](./tasks/Counter) - displaying the current heat number at the event
  * [Entries](./tasks/Entries) - entering student choices as to which dances they wish to perform
+ * [Multi-Dance](./tasks/Multi-Dance) - championship events combining multiple dances with optional competition splits
  * [Invoicing](./tasks/Invoicing) - determining how much to bill students a studios
  * [Mobile](./tasks/Mobile) - public access to the heat list from phones and other devices
  * [Publishing](./tasks/Publishing) - generating printed materials

@@ -105,6 +105,17 @@ After generation:
 3. The scheduler respects manual solo ordering
 4. Formations follow the same rules as solos
 
+### Scheduling Multi-Dance Competitions
+
+[Multi-dance competitions](./Multi-Dance) (championships, all arounds) have special scheduling behavior:
+
+1. **Competition Splits** are kept together as atomic units - all entries in a split dance in the same heat
+2. **Compatible splits** may be packed into the same heat number to reduce total heat count
+3. Splits within the same heat are distinguished by fractional numbers (e.g., 45.1, 45.2)
+4. Each split is judged and ranked independently
+
+To configure splits before scheduling, go to **Entries** and select your multi-dance.
+
 ## Troubleshooting
 
 ### "Cannot create valid schedule"
@@ -138,6 +149,7 @@ After generation:
 ## Related Topics
 
 - [Agenda](./Agenda) - Organizing your event structure
+- [Multi-Dance](./Multi-Dance) - Championship events with competition splits
 - [Settings](./Settings) - Configuring heat parameters
 - [Reordering](./Reordering) - Manual schedule adjustments
 - [Ballrooms](./Ballrooms) - Multi-floor scheduling
