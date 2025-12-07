@@ -76,7 +76,7 @@
   <label><b>Comments:</b></label>
   <textarea disabled data-score-target="comments" data-heat="<%= @heat.id %>"
     class="grow block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full"
-  ><%= (@comments && @comments[@subjects.first.id]) || '' %></textarea>
+  ><%= @comments.is_a?(Hash) ? @comments[@subjects.first.id] : @comments %></textarea>
 
   <div>
   <div class="float-right mt-4">
