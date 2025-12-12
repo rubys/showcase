@@ -949,7 +949,7 @@ class ScoresController < ApplicationController
     if @event.assign_judges? && @show == 'mixed' && @judge && @style != 'emcee'
       heats = Heat.joins(:scores).includes(entry: :lead).where(number: @heat.number, scores: {judge_id: @judge.id}).to_a
       unassigned = Heat.where(number: @heat.number).includes(entry: :lead).left_joins(:scores).where(scores: { id: nil }).to_a
-      early = Heat.includes(entry: :lead).joins(:scores).where(scores: { updated_at: ...Event.current.date}).distinct.to_a
+      early = Heat.includes(entry: :lead).joins(:scores).where(number: @heat.number, scores: { updated_at: ...Event.current.date}).distinct.to_a
       heats = (heats + early + unassigned).uniq.sort_by {|heat| heat.entry.lead.back || Float::INFINITY}
 
       # Compute judge_backs_display
