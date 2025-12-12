@@ -253,6 +253,30 @@ class HeatTest < ActiveSupport::TestCase
     end
   end
 
+  test "base_dance_category falls back to canonical dance for split dances" do
+    # Create a category for multi-dances
+    multi_category = Category.create!(name: "Split Dance Test Multi", order: 506)
+
+    # Set up the canonical dance (positive order) with multi_category
+    @dance.update!(name: "Test Multi Dance", order: 10, heat_length: 3, multi_category: multi_category)
+
+    # Create a split dance (negative order) WITHOUT multi_category set
+    # This simulates what happens when splits are created before category is configured
+    split_dance = Dance.create!(
+      name: "Test Multi Dance",
+      order: -10,
+      heat_length: 3,
+      multi_category_id: nil  # Explicitly nil to simulate the bug
+    )
+
+    # Update the heat to use the split dance and Multi category
+    @heat.update!(dance: split_dance, category: 'Multi')
+
+    # base_dance_category should fall back to the canonical dance's category
+    assert_equal multi_category, @heat.base_dance_category,
+      "Split dance should fall back to canonical dance's multi_category"
+  end
+
   # ===== DELEGATED METHOD TESTS =====
   
   test "lead delegates to entry lead" do
