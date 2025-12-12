@@ -34,7 +34,7 @@ class Heat < ApplicationRecord
   # Returns the base category for this heat (without considering extensions).
   # Use this during scheduling when heat numbers haven't been assigned yet.
   def base_dance_category
-    if dance.heat_length or category == 'Multi'
+    cat = if dance.heat_length or category == 'Multi'
       entry.pro ? dance.pro_multi_category || dance.multi_category : dance.multi_category
     elsif category == "Open"
       entry.pro ? dance.pro_open_category || dance.open_category : dance.open_category
@@ -43,6 +43,24 @@ class Heat < ApplicationRecord
     else
       dance.closed_category
     end
+
+    # If category is nil and this is a split dance (negative order), try the canonical dance
+    if cat.nil? && dance.order.to_i < 0
+      canonical = Dance.find_by(name: dance.name, order: 0..)
+      if canonical
+        cat = if dance.heat_length or category == 'Multi'
+          entry.pro ? canonical.pro_multi_category || canonical.multi_category : canonical.multi_category
+        elsif category == "Open"
+          entry.pro ? canonical.pro_open_category || canonical.open_category : canonical.open_category
+        elsif category == "Solo"
+          solo&.category_override || (entry.pro ? canonical.pro_solo_category || canonical.solo_category : canonical.solo_category)
+        else
+          canonical.closed_category
+        end
+      end
+    end
+
+    cat
   end
 
   def dance_category
