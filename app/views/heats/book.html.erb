@@ -311,7 +311,7 @@ end
            <td class="pl-4"><%= heat.entry.level_name %>
            <!-- td class="pl-4 text-center"><%= heat.entry.subject_category(@track_ages) %> -->
            <% end %>
-           <td class="pl-4"><%= link_to heat.studio.name.gsub(/\s-/, "\xA0-"), heat.studio %></td>
+           <td class="pl-4"><%= link_to heat.studio.name.gsub(/\s-/, "\u00A0-"), heat.studio %></td>
            <% if @type == 'judge' %>
            <td>
              <div class="w-24 pt-4 border-b-2 border-black">&nbsp;</div>
