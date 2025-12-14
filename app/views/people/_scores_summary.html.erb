@@ -1,0 +1,29 @@
+<% return if scores_summary.blank? %>
+
+<table class="min-w-full">
+  <caption class="text-left font-bold pt-8 text-3xl pb-5">Scores Summary</caption>
+  <thead>
+    <tr>
+      <th class="row-head text-left">Dance</th>
+      <% score_values = %w[GH G S B] %>
+      <% score_values.each do |value| %>
+        <th class="row-head text-center px-3"><%= value %></th>
+      <% end %>
+      <th class="row-head text-center px-3">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% scores_summary.each do |(dance_id, dance_name, dance_order), values| %>
+      <tr>
+        <td class="row"><%= dance_name %></td>
+        <% total = 0 %>
+        <% score_values.each do |sv| %>
+          <% count = values[sv] || 0 %>
+          <% total += count %>
+          <td class="row text-center px-3"><%= count > 0 ? count : '' %></td>
+        <% end %>
+        <td class="row text-center px-3 font-semibold"><%= total %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

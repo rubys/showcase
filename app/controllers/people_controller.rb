@@ -511,6 +511,21 @@ class PeopleController < ApplicationController
     end
 
     @disable_judge_assignments = true if ENV['RAILS_APP_DB'] == '2025-coquitlam-showcase'
+
+    # Build scores summary by dance (for students with scores)
+    if @person.type == 'Student'
+      @scores_summary = Score.joins(heat: [:entry, :dance])
+        .where(entry: { follow_id: @person.id })
+        .or(Score.joins(heat: [:entry, :dance]).where(entry: { lead_id: @person.id }))
+        .where.not(heats: { number: ...1 })  # Only scheduled heats
+        .where.not(value: [nil, ''])  # Only scores with actual values
+        .group('dances.id', 'dances.name', 'dances.order', :value)
+        .count
+        .group_by { |(dance_id, dance_name, dance_order, value), count| [dance_id, dance_name, dance_order] }
+        .transform_values { |entries| entries.to_h { |(_, _, _, value), count| [value, count] } }
+        .sort_by { |(dance_id, dance_name, dance_order), _| dance_order }
+        .to_h
+    end
   end
 
   # GET /people/new

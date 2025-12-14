@@ -13,8 +13,10 @@
   <%= render 'people/student_professional_section', person: @person, heats: @heats, solos: @solos, 
              entries: @entries, partners: @partners, dances: @dances, track_ages: @track_ages, event: @event %>
 
-  <%= render 'people/scores_table', scores: @scores, dances: @dances, 
+  <%= render 'people/scores_table', scores: @scores, dances: @dances,
              score_range: @score_range, score_bgcolor: @score_bgcolor %>
+
+  <%= render 'people/scores_summary', scores_summary: @scores_summary %>
 
   <%= render 'people/judge_section', person: @person, event: @event,
              disable_judge_assignments: @disable_judge_assignments,
