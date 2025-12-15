@@ -5,6 +5,7 @@ require 'uri'
 require 'json'
 require 'open3'
 require 'optparse'
+require 'zlib'
 
 # Disable output buffering for real-time progress updates
 $stdout.sync = true
@@ -213,6 +214,23 @@ else
   end
 end
 
+# Load and compress the index database for direct transfer
+git_path = File.realpath(File.expand_path('..', __dir__))
+dbpath = ENV.fetch('RAILS_DB_VOLUME') { "#{git_path}/db" }
+index_db = File.join(dbpath, 'index.sqlite3')
+
+unless File.exist?(index_db)
+  puts "Error: index.sqlite3 not found at #{index_db}"
+  exit 1
+end
+
+db_content = File.binread(index_db)
+compressed_db = Zlib.gzip(db_content)
+update_time = Time.now.utc.iso8601
+
+puts "Database: #{db_content.bytesize} bytes, compressed: #{compressed_db.bytesize} bytes"
+puts "\n"
+
 # Step 3: Call update_config CGI endpoint on each machine
 puts "Step 3: Triggering configuration update on each machine..."
 puts "=" * 50
@@ -228,7 +246,7 @@ success_count = 0
 failure_count = 0
 
 # Helper method to attempt updating a machine
-def attempt_update(uri, machine_id, verbose, target)
+def attempt_update(uri, machine_id, verbose, target, compressed_db, update_time)
   http = Net::HTTP.new(uri.host, uri.port)
   http.use_ssl = true
   http.read_timeout = 30
@@ -237,6 +255,12 @@ def attempt_update(uri, machine_id, verbose, target)
   request = Net::HTTP::Post.new(uri.path)
   # Only set Fly-Force-Instance-Id header for Fly.io targets
   request['Fly-Force-Instance-Id'] = machine_id if target.to_s == 'fly'
+
+  # Send the compressed database directly to avoid S3 eventual consistency issues
+  request['Content-Type'] = 'application/vnd.sqlite3'
+  request['Content-Encoding'] = 'gzip'
+  request['X-Update-Time'] = update_time
+  request.body = compressed_db
 
   response = http.request(request)
 
@@ -275,7 +299,7 @@ while pending_machines.any? && round <= max_retries
       success_count += 1
     else
       print "  #{machine_id}... "
-      result = attempt_update(uri, machine_id, options[:verbose], options[:target])
+      result = attempt_update(uri, machine_id, options[:verbose], options[:target], compressed_db, update_time)
 
       if result[:success]
         puts "✓ Success"

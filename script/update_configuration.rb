@@ -8,6 +8,8 @@ require 'fileutils'
 require 'open3'
 require 'json'
 require 'yaml'
+require 'zlib'
+require 'stringio'
 
 # Set up Rails environment variable (but don't load Rails)
 ENV['RAILS_ENV'] ||= 'production'
@@ -54,21 +56,51 @@ begin
   # Track start time for measuring performance
   start_time = Time.now
 
-  # Operation 1: Database sync (fetch index.sqlite3 from S3)
+  # Operation 1: Database sync (receive from POST or fetch from S3)
   log ""
-  log "Operation 1/4: Fetching index database from S3"
+  log "Operation 1/4: Updating index database"
   log "-" * 70
 
-  script_path = File.join(SCRIPT_ROOT, 'script', 'sync_databases_s3.rb')
-  unless run_command(
-    "Database sync",
-    'ruby', script_path, '--index-only'
-  )
-    log ""
-    log "=" * 70
-    log "Configuration update FAILED (database sync failed)"
-    log "Total time: #{(Time.now - start_time).round(2)}s"
-    exit 1
+  dbpath = ENV.fetch('RAILS_DB_VOLUME') { File.join(SCRIPT_ROOT, 'db') }
+  index_db_path = File.join(dbpath, 'index.sqlite3')
+
+  # Check if database was sent directly via POST (avoids S3 eventual consistency issues)
+  if ENV['REQUEST_METHOD'] == 'POST' && ENV['CONTENT_LENGTH'].to_i > 0
+    begin
+      body = STDIN.read(ENV['CONTENT_LENGTH'].to_i)
+      update_time = ENV['HTTP_X_UPDATE_TIME']
+
+      # Decompress if gzipped
+      if ENV['HTTP_CONTENT_ENCODING'] == 'gzip'
+        body = Zlib::GzipReader.new(StringIO.new(body)).read
+      end
+
+      # Write directly to disk
+      File.binwrite(index_db_path, body)
+      log "SUCCESS: Received database directly (#{body.bytesize} bytes, updated: #{update_time})"
+    rescue => e
+      log "ERROR: Failed to receive database: #{e.message}"
+      log e.backtrace.first(5).join("\n")
+      log ""
+      log "=" * 70
+      log "Configuration update FAILED (database receive failed)"
+      log "Total time: #{(Time.now - start_time).round(2)}s"
+      exit 1
+    end
+  else
+    # Fall back to S3 fetch for backwards compatibility (e.g., manual triggers)
+    log "No database in POST body, fetching from S3..."
+    script_path = File.join(SCRIPT_ROOT, 'script', 'sync_databases_s3.rb')
+    unless run_command(
+      "Database sync",
+      'ruby', script_path, '--index-only'
+    )
+      log ""
+      log "=" * 70
+      log "Configuration update FAILED (database sync failed)"
+      log "Total time: #{(Time.now - start_time).round(2)}s"
+      exit 1
+    end
   end
 
   # Operation 1.5: Download map ERB templates
@@ -117,8 +149,6 @@ begin
 
   begin
     require File.join(SCRIPT_ROOT, 'lib/region_configuration')
-
-    dbpath = ENV.fetch('RAILS_DB_VOLUME') { File.join(SCRIPT_ROOT, 'db') }
 
     # Generate showcases.yml
     showcases_data = RegionConfiguration.generate_showcases_data
