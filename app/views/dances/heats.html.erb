@@ -28,7 +28,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-blue-700">
       <div>
         <strong>Limit:</strong>
-        <%= @dance_limit %> heats
+        <%= @dance_limit || '∞' %> heats
       </div>
       <div>
         <strong>Total Entries:</strong> <%= @total_heats %>
@@ -59,7 +59,9 @@
             <% end %>
             <th class="px-4 py-2 text-center text-sm font-medium text-gray-700 border-b">Total Entries</th>
             <th class="px-4 py-2 text-center text-sm font-medium text-gray-700 border-b">Lead / Follow</th>
+            <% if @dance_limit %>
             <th class="px-4 py-2 text-center text-sm font-medium text-gray-700 border-b">% of Limit</th>
+            <% end %>
           </tr>
         </thead>
         <tbody>
@@ -85,6 +87,7 @@
               <td class="px-4 py-2 text-sm text-center border-b">
                 <%= format_lead_follow_counts(item[:lead_count], item[:follow_count]) %>
               </td>
+              <% if @dance_limit %>
               <td class="px-4 py-2 text-sm text-center border-b">
                 <div class="flex items-center justify-center">
                   <span class="<%= limit_status_text_class(item[:total_count], @dance_limit) %>">
@@ -93,6 +96,7 @@
                   <%= limit_status_badge(item[:total_count], @dance_limit) %>
                 </div>
               </td>
+              <% end %>
             </tr>
           <% end %>
         </tbody>
@@ -106,6 +110,7 @@
           <%= pluralize(@people_with_heats.count, 'person/category combination') %> total
         </p>
       </div>
+      <% if @dance_limit %>
       <div class="p-3 bg-yellow-50 rounded-lg">
         <h3 class="font-medium text-orange-800 mb-1">At Limit</h3>
         <p class="text-orange-700">
@@ -118,6 +123,7 @@
           <%= @people_with_heats.count { |item| item[:total_count] > @dance_limit } %> exceeding <%= @dance_limit %> heats
         </p>
       </div>
+      <% end %>
     </div>
   <% else %>
     <div class="text-center py-12">

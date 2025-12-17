@@ -87,7 +87,7 @@
 
   <div class="inline">
     <%= form.button 'Save', name: 'tab', value: 'Heats', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
-    <% if @event.dance_limit.present? && Heat.where(number: 0..).any? %>
+    <% if Heat.where(number: 0..).any? %>
       <%= link_to 'Check', limits_heats_path, class: "ml-3 rounded-lg py-3 px-5 bg-green-600 text-white inline-block font-medium cursor-pointer" %>
     <% end %>
   </div>

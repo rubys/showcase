@@ -12,7 +12,9 @@
 <li>Each person has a limit per dance (e.g., Waltz, Cha Cha)</li>
 <% end %>
 <li>Limits count total heats on the floor (Lead + Follow combined)</li>
+<% if @dance_limits.any? { |d| d[:is_custom] } %>
 <li>Some dances have custom limits that override the default of <%= @overall_limit %> heats</li>
+<% end %>
 <li>Violations occur when a person's total heats exceed their limit for any dance<% unless Event.current.heat_range_cat == 1 || !(Event.current.include_open && Event.current.include_closed) %>/category combination<% end %></li>
 </ul>
 </div>
@@ -27,11 +29,13 @@
   <div class="mb-8">
     <h2 class="text-2xl font-bold mb-4">Overall Configuration</h2>
     <p class="text-gray-600 mb-4">
-      Default heat limit per person/dance/category: <strong><%= @overall_limit %></strong> heats
+      Default heat limit per person/dance/category: <strong><%= @overall_limit || '∞' %></strong> heats
     </p>
+    <% if @dance_limits.any? { |d| d[:is_custom] } %>
     <p class="text-sm text-gray-500">
       Some dances have custom limits that override the default.
     </p>
+    <% end %>
   </div>
 
   <% if @violations.any? %>
@@ -89,7 +93,7 @@
         </table>
       </div>
     </div>
-  <% else %>
+  <% elsif @overall_limit.present? || @dance_limits.any? { |d| d[:is_custom] } %>
     <div class="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
       <h2 class="text-2xl font-bold text-green-600 mb-2">
         <span class="text-green-500">✅</span> No Violations
@@ -110,7 +114,7 @@
       <% @dance_limits.each do |dance_limit| %>
         <div class="my-5 flex flex-row">
           <div class="entry-count h-10 flex items-center justify-center bg-gray-100 text-gray-700 font-medium">
-            <%= dance_limit[:effective_limit] %>
+            <%= dance_limit[:effective_limit] || '∞' %>
           </div>
           <label class="mt-1 flex items-center justify-center">
             <%= link_to dance_limit[:name], heats_dance_path(dance_limit[:id]),

@@ -1,9 +1,9 @@
 module DanceLimitsHelper
   # Determine the CSS class for a row based on limit status
   def limit_status_row_class(count, limit, index = 0)
-    if count > limit
+    if limit && count > limit
       "bg-red-50 hover:bg-red-100"
-    elsif count == limit
+    elsif limit && count == limit
       "bg-yellow-50 hover:bg-yellow-100"
     elsif index.even?
       "bg-white hover:bg-gray-50"
@@ -14,9 +14,9 @@ module DanceLimitsHelper
 
   # Determine the text color class based on limit status
   def limit_status_text_class(count, limit)
-    if count > limit
+    if limit && count > limit
       "text-red-600"
-    elsif count == limit
+    elsif limit && count == limit
       "text-orange-600"
     else
       "text-gray-900"
@@ -75,9 +75,9 @@ module DanceLimitsHelper
   def limit_summary_stats(people_data, limit)
     {
       total: people_data.count,
-      at_limit: people_data.count { |item| item[:total_count] == limit },
-      over_limit: people_data.count { |item| item[:total_count] > limit },
-      under_limit: people_data.count { |item| item[:total_count] < limit }
+      at_limit: limit ? people_data.count { |item| item[:total_count] == limit } : 0,
+      over_limit: limit ? people_data.count { |item| item[:total_count] > limit } : 0,
+      under_limit: limit ? people_data.count { |item| item[:total_count] < limit } : people_data.count
     }
   end
 end
