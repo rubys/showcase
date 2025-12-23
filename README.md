@@ -1,5 +1,8 @@
 # Showcase
 
+[![Run in Smithery](https://smithery.ai/badge/skills/rubys)](https://smithery.ai/skills?ns=rubys&utm_source=github&utm_medium=badge)
+
+
 In between updates to [Agile Web Development with Rails
 8](https://pragprog.com/titles/rails8/agile-web-development-with-rails-8/), I
 keep my Rails skills sharp by developing small applications.
