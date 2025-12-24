@@ -1,23 +1,35 @@
 # Ruby2JS Shared Logic Architecture
 
-## Status: Planning
+## Status: Stage 1 Complete — Ready for Implementation
 
-This plan documents an approach to eliminate duplicate business logic between Ruby (server) and JavaScript (client) by:
+Ruby2JS now has the capabilities needed to eliminate duplicate view logic in the offline scoring SPA. The original plan proposed a custom annotation DSL, but the Rails model filter may make that unnecessary.
 
-1. **Model annotations** that declare serialization contracts
-2. **Ruby2JS** to transpile shared logic to JavaScript
-3. **Code generation** for serializers, hydrators, and type definitions
+### Context
+
+The showcase application maintainer is also the Ruby2JS maintainer. Ruby2JS is not a risky dependency — it's a tested, documented project with community support. Changes needed to support showcase can be made directly.
+
+### What Ruby2JS Now Provides (December 2025)
+
+1. **ERB filter** — transpiles ERB templates to JavaScript render functions
+2. **Rails model filter** — understands `has_many`, `belongs_to`, `validates`, etc.
+3. **Rails controller/routes/helpers filters** — complete MVC transpilation
+4. **Self-hosting** — Ruby2JS runs in the browser
+5. **Proven demo** — "Ruby2JS on Rails" blog tutorial running entirely in browser
 
 ## Problem Statement
 
-The offline-first scoring SPA requires business logic in both places:
+The offline-first scoring SPA requires:
 
-1. **Server (Ruby):** `ScoresController#heat` and `#heats_data` compute derived values, expand category scoring subjects, determine scoring types
-2. **Client (JavaScript):** `heat_hydrator.js` duplicates much of this logic to reconstruct the same data structures from normalized JSON
+1. **Snapshot data** from server before going offline
+2. **Render views** from that snapshot while offline
+3. **Send updates** when connectivity resumes
 
-When logic changes (e.g., category scoring expansion for amateur couples), both implementations must be updated in lockstep. This creates maintenance burden and risk of drift.
+Currently, view rendering is duplicated:
 
-Additionally, the JSON contract between server and client is implicit—defined only by code on each side. Field additions, renames, or type changes can cause silent failures.
+- **Server:** ERB templates render with ActiveRecord objects
+- **Client:** Hand-written Web Components render with hydrated JSON
+
+When view logic changes, both implementations must be updated. This creates maintenance burden and risk of drift.
 
 ## Current Architecture
 
@@ -40,30 +52,115 @@ ScoresController#heat
 Implicit JSON contract between server serialization and client expectations
 ```
 
+## Data Flow (Current vs Target)
+
+The offline scoring flow has four stages:
+
+```
+Serialization → Storage → Hydration → Rendering
+    (1)           (2)        (3)         (4)
+```
+
+### Current Implementation
+
+| Stage | Server | Client | Duplication? |
+|-------|--------|--------|--------------|
+| 1. Serialization | `heats_data` builds JSON | — | No |
+| 2. Storage | — | `HeatDataManager` → IndexedDB | No |
+| 3. Hydration | — | `heat_hydrator.js` rebuilds objects | Implicit contract |
+| 4. Rendering | ERB templates | Web Components | **YES — duplicated** |
+
+### Target Implementation
+
+| Stage | Implementation | Source of Truth |
+|-------|----------------|-----------------|
+| 1. Serialization | Keep or derive from model definitions | Model definitions |
+| 2. Storage | Keep `HeatDataManager` or migrate to Dexie | — |
+| 3. Hydration | Transpiled from model definitions | Model definitions |
+| 4. Rendering | Transpiled ERB → JavaScript | **ERB templates** |
+
 ## Proposed Architecture
 
+A proper subset of the showcase application (routes, models, views, controllers) gets transpiled into a client-side SPA backed by Dexie/IndexedDB.
+
 ```
-Model Annotations (Single Source of Truth)
-──────────────────────────────────────────
-app/models/heat.rb        → spa_serialize { ... }
-app/models/entry.rb       → spa_serialize { ... }
-app/models/person.rb      → spa_serialize { ... }
-         │
-         ▼
-    Code Generator
-         │
-         ├─────────────────────────────────────────────┐
-         │                                             │
-         ▼                                             ▼
-Generated Ruby                         Generated JavaScript
-─────────────────                      ────────────────────
-lib/generated/spa_serializers.rb       app/javascript/generated/
-  - HeatSerializer.serialize()           - spa_hydrators.js
-  - EntrySerializer.serialize()          - spa_types.d.ts (optional)
-  - includes_for_preload()
+Server (Rails)                       Client (Transpiled SPA)
+─────────────────                    ───────────────────────
+Routes (subset)          ──────►     Routes (transpiled)
+Models (subset)          ──────►     Models (Dexie-backed)
+Views (scoring ERB)      ──────►     Views (render functions)
+Controllers (subset)     ──────►     Controllers (transpiled)
+                                            │
+                                            ▼
+                                     Navigation + Sync Layer
+                                     ────────────────────────
+                                     On each navigation:
+                                       1. Attempt server request
+                                       2. Upload pending changes (batch)
+                                       3. Download updates (batch)
+                                       4. Fall back to IndexedDB if offline
 ```
 
-## Model Annotation Design
+### Sync Behavior
+
+On every navigation, the client attempts to sync with the server:
+- **Upload:** Batch of pending score changes queued while offline
+- **Download:** Latest data updates from server
+- **Fallback:** If offline, proceed with local IndexedDB data
+
+### Turbo Integration (Recommended)
+
+Ruby2JS can build on Turbo rather than replacing it. Key insight: `Turbo.renderStreamMessage()` processes Turbo Stream HTML regardless of source — server response or client-side generated.
+
+```
+Transpiled ERB → Generate Turbo Stream HTML → Turbo.renderStreamMessage() → DOM update
+```
+
+**How it works:**
+
+| Component | Role |
+|-----------|------|
+| **Turbo Drive** | Navigation (intercepted to render locally from Dexie when offline) |
+| **Turbo Streams** | DOM updates (generated client-side by transpiled ERB) |
+| **Stimulus** | Interactivity (unchanged — existing controllers work as-is) |
+| **Turbo events** | Sync hooks (`turbo:before-visit` for upload/download batch) |
+
+**Benefits:**
+- Existing Stimulus controllers work unchanged (they already use Turbo events/APIs)
+- No parallel navigation system to build
+- `turbo:before-visit`, `turbo:load` available for sync hooks
+- Turbo Frames/Streams available for progressive enhancement
+
+**Sync on navigation:**
+```javascript
+document.addEventListener('turbo:before-visit', async (event) => {
+  // 1. Upload pending changes
+  await uploadDirtyScores();
+  // 2. Download updates (or proceed offline)
+  await downloadUpdates().catch(() => {/* offline fallback */});
+});
+```
+
+This approach integrates with the existing Hotwire stack rather than replacing it.
+
+### Stimulus Compatibility
+
+Analyzed scoring view controllers for Turbo dependencies:
+
+| Controller | Turbo Usage | Offline SPA Impact |
+|------------|-------------|-------------------|
+| `score_controller.js` | `turbo:before-visit` event | Works unchanged |
+| `drop_controller.js` | `Turbo.renderStreamMessage()` | Can generate Turbo Stream locally |
+| `open_feedback_controller.js` | None | Works unchanged |
+| `info_box_controller.js` | None | Works unchanged |
+
+**Conclusion:** Existing Stimulus controllers work with the Turbo integration approach. The two controllers using `Turbo.renderStreamMessage()` (`drop_controller.js`, `live_scores_controller.js`) can receive locally-generated Turbo Stream HTML instead of server responses.
+
+**Key insight:** The Rails model filter already knows object shapes from `has_many`, `belongs_to`, etc. A custom annotation DSL may be unnecessary — model definitions can serve as the source of truth for hydration.
+
+## Model Annotation Design (Original Plan — Likely Unnecessary)
+
+> **Note:** This section documents the originally proposed annotation DSL. Given that the Rails model filter already understands model relationships, this custom DSL may be unnecessary. Preserved for reference.
 
 ### Basic Structure
 
@@ -374,177 +471,184 @@ The generator extracts this proc and:
 
 ## Implementation Stages
 
-### Stage 1: Ruby2JS Modernization
+### Stage 1: Ruby2JS Modernization — ✅ COMPLETE
 
-**Status: Prism migration complete** (see [ruby2js prism-migration branch](https://github.com/ruby2js/ruby2js))
+**Status: Complete and exceeded original scope** (December 2025)
 
-Ruby2JS now supports Prism via `Prism::Translation::Parser`, which translates Prism's AST into whitequark parser-compatible format. This approach:
+Ruby2JS has been substantially modernized with Prism support, self-hosting, and full Rails filter suite.
 
-- Requires no changes to existing handlers or filters
-- Auto-detects Prism on Ruby 3.3+, falls back to parser gem on older Ruby
-- All 1302 tests pass with both parsers
-- Maintains full backwards compatibility
+#### What Was Built
 
-**Remaining Stage 1 work:**
+| Task | Status | Details |
+|------|--------|---------|
+| Prism support | ✅ Complete | Full `PrismWalker` with 12 visitor modules |
+| ERB filter | ✅ Complete | 234-line filter in `lib/ruby2js/filter/erb.rb` |
+| Rails filters | ✅ Complete | Model, Controller, Routes, Schema, Helpers, Seeds, Logger |
+| Self-hosting | ✅ Complete | Ruby2JS transpiles itself to JavaScript |
+| Online demo | ✅ Updated | Self-host option added alongside Opal |
 
-| Task | Status |
-|------|--------|
-| Prism support via translation layer | ✅ Complete |
-| `group_by`, `sort_by`, `max_by`, `min_by` filters | Pending |
-| `erb` filter (extract from `ErbPrismConverter`) | Pending |
-| `rails_helpers` filter | Pending |
-| `web_components` filter | Pending |
-| Online demo update | Pending |
+#### Rails Filters Implemented
 
-**Online Demo Considerations:**
-The ruby2js.com demo currently uses Opal to run Ruby2JS in the browser. Options for Prism compatibility (in priority order):
-1. Self-hosting: Ruby2JS transpiles itself to JS, uses `@prism-ruby/prism` npm module directly
-2. Replace Opal with ruby.wasm (runs CRuby + native Prism in browser)
-3. Continue using Opal with parser gem (no changes needed - translation layer means existing code works)
+| Filter | Lines | Transforms |
+|--------|-------|------------|
+| `rails/model.rb` | 686 | `has_many`, `belongs_to`, `validates`, callbacks, STI, scopes |
+| `rails/controller.rb` | 758 | `before_action`, `params`, `render`, `redirect_to`, filter chains |
+| `rails/helpers.rb` | 589 | Form helpers, `link_to`, `truncate`, path helpers |
+| `rails/routes.rb` | 848 | `resources`, `root`, constraints, URL generation |
+| `rails/schema.rb` | 474 | `create_table`, column definitions |
+| `rails/seeds.rb` | 187 | Module-based seeds with auto-import |
+| `rails/logger.rb` | 46 | `Rails.logger` → `console.*` |
 
-**Outcome:** Modern Ruby2JS that benefits the broader community and provides foundation for Stage 2.
+#### Self-Hosting Infrastructure
 
-### Stage 2: Annotation DSL + Generator (Proof of Concept)
+Ruby2JS can now run entirely in JavaScript:
+- **CLI** (`lib/ruby2js/selfhost/cli.rb`) — 463 lines
+- **Runtime** (`lib/ruby2js/selfhost/runtime.rb`) — Parser-compatible location classes
+- **Bundler** (`lib/ruby2js/selfhost/bundle.rb`) — Packages for browser
+- **Prism browser** (`lib/ruby2js/selfhost/prism_browser.rb`) — WASI polyfill
 
-Build the `spa_serialize` DSL and generator, validated with one simple model.
+Self-host filters transform Ruby2JS's own code:
+- `selfhost/core.rb` — Dynamic super handling
+- `selfhost/walker.rb` — PrismWalker API transforms
+- `selfhost/filter.rb` — Filter module patterns
+- `selfhost/converter.rb` — Converter patterns
 
-Create the `spa_serialize` DSL:
+#### Enumerable Methods ✅
 
-```ruby
-# lib/spa_serialize.rb
-module SpaSerialize
-  extend ActiveSupport::Concern
+These methods are now implemented in `filter/functions.rb`:
 
-  class_methods do
-    def spa_serialize(&block)
-      @spa_config ||= SpaConfig.new(self)
-      @spa_config.instance_eval(&block)
-    end
+| Method | Implementation |
+|--------|----------------|
+| `group_by` | ES2024 `Object.groupBy` or `reduce` fallback |
+| `sort_by` | ES2023 `toSorted` or `slice().sort` fallback |
+| `max_by` | `reduce` with comparison |
+| `min_by` | `reduce` with comparison |
 
-    def spa_config
-      @spa_config
-    end
-  end
-end
+**Outcome:** Ruby2JS is production-ready with comprehensive Rails support.
 
-class SpaConfig
-  attr_reader :model_class, :attribute_names, :computed_fields, :reference_names
+### Stage 2: ERB Transpilation for Views
 
-  def initialize(model_class)
-    @model_class = model_class
-    @attribute_names = []
-    @computed_fields = []
-    @reference_names = []
-  end
+**Goal:** Eliminate view duplication by transpiling ERB templates to JavaScript.
 
-  def attributes(*names)
-    @attribute_names.concat(names)
-  end
+**Prerequisites (Ruby2JS):**
+- Add `dom_id` to Rails helpers filter (small)
+- Expose `pluralize` as view helper (small)
 
-  def computed(name, context: [], precompute: false, &block)
-    @computed_fields << {
-      name: name,
-      context: context,
-      precompute: precompute,
-      block: block
-    }
-  end
+**Approach:**
+1. Transpile one scoring partial (e.g., `_heat_table.html.erb`) as proof of concept
+2. Verify transpiled output renders identically to Web Component
+3. Transpile remaining scoring views
+4. Replace Web Components with transpiled render functions
 
-  def references(*names)
-    @reference_names.concat(names)
-  end
-end
-```
+**What this solves:**
+- View logic exists in one place (ERB templates)
+- No manual sync between ERB and JavaScript
+- `compare-erb-js` tests become unnecessary — nothing to compare
 
-**Code Generator:**
+**What this doesn't change:**
+- Data flow (serialization → storage → hydration) stays the same initially
+- `HeatDataManager` and IndexedDB usage unchanged
+- Score submission and ActionCable integration unchanged
 
-```ruby
-# lib/tasks/spa_generate.rake
-namespace :spa do
-  desc "Generate serializers and hydrators from model annotations"
-  task generate: :environment do
-    generator = SpaCodeGenerator.new
+### Stage 3: Hydration from Model Definitions
 
-    # Find all models with spa_serialize
-    Rails.application.eager_load!
-    models = ApplicationRecord.descendants.select { |m| m.respond_to?(:spa_config) && m.spa_config }
+**Goal:** Derive hydration logic from model definitions instead of hand-written `heat_hydrator.js`.
 
-    generator.generate_ruby_serializers(models)
-    generator.generate_js_hydrators(models)
-    generator.generate_ts_types(models) if ENV['GENERATE_TYPES']
-  end
-end
-```
+**Approach:**
+1. Transpile relevant model definitions with Rails model filter
+2. Use transpiled models to hydrate JSON from IndexedDB
+3. Transpiled views consume hydrated model objects
 
-**Proof of Concept:**
-1. Annotate one simple model (`Studio` or `Person`)
-2. Implement generator for that model
-3. Verify generated code works
-4. Refine DSL based on learnings
+**Key question:** Does the Rails model filter produce models that:
+- Can hydrate from JSON?
+- Provide AR-like interface (`heat.entry.lead.name`)?
+- Handle relationships correctly?
 
-**Outcome:** Working proof of concept, validated approach.
+The ruby2js-on-rails demo uses Dexie which handles this. For showcase, we need to verify the model filter works with the existing `HeatDataManager` approach, or decide to migrate to Dexie.
 
-### Stage 3: Full Model Coverage
+### Stage 4: Simplify Serialization (Optional)
 
-1. Annotate remaining models (`Heat`, `Entry`, `Dance`, `Score`, etc.)
-2. Solve context passing for precomputed fields
-3. Replace `heats_data` serialization with generated code
-4. Replace `heat_hydrator.js` with generated code
-5. Verify with `compare-erb-js` tests
-6. Remove hand-written serialization/hydration code
+**Goal:** Derive serialization from model definitions if beneficial.
 
-**Outcome:** Single source of truth for serialization contracts.
+Once views and hydration are transpiled, evaluate whether `heats_data` serialization can also be derived from model definitions. This may not be necessary — the current serialization works and isn't duplicated.
+
+**Decision point:** If hydration is derived from models, serialization might "just work" as the inverse. Explore after Stages 2-3 are complete.
 
 ### Dependencies
 
 ```
-Stage 1 (Ruby2JS Modernization)
+Stage 1 (Ruby2JS Modernization) ✅ COMPLETE
     │
-    ├── Prism migration
-    ├── New filters (group_by, sort_by, etc.)
-    └── ERB filter (extract from ErbPrismConverter)
+    ├── Prism migration ✅
+    ├── ERB filter ✅
+    ├── Rails filters ✅ (7 filters, ~3,600 lines)
+    └── Self-hosting ✅
           │
           ▼
-Stage 2 (Proof of Concept)
+Stage 2 (ERB Transpilation for Views)
     │
-    ├── spa_serialize DSL
-    ├── Generator for one model
-    └── Validate approach
+    └── Transpile scoring ERB → JavaScript render functions
           │
           ▼
-Stage 3 (Full Coverage)
+Stage 3 (Hydration from Model Definitions)
     │
-    ├── All model annotations
-    ├── Context passing solution
-    └── Replace hand-written code
+    └── Transpile models → JavaScript with AR-like interface
+          │
+          ▼
+Stage 4 (Simplify Serialization) — Optional
+    │
+    └── Evaluate if heats_data can be derived from models
 ```
 
-Stage 1 has independent value and no urgency. Stages 2 and 3 build on Stage 1 but can be deferred until Stage 1 is complete and proven.
+Stages are sequential but independently valuable. Stage 2 alone eliminates view duplication.
 
-## What Gets Generated vs What Remains Manual
+## What Gets Transpiled vs What Remains Manual
 
-### Generated
+### After Stage 2 (Views)
 
-| Component | Source | Output |
-|-----------|--------|--------|
-| Serializers | Model annotations | `lib/generated/spa_serializers.rb` |
-| Hydrators | Model annotations | `app/javascript/generated/spa_hydrators.js` |
-| Type definitions | Model annotations | `app/javascript/generated/spa_types.d.ts` |
-| Shared logic | Computed blocks | Both Ruby module and JS module |
-| Eager loading | `references` declarations | `includes_for_preload` methods |
+| Transpiled | Source | Output |
+|------------|--------|--------|
+| Scoring views | `app/views/scores/_*.html.erb` | JavaScript render functions |
 
-### Remains Manual
+| Manual | Notes |
+|--------|-------|
+| Hydration | `heat_hydrator.js` — unchanged initially |
+| Storage | `HeatDataManager` — unchanged |
+| Serialization | `heats_data` — unchanged |
+| Score submission | Existing logic — unchanged |
+| ActionCable | Existing integration — unchanged |
 
-| Component | Reason |
-|-----------|--------|
-| Controller orchestration | Business logic for which heats to load, context building |
-| Top-level JSON structure | `event`, `judge`, `paths`, etc. not tied to single model |
-| HTTP protocol | Request/response handling |
-| Browser interactivity | Event handlers, IndexedDB, History API |
+### After Stage 3 (Models)
 
-## Risk Verification (Completed)
+| Transpiled | Source | Output |
+|------------|--------|--------|
+| Scoring views | ERB templates | JavaScript render functions |
+| Model hydration | Model definitions | JavaScript models with AR interface |
 
-The following risks were investigated and verified as non-blocking:
+| Manual | Notes |
+|--------|-------|
+| Storage | `HeatDataManager` or Dexie — TBD |
+| Serialization | `heats_data` — likely unchanged |
+| Score submission | Existing logic — unchanged |
+| ActionCable | Existing integration — unchanged |
+
+### After Stage 4 (Optional)
+
+| Transpiled | Source | Output |
+|------------|--------|--------|
+| Scoring views | ERB templates | JavaScript render functions |
+| Model hydration | Model definitions | JavaScript models |
+| Serialization | Model definitions | Derived from same source as hydration |
+
+| Manual | Notes |
+|--------|-------|
+| Storage | Data layer implementation |
+| Score submission | Business logic |
+| ActionCable | Real-time integration |
+
+## Risk Verification (All Verified ✅)
+
+All originally identified risks have been verified as non-blocking through Stage 1 implementation.
 
 ### Ruby2JS Output Quality ✅
 
@@ -562,12 +666,20 @@ Tested with actual shared logic patterns. Output is clean, idiomatic JavaScript:
 | `case/when` | `switch/case` | ✅ Correct |
 | Multi-line nested blocks | Properly structured | ✅ Correct |
 
-### Ruby-Specific Methods ✅
+### ERB Templates ✅ (New)
 
-Methods like `group_by` and `sort_by` don't exist natively in JS, but:
-- Current shared logic doesn't use them (only server-side controller code does)
-- They can be added to `filter/functions.rb` following existing patterns (`select`→`filter`, `any?`→`some`)
-- Implementation is straightforward AST transformation
+The ERB filter (`lib/ruby2js/filter/erb.rb`) handles:
+- Buffer detection (`_erbout`, `_buf`)
+- Instance variable extraction to function parameters
+- Rails helper integration via hooks (`erb_prepend_imports`, `process_erb_block_*`)
+
+### Rails Patterns ✅ (New)
+
+The ruby2js-on-rails demo validates:
+- Models with `has_many`, `belongs_to`, `validates`
+- Controllers with `before_action`, `params`, `redirect_to`
+- Routes with `resources`, nested routes, path helpers
+- ERB templates with Rails helpers
 
 ### Block Introspection ✅
 
@@ -580,26 +692,78 @@ Ruby2JS can extract and convert blocks defined in model annotations:
 | Rake task timing (after `eager_load!`) | ✅ Works |
 | Nested structures, case/when | ✅ Works |
 
-**How it works:** Ruby2JS uses `block.source_location` to get `[filename, line_number]`, reads the source file, parses it, and extracts the block body from the AST.
+### Gap Analysis: Scoring ERB Templates
 
-**Caveat:** Ruby2JS reads the current file content at conversion time. This is correct behavior for code generation (rake task runs with current source).
+Analyzed `_table_heat.html.erb`, `_cards_heat.html.erb`, `_rank_heat.html.erb`, `_solo_heat.html.erb`, `_heat_header.html.erb`, `_info_box.html.erb`.
 
-### Remaining Unknown
+#### Already Implemented ✅
 
-**Context passing for precomputed fields** — How to specify that `dance_string` depends on `heats_same_number` context. May require explicit context declaration in annotation or convention-based approach. To be explored during implementation.
+| Feature | Location |
+|---------|----------|
+| `blank?` | `filter/active_functions` |
+| `raw` / `html_safe` | `erb` filter |
+| `pluralize` | Implemented (not yet exposed as helper) |
+| `group_by`, `sort_by`, `max_by`, `min_by` | `filter/functions` |
+| String methods (`gsub`, `split`, `join`, `start_with?`) | `filter/functions` |
+| Array/Enumerable (`each`, `map`, `find`, `any?`, `empty?`, `include?`) | `filter/functions` |
+| Safe navigation (`&.`) | Core transpiler |
+| `respond_to?` | Transpiles to property check |
+| `JSON.parse` | Native JS |
+
+#### Gaps to Fill
+
+| Gap | Effort | Notes |
+|-----|--------|-------|
+| `dom_id` | Small | Add to Rails helpers filter |
+| `pluralize` as view helper | Small | Expose existing implementation |
+
+#### Not Gaps (Initially Thought Problematic)
+
+| Pattern | Why It Works |
+|---------|--------------|
+| `Score.find_by(...)` | Transpiled models + Dexie handle AR-style queries client-side |
+| `Event.current` | Can be transpiled model or passed as data |
+| ActiveStorage `.url` | Pre-computed server-side, passed as data |
+
+#### Conclusion
+
+**Two small gaps** (`dom_id`, `pluralize` helper exposure). Everything else is implemented or handled by the Rails model filter + Dexie approach.
 
 ## Success Criteria
 
-1. Model annotations are the single source of truth for serialization shape
-2. Computed blocks with shared logic work identically in Ruby and JS
-3. `compare-erb-js` tests pass with generated code
-4. Reduced manual code in `heats_data` (~200 lines → ~50 lines)
-5. Reduced manual code in `heat_hydrator.js` (~400 lines → ~100 lines)
-6. Adding a new field requires only annotation change + regenerate
+### Stage 2 Complete When:
+- Scoring ERB templates transpile to JavaScript render functions
+- Transpiled views produce identical output to current Web Components
+- Offline scoring works with transpiled views
+- Web Component view code can be removed
+
+### Stage 3 Complete When:
+- Model definitions transpile to JavaScript with AR-like interface
+- Transpiled models hydrate from JSON correctly
+- `heat_hydrator.js` can be replaced with transpiled models
+- Transpiled views consume transpiled models
+
+### Overall Success:
+- View logic changes require editing ERB only (no JS sync)
+- `compare-erb-js` tests become unnecessary
+- Reduced total JavaScript in SPA (transpiled code replaces hand-written)
 
 ## Related Documents
 
+### Showcase Project
 - [ERB_TO_JS_TRANSFORMER_ARCHITECTURE.md](ERB_TO_JS_TRANSFORMER_ARCHITECTURE.md) — Modular converter design
 - [OFFLINE_SCORING_COMPLETION.md](OFFLINE_SCORING_COMPLETION.md) — Offline scoring implementation plan
-- [From ERB to JavaScript](https://intertwingly.net/blog/2025/11/25/ERB-Stimulus-Offline.html) — Blog post documenting current architecture
+
+### Ruby2JS Resources
 - [Ruby2JS](https://www.ruby2js.com/) — Ruby to JavaScript transpiler ([GitHub](https://github.com/ruby2js/ruby2js))
+- [Ruby2JS on Rails demo](https://github.com/ruby2js/ruby2js/tree/master/demo/ruby2js-on-rails) — Complete Rails blog running in browser
+- [Comparing Approaches: Opal, Ruby WASM, Ruby2JS](https://github.com/ruby2js/ruby2js/blob/master/plans/RUBY_IN_JS_APPROACHES.md)
+
+### Blog Posts (chronological)
+- [Offline-First Web Components](https://intertwingly.net/blog/2025/11/07/Offline-First-Web-Components.html) — First offline scoring approach
+- [Turbo MVC Offline](https://intertwingly.net/blog/2025/11/20/Turbo-MVC-Offline.html) — Second approach with Turbo navigation
+- [ERB to JavaScript Conversion](https://intertwingly.net/blog/2025/11/24/ERB-Stimulus-Offline.html) — ERB template transpilation breakthrough
+- [Ruby2JS Prism Support](https://intertwingly.net/blog/2025/11/27/Ruby2JS-Prism-Support.html) — Prism parser integration
+- [Three Paths to Ruby2JS in Browser](https://intertwingly.net/blog/2025/11/29/Ruby2JS-Browser-Options.html) — Self-hosting architecture
+- [The Ruby2JS Story](https://www.ruby2js.com/blog/2025/12/14/ruby2js-story/) — Project history and revival
+- [Ruby2JS on Rails](https://intertwingly.net/blog/2025/12/21/Ruby2JS-on-Rails.html) — Full Rails patterns in browser
