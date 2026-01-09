@@ -535,7 +535,7 @@ class PeopleController < ApplicationController
     params[:studio] = nil if params[:studio].to_s == '0'
 
     if params[:studio]
-      @types = %w[Student Professional Guest]
+      @types = ['Student', 'Professional', 'Guest', 'Franchisee', 'Studio Staff']
       @person.studio = Studio.find(params[:studio])
       @person.type ||= 'Student'
     else
@@ -553,7 +553,7 @@ class PeopleController < ApplicationController
     if @person.studio_id == 0
       @types = %w[Judge DJ Emcee Official Organizer Guest]
     elsif @person.studio_id
-      @types = %w[Student Professional Guest]
+      @types = ['Student', 'Professional', 'Guest', 'Franchisee', 'Studio Staff']
     end
 
     selections

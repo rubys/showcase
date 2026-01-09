@@ -124,6 +124,7 @@ class Person < ApplicationRecord
     elsif type == 'Guest'
       self.package_id ||= studio&.default_guest_package_id
     end
+    # Franchisee and Studio Staff don't have studio defaults, fall through to type lookup
 
     self.package_id ||= Billable.where(type: type).ordered.pick(:id)
   end
@@ -135,8 +136,8 @@ class Person < ApplicationRecord
 
   def active?
     case type
-    when 'Guest'
-      package_id != nil or not Billable.where(type: 'Guest').exists?
+    when 'Guest', 'Franchisee', 'Studio Staff'
+      package_id != nil or not Billable.where(type: type).exists?
     when 'Student', 'Professional'
       return true if Formation.where(person_id: id).exists?
       if role == 'Leader'

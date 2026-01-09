@@ -14,7 +14,7 @@
   <% if @type == 'package' %>
   <div class="my-5">
     <%= form.label :type %>
-    <%= form.select :type, %w(Student Professional Guest Judge DJ Emcee Official Organizer), {},
+    <%= form.select :type, ['Student', 'Professional', 'Guest', 'Franchisee', 'Studio Staff', 'Judge', 'DJ', 'Emcee', 'Official', 'Organizer'], {},
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
   </div>
   <% else %>

@@ -7,7 +7,7 @@
 
   <h1 class="font-bold text-4xl mb-6" id="options">Event Prices</h1>
 
-    <% %w(Student Professional Guest Judge DJ Emcee Official Organizer).each do |type| %>
+    <% ['Student', 'Professional', 'Guest', 'Franchisee', 'Studio Staff', 'Judge', 'DJ', 'Emcee', 'Official', 'Organizer'].each do |type| %>
     <% if @packages.include? type %>
     <h2 class="font-bold text-2xl mt-4"><%= type %> Packages</h2>
     <table class="table-auto">
