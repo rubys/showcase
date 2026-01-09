@@ -65,11 +65,13 @@ a scheduled heat time will be added to each heat.</li>
       <% end %>
     </tr>
     <% @agenda.each do |cat, heats| %>
-      <tr>
+      <% cat_slug = cat.downcase.gsub(/[^\w]+/, '-') %>
+      <% is_selected = @selected_category == cat_slug %>
+      <tr class="<%= is_selected ? 'bg-blue-100' : '' %>">
         <% if %w(Uncategorized Unscheduled).include? cat %>
-        <td class="row text-red-600 font-bold"><a href="#cat-<%= cat.downcase.gsub(/[^\w]+/, '-') %>"><%= cat %></a></td>
+        <td class="row text-red-600 font-bold"><%= link_to cat, heats_path(cat: cat_slug, anchor: "cat-#{cat_slug}"), data: { turbo: false } %></td>
         <% else %>
-        <td class="row"><a href="#cat-<%= cat.downcase.gsub(/[^\w]+/, '-') %>"><%= cat %></a></td>
+        <td class="row <%= is_selected ? 'font-bold' : '' %>"><%= link_to cat, heats_path(cat: cat_slug, anchor: "cat-#{cat_slug}"), data: { turbo: false } %></td>
         <% end %>
         <% if cat == "Unscheduled" %>
         <td colspan="2" class="text-right">(<%= pluralize(Heat.where(number: 0).count, 'entry') %>)</td>
@@ -91,13 +93,19 @@ a scheduled heat time will be added to each heat.</li>
   </table>
 
 <% unless @issues.empty? %>
+<%# Build mapping of heat numbers to category slugs for issue links %>
+<% issue_heat_to_category = {} %>
+<% @agenda.each do |cat, heats| %>
+  <% cat_slug = cat.downcase.gsub(/[^\w]+/, '-') %>
+  <% heats.each { |number, _| issue_heat_to_category[number] = cat_slug } %>
+<% end %>
 <div class="ml-6 mb-8">
 <h2 class="text-red-600 font-bold text-2xl">Issues:</h2>
 <ul class="list-disc list-inside ml-4">
 <% @issues.sort_by {|heat, issues| heat}.each do |heat, issues| %>
 <% issues.each do |person_id, count| %>
 <li>
-  <a href="#heat-<%= heat %>">Heat <%= heat %></a>:
+  <%= link_to "Heat #{heat}", heats_path(cat: issue_heat_to_category[heat], anchor: "heat-#{heat}"), data: { turbo: false } %>:
   <%= link_to Person.find(person_id).display_name, person_path(person_id) %>
   <% if count == 0 %>
   is not available
@@ -110,15 +118,22 @@ a scheduled heat time will be added to each heat.</li>
 <% end %>
 </ul>
 </div>
-<% end%>
+<% end %>
 
-  <% @agenda.each do |cat, heats| %>
-  <% next if heats.empty? %>
-  <div style="page-break-after: always"></div>
-  <%= render partial: 'category', locals: {cat: cat, heats: heats} %>
+  <% if @filtered_agenda %>
+    <% @filtered_agenda.each do |cat, heats| %>
+    <% next if heats.empty? %>
+    <%= render partial: 'category', locals: {cat: cat, heats: heats} %>
+    <% end %>
   <% end %>
 
   <% if @stats %>
+  <%# Build mapping of heat numbers to category slugs for links %>
+  <% heat_to_category = {} %>
+  <% @agenda.each do |cat, heats| %>
+    <% cat_slug = cat.downcase.gsub(/[^\w]+/, '-') %>
+    <% heats.each { |number, _| heat_to_category[number] = cat_slug } %>
+  <% end %>
   <div>
   <h1 id="stats" class="mt-12 mx-auto font-bold text-4xl print:hidden">Summary</h1>
   <div class="min-w-full print:hidden">
@@ -135,7 +150,7 @@ a scheduled heat time will be added to each heat.</li>
         <td>
         <% heats.each do |heat| %>
         <% next if size == 1 and @solos.include? heat %>
-        <a href="#heat-<%= heat %>"><%= heat %></a>
+        <%= link_to heat, heats_path(cat: heat_to_category[heat], anchor: "heat-#{heat}"), data: { turbo: false } %>
         <% end %>
         </td>
       </tr>
@@ -147,7 +162,7 @@ a scheduled heat time will be added to each heat.</li>
         <td>
         <% @solos.each do |heat| %>
         <% next if heat < 0 %>
-        <a href="#heat-<%= heat %>"><%= heat %></a>
+        <%= link_to heat, heats_path(cat: heat_to_category[heat], anchor: "heat-#{heat}"), data: { turbo: false } %>
         <% end %>
         </td>
       </tr>
