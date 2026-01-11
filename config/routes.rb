@@ -130,6 +130,7 @@ Rails.application.routes.draw do
       get 'couples', on: :collection
       post 'reset_ages', on: :collection
       post 'split_multi', on: :collection
+      post 'reset_splits', on: :collection
     end
 
     get '/dances/:dance/songs', to: 'songs#dancelist', as: 'dance_songlist'

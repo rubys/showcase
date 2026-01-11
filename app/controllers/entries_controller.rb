@@ -444,6 +444,29 @@ class EntriesController < ApplicationController
     redirect_to dance_entries_path(params[:dance])
   end
 
+  # POST /entries/reset_splits
+  def reset_splits
+    dance_id = params[:dance].to_i
+    dance = Dance.find(dance_id)
+
+    # Find the original dance (positive order) and all split dances
+    all_dances = Dance.where(name: dance.name)
+    original_dance = all_dances.find_by(order: 0..) || dance
+
+    # Move all heats to the original dance
+    all_dances.each do |d|
+      Heat.where(dance: d).update_all(dance_id: original_dance.id)
+    end
+
+    # Delete all multi_levels for this dance
+    MultiLevel.where(dance: all_dances).destroy_all
+
+    # Delete all split dances (negative order)
+    all_dances.where(order: ...0).destroy_all
+
+    redirect_to dance_entries_path(original_dance.id)
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_entry
