@@ -24,9 +24,41 @@ class HeatsControllerTest < ActionDispatch::IntegrationTest
   
   test "index displays heat agenda" do
     get heats_url
-    
+
     assert_response :success
     assert_select 'body'
+  end
+
+  test "index without category shows summary but not heat tables" do
+    get heats_url
+
+    assert_response :success
+    # Should have the agenda summary table
+    assert_select 'table.table-fixed'
+    # Should have category links
+    assert_select 'a[href*="cat="]'
+    # Should NOT render individual heat tables (those have id="heat-N")
+    assert_select 'tbody[id^="heat-"]', count: 0
+  end
+
+  test "index with category parameter shows only that category" do
+    get heats_url(cat: 'closed-american-smooth')
+
+    assert_response :success
+    # Should render heat tables for the selected category
+    assert_select 'tbody[id^="heat-"]'
+    # Selected category should be highlighted
+    assert_select 'tr.bg-blue-100', minimum: 1
+  end
+
+  test "category links include anchor for scroll position" do
+    get heats_url
+
+    assert_response :success
+    # Category links should have anchors
+    assert_select 'a[href*="cat="][href*="#cat-"]'
+    # Category links should disable turbo for proper anchor scrolling
+    assert_select 'a[data-turbo="false"][href*="cat="]'
   end
   
   test "mobile interface provides optimized heat display" do

@@ -82,6 +82,13 @@ class HeatsController < ApplicationController
     end
 
     @categories = (Category.all + CatExtension.all).map {|cat| [cat.name, cat]}.to_h
+
+    # Handle category filtering for pagination
+    @selected_category = params[:cat]
+    if @selected_category
+      key = @agenda.keys.find { |k| k.downcase.gsub(/[^\w]+/, '-') == @selected_category }
+      @filtered_agenda = @agenda.slice(key) if key
+    end
   end
 
   def mobile

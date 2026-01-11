@@ -94,9 +94,9 @@
         <td colspan="9" class="text-xl pt-4">Heat <span class="heat-humber"><%= number %></span>: 
           <% unless @combine_open_and_closed && %w(Open Closed).include?(heats.first.category) && heats.first.dance.open_category_id == heats.first.dance.closed_category_id %><%= heats.first.category %><% end %>
           <% if heats.first.dance_id == heats.last.dance_id %>
-          <%= heats.first.dance.name %>
+          <%= link_to heats.first.dance.name, heats_dance_path(heats.first.dance) %>
           <% if heats.first.category == 'Solo' and heats.first.solo.combo_dance%>
-          / <%= heats.first.solo.combo_dance.name %>
+          / <%= link_to heats.first.solo.combo_dance.name, heats_dance_path(heats.first.solo.combo_dance) %>
           <% end %>
           <% else %>
           <%= cat %>
