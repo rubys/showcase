@@ -125,6 +125,8 @@ a scheduled heat time will be added to each heat.</li>
     <% next if heats.empty? %>
     <%= render partial: 'category', locals: {cat: cat, heats: heats} %>
     <% end %>
+  <% else %>
+    <p class="ml-6 text-gray-600 italic print:hidden">Click on a category above to see the heats for that category.</p>
   <% end %>
 
   <% if @stats %>
