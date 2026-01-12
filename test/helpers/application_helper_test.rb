@@ -19,20 +19,23 @@ class ApplicationHelperTest < ActionView::TestCase
   end
   
   test "localized_date formats date ranges correctly for different locales" do
+    # Use current year so year is omitted in output
+    year = Date.current.year
+
     # Test US format - same month
-    assert_equal "March 15–17", localized_date("2025-03-15 - 2025-03-17", "en-US")
-    
+    assert_equal "March 15–17", localized_date("#{year}-03-15 - #{year}-03-17", "en-US")
+
     # Test UK format - different months
-    assert_equal "15 March – 17 April", localized_date("2025-03-15 - 2025-04-17", "en-GB")
-    
+    assert_equal "15 March – 17 April", localized_date("#{year}-03-15 - #{year}-04-17", "en-GB")
+
     # Test French format - same month
-    assert_equal "15 au 17 mars", localized_date("2025-03-15 - 2025-03-17", "fr-FR")
-    
+    assert_equal "15 au 17 mars", localized_date("#{year}-03-15 - #{year}-03-17", "fr-FR")
+
     # Test German format - different months
-    assert_equal "15. März – 17. April", localized_date("2025-03-15 - 2025-04-17", "de-DE")
-    
+    assert_equal "15. März – 17. April", localized_date("#{year}-03-15 - #{year}-04-17", "de-DE")
+
     # Test Japanese format
-    assert_equal "2025年3月15日〜3月17日", localized_date("2025-03-15 - 2025-03-17", "ja-JP")
+    assert_equal "#{year}年3月15日〜3月17日", localized_date("#{year}-03-15 - #{year}-03-17", "ja-JP")
   end
   
   test "localized_date shows year when date is not current year" do
