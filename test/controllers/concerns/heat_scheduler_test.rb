@@ -1432,16 +1432,55 @@ class HeatSchedulerTest < ActiveSupport::TestCase
     # Group of heats to add (a split)
     group_heats = [heat]
     group_participants = Set.new([person2.id, @instructor1.id])
+    group_couple_type = 'Pro-Am'
 
     # Create a packed group that already contains person1
     packed_group = {
       heats: [],
-      participants: Set.new([person1.id])
+      participants: Set.new([person1.id]),
+      couple_type: 'Pro-Am'
     }
 
     # person2 excludes person1, so the group should not be added
-    result = @scheduler.can_add_group_to_packed?(group_heats, group_participants, packed_group, 10)
+    result = @scheduler.can_add_group_to_packed?(group_heats, group_participants, group_couple_type, packed_group, 10)
     assert_equal false, result, "Should not add group when excluded person is in packed group"
+  end
+
+  test "can_add_group_to_packed rejects mismatched couple_types" do
+    # Create a heat for testing
+    entry = Entry.create!(
+      lead: @instructor1,
+      follow: @student1,
+      age: ages(:one),
+      level: levels(:one)
+    )
+
+    heat = Heat.create!(
+      dance: @dance_waltz,
+      entry: entry,
+      category: 'Multi',
+      number: 0
+    )
+
+    # Group of heats with Pro-Am couple_type
+    group_heats = [heat]
+    group_participants = Set.new([@instructor1.id, @student1.id])
+
+    # Try to add Pro-Am split to Amateur Couple packed group
+    packed_group = {
+      heats: [],
+      participants: Set.new,
+      couple_type: 'Amateur Couple'
+    }
+
+    # Should reject because couple_types don't match
+    result = @scheduler.can_add_group_to_packed?(group_heats, group_participants, 'Pro-Am', packed_group, 10)
+    assert_equal false, result, "Should not combine splits with different couple_types"
+
+    # Should accept when couple_types match
+    packed_group[:couple_type] = 'Pro-Am'
+    result = @scheduler.can_add_group_to_packed?(group_heats, group_participants, 'Pro-Am', packed_group, 10)
+    assert_equal true, result, "Should allow combining splits with matching couple_types"
   end
 
   # ===== REBALANCE PACKED GROUPS TESTS =====

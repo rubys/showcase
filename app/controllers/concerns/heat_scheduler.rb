@@ -588,6 +588,7 @@ module HeatScheduler
   # Pack a run of groups for the same multi-dance
   # Each group represents a split (dance_id) and must stay together as a unit.
   # We combine entire splits into the same heat, never breaking up a split.
+  # Only splits with matching couple_type can be combined.
   def pack_group_run(run_groups, event)
     return run_groups if run_groups.length <= 1
 
@@ -595,6 +596,10 @@ module HeatScheduler
     first_heat = run_groups.first.first
     agenda_cat = first_heat&.dance_category
     max_size = agenda_cat&.max_heat_size || event.max_heat_size || 9999
+
+    # Build a lookup of dance_id -> couple_type from MultiLevel records
+    dance_ids = run_groups.map { |g| g.first&.dance_id }.compact.uniq
+    couple_type_by_dance = MultiLevel.where(dance_id: dance_ids).pluck(:dance_id, :couple_type).to_h
 
     # Greedy bin-packing: try to fit entire groups (splits) into as few packed groups as possible
     packed_groups = []
@@ -608,11 +613,14 @@ module HeatScheduler
         group_participants.add(heat.entry.follow_id) if heat.entry.follow_id != 0
       end
 
+      # Get couple_type for this group's dance
+      group_couple_type = couple_type_by_dance[group.first&.dance_id]
+
       placed = false
 
       # Try to add entire group to an existing packed group
       packed_groups.each do |packed_group|
-        if can_add_group_to_packed?(group_heats, group_participants, packed_group, max_size)
+        if can_add_group_to_packed?(group_heats, group_participants, group_couple_type, packed_group, max_size)
           packed_group[:heats].concat(group_heats)
           packed_group[:participants].merge(group_participants)
           placed = true
@@ -625,6 +633,7 @@ module HeatScheduler
         packed_groups << {
           heats: group_heats,
           participants: group_participants,
+          couple_type: group_couple_type,
           agenda_category: run_groups.first.agenda_category
         }
       end
@@ -643,7 +652,10 @@ module HeatScheduler
   end
 
   # Check if an entire group (split) can be added to a packed group
-  def can_add_group_to_packed?(group_heats, group_participants, packed_group, max_size)
+  def can_add_group_to_packed?(group_heats, group_participants, group_couple_type, packed_group, max_size)
+    # Check couple_type compatibility - only combine splits with matching couple_type
+    return false if group_couple_type != packed_group[:couple_type]
+
     # Check size limit
     return false if packed_group[:heats].size + group_heats.size > max_size
 
@@ -674,6 +686,7 @@ module HeatScheduler
   # Rebalance packed groups by moving entire splits to distribute heats more evenly.
   # Unlike the old rebalance which moved individual heats (breaking splits),
   # this moves complete splits as atomic units.
+  # Only moves splits between groups with matching couple_type.
   def rebalance_packed_groups(packed_groups, max_size)
     return packed_groups if packed_groups.length <= 1
 
@@ -702,8 +715,9 @@ module HeatScheduler
       largest = packed_groups[largest_idx]
       smallest = packed_groups[smallest_idx]
 
-      # Only rebalance if difference is > 1
+      # Only rebalance if difference is > 1 and couple_types match
       next unless largest[:heats].size - smallest[:heats].size > 1
+      next unless largest[:couple_type] == smallest[:couple_type]
 
       # Try to move an entire split from largest to smallest
       splits_in_groups[largest_idx].each do |dance_id, split_data|
@@ -717,8 +731,8 @@ module HeatScheduler
         next if new_smallest_size > new_largest_size + 1  # Would reverse the imbalance
         next if new_smallest_size > max_size  # Would exceed max size
 
-        # Check if split can be added to smallest group
-        if can_add_group_to_packed?(split_heats, split_participants, smallest, max_size)
+        # Check if split can be added to smallest group (couple_type already verified above)
+        if can_add_group_to_packed?(split_heats, split_participants, largest[:couple_type], smallest, max_size)
           # Move the entire split
           split_heats.each { |heat| largest[:heats].delete(heat) }
           largest[:participants] -= split_participants
