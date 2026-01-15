@@ -1,12 +1,12 @@
 require "test_helper"
 
 # Tests for the MultiLevelSplitter concern which handles splitting multi-dances
-# into competition divisions by level, age, and couple type.
+# into competition divisions by couple type, level, and age.
 #
 # The concern provides layered splits:
-#   1. Level (e.g., Bronze vs Silver vs Gold)
-#   2. Age (e.g., 18-35 vs 46-54)
-#   3. Couple type (e.g., Pro-Am vs Amateur Couple)
+#   1. Couple type (e.g., Pro-Am vs Amateur Couple)
+#   2. Level (e.g., Bronze vs Silver vs Gold)
+#   3. Age (e.g., 18-35 vs 46-54)
 #
 # Each split creates a new Dance record with negative order and a MultiLevel
 # record to track the split criteria.
@@ -176,26 +176,78 @@ class MultiLevelSplitterTest < ActionDispatch::IntegrationTest
     assert_equal "#{@level_one.name} - #{@level_two.name}", name
   end
 
-  # Test base_name_without_couple
-  test "base_name_without_couple removes Pro-Am suffix" do
-    ml = MultiLevel.new(name: "Bronze - Silver - Pro-Am")
+  # Test base_name_without_couple (removes couple type PREFIX)
+  test "base_name_without_couple removes Pro-Am prefix" do
+    ml = MultiLevel.new(name: "Pro-Am - Bronze - Silver")
     controller = create_controller_with_concern
 
     assert_equal "Bronze - Silver", controller.send(:base_name_without_couple, ml)
   end
 
-  test "base_name_without_couple removes Amateur Couple suffix" do
-    ml = MultiLevel.new(name: "Bronze - Amateur Couple")
+  test "base_name_without_couple removes Amateur Couple prefix" do
+    ml = MultiLevel.new(name: "Amateur Couple - Bronze")
     controller = create_controller_with_concern
 
     assert_equal "Bronze", controller.send(:base_name_without_couple, ml)
   end
 
-  test "base_name_without_couple leaves name unchanged if no suffix" do
+  test "base_name_without_couple removes Amateur Lead prefix" do
+    ml = MultiLevel.new(name: "Amateur Lead - Full Gold")
+    controller = create_controller_with_concern
+
+    assert_equal "Full Gold", controller.send(:base_name_without_couple, ml)
+  end
+
+  test "base_name_without_couple removes Amateur Follow prefix" do
+    ml = MultiLevel.new(name: "Amateur Follow - Silver - Gold")
+    controller = create_controller_with_concern
+
+    assert_equal "Silver - Gold", controller.send(:base_name_without_couple, ml)
+  end
+
+  test "base_name_without_couple leaves name unchanged if no prefix" do
     ml = MultiLevel.new(name: "Bronze - Silver")
     controller = create_controller_with_concern
 
     assert_equal "Bronze - Silver", controller.send(:base_name_without_couple, ml)
+  end
+
+  # Test format_full_name (couple type prefix + level + optional age)
+  test "format_full_name with couple type and single level" do
+    controller = create_controller_with_concern
+
+    name = controller.send(:format_full_name, 'Pro-Am', @level_one.id, @level_one.id)
+    assert_equal "Pro-Am - #{@level_one.name}", name
+  end
+
+  test "format_full_name with couple type and level range" do
+    controller = create_controller_with_concern
+
+    name = controller.send(:format_full_name, 'Amateur Couple', @level_one.id, @level_three.id)
+    assert_equal "Amateur Couple - #{@level_one.name} - #{@level_three.name}", name
+  end
+
+  test "format_full_name without couple type returns just level range" do
+    controller = create_controller_with_concern
+
+    name = controller.send(:format_full_name, nil, @level_one.id, @level_two.id)
+    assert_equal "#{@level_one.name} - #{@level_two.name}", name
+  end
+
+  test "format_full_name with couple type, level, and age range" do
+    controller = create_controller_with_concern
+
+    name = controller.send(:format_full_name, 'Pro-Am', @level_one.id, @level_two.id, @age_one.id, @age_two.id)
+    expected = "Pro-Am - #{@level_one.name} - #{@level_two.name} #{@age_one.description} - #{@age_two.description}"
+    assert_equal expected, name
+  end
+
+  test "format_full_name with couple type, single level, and single age" do
+    controller = create_controller_with_concern
+
+    name = controller.send(:format_full_name, 'Amateur Lead', @level_one.id, @level_one.id, @age_one.id, @age_one.id)
+    expected = "Amateur Lead - #{@level_one.name} #{@age_one.description}"
+    assert_equal expected, name
   end
 
   # ===== LEVEL SPLIT TESTS =====
@@ -505,6 +557,216 @@ class MultiLevelSplitterTest < ActionDispatch::IntegrationTest
       assert_equal @level_one.id, m.start_level
       assert_equal @level_one.id, m.stop_level
     end
+  end
+
+  # ===== COUPLE TYPE LEVEL RANGE TESTS =====
+  # These tests verify that each couple type gets its own level range based on actual entries
+
+  test "perform_initial_couple_split calculates level range per couple type" do
+    # Pro-Am entries at level_two and level_three only (no level_one)
+    entry1 = create_proam_entry(@instructor, @student_follow, level: @level_two)
+    entry2 = create_proam_entry(@instructor, @student_follow, level: @level_three)
+
+    # Amateur Couple entries at level_one and level_two
+    entry3 = create_amateur_entry(@student_lead, @student_follow, level: @level_one)
+    entry4 = create_amateur_entry(@student_lead, @student_follow, level: @level_two)
+
+    Heat.create!(number: 1, entry: entry1, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 2, entry: entry2, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 3, entry: entry3, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 4, entry: entry4, dance: @multi_dance, category: 'Multi')
+
+    controller = create_controller_with_concern
+    controller.send(:perform_initial_couple_split, @multi_dance.id, 'pro_am_vs_amateur')
+
+    multi_levels = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+    assert_equal 2, multi_levels.count
+
+    # Pro-Am should have level range level_two to level_three
+    pro_am = multi_levels.find { |ml| ml.couple_type == 'Pro-Am' }
+    assert_not_nil pro_am
+    assert_equal @level_two.id, pro_am.start_level
+    assert_equal @level_three.id, pro_am.stop_level
+
+    # Amateur Couple should have level range level_one to level_two
+    amateur = multi_levels.find { |ml| ml.couple_type == 'Amateur Couple' }
+    assert_not_nil amateur
+    assert_equal @level_one.id, amateur.start_level
+    assert_equal @level_two.id, amateur.stop_level
+  end
+
+  test "perform_couple_split calculates level range per couple type within existing split" do
+    # Create entries with different levels per couple type
+    # Pro-Am at level_two only
+    entry1 = create_proam_entry(@instructor, @student_follow, level: @level_two)
+    # Amateur Couple at level_one and level_two
+    entry2 = create_amateur_entry(@student_lead, @student_follow, level: @level_one)
+    entry3 = create_amateur_entry(@student_lead, @student_follow, level: @level_two)
+
+    Heat.create!(number: 1, entry: entry1, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 2, entry: entry2, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 3, entry: entry3, dance: @multi_dance, category: 'Multi')
+
+    # Create a multi_level with wide range (covers all entries)
+    ml = MultiLevel.create!(
+      name: "#{@level_one.name} - #{@level_two.name}",
+      dance: @multi_dance,
+      start_level: @level_one.id,
+      stop_level: @level_two.id
+    )
+
+    controller = create_controller_with_concern
+    controller.send(:perform_couple_split, ml.id, 'pro_am_vs_amateur')
+
+    multi_levels = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+    assert_equal 2, multi_levels.count
+
+    # Pro-Am should have level range only where it has entries (level_two)
+    pro_am = multi_levels.find { |ml| ml.couple_type == 'Pro-Am' }
+    assert_not_nil pro_am
+    assert_equal @level_two.id, pro_am.start_level
+    assert_equal @level_two.id, pro_am.stop_level
+
+    # Amateur Couple should have its own range (level_one to level_two)
+    amateur = multi_levels.find { |ml| ml.couple_type == 'Amateur Couple' }
+    assert_not_nil amateur
+    assert_equal @level_one.id, amateur.start_level
+    assert_equal @level_two.id, amateur.stop_level
+  end
+
+  test "couple type split names show couple type first" do
+    entry1 = create_proam_entry(@instructor, @student_follow, level: @level_one)
+    entry2 = create_amateur_entry(@student_lead, @student_follow, level: @level_one)
+
+    Heat.create!(number: 1, entry: entry1, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 2, entry: entry2, dance: @multi_dance, category: 'Multi')
+
+    controller = create_controller_with_concern
+    controller.send(:perform_initial_couple_split, @multi_dance.id, 'pro_am_vs_amateur')
+
+    multi_levels = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+
+    # Names should have couple type prefix
+    pro_am = multi_levels.find { |ml| ml.couple_type == 'Pro-Am' }
+    assert pro_am.name.start_with?('Pro-Am - ')
+
+    amateur = multi_levels.find { |ml| ml.couple_type == 'Amateur Couple' }
+    assert amateur.name.start_with?('Amateur Couple - ')
+  end
+
+  # ===== LEVEL SPLIT COUPLE TYPE ISOLATION TESTS =====
+  # These tests verify that level splits only affect siblings within the same couple_type
+
+  test "level split only affects siblings with same couple_type" do
+    # Create entries for both couple types at multiple levels
+    entry1 = create_proam_entry(@instructor, @student_follow, level: @level_one)
+    entry2 = create_proam_entry(@instructor, @student_follow, level: @level_two)
+    entry3 = create_amateur_entry(@student_lead, @student_follow, level: @level_one)
+    entry4 = create_amateur_entry(@student_lead, @student_follow, level: @level_two)
+
+    Heat.create!(number: 1, entry: entry1, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 2, entry: entry2, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 3, entry: entry3, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 4, entry: entry4, dance: @multi_dance, category: 'Multi')
+
+    controller = create_controller_with_concern
+
+    # First split by couple type
+    controller.send(:perform_initial_couple_split, @multi_dance.id, 'pro_am_vs_amateur')
+
+    multi_levels = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+    assert_equal 2, multi_levels.count
+
+    # Get the Pro-Am multi_level
+    pro_am_ml = multi_levels.find { |ml| ml.couple_type == 'Pro-Am' }
+
+    # Split Pro-Am by level (shrink to level_one only)
+    controller.send(:perform_update_split, pro_am_ml.id, @level_one.id)
+
+    # Reload multi_levels
+    multi_levels = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+
+    # Should now have 3 multi_levels: 2 for Pro-Am (split by level), 1 for Amateur Couple (unchanged)
+    assert_equal 3, multi_levels.count
+
+    # Amateur Couple should be unchanged (still covers both levels)
+    amateur_mls = multi_levels.select { |ml| ml.couple_type == 'Amateur Couple' }
+    assert_equal 1, amateur_mls.count
+    assert_equal @level_one.id, amateur_mls.first.start_level
+    assert_equal @level_two.id, amateur_mls.first.stop_level
+
+    # Pro-Am should now have 2 multi_levels split by level
+    pro_am_mls = multi_levels.select { |ml| ml.couple_type == 'Pro-Am' }
+    assert_equal 2, pro_am_mls.count
+  end
+
+  test "handle_shrink preserves couple_type when creating new split" do
+    # Setup: Create a couple type split, then shrink one
+    entry1 = create_proam_entry(@instructor, @student_follow, level: @level_one)
+    entry2 = create_proam_entry(@instructor, @student_follow, level: @level_two)
+    entry3 = create_amateur_entry(@student_lead, @student_follow, level: @level_one)
+
+    Heat.create!(number: 1, entry: entry1, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 2, entry: entry2, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 3, entry: entry3, dance: @multi_dance, category: 'Multi')
+
+    controller = create_controller_with_concern
+    controller.send(:perform_initial_couple_split, @multi_dance.id, 'pro_am_vs_amateur')
+
+    # Get Pro-Am multi_level and shrink it
+    pro_am_ml = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+                          .find { |ml| ml.couple_type == 'Pro-Am' }
+
+    controller.send(:perform_update_split, pro_am_ml.id, @level_one.id)
+
+    # The new split should also be Pro-Am
+    pro_am_splits = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+                              .select { |ml| ml.couple_type == 'Pro-Am' }
+
+    assert_equal 2, pro_am_splits.count
+    pro_am_splits.each do |ml|
+      assert_equal 'Pro-Am', ml.couple_type
+    end
+  end
+
+  test "handle_expand only absorbs siblings with same couple_type" do
+    # Setup: Create couple type split, then level split Pro-Am, then expand
+    entry1 = create_proam_entry(@instructor, @student_follow, level: @level_one)
+    entry2 = create_proam_entry(@instructor, @student_follow, level: @level_two)
+    entry3 = create_amateur_entry(@student_lead, @student_follow, level: @level_one)
+    entry4 = create_amateur_entry(@student_lead, @student_follow, level: @level_two)
+
+    Heat.create!(number: 1, entry: entry1, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 2, entry: entry2, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 3, entry: entry3, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 4, entry: entry4, dance: @multi_dance, category: 'Multi')
+
+    controller = create_controller_with_concern
+
+    # Split by couple type
+    controller.send(:perform_initial_couple_split, @multi_dance.id, 'pro_am_vs_amateur')
+
+    # Split Pro-Am by level
+    pro_am_ml = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+                          .find { |ml| ml.couple_type == 'Pro-Am' }
+    controller.send(:perform_update_split, pro_am_ml.id, @level_one.id)
+
+    # Now we should have 3 multi_levels
+    assert_equal 3, MultiLevel.where(dance: Dance.where(name: 'Test Multi')).count
+
+    # Expand Pro-Am level_one to cover all levels (should collapse Pro-Am level splits)
+    pro_am_ml.reload
+    controller.send(:perform_update_split, pro_am_ml.id, @level_two.id)
+
+    # Should be back to 2 multi_levels (one for each couple type)
+    multi_levels = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+    assert_equal 2, multi_levels.count
+
+    # Amateur Couple should still be intact and unchanged
+    amateur_ml = multi_levels.find { |ml| ml.couple_type == 'Amateur Couple' }
+    assert_not_nil amateur_ml
+    assert_equal @level_one.id, amateur_ml.start_level
+    assert_equal @level_two.id, amateur_ml.stop_level
   end
 
   # ===== INTEGRATION TESTS VIA split_multi ACTION =====
