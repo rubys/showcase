@@ -207,10 +207,10 @@ class DancesController < ApplicationController
 
     multi_dances.each do |dance|
       # Get all splits for this dance, ordered to match entries index display
-      # Order by start_level, start_age, couple_type (same as MultiLevel ordering in entries controller)
+      # Order by couple_type, start_level, start_age (same as MultiLevel ordering in entries controller)
       all_splits = MultiLevel.joins(:dance)
         .where(dances: { name: dance.name })
-        .order(:start_level, :start_age, :couple_type)
+        .order(:couple_type, :start_level, :start_age)
         .pluck(:dance_id)
 
       # If no MultiLevel records exist, fall back to the main dance

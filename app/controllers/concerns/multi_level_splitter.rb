@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-# Handles splitting multi-dances into competition divisions by level, age, and couple type.
+# Handles splitting multi-dances into competition divisions by couple type, level, and age.
 #
 # Multi-dances can be split into separate competition groups (each with its own Dance record)
 # based on three layered criteria:
-#   1. Level (e.g., Bronze vs Silver vs Gold)
-#   2. Age (e.g., 20-40 vs 50+)
-#   3. Couple type (e.g., Pro-Am vs Amateur Lead vs Amateur Follow vs Amateur Couple)
+#   1. Couple type (e.g., Pro-Am vs Amateur Lead vs Amateur Follow vs Amateur Couple)
+#   2. Level (e.g., Bronze vs Silver vs Gold)
+#   3. Age (e.g., 20-40 vs 50+)
 #
 # Each split creates a new Dance record with negative order (to distinguish from the original)
 # and a MultiLevel record to track the split criteria.
@@ -31,6 +31,26 @@ module MultiLevelSplitter
       format_multi_level_name(Level.find(start_level_id), Level.find(stop_level_id))
     end
 
+    # Format full name with optional couple_type prefix
+    def format_full_name(couple_type, start_level_id, stop_level_id, start_age_id = nil, stop_age_id = nil)
+      level_part = format_level_name_from_ids(start_level_id, stop_level_id)
+
+      # Add age range if present
+      if start_age_id.present? && stop_age_id.present?
+        start_age = Age.find(start_age_id)
+        stop_age = Age.find(stop_age_id)
+        age_part = format_age_range_name(start_age, stop_age)
+        level_part = "#{level_part} #{age_part}"
+      end
+
+      # Add couple type prefix if present
+      if couple_type.present?
+        "#{couple_type} - #{level_part}"
+      else
+        level_part
+      end
+    end
+
     # Format age range name from age objects
     def format_age_range_name(start_age_obj, stop_age_obj)
       if start_age_obj.id == stop_age_obj.id
@@ -52,11 +72,11 @@ module MultiLevelSplitter
       end
     end
 
-    # Get base name without couple type suffix
+    # Get base name without couple type prefix
     def base_name_without_couple(multi_level)
       name = multi_level.name
-      # Remove any " - Pro-Am", " - Amateur Couple", etc. suffix
-      name.sub(/ - (Pro-Am|Amateur Couple|Amateur Lead|Amateur Follow)$/, '')
+      # Remove any "Pro-Am - ", "Amateur Couple - ", etc. prefix
+      name.sub(/^(Pro-Am|Amateur Couple|Amateur Lead|Amateur Follow) - /, '')
     end
 
     # Calculate next negative order for split dances
@@ -248,9 +268,11 @@ module MultiLevelSplitter
       dance = multi_level.dance
       all_levels = Level.order(:id).all
 
-      # Get all multi_levels for this dance set (same name)
+      # Get all multi_levels for this dance set (same name) with the same couple_type
+      # Level splits should only affect siblings within the same couple_type group
       all_dances = Dance.where(name: dance.name)
-      all_multi_levels = MultiLevel.where(dance: all_dances).order(:start_level).to_a
+      all_multi_levels = MultiLevel.where(dance: all_dances, couple_type: multi_level.couple_type)
+        .order(:start_level).to_a
 
       current_index = all_multi_levels.index(multi_level)
 
@@ -266,7 +288,7 @@ module MultiLevelSplitter
     def handle_shrink(multi_level, new_stop, old_stop, all_multi_levels, current_index, all_levels)
       # Update this multi_level
       multi_level.update!(stop_level: new_stop)
-      multi_level.update!(name: format_level_name_from_ids(multi_level.start_level, new_stop))
+      multi_level.update!(name: format_full_name(multi_level.couple_type, multi_level.start_level, new_stop))
 
       # Check if there's a next multi_level
       if current_index < all_multi_levels.length - 1
@@ -274,7 +296,7 @@ module MultiLevelSplitter
 
         # Adjust next multi_level's start
         next_multi.update!(start_level: new_stop + 1)
-        next_multi.update!(name: format_level_name_from_ids(new_stop + 1, next_multi.stop_level))
+        next_multi.update!(name: format_full_name(next_multi.couple_type, new_stop + 1, next_multi.stop_level))
 
         # Move heats from current dance to next dance if they're outside the new range
         Heat.where(dance: multi_level.dance).includes(entry: :level).each do |heat|
@@ -287,12 +309,13 @@ module MultiLevelSplitter
         original_dance = Dance.find_by(name: multi_level.dance.name, order: 0..)
         new_dance = create_split_dance_with_children(original_dance)
 
-        # Create new multi_level
+        # Create new multi_level, preserving couple_type from the original
         MultiLevel.create!(
-          name: format_level_name_from_ids(new_stop + 1, old_stop),
+          name: format_full_name(multi_level.couple_type, new_stop + 1, old_stop),
           dance: new_dance,
           start_level: new_stop + 1,
-          stop_level: old_stop
+          stop_level: old_stop,
+          couple_type: multi_level.couple_type
         )
 
         # Move heats
@@ -307,7 +330,7 @@ module MultiLevelSplitter
     def handle_expand(multi_level, new_stop, old_stop, all_multi_levels, current_index, all_levels)
       # Update this multi_level
       multi_level.update!(stop_level: new_stop)
-      multi_level.update!(name: format_level_name_from_ids(multi_level.start_level, new_stop))
+      multi_level.update!(name: format_full_name(multi_level.couple_type, multi_level.start_level, new_stop))
 
       # Process all subsequent multi_levels that fall within the new range
       (current_index + 1...all_multi_levels.length).each do |idx|
@@ -329,7 +352,7 @@ module MultiLevelSplitter
         elsif next_multi.start_level <= new_stop
           # This multi_level is partially subsumed - adjust its start
           next_multi.update!(start_level: new_stop + 1)
-          next_multi.update!(name: format_level_name_from_ids(next_multi.start_level, next_multi.stop_level))
+          next_multi.update!(name: format_full_name(next_multi.couple_type, next_multi.start_level, next_multi.stop_level))
 
           # Stop processing - we've adjusted the adjacent split
           break
@@ -563,12 +586,8 @@ module MultiLevelSplitter
 
       # Get heats and determine ranges
       heats = Heat.where(dance_id: dance_id).includes(entry: [:lead, :follow, :level, :age])
-      level_ids = heats.map { |h| h.entry.level_id }.uniq.sort
 
       return if heats.empty?
-
-      min_level = level_ids.min
-      max_level = level_ids.max
 
       split_couple_types = split_couple_types_for(couple_split_type)
       return unless split_couple_types
@@ -578,17 +597,25 @@ module MultiLevelSplitter
       # Only proceed if we have heats in multiple categories
       return if heats_by_type.keys.length < 2
 
-      level_name = format_level_name_from_ids(min_level, max_level)
+      # Calculate level range per couple type
+      level_range_by_type = {}
+      heats_by_type.each do |ct, ct_heats|
+        level_ids = ct_heats.map { |h| h.entry.level_id }.uniq.sort
+        level_range_by_type[ct] = { min: level_ids.min, max: level_ids.max }
+      end
 
       # Create multi_level for first type that has heats
       first_type = split_couple_types.find { |t| heats_by_type[t]&.any? }
       return unless first_type
 
+      first_range = level_range_by_type[first_type]
+      level_name = format_level_name_from_ids(first_range[:min], first_range[:max])
+
       MultiLevel.create!(
-        name: "#{level_name} - #{first_type}",
+        name: "#{first_type} - #{level_name}",
         dance: original_dance,
-        start_level: min_level,
-        stop_level: max_level,
+        start_level: first_range[:min],
+        stop_level: first_range[:max],
         couple_type: first_type
       )
 
@@ -597,13 +624,16 @@ module MultiLevelSplitter
         next if ct == first_type
         next unless heats_by_type[ct]&.any?
 
+        ct_range = level_range_by_type[ct]
+        ct_level_name = format_level_name_from_ids(ct_range[:min], ct_range[:max])
+
         new_dance = create_split_dance_with_children(original_dance)
 
         MultiLevel.create!(
-          name: "#{level_name} - #{ct}",
+          name: "#{ct} - #{ct_level_name}",
           dance: new_dance,
-          start_level: min_level,
-          stop_level: max_level,
+          start_level: ct_range[:min],
+          stop_level: ct_range[:max],
           couple_type: ct
         )
 
@@ -634,13 +664,24 @@ module MultiLevelSplitter
       # Only proceed if we have heats in multiple categories
       return if heats_by_type.keys.length < 2
 
+      # Calculate level range per couple type
+      level_range_by_type = {}
+      heats_by_type.each do |ct, ct_heats|
+        level_ids = ct_heats.map { |h| h.entry.level_id }.uniq.sort
+        level_range_by_type[ct] = { min: level_ids.min, max: level_ids.max }
+      end
+
       # Update current multi_level with first couple type that has heats
       first_type = split_couple_types.find { |t| heats_by_type[t]&.any? }
       return unless first_type
 
+      first_range = level_range_by_type[first_type]
+      first_level_name = format_level_name_from_ids(first_range[:min], first_range[:max])
       multi_level.update!(
         couple_type: first_type,
-        name: "#{multi_level.name} - #{first_type}"
+        start_level: first_range[:min],
+        stop_level: first_range[:max],
+        name: "#{first_type} - #{first_level_name}"
       )
 
       # Create new multi_levels and dances for other couple types
@@ -648,13 +689,16 @@ module MultiLevelSplitter
         next if ct == first_type  # Skip the first type (already assigned to current multi_level)
         next unless heats_by_type[ct]&.any?
 
+        ct_range = level_range_by_type[ct]
+        ct_level_name = format_level_name_from_ids(ct_range[:min], ct_range[:max])
+
         new_dance = create_split_dance_with_children(original_dance)
 
         MultiLevel.create!(
-          name: "#{base_name_without_couple(multi_level)} - #{ct}",
+          name: "#{ct} - #{ct_level_name}",
           dance: new_dance,
-          start_level: multi_level.start_level,
-          stop_level: multi_level.stop_level,
+          start_level: ct_range[:min],
+          stop_level: ct_range[:max],
           start_age: multi_level.start_age,
           stop_age: multi_level.stop_age,
           couple_type: ct

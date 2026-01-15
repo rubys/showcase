@@ -7,7 +7,7 @@
     <div class="info-button">&#x24D8;</div>
     <ul class="info-box">
       <% if @is_multi %>
-      <li>Split competitions into divisions by level, then age, then couple type. Splits are layered - first split by level, then within each level by age, then within each level+age by couple type.
+      <li>Split competitions into divisions by couple type, then level, then age. Splits are layered - first split by couple type, then within each couple type by level, then within each couple type+level by age.
       <% else %>
       <li>This page shows all entries (scheduled heats) filtered by your selections. Use dropdown filters to narrow the view.
       <ul>
@@ -67,22 +67,38 @@
         <thead class="bg-gray-100">
           <tr>
             <th class="px-4 py-2 border">Name</th>
+            <% if @couple_types_present&.length.to_i > 1 %>
+            <th class="px-4 py-2 border">Couple Type</th>
+            <% end %>
             <th class="px-4 py-2 border">Start Level</th>
             <th class="px-4 py-2 border">Stop Level</th>
             <% if @track_ages && @age_ids&.length.to_i > 1 %>
             <th class="px-4 py-2 border">Start Age</th>
             <th class="px-4 py-2 border">Stop Age</th>
             <% end %>
-            <% if @couple_types_present&.length.to_i > 1 %>
-            <th class="px-4 py-2 border">Couple Type</th>
-            <% end %>
             <th class="px-4 py-2 border text-center">Couples</th>
           </tr>
         </thead>
         <tbody>
-          <% if @multi_levels.empty? %>
+          <% if @multi_levels.empty? && @heats.any? %>
             <tr>
               <td class="px-4 py-2 border">All</td>
+              <% if @couple_types_present&.length.to_i > 1 %>
+              <td class="px-4 py-2 border">
+                <%= form_with url: split_multi_entries_path, method: :post, data: { controller: "auto-submit" } do |f| %>
+                  <%= f.hidden_field :dance_id, value: @dance %>
+                  <%= f.hidden_field :dance, value: @dance %>
+                  <%= f.hidden_field :couple, value: @couple %>
+                  <%= f.hidden_field :level, value: @level %>
+                  <%= f.hidden_field :age, value: @age %>
+                  <%= f.hidden_field :sort, value: params[:sort] %>
+                  <%= f.select :couple_split,
+                      [['All', ''], ['Pro-Am vs Amateur', 'pro_am_vs_amateur'], ['Am Lead / Am Follow / Am Couple', 'amateur_lead_follow']],
+                      { selected: '' },
+                      class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1" %>
+                <% end %>
+              </td>
+              <% end %>
               <td class="px-4 py-2 border"><%= Level.find(@min_level).name %></td>
               <td class="px-4 py-2 border">
                 <% if @level_ids.length > 1 %>
@@ -119,38 +135,23 @@
                 <% end %>
               </td>
               <% end %>
-              <% if @couple_types_present&.length.to_i > 1 %>
-              <td class="px-4 py-2 border">
-                <%= form_with url: split_multi_entries_path, method: :post, data: { controller: "auto-submit" } do |f| %>
-                  <%= f.hidden_field :dance_id, value: @dance %>
-                  <%= f.hidden_field :dance, value: @dance %>
-                  <%= f.hidden_field :couple, value: @couple %>
-                  <%= f.hidden_field :level, value: @level %>
-                  <%= f.hidden_field :age, value: @age %>
-                  <%= f.hidden_field :sort, value: params[:sort] %>
-                  <%= f.select :couple_split,
-                      [['All', ''], ['Pro-Am vs Amateur', 'pro_am_vs_amateur'], ['Am Lead / Am Follow / Am Couple', 'amateur_lead_follow']],
-                      { selected: '' },
-                      class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1" %>
-                <% end %>
-              </td>
-              <% end %>
               <td class="px-4 py-2 border text-center"><%= @heats.select { |h| h.number > 0 }.map(&:entry_id).uniq.count %></td>
             </tr>
           <% else %>
             <%
-              # Group multi_levels by level range for display
-              grouped_by_level = @multi_levels.group_by { |ml| [ml.start_level, ml.stop_level] }
+              # Group multi_levels by couple_type + level range for display
+              # Each couple type group can independently split by level, then by age
+              grouped_by_couple_and_level = @multi_levels.group_by { |ml| [ml.couple_type, ml.start_level, ml.stop_level] }
             %>
             <% @multi_levels.each_with_index do |ml, index| %>
               <%
-                # Determine if this is the last row in its level group (for age splitting)
-                level_group = grouped_by_level[[ml.start_level, ml.stop_level]]
-                is_last_in_level_group = level_group.last == ml
+                # Determine if this is the last row in its couple_type + level group (for age splitting)
+                couple_level_group = grouped_by_couple_and_level[[ml.couple_type, ml.start_level, ml.stop_level]]
+                is_last_in_couple_level_group = couple_level_group.last == ml
 
                 # Determine if this multi_level has age splits or is ready for age splitting
                 has_age_range = ml.start_age.present? && ml.stop_age.present?
-                can_age_split = @track_ages && @age_ids&.length.to_i > 1 && is_last_in_level_group
+                can_age_split = @track_ages && @age_ids&.length.to_i > 1 && is_last_in_couple_level_group
 
                 # Count heats matching this multi_level
                 matching_heats = @heats.select do |h|
@@ -200,99 +201,6 @@
                         class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1 w-full" %>
                   <% end %>
                 </td>
-                <td class="px-4 py-2 border"><%= Level.find(ml.start_level).name %></td>
-                <td class="px-4 py-2 border">
-                  <%
-                    # Only show level split dropdown if no age/couple splits yet for this level range
-                    level_siblings = @multi_levels.select { |m| m.start_level == ml.start_level && m.stop_level == ml.stop_level }
-                    can_level_split = level_siblings.length == 1 && (index < @multi_levels.length - 1 || ml.start_level != ml.stop_level)
-                  %>
-                  <% if can_level_split %>
-                    <%= form_with url: split_multi_entries_path, method: :post, data: { controller: "auto-submit" } do |f| %>
-                      <%= f.hidden_field :multi_level_id, value: ml.id %>
-                      <%= f.hidden_field :dance, value: @dance %>
-                      <%= f.hidden_field :couple, value: @couple %>
-                      <%= f.hidden_field :level, value: @level %>
-                      <%= f.hidden_field :age, value: @age %>
-                      <%= f.hidden_field :sort, value: params[:sort] %>
-                      <%
-                        if index < @multi_levels.length - 1
-                          available_levels = @levels.select { |name, id| @level_ids.include?(id) && id >= ml.start_level && id <= @max_level }
-                        else
-                          available_levels = @levels.select { |name, id| @level_ids.include?(id) && id >= ml.start_level && id <= ml.stop_level }
-                        end
-                      %>
-                      <%= f.select :stop_level,
-                          available_levels.map { |name, id| [name, id] },
-                          { selected: ml.stop_level },
-                          class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1" %>
-                    <% end %>
-                  <% else %>
-                    <%= Level.find(ml.stop_level).name %>
-                  <% end %>
-                </td>
-                <% if @track_ages && @age_ids&.length.to_i > 1 %>
-                <%
-                  # Calculate the actual age range for this split's heats
-                  level_heats = @heats.select { |h| h.entry.level_id >= ml.start_level && h.entry.level_id <= ml.stop_level }
-                  level_age_ids = level_heats.map { |h| h.entry.age_id }.uniq.sort
-                  level_min_age = level_age_ids.min || @min_age
-                  level_max_age = level_age_ids.max || @max_age
-
-                  # Use stored age range if present, otherwise use calculated range
-                  display_start_age = ml.start_age || level_min_age
-                  display_stop_age = ml.stop_age || level_max_age
-                %>
-                <td class="px-4 py-2 border">
-                  <%= Age.find(display_start_age).description %>
-                </td>
-                <td class="px-4 py-2 border">
-                  <%
-                    # Can we show an age dropdown?
-                    # - If has_age_range: can shrink/expand (unless it's already a single age AND is last in level group)
-                    # - If no age range yet: can split if multiple ages exist and this is last in level group
-                    can_show_age_dropdown = if has_age_range
-                      # Non-last rows can always expand; last rows can only shrink if range > 1
-                      !is_last_in_level_group || ml.start_age != ml.stop_age
-                    elsif can_age_split && level_age_ids.length > 1
-                      true
-                    else
-                      false
-                    end
-                  %>
-                  <% if can_show_age_dropdown %>
-                    <%= form_with url: split_multi_entries_path, method: :post, data: { controller: "auto-submit" } do |f| %>
-                      <%= f.hidden_field :multi_level_id, value: ml.id %>
-                      <%= f.hidden_field :dance, value: @dance %>
-                      <%= f.hidden_field :couple, value: @couple %>
-                      <%= f.hidden_field :level, value: @level %>
-                      <%= f.hidden_field :age, value: @age %>
-                      <%= f.hidden_field :sort, value: params[:sort] %>
-                      <%
-                        if has_age_range
-                          if is_last_in_level_group
-                            # Last row: can only shrink, show ages from start to current stop
-                            available_ages = @ages.select { |desc, id| level_age_ids.include?(id) && id >= ml.start_age && id <= ml.stop_age }
-                          else
-                            # Non-last row: can expand to consume later splits, show ages from start to level max
-                            available_ages = @ages.select { |desc, id| level_age_ids.include?(id) && id >= ml.start_age && id <= level_max_age }
-                          end
-                          selected_age = ml.stop_age
-                        else
-                          available_ages = @ages.select { |desc, id| level_age_ids.include?(id) && id >= level_min_age }
-                          selected_age = level_max_age
-                        end
-                      %>
-                      <%= f.select :stop_age,
-                          available_ages.map { |desc, id| [desc, id] },
-                          { selected: selected_age },
-                          class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1" %>
-                    <% end %>
-                  <% else %>
-                    <%= Age.find(display_stop_age).description %>
-                  <% end %>
-                </td>
-                <% end %>
                 <% if @couple_types_present&.length.to_i > 1 %>
                 <td class="px-4 py-2 border">
                   <% if ml.couple_type.present? %>
@@ -347,6 +255,115 @@
                   <% end %>
                 </td>
                 <% end %>
+                <td class="px-4 py-2 border"><%= Level.find(ml.start_level).name %></td>
+                <td class="px-4 py-2 border">
+                  <%
+                    # Find all siblings with same couple_type (for level splitting)
+                    couple_siblings = @multi_levels.select { |m| m.couple_type == ml.couple_type }
+                      .sort_by { |m| m.start_level }
+                    current_sibling_index = couple_siblings.index(ml)
+
+                    # Siblings with same level range (for checking if age splits exist)
+                    level_siblings = couple_siblings.select { |m|
+                      m.start_level == ml.start_level && m.stop_level == ml.stop_level
+                    }
+
+                    # Can shrink if range > 1 level and no age splits yet
+                    can_shrink = ml.start_level != ml.stop_level && level_siblings.length == 1
+
+                    # Can expand if there's a next sibling to absorb
+                    can_expand = current_sibling_index && current_sibling_index < couple_siblings.length - 1
+
+                    can_level_split = can_shrink || can_expand
+                  %>
+                  <% if can_level_split %>
+                    <%= form_with url: split_multi_entries_path, method: :post, data: { controller: "auto-submit" } do |f| %>
+                      <%= f.hidden_field :multi_level_id, value: ml.id %>
+                      <%= f.hidden_field :dance, value: @dance %>
+                      <%= f.hidden_field :couple, value: @couple %>
+                      <%= f.hidden_field :level, value: @level %>
+                      <%= f.hidden_field :age, value: @age %>
+                      <%= f.hidden_field :sort, value: params[:sort] %>
+                      <%
+                        # Determine max level: can expand to absorb next siblings
+                        max_available_level = if can_expand
+                          couple_siblings.last.stop_level
+                        else
+                          ml.stop_level
+                        end
+                        available_levels = @levels.select { |name, id| @level_ids.include?(id) && id >= ml.start_level && id <= max_available_level }
+                      %>
+                      <%= f.select :stop_level,
+                          available_levels.map { |name, id| [name, id] },
+                          { selected: ml.stop_level },
+                          class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1" %>
+                    <% end %>
+                  <% else %>
+                    <%= Level.find(ml.stop_level).name %>
+                  <% end %>
+                </td>
+                <% if @track_ages && @age_ids&.length.to_i > 1 %>
+                <%
+                  # Calculate the actual age range for this split's heats
+                  level_heats = @heats.select { |h| h.entry.level_id >= ml.start_level && h.entry.level_id <= ml.stop_level }
+                  level_age_ids = level_heats.map { |h| h.entry.age_id }.uniq.sort
+                  level_min_age = level_age_ids.min || @min_age
+                  level_max_age = level_age_ids.max || @max_age
+
+                  # Use stored age range if present, otherwise use calculated range
+                  display_start_age = ml.start_age || level_min_age
+                  display_stop_age = ml.stop_age || level_max_age
+                %>
+                <td class="px-4 py-2 border">
+                  <%= Age.find(display_start_age).description %>
+                </td>
+                <td class="px-4 py-2 border">
+                  <%
+                    # Can we show an age dropdown?
+                    # - If has_age_range: can shrink/expand (unless it's already a single age AND is last in level group)
+                    # - If no age range yet: can split if multiple ages exist and this is last in level group
+                    can_show_age_dropdown = if has_age_range
+                      # Non-last rows can always expand; last rows can only shrink if range > 1
+                      !is_last_in_couple_level_group || ml.start_age != ml.stop_age
+                    elsif can_age_split && level_age_ids.length > 1
+                      true
+                    else
+                      false
+                    end
+                  %>
+                  <% if can_show_age_dropdown %>
+                    <%= form_with url: split_multi_entries_path, method: :post, data: { controller: "auto-submit" } do |f| %>
+                      <%= f.hidden_field :multi_level_id, value: ml.id %>
+                      <%= f.hidden_field :dance, value: @dance %>
+                      <%= f.hidden_field :couple, value: @couple %>
+                      <%= f.hidden_field :level, value: @level %>
+                      <%= f.hidden_field :age, value: @age %>
+                      <%= f.hidden_field :sort, value: params[:sort] %>
+                      <%
+                        if has_age_range
+                          if is_last_in_couple_level_group
+                            # Last row: can only shrink, show ages from start to current stop
+                            available_ages = @ages.select { |desc, id| level_age_ids.include?(id) && id >= ml.start_age && id <= ml.stop_age }
+                          else
+                            # Non-last row: can expand to consume later splits, show ages from start to level max
+                            available_ages = @ages.select { |desc, id| level_age_ids.include?(id) && id >= ml.start_age && id <= level_max_age }
+                          end
+                          selected_age = ml.stop_age
+                        else
+                          available_ages = @ages.select { |desc, id| level_age_ids.include?(id) && id >= level_min_age }
+                          selected_age = level_max_age
+                        end
+                      %>
+                      <%= f.select :stop_age,
+                          available_ages.map { |desc, id| [desc, id] },
+                          { selected: selected_age },
+                          class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1" %>
+                    <% end %>
+                  <% else %>
+                    <%= Age.find(display_stop_age).description %>
+                  <% end %>
+                </td>
+                <% end %>
                 <td class="px-4 py-2 border text-center">
                   <%= matching_heats.select { |h| h.number > 0 }.map(&:entry_id).uniq.count %>
                 </td>
@@ -359,7 +376,7 @@
 
     <%# Mobile card view - shown only on small screens %>
     <div class="md:hidden space-y-4 px-2">
-      <% if @multi_levels.empty? %>
+      <% if @multi_levels.empty? && @heats.any? %>
         <div class="border border-gray-300 rounded-lg p-4 bg-white shadow-sm">
           <div class="flex justify-between items-center mb-3">
             <span class="font-bold text-lg">All</span>
@@ -368,6 +385,23 @@
             </span>
           </div>
           <div class="space-y-2 text-sm">
+            <% if @couple_types_present&.length.to_i > 1 %>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Couple type:</span>
+              <%= form_with url: split_multi_entries_path, method: :post, data: { controller: "auto-submit" } do |f| %>
+                <%= f.hidden_field :dance_id, value: @dance %>
+                <%= f.hidden_field :dance, value: @dance %>
+                <%= f.hidden_field :couple, value: @couple %>
+                <%= f.hidden_field :level, value: @level %>
+                <%= f.hidden_field :age, value: @age %>
+                <%= f.hidden_field :sort, value: params[:sort] %>
+                <%= f.select :couple_split,
+                    [['All', ''], ['Pro-Am vs Amateur', 'pro_am_vs_amateur'], ['Am Lead/Follow/Couple', 'amateur_lead_follow']],
+                    { selected: '' },
+                    class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1 text-sm" %>
+              <% end %>
+            </div>
+            <% end %>
             <div class="flex justify-between">
               <span class="text-gray-600">Level:</span>
               <span><%= Level.find(@min_level).name %> - <%= Level.find(@max_level).name %></span>
@@ -410,35 +444,18 @@
               <% end %>
             </div>
             <% end %>
-            <% if @couple_types_present&.length.to_i > 1 %>
-            <div class="flex justify-between items-center">
-              <span class="text-gray-600">Couple type:</span>
-              <%= form_with url: split_multi_entries_path, method: :post, data: { controller: "auto-submit" } do |f| %>
-                <%= f.hidden_field :dance_id, value: @dance %>
-                <%= f.hidden_field :dance, value: @dance %>
-                <%= f.hidden_field :couple, value: @couple %>
-                <%= f.hidden_field :level, value: @level %>
-                <%= f.hidden_field :age, value: @age %>
-                <%= f.hidden_field :sort, value: params[:sort] %>
-                <%= f.select :couple_split,
-                    [['All', ''], ['Pro-Am vs Amateur', 'pro_am_vs_amateur'], ['Am Lead/Follow/Couple', 'amateur_lead_follow']],
-                    { selected: '' },
-                    class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1 text-sm" %>
-              <% end %>
-            </div>
-            <% end %>
           </div>
         </div>
       <% else %>
         <%
-          grouped_by_level = @multi_levels.group_by { |ml| [ml.start_level, ml.stop_level] }
+          grouped_by_couple_and_level = @multi_levels.group_by { |ml| [ml.couple_type, ml.start_level, ml.stop_level] }
         %>
         <% @multi_levels.each_with_index do |ml, index| %>
           <%
-            level_group = grouped_by_level[[ml.start_level, ml.stop_level]]
-            is_last_in_level_group = level_group.last == ml
+            couple_level_group = grouped_by_couple_and_level[[ml.couple_type, ml.start_level, ml.stop_level]]
+            is_last_in_couple_level_group = couple_level_group.last == ml
             has_age_range = ml.start_age.present? && ml.stop_age.present?
-            can_age_split = @track_ages && @age_ids&.length.to_i > 1 && is_last_in_level_group
+            can_age_split = @track_ages && @age_ids&.length.to_i > 1 && is_last_in_couple_level_group
 
             matching_heats = @heats.select do |h|
               e = h.entry
@@ -474,8 +491,23 @@
               true
             end
 
-            level_siblings = @multi_levels.select { |m| m.start_level == ml.start_level && m.stop_level == ml.stop_level }
-            can_level_split = level_siblings.length == 1 && (index < @multi_levels.length - 1 || ml.start_level != ml.stop_level)
+            # Find all siblings with same couple_type (for level splitting)
+            couple_siblings = @multi_levels.select { |m| m.couple_type == ml.couple_type }
+              .sort_by { |m| m.start_level }
+            current_sibling_index = couple_siblings.index(ml)
+
+            # Siblings with same level range (for checking if age splits exist)
+            level_siblings = couple_siblings.select { |m|
+              m.start_level == ml.start_level && m.stop_level == ml.stop_level
+            }
+
+            # Can shrink if range > 1 level and no age splits yet
+            can_shrink = ml.start_level != ml.stop_level && level_siblings.length == 1
+
+            # Can expand if there's a next sibling to absorb
+            can_expand = current_sibling_index && current_sibling_index < couple_siblings.length - 1
+
+            can_level_split = can_shrink || can_expand
 
             level_heats = @heats.select { |h| h.entry.level_id >= ml.start_level && h.entry.level_id <= ml.stop_level }
             level_age_ids = level_heats.map { |h| h.entry.age_id }.uniq.sort
@@ -485,7 +517,7 @@
             display_stop_age = ml.stop_age || level_max_age
 
             can_show_age_dropdown = if has_age_range
-              !is_last_in_level_group || ml.start_age != ml.stop_age
+              !is_last_in_couple_level_group || ml.start_age != ml.stop_age
             elsif can_age_split && level_age_ids.length > 1
               true
             else
@@ -509,74 +541,6 @@
               </span>
             </div>
             <div class="space-y-2 text-sm">
-              <div class="flex justify-between items-center">
-                <span class="text-gray-600">Level:</span>
-                <span>
-                  <%= Level.find(ml.start_level).name %>
-                  <% if can_level_split %>
-                    -
-                    <%= form_with url: split_multi_entries_path, method: :post, data: { controller: "auto-submit" }, class: "inline" do |f| %>
-                      <%= f.hidden_field :multi_level_id, value: ml.id %>
-                      <%= f.hidden_field :dance, value: @dance %>
-                      <%= f.hidden_field :couple, value: @couple %>
-                      <%= f.hidden_field :level, value: @level %>
-                      <%= f.hidden_field :age, value: @age %>
-                      <%= f.hidden_field :sort, value: params[:sort] %>
-                      <%
-                        if index < @multi_levels.length - 1
-                          available_levels = @levels.select { |name, id| @level_ids.include?(id) && id >= ml.start_level && id <= @max_level }
-                        else
-                          available_levels = @levels.select { |name, id| @level_ids.include?(id) && id >= ml.start_level && id <= ml.stop_level }
-                        end
-                      %>
-                      <%= f.select :stop_level,
-                          available_levels.map { |name, id| [name, id] },
-                          { selected: ml.stop_level },
-                          class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1 text-sm" %>
-                    <% end %>
-                  <% elsif ml.start_level != ml.stop_level %>
-                    - <%= Level.find(ml.stop_level).name %>
-                  <% end %>
-                </span>
-              </div>
-              <% if @track_ages && @age_ids&.length.to_i > 1 %>
-              <div class="flex justify-between items-center">
-                <span class="text-gray-600">Age:</span>
-                <span>
-                  <%= Age.find(display_start_age).description %>
-                  <% if can_show_age_dropdown %>
-                    -
-                    <%= form_with url: split_multi_entries_path, method: :post, data: { controller: "auto-submit" }, class: "inline" do |f| %>
-                      <%= f.hidden_field :multi_level_id, value: ml.id %>
-                      <%= f.hidden_field :dance, value: @dance %>
-                      <%= f.hidden_field :couple, value: @couple %>
-                      <%= f.hidden_field :level, value: @level %>
-                      <%= f.hidden_field :age, value: @age %>
-                      <%= f.hidden_field :sort, value: params[:sort] %>
-                      <%
-                        if has_age_range
-                          if is_last_in_level_group
-                            available_ages = @ages.select { |desc, id| level_age_ids.include?(id) && id >= ml.start_age && id <= ml.stop_age }
-                          else
-                            available_ages = @ages.select { |desc, id| level_age_ids.include?(id) && id >= ml.start_age && id <= level_max_age }
-                          end
-                          selected_age = ml.stop_age
-                        else
-                          available_ages = @ages.select { |desc, id| level_age_ids.include?(id) && id >= level_min_age }
-                          selected_age = level_max_age
-                        end
-                      %>
-                      <%= f.select :stop_age,
-                          available_ages.map { |desc, id| [desc, id] },
-                          { selected: selected_age },
-                          class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1 text-sm" %>
-                    <% end %>
-                  <% elsif display_start_age != display_stop_age %>
-                    - <%= Age.find(display_stop_age).description %>
-                  <% end %>
-                </span>
-              </div>
-              <% end %>
               <% if @couple_types_present&.length.to_i > 1 %>
               <div class="flex justify-between items-center">
                 <span class="text-gray-600">Couple:</span>
@@ -628,6 +592,76 @@
                     <span>All</span>
                   <% end %>
                 <% end %>
+              </div>
+              <% end %>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Level:</span>
+                <span>
+                  <%= Level.find(ml.start_level).name %>
+                  <% if can_level_split %>
+                    -
+                    <%= form_with url: split_multi_entries_path, method: :post, data: { controller: "auto-submit" }, class: "inline" do |f| %>
+                      <%= f.hidden_field :multi_level_id, value: ml.id %>
+                      <%= f.hidden_field :dance, value: @dance %>
+                      <%= f.hidden_field :couple, value: @couple %>
+                      <%= f.hidden_field :level, value: @level %>
+                      <%= f.hidden_field :age, value: @age %>
+                      <%= f.hidden_field :sort, value: params[:sort] %>
+                      <%
+                        # Determine max level: can expand to absorb next siblings
+                        max_available_level = if can_expand
+                          couple_siblings.last.stop_level
+                        else
+                          ml.stop_level
+                        end
+                        available_levels = @levels.select { |name, id| @level_ids.include?(id) && id >= ml.start_level && id <= max_available_level }
+                      %>
+                      <%= f.select :stop_level,
+                          available_levels.map { |name, id| [name, id] },
+                          { selected: ml.stop_level },
+                          class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1 text-sm" %>
+                    <% end %>
+                  <% elsif ml.start_level != ml.stop_level %>
+                    - <%= Level.find(ml.stop_level).name %>
+                  <% end %>
+                </span>
+              </div>
+              <% if @track_ages && @age_ids&.length.to_i > 1 %>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Age:</span>
+                <span>
+                  <%= Age.find(display_start_age).description %>
+                  <% if can_show_age_dropdown %>
+                    -
+                    <%= form_with url: split_multi_entries_path, method: :post, data: { controller: "auto-submit" }, class: "inline" do |f| %>
+                      <%= f.hidden_field :multi_level_id, value: ml.id %>
+                      <%= f.hidden_field :dance, value: @dance %>
+                      <%= f.hidden_field :couple, value: @couple %>
+                      <%= f.hidden_field :level, value: @level %>
+                      <%= f.hidden_field :age, value: @age %>
+                      <%= f.hidden_field :sort, value: params[:sort] %>
+                      <%
+                        if has_age_range
+                          if is_last_in_couple_level_group
+                            available_ages = @ages.select { |desc, id| level_age_ids.include?(id) && id >= ml.start_age && id <= ml.stop_age }
+                          else
+                            available_ages = @ages.select { |desc, id| level_age_ids.include?(id) && id >= ml.start_age && id <= level_max_age }
+                          end
+                          selected_age = ml.stop_age
+                        else
+                          available_ages = @ages.select { |desc, id| level_age_ids.include?(id) && id >= level_min_age }
+                          selected_age = level_max_age
+                        end
+                      %>
+                      <%= f.select :stop_age,
+                          available_ages.map { |desc, id| [desc, id] },
+                          { selected: selected_age },
+                          class: "shadow rounded-md border border-gray-200 outline-none px-2 py-1 text-sm" %>
+                    <% end %>
+                  <% elsif display_start_age != display_stop_age %>
+                    - <%= Age.find(display_stop_age).description %>
+                  <% end %>
+                </span>
               </div>
               <% end %>
             </div>

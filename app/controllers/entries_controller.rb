@@ -76,14 +76,14 @@ class EntriesController < ApplicationController
     when 'dance'
       selected = selected.joins(:dance).order('dances.name')
     when 'level'
-      # Order by level, then age, then couple type (to match multi-level splits display)
-      # MultiLevels are ordered by start_level, start_age, couple_type
+      # Order by couple type, then level, then age (to match multi-level splits display)
+      # MultiLevels are ordered by couple_type, start_level, start_age
       # Couple type order: Amateur Couple (Student+Student) before Pro-Am (has Professional)
       # Professional < Student alphabetically, so DESC puts Student first (Amateur Couple before Pro-Am)
       selected = selected.joins(entry: [:level, :age])
         .joins("INNER JOIN people AS leads ON leads.id = entries.lead_id")
         .joins("INNER JOIN people AS follows ON follows.id = entries.follow_id")
-        .order('levels.id, ages.id, leads.type DESC, follows.type DESC')
+        .order('leads.type DESC, follows.type DESC, levels.id, ages.id')
     when 'age'
       selected = selected.joins(entry: :age).order('ages.id')
     end
@@ -98,9 +98,9 @@ class EntriesController < ApplicationController
       # Get all dances with this name
       all_dances = Dance.where(name: @dance_name)
 
-      # Get all multi_levels for these dances, ordered by level then age then couple_type
+      # Get all multi_levels for these dances, ordered by couple_type then level then age
       @multi_levels = MultiLevel.where(dance: all_dances)
-        .order(:start_level, :start_age, :couple_type).to_a
+        .order(:couple_type, :start_level, :start_age).to_a
 
       # Get the range of levels and ages shown on this page
       if @heats.any?
