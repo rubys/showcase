@@ -190,6 +190,10 @@ class EntriesController < ApplicationController
 
     if @entry.lead.type != 'Professional' or @entry.follow.type != 'Professional'
       @studios = [@person.studio, partner.studio, @entry.instructor&.studio].compact.uniq
+      # Include entry's current studio if it doesn't match participant studios (allows fixing mismatches)
+      if @entry.studio && !@studios.include?(@entry.studio)
+        @studios << @entry.studio
+      end
       @studio = @studios.find {|studio| studio.name == @entry.invoice_studio}&.id if @studios.length > 1
     end
   end
