@@ -196,9 +196,98 @@ class StudiosInvoiceViewTest < ActionView::TestCase
   end
 
   # ===== ENTRY DETAIL VIEW TESTS =====
-  # Note: Entry view tests are complex due to many dependencies and grouping logic.
-  # These are better tested via integration/system tests or by testing the
-  # underlying logic in the model/concern tests.
+
+  test "entry partial shows full count for student-student same-studio on studio invoice" do
+    student1 = create_student(@studio, "Student One")
+    student2 = create_student(@studio, "Student Two")
+
+    # Create a dance and category with unique order values
+    order = (Category.maximum(:order) || 0) + rand(1000) + 1
+    category = Category.create!(name: "Test Cat #{SecureRandom.hex(4)}", order: order)
+    dance = Dance.create!(name: "Test Dance #{SecureRandom.hex(4)}", closed_category: category, order: order)
+
+    # Create entry with heats (category: 'Closed' to match @cost lookup)
+    entry = create_entry(student1, student2)
+    3.times { Heat.create!(entry: entry, dance: dance, number: Heat.maximum(:number).to_i + 1, category: 'Closed') }
+
+    # Set up instance variables for the partial
+    @student = false
+    @instructor = nil
+
+    # Render the entry partial as studio invoice
+    rendered = render partial: 'studios/entry', locals: {
+      names: [student1, student2],
+      entries: [entry],
+      studio: @studio.name,
+      invoice: :studio,
+      partner: nil
+    }
+
+    # Should show full count (3), not split (1.5)
+    assert_match ">3<", rendered, "Studio invoice should show full heat count for same-studio student couple"
+    assert_no_match "1.5", rendered, "Studio invoice should NOT split count for same-studio student couple"
+
+    # Verify the full cost (3 heats * $25 = $75)
+    assert_match "75", rendered
+  end
+
+  test "entry partial splits count for student-student on student invoice without partner" do
+    student1 = create_student(@studio, "Student One")
+    student2 = create_student(@studio, "Student Two")
+
+    order = (Category.maximum(:order) || 0) + rand(1000) + 1
+    category = Category.create!(name: "Test Cat #{SecureRandom.hex(4)}", order: order)
+    dance = Dance.create!(name: "Test Dance #{SecureRandom.hex(4)}", closed_category: category, order: order)
+
+    entry = create_entry(student1, student2)
+    2.times { Heat.create!(entry: entry, dance: dance, number: Heat.maximum(:number).to_i + 1, category: 'Closed') }
+
+    @student = true
+    @instructor = nil
+
+    # Render as student invoice (no partner relationship)
+    rendered = render partial: 'studios/entry', locals: {
+      names: [student1, student2],
+      entries: [entry],
+      studio: @studio.name,
+      invoice: :student,
+      partner: nil
+    }
+
+    # Should show split count (1), not full (2)
+    assert_match ">1<", rendered, "Student invoice should show split count"
+    # Cost should be split too (1 heat * $25 = $25)
+    assert_match "25.00", rendered
+  end
+
+  test "entry partial shows full count for student-student on student invoice with partner" do
+    student1 = create_student(@studio, "Student One")
+    student2 = create_student(@studio, "Student Two")
+
+    order = (Category.maximum(:order) || 0) + rand(1000) + 1
+    category = Category.create!(name: "Test Cat #{SecureRandom.hex(4)}", order: order)
+    dance = Dance.create!(name: "Test Dance #{SecureRandom.hex(4)}", closed_category: category, order: order)
+
+    entry = create_entry(student1, student2)
+    4.times { Heat.create!(entry: entry, dance: dance, number: Heat.maximum(:number).to_i + 1, category: 'Closed') }
+
+    @student = true
+    @instructor = nil
+
+    # Render as student invoice with partner (couple relationship)
+    rendered = render partial: 'studios/entry', locals: {
+      names: [student1, student2],
+      entries: [entry],
+      studio: @studio.name,
+      invoice: :student,
+      partner: student2  # student1 viewing with student2 as partner
+    }
+
+    # Should show full count (4) because they're a couple
+    assert_match ">4<", rendered, "Student invoice with partner should show full count"
+    # Full cost (4 * $25 = $100)
+    assert_match "100", rendered
+  end
 
   private
 
@@ -224,6 +313,11 @@ class StudiosInvoiceViewTest < ActionView::TestCase
   end
 
   def create_entry(lead, follow, instructor = nil)
+    # If both are students and no instructor provided, create one
+    if !instructor && lead.type == 'Student' && follow.type == 'Student'
+      instructor = create_professional(@studio, "Instructor for couple")
+    end
+
     Entry.create!(
       lead: lead,
       follow: follow,

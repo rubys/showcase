@@ -38,6 +38,9 @@
        if entry.lead.type == 'Student' and entry.follow.type == 'Student'
          split = 2
          split = 1 if entry.lead == partner or entry.follow == partner
+         # For studio invoices, don't split when both students are from the same studio
+         # (the entry appears once, not twice, so we need to show the full amount)
+         split = 1 if invoice == :studio && entry.lead.studio_id == entry.follow.studio_id
        elsif is_pro_pro and category == 'Solo'
          # For individual instructor invoices, always split pro-pro solos
          # For studio invoices, only split if from different studios
