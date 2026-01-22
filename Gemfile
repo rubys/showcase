@@ -83,8 +83,6 @@ group :test do
   gem "simplecov-html", require: false
 end
 
-gem "dockerfile-rails"
-
 gem "sentry-ruby", "~> 6.1"
 gem "sentry-rails", "~> 6.1"
 
