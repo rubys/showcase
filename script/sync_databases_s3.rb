@@ -179,6 +179,16 @@ s3_client = Aws::S3::Client.new(
   http_continue_timeout: 1    # timeout for 100-continue response on uploads
 )
 
+# Fix for Tigris hanging on empty Accept-Encoding header
+# See: https://github.com/aws/aws-sdk-ruby/issues/2831
+class AcceptEncodingHandler < Seahorse::Client::Handler
+  def call(context)
+    context.http_request.headers['Accept-Encoding'] = 'identity'
+    @handler.call(context)
+  end
+end
+s3_client.handlers.add(AcceptEncodingHandler, step: :sign, priority: 99)
+
 # Extract bucket name from endpoint or use default
 bucket_name = ENV.fetch('BUCKET_NAME', 'showcase')
 
