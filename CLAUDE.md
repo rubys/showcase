@@ -14,7 +14,7 @@ For understanding the overall system architecture, deployment model, and operati
 
 ## Rails Configuration
 
-The application runs on Rails 8.0.2 with full Rails 8.0 configuration defaults (`config.load_defaults 8.0`).
+The application runs on Rails 8.0.2 with Ruby 4.0.1 and full Rails 8.0 configuration defaults (`config.load_defaults 8.0`).
 
 ### Rails 8.0 Migration Completed
 
