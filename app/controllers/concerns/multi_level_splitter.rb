@@ -133,6 +133,35 @@ module MultiLevelSplitter
       false
     end
 
+    # Reassign all heats across all multi-dances to their correct split dances.
+    # Called before scheduling to ensure heats are on correct dances.
+    def reassign_all_multi_dance_heats
+      # Find all dance names that have MultiLevel splits
+      dance_names = Dance.joins(:multi_levels).distinct.pluck(:name)
+      dance_names.each { |name| reassign_heats_to_splits(name) }
+    end
+
+    # Reassign all heats to their correct split dances based on current MultiLevel configuration.
+    # This ensures heats are on the correct dance regardless of the order splits were created.
+    def reassign_heats_to_splits(dance_name)
+      all_dances = Dance.where(name: dance_name)
+      multi_levels = MultiLevel.where(dance: all_dances).to_a
+
+      return if multi_levels.empty?
+
+      # Get all heats for this dance name
+      all_heats = Heat.where(dance: all_dances).includes(entry: [:lead, :follow, :level, :age])
+
+      all_heats.each do |heat|
+        # Find the multi_level that matches this heat's entry
+        matching_ml = multi_levels.find { |ml| entry_matches_multi_level?(heat.entry, ml) }
+
+        if matching_ml && heat.dance_id != matching_ml.dance_id
+          heat.update_column(:dance_id, matching_ml.dance_id)
+        end
+      end
+    end
+
     # Group heats by couple type based on split type
     def group_heats_by_couple_type(heats, couple_split_type)
       heats_by_type = {}

@@ -1,5 +1,6 @@
 module HeatScheduler
   include Printable
+  include MultiLevelSplitter
 
   def build_true_order
     true_order = {}
@@ -40,6 +41,9 @@ module HeatScheduler
     Entry.includes(:heats).where(heats: {id: nil}).each {|entry| entry.destroy}
 
     fixups
+
+    # Ensure all multi-dance heats are on their correct split dances
+    reassign_all_multi_dance_heats
 
     # extract heats
     @heats = Heat.eager_load(

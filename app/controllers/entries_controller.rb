@@ -444,6 +444,10 @@ class EntriesController < ApplicationController
       multi_level.update!(name: new_name)
     end
 
+    # Reassign all heats to their correct split dances based on current MultiLevel configuration
+    dance = Dance.find(params[:dance].to_i)
+    reassign_heats_to_splits(dance.name)
+
     # Redirect back to the entries page with the same query params
     redirect_to dance_entries_path(params[:dance])
   end

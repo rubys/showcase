@@ -1265,6 +1265,110 @@ class MultiLevelSplitterTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # ===== HEAT REASSIGNMENT TESTS =====
+  # These tests verify that heats are correctly assigned to split dances
+
+  test "reassign_heats_to_splits moves heats to correct split dances" do
+    # Create entries with different characteristics
+    entry1 = create_proam_entry(@instructor, @student_follow, level: @level_one, age: @age_one)
+    entry2 = create_proam_entry(@instructor, @student_follow, level: @level_two, age: @age_two)
+    entry3 = create_amateur_entry(@student_lead, @student_follow, level: @level_one, age: @age_one)
+
+    # Create heats all on the original dance
+    heat1 = Heat.create!(number: 1, entry: entry1, dance: @multi_dance, category: 'Multi')
+    heat2 = Heat.create!(number: 2, entry: entry2, dance: @multi_dance, category: 'Multi')
+    heat3 = Heat.create!(number: 3, entry: entry3, dance: @multi_dance, category: 'Multi')
+
+    controller = create_controller_with_concern
+
+    # Create couple type split first
+    controller.send(:perform_initial_couple_split, @multi_dance.id, 'pro_am_vs_amateur')
+
+    # Now create level split within Pro-Am
+    pro_am_ml = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+                          .find { |ml| ml.couple_type == 'Pro-Am' }
+    controller.send(:perform_update_split, pro_am_ml.id, @level_one.id)
+
+    # At this point we should have 3 splits:
+    # - Pro-Am level_one
+    # - Pro-Am level_two+
+    # - Amateur Couple
+    multi_levels = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+    assert_equal 3, multi_levels.count
+
+    # Manually put all heats back on the original dance to simulate the bug
+    Heat.where(id: [heat1.id, heat2.id, heat3.id]).update_all(dance_id: @multi_dance.id)
+
+    # Verify heats are all on original dance
+    [heat1, heat2, heat3].each do |h|
+      h.reload
+      assert_equal @multi_dance.id, h.dance_id, "Heat should be on original dance before reassignment"
+    end
+
+    # Call reassign_heats_to_splits
+    controller.send(:reassign_heats_to_splits, 'Test Multi')
+
+    # Reload heats
+    heat1.reload
+    heat2.reload
+    heat3.reload
+
+    # Verify heats are now on correct dances
+    # heat1: Pro-Am, level_one, age_one -> should match Pro-Am level_one split
+    # heat2: Pro-Am, level_two, age_two -> should match Pro-Am level_two+ split
+    # heat3: Amateur Couple, level_one, age_one -> should match Amateur Couple split
+
+    pro_am_level_one_ml = multi_levels.find { |ml| ml.couple_type == 'Pro-Am' && ml.stop_level == @level_one.id }
+    pro_am_level_two_ml = multi_levels.find { |ml| ml.couple_type == 'Pro-Am' && ml.start_level == @level_two.id }
+    amateur_ml = multi_levels.find { |ml| ml.couple_type == 'Amateur Couple' }
+
+    assert_equal pro_am_level_one_ml.dance_id, heat1.dance_id, "Pro-Am level_one heat should be on correct dance"
+    assert_equal pro_am_level_two_ml.dance_id, heat2.dance_id, "Pro-Am level_two heat should be on correct dance"
+    assert_equal amateur_ml.dance_id, heat3.dance_id, "Amateur Couple heat should be on correct dance"
+  end
+
+  test "reassign_heats_to_splits is idempotent" do
+    # Test that calling reassign_heats_to_splits multiple times produces the same result
+
+    # Create entries with different characteristics
+    entry1 = create_proam_entry(@instructor, @student_follow, level: @level_one, age: @age_one)
+    entry2 = create_amateur_entry(@student_lead, @student_follow, level: @level_one, age: @age_one)
+
+    heat1 = Heat.create!(number: 1, entry: entry1, dance: @multi_dance, category: 'Multi')
+    heat2 = Heat.create!(number: 2, entry: entry2, dance: @multi_dance, category: 'Multi')
+
+    controller = create_controller_with_concern
+
+    # Create couple type split
+    controller.send(:perform_initial_couple_split, @multi_dance.id, 'pro_am_vs_amateur')
+
+    # Call reassign_heats_to_splits multiple times
+    3.times do
+      controller.send(:reassign_heats_to_splits, 'Test Multi')
+    end
+
+    # Reload heats
+    heat1.reload
+    heat2.reload
+
+    # Verify heats are on correct dances
+    multi_levels = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+    pro_am_ml = multi_levels.find { |ml| ml.couple_type == 'Pro-Am' }
+    amateur_ml = multi_levels.find { |ml| ml.couple_type == 'Amateur Couple' }
+
+    assert_equal pro_am_ml.dance_id, heat1.dance_id, "Pro-Am heat should be on correct dance"
+    assert_equal amateur_ml.dance_id, heat2.dance_id, "Amateur Couple heat should be on correct dance"
+
+    # Call one more time and verify nothing changes
+    controller.send(:reassign_heats_to_splits, 'Test Multi')
+
+    heat1.reload
+    heat2.reload
+
+    assert_equal pro_am_ml.dance_id, heat1.dance_id, "Pro-Am heat should still be on correct dance"
+    assert_equal amateur_ml.dance_id, heat2.dance_id, "Amateur Couple heat should still be on correct dance"
+  end
+
   private
 
   # Create a Pro-Am entry (one professional, one student)
