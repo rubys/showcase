@@ -213,11 +213,12 @@ class MultiLevelSplitterTest < ActionDispatch::IntegrationTest
   end
 
   # Test format_full_name (couple type prefix + level + optional age)
-  test "format_full_name with couple type and single level" do
+  # Pro-Am is the dominant category and doesn't get a prefix
+  test "format_full_name with Pro-Am couple type omits prefix" do
     controller = create_controller_with_concern
 
     name = controller.send(:format_full_name, 'Pro-Am', @level_one.id, @level_one.id)
-    assert_equal "Pro-Am - #{@level_one.name}", name
+    assert_equal @level_one.name, name
   end
 
   test "format_full_name with couple type and level range" do
@@ -234,11 +235,11 @@ class MultiLevelSplitterTest < ActionDispatch::IntegrationTest
     assert_equal "#{@level_one.name} - #{@level_two.name}", name
   end
 
-  test "format_full_name with couple type, level, and age range" do
+  test "format_full_name with Pro-Am, level, and age range omits couple type prefix" do
     controller = create_controller_with_concern
 
     name = controller.send(:format_full_name, 'Pro-Am', @level_one.id, @level_two.id, @age_one.id, @age_two.id)
-    expected = "Pro-Am - #{@level_one.name} - #{@level_two.name} #{@age_one.description} - #{@age_two.description}"
+    expected = "#{@level_one.name} - #{@level_two.name} #{@age_one.description} - #{@age_two.description}"
     assert_equal expected, name
   end
 
@@ -634,7 +635,7 @@ class MultiLevelSplitterTest < ActionDispatch::IntegrationTest
     assert_equal @level_two.id, amateur.stop_level
   end
 
-  test "couple type split names show couple type first" do
+  test "couple type split names show couple type for non-Pro-Am only" do
     entry1 = create_proam_entry(@instructor, @student_follow, level: @level_one)
     entry2 = create_amateur_entry(@student_lead, @student_follow, level: @level_one)
 
@@ -646,12 +647,13 @@ class MultiLevelSplitterTest < ActionDispatch::IntegrationTest
 
     multi_levels = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
 
-    # Names should have couple type prefix
+    # Pro-Am is the dominant category - no prefix needed
     pro_am = multi_levels.find { |ml| ml.couple_type == 'Pro-Am' }
-    assert pro_am.name.start_with?('Pro-Am - ')
+    assert_not pro_am.name.start_with?('Pro-Am'), "Pro-Am should not have couple type prefix"
 
+    # Amateur Couple should have prefix for clarity
     amateur = multi_levels.find { |ml| ml.couple_type == 'Amateur Couple' }
-    assert amateur.name.start_with?('Amateur Couple - ')
+    assert amateur.name.start_with?('Amateur Couple - '), "Amateur Couple should have couple type prefix"
   end
 
   # ===== LEVEL SPLIT COUPLE TYPE ISOLATION TESTS =====

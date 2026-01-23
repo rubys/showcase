@@ -43,8 +43,8 @@ module MultiLevelSplitter
         level_part = "#{level_part} #{age_part}"
       end
 
-      # Add couple type prefix if present
-      if couple_type.present?
+      # Add couple type prefix for non-Pro-Am splits
+      if couple_type.present? && couple_type != 'Pro-Am'
         "#{couple_type} - #{level_part}"
       else
         level_part
@@ -66,9 +66,16 @@ module MultiLevelSplitter
 
       if type == :age
         age_part = start_obj.id == stop_obj.id ? start_obj.description : "#{start_obj.description} - #{stop_obj.description}"
-        "#{level_part} #{age_part}"
+        base_name = "#{level_part} #{age_part}"
       else
-        level_part
+        base_name = level_part
+      end
+
+      # Add couple type prefix for non-Pro-Am splits
+      if multi_level.couple_type.present? && multi_level.couple_type != 'Pro-Am'
+        "#{multi_level.couple_type} - #{base_name}"
+      else
+        base_name
       end
     end
 
@@ -660,9 +667,10 @@ module MultiLevelSplitter
 
       first_range = level_range_by_type[first_type]
       level_name = format_level_name_from_ids(first_range[:min], first_range[:max])
+      first_name = first_type == 'Pro-Am' ? level_name : "#{first_type} - #{level_name}"
 
       MultiLevel.create!(
-        name: "#{first_type} - #{level_name}",
+        name: first_name,
         dance: original_dance,
         start_level: first_range[:min],
         stop_level: first_range[:max],
@@ -676,11 +684,12 @@ module MultiLevelSplitter
 
         ct_range = level_range_by_type[ct]
         ct_level_name = format_level_name_from_ids(ct_range[:min], ct_range[:max])
+        ct_name = ct == 'Pro-Am' ? ct_level_name : "#{ct} - #{ct_level_name}"
 
         new_dance = create_split_dance_with_children(original_dance)
 
         MultiLevel.create!(
-          name: "#{ct} - #{ct_level_name}",
+          name: ct_name,
           dance: new_dance,
           start_level: ct_range[:min],
           stop_level: ct_range[:max],
@@ -727,11 +736,12 @@ module MultiLevelSplitter
 
       first_range = level_range_by_type[first_type]
       first_level_name = format_level_name_from_ids(first_range[:min], first_range[:max])
+      first_name = first_type == 'Pro-Am' ? first_level_name : "#{first_type} - #{first_level_name}"
       multi_level.update!(
         couple_type: first_type,
         start_level: first_range[:min],
         stop_level: first_range[:max],
-        name: "#{first_type} - #{first_level_name}"
+        name: first_name
       )
 
       # Create new multi_levels and dances for other couple types
@@ -741,11 +751,12 @@ module MultiLevelSplitter
 
         ct_range = level_range_by_type[ct]
         ct_level_name = format_level_name_from_ids(ct_range[:min], ct_range[:max])
+        ct_name = ct == 'Pro-Am' ? ct_level_name : "#{ct} - #{ct_level_name}"
 
         new_dance = create_split_dance_with_children(original_dance)
 
         MultiLevel.create!(
-          name: "#{ct} - #{ct_level_name}",
+          name: ct_name,
           dance: new_dance,
           start_level: ct_range[:min],
           stop_level: ct_range[:max],
