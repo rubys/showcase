@@ -727,23 +727,31 @@
       true
     }
 
+    # Helper to get split index for an entry
+    get_split_index = ->(entry) {
+      return nil unless @is_multi && @multi_levels&.any?
+      @multi_levels.each_with_index do |ml, idx|
+        return idx if entry_matches_ml.call(entry, ml)
+      end
+      nil
+    }
+
     # Build tally of lead/follow appearances within each split
     # Key: split_index (or nil for no split), Value: hash of person_id => count
     split_tallies = {}
     @heats.select { |h| h.number > 0 }.each do |heat|
       entry = heat.entry
-      split_index = nil
-      if @is_multi && @multi_levels&.any?
-        @multi_levels.each_with_index do |ml, idx|
-          if entry_matches_ml.call(entry, ml)
-            split_index = idx
-            break
-          end
-        end
-      end
+      split_index = get_split_index.call(entry)
       split_tallies[split_index] ||= Hash.new(0)
       split_tallies[split_index][entry.lead_id] += 1
       split_tallies[split_index][entry.follow_id] += 1
+    end
+
+    # Sort heats by split index to group entries from the same split together
+    sorted_heats = if @is_multi && @multi_levels&.any?
+      @heats.sort_by { |h| [get_split_index.call(h.entry) || 999, h.entry.level_id, h.entry.age_id] }
+    else
+      @heats
     end
   %>
   <table class="mx-auto">
@@ -760,19 +768,11 @@
     </thead>
 
     <tbody>
-      <% @heats.each do |heat| %>
+      <% sorted_heats.each do |heat| %>
         <% entry = heat.entry %>
         <%
           # Determine which split this heat belongs to
-          split_index = nil
-          if @is_multi && @multi_levels&.any?
-            @multi_levels.each_with_index do |ml, idx|
-              if entry_matches_ml.call(entry, ml)
-                split_index = idx
-                break
-              end
-            end
-          end
+          split_index = get_split_index.call(entry)
 
           # Get the tally for this split
           tally = @is_multi ? (split_tallies[split_index] || {}) : {}

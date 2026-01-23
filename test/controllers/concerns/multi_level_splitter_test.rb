@@ -1095,6 +1095,176 @@ class MultiLevelSplitterTest < ActionDispatch::IntegrationTest
     assert_nil level_one_remaining.stop_age
   end
 
+  # ===== AGE SPLIT COUPLE TYPE ISOLATION TESTS =====
+  # These tests verify that age splits only affect siblings within the same couple_type
+
+  test "age split only affects siblings with same couple_type" do
+    # This test reproduces the bug where age-splitting Pro-Am Full Bronze
+    # would incorrectly interact with Amateur Couple Full Bronze splits
+    # because the level_siblings query didn't filter by couple_type.
+
+    # Create entries for both couple types at the same level but different ages
+    # Pro-Am entries
+    entry1 = create_proam_entry(@instructor, @student_follow, level: @level_one, age: @age_one)
+    entry2 = create_proam_entry(@instructor, @student_follow, level: @level_one, age: @age_two)
+    # Amateur Couple entries at same level, already age-split
+    entry3 = create_amateur_entry(@student_lead, @student_follow, level: @level_one, age: @age_one)
+    entry4 = create_amateur_entry(@student_lead, @student_follow, level: @level_one, age: @age_two)
+
+    Heat.create!(number: 1, entry: entry1, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 2, entry: entry2, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 3, entry: entry3, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 4, entry: entry4, dance: @multi_dance, category: 'Multi')
+
+    controller = create_controller_with_concern
+
+    # First split by couple type
+    controller.send(:perform_initial_couple_split, @multi_dance.id, 'pro_am_vs_amateur')
+
+    multi_levels = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+    assert_equal 2, multi_levels.count
+
+    # Now age-split the Amateur Couple group
+    amateur_ml = multi_levels.find { |ml| ml.couple_type == 'Amateur Couple' }
+    controller.send(:perform_age_split, amateur_ml.id, @age_one.id)
+
+    # Should now have 3 multi_levels: 1 Pro-Am (unchanged), 2 Amateur Couple (age-split)
+    multi_levels = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+    assert_equal 3, multi_levels.count
+
+    # Pro-Am should be unchanged (still covers all ages, no start_age/stop_age)
+    pro_am_mls = multi_levels.select { |ml| ml.couple_type == 'Pro-Am' }
+    assert_equal 1, pro_am_mls.count
+    assert_nil pro_am_mls.first.start_age, "Pro-Am should not have age split"
+    assert_nil pro_am_mls.first.stop_age, "Pro-Am should not have age split"
+
+    # Amateur Couple should have 2 age splits
+    amateur_mls = multi_levels.select { |ml| ml.couple_type == 'Amateur Couple' }
+    assert_equal 2, amateur_mls.count
+    amateur_mls.each do |ml|
+      assert_not_nil ml.start_age, "Amateur Couple splits should have start_age"
+      assert_not_nil ml.stop_age, "Amateur Couple splits should have stop_age"
+    end
+  end
+
+  test "age split with existing age splits in different couple_type does not create gaps" do
+    # This is the specific scenario that caused the original bug:
+    # Amateur Couple has age splits, Pro-Am doesn't.
+    # When age-splitting Pro-Am, it should NOT interfere with Amateur Couple's splits.
+
+    # Create entries
+    # Pro-Am at level_one (all ages)
+    entry1 = create_proam_entry(@instructor, @student_follow, level: @level_one, age: @age_one)
+    entry2 = create_proam_entry(@instructor, @student_follow, level: @level_one, age: @age_two)
+    entry3 = create_proam_entry(@instructor, @student_follow, level: @level_one, age: @age_three)
+    # Amateur Couple at level_one (will be age-split first)
+    entry4 = create_amateur_entry(@student_lead, @student_follow, level: @level_one, age: @age_one)
+    entry5 = create_amateur_entry(@student_lead, @student_follow, level: @level_one, age: @age_two)
+
+    Heat.create!(number: 1, entry: entry1, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 2, entry: entry2, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 3, entry: entry3, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 4, entry: entry4, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 5, entry: entry5, dance: @multi_dance, category: 'Multi')
+
+    controller = create_controller_with_concern
+
+    # First split by couple type
+    controller.send(:perform_initial_couple_split, @multi_dance.id, 'pro_am_vs_amateur')
+    assert_equal 2, MultiLevel.where(dance: Dance.where(name: 'Test Multi')).count
+
+    # Age-split Amateur Couple first
+    amateur_ml = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+                           .find { |ml| ml.couple_type == 'Amateur Couple' }
+    controller.send(:perform_age_split, amateur_ml.id, @age_one.id)
+
+    # Now we have: 1 Pro-Am (all ages), 2 Amateur Couple (age-split)
+    assert_equal 3, MultiLevel.where(dance: Dance.where(name: 'Test Multi')).count
+
+    # Now age-split Pro-Am - this is where the bug occurred
+    pro_am_ml = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+                          .find { |ml| ml.couple_type == 'Pro-Am' }
+    controller.send(:perform_age_split, pro_am_ml.id, @age_one.id)
+
+    # Should now have 4 multi_levels: 2 Pro-Am (age-split), 2 Amateur Couple (age-split)
+    multi_levels = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+    assert_equal 4, multi_levels.count
+
+    # Verify Pro-Am splits are correct (age_one | age_two-age_three)
+    pro_am_mls = multi_levels.select { |ml| ml.couple_type == 'Pro-Am' }.sort_by(&:start_age)
+    assert_equal 2, pro_am_mls.count
+    assert_equal @age_one.id, pro_am_mls.first.start_age
+    assert_equal @age_one.id, pro_am_mls.first.stop_age
+    assert_equal @age_two.id, pro_am_mls.second.start_age
+    assert_equal @age_three.id, pro_am_mls.second.stop_age  # Pro-Am has entries at age_three
+
+    # Verify Amateur Couple splits are still correct (unchanged by Pro-Am split)
+    # Amateur Couple only has entries at age_one and age_two
+    amateur_mls = multi_levels.select { |ml| ml.couple_type == 'Amateur Couple' }.sort_by(&:start_age)
+    assert_equal 2, amateur_mls.count
+    assert_equal @age_one.id, amateur_mls.first.start_age
+    assert_equal @age_one.id, amateur_mls.first.stop_age
+    assert_equal @age_two.id, amateur_mls.second.start_age
+    assert_equal @age_two.id, amateur_mls.second.stop_age  # Amateur only goes to age_two
+  end
+
+  test "age expand only considers siblings with same couple_type when collapsing" do
+    # This tests Fix #2: remaining_siblings filter in handle_age_expand
+    # When expanding an age range to collapse age splits, it should only
+    # consider siblings with the same couple_type.
+
+    # Create entries for both couple types
+    entry1 = create_proam_entry(@instructor, @student_follow, level: @level_one, age: @age_one)
+    entry2 = create_proam_entry(@instructor, @student_follow, level: @level_one, age: @age_two)
+    entry3 = create_amateur_entry(@student_lead, @student_follow, level: @level_one, age: @age_one)
+    entry4 = create_amateur_entry(@student_lead, @student_follow, level: @level_one, age: @age_two)
+
+    Heat.create!(number: 1, entry: entry1, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 2, entry: entry2, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 3, entry: entry3, dance: @multi_dance, category: 'Multi')
+    Heat.create!(number: 4, entry: entry4, dance: @multi_dance, category: 'Multi')
+
+    controller = create_controller_with_concern
+
+    # Split by couple type
+    controller.send(:perform_initial_couple_split, @multi_dance.id, 'pro_am_vs_amateur')
+    assert_equal 2, MultiLevel.where(dance: Dance.where(name: 'Test Multi')).count
+
+    # Age-split both couple types
+    pro_am_ml = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+                          .find { |ml| ml.couple_type == 'Pro-Am' }
+    amateur_ml = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+                           .find { |ml| ml.couple_type == 'Amateur Couple' }
+
+    controller.send(:perform_age_split, pro_am_ml.id, @age_one.id)
+    controller.send(:perform_age_split, amateur_ml.id, @age_one.id)
+
+    # Now we have 4 multi_levels: 2 Pro-Am (age-split), 2 Amateur Couple (age-split)
+    assert_equal 4, MultiLevel.where(dance: Dance.where(name: 'Test Multi')).count
+
+    # Expand Pro-Am to collapse its age splits
+    pro_am_ml.reload
+    controller.send(:perform_age_split, pro_am_ml.id, @age_two.id)
+
+    # Should now have 3 multi_levels: 1 Pro-Am (collapsed), 2 Amateur Couple (still age-split)
+    multi_levels = MultiLevel.where(dance: Dance.where(name: 'Test Multi'))
+    assert_equal 3, multi_levels.count
+
+    # Pro-Am should have no age range (collapsed back to single)
+    pro_am_mls = multi_levels.select { |ml| ml.couple_type == 'Pro-Am' }
+    assert_equal 1, pro_am_mls.count
+    assert_nil pro_am_mls.first.start_age, "Pro-Am should have nil start_age after collapse"
+    assert_nil pro_am_mls.first.stop_age, "Pro-Am should have nil stop_age after collapse"
+
+    # Amateur Couple should still have 2 age splits (unchanged)
+    amateur_mls = multi_levels.select { |ml| ml.couple_type == 'Amateur Couple' }
+    assert_equal 2, amateur_mls.count
+    amateur_mls.each do |ml|
+      assert_not_nil ml.start_age, "Amateur Couple should still have age splits"
+      assert_not_nil ml.stop_age, "Amateur Couple should still have age splits"
+    end
+  end
+
   private
 
   # Create a Pro-Am entry (one professional, one student)

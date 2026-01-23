@@ -436,15 +436,35 @@ module MultiLevelSplitter
       dance = multi_level.dance
       all_ages = Age.order(:id).all
 
-      # Get all multi_levels in this level group
+      # Get all multi_levels in this level group with the same couple_type
       all_dances = Dance.where(name: dance.name)
       level_siblings = MultiLevel.where(dance: all_dances)
         .where(start_level: multi_level.start_level, stop_level: multi_level.stop_level)
+        .where(couple_type: multi_level.couple_type)
         .order(:start_age).to_a
 
-      # Get heats for this level range across all dances
-      level_heats = Heat.where(dance: all_dances).includes(entry: [:level, :age])
+      # Get heats for this level range across all dances, filtered by couple_type
+      level_heats = Heat.where(dance: all_dances).includes(entry: [:lead, :follow, :level, :age])
         .select { |h| h.entry.level_id >= multi_level.start_level && h.entry.level_id <= multi_level.stop_level }
+
+      # Filter by couple_type if specified
+      if multi_level.couple_type.present?
+        level_heats = level_heats.select do |h|
+          entry_couple_type = determine_couple_type(h.entry)
+          case multi_level.couple_type
+          when 'Pro-Am'
+            ['Amateur Lead', 'Amateur Follow'].include?(entry_couple_type)
+          when 'Amateur Couple'
+            entry_couple_type == 'Amateur Couple'
+          when 'Amateur Lead'
+            entry_couple_type == 'Amateur Lead'
+          when 'Amateur Follow'
+            entry_couple_type == 'Amateur Follow'
+          else
+            true
+          end
+        end
+      end
 
       age_ids = level_heats.map { |h| h.entry.age_id }.uniq.sort
       return if age_ids.empty?
@@ -561,9 +581,10 @@ module MultiLevelSplitter
         end
       end
 
-      # Check if we're back to a single age split in this level group
+      # Check if we're back to a single age split in this level group (same couple_type)
       remaining_siblings = MultiLevel.where(dance: all_dances)
-        .where(start_level: multi_level.start_level, stop_level: multi_level.stop_level).to_a
+        .where(start_level: multi_level.start_level, stop_level: multi_level.stop_level)
+        .where(couple_type: multi_level.couple_type).to_a
 
       if remaining_siblings.length == 1
         # Remove age range to indicate no age split
