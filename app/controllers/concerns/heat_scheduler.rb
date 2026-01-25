@@ -338,6 +338,17 @@ module HeatScheduler
       map {|size, entries| [size, entries.map(&:last)]}.
       sort
 
+    # Persist computed ballroom assignments to database for consistent display
+    generate_agenda
+    persist_ballroom_assignments
+
+    # Reload heats since generate_agenda modifies @heats format
+    @heats = Heat.eager_load(
+      :solo,
+      dance: [:open_category, :closed_category, :solo_category, :multi_category],
+      entry: [{lead: :studio}, {follow: :studio}]
+    ).all
+
     @heats = @heats.
       group_by {|heat| heat.number}.map do |number, heats|
         [number, heats.sort_by { |heat| heat.back || 0 } ]

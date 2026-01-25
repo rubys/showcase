@@ -80,6 +80,13 @@ module Printable
 
     extensions = CatExtension.includes(:category).order(:part).all.group_by(&:category)
 
+    # State for rotating ballroom assignment (used when ballrooms >= 3)
+    @ballroom_state = {
+      person_ballroom: {},    # person_id → current ballroom letter
+      block_number: 0,        # increments when dance order decreases
+      last_dance_order: nil   # to detect block boundaries
+    }
+
     @heats.each do |number, heats|
       if number == 0
         @agenda['Unscheduled'] << [number, {nil => heats}]
@@ -89,6 +96,7 @@ module Printable
         cat = current if cat != current && event.heat_range_cat == 1 && heats.first.category != 'Solo' && heats.first.dance.open_category_id == heats.first.dance.closed_category_id && (heats.first.dance.open_category == current || heats.first.dance.closed_category == current)
         current = cat
         ballrooms = cat&.ballrooms || event.ballrooms || 1
+        max_heat_size = cat&.max_heat_size || event.max_heat_size
 
         if cat && cat.instance_of?(Category)
           split = cat.split.to_s.split(/[, ]+/).map(&:to_i)
@@ -129,13 +137,13 @@ module Printable
               copy.readonly!
               copy
             end
-            
+
             @agenda[cat] << [number, assign_rooms(ballrooms, heat_copies,
-              (judge_ballrooms && ballrooms == 2) ? -number : nil)]
+              (judge_ballrooms && ballrooms == 2) ? -number : nil, state: @ballroom_state, max_heat_size: max_heat_size)]
           end
         else
           @agenda[cat] << [number, assign_rooms(ballrooms, heats,
-            (judge_ballrooms && ballrooms == 2) ? -number : nil)]
+            (judge_ballrooms && ballrooms == 2) ? -number : nil, state: @ballroom_state, max_heat_size: max_heat_size)]
         end
       end
     end
@@ -331,8 +339,8 @@ module Printable
     end
   end
 
-  def assign_rooms(ballrooms, heats, number, preserve_order: false)
-    if heats.all? {|heat| heat.category == 'Solo'}
+  def assign_rooms(ballrooms, heats, number, preserve_order: false, state: nil, max_heat_size: nil)
+    result = if heats.all? {|heat| heat.category == 'Solo'}
       {nil => heats}
     elsif heats.all? {|heat| !heat.ballroom.nil?}
       heats.group_by(&:ballroom)
@@ -342,22 +350,191 @@ module Printable
       b = heats.select {|heat| heat.entry.lead.type == "Student"}
       {'A': heats - b, 'B': b}
     else
-      if number && (number < 0 || Judge.where.not(ballroom: 'Both').exists?) && !preserve_order
-        # negative number means it has already been determined that
-        # judges ae assigned to a specific ballroom.
-        heats = heats.sort_by(&:id)
-        heats = heats.shuffle(random: Random.new(number.to_f.abs))
-      end
+      # Rotating assignment for ballrooms >= 3 (setting values 3, 4, 5, 6)
+      num_rooms = case ballrooms
+                  when 3, 4 then 2
+                  when 5 then 3
+                  when 6 then 4
+                  else 2
+                  end
 
-      groups = {nil => [], 'A' => [], 'B' => []}.merge(heats.group_by do |heat|
-        next heat.ballroom unless heat.ballroom.blank?
-        next heat.subject.studio.ballroom if ballrooms != 3 && !heat.subject.studio.ballroom.blank?
-      end)
-      heats = groups[nil]
-      n = (heats.length / 2).to_i
-      n += 1 if heats.length % 2 == 1 and heats[n].entry.lead.type != 'Student'
-      {'A': heats[...n] + groups['A'], 'B': heats[n..] + groups['B']}
+      # Calculate per-ballroom cap from max_heat_size
+      cap = max_heat_size ? (max_heat_size.to_f / num_rooms).ceil : nil
+
+      assign_rooms_rotating(num_rooms, heats, state, cap: cap)
     end
+
+    # Sort by ballroom letter (nil sorts first)
+    result.sort_by { |k, _| k.to_s }.to_h
+  end
+
+  def assign_rooms_rotating(num_rooms, heats, state, cap: nil)
+    # Create default state if not provided (for callers that don't track state)
+    state ||= {
+      person_ballroom: {},
+      block_number: 0,
+      last_dance_order: nil
+    }
+
+    # Detect new block: when dance order decreases, we've started a new interleave cycle
+    current_order = heats.first&.dance&.order
+    if state[:last_dance_order] && current_order && current_order < state[:last_dance_order]
+      state[:block_number] += 1
+    end
+    state[:last_dance_order] = current_order
+
+    result = Hash.new { |h, k| h[k] = [] }
+
+    heats.each do |heat|
+      # Check if this is a manual override before determining ballroom
+      manual_override = heat.ballroom.present?
+
+      assigned = determine_ballroom(heat, num_rooms, state, result, cap: cap)
+      result[assigned] << heat
+
+      # Only update state for automatic assignments - manual overrides should not
+      # affect the deterministic placement of other participants
+      unless manual_override
+        state[:person_ballroom][heat.entry.lead_id] = assigned if heat.entry.lead_id != 0
+        state[:person_ballroom][heat.entry.follow_id] = assigned if heat.entry.follow_id != 0
+      end
+    end
+
+    result
+  end
+
+  def determine_ballroom(heat, num_rooms, state, current_heat_assignments = {}, cap: nil)
+    # Check heat-level override first (bypasses cap - trust the event owner)
+    return heat.ballroom unless heat.ballroom.blank?
+
+    # Check studio preference (subject to cap)
+    studio_pref = heat.subject&.studio&.ballroom
+    if studio_pref.present? && ballroom_under_cap?(studio_pref, current_heat_assignments, cap)
+      return studio_pref
+    end
+
+    # Look up existing assignments for lead and follow
+    lead_room = state[:person_ballroom][heat.entry.lead_id]
+    follow_room = state[:person_ballroom][heat.entry.follow_id]
+
+    if lead_room.nil? && follow_room.nil?
+      # New participants - assign to least-loaded ballroom under cap
+      least_loaded_ballroom(num_rooms, state[:block_number], heat.entry.id, current_heat_assignments, cap: cap)
+    elsif lead_room && follow_room.nil?
+      # Follow lead's room if under cap, otherwise find alternative
+      if ballroom_under_cap?(lead_room, current_heat_assignments, cap)
+        lead_room
+      else
+        least_loaded_ballroom(num_rooms, state[:block_number], heat.entry.id, current_heat_assignments, cap: cap)
+      end
+    elsif follow_room && lead_room.nil?
+      # Follow follow's room if under cap, otherwise find alternative
+      if ballroom_under_cap?(follow_room, current_heat_assignments, cap)
+        follow_room
+      else
+        least_loaded_ballroom(num_rooms, state[:block_number], heat.entry.id, current_heat_assignments, cap: cap)
+      end
+    elsif lead_room == follow_room
+      # Both in same room - use it if under cap
+      if ballroom_under_cap?(lead_room, current_heat_assignments, cap)
+        lead_room
+      else
+        least_loaded_ballroom(num_rooms, state[:block_number], heat.entry.id, current_heat_assignments, cap: cap)
+      end
+    else
+      # Conflict - resolve then check cap
+      preferred = resolve_ballroom_conflict(heat, lead_room, follow_room)
+      if ballroom_under_cap?(preferred, current_heat_assignments, cap)
+        preferred
+      else
+        # Try the other room
+        other = (preferred == lead_room) ? follow_room : lead_room
+        if ballroom_under_cap?(other, current_heat_assignments, cap)
+          other
+        else
+          least_loaded_ballroom(num_rooms, state[:block_number], heat.entry.id, current_heat_assignments, cap: cap)
+        end
+      end
+    end
+  end
+
+  def ballroom_under_cap?(room, current_assignments, cap)
+    return true if cap.nil?  # No cap means always under
+    (current_assignments[room]&.length || 0) < cap
+  end
+
+  def least_loaded_ballroom(num_rooms, block_number, entry_id, current_assignments, cap: nil)
+    # Get counts for each ballroom
+    counts = {}
+    num_rooms.times do |i|
+      room = ('A'.ord + i).chr
+      counts[room] = current_assignments[room]&.length || 0
+    end
+
+    # If cap is set, filter to only ballrooms under cap
+    if cap
+      under_cap = counts.select { |_, count| count < cap }
+      counts = under_cap if under_cap.any?
+    end
+
+    min_count = counts.values.min
+
+    # Find all ballrooms with the minimum count
+    candidates = counts.select { |_, count| count == min_count }.keys
+
+    if candidates.length == 1
+      candidates.first
+    else
+      # Tiebreaker: use original rotation formula among candidates
+      base = entry_id % candidates.length
+      index = (base + block_number) % candidates.length
+      candidates.sort[index]
+    end
+  end
+
+  # Persist computed ballroom assignments to database after scheduling
+  # This ensures consistent ballroom display across all views
+  def persist_ballroom_assignments
+    return unless @agenda
+
+    updates_by_ballroom = Hash.new { |h, k| h[k] = [] }
+
+    @agenda.each do |_category, heats_by_number|
+      heats_by_number.each do |_number, rooms|
+        next unless rooms.is_a?(Hash)
+
+        rooms.each do |ballroom, heats|
+          next if ballroom.nil?  # Skip unassigned (solos, single ballroom)
+
+          heats.each do |heat|
+            next if heat.readonly?  # Skip copied heats used for multi-dance expansion
+
+            # Only update heats that don't have a manual override
+            # (manual overrides already have ballroom set in the DB)
+            if heat.ballroom.blank?
+              updates_by_ballroom[ballroom.to_s] << heat.id
+            end
+          end
+        end
+      end
+    end
+
+    # Batch update heats by ballroom for efficiency
+    updates_by_ballroom.each do |ballroom, heat_ids|
+      Heat.where(id: heat_ids).update_all(ballroom: ballroom) if heat_ids.any?
+    end
+  end
+
+  def resolve_ballroom_conflict(heat, lead_room, follow_room)
+    lead_is_student = heat.entry.lead.type == 'Student'
+    follow_is_student = heat.entry.follow.type == 'Student'
+
+    # Prefer keeping student stationary over professional
+    return lead_room if lead_is_student && !follow_is_student
+    return follow_room if follow_is_student && !lead_is_student
+
+    # Both same type - lower person ID stays in their ballroom
+    heat.entry.lead_id < heat.entry.follow_id ? lead_room : follow_room
   end
 
   def find_couples

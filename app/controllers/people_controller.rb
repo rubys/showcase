@@ -893,9 +893,12 @@ class PeopleController < ApplicationController
       end
       unscored = query.order(:number).pluck(:id)
 
+      # Generate agenda for consistent ballroom assignments
+      # This is needed for both category-level overrides and rotating ballrooms (3+)
+      @include_times = true  # Override for admin view
+      generate_agenda unless @agenda
+
       if Category.where.not(ballrooms: nil).any?
-        @include_times = true  # Override for admin view
-        generate_agenda unless @agenda
         cat_ballrooms = Category.pluck(:name, :ballrooms).to_h
         heat_ballrooms = @agenda.map {|cat, heats|
           [cat, heats.map {|heat, ballrooms| [heat, cat_ballrooms[cat] || @event.ballrooms]}]
@@ -904,11 +907,37 @@ class PeopleController < ApplicationController
         heat_ballrooms = {}
       end
 
+      # Build lookup from heat_id to ballroom from the agenda
+      @agenda_ballrooms = {}
+      @agenda.each do |_category, heats_by_number|
+        heats_by_number.each do |_number, rooms|
+          next unless rooms.is_a?(Hash)
+          rooms.each do |ballroom, heats|
+            heats.each { |heat| @agenda_ballrooms[heat.id] = ballroom }
+          end
+        end
+      end
+
       if @event.ballrooms > 1 || heat_ballrooms.any?
-        eligable = {
-          A: judges.select {|judge| Person.find(judge).judge&.ballroom != 'B'},
-          B: judges.select {|judge| Person.find(judge).judge&.ballroom != 'A'}
-        }
+        # Build eligibility dynamically based on number of ballrooms
+        num_rooms = case @event.ballrooms
+                    when 1 then 1
+                    when 2 then 2
+                    when 3, 4 then 2
+                    when 5 then 3
+                    when 6 then 4
+                    else 2
+                    end
+
+        eligable = {}
+        num_rooms.times do |i|
+          room = ('A'.ord + i).chr.to_sym
+          # Judge is eligible if their ballroom is 'Both' (or nil) or matches this room
+          eligable[room] = judges.select do |judge|
+            judge_ballroom = Person.find(judge).judge&.ballroom
+            judge_ballroom.nil? || judge_ballroom == 'Both' || judge_ballroom == room.to_s
+          end
+        end
       end
 
       judge_dancers = Person.where(type: 'Judge').where.not(exclude_id: nil).pluck(:id, :exclude_id).to_h
@@ -926,14 +955,16 @@ class PeopleController < ApplicationController
         query = query.joins(:dance).where.not(dances: { closed_category_id: category_scored_ids })
       end
       unscored = query.order(:number).group_by(&:number)
-      splittable = Judge.where.not(ballroom: 'Both').any? && !eligable[:A].empty? && !eligable[:B].empty?
+      splittable = Judge.where.not(ballroom: 'Both').any? && eligable&.values&.all? { |v| !v.empty? }
 
       Score.transaction do
         unscored.each do |number, heats|
           ballrooms = splittable ? (heat_ballrooms[heats.first.number] || @event.ballrooms) : 1
           if ballrooms > 1
-            assign_rooms(ballrooms, heats, -number).each do |room, heats|
-              heats.each do |heat|
+            # Use pre-computed agenda ballrooms for consistent assignments
+            rooms_hash = heats.group_by { |heat| @agenda_ballrooms[heat.id] || 'A' }
+            rooms_hash.each do |room, room_heats|
+              room_heats.each do |heat|
                 judge = counts.sort_by(&:last).find {|id, count| eligable[room.to_sym].include? id}.first
                 counts[judge] += 1
                 redo if judge_dancers.include?(judge) and dancers[number.to_f].include?(judge_dancers[judge])

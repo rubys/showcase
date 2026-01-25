@@ -614,4 +614,347 @@ class PrintableTest < ActiveSupport::TestCase
       assert last_keys.include?(key), "#{key} should be at the end"
     end
   end
+
+  # ===== ROTATING BALLROOM ASSIGNMENT TESTS =====
+
+  test "assign_rooms_rotating distributes heats across ballrooms" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    # Create multiple entries with different IDs to ensure distribution
+    entries = 4.times.map do |i|
+      student = Person.create!(name: "Test Student #{i}", type: 'Student', studio: @studio, level: @level)
+      Entry.create!(
+        lead: @instructor,
+        follow: student,
+        age: @age,
+        level: @level
+      )
+    end
+
+    heats = entries.map do |entry|
+      Heat.create!(number: 200, entry: entry, dance: @dance, category: 'Closed')
+    end
+
+    # Test with 2 ballrooms (setting value 3 or 4)
+    rooms = assign_rooms(3, heats, nil, state: state)
+
+    assert rooms.key?('A') || rooms.key?('B'), "Should assign to ballrooms A or B"
+    total = (rooms['A']&.length || 0) + (rooms['B']&.length || 0)
+    assert_equal heats.length, total, "All heats should be assigned"
+  end
+
+  test "assign_rooms_rotating tracks person assignments across heats" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    # Create a student who will dance multiple heats
+    student = Person.create!(name: "Tracking Student", type: 'Student', studio: @studio, level: @level)
+    entry1 = Entry.create!(lead: @instructor, follow: student, age: @age, level: @level)
+
+    heat1 = Heat.create!(number: 201, entry: entry1, dance: @dance, category: 'Closed')
+
+    # First assignment
+    rooms1 = assign_rooms(3, [heat1], nil, state: state)
+    first_room = state[:person_ballroom][student.id]
+    assert_not_nil first_room, "Student should be tracked after first heat"
+
+    # Create second heat with same student, different partner
+    instructor2 = Person.create!(name: "Instructor 2", type: 'Professional', studio: @studio)
+    entry2 = Entry.create!(lead: instructor2, follow: student, age: @age, level: @level)
+    heat2 = Heat.create!(number: 202, entry: entry2, dance: @dance, category: 'Closed')
+
+    # Second assignment should keep student in same room
+    rooms2 = assign_rooms(3, [heat2], nil, state: state)
+    second_room = state[:person_ballroom][student.id]
+
+    assert_equal first_room, second_room, "Student should stay in same ballroom within block"
+  end
+
+  test "assign_rooms_rotating detects new block when dance order decreases" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    waltz = dances(:waltz)
+    tango = dances(:tango)
+
+    # Ensure waltz has lower order than tango
+    waltz.update!(order: 1)
+    tango.update!(order: 2)
+
+    heat1 = Heat.create!(number: 301, entry: @entry, dance: waltz, category: 'Closed')
+    heat2 = Heat.create!(number: 302, entry: @entry, dance: tango, category: 'Closed')
+
+    # Process in increasing order
+    assign_rooms(3, [heat1], nil, state: state)
+    assert_equal 0, state[:block_number], "Block number should be 0 initially"
+
+    assign_rooms(3, [heat2], nil, state: state)
+    assert_equal 0, state[:block_number], "Block number should still be 0 (order increasing)"
+
+    # Now process waltz again - order decreases, new block
+    heat3 = Heat.create!(number: 303, entry: @entry, dance: waltz, category: 'Closed')
+    assign_rooms(3, [heat3], nil, state: state)
+    assert_equal 1, state[:block_number], "Block number should increment when dance order decreases"
+  end
+
+  test "assign_rooms_rotating respects heat ballroom override" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    heat = Heat.create!(number: 401, entry: @entry, dance: @dance, category: 'Closed', ballroom: 'B')
+
+    rooms = assign_rooms(3, [heat], nil, state: state)
+
+    assert rooms.key?('B'), "Should respect heat ballroom override"
+    assert_includes rooms['B'], heat
+  end
+
+  test "assign_rooms_rotating respects studio ballroom preference" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    @studio.update!(ballroom: 'A')
+    @student.update!(studio: @studio)
+
+    heat = Heat.create!(number: 402, entry: @entry, dance: @dance, category: 'Closed')
+
+    rooms = assign_rooms(3, [heat], nil, state: state)
+
+    assert rooms.key?('A'), "Should respect studio ballroom preference"
+    assert_includes rooms['A'], heat
+  end
+
+  test "assign_rooms_rotating conflict resolution prefers student stationary" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    # Pre-populate state: student in A, instructor in B
+    student = Person.create!(name: "Conflict Student", type: 'Student', studio: @studio, level: @level)
+    instructor = Person.create!(name: "Conflict Instructor", type: 'Professional', studio: @studio)
+
+    state[:person_ballroom][student.id] = 'A'
+    state[:person_ballroom][instructor.id] = 'B'
+
+    entry = Entry.create!(lead: instructor, follow: student, age: @age, level: @level)
+    heat = Heat.create!(number: 501, entry: entry, dance: @dance, category: 'Closed')
+
+    rooms = assign_rooms(3, [heat], nil, state: state)
+
+    # Student should stay in A (student over professional)
+    assert rooms.key?('A'), "Should keep student in their ballroom"
+    assert_includes rooms['A'], heat
+  end
+
+  test "assign_rooms_rotating conflict resolution uses lower ID when same type" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    # Create two students
+    student1 = Person.create!(name: "Student Low ID", type: 'Student', studio: @studio, level: @level)
+    student2 = Person.create!(name: "Student High ID", type: 'Student', studio: @studio, level: @level)
+
+    # Ensure student1 has lower ID
+    if student1.id > student2.id
+      student1, student2 = student2, student1
+    end
+
+    # Pre-populate: lower ID in A, higher ID in B
+    state[:person_ballroom][student1.id] = 'A'
+    state[:person_ballroom][student2.id] = 'B'
+
+    entry = Entry.create!(lead: student1, follow: student2, instructor: @instructor, age: @age, level: @level)
+    heat = Heat.create!(number: 502, entry: entry, dance: @dance, category: 'Closed')
+
+    rooms = assign_rooms(3, [heat], nil, state: state)
+
+    # Lower ID should stay in A
+    assert rooms.key?('A'), "Should keep lower ID person in their ballroom"
+    assert_includes rooms['A'], heat
+  end
+
+  test "assign_rooms handles three ballrooms" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    # Create enough entries to potentially fill 3 ballrooms
+    entries = 6.times.map do |i|
+      student = Person.create!(name: "3BR Student #{i}", type: 'Student', studio: @studio, level: @level)
+      Entry.create!(lead: @instructor, follow: student, age: @age, level: @level)
+    end
+
+    heats = entries.map do |entry|
+      Heat.create!(number: 600, entry: entry, dance: @dance, category: 'Closed')
+    end
+
+    # Test with 3 ballrooms (setting value 5)
+    rooms = assign_rooms(5, heats, nil, state: state)
+
+    # Should have at least some distribution
+    assigned_rooms = rooms.keys.reject(&:nil?)
+    assert assigned_rooms.any?, "Should assign to ballrooms"
+
+    total = assigned_rooms.sum { |r| rooms[r].length }
+    assert_equal heats.length, total, "All heats should be assigned"
+  end
+
+  test "assign_rooms handles four ballrooms" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    # Create enough entries to potentially fill 4 ballrooms
+    entries = 8.times.map do |i|
+      student = Person.create!(name: "4BR Student #{i}", type: 'Student', studio: @studio, level: @level)
+      Entry.create!(lead: @instructor, follow: student, age: @age, level: @level)
+    end
+
+    heats = entries.map do |entry|
+      Heat.create!(number: 700, entry: entry, dance: @dance, category: 'Closed')
+    end
+
+    # Test with 4 ballrooms (setting value 6)
+    rooms = assign_rooms(6, heats, nil, state: state)
+
+    # Should have at least some distribution
+    assigned_rooms = rooms.keys.reject(&:nil?)
+    assert assigned_rooms.any?, "Should assign to ballrooms"
+
+    total = assigned_rooms.sum { |r| rooms[r].length }
+    assert_equal heats.length, total, "All heats should be assigned"
+  end
+
+  test "assign_rooms_rotating is deterministic" do
+    # Run the same assignment twice and verify identical results
+    entries = 4.times.map do |i|
+      student = Person.create!(name: "Deterministic Student #{i}", type: 'Student', studio: @studio, level: @level)
+      Entry.create!(lead: @instructor, follow: student, age: @age, level: @level)
+    end
+
+    heats = entries.map do |entry|
+      Heat.create!(number: 800, entry: entry, dance: @dance, category: 'Closed')
+    end
+
+    # First run
+    state1 = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+    rooms1 = assign_rooms(3, heats, nil, state: state1)
+    result1 = rooms1.transform_values { |h| h.map(&:id).sort }
+
+    # Second run with fresh state
+    state2 = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+    rooms2 = assign_rooms(3, heats, nil, state: state2)
+    result2 = rooms2.transform_values { |h| h.map(&:id).sort }
+
+    assert_equal result1, result2, "Results should be identical for same input"
+  end
+
+  test "assign_rooms backwards compatible with setting value 4" do
+    # Setting value 4 (old "assign by studio") should now use rotating logic
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    heat = Heat.create!(number: 901, entry: @entry, dance: @dance, category: 'Closed')
+
+    rooms = assign_rooms(4, [heat], nil, state: state)
+
+    # Should return a valid ballroom assignment
+    assert rooms.is_a?(Hash), "Should return hash"
+    total = rooms.values.flatten.length
+    assert_equal 1, total, "Heat should be assigned"
+  end
+
+  test "assign_rooms enforces per-ballroom cap" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    # Create 6 entries - with cap of 2 per ballroom (max_heat_size=6, 3 ballrooms)
+    # they should be distributed 2-2-2
+    entries = 6.times.map do |i|
+      student = Person.create!(name: "Cap Test Student #{i}", type: 'Student', studio: @studio, level: @level)
+      Entry.create!(lead: @instructor, follow: student, age: @age, level: @level)
+    end
+
+    heats = entries.map do |entry|
+      Heat.create!(number: 1000, entry: entry, dance: @dance, category: 'Closed')
+    end
+
+    # 3 ballrooms (setting 5), max_heat_size 6 = cap of 2 per ballroom
+    rooms = assign_rooms(5, heats, nil, state: state, max_heat_size: 6)
+
+    # No ballroom should exceed cap of 2
+    rooms.each do |room, room_heats|
+      next if room.nil?
+      assert room_heats.length <= 2, "Ballroom #{room} has #{room_heats.length} heats, exceeds cap of 2"
+    end
+
+    # All heats should be assigned
+    total = rooms.values.flatten.length
+    assert_equal 6, total, "All heats should be assigned"
+  end
+
+  test "assign_rooms cap allows heat-level override to bypass" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    # Create 3 entries, all with explicit ballroom A override
+    entries = 3.times.map do |i|
+      student = Person.create!(name: "Override Test Student #{i}", type: 'Student', studio: @studio, level: @level)
+      Entry.create!(lead: @instructor, follow: student, age: @age, level: @level)
+    end
+
+    heats = entries.map do |entry|
+      Heat.create!(number: 1001, entry: entry, dance: @dance, category: 'Closed', ballroom: 'A')
+    end
+
+    # 3 ballrooms, max_heat_size 3 = cap of 1 per ballroom
+    # But all heats have explicit override to A
+    rooms = assign_rooms(5, heats, nil, state: state, max_heat_size: 3)
+
+    # All 3 should be in A despite cap of 1, because override bypasses cap
+    assert_equal 3, rooms['A']&.length || 0, "All heats should be in A due to override"
+  end
+
+  test "assign_rooms cap redirects when person tracking would exceed cap" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    # Pre-assign a person to ballroom A
+    tracked_student = Person.create!(name: "Tracked Student", type: 'Student', studio: @studio, level: @level)
+    state[:person_ballroom][tracked_student.id] = 'A'
+
+    # Create entries - first one fills A to cap
+    filler_student = Person.create!(name: "Filler Student", type: 'Student', studio: @studio, level: @level)
+    filler_entry = Entry.create!(lead: @instructor, follow: filler_student, age: @age, level: @level)
+    filler_heat = Heat.create!(number: 1002, entry: filler_entry, dance: @dance, category: 'Closed')
+
+    # Now create entry with tracked student - should be redirected due to cap
+    tracked_entry = Entry.create!(lead: @instructor, follow: tracked_student, age: @age, level: @level)
+    tracked_heat = Heat.create!(number: 1002, entry: tracked_entry, dance: @dance, category: 'Closed')
+
+    # 2 ballrooms, max_heat_size 2 = cap of 1 per ballroom
+    rooms = assign_rooms(3, [filler_heat, tracked_heat], nil, state: state, max_heat_size: 2)
+
+    # Each ballroom should have at most 1
+    rooms.each do |room, room_heats|
+      next if room.nil?
+      assert room_heats.length <= 1, "Ballroom #{room} exceeds cap"
+    end
+  end
+
+  test "assign_rooms manual override does not affect state tracking" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    # Create a student with manual override to ballroom C
+    override_student = Person.create!(name: "Override Student", type: 'Student', studio: @studio, level: @level)
+    override_entry = Entry.create!(lead: @instructor, follow: override_student, age: @age, level: @level)
+    override_heat = Heat.create!(number: 1003, entry: override_entry, dance: @dance, category: 'Closed', ballroom: 'C')
+
+    # Process the heat with override
+    assign_rooms(5, [override_heat], nil, state: state)
+
+    # The student should NOT be tracked in state (override doesn't affect deterministic placement)
+    assert_nil state[:person_ballroom][override_student.id], "Manual override should not update person tracking state"
+    assert_nil state[:person_ballroom][@instructor.id], "Manual override should not update instructor tracking state"
+  end
+
+  test "assign_rooms automatic assignment does update state tracking" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    # Create a student without override
+    auto_student = Person.create!(name: "Auto Student", type: 'Student', studio: @studio, level: @level)
+    auto_entry = Entry.create!(lead: @instructor, follow: auto_student, age: @age, level: @level)
+    auto_heat = Heat.create!(number: 1005, entry: auto_entry, dance: @dance, category: 'Closed')
+
+    # Process the heat without override
+    rooms = assign_rooms(5, [auto_heat], nil, state: state)
+
+    # The student SHOULD be tracked in state for automatic assignments
+    assert_not_nil state[:person_ballroom][auto_student.id], "Automatic assignment should update person tracking state"
+  end
 end

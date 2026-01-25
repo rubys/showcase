@@ -17,6 +17,17 @@ class HeatsController < ApplicationController
     @include_times = true
     generate_agenda
 
+    # Build ballroom lookup from agenda for views
+    @ballroom_lookup = {}
+    @agenda.each do |_category, heats_by_number|
+      heats_by_number.each do |_number, rooms|
+        next unless rooms.is_a?(Hash)
+        rooms.each do |ballroom, heats|
+          heats.each { |heat| @ballroom_lookup[heat.id] = ballroom }
+        end
+      end
+    end
+
     @solos = Solo.includes(:heat).order('heats.number').
       map {|solo| solo.heat.number}
 

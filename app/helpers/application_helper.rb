@@ -172,4 +172,30 @@ module ApplicationHelper
     end
   end
 
+  # Returns the number of physical ballrooms based on the event's ballroom setting
+  def num_ballrooms(ballroom_setting = nil)
+    ballroom_setting ||= Event.current&.ballrooms || 1
+    case ballroom_setting
+    when 1 then 1
+    when 2, 3, 4 then 2  # split-by-role or rotating with 2 ballrooms
+    when 5 then 3        # rotating with 3 ballrooms
+    when 6 then 4        # rotating with 4 ballrooms
+    else 2
+    end
+  end
+
+  # Returns ballroom letter options based on the event's ballroom setting
+  # For use in select dropdowns
+  def ballroom_options(include_both: false)
+    count = [num_ballrooms, Category.maximum(:ballrooms).to_i].max
+    count = num_ballrooms(count) if count > 4  # handle category-level overrides
+    letters = ('A'..'Z').first(count)
+    return letters unless include_both
+
+    # Display "All" instead of "Both" when there are more than 2 ballrooms
+    # but keep internal value as "Both" for backwards compatibility
+    display_text = count > 2 ? 'All' : 'Both'
+    [[display_text, 'Both']] + letters
+  end
+
 end

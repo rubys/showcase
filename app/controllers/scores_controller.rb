@@ -2369,7 +2369,19 @@ class ScoresController < ApplicationController
       end
 
       ballrooms_count = subjects.first&.dance_category&.ballrooms || event.ballrooms
-      ballrooms = assign_rooms(ballrooms_count, subjects, number, preserve_order: show != 'mixed')
+
+      # For rotating ballrooms (3+ physical ballrooms), if heats don't have persisted
+      # ballrooms, we need to generate the full agenda to get correct assignments
+      uses_rotating = ballrooms_count >= 3
+      needs_full_agenda = uses_rotating && subjects.any? { |h| h.ballroom.blank? }
+
+      if needs_full_agenda
+        # Generate full agenda to compute ballrooms with proper state tracking
+        generate_agenda unless @agenda
+        ballrooms = lookup_ballrooms_from_agenda(subjects)
+      else
+        ballrooms = assign_rooms(ballrooms_count, subjects, number, preserve_order: show != 'mixed')
+      end
 
       if sort_order == 'level'
         ballrooms.each do |ballroom, ballroom_subjects|
@@ -2382,6 +2394,29 @@ class ScoresController < ApplicationController
       end
 
       [ballrooms_count, ballrooms]
+    end
+
+    # Look up ballroom assignments from pre-generated agenda
+    def lookup_ballrooms_from_agenda(subjects)
+      subject_ids = subjects.map(&:id).to_set
+      result = Hash.new { |h, k| h[k] = [] }
+
+      @agenda.each do |_category, heats_by_number|
+        heats_by_number.each do |_number, rooms|
+          next unless rooms.is_a?(Hash)
+
+          rooms.each do |ballroom, heats|
+            heats.each do |heat|
+              if subject_ids.include?(heat.id)
+                result[ballroom] << subjects.find { |s| s.id == heat.id }
+              end
+            end
+          end
+        end
+      end
+
+      # Sort by ballroom letter (nil sorts first)
+      result.sort_by { |k, _| k.to_s }.to_h
     end
 
     # Validate feedback configuration for duplicate/empty abbreviations
