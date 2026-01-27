@@ -460,13 +460,11 @@ class SolosController < ApplicationController
         # Update heat number if this solo was scheduled
         if new_heat_number[new_order]
           solo.heat.number = new_heat_number[new_order]
-          solo.heat.save!
+          solo.heat.save! validate: false
         end
 
         solo.save! validate: false
       end
-
-      raise ActiveRecord::Rollback unless order.all? {|solo| solo.valid?}
     end
 
     respond_to do |format|
@@ -508,140 +506,63 @@ class SolosController < ApplicationController
 
       # Process each group separately with the gap optimization algorithm
       groups.each do |solos|
-      # Build participants hash with ALL people in each solo (lead, follow, formations)
-      # Exclude Nobody (person 0) who is a placeholder for studio formations
-      participants = {}
-      solos.each do |solo|
+      # Shuffle-and-swap optimization algorithm
+      # Start with a random order, then iteratively swap pairs to improve min gap
+      schedule = solos.shuffle
+
+      # Precompute people for each solo (excluding Nobody)
+      solo_people = {}
+      schedule.each do |solo|
         entry = solo.heat.entry
         people = [entry.lead, entry.follow] + solo.formations.map(&:person)
-        people.reject! { |person| person.id == 0 }  # Exclude Nobody
-
-        people.each do |person|
-          participants[person] ||= []
-          participants[person] << solo
-        end
+        solo_people[solo] = people.reject { |p| p.id == 0 }
       end
 
-      # Calculate minimum gap for a given ordering
-      calculate_min_gap = ->(ordering) {
-        min_gap = Float::INFINITY
-        last_positions = {}
+      # Calculate the sum of inverse gaps (lower is better) and minimum gap
+      evaluate = ->(ordering) {
+        last_pos = {}
+        min_gap = ordering.length
+        total_penalty = 0.0
 
-        ordering.each_with_index do |solo, position|
-          entry = solo.heat.entry
-          people = [entry.lead, entry.follow] + solo.formations.map(&:person)
-          people.reject! { |person| person.id == 0 }  # Exclude Nobody
-
-          people.each do |person|
-            if last_positions[person]
-              gap = position - last_positions[person]
+        ordering.each_with_index do |solo, pos|
+          solo_people[solo].each do |person|
+            if last_pos[person]
+              gap = pos - last_pos[person]
               min_gap = gap if gap < min_gap
+              total_penalty += 1.0 / gap
             end
-            last_positions[person] = position
+            last_pos[person] = pos
           end
         end
 
-        min_gap == Float::INFINITY ? solos.length : min_gap
+        [min_gap, total_penalty]
       }
 
-      # Round-robin slot distribution algorithm
-      # Place high-frequency performers first, distributing evenly across slots
+      current_min_gap, current_penalty = evaluate.call(schedule)
 
-      # Create empty schedule slots
-      schedule = Array.new(solos.length, nil)
-      placed_solos = Set.new
+      # Run swap iterations: try random swaps, keep improvements
+      # More iterations for larger lists
+      iterations = solos.length * solos.length * 3
+      iterations.times do
+        i = rand(schedule.length)
+        j = rand(schedule.length)
+        next if i == j
 
-      # Track ALL positions of each person for conflict checking
-      person_positions = Hash.new { |h, k| h[k] = [] }
+        schedule[i], schedule[j] = schedule[j], schedule[i]
+        new_min_gap, new_penalty = evaluate.call(schedule)
 
-      # Sort people by number of appearances (descending), shuffle to randomize ties
-      sorted_people = participants.sort_by { |person, person_solos|
-        [-person_solos.length, rand]
-      }.map(&:first)
-
-      # Process each person in order
-      sorted_people.each do |person|
-        person_solos = participants[person].reject { |solo| placed_solos.include?(solo) }
-        next if person_solos.empty?
-
-        # Calculate ideal spacing for this person's solos
-        count = person_solos.length
-        spacing = solos.length.to_f / count
-
-        # Find available slots, trying to space evenly
-        target_positions = count.times.map { |i| (i * spacing).round }
-
-        # For each of this person's solos, find the best available slot
-        person_solos.each_with_index do |solo, idx|
-          target = target_positions[idx]
-
-          # Find nearest available slot to target
-          best_slot = nil
-          best_score = -Float::INFINITY
-
-          schedule.each_with_index do |slot_solo, slot_idx|
-            next if slot_solo  # Slot already filled
-
-            # Check if placing this solo here would conflict with other people in it
-            entry = solo.heat.entry
-            people_in_solo = [entry.lead, entry.follow] + solo.formations.map(&:person)
-            people_in_solo.reject! { |p| p.id == 0 }
-
-            # Check for conflicts (other people in this solo already placed nearby)
-            conflict = false
-            min_gap = Float::INFINITY
-
-            people_in_solo.each do |other_person|
-              # Check all existing positions for this person
-              person_positions[other_person].each do |pos|
-                gap = (slot_idx - pos).abs
-                min_gap = gap if gap < min_gap
-
-                # Hard conflict: too close to any appearance
-                if gap < 2
-                  conflict = true
-                  break
-                end
-              end
-              break if conflict
-            end
-
-            next if conflict
-
-            # Calculate score: prioritize min gap, then distance from target
-            distance = (slot_idx - target).abs
-            score = min_gap * 1000 - distance
-
-            if score > best_score
-              best_score = score
-              best_slot = slot_idx
-            end
-          end
-
-          # Place the solo in the best available slot
-          if best_slot
-            schedule[best_slot] = solo
-            placed_solos.add(solo)
-
-            # Update positions for all people in this solo
-            entry = solo.heat.entry
-            people_in_solo = [entry.lead, entry.follow] + solo.formations.map(&:person)
-            people_in_solo.reject! { |p| p.id == 0 }
-            people_in_solo.each { |p| person_positions[p] << best_slot }
-          end
+        # Keep swap if it improves min gap, or same min gap with lower penalty
+        if new_min_gap > current_min_gap ||
+           (new_min_gap == current_min_gap && new_penalty < current_penalty)
+          current_min_gap = new_min_gap
+          current_penalty = new_penalty
+        else
+          # Revert swap
+          schedule[i], schedule[j] = schedule[j], schedule[i]
         end
       end
 
-      # Fill any remaining empty slots with unplaced solos
-      remaining_solos = solos.reject { |solo| placed_solos.include?(solo) }
-      schedule.each_with_index do |slot_solo, idx|
-        if slot_solo.nil? && remaining_solos.any?
-          schedule[idx] = remaining_solos.shift
-        end
-      end
-
-      # Remove any nils and add to order
-      order += schedule.compact
+      order += schedule
       end # groups.each
     end # solos.each
 
@@ -654,13 +575,11 @@ class SolosController < ApplicationController
         # Update heat number if this solo was scheduled
         if new_heat_number[new_order]
           solo.heat.number = new_heat_number[new_order]
-          solo.heat.save!
+          solo.heat.save! validate: false
         end
 
         solo.save! validate: false
       end
-
-      raise ActiveRecord::Rollback unless order.all? {|solo| solo.valid?}
     end
 
     respond_to do |format|
