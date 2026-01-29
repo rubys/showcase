@@ -491,7 +491,7 @@ class EntriesController < ApplicationController
       event = Event.current
 
       dances = Dance.ordered.where(heat_length: nil)
-      multis = Dance.ordered.where.not(heat_length: nil)
+      multis = Dance.ordered.where.not(heat_length: nil).where(order: 1..)
 
       @include_open = event.include_open
       @include_closed = event.include_closed
@@ -538,16 +538,12 @@ class EntriesController < ApplicationController
           next if cat.pro ^ pro
 
           # Collect all non-empty dance types for this category
+          # Filter to only canonical dances (positive order), not split dances
           category_dances = []
           dance_ids.each do |id, name|
-            dances = cat.send(id).ordered
+            dances = cat.send(id).where(order: 1..).ordered
 
             if dances.length > 0
-              if dances.first.order < 0
-                reorder ||= Dance.where(order: 0...).pluck(:name, :order).to_h
-                dances = dances.sort_by {|dance| reorder[dance.name] || dance.order}
-              end
-
               category_dances << { dances: dances, category: name }
             end
           end
@@ -669,9 +665,8 @@ class EntriesController < ApplicationController
                   multi_levels = MultiLevel.where(dance: all_dances).order(:start_level).to_a
 
                   if multi_levels.any?
-                    # Find the appropriate dance for this entry's level
-                    entry_level = @entry.level_id
-                    multi_level = multi_levels.find { |ml| entry_level >= ml.start_level && entry_level <= ml.stop_level }
+                    # Find the appropriate dance for this entry's level and couple type
+                    multi_level = multi_levels.find { |ml| entry_matches_multi_level?(@entry, ml) }
                     actual_dance = multi_level.dance if multi_level
                   end
                 end
