@@ -1095,6 +1095,132 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", text: /No couples on the floor/, count: 0
   end
 
+  # ===== SPLIT ELIGIBILITY TESTS =====
+  # These tests verify that scrutineering is only used when all splits
+  # in a heat are "complete" (all entries for each dance_id are in one heat)
+
+  test "scrutineering used when all entries for dance_id in single heat" do
+    # Create a scrutineering dance where all entries fit in one heat
+    dance = Dance.create!(
+      name: 'Complete Split Dance',
+      semi_finals: true,
+      heat_length: 2,
+      order: 1050
+    )
+
+    # Create 3 entries all in the same heat
+    entries = 3.times.map do |i|
+      student = Person.create!(name: "Complete Split Student #{i}", type: 'Student', studio: studios(:one), level: @level)
+      Entry.create!(lead: @instructor, follow: student, age: @age, level: @level)
+    end
+
+    heats = entries.map do |entry|
+      Heat.create!(number: 500, entry: entry, dance: dance, category: 'Multi')
+    end
+
+    get judge_heat_path(@judge, 500)
+    assert_response :success
+
+    # Should use scrutineering - check for callback UI elements or ranking
+    # With 3 entries (≤8), should go straight to finals/ranking
+    assert_select 'tr[draggable="true"]', minimum: 1,
+      message: "Expected draggable rows for ranking when scrutineering is active"
+  end
+
+  test "scrutineering fallback when entries span multiple heats" do
+    # Create a scrutineering dance where entries are split across heats
+    dance = Dance.create!(
+      name: 'Incomplete Split Dance',
+      semi_finals: true,
+      heat_length: 2,
+      order: 1051
+    )
+
+    # Create entries in different heats (simulating instructor conflict)
+    student1 = Person.create!(name: "Incomplete Student 1", type: 'Student', studio: studios(:one), level: @level)
+    student2 = Person.create!(name: "Incomplete Student 2", type: 'Student', studio: studios(:one), level: @level)
+
+    entry1 = Entry.create!(lead: @instructor, follow: student1, age: @age, level: @level)
+    entry2 = Entry.create!(lead: @instructor, follow: student2, age: @age, level: @level)
+
+    # Put entries in different heats (incomplete split)
+    Heat.create!(number: 501, entry: entry1, dance: dance, category: 'Multi')
+    Heat.create!(number: 502, entry: entry2, dance: dance, category: 'Multi')
+
+    get judge_heat_path(@judge, 501)
+    assert_response :success
+
+    # Should NOT use scrutineering - should fall back to regular scoring
+    # Check that we don't have ranking UI (no draggable rows)
+    assert_select 'tr[draggable="true"]', count: 0,
+      message: "Should not have draggable rows when split is incomplete"
+  end
+
+  test "multi-split heat uses scrutineering when all splits complete" do
+    # Create a category for the multi-dances
+    multi_category = Category.create!(name: 'Multi Split Test Category', order: 1060)
+
+    # Create two different splits that both fit in one heat
+    dance1 = Dance.create!(
+      name: 'Multi Split Dance A',
+      semi_finals: true,
+      heat_length: 2,
+      order: -1052,  # Negative order = split dance
+      multi_category: multi_category
+    )
+    dance2 = Dance.create!(
+      name: 'Multi Split Dance B',
+      semi_finals: true,
+      heat_length: 2,
+      order: -1053,
+      multi_category: multi_category
+    )
+
+    # Create entries for both splits, all in same heat
+    student1 = Person.create!(name: "Multi Split Student 1", type: 'Student', studio: studios(:one), level: @level)
+    student2 = Person.create!(name: "Multi Split Student 2", type: 'Student', studio: studios(:one), level: @level)
+
+    entry1 = Entry.create!(lead: @instructor, follow: student1, age: @age, level: @level)
+    entry2 = Entry.create!(lead: people(:instructor2), follow: student2, age: @age, level: @level)
+
+    Heat.create!(number: 503, entry: entry1, dance: dance1, category: 'Multi')
+    Heat.create!(number: 503, entry: entry2, dance: dance2, category: 'Multi')
+
+    get judge_heat_path(@judge, 503)
+    assert_response :success
+
+    # Both splits complete - should use scrutineering with packed splits view
+    assert_select 'tr[draggable="true"]', minimum: 1,
+      message: "Expected draggable rows for multi-split scrutineering"
+  end
+
+  test "all_splits_complete helper returns true for complete split" do
+    dance = Dance.create!(name: 'Helper Test Complete', semi_finals: true, order: 1054)
+    student = Person.create!(name: "Helper Test Student", type: 'Student', studio: studios(:one), level: @level)
+    entry = Entry.create!(lead: @instructor, follow: student, age: @age, level: @level)
+    heat = Heat.create!(number: 504, entry: entry, dance: dance, category: 'Multi')
+
+    # Use send to call private method
+    controller = ScoresController.new
+    result = controller.send(:all_splits_complete?, [heat], 504)
+    assert result, "all_splits_complete? should return true when all entries in one heat"
+  end
+
+  test "all_splits_complete helper returns false for incomplete split" do
+    dance = Dance.create!(name: 'Helper Test Incomplete', semi_finals: true, order: 1055)
+    student1 = Person.create!(name: "Helper Student 1", type: 'Student', studio: studios(:one), level: @level)
+    student2 = Person.create!(name: "Helper Student 2", type: 'Student', studio: studios(:one), level: @level)
+    entry1 = Entry.create!(lead: @instructor, follow: student1, age: @age, level: @level)
+    entry2 = Entry.create!(lead: @instructor, follow: student2, age: @age, level: @level)
+
+    heat1 = Heat.create!(number: 505, entry: entry1, dance: dance, category: 'Multi')
+    Heat.create!(number: 506, entry: entry2, dance: dance, category: 'Multi')  # Different heat!
+
+    controller = ScoresController.new
+    result = controller.send(:all_splits_complete?, [heat1], 505)
+    assert_not result, "all_splits_complete? should return false when entries span multiple heats"
+  end
+
   # ===== JUDGE HEAT INTERFACE SCRUTINEERING TESTS =====
   # These tests specifically target the judge heat scoring interface
   # for semi-finals dances, addressing gaps that allowed the bug where

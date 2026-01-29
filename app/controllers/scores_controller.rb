@@ -628,8 +628,9 @@ class ScoresController < ApplicationController
 
     slots = @slot
 
-    # Only apply scrutineering logic for Multi category heats
-    if @heat.category == 'Multi' && @heat.dance.uses_scrutineering?
+    # Only apply scrutineering logic for Multi category heats where all splits are complete
+    # (all entries for each dance_id in this heat are contained within this single heat)
+    if @heat.category == 'Multi' && @heat.dance.uses_scrutineering? && all_splits_complete?(@subjects, @number)
       @style = 'radio' if params[:style].blank?
 
       # For multi-dance events, we need to check the parent dance's heat_length
@@ -1976,6 +1977,16 @@ class ScoresController < ApplicationController
   end
 
   private
+    # Check if all splits (dance_ids) in this heat are complete
+    # (i.e., all entries for each dance_id are contained within this single heat)
+    def all_splits_complete?(subjects, heat_number)
+      dance_ids = subjects.map(&:dance_id).uniq
+      dance_ids.all? do |dance_id|
+        heat_numbers = Heat.where(dance_id: dance_id).where('number > 0').pluck(:number).uniq
+        heat_numbers == [heat_number]
+      end
+    end
+
     # Setup instance variables for heatlist view (shared by heatlist and spa actions)
     def setup_heatlist_data
       event = Event.current

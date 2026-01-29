@@ -94,8 +94,8 @@ module HeatScheduler
         order,
         category,
         availability,
-        heat.dance.semi_finals ? 1 : heat.entry.level_id,
-        heat.dance.semi_finals ? 1 : heat.entry.age_id,
+        heat.entry.level_id,
+        heat.entry.age_id,
         heat
       ]
     }
@@ -356,7 +356,6 @@ module HeatScheduler
   end
 
   def rebalance(assignments, subgroups, max)
-    return if subgroups.first.dance&.semi_finals
     return if max <= 0
     while subgroups.length * max < assignments.length
       subgroups.unshift Group.new
@@ -776,7 +775,6 @@ module HeatScheduler
       @@level = @@event.heat_range_level
       @@age = @@event.heat_range_age
       @@max = @@event.max_heat_size || 9999
-      @@skating = Dance.where(semi_finals: true).pluck(:id)
 
       # only combine open/closed dances if the category is the same
       if @@category == 0
@@ -905,14 +903,12 @@ module HeatScheduler
         @agenda_category = heat.base_dance_category
       end
 
-      unless @@skating.include? heat.dance_id
-        return if @group.size >= @@max
-        # Skip participant checks for Nobody (id=0) - allows multiple partnerless entries
-        return if heat.lead.id != 0 && @participants.include?(heat.lead)
-        return if heat.follow.id != 0 && @participants.include?(heat.follow)
-        return if heat.lead.exclude_id and @participants.include? heat.lead.exclude
-        return if heat.follow.exclude_id and @participants.include? heat.follow.exclude
-      end
+      return if @group.size >= @@max
+      # Skip participant checks for Nobody (id=0) - allows multiple partnerless entries
+      return if heat.lead.id != 0 && @participants.include?(heat.lead)
+      return if heat.follow.id != 0 && @participants.include?(heat.follow)
+      return if heat.lead.exclude_id and @participants.include? heat.lead.exclude
+      return if heat.follow.exclude_id and @participants.include? heat.follow.exclude
 
       formations = heat.solo&.formations&.map(&:person)
       return if formations and @participants.any? {|participant| formations.include? participant}
