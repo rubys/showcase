@@ -508,6 +508,20 @@ class HeatsController < ApplicationController
     @heat.entry = replace
     @heat.number = 0
 
+    # Reassign to correct split dance for multi-dances based on entry's level and couple type
+    dance = @heat.dance
+    if dance.multi_children.any?
+      all_dances = Dance.where(name: dance.name)
+      multi_levels = MultiLevel.where(dance: all_dances).to_a
+      if multi_levels.any?
+        multi_level = multi_levels.find { |ml| entry_matches_multi_level?(replace, ml) }
+        if multi_level
+          @heat.dance_id = multi_level.dance_id
+          params[:heat][:dance_id] = multi_level.dance_id
+        end
+      end
+    end
+
     if Event.current.agenda_based_entries? and params[:heat][:number].to_i != 0
       heat = Heat.find_by(number: params[:heat][:number].to_i)
       category = heat&.dance_category
