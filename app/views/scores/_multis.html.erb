@@ -11,13 +11,14 @@
     <% next if entries.empty? %>
     <% empty = false %>
     <% split_name = @split_names[dance.id] %>
+    <% scrutineering = @scrutineering_eligible[dance.id] %>
     <a href="details/multis#<%= dance.name.gsub(/\W+/, '-') %><%= "-#{split_name.gsub(/\W+/, '-')}" if split_name %>">
-    <h2 class="font-bold pt-4 text-2xl pb-5"><% if dance.heats.where.not(number: ..0).distinct.pluck(:number).count == 1 %>Heat <%= dance.heats.first.number %>: <% end %><%= dance.name %><% if split_name %> (<%= split_name %>)<% end %><% if dance.semi_finals? %> - Scrutineering<% end %></h2>
+    <h2 class="font-bold pt-4 text-2xl pb-5"><% if dance.heats.where.not(number: ..0).distinct.pluck(:number).count == 1 %>Heat <%= dance.heats.first.number %>: <% end %><%= dance.name %><% if split_name %> (<%= split_name %>)<% end %><% if scrutineering %> - Scrutineering<% end %></h2>
     </a>
     <table class="mb-8">
       <thead>
         <tr>
-        <% if dance.semi_finals? %>
+        <% if scrutineering %>
         <th class="row-head">Rank
         <% else %>
         <th class="row-head">Points
@@ -31,7 +32,7 @@
         <% end %>
         </tr>
       </thead>
-      <% if dance.semi_finals? %>
+      <% if scrutineering %>
         <%# Sort by rank for scrutineering - show all called back couples %>
         <% results = entries.sort_by {|entry, results| results['rank'] || 999} %>
         <% results.each do |entry, results| %>

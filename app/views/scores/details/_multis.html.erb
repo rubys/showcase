@@ -11,17 +11,18 @@
     <% next if entries.empty? %>
     <% empty = false %>
     <% split_name = @split_names[dance.id] %>
+    <% scrutineering = @scrutineering_eligible[dance.id] %>
     <div class="flex justify-between items-center pt-4 pb-5">
       <h2 class="font-bold text-2xl" id="<%= dance.name.gsub(/\W+/, '-') %><%= "-#{split_name.gsub(/\W+/, '-')}" if split_name %>">
-        <% if dance.heats.where.not(number: ..0).distinct.pluck(:number).count == 1 %>Heat <%= dance.heats.first.number %>: <% end %><%= dance.name %><% if split_name %> (<%= split_name %>)<% end %><% if dance.semi_finals? %> - Scrutineering<% end %>
+        <% if dance.heats.where.not(number: ..0).distinct.pluck(:number).count == 1 %>Heat <%= dance.heats.first.number %>: <% end %><%= dance.name %><% if split_name %> (<%= split_name %>)<% end %><% if scrutineering %> - Scrutineering<% end %>
       </h2>
-      <% if dance.semi_finals? %>
-        <%= link_to "Calculations", skating_calculations_path(dance.id), 
+      <% if scrutineering %>
+        <%= link_to "Calculations", skating_calculations_path(dance.id),
             class: "inline-flex items-center px-3 py-2 border border-purple-300 shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-purple-500 hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500" %>
       <% end %>
     </div>
-    
-    <% if dance.semi_finals? %>
+
+    <% if scrutineering %>
       <!-- Scrutineering Results Table -->
       <table class="mb-8">
         <thead>

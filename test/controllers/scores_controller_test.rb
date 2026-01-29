@@ -1058,7 +1058,8 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
       )
       entry = Entry.create!(lead: instructor, follow: student, age: @age, level: @level)
       entries << entry
-      heat = Heat.create!(number: 300 + i/10.0, entry: entry, dance: dance, category: 'Multi')
+      # All entries must be in the same heat number for scrutineering eligibility
+      heat = Heat.create!(number: 300, entry: entry, dance: dance, category: 'Multi')
       heats << heat
     end
     

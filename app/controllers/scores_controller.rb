@@ -1625,6 +1625,7 @@ class ScoresController < ApplicationController
     @scores = {}
     @scrutineering_results = {}
     @split_names = {}
+    @scrutineering_eligible = {}
 
     canonical_dances.each do |canonical_dance|
       # Find all splits for this dance (including itself)
@@ -1641,8 +1642,14 @@ class ScoresController < ApplicationController
         ml = MultiLevel.find_by(dance_id: dance.id)
         @split_names[dance.id] = ml&.name
 
+        # Check if this dance is scrutineering-eligible:
+        # 1. Must have semi_finals enabled
+        # 2. All entries must be in a single heat (split is "complete")
+        heat_numbers = dance.heats.where.not(number: ..0).pluck(:number).uniq
+        @scrutineering_eligible[dance.id] = dance.semi_finals? && heat_numbers.length == 1
+
         # Check if this dance uses semi-finals
-        if dance.semi_finals?
+        if @scrutineering_eligible[dance.id]
           # Check if there are any scores for this dance
           total_scores = dance.heats.joins(:scores).count
 
