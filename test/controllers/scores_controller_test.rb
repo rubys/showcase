@@ -2697,6 +2697,83 @@ class ScoresControllerTest < ActionDispatch::IntegrationTest
     assert_equal [1], split2_scores.map { |s| s.value.to_i }
   end
 
+  test "packed splits with 8 or fewer entries per split skip callbacks and go directly to finals" do
+    studio = studios(:one)
+
+    # Create a multi category
+    multi_cat = Category.create!(name: 'Small Packed Split Category', order: 8050)
+
+    # Create parent multi-dance with semi_finals enabled
+    parent_dance = Dance.create!(
+      name: 'Small Packed 3-Dance',
+      semi_finals: true,
+      heat_length: 4,  # 4 semi-final slots before finals
+      order: 8050,
+      multi_category: multi_cat
+    )
+
+    # Create split dances (same name, different dance_ids)
+    split1 = Dance.create!(name: 'Small Packed 3-Dance', order: -1, multi_category: multi_cat)
+    split2 = Dance.create!(name: 'Small Packed 3-Dance', order: -2, multi_category: multi_cat)
+
+    # Create multi_levels for each split
+    MultiLevel.create!(dance: parent_dance, name: 'Newcomer', start_level: 1, stop_level: 1)
+    MultiLevel.create!(dance: split1, name: 'Bronze', start_level: 2, stop_level: 2)
+    MultiLevel.create!(dance: split2, name: 'Silver', start_level: 3, stop_level: 3)
+
+    max_back = Person.maximum(:back) || 0
+
+    # Create 3 entries for parent_dance (Newcomer) - ≤8
+    3.times do |i|
+      student = Person.create!(name: "Small Newcomer Student #{i}", studio: studio, type: 'Student', level: @level)
+      instructor = Person.create!(name: "Small Newcomer Instructor #{i}", studio: studio, type: 'Professional', back: max_back + 400 + i)
+      entry = Entry.create!(lead: student, follow: instructor, age: @age, level: @level)
+      Heat.create!(number: 201, dance: parent_dance, entry: entry, category: 'Multi')
+    end
+
+    # Create 4 entries for split1 (Bronze) - ≤8
+    4.times do |i|
+      student = Person.create!(name: "Small Bronze Student #{i}", studio: studio, type: 'Student', level: @level)
+      instructor = Person.create!(name: "Small Bronze Instructor #{i}", studio: studio, type: 'Professional', back: max_back + 500 + i)
+      entry = Entry.create!(lead: student, follow: instructor, age: @age, level: @level)
+      Heat.create!(number: 201, dance: split1, entry: entry, category: 'Multi')
+    end
+
+    # Create 2 entries for split2 (Silver) - ≤8
+    2.times do |i|
+      student = Person.create!(name: "Small Silver Student #{i}", studio: studio, type: 'Student', level: @level)
+      instructor = Person.create!(name: "Small Silver Instructor #{i}", studio: studio, type: 'Professional', back: max_back + 600 + i)
+      entry = Entry.create!(lead: student, follow: instructor, age: @age, level: @level)
+      Heat.create!(number: 201, dance: split2, entry: entry, category: 'Multi')
+    end
+
+    # Total: 9 entries across 3 splits, but each split has ≤8
+    # Slot 1 should show finals (draggable rows), not callbacks (checkboxes)
+    get judge_heat_path(@judge, 201, slot: 1)
+
+    assert_response :success
+
+    # Should show split headers (indicates finals view with per-split rankings)
+    assert_select 'h3', text: 'Newcomer'
+    assert_select 'h3', text: 'Bronze'
+    assert_select 'h3', text: 'Silver'
+
+    # Should have draggable rows (finals) not checkboxes (callbacks)
+    assert_select 'tr.cursor-move', minimum: 9, message: "Should show draggable rows for all 9 entries in finals"
+    assert_select 'input[type=checkbox]', count: 0, message: "Should not show callback checkboxes when each split has ≤8"
+
+    # Verify scores were created with per-split rankings
+    heats = Heat.where(number: 201)
+    parent_scores = Score.where(judge: @judge, heat: heats.where(dance: parent_dance), slot: 1)
+    split1_scores = Score.where(judge: @judge, heat: heats.where(dance: split1), slot: 1)
+    split2_scores = Score.where(judge: @judge, heat: heats.where(dance: split2), slot: 1)
+
+    # Each split should have independent rankings starting from 1
+    assert_equal [1, 2, 3].sort, parent_scores.map { |s| s.value.to_i }.sort
+    assert_equal [1, 2, 3, 4].sort, split1_scores.map { |s| s.value.to_i }.sort
+    assert_equal [1, 2].sort, split2_scores.map { |s| s.value.to_i }.sort
+  end
+
   test "update_rank prevents reordering across different splits" do
     studio = studios(:one)
 

@@ -640,7 +640,16 @@ class ScoresController < ApplicationController
       # Set default slot if not already set (for multi-dance child heats)
       @slot ||= 1 if heat_length && heat_length > 0
 
-      @final = (@slot || 0) > heat_length || @subjects.length <= 8
+      # For packed splits, check if ALL splits have ≤8 entries (each goes to finals)
+      # For single splits, check total count
+      dance_ids = @subjects.map(&:dance_id).uniq
+      if dance_ids.length > 1
+        # Packed splits: final if largest split has ≤8
+        max_split_size = @subjects.group_by(&:dance_id).values.map(&:length).max
+        @final = (@slot || 0) > heat_length || max_split_size <= 8
+      else
+        @final = (@slot || 0) > heat_length || @subjects.length <= 8
+      end
 
       if @final
         # sort subjects by score
@@ -2276,18 +2285,38 @@ class ScoresController < ApplicationController
       parent_dance = @heat.dance.multi_dances.first&.parent || @heat.dance
       heat_length = parent_dance.heat_length
 
-      # select callbacks for finals using shared logic
-      called_back = determine_callbacks(@number, @subjects, ..heat_length)
-      @subjects.select! {|heat| called_back.include? heat.entry_id}
-
       # Check if this is a packed multi-dance heat (multiple dance_ids in same heat number)
+      # Must check BEFORE callback filtering since packed splits need per-split handling
       dance_ids = @subjects.map(&:dance_id).uniq
       @packed_splits = dance_ids.length > 1 && @subjects.first&.category == 'Multi'
 
       if @packed_splits
+        # For packed splits, check if each split has ≤8 entries (direct to finals)
+        splits = @subjects.group_by(&:dance_id)
+        max_split_size = splits.values.map(&:length).max
+
+        if max_split_size <= 8
+          # All splits have ≤8 entries - skip callback filtering, go directly to finals
+          # No semi-finals were needed, so no callbacks exist
+        else
+          # Some splits have >8 - apply callback filtering per-split
+          splits.each do |dance_id, split_subjects|
+            if split_subjects.length > 8
+              called_back = determine_callbacks(@number, split_subjects, ..heat_length)
+              @subjects.select! do |heat|
+                heat.dance_id != dance_id || called_back.include?(heat.entry_id)
+              end
+            end
+          end
+        end
+
         # For packed heats, score each split separately
         final_scores_by_split
       else
+        # select callbacks for finals using shared logic
+        called_back = determine_callbacks(@number, @subjects, ..heat_length)
+        @subjects.select! {|heat| called_back.include? heat.entry_id}
+
         # Original logic for non-packed heats
         final_scores_single
       end
