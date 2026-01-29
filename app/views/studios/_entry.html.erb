@@ -59,10 +59,10 @@
        cost_category = heat.dance_category.name if heat.dance_category&.cost_override
        cost_category = heat.dance.name if heat.dance.cost_override
 
-       # Use professional costs for: instructor invoices OR pro-pro solos
+       # Use professional costs for: instructor invoices OR pro-pro entries
        if @instructor && !@student
          cost = @pcost[cost_category] || 0
-       elsif is_pro_pro and category == 'Solo'
+       elsif is_pro_pro
          cost = @pcost[cost_category] || 0
        else
          cost = @cost[cost_category] || 0

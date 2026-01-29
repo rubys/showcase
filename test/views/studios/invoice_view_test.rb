@@ -289,6 +289,46 @@ class StudiosInvoiceViewTest < ActionView::TestCase
     assert_match "100", rendered
   end
 
+  test "entry partial uses pro_multi_cost for pro-pro multi-dance entries" do
+    pro1 = create_professional(@studio, "Pro One")
+    pro2 = create_professional(@studio, "Pro Two")
+
+    # Set up pricing: multi_cost=$75, pro_multi_cost=$0
+    @cost['Multi'] = 75.0
+    @pcost['Multi'] = 0.0
+
+    order = (Category.maximum(:order) || 0) + rand(1000) + 1
+    category = Category.create!(name: "Pro Multi Cat #{SecureRandom.hex(4)}", order: order)
+    dance = Dance.create!(
+      name: "Pro Multi Dance #{SecureRandom.hex(4)}",
+      pro_multi_category: category,
+      order: order,
+      heat_length: 3  # marks it as a multi-dance
+    )
+
+    entry = Entry.create!(lead: pro1, follow: pro2, age: @age, level: @level)
+    Heat.create!(entry: entry, dance: dance, number: Heat.maximum(:number).to_i + 1, category: 'Multi')
+
+    @student = false
+    @instructor = nil
+
+    rendered = render partial: 'studios/entry', locals: {
+      names: [pro1, pro2],
+      entries: [entry],
+      studio: @studio.name,
+      invoice: :studio,
+      partner: nil
+    }
+
+    # Should use @pcost['Multi'] = $0, not @cost['Multi'] = $75
+    assert_match ">1<", rendered, "Should show 1 multi-dance entry"
+    # The cost should be $0 (pro rate), not $75 (regular rate)
+    # Check that 75.00 doesn't appear as a price (avoid matching random hex in names)
+    assert_no_match ">75.00<", rendered, "Pro-pro multi should NOT use regular multi_cost ($75)"
+    # Line item cost should be 0.00
+    assert_match ">0.00<", rendered, "Pro-pro multi cost should be $0"
+  end
+
   private
 
   def create_professional(studio, name = nil)
