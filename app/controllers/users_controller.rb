@@ -8,6 +8,7 @@ class UsersController < ApplicationController
   before_action :get_authentication, except: %i[ password_verify ]
   before_action :authenticate_index, except: %i[ password_reset password_verify ]
   before_action :set_user, only: %i[ show edit auth update destroy ]
+  before_action :setup_form, only: %i[ new edit auth ]
   before_action :admin_home
 
   # GET /users or /users.json
@@ -21,19 +22,14 @@ class UsersController < ApplicationController
 
   # GET /users/new
   def new
-    @user ||= User.new
-    @admin = @@encryptor.encrypt_and_sign(dom_id(@user))
-    load_studios(@user.sites.to_s.split(','), @user.userid)
   end
 
   # GET /users/1/edit
   def edit
-    new
   end
 
   # GET /users/1/auth
   def auth
-    edit
     @auth = true
     render :edit
   end
@@ -255,6 +251,12 @@ class UsersController < ApplicationController
       unless request.local? or User.index_auth?(@authuser)
         request_http_basic_authentication "Showcase" unless request.local?
       end
+    end
+
+    def setup_form
+      @user ||= User.new
+      @admin = @@encryptor.encrypt_and_sign(dom_id(@user))
+      load_studios(@user.sites.to_s.split(','), @user.userid)
     end
 
     def set_password

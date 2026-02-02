@@ -3,6 +3,7 @@ class ShowcasesController < ApplicationController
   include DbQuery
 
   before_action :set_showcase, only: %i[ show edit update destroy ]
+  before_action :setup_form, only: %i[ new edit ]
   before_action :set_studio_for_auth, only: %i[ new_request create ]
   before_action :admin_home
 
@@ -19,26 +20,10 @@ class ShowcasesController < ApplicationController
 
   # GET /showcases/new
   def new
-    @showcase ||= Showcase.new
-
-    @showcase.year ||= Showcase.maximum(:year) || Time.now.year
-
-    @locations = Location.pluck(:name, :id)
-
-    if params[:location]
-      @showcase.location_id = params[:location]
-
-      unless @showcase.location.showcases.any? {|showcase| showcase.year == @showcase.year}
-        @showcase.name ||= 'Showcase'
-        @showcase.key ||= 'showcase'
-      end
-    end
   end
 
   # GET /showcases/1/edit
   def edit
-    new
-
     if @showcase.key == 'showcase' and @showcase.location.showcases.select {|showcase| showcase.year == @showcase.year}.count == 1
       @db = "#{@showcase.year}-#{@showcase.location.key}"
     else
@@ -169,7 +154,7 @@ class ShowcasesController < ApplicationController
 
         format.json { render :show, status: :created, location: @showcase }
       else
-        new
+        setup_form
         @return_to = params[:return_to]
 
         # If @return_to is set and there is a name error, remove key errors
@@ -211,7 +196,7 @@ class ShowcasesController < ApplicationController
           notice: "#{@showcase.name} was successfully updated.", allow_other_host: true }
         format.json { render :show, status: :ok, location: @showcase }
       else
-        edit
+        setup_form
         format.html { render :edit, status: :unprocessable_content }
         format.json { render json: @showcase.errors, status: :unprocessable_content }
       end
@@ -270,6 +255,23 @@ class ShowcasesController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_showcase
       @showcase = Showcase.find(params[:id])
+    end
+
+    def setup_form
+      @showcase ||= Showcase.new
+
+      @showcase.year ||= Showcase.maximum(:year) || Time.now.year
+
+      @locations = Location.pluck(:name, :id)
+
+      if params[:location]
+        @showcase.location_id = params[:location]
+
+        unless @showcase.location.showcases.any? {|showcase| showcase.year == @showcase.year}
+          @showcase.name ||= 'Showcase'
+          @showcase.key ||= 'showcase'
+        end
+      end
     end
 
     def set_studio_for_auth

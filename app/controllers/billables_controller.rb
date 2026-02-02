@@ -1,5 +1,6 @@
 class BillablesController < ApplicationController
   before_action :set_billable, only: %i[ show edit update destroy people missing ]
+  before_action :setup_form, only: %i[ new edit ]
 
   # GET /billables or /billables.json
   def index
@@ -14,31 +15,10 @@ class BillablesController < ApplicationController
 
   # GET /billables/new
   def new
-    @billable ||= Billable.new
-    @type ||= params[:type]
-
-    if @type == 'package'
-      current_options = @billable.package_includes.map(&:option_id)
-      @options = Billable.where(type: 'Option').ordered.
-        map {|option| [option, current_options.include?(option.id)]}
-    else
-      current_packages = @billable.option_included_by.map(&:package_id)
-      @packages = (Billable.where(type: 'Student').ordered +
-        Billable.where(type: 'Guest').ordered +
-        Billable.where(type: 'Professional').ordered).
-        map {|package| [package, current_packages.include?(package.id)]}
-    end
   end
 
   # GET /billables/1/edit
   def edit
-    if @billable.type == "Option"
-      @type = 'option'
-    else
-      @type = 'package'
-    end
-
-    new
   end
 
   # POST /billables or /billables.json
@@ -56,7 +36,7 @@ class BillablesController < ApplicationController
           notice: "#{@billable.name} was successfully created." }
         format.json { render :show, status: :created, location: @billable }
       else
-        edit
+        setup_form
         format.html { render :new, status: :unprocessable_content }
         format.json { render json: @billable.errors, status: :unprocessable_content }
       end
@@ -82,7 +62,7 @@ class BillablesController < ApplicationController
           notice: "#{@billable.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @billable }
       else
-        new
+        setup_form
         format.html { render :edit, status: :unprocessable_content }
         format.json { render json: @billable.errors, status: :unprocessable_content }
       end
@@ -216,6 +196,29 @@ class BillablesController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_billable
       @billable = Billable.find(params[:id])
+    end
+
+    def setup_form
+      @billable ||= Billable.new
+
+      # Determine type from existing billable or params
+      @type ||= if @billable.persisted?
+        @billable.type == "Option" ? 'option' : 'package'
+      else
+        params[:type]
+      end
+
+      if @type == 'package'
+        current_options = @billable.package_includes.map(&:option_id)
+        @options = Billable.where(type: 'Option').ordered.
+          map {|option| [option, current_options.include?(option.id)]}
+      else
+        current_packages = @billable.option_included_by.map(&:package_id)
+        @packages = (Billable.where(type: 'Student').ordered +
+          Billable.where(type: 'Guest').ordered +
+          Billable.where(type: 'Professional').ordered).
+          map {|package| [package, current_packages.include?(package.id)]}
+      end
     end
 
     # Only allow a list of trusted parameters through.

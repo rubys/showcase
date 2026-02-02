@@ -3,6 +3,7 @@ class StudiosController < ApplicationController
   include ActiveStorage::SetCurrent
 
   before_action :set_studio, only: %i[ show edit update unpair destroy heats scores invoice student_invoices send_invoice solos ]
+  before_action :setup_form, only: %i[ new edit ]
 
   permit_site_owners *%i[ index show solos invoice student_invoices scores ], trust_level: 25
 
@@ -188,36 +189,10 @@ class StudiosController < ApplicationController
 
   # GET /studios/new
   def new
-    @studio ||= Studio.new
-    @pairs = @studio.pairs
-    @avail = Studio.where.not(name: "Event Staff").map {|studio| studio.name}
-    @cost_override = !!(@studio.heat_cost || @studio.solo_cost || @studio.multi_cost)
-    @student_cost_override = !!(@studio.student_heat_cost || @studio.student_solo_cost || @studio.student_multi_cost)
-
-    event = Event.current
-    @studio.heat_cost ||= event.heat_cost
-    @studio.solo_cost ||= event.solo_cost
-    @studio.multi_cost ||= event.multi_cost
-
-    @studio.student_heat_cost ||= @studio.heat_cost;
-    @studio.student_solo_cost ||= @studio.solo_cost;
-    @studio.student_multi_cost ||= @studio.multi_cost;
-
-    @student_packages = Billable.where(type: 'Student').ordered.pluck(:name, :id).to_h
-    @professional_packages = Billable.where(type: 'Professional').ordered.pluck(:name, :id).to_h
-    @guest_packages = Billable.where(type: 'Guest').ordered.pluck(:name, :id).to_h
-
-    if @studio.default_student_package_id
-      @studio.student_registration_cost ||= Billable.find(@studio.default_student_package_id).price
-    elsif not @student_packages.empty?
-      @studio.student_registration_cost ||= Billable.find(@student_packages.first.last).price
-    end
   end
 
   # GET /studios/1/edit
   def edit
-    new
-
     @avail.select! {|studio| studio != @studio.name and not @pairs.any? {|pair| pair.name == studio}}
     @locked = Event.current.locked?
   end
@@ -234,7 +209,7 @@ class StudiosController < ApplicationController
         format.html { redirect_to studio_url(@studio), notice: "#{@studio.name} was successfully created." }
         format.json { render :show, status: :created, location: @studio }
       else
-        new
+        setup_form
         format.html { render :new, status: :unprocessable_content }
         format.json { render json: @studio.errors, status: :unprocessable_content }
       end
@@ -251,7 +226,9 @@ class StudiosController < ApplicationController
         format.html { redirect_to studio_url(@studio), notice: "#{@studio.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @studio }
       else
-        edit
+        setup_form
+        @avail.select! {|studio| studio != @studio.name and not @pairs.any? {|pair| pair.name == studio}}
+        @locked = Event.current.locked?
         format.html { render :edit, status: :unprocessable_content }
         format.json { render json: @studio.errors, status: :unprocessable_content }
       end
@@ -285,6 +262,33 @@ class StudiosController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_studio
       @studio = Studio.find(params[:id])
+    end
+
+    def setup_form
+      @studio ||= Studio.new
+      @pairs = @studio.pairs
+      @avail = Studio.where.not(name: "Event Staff").map {|studio| studio.name}
+      @cost_override = !!(@studio.heat_cost || @studio.solo_cost || @studio.multi_cost)
+      @student_cost_override = !!(@studio.student_heat_cost || @studio.student_solo_cost || @studio.student_multi_cost)
+
+      event = Event.current
+      @studio.heat_cost ||= event.heat_cost
+      @studio.solo_cost ||= event.solo_cost
+      @studio.multi_cost ||= event.multi_cost
+
+      @studio.student_heat_cost ||= @studio.heat_cost;
+      @studio.student_solo_cost ||= @studio.solo_cost;
+      @studio.student_multi_cost ||= @studio.multi_cost;
+
+      @student_packages = Billable.where(type: 'Student').ordered.pluck(:name, :id).to_h
+      @professional_packages = Billable.where(type: 'Professional').ordered.pluck(:name, :id).to_h
+      @guest_packages = Billable.where(type: 'Guest').ordered.pluck(:name, :id).to_h
+
+      if @studio.default_student_package_id
+        @studio.student_registration_cost ||= Billable.find(@studio.default_student_package_id).price
+      elsif not @student_packages.empty?
+        @studio.student_registration_cost ||= Billable.find(@student_packages.first.last).price
+      end
     end
 
     # Only allow a list of trusted parameters through.

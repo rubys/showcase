@@ -1,5 +1,6 @@
 class MultisController < ApplicationController
   before_action :set_multi, only: %i[ show edit update destroy ]
+  before_action :setup_form, only: %i[ new edit ]
 
   # GET /multis or /multis.json
   def index
@@ -12,26 +13,10 @@ class MultisController < ApplicationController
 
   # GET /multis/new
   def new
-    @dance ||= Dance.new
-    @dance.heat_length ||= 3
-
-    @dances = Dance.ordered.where(heat_length: nil)
-    @multi = {}
-
-    @categories = Category.ordered.pluck(:name, :id)
-
-    previous = Dance.where.not(multi_category_id: nil).select(:multi_category_id).distinct.pluck(:multi_category_id)
-    @dance.multi_category_id ||= previous.first if previous.length == 1
-
-    @url = multis_path
-
-    @columns = Dance.maximum(:col)
   end
 
   # GET /multis/1/edit
   def edit
-    new
-
     @dance.multi_children.each do |multi|
       @multi[multi.dance.name] = multi.slot
     end
@@ -51,7 +36,7 @@ class MultisController < ApplicationController
         format.html { redirect_to dances_url, notice: "#{@dance.name} was successfully created." }
         format.json { render :show, status: :created, location: @dance }
       else
-        new
+        setup_form
         format.html { render :new, status: :unprocessable_content }
         format.json { render json: @dance.errors, status: :unprocessable_content }
       end
@@ -72,7 +57,7 @@ class MultisController < ApplicationController
         format.html { redirect_to dances_url, notice: "#{@dance.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @multi }
       else
-        edit
+        setup_form
         format.html { render :edit, status: :unprocessable_content }
         format.json { render json: @multi.errors, status: :unprocessable_content }
       end
@@ -93,6 +78,23 @@ class MultisController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_multi
       @dance = Dance.find(params[:id])
+    end
+
+    def setup_form
+      @dance ||= Dance.new
+      @dance.heat_length ||= 3
+
+      @dances = Dance.ordered.where(heat_length: nil)
+      @multi = {}
+
+      @categories = Category.ordered.pluck(:name, :id)
+
+      previous = Dance.where.not(multi_category_id: nil).select(:multi_category_id).distinct.pluck(:multi_category_id)
+      @dance.multi_category_id ||= previous.first if previous.length == 1
+
+      @url = multis_path
+
+      @columns = Dance.maximum(:col)
     end
 
     # Only allow a list of trusted parameters through.

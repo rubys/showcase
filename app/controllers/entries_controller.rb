@@ -139,18 +139,7 @@ class EntriesController < ApplicationController
   # GET /entries/new
   def new
     @entry ||= Entry.new
-
-    form_init(params[:primary])
-    agenda_init
-
-    # Auto-select Nobody if partnerless entries are enabled and student
-    if Event.current.partnerless_entries && @person&.type == 'Student' && Person.exists?(0)
-      @partner = 0
-    else
-      @partner = nil
-    end
-    @age = @person.age_id
-    @level = @person.level_id
+    setup_new_form
   end
 
   # GET /entries/1/edit
@@ -209,7 +198,7 @@ class EntriesController < ApplicationController
 
       if @entry.errors.any?
         entries = @entries
-        new
+        setup_new_form
         @entries = entries
         return render :edit, status: :unprocessable_content
       end
@@ -225,7 +214,7 @@ class EntriesController < ApplicationController
         format.html { redirect_to @person, notice: "#{helpers.pluralize @total, 'heat'} successfully created." }
         format.json { render :show, status: :created, location: @entry }
       else
-        new
+        setup_new_form
         format.html { render :new, status: :unprocessable_content }
         format.json { render json: @entry.errors, status: :unprocessable_content }
       end
@@ -485,6 +474,20 @@ class EntriesController < ApplicationController
     # Only allow a list of trusted parameters through.
     def entry_params
       params.require(:entry).permit(:count, :dance_id, :lead_id, :follow_id, :studio_id)
+    end
+
+    def setup_new_form
+      form_init(params[:primary])
+      agenda_init
+
+      # Auto-select Nobody if partnerless entries are enabled and student
+      if Event.current.partnerless_entries && @person&.type == 'Student' && Person.exists?(0)
+        @partner = 0
+      else
+        @partner = nil
+      end
+      @age = @person.age_id
+      @level = @person.level_id
     end
 
     def agenda_init

@@ -3,6 +3,7 @@ class LocationsController < ApplicationController
   include DbQuery
 
   before_action :set_location, only: %i[ show edit events auth update_auth sisters update destroy ]
+  before_action :setup_form, only: %i[ new edit first_event events auth add_auth sisters ]
   before_action :admin_home, unless: -> { params[:studio].present? }
 
   skip_before_action :authenticate_user, only: %i[ auth update_auth ], if: -> { params[:studio].present? }
@@ -19,41 +20,9 @@ class LocationsController < ApplicationController
 
   # GET /locations/new
   def new
-    @location ||= Location.new
-
-    if params[:user_id] and @location.new_record?
-      user = User.find(params[:user_id])
-      @location.user = user
-      @location.key = user.userid
-      @location.name = user.userid.capitalize
-    end
-
-    @users = User.order(:userid).pluck(:userid, :name1, :name2, :id).
-    map do |userid, name1, name2, id|
-      if name2.blank?
-        ["#{userid}: #{name1}", id]
-      else
-        ["#{userid}: #{name1}/#{name2}", id]
-      end
-    end
-
-    regions = RegionConfiguration.load_deployed_regions
-    regions_data = RegionConfiguration.load_regions_data
-    @regions = regions_data.
-      select {|region| regions.include? region['code']}.
-      map {|region| [region['name'], region['code']]}.
-      sort
-    @regions.unshift ["", nil]
-
-    Dir.chdir 'public' do
-      @logos = Dir['*'].select do |name|
-        name.include? '.' and not name.include? '.html' and not name.start_with? 'apple-' and not name.include? '.txt'
-      end
-    end
   end
 
   def first_event(status=:ok)
-    new
     @user ||= User.new
     @showcase ||= Showcase.new
     @first_event = true
@@ -70,18 +39,14 @@ class LocationsController < ApplicationController
 
   # GET /locations/1/edit
   def edit
-    new
-
     @showcases = @location.showcases.order(:year, :order).reverse.group_by(&:year)
   end
 
   def events
-    edit
+    @showcases = @location.showcases.order(:year, :order).reverse.group_by(&:year)
   end
 
   def auth
-    edit
-
     # Set paths based on whether accessed via /studios/:studio or /locations/:id
     if params[:studio]
       @back_path = studio_events_path(params[:studio])
@@ -124,7 +89,45 @@ class LocationsController < ApplicationController
   end
 
   def add_auth
-    auth
+    # Set paths based on whether accessed via /studios/:studio or /locations/:id
+    if params[:studio]
+      @back_path = studio_events_path(params[:studio])
+      @save_path = studio_auth_path(params[:studio])
+    else
+      @back_path = edit_location_path(@location)
+      @save_path = locations_users_path
+    end
+
+    studios = []
+    dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
+    Dir["#{dbpath}/20*.sqlite3"].each do |db|
+      next unless db =~ /^#{dbpath}\/\d+-#{@location.key}[-.]/
+      studios += dbquery(File.basename(db, '.sqlite3'), 'studios', 'name')
+    end
+
+    locations = Location.joins(:user).pluck(:name, :sisters, :userid).
+      map {|name, sisters, userid| ([name] + sisters.to_s.split(',')).
+      map {|site| [site, userid]}}.flatten(1).to_h
+
+    owners = studios.uniq.map {|studio| locations[studio['name']]}.compact.sort
+    @studios = @location.key
+
+    @checked = {}
+    @auth = User.order(:userid).select do |user|
+      if user.sites.to_s.split(',').include? @location.name
+        @checked[user.id] = true
+      elsif owners.include?(user.userid)
+        true
+      elsif user.sites.to_s.split(',').include? @location.name
+        true
+      else
+        false
+      end
+    end
+
+    # Build list of users not already in @auth for the add dropdown
+    auth_ids = @auth.map(&:id)
+    @available_users = @users.reject { |label, id| auth_ids.include?(id) }
 
     # Restore checkbox state from params and add any users not in the original list
     if params[:auth].present?
@@ -230,7 +233,7 @@ class LocationsController < ApplicationController
   end
 
   def sisters
-    edit
+    @showcases = @location.showcases.order(:year, :order).reverse.group_by(&:year)
 
     studios = []
     dbpath = ENV.fetch('RAILS_DB_VOLUME') { 'db' }
@@ -328,7 +331,7 @@ class LocationsController < ApplicationController
         @showcase = Showcase.new(showcase_params)
         format.html { first_event(:unprocessable_content) }
       else
-        new
+        setup_form
         format.html { render :new, status: :unprocessable_content }
         format.json { render json: @location.errors, status: :unprocessable_content }
       end
@@ -351,7 +354,8 @@ class LocationsController < ApplicationController
         format.html { redirect_to locations_url, notice: "#{@location.name} was successfully updated." }
         format.json { render :show, status: :ok, location: @location }
       else
-        edit
+        setup_form
+        @showcases = @location.showcases.order(:year, :order).reverse.group_by(&:year)
         format.html { render :edit, status: :unprocessable_content }
         format.json { render json: @location.errors, status: :unprocessable_content }
       end
@@ -387,6 +391,40 @@ class LocationsController < ApplicationController
         @location = Location.find_by!(key: params[:studio])
       else
         @location = Location.find(params[:id])
+      end
+    end
+
+    def setup_form
+      @location ||= Location.new
+
+      if params[:user_id] and @location.new_record?
+        user = User.find(params[:user_id])
+        @location.user = user
+        @location.key = user.userid
+        @location.name = user.userid.capitalize
+      end
+
+      @users = User.order(:userid).pluck(:userid, :name1, :name2, :id).
+      map do |userid, name1, name2, id|
+        if name2.blank?
+          ["#{userid}: #{name1}", id]
+        else
+          ["#{userid}: #{name1}/#{name2}", id]
+        end
+      end
+
+      regions = RegionConfiguration.load_deployed_regions
+      regions_data = RegionConfiguration.load_regions_data
+      @regions = regions_data.
+        select {|region| regions.include? region['code']}.
+        map {|region| [region['name'], region['code']]}.
+        sort
+      @regions.unshift ["", nil]
+
+      Dir.chdir 'public' do
+        @logos = Dir['*'].select do |name|
+          name.include? '.' and not name.include? '.html' and not name.start_with? 'apple-' and not name.include? '.txt'
+        end
       end
     end
 
