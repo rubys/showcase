@@ -367,7 +367,7 @@ class PeopleController < ApplicationController
       map do |(lead, follow), entries|
         [lead, follow, entries.sum {|entry| entry.heats.count}]
       end.
-      sort_by {|(lead, follow), count| level = lead.level_id}
+      sort_by {|(lead, follow), count| lead.level_id}
     @track_ages = Event.current.track_ages
   end
 
