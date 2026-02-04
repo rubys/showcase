@@ -34,100 +34,13 @@ class EventController < ApplicationController
   end
 
   def root
-    @judges = Person.includes(:judge).where(type: 'Judge').by_name
-    @djs    = Person.where(type: 'DJ').by_name
-    @emcees = Person.where(type: 'Emcee').by_name
-
-    # If there are no DJs, but there are emcees, swap them as DJs will be used as emcees
-    if @djs.empty? && !@emcees.empty?
-      @djs, @emcees = @emcees, []
-    end
-
-    @event = Event.current || Event.create(name: 'Untitled Event', date: Time.now.strftime('%Y-%m-%d'), location: 'Unknown Location')
-
-    @heats = Heat.where.not(number: ..0).distinct.count(:number)
-    @unscheduled = Heat.where(number: 0).count
-
-    # event navigation
-    events = User.auth_event_list(@authuser)
-    this_event = root_path.chomp('/')
-    index = events.find_index(this_event)
-    if index
-      @prev = events[index-1] unless index == 0
-      @next = events[index+1] unless index == events.length - 1
-    end
-
-    owner = ENV['RAILS_APP_OWNER']
-    scope = ENV['RAILS_APP_SCOPE']
-    root = ENV['RAILS_RELATIVE_URL_ROOT']
-    if owner and scope and root
-      events = Event.list.select {|event| event.owner == owner}
-      index = events.find_index {|event| event.scope == scope}
-      if index
-        @up = File.join(root, 'studios', events[index].studio)
-        @prev = File.join(root, events[index-1].scope + '/') unless index == 0
-        @next = File.join(root, events[index+1].scope + '/') unless index == events.length - 1
-      end
-    end
-
-    @browser_warn = browser_warn
-
-    if @heats == 0 && @unscheduled == 0 && !Studio.where.not(name: 'Event Staff').any? && ENV['RAILS_APP_OWNER'] != 'Demo'
-      @sources = build_sources_list
-      @cloneable = !@sources.empty?
-    end
-
-    ActiveRecord::Base.connection.query_cache.clear unless Rails.env.production?
-
+    setup_root_page
     render :root, status: (@browser_warn ? :upgrade_required : :ok)
   end
 
-  def settings(status: :ok)
-    @judges = Person.where(type: 'Judge').by_name
-    @djs    = Person.where(type: 'DJ').by_name
-    @emcees = Person.where(type: 'Emcee').by_name
-
-    @event ||= Event.current
-
-    @combine_open_and_closed = @event.heat_range_cat == 1
-
-    @ages = Age.all.size
-    @levels = Level.all.order(:id).map {|level| [level.name, level.id]}
-    @solo_levels = @levels[1..]
-
-    @packages = Billable.where.not(type: 'Order').ordered.group_by(&:type)
-    @options = Billable.where(type: 'Option').ordered
-
-    if not params[:tab] and Studio.pluck(:name).all? {|name| name == 'Event Staff'}
-      clone unless ENV['RAILS_APP_OWNER'] == 'Demo'
-    end
-
-    if @sources and not @sources.empty?
-      @tab = params[:tab] || 'Clone'
-    else
-      @tab = params[:tab] || 'Description'
-    end
-
-    if params[:tab] == 'Prices'
-      @ages = Age.order(:id).pluck(:category, :id)
-    elsif params[:tab] == 'Advanced'
-      if not @event.track_ages
-        @reset_ages = Person.where.not(age_id: 1).any? || Entry.where.not(age_id: 1).any?
-      end
-
-      if not @event.include_closed
-        @reset_open = Heat.where(category: 'Closed').any?
-      end
-
-      if not @event.include_open
-        @reset_closed = Heat.where(category: 'Open').any?
-      end
-
-      @reset_scores = Score.where.not(value: nil).any? or Score.where.not(comments: nil).any? or
-        Score.where.not(good: nil).any? or Score.where.not(bad: nil).any?
-    end
-
-    render "event/settings/#{@tab.downcase}", layout: 'settings', status: status
+  def settings
+    setup_settings
+    render "event/settings/#{@tab.downcase}", layout: 'settings'
   end
 
   def counter
@@ -278,25 +191,20 @@ class EventController < ApplicationController
 
       redirect_to dest, notice: notice
     else
-      settings(status: :unprocessable_content)
+      setup_settings
+      render "event/settings/#{@tab.downcase}", layout: 'settings', status: :unprocessable_content
     end
 
     Event.current = Event.current
   end
 
   def index
-    return select if params[:db]
-
-    @people = Person.includes(:level, :age, :studio, :lead_entries, :follow_entries)
-      .by_name
-    @judges = Person.where(type: 'Judge').by_name
-    @heats = Heat.joins(entry: :lead).
-      includes(:scores, :dance, entry: [:level, :age, :lead, :follow]).
-      order('number,people.back').all
+    return handle_db_select if params[:db]
+    load_index_data
   end
 
   def spreadsheet
-    index
+    load_index_data
 
     @sheets = {}
 
@@ -408,7 +316,7 @@ class EventController < ApplicationController
   end
 
   def judge
-    index
+    load_index_data
 
     @sheets = {}
 
@@ -552,7 +460,7 @@ class EventController < ApplicationController
       city_info = @showcases.values.first.values.first
       if !@city || !city_info[:events] || city_info[:events].length == 1
         params[:db] = "#{@showcases.keys.first}-#{@showcases.values.first.keys.first}"
-        return select
+        return handle_db_select
       end
     end
 
@@ -602,7 +510,7 @@ class EventController < ApplicationController
 
 
   def regions
-    return select if params[:year]
+    return handle_db_select if params[:year]
     return redirect_to root_path(db: params[:db]) if params[:db]
 
     @list = params[:list]
@@ -945,11 +853,7 @@ class EventController < ApplicationController
       redirect_to settings_event_index_path,
         notice: "Cloned: #{tables.keys.map(&:to_s).join(", ")}"
     else
-
-      showcases
-
-      @sources = build_sources_list
-
+      load_clone_sources
     end
   end
 
@@ -994,7 +898,8 @@ class EventController < ApplicationController
       end
       render status: 202, json: {result: 'OK'}
     else
-      root
+      setup_root_page
+      render :root, status: (@browser_warn ? :upgrade_required : :ok)
     end
   end
 
@@ -1003,41 +908,7 @@ class EventController < ApplicationController
   end
 
   def select
-    if params[:year] && params[:db].blank?
-      return redirect_to root_path(
-        db: "#{params[:year]}-#{params[:city]}-#{params[:event]}",
-        year: params[:year],
-      )
-    end
-
-    if params[:db]
-      FileUtils.rm "tmp/pids/server.pid", force: true
-      FileUtils.touch "tmp/reload.txt"
-
-      Thread.new do
-        sleep 0.5
-
-        if params[:date].blank?
-          Rails.logger.info "exec cd #{Rails.root} && bin/dev #{params[:db]}"
-          Bundler.original_exec "cd #{Rails.root} && bin/dev #{params[:db]}"
-        else
-          Rails.logger.info "exec cd #{Rails.root} && bin/dev #{params[:db]} #{params[:date]}"
-          Bundler.original_exec "cd #{Rails.root} && bin/dev #{params[:db]} #{params[:date]}"
-        end
-      end
-
-      render file: 'public/503.html'
-    elsif File.exist? "tmp/reload.txt"
-      FileUtils.rm "tmp/reload.txt"
-      redirect_to root_path
-    else
-      @dbs = Dir["db/2*.sqlite3"].
-        sort_by {|name| File.mtime(name)}[-20..].
-        map {|name| File.basename(name, '.sqlite3')}.
-        reverse + ["index"]
-
-      @dates = (0..19).map {|i| (Date.today-i).iso8601}
-    end
+    handle_db_select
   end
 
   def execute_command
@@ -1158,6 +1029,150 @@ class EventController < ApplicationController
   end
 
 private
+
+  def setup_root_page
+    @judges = Person.includes(:judge).where(type: 'Judge').by_name
+    @djs    = Person.where(type: 'DJ').by_name
+    @emcees = Person.where(type: 'Emcee').by_name
+
+    # If there are no DJs, but there are emcees, swap them as DJs will be used as emcees
+    if @djs.empty? && !@emcees.empty?
+      @djs, @emcees = @emcees, []
+    end
+
+    @event = Event.current || Event.create(name: 'Untitled Event', date: Time.now.strftime('%Y-%m-%d'), location: 'Unknown Location')
+
+    @heats = Heat.where.not(number: ..0).distinct.count(:number)
+    @unscheduled = Heat.where(number: 0).count
+
+    # event navigation
+    events = User.auth_event_list(@authuser)
+    this_event = root_path.chomp('/')
+    index = events.find_index(this_event)
+    if index
+      @prev = events[index-1] unless index == 0
+      @next = events[index+1] unless index == events.length - 1
+    end
+
+    owner = ENV['RAILS_APP_OWNER']
+    scope = ENV['RAILS_APP_SCOPE']
+    root = ENV['RAILS_RELATIVE_URL_ROOT']
+    if owner and scope and root
+      events = Event.list.select {|event| event.owner == owner}
+      index = events.find_index {|event| event.scope == scope}
+      if index
+        @up = File.join(root, 'studios', events[index].studio)
+        @prev = File.join(root, events[index-1].scope + '/') unless index == 0
+        @next = File.join(root, events[index+1].scope + '/') unless index == events.length - 1
+      end
+    end
+
+    @browser_warn = browser_warn
+
+    if @heats == 0 && @unscheduled == 0 && !Studio.where.not(name: 'Event Staff').any? && ENV['RAILS_APP_OWNER'] != 'Demo'
+      @sources = build_sources_list
+      @cloneable = !@sources.empty?
+    end
+
+    ActiveRecord::Base.connection.query_cache.clear unless Rails.env.production?
+  end
+
+  def setup_settings
+    @judges = Person.where(type: 'Judge').by_name
+    @djs    = Person.where(type: 'DJ').by_name
+    @emcees = Person.where(type: 'Emcee').by_name
+
+    @event ||= Event.current
+
+    @combine_open_and_closed = @event.heat_range_cat == 1
+
+    @ages = Age.all.size
+    @levels = Level.all.order(:id).map {|level| [level.name, level.id]}
+    @solo_levels = @levels[1..]
+
+    @packages = Billable.where.not(type: 'Order').ordered.group_by(&:type)
+    @options = Billable.where(type: 'Option').ordered
+
+    if not params[:tab] and Studio.pluck(:name).all? {|name| name == 'Event Staff'}
+      load_clone_sources unless ENV['RAILS_APP_OWNER'] == 'Demo'
+    end
+
+    if @sources and not @sources.empty?
+      @tab = params[:tab] || 'Clone'
+    else
+      @tab = params[:tab] || 'Description'
+    end
+
+    if params[:tab] == 'Prices'
+      @ages = Age.order(:id).pluck(:category, :id)
+    elsif params[:tab] == 'Advanced'
+      if not @event.track_ages
+        @reset_ages = Person.where.not(age_id: 1).any? || Entry.where.not(age_id: 1).any?
+      end
+
+      if not @event.include_closed
+        @reset_open = Heat.where(category: 'Closed').any?
+      end
+
+      if not @event.include_open
+        @reset_closed = Heat.where(category: 'Open').any?
+      end
+
+      @reset_scores = Score.where.not(value: nil).any? or Score.where.not(comments: nil).any? or
+        Score.where.not(good: nil).any? or Score.where.not(bad: nil).any?
+    end
+  end
+
+  def load_index_data
+    @people = Person.includes(:level, :age, :studio, :lead_entries, :follow_entries)
+      .by_name
+    @judges = Person.where(type: 'Judge').by_name
+    @heats = Heat.joins(entry: :lead).
+      includes(:scores, :dance, entry: [:level, :age, :lead, :follow]).
+      order('number,people.back').all
+  end
+
+  def handle_db_select
+    if params[:year] && params[:db].blank?
+      return redirect_to root_path(
+        db: "#{params[:year]}-#{params[:city]}-#{params[:event]}",
+        year: params[:year],
+      )
+    end
+
+    if params[:db]
+      FileUtils.rm "tmp/pids/server.pid", force: true
+      FileUtils.touch "tmp/reload.txt"
+
+      Thread.new do
+        sleep 0.5
+
+        if params[:date].blank?
+          Rails.logger.info "exec cd #{Rails.root} && bin/dev #{params[:db]}"
+          Bundler.original_exec "cd #{Rails.root} && bin/dev #{params[:db]}"
+        else
+          Rails.logger.info "exec cd #{Rails.root} && bin/dev #{params[:db]} #{params[:date]}"
+          Bundler.original_exec "cd #{Rails.root} && bin/dev #{params[:db]} #{params[:date]}"
+        end
+      end
+
+      render file: 'public/503.html'
+    elsif File.exist? "tmp/reload.txt"
+      FileUtils.rm "tmp/reload.txt"
+      redirect_to root_path
+    else
+      @dbs = Dir["db/2*.sqlite3"].
+        sort_by {|name| File.mtime(name)}[-20..].
+        map {|name| File.basename(name, '.sqlite3')}.
+        reverse + ["index"]
+
+      @dates = (0..19).map {|i| (Date.today-i).iso8601}
+    end
+  end
+
+  def load_clone_sources
+    @sources = build_sources_list
+  end
 
   def event_params
     params.require(:event).permit(:name, :theme, :location, :date, :heat_range_cat, :heat_range_level, :heat_range_age,
