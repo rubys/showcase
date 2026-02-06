@@ -48,9 +48,18 @@
   <li>Ballroom A: Amateur follower with instructor</li>
   <li>Ballroom B: Amateur leader (includes amateur couples)</li>
   </ul></li>
-  <li class="my-2"><%= form.radio_button :ballrooms, 3 %> Two ballrooms (rotating by block)</li>
-  <li class="my-2"><%= form.radio_button :ballrooms, 5 %> Three ballrooms (rotating by block)</li>
-  <li class="my-2"><%= form.radio_button :ballrooms, 6 %> Four ballrooms (rotating by block)</li>
+  <li class="my-2"><%= form.radio_button :ballrooms, 3 %> Two ballrooms (rotating)
+  <ul class="ml-8">
+  <li>Participants are evenly divided and rotate to a different ballroom for each group of dances</li>
+  </ul></li>
+  <li class="my-2"><%= form.radio_button :ballrooms, 5 %> Three ballrooms (rotating)
+  <ul class="ml-8">
+  <li>Same as above, across three ballrooms</li>
+  </ul></li>
+  <li class="my-2"><%= form.radio_button :ballrooms, 6 %> Four ballrooms (rotating)
+  <ul class="ml-8">
+  <li>Same as above, across four ballrooms</li>
+  </ul></li>
   </ul>
   </div>
   

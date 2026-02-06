@@ -10,7 +10,7 @@ The information you enter in this section is used largely for the printed materi
 
 * Heat column order - which should come first - student or leader - in printed materials?
 
-* Ballrooms - smaller events will typically have one ballroom, but larger events may chose to split the floor with stanchions into two ballrooms.  If you do decide to split the ballroom, you can put the amateur followers in one and the amateur leaders (including amateur couples) in the other.  Or you can chose to evenly split couples.  Note this choice is not all or nothing: you can chose to split the ballrooms for only certain [agenda](./Agenda) items.
+* Ballrooms - smaller events will typically have one ballroom, but larger events may chose to split the floor with stanchions into two or more ballrooms.  If you do decide to split the ballroom, you can put the amateur followers in one and the amateur leaders (including amateur couples) in the other.  Or you can chose a rotating option, which evenly divides participants across ballrooms and rotates them to a different ballroom for each group of dances, ensuring everyone gets exposure to different judges.  Note this choice is not all or nothing: you can chose to split the ballrooms for only certain [agenda](./Agenda) items.  For more details, see [Ballrooms](./Ballrooms).
 
 * Open Scoring - typically open scoring is 1/2/3/F, but you can elect to change this to match closed scoring (GH/G/S/B), a
 number, or feedback on areas that are particularly notable or need improvement (e.g. Dance Frame, Footwork, Timing), or a combination of number of feedback.

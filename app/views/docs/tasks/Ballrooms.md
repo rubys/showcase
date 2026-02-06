@@ -8,9 +8,9 @@ Event-wide ballroom settings can be configured from the [Settings](./Settings) p
 
 - **One ballroom** - No splitting, all heats in the same area
 - **Two ballrooms (split by role)** - Ballroom A for amateur followers with instructor, Ballroom B for amateur leaders (includes amateur couples)
-- **Two ballrooms (rotating)** - Participants rotate between ballrooms across dance blocks
-- **Three ballrooms (rotating)** - Same rotation approach across three ballrooms
-- **Four ballrooms (rotating)** - Same rotation approach across four ballrooms
+- **Two ballrooms (rotating)** - Participants are evenly divided and rotate to a different ballroom for each group of dances, ensuring exposure to different judges
+- **Three ballrooms (rotating)** - Same as above, across three ballrooms
+- **Four ballrooms (rotating)** - Same as above, across four ballrooms
 
 These settings can be overridden on an agenda item by item basis.
 
@@ -18,9 +18,9 @@ These settings can be overridden on an agenda item by item basis.
 
 When using the rotating ballroom options (2, 3, or 4 ballrooms), the system:
 
-1. **Tracks participants** - Each person is assigned to a ballroom and stays there within a dance block
-2. **Detects blocks** - A new block starts when the dance order decreases (due to interleaving)
-3. **Rotates across blocks** - Participants are assigned to different ballrooms in subsequent blocks, ensuring exposure to different judges
+1. **Tracks participants** - Each person is assigned to a ballroom and stays there within a group of dances
+2. **Detects groups** - A new group starts each time the dances cycle back to the beginning of a style (e.g., when Smooth dances start over with Waltz again)
+3. **Rotates across groups** - Participants are assigned to different ballrooms in subsequent groups, ensuring exposure to different judges
 4. **Handles partner changes** - When partners have conflicting ballroom assignments, the system prefers keeping students stationary over professionals
 
 ### Overrides
