@@ -1,79 +1,55 @@
-// Check for heartbeat logs from all vms every 60 minutes
-// Messages are sent to Sentry if a heartbeat is not found
+// Check for failed machines every 60 minutes and attempt to restart them.
+// Alerts are sent to Sentry when a restart is attempted or fails.
 
-import { promises as dns } from 'node:dns'
-import fs from 'node:fs'
-import readline from 'node:readline'
-import path from 'node:path'
-
-import { LOGS } from "./view.ts"
 import { alert } from "./sentry.ts"
 
-// get the list of vms from for the smooth application
-async function vms() {
-  if (!process.env.FLY_REGION) return [];
-  return (await dns.resolveTxt('vms.smooth.internal')).
-    map(lines => lines.join('')).join('').split(',')
+const APP_NAME = "smooth"
+const API_BASE = `http://_api.internal:4280/v1/apps/${APP_NAME}/machines`
+
+function headers() {
+  return {
+    "Authorization": `Bearer ${process.env.ACCESS_TOKEN}`,
+    "Content-Type": "application/json"
+  }
 }
 
-let previous_vms = await vms()
-
 async function monitor() {
-  // only look for vms that are active and were present in the previous check
-  const current_vms = await vms()
+  if (!process.env.FLY_REGION) return
 
-  let seeking = new Set()
-
-  for (const vm of previous_vms) {
-    if (current_vms.includes(vm)) {
-      seeking.add(vm)
+  try {
+    // list all machines
+    const response = await fetch(API_BASE, { headers: headers() })
+    if (!response.ok) {
+      alert(`monitor: failed to list machines: ${response.status} ${response.statusText}`)
+      return
     }
+
+    const machines: any[] = await response.json()
+    const failed = machines.filter((m: any) => m.state === "failed")
+
+    for (const machine of failed) {
+      const label = `${machine.name || machine.id} (${machine.region})`
+      console.log(`monitor: attempting to restart failed machine ${label}`)
+
+      try {
+        const startResponse = await fetch(`${API_BASE}/${machine.id}/start`, {
+          method: "POST",
+          headers: headers()
+        })
+
+        if (startResponse.ok) {
+          alert(`monitor: restarted failed machine ${label}`)
+        } else {
+          const body = await startResponse.text()
+          alert(`monitor: failed to restart ${label}: ${startResponse.status} ${body}`)
+        }
+      } catch (error: any) {
+        alert(`monitor: error restarting ${label}: ${error.message}`)
+      }
+    }
+  } catch (error: any) {
+    alert(`monitor: error checking machines: ${error.message}`)
   }
-
-  // pattern to match heartbeat logs
-  const pattern = new RegExp([
-    /^\S+\s+\[.*?\] \w+ /,             // timestamp machine region
-    /\[\w+\] /,                        // log level
-    /[\d:]+ heartbeat\.1\s* \| /,      // time, procfile source
-    /HEARTBEAT (\w+ \w+)/              // vm (#1)
-  ].map(r => r.source).join(''))
-
-  // only look for logs from the last hour
-  let since = new Date((new Date()).getTime() - 60 * 60_000).toISOString()
-
-  let logs = await fs.promises.readdir(LOGS)
-  for (let log of logs) {
-    if (!log.endsWith('.log')) continue
-    if (log < since.slice(0, 10)) continue
-
-    const rl = readline.createInterface({
-      input: fs.createReadStream(path.join(LOGS, log)),
-      crlfDelay: Infinity
-    });
-
-    // remove vms that have produced a heartbeat log
-    await new Promise(resolve => {
-      rl.on('line', line => {
-        if (line < since) return
-        let match = line.match(pattern)
-        if (!match) return
-
-        seeking.delete(match[1])
-      });
-
-      rl.on('close', () => {
-        resolve(null)
-      });
-    });
-  }
-
-  // send a message to Sentry listing vms that did not produce a heartbeat log
-  if (seeking.size) {
-    alert(`heatbeat not found for ${[...seeking].join(', ')}`)
-  }
-
-  // update the list of vms for the next check
-  previous_vms = current_vms
 }
 
 setInterval(monitor, 60 * 60 * 1000)
