@@ -87,6 +87,16 @@ module Printable
       last_dance_order: nil   # to detect block boundaries
     }
 
+    # Clear in-memory ballroom assignments so the algorithm starts fresh.
+    # Previously persisted ballrooms would otherwise be treated as manual overrides,
+    # preventing rebalancing on subsequent runs (redo).
+    @heats.each do |_number, heats|
+      heats.each { |heat| heat.ballroom = nil }
+    end
+
+    pending_block = []
+    pending_last_dance_order = nil
+
     @heats.each do |number, heats|
       if number == 0
         @agenda['Unscheduled'] << [number, {nil => heats}]
@@ -119,34 +129,83 @@ module Printable
           cat = 'Uncategorized'
         end
 
-        # Check if this is a multi-heat with children that should be expanded
-        if expand_multi_heats && heats.first.category == 'Multi' && heats.first.dance.multi_children.any?
-          # Create a separate entry for each child dance
-          heats.first.dance.multi_children.sort_by { |child| child.slot || child.id }.each do |child_dance|
-            # Create copies of heats with the child dance name
-            heat_copies = heats.map do |heat|
-              # Create a new Heat instance with the same attributes
-              copy = Heat.new(heat.attributes.except('id'))
-              copy.id = heat.id  # Preserve ID for routing
-              copy.child_dance_name = child_dance.dance.name
-              # Copy associations
-              copy.dance = heat.dance
-              copy.entry = heat.entry
-              copy.solo = heat.solo if heat.solo
-              # Mark as readonly to prevent accidental database operations
-              copy.readonly!
-              copy
-            end
+        # Determine number of rotating rooms for block-level logic
+        num_rooms = case ballrooms
+                    when 3, 4 then 2
+                    when 5 then 3
+                    when 6 then 4
+                    else nil
+                    end
 
-            @agenda[cat] << [number, assign_rooms(ballrooms, heat_copies,
-              (judge_ballrooms && ballrooms == 2) ? -number : nil, state: @ballroom_state, max_heat_size: max_heat_size)]
+        if num_rooms
+          # Block-level ballroom assignment for rotating ballrooms (>= 3)
+          current_order = heats.first&.dance&.order
+
+          # Detect block boundary: dance order decreased means new interleave cycle
+          if pending_block.any? && pending_last_dance_order && current_order && current_order < pending_last_dance_order
+            flush_block(pending_block, @ballroom_state)
+            pending_block = []
+          end
+          pending_last_dance_order = current_order
+
+          cap = max_heat_size ? (max_heat_size.to_f / num_rooms).ceil : nil
+
+          # Check if this is a multi-heat with children that should be expanded
+          if expand_multi_heats && heats.first.category == 'Multi' && heats.first.dance.multi_children.any?
+            heats.first.dance.multi_children.sort_by { |child| child.slot || child.id }.each do |child_dance|
+              heat_copies = heats.map do |heat|
+                copy = Heat.new(heat.attributes.except('id'))
+                copy.id = heat.id
+                copy.child_dance_name = child_dance.dance.name
+                copy.dance = heat.dance
+                copy.entry = heat.entry
+                copy.solo = heat.solo if heat.solo
+                copy.readonly!
+                copy
+              end
+
+              pending_block << { heats: heat_copies, num_rooms: num_rooms,
+                                 cap: cap, cat: cat, number: number }
+            end
+          else
+            pending_block << { heats: heats, num_rooms: num_rooms,
+                               cap: cap, cat: cat, number: number }
           end
         else
-          @agenda[cat] << [number, assign_rooms(ballrooms, heats,
-            (judge_ballrooms && ballrooms == 2) ? -number : nil, state: @ballroom_state, max_heat_size: max_heat_size)]
+          # Flush any pending block before switching to non-rotating
+          if pending_block.any?
+            flush_block(pending_block, @ballroom_state)
+            pending_block = []
+            pending_last_dance_order = nil
+          end
+
+          # Original assign_rooms call for ballrooms 1-2
+          if expand_multi_heats && heats.first.category == 'Multi' && heats.first.dance.multi_children.any?
+            heats.first.dance.multi_children.sort_by { |child| child.slot || child.id }.each do |child_dance|
+              heat_copies = heats.map do |heat|
+                copy = Heat.new(heat.attributes.except('id'))
+                copy.id = heat.id
+                copy.child_dance_name = child_dance.dance.name
+                copy.dance = heat.dance
+                copy.entry = heat.entry
+                copy.solo = heat.solo if heat.solo
+                copy.readonly!
+                copy
+              end
+
+              @agenda[cat] << [number, assign_rooms(ballrooms, heat_copies,
+                (judge_ballrooms && ballrooms == 2) ? -number : nil, state: @ballroom_state, max_heat_size: max_heat_size)]
+            end
+          else
+            @agenda[cat] << [number, assign_rooms(ballrooms, heats,
+              (judge_ballrooms && ballrooms == 2) ? -number : nil, state: @ballroom_state, max_heat_size: max_heat_size)]
+          end
         end
       end
     end
+
+    # Flush any remaining pending block
+    flush_block(pending_block, @ballroom_state) if pending_block.any?
 
     @agenda.delete 'Unscheduled' if @agenda['Unscheduled'].empty?
     @agenda.delete 'Uncategorized' if @agenda['Uncategorized'].empty?
@@ -401,6 +460,296 @@ module Printable
     end
 
     result
+  end
+
+  # Flush a pending block of heat-numbers, assigning ballrooms at the block level.
+  # Each person gets a stable "home ballroom" for the entire block, then per-heat-number
+  # assignments respect those homes for better balance and reduced bouncing.
+  def flush_block(pending_block, state)
+    return if pending_block.empty?
+
+    num_rooms = pending_block.first[:num_rooms]
+
+    # Collect all people across all heat-numbers in the block, counting how many
+    # heat-numbers each person appears in (their "weight").
+    # Also build per-heat-number people sets to balance per-heat counts,
+    # and entry pairs to keep partners together.
+    person_weights = Hash.new(0)
+    person_studios = {}
+    heat_number_people = []  # array of Sets, one per item in pending_block
+    pair_counts = Hash.new(0) # [lead_id, follow_id] → count of heats together
+
+    pending_block.each do |item|
+      people_in_heat_number = Set.new
+      item[:heats].each do |heat|
+        lead_id = heat.entry.lead_id
+        follow_id = heat.entry.follow_id
+
+        if lead_id != 0 && !people_in_heat_number.include?(lead_id)
+          people_in_heat_number << lead_id
+          person_studios[lead_id] ||= heat.entry.lead.studio&.ballroom
+        end
+
+        if follow_id != 0 && !people_in_heat_number.include?(follow_id)
+          people_in_heat_number << follow_id
+          person_studios[follow_id] ||= heat.entry.follow.studio&.ballroom
+        end
+
+        # Track entry pairs (ordered by ID for consistency)
+        if lead_id != 0 && follow_id != 0
+          pair = lead_id < follow_id ? [lead_id, follow_id] : [follow_id, lead_id]
+          pair_counts[pair] += 1
+        end
+      end
+
+      heat_number_people << people_in_heat_number
+      people_in_heat_number.each { |pid| person_weights[pid] += 1 }
+    end
+
+    # Assign home ballrooms for everyone in this block
+    homes = assign_home_ballrooms(person_weights, person_studios, num_rooms, state, heat_number_people, pair_counts)
+
+    # For each heat-number in the block, assign ballrooms respecting homes
+    pending_block.each do |item|
+      rooms = assign_heat_with_homes(item[:heats], homes, num_rooms, state, cap: item[:cap])
+      @agenda[item[:cat]] << [item[:number], rooms]
+    end
+
+    # Update state with final home assignments for carry-forward to next block
+    homes.each do |person_id, room|
+      state[:person_ballroom][person_id] = room
+    end
+
+    state[:block_number] += 1
+  end
+
+  # Assign each person a stable "home ballroom" for a block using three-pass weighted greedy.
+  #
+  # Pass 1 — Studio preferences: People whose studio has a ballroom preference are locked.
+  # Pass 2 — Carry-forward: People who had a home in the prior block keep it, unless
+  #           doing so would exceed a tolerance threshold.
+  # Pass 3 — New assignments: Remaining people go to the room with the lowest
+  #           per-heat-number imbalance score.
+  #
+  # Weight = number of heat-numbers a person appears in within this block.
+  # heat_number_people = array of Sets, one per heat-number, listing person_ids in that heat-number.
+  def assign_home_ballrooms(person_weights, person_studios, num_rooms, state, heat_number_people = [], pair_counts = {})
+    homes = {}
+    room_weights = Hash.new(0)
+    total_weight = person_weights.values.sum
+    tolerance = total_weight.to_f / num_rooms * 1.3
+
+    room_letters = num_rooms.times.map { |i| ('A'.ord + i).chr }
+
+    # Per-heat-number room counts: how many people in each heat-number are assigned to each room
+    # This is used to balance per-heat-number counts, not just total weight.
+    heat_room_counts = heat_number_people.map { Hash.new(0) }
+
+    # Helper to assign a person to a room and update all tracking
+    assign_person = lambda do |person_id, room|
+      homes[person_id] = room
+      room_weights[room] += person_weights[person_id]
+      heat_number_people.each_with_index do |people_set, idx|
+        heat_room_counts[idx][room] += 1 if people_set.include?(person_id)
+      end
+    end
+
+    # Helper: compute the maximum per-heat-number imbalance if person_id were assigned to room.
+    # Returns the worst (max over all heat-numbers) difference between the largest and smallest
+    # room count for heat-numbers this person participates in.
+    heat_imbalance_for = lambda do |person_id, room|
+      max_imbalance = 0
+      heat_number_people.each_with_index do |people_set, idx|
+        next unless people_set.include?(person_id)
+        counts = heat_room_counts[idx].dup
+        counts[room] += 1
+        room_counts = room_letters.map { |r| counts[r] }
+        imbalance = room_counts.max - room_counts.min
+        max_imbalance = imbalance if imbalance > max_imbalance
+      end
+      max_imbalance
+    end
+
+    # Pass 1: Studio preferences
+    person_weights.each do |person_id, weight|
+      studio_pref = person_studios[person_id]
+      if studio_pref.present? && room_letters.include?(studio_pref)
+        assign_person.call(person_id, studio_pref)
+      end
+    end
+
+    # Pass 2: Carry-forward from previous block (heaviest-weight people first)
+    carry_forward = person_weights.keys
+      .reject { |pid| homes.key?(pid) }
+      .select { |pid| state[:person_ballroom][pid] }
+      .sort_by { |pid| -person_weights[pid] }
+
+    carry_forward.each do |person_id|
+      prior_room = state[:person_ballroom][person_id]
+      weight = person_weights[person_id]
+
+      if room_letters.include?(prior_room) && (room_weights[prior_room] + weight) <= tolerance
+        assign_person.call(person_id, prior_room)
+      end
+      # If would exceed tolerance, leave unassigned for Pass 3
+    end
+
+    # Pass 3: New assignments — assign to room that minimizes per-heat-number imbalance
+    unassigned = person_weights.keys
+      .reject { |pid| homes.key?(pid) }
+      .sort_by { |pid| [-person_weights[pid], pid] }
+
+    unassigned.each do |person_id|
+      # Score each room by per-heat-number imbalance, then by total weight as tiebreaker
+      best_room = room_letters.min_by do |room|
+        [heat_imbalance_for.call(person_id, room), room_weights[room]]
+      end
+
+      # If multiple rooms tie on both metrics, use deterministic tiebreaker
+      best_score = [heat_imbalance_for.call(person_id, best_room), room_weights[best_room]]
+      candidates = room_letters.select do |room|
+        [heat_imbalance_for.call(person_id, room), room_weights[room]] == best_score
+      end
+
+      if candidates.length == 1
+        room = candidates.first
+      else
+        index = (person_id + state[:block_number]) % candidates.length
+        room = candidates.sort[index]
+      end
+
+      assign_person.call(person_id, room)
+    end
+
+    # Pass 4: Pair reconciliation — reduce bouncing by aligning conflicting partners.
+    # For each pair where lead and follow got different homes, try moving the lighter
+    # partner to match the heavier one, if it doesn't worsen per-heat-number imbalance.
+    if pair_counts.any?
+      # Helper to move a person from their current room to a new room
+      move_person = lambda do |person_id, old_room, new_room|
+        homes[person_id] = new_room
+        weight = person_weights[person_id]
+        room_weights[old_room] -= weight
+        room_weights[new_room] += weight
+        heat_number_people.each_with_index do |people_set, idx|
+          if people_set.include?(person_id)
+            heat_room_counts[idx][old_room] -= 1
+            heat_room_counts[idx][new_room] += 1
+          end
+        end
+      end
+
+      # Helper: current max imbalance across all heat-numbers a person participates in
+      current_imbalance_for = lambda do |person_id|
+        max_imbalance = 0
+        heat_number_people.each_with_index do |people_set, idx|
+          next unless people_set.include?(person_id)
+          room_counts = room_letters.map { |r| heat_room_counts[idx][r] }
+          imbalance = room_counts.max - room_counts.min
+          max_imbalance = imbalance if imbalance > max_imbalance
+        end
+        max_imbalance
+      end
+
+      # Sort conflicting pairs by heat count together (most heats first = most bounce reduction)
+      conflicting_pairs = pair_counts.select { |pair, _| homes[pair[0]] != homes[pair[1]] }
+        .sort_by { |_, count| -count }
+
+      conflicting_pairs.each do |pair, count|
+        pid_a, pid_b = pair
+        next unless homes[pid_a] && homes[pid_b]
+        next if homes[pid_a] == homes[pid_b]  # may have been resolved by earlier move
+
+        # Decide who moves: lighter weight moves to heavier's room
+        if person_weights[pid_a] >= person_weights[pid_b]
+          mover, stayer = pid_b, pid_a
+        else
+          mover, stayer = pid_a, pid_b
+        end
+
+        old_room = homes[mover]
+        new_room = homes[stayer]
+
+        # Check if moving would worsen any per-heat-number imbalance beyond 2
+        would_worsen = false
+        heat_number_people.each_with_index do |people_set, idx|
+          next unless people_set.include?(mover)
+          new_count = heat_room_counts[idx][new_room] + 1
+          old_count = heat_room_counts[idx][old_room] - 1
+          all_counts = room_letters.map do |r|
+            if r == new_room then heat_room_counts[idx][r] + 1
+            elsif r == old_room then heat_room_counts[idx][r] - 1
+            else heat_room_counts[idx][r]
+            end
+          end
+          if all_counts.max - all_counts.min > 2
+            would_worsen = true
+            break
+          end
+        end
+
+        move_person.call(mover, old_room, new_room) unless would_worsen
+      end
+    end
+
+    homes
+  end
+
+  # Assign ballrooms for heats within a single heat-number, respecting home assignments.
+  # Priority: heat-level override > studio preference > home ballroom > fallback.
+  # Enforces a per-heat-number balance cap so no room gets too many heats.
+  def assign_heat_with_homes(heats, homes, num_rooms, state, cap: nil)
+    result = Hash.new { |h, k| h[k] = [] }
+
+    # Per-heat-number balance cap
+    non_override_count = heats.count { |h| h.ballroom.blank? }
+    balance_cap = (non_override_count.to_f / num_rooms).ceil
+    # Use the stricter of event cap and balance cap
+    effective_cap = if cap && balance_cap
+                     [cap, balance_cap].min
+                   else
+                     cap || balance_cap
+                   end
+
+    heats.each do |heat|
+      assigned = if heat.ballroom.present?
+        # Heat-level override — use as-is (bypasses cap)
+        heat.ballroom
+      else
+        # Try studio preference
+        studio_pref = heat.subject&.studio&.ballroom
+        if studio_pref.present? && ballroom_under_cap?(studio_pref, result, effective_cap)
+          studio_pref
+        else
+          # Use home ballrooms for lead and follow
+          lead_home = homes[heat.entry.lead_id]
+          follow_home = homes[heat.entry.follow_id]
+
+          preferred = if lead_home.nil? && follow_home.nil?
+            nil
+          elsif lead_home && follow_home.nil?
+            lead_home
+          elsif follow_home && lead_home.nil?
+            follow_home
+          elsif lead_home == follow_home
+            lead_home
+          else
+            resolve_ballroom_conflict(heat, lead_home, follow_home)
+          end
+
+          if preferred && ballroom_under_cap?(preferred, result, effective_cap)
+            preferred
+          else
+            least_loaded_ballroom(num_rooms, state[:block_number], heat.entry.id, result, cap: effective_cap)
+          end
+        end
+      end
+
+      result[assigned] << heat
+    end
+
+    # Sort by ballroom letter (nil sorts first)
+    result.sort_by { |k, _| k.to_s }.to_h
   end
 
   def determine_ballroom(heat, num_rooms, state, current_heat_assignments = {}, cap: nil)

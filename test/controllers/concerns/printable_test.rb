@@ -957,4 +957,343 @@ class PrintableTest < ActiveSupport::TestCase
     # The student SHOULD be tracked in state for automatic assignments
     assert_not_nil state[:person_ballroom][auto_student.id], "Automatic assignment should update person tracking state"
   end
+
+  # ===== BLOCK-LEVEL BALLROOM ASSIGNMENT TESTS =====
+
+  test "flush_block balances across heat numbers without extreme splits" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+    @agenda = { 'TestCat' => [] }
+
+    # Create 17 entries (to simulate a 5:12 imbalance scenario)
+    students = 17.times.map do |i|
+      Person.create!(name: "Block Student #{i}", type: 'Student', studio: @studio, level: @level)
+    end
+
+    entries = students.map do |student|
+      Entry.create!(lead: @instructor, follow: student, age: @age, level: @level)
+    end
+
+    # Build a block with one heat-number containing all 17 heats
+    heats = entries.map do |entry|
+      Heat.new(number: 133, entry: entry, dance: @dance, category: 'Closed').tap do |h|
+        h.id = entry.id  # Use entry id as surrogate
+      end
+    end
+
+    pending_block = [{
+      heats: heats, num_rooms: 2, cap: nil, cat: 'TestCat', number: 133
+    }]
+
+    flush_block(pending_block, state)
+
+    # Check balance: no room should have more than ceil(17/2) = 9
+    rooms = @agenda['TestCat'].first[1]
+    room_a = rooms['A']&.length || 0
+    room_b = rooms['B']&.length || 0
+
+    assert_equal 17, room_a + room_b, "All heats should be assigned"
+    assert room_a >= 7 && room_a <= 10, "Room A should have 7-10 heats, got #{room_a}"
+    assert room_b >= 7 && room_b <= 10, "Room B should have 7-10 heats, got #{room_b}"
+  end
+
+  test "flush_block minimizes person bouncing within a block" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+    @agenda = { 'TestCat' => [] }
+
+    waltz = dances(:waltz)
+    tango = dances(:tango)
+    waltz.update!(order: 1)
+    tango.update!(order: 2)
+
+    # Create 8 students who each dance in both heat-numbers
+    students = 8.times.map do |i|
+      Person.create!(name: "Bounce Student #{i}", type: 'Student', studio: @studio, level: @level)
+    end
+
+    entries = students.map do |student|
+      Entry.create!(lead: @instructor, follow: student, age: @age, level: @level)
+    end
+
+    # Heat-number 1: all 8 entries dance waltz
+    heats1 = entries.map.with_index do |entry, i|
+      Heat.new(number: 130, entry: entry, dance: waltz, category: 'Closed').tap { |h| h.id = 10000 + i }
+    end
+
+    # Heat-number 2: all 8 entries dance tango
+    heats2 = entries.map.with_index do |entry, i|
+      Heat.new(number: 131, entry: entry, dance: tango, category: 'Closed').tap { |h| h.id = 10100 + i }
+    end
+
+    pending_block = [
+      { heats: heats1, num_rooms: 2, cap: nil, cat: 'TestCat', number: 130 },
+      { heats: heats2, num_rooms: 2, cap: nil, cat: 'TestCat', number: 131 }
+    ]
+
+    flush_block(pending_block, state)
+
+    # Check that each student stays in the same ballroom across both heat-numbers
+    # Build a map of person_id -> ballroom for each heat-number
+    rooms_by_number = {}
+    @agenda['TestCat'].each do |number, rooms|
+      rooms_by_number[number] = {}
+      rooms.each do |room, room_heats|
+        room_heats.each do |heat|
+          rooms_by_number[number][heat.entry.follow_id] = room
+        end
+      end
+    end
+
+    bounces = 0
+    students.each do |student|
+      room1 = rooms_by_number[130][student.id]
+      room2 = rooms_by_number[131][student.id]
+      bounces += 1 if room1 && room2 && room1 != room2
+    end
+
+    assert bounces <= 1, "At most 1 student should bounce between ballrooms, got #{bounces}"
+  end
+
+  test "flush_block carry-forward works between blocks" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+    @agenda = { 'TestCat' => [] }
+
+    waltz = dances(:waltz)
+    tango = dances(:tango)
+    waltz.update!(order: 1)
+    tango.update!(order: 2)
+
+    # Create students
+    students = 6.times.map do |i|
+      Person.create!(name: "CarryFwd Student #{i}", type: 'Student', studio: @studio, level: @level)
+    end
+
+    entries = students.map do |student|
+      Entry.create!(lead: @instructor, follow: student, age: @age, level: @level)
+    end
+
+    # Block 1: waltz then tango (order 1, 2)
+    block1_heats1 = entries.map.with_index do |entry, i|
+      Heat.new(number: 200, entry: entry, dance: waltz, category: 'Closed').tap { |h| h.id = 20000 + i }
+    end
+    block1_heats2 = entries.map.with_index do |entry, i|
+      Heat.new(number: 201, entry: entry, dance: tango, category: 'Closed').tap { |h| h.id = 20100 + i }
+    end
+
+    flush_block([
+      { heats: block1_heats1, num_rooms: 2, cap: nil, cat: 'TestCat', number: 200 },
+      { heats: block1_heats2, num_rooms: 2, cap: nil, cat: 'TestCat', number: 201 }
+    ], state)
+
+    # Record where each student was in block 1
+    block1_rooms = {}
+    @agenda['TestCat'].each do |_number, rooms|
+      rooms.each do |room, room_heats|
+        room_heats.each do |heat|
+          block1_rooms[heat.entry.follow_id] ||= room
+        end
+      end
+    end
+
+    # Block 2: same students, waltz then tango again (new interleave cycle)
+    @agenda['TestCat'] = []  # Clear for block 2
+
+    block2_heats1 = entries.map.with_index do |entry, i|
+      Heat.new(number: 202, entry: entry, dance: waltz, category: 'Closed').tap { |h| h.id = 20200 + i }
+    end
+    block2_heats2 = entries.map.with_index do |entry, i|
+      Heat.new(number: 203, entry: entry, dance: tango, category: 'Closed').tap { |h| h.id = 20300 + i }
+    end
+
+    flush_block([
+      { heats: block2_heats1, num_rooms: 2, cap: nil, cat: 'TestCat', number: 202 },
+      { heats: block2_heats2, num_rooms: 2, cap: nil, cat: 'TestCat', number: 203 }
+    ], state)
+
+    # Check that most students kept the same room in block 2
+    block2_rooms = {}
+    @agenda['TestCat'].each do |_number, rooms|
+      rooms.each do |room, room_heats|
+        room_heats.each do |heat|
+          block2_rooms[heat.entry.follow_id] ||= room
+        end
+      end
+    end
+
+    carried_forward = students.count do |student|
+      block1_rooms[student.id] && block2_rooms[student.id] &&
+        block1_rooms[student.id] == block2_rooms[student.id]
+    end
+
+    assert carried_forward >= 4, "At least 4 of 6 students should carry forward, got #{carried_forward}"
+  end
+
+  test "flush_block rebalances when carry-forward would cause severe imbalance" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+    @agenda = { 'TestCat' => [] }
+
+    # Pre-load state: 10 people all in room A from a hypothetical previous block
+    people_ids = (30000..30009).to_a
+    people_ids.each { |pid| state[:person_ballroom][pid] = 'A' }
+
+    # Create 10 students (5 will be in this block, 5 won't)
+    students = 10.times.map do |i|
+      Person.create!(name: "Rebalance Student #{i}", type: 'Student', studio: @studio, level: @level)
+    end
+
+    entries = students.map do |student|
+      Entry.create!(lead: @instructor, follow: student, age: @age, level: @level)
+    end
+
+    # Override person_ballroom to map all these students to A
+    students.each { |s| state[:person_ballroom][s.id] = 'A' }
+
+    heats = entries.map.with_index do |entry, i|
+      Heat.new(number: 300, entry: entry, dance: @dance, category: 'Closed').tap { |h| h.id = 30000 + i }
+    end
+
+    flush_block([
+      { heats: heats, num_rooms: 2, cap: nil, cat: 'TestCat', number: 300 }
+    ], state)
+
+    rooms = @agenda['TestCat'].first[1]
+    room_a = rooms['A']&.length || 0
+    room_b = rooms['B']&.length || 0
+
+    assert_equal 10, room_a + room_b, "All heats should be assigned"
+    # With tolerance of 1.3, max per room is ceil(10/2 * 1.3) = 7
+    # So the split should be no worse than 7:3
+    assert room_a <= 7, "Room A should not exceed tolerance, got #{room_a}"
+    assert room_b >= 3, "Room B should have at least 3, got #{room_b}"
+  end
+
+  test "flush_block respects studio preferences at block level" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+    @agenda = { 'TestCat' => [] }
+
+    # Set studio to prefer ballroom B
+    @studio.update!(ballroom: 'B')
+
+    # Create enough heats across multiple heat-numbers so studio preference can be
+    # respected while still maintaining per-heat balance
+    students = 6.times.map do |i|
+      Person.create!(name: "Studio Pref Student #{i}", type: 'Student', studio: @studio, level: @level)
+    end
+
+    # Also create non-studio entries to provide balancing counterweight
+    other_studio = Studio.create!(name: 'Other Studio')
+    other_students = 6.times.map do |i|
+      Person.create!(name: "Other Student #{i}", type: 'Student', studio: other_studio, level: @level)
+    end
+
+    all_entries = (students + other_students).map do |student|
+      Entry.create!(lead: @instructor, follow: student, age: @age, level: @level)
+    end
+
+    heats = all_entries.map.with_index do |entry, i|
+      Heat.new(number: 400, entry: entry, dance: @dance, category: 'Closed').tap { |h| h.id = 40000 + i }
+    end
+
+    flush_block([
+      { heats: heats, num_rooms: 2, cap: nil, cat: 'TestCat', number: 400 }
+    ], state)
+
+    rooms = @agenda['TestCat'].first[1]
+
+    # Studio-preferred students should predominantly be in B
+    studio_in_b = (rooms['B'] || []).count { |h| students.include?(h.entry.follow) }
+    studio_in_a = (rooms['A'] || []).count { |h| students.include?(h.entry.follow) }
+    assert studio_in_b >= studio_in_a, "More studio-preferred students should be in B (#{studio_in_b}) than A (#{studio_in_a})"
+  end
+
+  test "flush_block honors heat-level overrides" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+    @agenda = { 'TestCat' => [] }
+
+    student = Person.create!(name: "Override Student", type: 'Student', studio: @studio, level: @level)
+    entry = Entry.create!(lead: @instructor, follow: student, age: @age, level: @level)
+
+    # Create heat with explicit ballroom override
+    heat = Heat.new(number: 500, entry: entry, dance: @dance, category: 'Closed', ballroom: 'B')
+    heat.id = 50000
+
+    flush_block([
+      { heats: [heat], num_rooms: 2, cap: nil, cat: 'TestCat', number: 500 }
+    ], state)
+
+    rooms = @agenda['TestCat'].first[1]
+    assert_equal 1, rooms['B']&.length || 0, "Heat with override should be in B"
+  end
+
+  test "flush_block handles single-heat-number block" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+    @agenda = { 'TestCat' => [] }
+
+    students = 6.times.map do |i|
+      Person.create!(name: "Single Block Student #{i}", type: 'Student', studio: @studio, level: @level)
+    end
+
+    entries = students.map do |student|
+      Entry.create!(lead: @instructor, follow: student, age: @age, level: @level)
+    end
+
+    heats = entries.map.with_index do |entry, i|
+      Heat.new(number: 600, entry: entry, dance: @dance, category: 'Closed').tap { |h| h.id = 60000 + i }
+    end
+
+    flush_block([
+      { heats: heats, num_rooms: 2, cap: nil, cat: 'TestCat', number: 600 }
+    ], state)
+
+    # Should produce balanced split for single heat-number
+    rooms = @agenda['TestCat'].first[1]
+    room_a = rooms['A']&.length || 0
+    room_b = rooms['B']&.length || 0
+
+    assert_equal 6, room_a + room_b, "All heats should be assigned"
+    assert_equal 3, room_a, "Should be perfectly balanced: A=#{room_a}"
+    assert_equal 3, room_b, "Should be perfectly balanced: B=#{room_b}"
+  end
+
+  test "assign_home_ballrooms distributes by weight" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    # Person 1 has weight 7, Person 2 has weight 3
+    person_weights = { 1 => 7, 2 => 3 }
+    person_studios = {}
+
+    homes = assign_home_ballrooms(person_weights, person_studios, 2, state)
+
+    assert_equal 2, homes.size, "Both people should have homes"
+    assert_not_equal homes[1], homes[2], "Different-weight people should be in different rooms"
+  end
+
+  test "assign_home_ballrooms handles three rooms" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    person_weights = { 1 => 5, 2 => 5, 3 => 5 }
+    person_studios = {}
+
+    homes = assign_home_ballrooms(person_weights, person_studios, 3, state)
+
+    assert_equal 3, homes.size
+    # Each person should be in a different room for perfect balance
+    assert_equal 3, homes.values.uniq.length, "Each person should be in different room"
+  end
+
+  test "flush_block increments block_number" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+    @agenda = { 'TestCat' => [] }
+
+    student = Person.create!(name: "Block Num Student", type: 'Student', studio: @studio, level: @level)
+    entry = Entry.create!(lead: @instructor, follow: student, age: @age, level: @level)
+
+    heat = Heat.new(number: 700, entry: entry, dance: @dance, category: 'Closed')
+    heat.id = 70000
+
+    flush_block([
+      { heats: [heat], num_rooms: 2, cap: nil, cat: 'TestCat', number: 700 }
+    ], state)
+
+    assert_equal 1, state[:block_number], "Block number should increment after flush"
+  end
 end
