@@ -91,6 +91,21 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_select 'h2', text: 'Solo Bronze'
   end
   
+  test "new entry form shows dances from categories with only split dances" do
+    @event.update!(agenda_based_entries: true)
+
+    max_order = Category.maximum(:order) || 0
+    newcomer = Category.create!(name: 'Newcomer', order: max_order + 1, pro: false, routines: false)
+
+    # Create a split dance (negative order) assigned to the newcomer category
+    Dance.create!(name: 'Waltz', order: -100, closed_category: newcomer)
+
+    get new_entry_url, params: { primary: @student.id }
+
+    assert_response :success
+    assert_select 'h2', text: 'Newcomer'
+  end
+
   test "edit entry form loads with heat tallying" do
     get edit_entry_url(@entry, primary: @student.id)
     

@@ -541,10 +541,9 @@ class EntriesController < ApplicationController
           next if cat.pro ^ pro
 
           # Collect all non-empty dance types for this category
-          # Filter to only canonical dances (positive order), not split dances
           category_dances = []
           dance_ids.each do |id, name|
-            dances = cat.send(id).where(order: 1..).ordered
+            dances = cat.send(id).ordered
 
             if dances.length > 0
               category_dances << { dances: dances, category: name }
