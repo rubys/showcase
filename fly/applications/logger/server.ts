@@ -5,4 +5,4 @@ import "./index.ts"
 import "./logfiler.ts"
 
 // start monitor
-// import "./monitor.ts"
+import "./monitor.ts"
