@@ -13,8 +13,8 @@ class HeatsController < ApplicationController
 
   # GET /heats or /heats.json
   def index
-    # Override to always show times in admin view
-    @include_times = true
+    # Override to always show times in admin view (unless already set by caller)
+    @include_times = true if @include_times.nil?
     generate_agenda
 
     # Build ballroom lookup from agenda for views
@@ -137,6 +137,7 @@ class HeatsController < ApplicationController
     @type = params[:type]
     @event = Event.current
     @ballrooms = Event.current.ballrooms
+    @include_times = @event.include_times
     index
     @font_family = @event.font_family
     @font_size = @event.font_size
