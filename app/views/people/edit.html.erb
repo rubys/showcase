@@ -12,12 +12,12 @@
     <% elsif @heats.all? {|heat| heat.number == 0} %>
     <%= up_link 'Remove this person', person_path(@person), class: 'btn-grey my-0',
       method: :delete, disabled: true, form: {data: { turbo_confirm: 'Are you sure?' }} %>
-    <% elsif @heats.all? {|heat| heat.number >= 0} %>
-    <%= up_link 'Scratch Heats', person_path(@person), class: 'btn-grey my-0',
-      method: :delete, form: {data: { turbo_confirm: 'Are you sure?' }} %>
-    <% else %>
+    <% elsif @heats.any? {|heat| heat.number < 0} %>
     <%= up_link 'Un-scratch Heats', person_path(@person), class: 'btn-grey my-0',
       method: :delete %>
+    <% elsif @heats.any? {|heat| heat.number > 0} %>
+    <%= up_link 'Scratch Heats', person_path(@person), class: 'btn-grey my-0',
+      method: :delete, form: {data: { turbo_confirm: 'Are you sure?' }} %>
     <% end %>
 
     <% if @return_to %>

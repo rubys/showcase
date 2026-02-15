@@ -1013,13 +1013,21 @@ class PeopleController < ApplicationController
         end
         notice = "#{count} heats successfully restored."
       else
-        count = @heats.count {|heat| heat.number > 0}
+        scored_heat_numbers = Score.joins(:heat)
+          .where.not(scores: { value: nil, comments: nil, good: nil, bad: nil })
+          .pluck('heats.number').uniq
+
+        scratchable = @heats.select { |heat| heat.number > 0 && !scored_heat_numbers.include?(heat.number) }
+        scored = @heats.count { |heat| heat.number > 0 && scored_heat_numbers.include?(heat.number) }
+
         Heat.transaction do
-          @heats.each do |heat|
-            heat.update(number: -heat.number) if heat.number > 0
+          scratchable.each do |heat|
+            heat.update(number: -heat.number)
           end
         end
-        notice = "#{count} heats successfully scratched."
+
+        notice = "#{scratchable.count} heats successfully scratched."
+        notice += " #{scored} scored heats were not scratched." if scored > 0
       end
     end
 
