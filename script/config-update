@@ -56,6 +56,13 @@ result = ShowcaseCleanup.cleanup(quiet: false)
 
 if result[:removed].any?
   puts "Removed #{result[:removed].length} stale showcase(s)"
+
+  # Regenerate showcases.yml so it reflects the deletions
+  require_relative '../lib/region_configuration'
+  showcases_data = RegionConfiguration.generate_showcases_data
+  showcases_file = File.join(ShowcasesLoader.db_path, 'showcases.yml')
+  File.write(showcases_file, YAML.dump(showcases_data))
+  puts "Regenerated showcases.yml"
 else
   puts "No stale showcases to remove"
 end
