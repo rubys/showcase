@@ -47,6 +47,25 @@ end
 
 puts "\n"
 
+# Step 0.6: Clean up stale empty showcases
+puts "Step 0.6: Cleaning up stale empty showcases..."
+puts "=" * 50
+
+require_relative '../lib/showcase_cleanup'
+result = ShowcaseCleanup.cleanup(quiet: false)
+
+if result[:removed].any?
+  puts "Removed #{result[:removed].length} stale showcase(s)"
+else
+  puts "No stale showcases to remove"
+end
+
+if result[:errors].any?
+  puts "#{result[:errors].length} error(s) occurred"
+end
+
+puts "\n"
+
 # Parse command line options
 options = { verbose: false, dry_run: false, target: 'fly' }
 OptionParser.new do |opts|
