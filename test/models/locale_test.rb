@@ -149,6 +149,28 @@ class LocaleTest < ActiveSupport::TestCase
     assert_equal "0.12", Locale.number_format(0.123456, "en-US", maximum_fraction_digits: 2)
   end
 
+  test "Romanian locale formats correctly" do
+    # Date formatting
+    date = Date.new(2024, 3, 15) # Friday
+    result = Locale.format_single_date(date, "ro-RO")
+    assert_equal "vineri, 15 martie 2024", result
+
+    # Month and weekday names
+    months = Locale.month_names("ro-RO")
+    assert_equal "ianuarie", months[0]
+    assert_equal "decembrie", months[11]
+
+    weekdays = Locale.weekday_names("ro-RO")
+    assert_equal "duminică", weekdays[0]
+    assert_equal "sâmbătă", weekdays[6]
+
+    # Number formatting
+    assert_equal "1 234,56", Locale.number_format(1234.56, "ro-RO")
+
+    # Currency formatting
+    assert_equal "1 234,56 lei", Locale.number_format(1234.56, "ro-RO", style: 'currency', currency: 'RON')
+  end
+
   test "number_format handles all supported locales" do
     test_number = 1234567.89
     

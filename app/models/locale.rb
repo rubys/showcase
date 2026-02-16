@@ -17,6 +17,7 @@ class Locale
     'es_ES' => { name: 'Spanish (ES)', browser: 'es-ES' },
     'it_IT' => { name: 'Italian (IT)', browser: 'it-IT' },
     'uk_UA' => { name: 'Ukrainian (UA)', browser: 'uk-UA' },
+    'ro_RO' => { name: 'Romanian (RO)', browser: 'ro-RO' },
     'ja_JP' => { name: 'Japanese (JP)', browser: 'ja-JP' }
   }.freeze
 
@@ -74,6 +75,8 @@ class Locale
       ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia']
     when 'uk-UA'
       ['січня', 'лютого', 'березня', 'квітня', 'травня', 'червня', 'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня']
+    when 'ro-RO'
+      ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie', 'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie']
     when 'ja-JP'
       ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
     else # English (en-US, en-GB, en-CA, en-AU)
@@ -97,6 +100,8 @@ class Locale
       ['niedziela', 'poniedziałek', 'wtorek', 'środa', 'czwartek', 'piątek', 'sobota']
     when 'uk-UA'
       ['неділя', 'понеділок', 'вівторок', 'середа', 'четвер', "п'ятниця", 'субота']
+    when 'ro-RO'
+      ['duminică', 'luni', 'marți', 'miercuri', 'joi', 'vineri', 'sâmbătă']
     when 'ja-JP'
       ['日', '月', '火', '水', '木', '金', '土']
     else # English (en-US, en-GB, en-CA, en-AU)
@@ -134,6 +139,8 @@ class Locale
       "#{weekday}, #{date.day} #{month} #{date.year}"
     when 'uk-UA'
       "#{weekday}, #{date.day} #{month} #{date.year}"
+    when 'ro-RO'
+      "#{weekday}, #{date.day} #{month} #{date.year}"
     when 'ja-JP'
       "#{date.year}年#{date.month}月#{date.day}日(#{weekday})"
     else # Default to en-US format
@@ -154,7 +161,7 @@ class Locale
     # Format based on locale conventions
     # Note: Locale service already converted to browser format (with dashes)
     case locale
-    when 'en-GB', 'en-AU', 'en-CA'
+    when 'en-GB', 'en-AU', 'en-CA', 'ro-RO'
       if start_date.month == end_date.month && start_date.year == end_date.year
         if show_year
           "#{start_date.day}–#{end_date.day} #{start_month} #{start_date.year}"
@@ -299,7 +306,7 @@ class Locale
       [',', '.']  # 1,234.56
     when 'en-GB', 'en-AU'
       [',', '.']  # 1,234.56
-    when 'fr-FR', 'es-ES', 'it-IT', 'pl-PL', 'uk-UA'
+    when 'fr-FR', 'es-ES', 'it-IT', 'pl-PL', 'uk-UA', 'ro-RO'
       [' ', ',']  # 1 234,56 (space for thousands)
     when 'fr-CA'
       [' ', ',']  # 1 234,56 (French Canada follows French conventions)
@@ -377,6 +384,8 @@ class Locale
       "#{amount_str} #{symbol}"  # 1 234,56 zł
     when 'uk-UA'
       "#{amount_str} #{symbol}"  # 1 234,56 ₴
+    when 'ro-RO'
+      "#{amount_str} #{symbol}"  # 1 234,56 lei
     when 'ja-JP'
       if currency == 'JPY'
         "#{symbol}#{amount_str}"  # ¥1,234
@@ -410,6 +419,8 @@ class Locale
       'zł'
     when 'UAH'
       '₴'
+    when 'RON'
+      'lei'
     else
       currency  # Fall back to currency code
     end

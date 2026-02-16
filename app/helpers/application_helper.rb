@@ -126,6 +126,8 @@ module ApplicationHelper
         'PLN'
       when 'uk-UA'
         'UAH'
+      when 'ro-RO'
+        'RON'
       else
         'USD'
       end
