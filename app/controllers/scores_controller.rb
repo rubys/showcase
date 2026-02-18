@@ -834,10 +834,10 @@ class ScoresController < ApplicationController
       @scoring = @event.closed_scoring
     end
 
+    @good = {}
+    @bad = {}
+    @value = {}
     if %w(+ & @).include? @scoring
-      @good = {}
-      @bad = {}
-      @value = {}
       scores.each do |score|
         # For category scoring, score.heat is the subject wrapper (OpenStruct) - use student's person ID
         # For per-heat scoring, score.heat is a Heat model - use heat_id
