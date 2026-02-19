@@ -466,7 +466,7 @@ module Printable
       unless manual_override
         state[:person_ballroom][heat.entry.lead_id] = assigned if heat.entry.lead_id != 0
         state[:person_ballroom][heat.entry.follow_id] = assigned if heat.entry.follow_id != 0
-        dance_room[heat.dance_id] ||= assigned
+        dance_room[heat.dance_id] = assigned
       end
     end
 
@@ -763,7 +763,7 @@ module Printable
       end
 
       result[assigned] << heat
-      dance_room[heat.dance_id] ||= assigned unless heat.ballroom.present?
+      dance_room[heat.dance_id] = assigned unless heat.ballroom.present?
     end
 
     # Sort by ballroom letter (nil sorts first)
