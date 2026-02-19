@@ -444,7 +444,9 @@ module Printable
 
     result = Hash.new { |h, k| h[k] = [] }
 
-    # Track dance_id → ballroom so packed multi-dance splits stay together
+    # Track dance_id → ballroom so packed multi-dance splits stay together.
+    # Only applies when multiple dances share the same heat number.
+    multi_dance = heats.map(&:dance_id).uniq.size > 1
     dance_room = {}
 
     heats.each do |heat|
@@ -453,7 +455,8 @@ module Printable
 
       assigned = if manual_override
         heat.ballroom
-      elsif dance_room[heat.dance_id] && ballroom_under_cap?(dance_room[heat.dance_id], result, cap)
+      elsif multi_dance && dance_room[heat.dance_id]
+        # Same dance_id already assigned — keep together (bypasses cap)
         dance_room[heat.dance_id]
       else
         determine_ballroom(heat, num_rooms, state, result, cap: cap)
@@ -466,7 +469,7 @@ module Printable
       unless manual_override
         state[:person_ballroom][heat.entry.lead_id] = assigned if heat.entry.lead_id != 0
         state[:person_ballroom][heat.entry.follow_id] = assigned if heat.entry.follow_id != 0
-        dance_room[heat.dance_id] = assigned
+        dance_room[heat.dance_id] = assigned if multi_dance
       end
     end
 
@@ -722,15 +725,17 @@ module Printable
                      cap || balance_cap
                    end
 
-    # Track dance_id → ballroom so packed multi-dance splits stay together
+    # Track dance_id → ballroom so packed multi-dance splits stay together.
+    # Only applies when multiple dances share the same heat number.
+    multi_dance = heats.map(&:dance_id).uniq.size > 1
     dance_room = {}
 
     heats.each do |heat|
       assigned = if heat.ballroom.present?
         # Heat-level override — use as-is (bypasses cap)
         heat.ballroom
-      elsif dance_room[heat.dance_id] && ballroom_under_cap?(dance_room[heat.dance_id], result, effective_cap)
-        # Same dance_id already assigned — keep together
+      elsif multi_dance && dance_room[heat.dance_id]
+        # Same dance_id already assigned — keep together (bypasses cap)
         dance_room[heat.dance_id]
       else
         # Try studio preference
@@ -763,7 +768,7 @@ module Printable
       end
 
       result[assigned] << heat
-      dance_room[heat.dance_id] = assigned unless heat.ballroom.present?
+      dance_room[heat.dance_id] = assigned if multi_dance && !heat.ballroom.present?
     end
 
     # Sort by ballroom letter (nil sorts first)
