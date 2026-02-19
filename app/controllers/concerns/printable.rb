@@ -444,11 +444,21 @@ module Printable
 
     result = Hash.new { |h, k| h[k] = [] }
 
+    # Track dance_id → ballroom so packed multi-dance splits stay together
+    dance_room = {}
+
     heats.each do |heat|
       # Check if this is a manual override before determining ballroom
       manual_override = heat.ballroom.present?
 
-      assigned = determine_ballroom(heat, num_rooms, state, result, cap: cap)
+      assigned = if manual_override
+        heat.ballroom
+      elsif dance_room[heat.dance_id] && ballroom_under_cap?(dance_room[heat.dance_id], result, cap)
+        dance_room[heat.dance_id]
+      else
+        determine_ballroom(heat, num_rooms, state, result, cap: cap)
+      end
+
       result[assigned] << heat
 
       # Only update state for automatic assignments - manual overrides should not
@@ -456,6 +466,7 @@ module Printable
       unless manual_override
         state[:person_ballroom][heat.entry.lead_id] = assigned if heat.entry.lead_id != 0
         state[:person_ballroom][heat.entry.follow_id] = assigned if heat.entry.follow_id != 0
+        dance_room[heat.dance_id] ||= assigned
       end
     end
 
@@ -711,10 +722,16 @@ module Printable
                      cap || balance_cap
                    end
 
+    # Track dance_id → ballroom so packed multi-dance splits stay together
+    dance_room = {}
+
     heats.each do |heat|
       assigned = if heat.ballroom.present?
         # Heat-level override — use as-is (bypasses cap)
         heat.ballroom
+      elsif dance_room[heat.dance_id] && ballroom_under_cap?(dance_room[heat.dance_id], result, effective_cap)
+        # Same dance_id already assigned — keep together
+        dance_room[heat.dance_id]
       else
         # Try studio preference
         studio_pref = heat.subject&.studio&.ballroom
@@ -746,6 +763,7 @@ module Printable
       end
 
       result[assigned] << heat
+      dance_room[heat.dance_id] ||= assigned unless heat.ballroom.present?
     end
 
     # Sort by ballroom letter (nil sorts first)

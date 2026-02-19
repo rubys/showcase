@@ -537,9 +537,11 @@ module HeatScheduler
   end
 
   # Pack consecutive multi-dance split groups to reduce heat count.
-  # Only applies to multi-dances that have multi_level splits.
+  # Packs multi-dance splits into fewer heats.
+  # Applies to both MultiLevel-based splits (same dance name) and pre-split
+  # dances (different names but same multi_category and heat_length).
   # Groups can be combined if:
-  # 1. They are for the same multi-dance (same dance name, category Multi)
+  # 1. They are for the same multi-dance (same dance name or same multi_category)
   # 2. No dancer would appear twice in the combined group
   # 3. Combined size doesn't exceed max heat size
   def pack_multi_dance_splits(groups)
@@ -553,8 +555,6 @@ module HeatScheduler
       dances_with_splits.add(name)
     end
 
-    return groups if dances_with_splits.empty?
-
     packed = []
     i = 0
 
@@ -562,8 +562,11 @@ module HeatScheduler
       group = groups[i]
       heat = group.first
 
-      # Check if this is a Multi heat for a dance with splits
-      if heat&.category == 'Multi' && dances_with_splits.include?(heat.dance.name)
+      # Check if this is a Multi heat for a dance with splits or pre-split multi_category
+      if heat&.category == 'Multi' && (
+           dances_with_splits.include?(heat.dance.name) ||
+           heat.dance.multi_category_id.present?
+         )
         # Find consecutive groups for the same multi-dance
         run_start = i
         run_end = i
@@ -572,8 +575,18 @@ module HeatScheduler
           next_group = groups[run_end + 1]
           next_heat = next_group.first
           break unless next_heat&.category == 'Multi' &&
-                       next_heat.dance.name == heat.dance.name &&
                        next_group.agenda_category == group.agenda_category
+
+          if dances_with_splits.include?(heat.dance.name)
+            # MultiLevel case: same dance name
+            break unless next_heat.dance.name == heat.dance.name
+          else
+            # Pre-split case: same heat_length, same multi_category, not a MultiLevel dance
+            break unless next_heat.dance.heat_length == heat.dance.heat_length &&
+                         next_heat.dance.multi_category_id == heat.dance.multi_category_id &&
+                         next_heat.dance.multi_category_id.present? &&
+                         !dances_with_splits.include?(next_heat.dance.name)
+          end
 
           run_end += 1
         end

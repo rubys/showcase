@@ -1296,4 +1296,64 @@ class PrintableTest < ActiveSupport::TestCase
 
     assert_equal 1, state[:block_number], "Block number should increment after flush"
   end
+
+  # ===== SAME-DANCE BALLROOM GROUPING TESTS =====
+
+  test "assign_heat_with_homes keeps same dance_id in same ballroom" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    dance_x = Dance.create!(name: "SameDance X", order: 800)
+    dance_y = Dance.create!(name: "SameDance Y", order: -1)
+
+    # Create 4 heats for dance_x and 4 for dance_y (8 total, 2 ballrooms, cap 4 each)
+    heats = []
+    8.times do |i|
+      student = Person.create!(name: "SDance Student #{i}", type: 'Student', studio: @studio, level: @level)
+      entry = Entry.create!(lead: @instructor, follow: student, age: @age, level: @level)
+      d = i < 4 ? dance_x : dance_y
+      heat = Heat.new(number: 800, entry: entry, dance: d, category: 'Closed')
+      heat.id = 80000 + i
+      heats << heat
+    end
+
+    # Sort by dance_id (as the real code does) so same-dance heats are consecutive
+    heats.sort_by! { |h| [h.dance_id, h.entry.id] }
+
+    homes = {}
+    rooms = assign_heat_with_homes(heats, homes, 2, state)
+
+    # Collect which ballrooms each dance got
+    dance_x_rooms = rooms.select { |_, hs| hs.any? { |h| h.dance_id == dance_x.id } }.keys
+    dance_y_rooms = rooms.select { |_, hs| hs.any? { |h| h.dance_id == dance_y.id } }.keys
+
+    assert_equal 1, dance_x_rooms.size, "All dance_x heats should be in one ballroom, got #{dance_x_rooms}"
+    assert_equal 1, dance_y_rooms.size, "All dance_y heats should be in one ballroom, got #{dance_y_rooms}"
+  end
+
+  test "assign_rooms_rotating keeps same dance_id in same ballroom" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    dance_x = Dance.create!(name: "RotDance X", order: 810)
+    dance_y = Dance.create!(name: "RotDance Y", order: -1)
+
+    heats = []
+    8.times do |i|
+      student = Person.create!(name: "RotDance Student #{i}", type: 'Student', studio: @studio, level: @level)
+      entry = Entry.create!(lead: @instructor, follow: student, age: @age, level: @level)
+      d = i < 4 ? dance_x : dance_y
+      heat = Heat.create!(number: 810, entry: entry, dance: d, category: 'Closed')
+      heats << heat
+    end
+
+    # Sort by dance_id so same-dance heats are consecutive
+    heats.sort_by! { |h| [h.dance_id, h.entry.id] }
+
+    rooms = assign_rooms_rotating(2, heats, state)
+
+    dance_x_rooms = rooms.select { |_, hs| hs.any? { |h| h.dance_id == dance_x.id } }.keys
+    dance_y_rooms = rooms.select { |_, hs| hs.any? { |h| h.dance_id == dance_y.id } }.keys
+
+    assert_equal 1, dance_x_rooms.size, "All dance_x heats should be in one ballroom, got #{dance_x_rooms}"
+    assert_equal 1, dance_y_rooms.size, "All dance_y heats should be in one ballroom, got #{dance_y_rooms}"
+  end
 end

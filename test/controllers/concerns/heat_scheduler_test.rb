@@ -2180,4 +2180,122 @@ class HeatSchedulerTest < ActiveSupport::TestCase
     assert_equal first_result, second_result,
       "Results should be identical regardless of previous heat numbers"
   end
+
+  # ===== PRE-SPLIT MULTI-DANCE PACKING TESTS =====
+
+  test "pack_multi_dance_splits packs pre-split dances with same multi_category and heat_length" do
+    # Mark all existing heats as scratched
+    Heat.update_all(number: -1)
+
+    # Create a multi category
+    multi_cat = Category.create!(name: "PreSplit Pack Test", order: 950)
+
+    # Create 3 pre-split dances with different names but same multi_category and heat_length
+    dance_a = Dance.create!(name: "PreSplit AA", order: 750, multi_category: multi_cat, heat_length: 3)
+    dance_b = Dance.create!(name: "PreSplit BB", order: -1, multi_category: multi_cat, heat_length: 3)
+    dance_c = Dance.create!(name: "PreSplit CC", order: -2, multi_category: multi_cat, heat_length: 3)
+
+    # Create child dances for multi
+    child1 = Dance.create!(name: "PreSplit Child W", order: 751)
+    child2 = Dance.create!(name: "PreSplit Child T", order: 752)
+    child3 = Dance.create!(name: "PreSplit Child F", order: 753)
+
+    [dance_a, dance_b, dance_c].each do |d|
+      Multi.create!(parent_id: d.id, dance_id: child1.id)
+      Multi.create!(parent_id: d.id, dance_id: child2.id)
+      Multi.create!(parent_id: d.id, dance_id: child3.id)
+    end
+
+    # Create entries and heats for each split with non-overlapping dancers
+    max_back = Person.maximum(:back) || 0
+    students = 6.times.map do |i|
+      Person.create!(name: "PreSplit Student #{i}", studio: @studio1, type: 'Student', level: levels(:one))
+    end
+    instructors = 6.times.map do |i|
+      Person.create!(name: "PreSplit Inst #{i}", studio: @studio1, type: 'Professional', back: max_back + 300 + i)
+    end
+
+    # Dance A: students 0,1
+    [0, 1].each do |i|
+      entry = Entry.create!(lead: students[i], follow: instructors[i], age: ages(:one), level: levels(:one))
+      Heat.create!(dance: dance_a, entry: entry, category: 'Multi', number: 0)
+    end
+
+    # Dance B: students 2,3
+    [2, 3].each do |i|
+      entry = Entry.create!(lead: students[i], follow: instructors[i], age: ages(:one), level: levels(:one))
+      Heat.create!(dance: dance_b, entry: entry, category: 'Multi', number: 0)
+    end
+
+    # Dance C: students 4,5
+    [4, 5].each do |i|
+      entry = Entry.create!(lead: students[i], follow: instructors[i], age: ages(:one), level: levels(:one))
+      Heat.create!(dance: dance_c, entry: entry, category: 'Multi', number: 0)
+    end
+
+    @scheduler.schedule_heats
+
+    # Get all scheduled Multi heats for our test dances
+    test_dances = [dance_a, dance_b, dance_c]
+    multi_heats = Heat.where(dance: test_dances, category: 'Multi').where('number > 0')
+
+    assert_equal 6, multi_heats.count, "All 6 heats should be scheduled"
+
+    # Since no dancers overlap, all heats could be packed into fewer heat numbers
+    heat_numbers = multi_heats.pluck(:number).uniq
+    assert heat_numbers.size < 3, "Pre-split dances should pack (got #{heat_numbers.size} groups for 3 splits)"
+  end
+
+  test "pack_multi_dance_splits does not pack pre-split dances with different heat_length" do
+    # Mark all existing heats as scratched
+    Heat.update_all(number: -1)
+
+    multi_cat = Category.create!(name: "PreSplit HeatLen Test", order: 951)
+
+    # Two dances with same multi_category but different heat_length
+    dance_short = Dance.create!(name: "PreSplit Short", order: 760, multi_category: multi_cat, heat_length: 2)
+    dance_long  = Dance.create!(name: "PreSplit Long",  order: -1, multi_category: multi_cat, heat_length: 4)
+
+    child1 = Dance.create!(name: "PreSplit HL Child W", order: 761)
+    child2 = Dance.create!(name: "PreSplit HL Child T", order: 762)
+
+    [dance_short, dance_long].each do |d|
+      Multi.create!(parent_id: d.id, dance_id: child1.id)
+      Multi.create!(parent_id: d.id, dance_id: child2.id)
+    end
+
+    max_back = Person.maximum(:back) || 0
+    students = 4.times.map do |i|
+      Person.create!(name: "PreSplit HL Student #{i}", studio: @studio1, type: 'Student', level: levels(:one))
+    end
+    instructors = 4.times.map do |i|
+      Person.create!(name: "PreSplit HL Inst #{i}", studio: @studio1, type: 'Professional', back: max_back + 400 + i)
+    end
+
+    # Dance Short: students 0,1
+    [0, 1].each do |i|
+      entry = Entry.create!(lead: students[i], follow: instructors[i], age: ages(:one), level: levels(:one))
+      Heat.create!(dance: dance_short, entry: entry, category: 'Multi', number: 0)
+    end
+
+    # Dance Long: students 2,3
+    [2, 3].each do |i|
+      entry = Entry.create!(lead: students[i], follow: instructors[i], age: ages(:one), level: levels(:one))
+      Heat.create!(dance: dance_long, entry: entry, category: 'Multi', number: 0)
+    end
+
+    @scheduler.schedule_heats
+
+    test_dances = [dance_short, dance_long]
+    multi_heats = Heat.where(dance: test_dances, category: 'Multi').where('number > 0')
+
+    assert_equal 4, multi_heats.count, "All 4 heats should be scheduled"
+
+    # Different heat_length should NOT be packed together
+    short_numbers = multi_heats.where(dance: dance_short).pluck(:number).uniq
+    long_numbers = multi_heats.where(dance: dance_long).pluck(:number).uniq
+
+    assert_empty short_numbers & long_numbers,
+      "Different heat_length dances should not share heat numbers"
+  end
 end
