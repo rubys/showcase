@@ -46,12 +46,13 @@
     <% end %>
     <% last_number = number %>
     <% heats = ballrooms.map(&:last).flatten %>
+    <% single_dance = heats.map(&:dance_id).uniq.size == 1 %>
     <% tally = heats.select {|heat| heat.number > 0}.map {|heat| e=heat.entry; [e.lead_id, e.follow_id]}.flatten.tally %>
     <% # Set dance to 0 to force showing split name if: different dances OR first dance has a multi_level name %>
-    <% dance = (heats.first.dance_id == heats.last.dance_id && !heats.first.dance.multi_levels.first) ? heats.first.dance_id : 0 %>
+    <% dance = (single_dance && !heats.first.dance.multi_levels.first) ? heats.first.dance_id : 0 %>
     <table class="break-inside-avoid text-sm mt-4 table-fixed">
       <colgroup>
-        <% if number == 0 && heats.first.dance_id == heats.last.dance_id %>
+        <% if number == 0 && single_dance %>
         <col width="1%">
         <% else %>
         <col width="5%">
@@ -68,7 +69,7 @@
       </colgroup>
       <thead>
         <td></td>
-        <% if number != 0 || heats.first.dance_id != heats.last.dance_id%>
+        <% if number != 0 || !single_dance %>
         <th width="5"></th>
         <% else %>
         <th></th>
@@ -93,7 +94,7 @@
         <td></td>
         <td colspan="9" class="text-xl pt-4">Heat <span class="heat-humber"><%= number %></span>: 
           <% unless @combine_open_and_closed && %w(Open Closed).include?(heats.first.category) && heats.first.dance.open_category_id == heats.first.dance.closed_category_id %><%= heats.first.category %><% end %>
-          <% if heats.first.dance_id == heats.last.dance_id %>
+          <% if single_dance %>
           <%= link_to heats.first.dance.name, heats_dance_path(heats.first.dance) %>
           <% if heats.first.category == 'Solo' and heats.first.solo.combo_dance%>
           / <%= link_to heats.first.solo.combo_dance.name, heats_dance_path(heats.first.solo.combo_dance) %>
