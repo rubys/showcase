@@ -39,12 +39,14 @@
   </thead>
   <% lastcat = nil %>
   <% lastassign = false %>
+  <% last_ballroom = nil %>
   <% @ballrooms.each do |ballroom, subjects| %>
     <% next if subjects.empty? %>
-    <% dance = subjects.first.dance_id %> 
-    <% if ballroom.to_s == 'B' %>
-      <tr><td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) + (@scores&.length || 0) %>" class="bg-black"></td></tr>
+    <% dance = subjects.first.dance_id %>
+    <% if last_ballroom && ballroom != last_ballroom %>
+      <tr><td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) + (@scores&.length || 0) %>" class="bg-black h-0.5"></td></tr>
     <% end %>
+    <% last_ballroom = ballroom %>
     <% subjects.each do |subject| %>
     <% if @category_scoring_enabled && @category_score_assignments %>
       <% student_id = subject.respond_to?(:subject) ? subject.subject.id : nil %>
@@ -54,7 +56,7 @@
     <% end %>
     <% next if @show == 'only' and not assign %>
     <% if subject.dance_id != dance %>
-    <tr><td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) + (@scores&.length || 0) %>" class="bg-gray-400"></td></tr>
+    <tr><td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) + (@scores&.length || 0) %>" class="bg-gray-400 h-0.5"></td></tr>
     <% dance = subject.dance_id %>
     <% end %>
     <% subcat = subject.entry.pro ? 'Pro' : "#{subject.entry.subject_category(@track_ages)} - #{subject.entry.level.initials}" %>
