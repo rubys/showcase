@@ -666,7 +666,7 @@ class ScoresController < ApplicationController
       @dance = '-'
       @scores = []
     else
-      if @subjects.first.dance_id == @subjects.last.dance_id
+      if @subjects.map(&:dance_id).uniq.size == 1
         @dance = "#{@subjects.first.category} #{@subjects.first.dance.name}"
       else
         @dance = "#{@subjects.first.category} #{@subjects.first.dance_category.name}"
@@ -2446,6 +2446,7 @@ class ScoresController < ApplicationController
     # Look up ballroom assignments from pre-generated agenda
     def lookup_ballrooms_from_agenda(subjects)
       subject_ids = subjects.map(&:id).to_set
+      matched_ids = Set.new
       result = Hash.new { |h, k| h[k] = [] }
 
       @agenda.each do |_category, heats_by_number|
@@ -2454,7 +2455,8 @@ class ScoresController < ApplicationController
 
           rooms.each do |ballroom, heats|
             heats.each do |heat|
-              if subject_ids.include?(heat.id)
+              if subject_ids.include?(heat.id) && !matched_ids.include?(heat.id)
+                matched_ids.add(heat.id)
                 result[ballroom] << subjects.find { |s| s.id == heat.id }
               end
             end
