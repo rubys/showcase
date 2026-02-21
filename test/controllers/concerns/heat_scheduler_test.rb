@@ -1080,13 +1080,6 @@ class HeatSchedulerTest < ActiveSupport::TestCase
     assert_not_nil block.dance
     assert_not_nil block.dance_id
 
-    # Test comparison operator
-    heat2 = Heat.create!(dance: cha_cha, entry: entry, category: 'Open', number: 2)
-    block2 = HeatScheduler::Block.new(entry, 'Open', rhythm_cat)
-    block2.add_heat(heat2)
-
-    assert_equal(-1, block <=> block2)
-    assert_equal(-1, block <=> heat2)
   end
 
   test "BlockDance class provides required category methods" do

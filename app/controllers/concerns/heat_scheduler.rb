@@ -166,7 +166,7 @@ module HeatScheduler
       end
 
       # Sort blocks and remaining heats together
-      # Use sort_by to avoid direct Heat<=>Block comparisons
+      # Use sort_by for consistent sorting of mixed Heat/Block collections
       combined = block_tuples + remaining_heats
       heats = combined.sort_by do |tuple|
         # For sorting, use the tuple values themselves, not the final object
@@ -1029,7 +1029,6 @@ module HeatScheduler
 
   # Block: Container for multiple heats with the same entry and agenda category
   class Block
-    include Comparable
 
     attr_reader :heats, :entry, :heat_category, :agenda_category, :block_dance
 
@@ -1089,19 +1088,6 @@ module HeatScheduler
       # Blocks can't be assigned numbers directly
     end
 
-    # Implement comparison operator to make blocks sortable with heats
-    # Use the first heat in the block for comparison
-    def <=>(other)
-      if other.is_a?(Block)
-        # Compare blocks by their first heat
-        @heats.first <=> other.heats.first
-      elsif other.is_a?(Heat)
-        # Compare block to heat using first heat
-        @heats.first <=> other
-      else
-        nil
-      end
-    end
   end
 
   if ENV['RAILS_APP_DB'] == '2024-monterey'
