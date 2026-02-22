@@ -3,7 +3,7 @@ require 'ostruct'
 class Event < ApplicationRecord
   include BlobUploadable
 
-  validate :valid_date? unless Rails.env.test?
+  validate :valid_date?
   has_one_attached :counter_art, dependent: false
   validate :correct_document_mime_type
 
