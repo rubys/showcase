@@ -91,41 +91,6 @@ class CategoryTest < ActiveSupport::TestCase
     assert_includes duplicate.errors[:order], 'has already been taken'
   end
   
-  test "should validate day using chronic parser" do
-    valid_category = Category.new(
-      name: 'Valid Day Category',
-      order: 105,
-      day: 'Friday'
-    )
-    assert valid_category.valid?
-    
-    # Test with clearly invalid day
-    invalid_category = Category.new(
-      name: 'Invalid Day Category',
-      order: 106,
-      day: 'Notaday'
-    )
-    assert_not invalid_category.valid?
-    # Note: The chronic validator may be more permissive than expected
-  end
-  
-  test "should validate time using chronic parser" do
-    valid_category = Category.new(
-      name: 'Valid Time Category',
-      order: 107,
-      time: '10:30 AM'
-    )
-    assert valid_category.valid?
-    
-    invalid_category = Category.new(
-      name: 'Invalid Time Category',
-      order: 108,
-      time: 'Not a time'
-    )
-    assert_not invalid_category.valid?
-    assert_includes invalid_category.errors[:time], 'is not an day/time'
-  end
-  
   test "should allow blank day and time" do
     category = Category.new(
       name: 'Flexible Category',

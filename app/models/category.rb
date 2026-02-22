@@ -32,9 +32,6 @@ class Category < ApplicationRecord
   validates :name, presence: true, uniqueness: { unless: :is_spacer? }
   validates :order, presence: true, uniqueness: true
 
-  validates :day, chronic: true, allow_blank: true
-  validates :time, chronic: true, allow_blank: true
-
   def part
     nil
   end
