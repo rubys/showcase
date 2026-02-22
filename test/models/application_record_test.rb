@@ -60,8 +60,8 @@ class ApplicationRecordTest < ActiveSupport::TestCase
   end
 
   test "RAILS_STORAGE constant should be defined" do
-    assert_kind_of Pathname, ApplicationRecord::RAILS_STORAGE
-    assert ApplicationRecord::RAILS_STORAGE.to_s.length > 0
+    assert_kind_of Pathname, BlobUploadable::RAILS_STORAGE
+    assert BlobUploadable::RAILS_STORAGE.to_s.length > 0
   end
 
   test "upload_blobs should return early when not in FLY_REGION" do
@@ -101,7 +101,7 @@ class ApplicationRecordTest < ActiveSupport::TestCase
 
   test "download_blob should test path generation" do
     blob = double_stub(service_name: 'tigris', key: 'abcd1234')
-    expected_path = ApplicationRecord::RAILS_STORAGE.join('ab/cd/abcd1234')
+    expected_path = BlobUploadable::RAILS_STORAGE.join('ab/cd/abcd1234')
     
     # The method returns early (line 81 in application_record.rb)
     # so we just verify it returns nil

@@ -1,4 +1,6 @@
 class Solo < ApplicationRecord
+  include BlobUploadable
+
   # Rails 8.0 compatible ordering scope
   scope :ordered, -> { order(arel_table[:order]) }
 

@@ -1,4 +1,6 @@
 class Song < ApplicationRecord
+  include BlobUploadable
+
   normalizes :title, with: -> name { name.strip }
 
   # Rails 8.0 compatible ordering scope
