@@ -87,13 +87,6 @@ module Printable
       last_dance_order: nil   # to detect block boundaries
     }
 
-    # Clear in-memory ballroom assignments so the algorithm starts fresh.
-    # Previously persisted ballrooms would otherwise be treated as manual overrides,
-    # preventing rebalancing on subsequent runs (redo).
-    @heats.each do |_number, heats|
-      heats.each { |heat| heat.ballroom = nil }
-    end
-
     pending_block = []
     pending_last_dance_order = nil
 
@@ -312,6 +305,17 @@ module Printable
     end
 
     @agenda = final_agenda
+
+    # Write computed ballroom assignments back onto heat objects so views
+    # that iterate @heats can use heat.ballroom directly.
+    @agenda.each do |_cat, entries|
+      entries.each do |_number, rooms|
+        rooms.each do |room, room_heats|
+          next if room.nil?
+          room_heats.each { |heat| heat.ballroom = room.to_s }
+        end
+      end
+    end
 
     # assign start and finish times
 
