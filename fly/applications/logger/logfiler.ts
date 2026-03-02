@@ -7,6 +7,10 @@ import { alert } from "./sentry.ts"
 
 fs.mkdirSync(LOGS, { recursive: true });
 
+// Track last log timestamp per smooth machine for monitoring
+export const lastSeen = new Map<string, number>()
+export const logfilerStarted = Date.now()
+
 (async () => {
   while (true) {
     try {
@@ -101,6 +105,11 @@ fs.mkdirSync(LOGS, { recursive: true });
           data.log = {
             level: data.stream
           }
+        }
+
+        // track last log timestamp per smooth machine for monitoring
+        if (data.fly.app.name === "smooth") {
+          lastSeen.set(data.fly.app.instance, Date.now())
         }
 
         // report errors to this apps's log

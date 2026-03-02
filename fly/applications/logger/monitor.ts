@@ -1,11 +1,15 @@
-// Check for failed/stuck machines every 60 minutes and take action.
+// Check for failed/stuck/silent machines every 60 minutes and take action.
 // Failed machines are restarted. Machines stuck in replacing state
 // (with no evidence of being started in the last 15 minutes) trigger alerts.
+// Started machines that have gone silent (no log output for 20 minutes)
+// are restarted.
 
 import { alert } from "./sentry.ts"
+import { lastSeen, logfilerStarted } from "./logfiler.ts"
 
 const APP_NAME = "smooth"
 const API_BASE = `http://_api.internal:4280/v1/apps/${APP_NAME}/machines`
+const SILENCE_THRESHOLD = 20 * 60_000 // 20 minutes
 
 function headers() {
   return {
@@ -50,6 +54,8 @@ async function monitor() {
         }
       } else if (machine.state === "replacing") {
         await checkStuckReplacing(machine, label)
+      } else if (machine.state === "started") {
+        await checkSilentStarted(machine, label)
       }
     }
   } catch (error: any) {
@@ -77,6 +83,35 @@ async function checkStuckReplacing(machine: any, label: string) {
     }
   } catch (error: any) {
     alert(`monitor: error checking replacing machine ${label}: ${error.message}`)
+  }
+}
+
+async function checkSilentStarted(machine: any, label: string) {
+  // only check once logfiler has been running long enough to establish baselines
+  if (Date.now() - logfilerStarted < SILENCE_THRESHOLD) return
+
+  const lastTime = lastSeen.get(machine.id)
+  if (lastTime === undefined) return
+  if (Date.now() - lastTime < SILENCE_THRESHOLD) return
+
+  const silentMinutes = Math.round((Date.now() - lastTime) / 60_000)
+  console.log(`monitor: machine ${label} started but silent for ${silentMinutes} minutes, attempting restart`)
+
+  try {
+    const restartResponse = await fetch(`${API_BASE}/${machine.id}/restart`, {
+      method: "POST",
+      headers: headers()
+    })
+
+    if (restartResponse.ok) {
+      lastSeen.set(machine.id, Date.now())
+      alert(`monitor: restarted silent machine ${label} (silent for ${silentMinutes} min)`)
+    } else {
+      const body = await restartResponse.text()
+      alert(`monitor: failed to restart silent ${label}: ${restartResponse.status} ${body}`)
+    }
+  } catch (error: any) {
+    alert(`monitor: error restarting silent ${label}: ${error.message}`)
   }
 }
 
