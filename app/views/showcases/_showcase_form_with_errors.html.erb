@@ -59,3 +59,22 @@
   <input type="submit" class="rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" form="showcase-form" value="Create Event">
   <%= link_to "Back to studio", "/showcase/studios/#{location_key}", class: "ml-2 rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
 </div>
+
+<% if existing_showcases&.any? %>
+  <div class="mt-8 border-t pt-6">
+    <h2 class="font-bold text-2xl mb-4">Existing Events</h2>
+    <% existing_showcases.group_by(&:year).each do |year, showcases| %>
+      <h3 class="font-bold text-xl mt-3 mb-2"><%= year %></h3>
+      <ul class="list-disc list-inside">
+        <% showcases.each do |showcase| %>
+          <li>
+            <span class="text-lg"><%= showcase.name %></span>
+            <% if showcase.date.present? %>
+              <span class="text-slate-400">- <%= localized_date(showcase.date, location&.locale) %></span>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>
+<% end %>

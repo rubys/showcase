@@ -68,6 +68,7 @@ class ShowcasesController < ApplicationController
 
     @locations = [[@location.name, @location.id]]
     @location_key = params[:location_key]
+    @existing_showcases = @location.showcases.order(year: :desc).ordered
   end
 
   # POST /showcases or /showcases.json
@@ -163,13 +164,14 @@ class ShowcasesController < ApplicationController
         end
 
         @location_key = @showcase.location&.key if @return_to
+        @existing_showcases = @location&.showcases&.order(year: :desc)&.ordered
 
         format.turbo_stream do
           if @return_to
             render turbo_stream: turbo_stream.replace(
               "showcase-form-container",
               partial: "showcases/showcase_form_with_errors",
-              locals: { showcase: @showcase, location_key: @location_key, location: @location }
+              locals: { showcase: @showcase, location_key: @location_key, location: @location, existing_showcases: @existing_showcases }
             ), status: :unprocessable_entity
           else
             # For non-studio-request forms, render the standard new form
