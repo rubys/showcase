@@ -1,9 +1,10 @@
 <span id="current-heat" data-last-update="<%= Heat.maximum(:updated_at)&.to_i %>">
-  <%= event.current_heat || "0" %>
+  <span class="counter-number"><%= event.current_heat || "0" %></span>
   <% if event.current_heat.to_i > 0 %>
   <% heats = Heat.where(number: event.current_heat).includes(entry: [:lead, :follow], solo: {formations: :person}) %>
-  <span class="counter-names hidden">
+  <span class="counter-details" style="display:none">
     <span class="counter-dance"><%= heats.first&.category %> <%= heats.first&.dance&.name %></span>
+    <span class="counter-couples">
     <% heats.sort_by { |h| h.entry.lead.back || 0 }.each do |heat| %>
       <% lead = heat.entry.lead; follow = heat.entry.follow %>
       <% if heat.category == 'Solo' %>
@@ -29,6 +30,7 @@
         </span>
       <% end %>
     <% end %>
+    </span>
   </span>
   <% end %>
 </span>

@@ -89,7 +89,8 @@ export default class extends Controller {
 
   seek = () => {
     let currentHeatElement = document.getElementById("current-heat");
-    let currentHeat = currentHeatElement.textContent.trim();
+    let counter = currentHeatElement.querySelector('.counter-number');
+    let currentHeat = (counter || currentHeatElement).textContent.trim();
 
     // Check if the last update time has changed
     let newLastUpdate = currentHeatElement.dataset.lastUpdate;

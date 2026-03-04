@@ -3,38 +3,134 @@ html, body {
    height: 100%;
    overflow-y: hidden;
 }
-<% if @show_names %>
-#current-heat {
+
+/* number layout (default): giant heat number only */
+[data-layout="number"] #current-heat {
+  font-size: 50vw;
+}
+
+/* stacked layout: number + dance + vertical names */
+[data-layout="stacked"] #current-heat {
   font-size: 10vh;
   line-height: 1.1;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-.counter-names {
+[data-layout="stacked"] .counter-details {
   display: flex !important;
   flex-direction: column;
   align-items: center;
   margin-top: 1vh;
 }
-.counter-dance {
+[data-layout="stacked"] .counter-dance {
   font-size: 4vh;
   font-style: italic;
   opacity: 0.9;
   margin-bottom: 0.5vh;
 }
-.counter-couple {
+[data-layout="stacked"] .counter-couples {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+[data-layout="stacked"] .counter-couple {
   font-size: 3.8vh;
   line-height: 1.4;
 }
-.counter-back {
+[data-layout="stacked"] .counter-back {
   display: inline-block;
   min-width: 3ch;
   text-align: right;
   margin-right: 0.5ch;
   opacity: 0.8;
 }
-<% end %>
+
+/* split layout: number+dance left, names right */
+[data-layout="split"] #current-heat {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  justify-items: center;
+  gap: 0 4vw;
+}
+[data-layout="split"] .counter-number {
+  font-size: 25vw;
+  grid-column: 1;
+  grid-row: 1;
+}
+[data-layout="split"] .counter-details {
+  display: contents !important;
+}
+[data-layout="split"] .counter-dance {
+  font-size: 3.5vh;
+  font-style: italic;
+  opacity: 0.9;
+  grid-column: 1;
+  grid-row: 2;
+}
+[data-layout="split"] .counter-couples {
+  display: flex;
+  flex-direction: column;
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: center;
+}
+[data-layout="split"] .counter-couple {
+  font-size: 3.5vh;
+  line-height: 1.4;
+}
+[data-layout="split"] .counter-back {
+  display: inline-block;
+  min-width: 3ch;
+  text-align: right;
+  margin-right: 0.5ch;
+  opacity: 0.8;
+}
+
+/* columns layout: number+dance top, two-column names */
+[data-layout="columns"] #current-heat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+[data-layout="columns"] .counter-number {
+  font-size: 15vh;
+  line-height: 1.1;
+}
+[data-layout="columns"] .counter-details {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+[data-layout="columns"] .counter-dance {
+  font-size: 3.5vh;
+  font-style: italic;
+  opacity: 0.9;
+  margin-bottom: 1vh;
+}
+[data-layout="columns"] .counter-couples {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 90%;
+}
+[data-layout="columns"] .counter-couple {
+  font-size: 3.2vh;
+  line-height: 1.4;
+  width: 50%;
+  text-align: center;
+  box-sizing: border-box;
+  padding: 0 1vw;
+}
+[data-layout="columns"] .counter-back {
+  display: inline-block;
+  min-width: 3ch;
+  text-align: right;
+  margin-right: 0.5ch;
+  opacity: 0.8;
+}
 </style>
 
 <% if @event.counter_art.attached? %>
@@ -49,12 +145,10 @@ html, body {
 <% else %>
 <div class="bg-gradient-to-r from-violet-500 to-fuchsia-500">
 <% end %>
-<div class="flex flex-col h-screen justify-center items-center">
+<div class="flex flex-col h-screen justify-center items-center"
+  data-controller="counter-layout"
+  data-counter-layout-initial-value="<%= params[:layout] || (params[:names].present? ? 'stacked' : 'number') %>">
   <%= turbo_stream_from "current-heat-#{ENV['RAILS_APP_DB']}" %>
-  <% if @show_names %>
   <div class="p-2 text-center" style="color: <%= @event.counter_color %>; text-shadow: 4px 4px 4px black"><%= render partial: 'event/heat', locals: {event: @event} %></div>
-  <% else %>
-  <div class="p-2" style="color: <%= @event.counter_color %>; font-size: 50vw; text-shadow: 4px 4px 4px black"><%= render partial: 'event/heat', locals: {event: @event} %></div>
-  <% end %>
 </div>
 </div>
