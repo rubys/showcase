@@ -68,10 +68,12 @@
       <ul class="list-disc list-inside">
         <% showcases.each do |showcase| %>
           <li>
-            <span class="text-lg"><%= showcase.name %></span>
-            <% if showcase.date.present? %>
-              <span class="text-slate-400">- <%= localized_date(showcase.date, location&.locale) %></span>
-            <% end %>
+            <a href="<%= "#{Showcase.url}/#{showcase.year}/#{location_key}/#{showcase.key}/" %>">
+              <span class="text-lg"><%= showcase.name %></span>
+              <% if showcase.date.present? %>
+                <span class="text-slate-400">- <%= localized_date(showcase.date, location&.locale) %></span>
+              <% end %>
+            </a>
           </li>
         <% end %>
       </ul>
