@@ -9,7 +9,7 @@ fs.mkdirSync(LOGS, { recursive: true });
 
 // Track last log timestamp per smooth machine for monitoring
 export const lastSeen = new Map<string, number>()
-export const logfilerStarted = Date.now()
+export const logfilerStarted = Date.now();
 
 (async () => {
   while (true) {
