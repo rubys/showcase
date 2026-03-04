@@ -3,6 +3,38 @@ html, body {
    height: 100%;
    overflow-y: hidden;
 }
+<% if @show_names %>
+#current-heat {
+  font-size: 10vh;
+  line-height: 1.1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.counter-names {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1vh;
+}
+.counter-dance {
+  font-size: 4vh;
+  font-style: italic;
+  opacity: 0.9;
+  margin-bottom: 0.5vh;
+}
+.counter-couple {
+  font-size: 3.8vh;
+  line-height: 1.4;
+}
+.counter-back {
+  display: inline-block;
+  min-width: 3ch;
+  text-align: right;
+  margin-right: 0.5ch;
+  opacity: 0.8;
+}
+<% end %>
 </style>
 
 <% if @event.counter_art.attached? %>
@@ -19,6 +51,10 @@ html, body {
 <% end %>
 <div class="flex flex-col h-screen justify-center items-center">
   <%= turbo_stream_from "current-heat-#{ENV['RAILS_APP_DB']}" %>
+  <% if @show_names %>
+  <div class="p-2 text-center" style="color: <%= @event.counter_color %>; text-shadow: 4px 4px 4px black"><%= render partial: 'event/heat', locals: {event: @event} %></div>
+  <% else %>
   <div class="p-2" style="color: <%= @event.counter_color %>; font-size: 50vw; text-shadow: 4px 4px 4px black"><%= render partial: 'event/heat', locals: {event: @event} %></div>
+  <% end %>
 </div>
 </div>

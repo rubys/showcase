@@ -1,3 +1,34 @@
 <span id="current-heat" data-last-update="<%= Heat.maximum(:updated_at)&.to_i %>">
   <%= event.current_heat || "0" %>
+  <% if event.current_heat.to_i > 0 %>
+  <% heats = Heat.where(number: event.current_heat).includes(entry: [:lead, :follow], solo: {formations: :person}) %>
+  <span class="counter-names hidden">
+    <span class="counter-dance"><%= heats.first&.category %> <%= heats.first&.dance&.name %></span>
+    <% heats.sort_by { |h| h.entry.lead.back || 0 }.each do |heat| %>
+      <% lead = heat.entry.lead; follow = heat.entry.follow %>
+      <% if heat.category == 'Solo' %>
+        <span class="counter-couple">
+          <%= [lead, follow].select { |p| p.id != 0 }.map(&:display_name).join(' & ') %>
+          <% if heat.solo %>
+            <% heat.solo.formations.select(&:on_floor).each do |f| %>
+              & <%= f.person.display_name %>
+            <% end %>
+          <% end %>
+        </span>
+      <% else %>
+        <%
+          if Event.current.column_order == 1 || lead.type == 'Student'
+            p1, p2 = lead, follow
+          else
+            p1, p2 = follow, lead
+          end
+        %>
+        <span class="counter-couple">
+          <% if lead.back %><span class="counter-back"><%= lead.back %></span><% end %>
+          <%= [p1, p2].select { |p| p.id != 0 }.map(&:display_name).join(' & ') %>
+        </span>
+      <% end %>
+    <% end %>
+  </span>
+  <% end %>
 </span>

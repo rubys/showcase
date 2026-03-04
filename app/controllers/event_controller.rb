@@ -46,6 +46,7 @@ class EventController < ApplicationController
   def counter
     @event = Event.current
     @layout = 'mx-0 overflow-hidden'
+    @show_names = params[:names].present?
   end
 
   def summary
