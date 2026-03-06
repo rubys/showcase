@@ -56,7 +56,7 @@ class AdminController < ApplicationController
     thread1 = Thread.new do
       original = IO.read RegionConfiguration.deployed_json_path rescue '{}'
       pending = JSON.parse(original)["pending"]
-      stdout, status = Open3.capture2(fly, 'regions', 'list', '--json')
+      stdout, status = Open3.capture2({'LOG_LEVEL' => 'error'}, fly, 'regions', 'list', '--json')
 
       if pending
         deployed = JSON.parse(stdout)
@@ -82,7 +82,7 @@ class AdminController < ApplicationController
     end
 
     thread2 = Thread.new do
-      stdout, status = Open3.capture2(fly, 'platform', 'regions', '--json')
+      stdout, status = Open3.capture2({'LOG_LEVEL' => 'error'}, fly, 'platform', 'regions', '--json')
       if status.success? and stdout != (IO.read RegionConfiguration.regions_json_path rescue nil)
         IO.write RegionConfiguration.regions_json_path, stdout
       end
