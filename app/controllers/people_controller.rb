@@ -388,6 +388,19 @@ class PeopleController < ApplicationController
   end
 
 
+  # GET /people/guest-passes
+  def guest_passes
+    @event = Event.current
+    @people = Person.where(type: 'Guest').includes(:package).order(:name).to_a
+
+    respond_to do |format|
+      format.html { render layout: false }
+      format.pdf do
+        render_as_pdf basename: "guest-passes"
+      end
+    end
+  end
+
   # GET /people/back-numbers
   def back_numbers
     @event = Event.current

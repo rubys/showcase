@@ -163,6 +163,7 @@ Rails.application.routes.draw do
       get 'labels', on: :collection
       get 'back-numbers', on: :collection, action: 'back_numbers'
       get 'guests', on: :collection
+      get 'guest-passes', on: :collection, action: 'guest_passes'
       get 'heats', on: :collection
       get 'heats', on: :member, action: 'individual_heats'
       get 'scores', on: :collection
