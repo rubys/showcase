@@ -1822,42 +1822,74 @@ class ScoresController < ApplicationController
     @event = Event.current
     @open_scoring = @event.open_scoring
     @closed_scoring = @event.closed_scoring
-    @open_scores = get_scores_for_type(@open_scoring)
-    @closed_scores = get_scores_for_type(@closed_scoring == '=' ? @open_scoring : @closed_scoring)
-    @scores = {}
+    @feedback_mode = %w[+ & @].include?(@open_scoring)
 
     people = Person.where(type: 'Professional').
       map {|person| [person.id, person]}.to_h
 
-    instructor_results.each do |(score, instructor), count|
-      person = people[instructor]
+    if @feedback_mode
+      @scores = {}
 
-      @scores[person] ||= {
-        'Open' => @open_scoring == '&' ? [0]*5 : @open_scores.map {0},
-        'Closed' => @closed_scores.map {0},
-        'points' => 0
-      }
+      instructor_feedback_results.each do |instructor_id, good, bad|
+        person = people[instructor_id]
+        next unless person
 
-      if @open_scoring == '#'
-        @scores[person]['points'] += score.to_i
+        @scores[person] ||= { 'heats' => 0, 'good' => Hash.new(0), 'bad' => Hash.new(0) }
+        @scores[person]['heats'] += 1
+        good.to_s.split.each { |abbr| @scores[person]['good'][abbr] += 1 } if good.present?
+        bad.to_s.split.each { |abbr| @scores[person]['bad'][abbr] += 1 } if bad.present?
+      end
+
+      if Feedback.any?
+        @feedback_items = Feedback.ordered.map { |f| [f.abbr, f.value] }
+      elsif @open_scoring == '+'
+        @feedback_items = [
+          ['DF', 'Dance Frame'], ['T', 'Timing'], ['LF', 'Lead/Follow'],
+          ['CM', 'Cuban Motion'], ['RF', 'Rise & Fall'], ['FW', 'Footwork'],
+          ['B', 'Balance'], ['AS', 'Arm Styling'], ['CB', 'Contra-Body'], ['FC', 'Floor Craft']
+        ]
       else
-        value = @closed_scores.index score
-        if value
-          category = 'Closed'
+        @feedback_items = [
+          ['F', 'Frame'], ['P', 'Posture'], ['FW', 'Footwork'],
+          ['LF', 'Lead/Follow'], ['T', 'Timing'], ['S', 'Styling']
+        ]
+      end
+    else
+      @open_scores = get_scores_for_type(@open_scoring)
+      @closed_scores = get_scores_for_type(@closed_scoring == '=' ? @open_scoring : @closed_scoring)
+      @scores = {}
+
+      instructor_results.each do |(score, instructor), count|
+        person = people[instructor]
+        next unless person
+
+        @scores[person] ||= {
+          'Open' => @open_scoring == '&' ? [0]*5 : @open_scores.map {0},
+          'Closed' => @closed_scores.map {0},
+          'points' => 0
+        }
+
+        if @open_scoring == '#'
+          @scores[person]['points'] += score.to_i
         else
-          category = 'Open'
-          value = @open_scores.index score
-        end
+          value = @closed_scores.index score
+          if value
+            category = 'Closed'
+          else
+            category = 'Open'
+            value = @open_scores.index score
+          end
 
-        if not value and @open_scoring == '&' and score =~ /^\d+$/
-          value = score.to_i - 1
-          value = 4-value
+          if not value and @open_scoring == '&' and score =~ /^\d+$/
+            value = score.to_i - 1
+            value = 4-value
 
-          @scores[person][category][value] += count
-          @scores[person]['points'] += count * value
-        elsif value
-          @scores[person][category][value] += count
-          @scores[person]['points'] += count * WEIGHTS[value]
+            @scores[person][category][value] += count
+            @scores[person]['points'] += count * value
+          elsif value
+            @scores[person][category][value] += count
+            @scores[person]['points'] += count * WEIGHTS[value]
+          end
         end
       end
     end
@@ -2163,6 +2195,18 @@ class ScoresController < ApplicationController
       Score.joins(heat: {solo: :formations}).
         group(:person_id, :value).
         count(:value).to_a
+    end
+
+    def instructor_feedback_results
+      Score.joins(heat: {entry: [:follow]}).
+        where(follow: {type: 'Professional'}).
+        pluck(:follow_id, :good, :bad).map { |id, g, b| [id, g, b] } +
+      Score.joins(heat: {entry: [:lead]}).
+        where(lead: {type: 'Professional'}).
+        pluck(:lead_id, :good, :bad).map { |id, g, b| [id, g, b] } +
+      Score.joins(heat: :entry).
+        where.not(entry: {instructor_id: nil}).
+        pluck(:instructor_id, :good, :bad).map { |id, g, b| [id, g, b] }
     end
 
     # Common setup for score view methods

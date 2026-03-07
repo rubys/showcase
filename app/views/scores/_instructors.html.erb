@@ -1,4 +1,51 @@
 <div id="instructor-scores">
+<% if @feedback_mode %>
+  <table class="mb-8">
+    <thead>
+      <tr>
+        <th class="row-head">Name
+        <th class="row-head">Heats
+        <% @feedback_items.each do |abbr, name| %>
+        <th class="row-head"><abbr title="<%= name %>"><%= abbr %></abbr>
+        <% end %>
+      </tr>
+    </thead>
+    <% @scores.sort_by {|person, results| -results['heats']}.each do |person, results| %>
+    <tr>
+      <td class="row-main"><%= link_to person.display_name, person %></td>
+      <td class="row text-right px-4"><%= results['heats'] %></td>
+      <% @feedback_items.each do |abbr, name| %>
+      <td class="row text-center px-2">
+        <% good = results['good'][abbr] %>
+        <% bad = results['bad'][abbr] %>
+        <% if good > 0 %><div class="text-green-600"><%= good %></div><% end %>
+        <% if bad > 0 %><div class="text-red-600"><%= bad %></div><% end %>
+      </td>
+      <% end %>
+    </tr>
+    <% end %>
+  </table>
+
+  <table class="ml-8 w-full mb-8">
+  <% if Feedback.any? %>
+    <% Feedback.ordered.each_slice(5) do |feedbacks| %>
+    <tr>
+      <% feedbacks.each do |feedback| %>
+        <td><abbr><%= feedback.abbr %></abbr>: <span><%= feedback.value %></span></td>
+      <% end %>
+    </tr>
+    <% end %>
+  <% else %>
+    <% @feedback_items.each_slice(5) do |items| %>
+    <tr>
+      <% items.each do |abbr, name| %>
+        <td><abbr><%= abbr %></abbr>: <span><%= name %></span></td>
+      <% end %>
+    </tr>
+    <% end %>
+  <% end %>
+  </table>
+<% else %>
   <table class="mb-8">
     <thead>
           <% if @open_scoring == '1' %>
@@ -33,7 +80,7 @@
     <% @scores.sort_by {|person, results| results['points']}.reverse.each do |person, results| %>
     <tr>
       <td class="row-main text-right"><%= results['points'] %>
-      <td class="row-main"><%= link_to person&.display_name || 'nil', person %></td>
+      <td class="row-main"><%= link_to person.display_name, person %></td>
       <% if @open_scoring != '#' %>
       <% if @event.closed_scoring != '=' or @open_scoring == 'G' %>
       <% results['Closed'].each do |score| %>
@@ -49,6 +96,7 @@
     </tr>
     <% end %>
   </table>
+<% end %>
 
   <% if @scores.empty? %>
   <p class="my-8">No scores entered yet.</p>
