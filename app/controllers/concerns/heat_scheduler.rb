@@ -338,7 +338,8 @@ module HeatScheduler
       map {|size, entries| [size, entries.map(&:last)]}.
       sort
 
-    # Persist computed ballroom assignments to database for consistent display
+    # Clear stale ballroom assignments, then recompute and persist
+    Heat.where.not(ballroom: [nil, '']).update_all(ballroom: nil)
     generate_agenda
     persist_ballroom_assignments
 
