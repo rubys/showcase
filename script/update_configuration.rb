@@ -58,7 +58,7 @@ begin
 
   # Operation 1: Database sync (receive from POST or fetch from S3)
   log ""
-  log "Operation 1/4: Updating index database"
+  log "Operation 1/5: Updating index database"
   log "-" * 70
 
   dbpath = ENV.fetch('RAILS_DB_VOLUME') { File.join(SCRIPT_ROOT, 'db') }
@@ -105,7 +105,7 @@ begin
 
   # Operation 1.5: Download map ERB templates
   log ""
-  log "Operation 1.5/4: Downloading map ERB templates"
+  log "Operation 1.5/5: Downloading map ERB templates"
   log "-" * 70
 
   begin
@@ -125,7 +125,7 @@ begin
 
   # Operation 2: htpasswd update
   log ""
-  log "Operation 2/4: Updating htpasswd file"
+  log "Operation 2/5: Updating htpasswd file"
   log "-" * 70
 
   begin
@@ -144,7 +144,7 @@ begin
 
   # Operation 3: Showcases generation
   log ""
-  log "Operation 3/4: Generating showcases configuration"
+  log "Operation 3/5: Generating showcases configuration"
   log "-" * 70
 
   begin
@@ -168,7 +168,7 @@ begin
 
   # Operation 4: Navigator config generation
   log ""
-  log "Operation 4/4: Generating navigator configuration"
+  log "Operation 4/5: Generating navigator configuration"
   log "-" * 70
 
   begin
@@ -183,6 +183,57 @@ begin
     log "Configuration update FAILED (navigator config generation failed)"
     log "Total time: #{(Time.now - start_time).round(2)}s"
     exit 1
+  end
+
+  # Operation 5: Prepare new event databases
+  # Create databases that don't exist yet BEFORE Navigator reloads config.
+  # This prevents a race condition where Navigator starts routing requests
+  # to a new tenant before bin/prepare.rb (in the async ready hook) has
+  # created and chowned the database, causing ReadOnlyException errors.
+  log ""
+  log "Operation 5/5: Preparing new event databases"
+  log "-" * 70
+
+  begin
+    new_db_count = 0
+    prepare_script = File.join(SCRIPT_ROOT, 'bin/prepare.rb')
+    current_region = ENV['FLY_REGION']
+
+    showcases_data.each do |year, sites|
+      next unless sites.is_a?(Hash)
+      sites.each do |token, info|
+        next unless info.is_a?(Hash)
+        # Only create databases for this machine's region
+        next unless info[:region] && current_region == info[:region]
+
+        if info[:events]
+          info[:events].each do |subtoken, _|
+            db_path = File.join(dbpath, "#{year}-#{token}-#{subtoken}.sqlite3")
+            unless File.exist?(db_path) && File.size(db_path) > 0
+              log "Preparing new database: #{File.basename(db_path)}"
+              system('ruby', prepare_script, db_path)
+              new_db_count += 1
+            end
+          end
+        else
+          db_path = File.join(dbpath, "#{year}-#{token}.sqlite3")
+          unless File.exist?(db_path) && File.size(db_path) > 0
+            log "Preparing new database: #{File.basename(db_path)}"
+            system('ruby', prepare_script, db_path)
+            new_db_count += 1
+          end
+        end
+      end
+    end
+
+    if new_db_count > 0
+      log "SUCCESS: Prepared #{new_db_count} new database(s)"
+    else
+      log "INFO: No new databases to prepare"
+    end
+  rescue => e
+    log "WARNING: Database preparation failed: #{e.message}"
+    log "Continuing - ready hook will retry database preparation"
   end
 
   # Success summary

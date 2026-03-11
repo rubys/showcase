@@ -141,9 +141,9 @@ ARGV.each do |database|
       if rails_uid && rails_gid
         log_file = File.join(log_volume, db_name.sub('.sqlite3', '.log'))
 
-        # Change ownership of database file if it exists
-        if File.exist?(database)
-          File.chown(rails_uid, rails_gid, database)
+        # Change ownership of database file and WAL/SHM files if they exist
+        [database, "#{database}-wal", "#{database}-shm"].each do |path|
+          File.chown(rails_uid, rails_gid, path) if File.exist?(path)
         end
 
         # Change ownership of log file if it exists
