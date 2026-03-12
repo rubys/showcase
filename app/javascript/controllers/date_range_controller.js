@@ -46,7 +46,7 @@ export default class extends Controller {
     })
 
     for (let option of this.element.querySelectorAll('#avail_date option' )) {
-      option.textContent = formatter.format(new Date(option.value))
+      option.textContent = formatter.format(new Date(option.value + "T12:00:00Z"))
     }
 
     for (let option of this.element.querySelectorAll('#category_day option' )) {
