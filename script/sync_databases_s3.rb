@@ -297,7 +297,7 @@ begin
            inventories[owner_region][filename]['etag'] == object.etag
           actual_last_modified = Time.parse(inventories[owner_region][filename]['last_modified'])
         else
-          obj_response = s3_client.get_object(bucket: bucket_name, key: object.key)
+          obj_response = s3_client.head_object(bucket: bucket_name, key: object.key)
           if obj_response.metadata && obj_response.metadata['last-modified']
             actual_last_modified = Time.parse(obj_response.metadata['last-modified'])
             inventories[owner_region] ||= {}
