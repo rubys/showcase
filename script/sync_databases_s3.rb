@@ -19,6 +19,19 @@ if ENV["SENTRY_DSN"]
   end
 end
 
+# Retry block for transient S3 errors (e.g. RequestCanceled, network timeouts)
+def retries(max_attempts, &block)
+  attempts = 0
+  begin
+    attempts += 1
+    block.call
+  rescue Aws::S3::Errors::RequestCanceled, Seahorse::Client::NetworkingError => e
+    raise if attempts >= max_attempts
+    sleep(2 ** attempts)
+    retry
+  end
+end
+
 # Parse command line arguments
 options = { dry_run: false, verbose: false, safe: false, quiet: false, skip_list: [], only_dbs: [] }
 OptionParser.new do |opts|
@@ -211,7 +224,7 @@ inventory_path = File.expand_path("inventory", File.dirname(dbpath)) if ENV['RAI
 FileUtils.mkdir_p(inventory_path) unless options[:dry_run]
 
 local_inventories = Dir["#{inventory_path}/*.json"].map { |file| File.basename(file, '.json') }
-response = s3_client.list_objects_v2(bucket: bucket_name, prefix: 'inventory/')
+response = retries(3) { s3_client.list_objects_v2(bucket: bucket_name, prefix: 'inventory/') }
 if response.contents
   response.contents.each do |object|
     if object.key.end_with?('.json')
@@ -224,7 +237,7 @@ if response.contents
         inventories[region] = JSON.parse(File.read(local_cache))
       else
         begin
-          response = s3_client.get_object(bucket: bucket_name, key: object.key)
+          response = retries(3) { s3_client.get_object(bucket: bucket_name, key: object.key) }
           inventories[region] = JSON.parse(response.body.read)
           File.write(local_cache, JSON.pretty_generate(inventories[region])) unless options[:dry_run]
           File.utime(object.last_modified, object.last_modified, local_cache) unless options[:dry_run]
@@ -279,7 +292,7 @@ begin
     }
     params[:continuation_token] = continuation_token if continuation_token
     
-    response = s3_client.list_objects_v2(params)
+    response = retries(3) { s3_client.list_objects_v2(params) }
     
     if response.contents
       response.contents.each do |object|
@@ -297,7 +310,7 @@ begin
            inventories[owner_region][filename]['etag'] == object.etag
           actual_last_modified = Time.parse(inventories[owner_region][filename]['last_modified'])
         else
-          obj_response = s3_client.head_object(bucket: bucket_name, key: object.key)
+          obj_response = retries(3) { s3_client.head_object(bucket: bucket_name, key: object.key) }
           if obj_response.metadata && obj_response.metadata['last-modified']
             actual_last_modified = Time.parse(obj_response.metadata['last-modified'])
             inventories[owner_region] ||= {}
@@ -392,7 +405,7 @@ expected_databases.each do |db_name|
       
       unless options[:dry_run]
         begin
-          response = s3_client.get_object(bucket: bucket_name, key: s3_key)
+          response = retries(3) { s3_client.get_object(bucket: bucket_name, key: s3_key) }
           File.open(local_path, 'wb') do |file|
             file.write(response.body.read)
           end
@@ -431,14 +444,16 @@ expected_databases.each do |db_name|
       unless options[:dry_run]
         begin
           File.open(local_path, 'rb') do |file|
-            put_response = s3_client.put_object(
-              bucket: bucket_name,
-              key: s3_key,
-              body: file,
-              metadata: {
-                'last-modified' => local_mtime.utc.inspect
-              }
-            )
+            put_response = retries(3) do
+              s3_client.put_object(
+                bucket: bucket_name,
+                key: s3_key,
+                body: file,
+                metadata: {
+                  'last-modified' => local_mtime.utc.inspect
+                }
+              )
+            end
             
             # Update inventory for the region that owns this database
             owner_region = tenant_regions[tenant_name] || 'index'
@@ -525,12 +540,14 @@ unless options[:dry_run]
       inventory_data = JSON.pretty_generate(inventories[region])
       
       begin
-        response = s3_client.put_object(
-          bucket: bucket_name,
-          key: inventory_key,
-          body: inventory_data,
-          content_type: 'application/json'
-        )
+        response = retries(3) do
+          s3_client.put_object(
+            bucket: bucket_name,
+            key: inventory_key,
+            body: inventory_data,
+            content_type: 'application/json'
+          )
+        end
       rescue => e
         puts "Error saving inventory for #{region}: #{e.message}"
         if ENV["SENTRY_DSN"]
@@ -557,15 +574,17 @@ if !options[:dry_run] && uploads.any? { |u| u[:name] == 'index.sqlite3' } && !EN
       begin
         local_mtime = File.mtime(local_path)
         File.open(local_path, 'rb') do |file|
-          s3_client.put_object(
-            bucket: bucket_name,
-            key: s3_key,
-            body: file,
-            content_type: 'text/html',
-            metadata: {
-              'last-modified' => local_mtime.utc.iso8601
-            }
-          )
+          retries(3) do
+            s3_client.put_object(
+              bucket: bucket_name,
+              key: s3_key,
+              body: file,
+              content_type: 'text/html',
+              metadata: {
+                'last-modified' => local_mtime.utc.iso8601
+              }
+            )
+          end
         end
         map_uploads << map_name
         puts "  Uploaded: #{map_name}.html.erb" if options[:verbose]
