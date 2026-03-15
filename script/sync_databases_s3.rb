@@ -224,7 +224,7 @@ inventory_path = File.expand_path("inventory", File.dirname(dbpath)) if ENV['RAI
 FileUtils.mkdir_p(inventory_path) unless options[:dry_run]
 
 local_inventories = Dir["#{inventory_path}/*.json"].map { |file| File.basename(file, '.json') }
-response = retries(3) { s3_client.list_objects_v2(bucket: bucket_name, prefix: 'inventory/') }
+response = retries(5) { s3_client.list_objects_v2(bucket: bucket_name, prefix: 'inventory/') }
 if response.contents
   response.contents.each do |object|
     if object.key.end_with?('.json')
@@ -292,7 +292,7 @@ begin
     }
     params[:continuation_token] = continuation_token if continuation_token
     
-    response = retries(3) { s3_client.list_objects_v2(params) }
+    response = retries(5) { s3_client.list_objects_v2(params) }
     
     if response.contents
       response.contents.each do |object|
