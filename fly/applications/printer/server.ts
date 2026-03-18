@@ -277,8 +277,9 @@ const server = Bun.serve({
       })
     }
 
-    page.setDefaultNavigationTimeout(FETCH_TIMEOUT)
-    page.setDefaultTimeout(FETCH_TIMEOUT)
+    const fetchTimeout = parseInt(url.searchParams.get('timeout') || '') * 1000 || FETCH_TIMEOUT
+    page.setDefaultNavigationTimeout(fetchTimeout)
+    page.setDefaultTimeout(fetchTimeout)
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36')
 
     // main puppeteer logic: fetch url, convert to URL, return response
@@ -298,7 +299,7 @@ const server = Bun.serve({
       try {
         response = await page.goto(url.href, {
           waitUntil: JAVASCRIPT ? 'networkidle2' : 'load',
-          timeout: FETCH_TIMEOUT
+          timeout: fetchTimeout
         })
       } catch (error: any) {
         if (error.message.includes("ERR_NETWORK_CHANGED")) {
@@ -307,7 +308,7 @@ const server = Bun.serve({
           console.log(`${chalk.yellow.bold('Retrying')} ${chalk.black(url.href)}`)
           response = await page.goto(url.href, {
             waitUntil: JAVASCRIPT ? 'networkidle2' : 'load',
-            timeout: FETCH_TIMEOUT * 4
+            timeout: fetchTimeout * 4
           })
         } else {
           throw error
@@ -324,7 +325,7 @@ const server = Bun.serve({
           try {
             response = await page.goto(url.href, {
               waitUntil: JAVASCRIPT ? 'networkidle2' : 'load',
-              timeout: FETCH_TIMEOUT
+              timeout: fetchTimeout
             })
 
             if (response && response.status() !== 503) {
