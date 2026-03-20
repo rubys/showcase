@@ -25,7 +25,7 @@ def retries(max_attempts, &block)
   begin
     attempts += 1
     block.call
-  rescue Aws::S3::Errors::RequestCanceled, Seahorse::Client::NetworkingError => e
+  rescue Aws::S3::Errors::RequestCanceled, Aws::S3::Errors::SlowDown, Aws::S3::Errors::Throttling, Seahorse::Client::NetworkingError => e
     raise if attempts >= max_attempts
     sleep(2 ** attempts)
     retry
