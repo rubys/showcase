@@ -864,28 +864,7 @@ module HeatScheduler
     end
 
     def max_heat_size
-      agenda_cat = case @min_dcat
-      when 0
-        dance&.closed_category
-      when 1
-        dance&.open_category
-      when 2
-        dance&.solo_category
-      when 3
-        dance&.multi_category
-      when 4
-        dance&.pro_closed_category
-      when 5
-        dance&.pro_open_category
-      when 6
-        dance&.pro_solo_category
-      when 7
-        dance&.pro_multi_category
-      else
-        nil
-      end
-
-      agenda_cat&.max_heat_size || @@event.max_heat_size || 9999
+      @agenda_category&.max_heat_size || @@event.max_heat_size || 9999
     end
 
     attr_reader :agenda_category
