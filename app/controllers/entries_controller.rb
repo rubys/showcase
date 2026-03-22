@@ -299,8 +299,22 @@ class EntriesController < ApplicationController
     elsif replace != @entry
       @total = 0
       @entry.reload
+
+      # Determine which person is the new partner (the one that changed)
+      new_partner = (replace.lead == @entry.lead) ? replace.follow : replace.lead
+
+      # Find all heat numbers the new partner is already scheduled for
+      partner_heat_numbers = Heat.where(number: 1..).
+        joins(:entry).
+        where(entry: { id: Entry.where(lead_id: new_partner.id).or(Entry.where(follow_id: new_partner.id)) }).
+        pluck(:number).map(&:to_i).to_set
+
       @entry.heats.to_a.each do |heat|
         if heat.category != 'Solo'
+          # Reset heat number if the new partner already has a heat at this number
+          if heat.number > 0 && partner_heat_numbers.include?(heat.number)
+            heat.number = 0
+          end
           heat.entry = replace
           heat.save!
           @total += 1

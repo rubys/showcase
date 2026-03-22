@@ -463,6 +463,64 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal 2, original_entry.heats.count
   end
 
+  test "changing partner resets heat numbers that would cause double-booking" do
+    # Create a second instructor to be the new partner
+    new_partner = Person.create!(
+      name: "New Partner",
+      type: "Professional",
+      studio: @studio
+    )
+
+    # Original entry: @instructor + @student with heats at numbers 5 and 10
+    original_entry = Entry.create!(
+      lead: @instructor,
+      follow: @student,
+      age: @age,
+      level: @level
+    )
+
+    heat1 = Heat.create!(number: 5, entry: original_entry, dance: @dance, category: 'Closed')
+    heat2 = Heat.create!(number: 10, entry: original_entry, dance: @dance, category: 'Closed')
+
+    # Target entry already exists for new_partner + @student (the merge target)
+    target_entry = Entry.create!(
+      lead: new_partner,
+      follow: @student,
+      age: @age,
+      level: @level
+    )
+
+    # new_partner already has a heat at number 5 through a DIFFERENT entry (with student2)
+    other_entry = Entry.create!(
+      lead: new_partner,
+      follow: @student2,
+      age: @age,
+      level: @level
+    )
+    Heat.create!(number: 5, entry: other_entry, dance: @dance, category: 'Closed')
+
+    # Change partner from @instructor to new_partner — triggers merge into target_entry
+    patch entry_url(original_entry), params: {
+      entry: {
+        primary: @student.id,
+        partner: new_partner.id,
+        age: @age.id,
+        level: @level.id
+      },
+      submit: 'Update'
+    }
+
+    assert_response 302
+
+    # Heat at number 5 should be reset to 0 (conflict with new_partner's existing heat)
+    heat1.reload
+    assert_equal 0, heat1.number
+
+    # Heat at number 10 should keep its number (no conflict)
+    heat2.reload
+    assert_equal 10, heat2.number
+  end
+
   # ===== ENTRY MODIFICATION WORKFLOWS =====
   
   test "updates entry with heat modifications" do
