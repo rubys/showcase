@@ -34,6 +34,7 @@ class LocationsController < ApplicationController
       @showcase.key ||= 'showcase'
     end
 
+    setup_form
     render :new, status: status
   end
 
