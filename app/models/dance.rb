@@ -68,7 +68,7 @@ class Dance < ApplicationRecord
     
     # Extract unique values more efficiently
     score_data = scores.pluck(:slot, :judge_id).uniq
-    slots = score_data.map(&:first).uniq.sort
+    slots = score_data.map(&:first).compact.uniq.sort
     judges = score_data.map(&:last).uniq.sort
     numbers = heats.where.not(number: ..0).distinct.pluck(:number)
 
