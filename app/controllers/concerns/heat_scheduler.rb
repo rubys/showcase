@@ -190,7 +190,7 @@ module HeatScheduler
       assignments = {}
       subgroups = []
 
-      if event.heat_order == 'R'
+      if event.heat_order == 'R' || event.heat_order == 'D'
 
         # first, extract all heats in the group
         pending = []
@@ -209,6 +209,27 @@ module HeatScheduler
           end
         end
 
+        # For 'D' (densest-first): count how often each person appears in this
+        # match group, then sort heats by the sum of lead+follow counts so
+        # couples with TWO high-frequency dancers (e.g. pro Mig + heavy student
+        # Lil) go before couples with one high-frequency dancer and one rare
+        # partner. Sum captures dual-end conflict that max misses.
+        if event.heat_order == 'D'
+          person_counts = Hash.new(0)
+          pending.each do |index|
+            heat = heats[index].last
+            person_counts[heat.entry.lead_id] += 1 if heat.entry.lead_id != 0
+            person_counts[heat.entry.follow_id] += 1 if heat.entry.follow_id != 0
+          end
+
+          pending = pending.sort_by do |index|
+            heat = heats[index].last
+            lead_count = heat.entry.lead_id != 0 ? person_counts[heat.entry.lead_id] : 0
+            follow_count = heat.entry.follow_id != 0 ? person_counts[heat.entry.follow_id] : 0
+            [-(lead_count + follow_count), index]
+          end
+        end
+
         # now organize heats into subgroups
         more = pending.first
         while more
@@ -216,7 +237,7 @@ module HeatScheduler
           subgroups.unshift group
           more = nil
 
-          pending.shuffle!
+          pending.shuffle! if event.heat_order == 'R'
           pending.each do |index|
             next if assignments[index]
             entry = heats[index]
@@ -253,13 +274,17 @@ module HeatScheduler
 
       Group.max = group.max_heat_size
 
-      if event.heat_order == 'R'
+      if event.heat_order == 'R' || event.heat_order == 'D'
         assignments = assignments.map {|index, assignment| [heats[index], assignment]}.to_h
       else
         assignments = (0...assignments.length).map {|index| [heats[index], assignments[index]]}.to_h
       end
 
       rebalance(assignments, subgroups, group.max_heat_size)
+
+      if event.heat_order == 'D' || event.heat_order == 'R'
+        merge_singletons(assignments, subgroups, group.max_heat_size)
+      end
 
       heats.shift assignments.length
       groups += subgroups.reverse
@@ -321,7 +346,7 @@ module HeatScheduler
     end
 
     limited_availability = Person.where.not(available: nil).all
-    if limited_availability.any? && (Event.current.heat_order == "R" || Event.current.heat_order == "A")
+    if limited_availability.any? && ["R", "A", "D"].include?(Event.current.heat_order)
       exchange_heats(limited_availability)
       rescue_individual_heats(limited_availability)
       unschedule_remaining_violations(limited_availability)
@@ -408,6 +433,63 @@ module HeatScheduler
         rebalance(assignments, subgroups, max)
       end
     end
+  end
+
+  # After rebalance, the greedy can leave compatible singletons (e.g. Mig+Ale
+  # and Seb+Fla — no shared person, but each in its own subgroup). This pass
+  # merges any singleton pairs that don't conflict, and as a second step tries
+  # to absorb a remaining singleton into any non-full subgroup with room.
+  def merge_singletons(assignments, subgroups, max)
+    return if max <= 1
+
+    # Pass 1: merge pairs of compatible singletons.
+    loop do
+      singletons = subgroups.select { |sg| sg.size == 1 }
+      break if singletons.length < 2
+
+      merged = false
+      singletons.each_with_index do |sg1, i|
+        singletons[(i + 1)..].each do |sg2|
+          next if sg1.size + sg2.size > max
+          entry, _src = assignments.find { |_e, s| s == sg2 }
+          next unless entry
+          if sg1.add? *entry
+            sg2.remove *entry
+            assignments[entry] = sg1
+            merged = true
+            break
+          end
+        end
+        break if merged
+      end
+      break unless merged
+    end
+
+    # Pass 2: absorb remaining singletons into any subgroup with room,
+    # provided the source group still has size >= 2 after donating.
+    loop do
+      singletons = subgroups.select { |sg| sg.size == 1 }
+      break if singletons.empty?
+
+      absorbed = false
+      singletons.each do |target|
+        assignments.each do |entry, source|
+          next if source == target
+          next if source.size <= 2
+          next if target.size >= max
+          if target.add? *entry
+            source.remove *entry
+            assignments[entry] = target
+            absorbed = true
+            break
+          end
+        end
+        break if absorbed
+      end
+      break unless absorbed
+    end
+
+    subgroups.reject! { |sg| sg.size == 0 }
   end
 
   def reorder(groups)
