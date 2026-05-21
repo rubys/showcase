@@ -597,6 +597,61 @@ class PrintableTest < ActiveSupport::TestCase
     assert matching_keys.length >= 3, "Category should appear 3 times due to interleaving"
   end
 
+  test "generate_agenda gives duplicate-named spacer categories distinct times" do
+    Heat.destroy_all
+    Category.destroy_all
+
+    @event.update!(heat_length: 60, date: Date.current.iso8601, include_times: true)
+
+    # Schedule: anchor (heats) → spacer1 (10 min) → middle (heats) → spacer2 (15 min) → tail (heats)
+    # Both spacers share the same name "Break" but have different orders and durations.
+    anchor = Category.create!(name: 'Anchor', order: 1, time: '10 a.m.')
+    spacer1 = Category.create!(name: 'Break', order: 2, duration: 10)
+    middle = Category.create!(name: 'Middle', order: 3)
+    spacer2 = Category.create!(name: 'Break', order: 4, duration: 15)
+    tail = Category.create!(name: 'Tail', order: 5)
+
+    waltz = dances(:waltz)
+    tango = dances(:tango)
+    rumba = dances(:rumba)
+
+    waltz.update!(closed_category: anchor, open_category: nil, solo_category: nil)
+    tango.update!(closed_category: middle, open_category: nil, solo_category: nil)
+    rumba.update!(closed_category: tail, open_category: nil, solo_category: nil)
+
+    Heat.create!(number: 1, entry: @entry, dance: waltz, category: 'Closed')
+    Heat.create!(number: 2, entry: @entry, dance: tango, category: 'Closed')
+    Heat.create!(number: 3, entry: @entry, dance: rumba, category: 'Closed')
+
+    generate_agenda
+
+    # Both spacer records are tracked — the later-order one keeps the plain name,
+    # the earlier-order one gets a disambiguated key (per reverse-order insertion).
+    keys_for_break = @agenda.keys.select do |k|
+      k == 'Break' || @agenda_display_names[k] == 'Break'
+    end
+    assert_equal 2, keys_for_break.length, "Both spacer categories should appear in agenda"
+
+    # @agenda_cat resolves each agenda key back to its specific category record
+    cat_ids = keys_for_break.map { |k| @agenda_cat[k].id }.sort
+    assert_equal [spacer1.id, spacer2.id].sort, cat_ids
+
+    # Disambiguated key displays the original name
+    disambiguated_key = keys_for_break.find { |k| @agenda_display_names[k] }
+    assert_not_nil disambiguated_key, "One spacer key should be disambiguated"
+    assert_equal 'Break', @agenda_display_names[disambiguated_key]
+
+    # Each spacer has its own start/finish time, and the earlier-order spacer starts earlier
+    assert_not_nil @cat_start_by_id[spacer1.id]
+    assert_not_nil @cat_start_by_id[spacer2.id]
+    assert @cat_start_by_id[spacer1.id] < @cat_start_by_id[spacer2.id],
+      "Earlier-order spacer should start before later-order spacer"
+
+    # Durations are honored independently
+    assert_equal 10 * 60, @cat_finish_by_id[spacer1.id] - @cat_start_by_id[spacer1.id]
+    assert_equal 15 * 60, @cat_finish_by_id[spacer2.id] - @cat_start_by_id[spacer2.id]
+  end
+
   test "generate_agenda maintains Uncategorized and Unscheduled at end" do
     # Create various heats
     Heat.create!(number: 1, entry: @entry, dance: @dance, category: 'Closed')

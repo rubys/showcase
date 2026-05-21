@@ -25,8 +25,8 @@ module Printable
         [number, heats.sort_by { |heat| [heat.dance_id, heat.back || 0, heat.entry.lead.type] } ]
       end.to_h
 
-    @categories = (Category.includes(:extensions).all + CatExtension.includes(:category).all).sort_by {|cat| cat.order}.
-      map {|category| [category.name, category]}.to_h
+    all_categories = (Category.includes(:extensions).all + CatExtension.includes(:category).all).sort_by {|cat| cat.order}
+    @categories = all_categories.map {|category| [category.name, category]}.to_h
 
     # copy start time/date to subsequent entries
     last_cat = nil
@@ -277,30 +277,54 @@ module Printable
     end
 
     # Preserve categories with duration (breaks, warm-ups) even if they have no heats
-    # Insert them into final_agenda at the appropriate position based on category order
-    @categories.values.sort_by(&:order).reverse.each do |cat|
-      next unless cat.duration && @agenda.key?(cat.name) && !final_agenda.key?(cat.name)
+    # Insert them into final_agenda at the appropriate position based on category order.
+    # Iterate all_categories (preserving duplicates) so that two spacer categories
+    # sharing a name both get their own slot, with a disambiguator key when needed.
+    @agenda_display_names = {}
+    @agenda_cat = {}
+
+    all_categories.sort_by(&:order).reverse.each do |cat|
+      next unless cat.duration && @agenda.key?(cat.name)
+
+      if final_agenda.key?(cat.name)
+        # Existing entry for this name. Distinguish:
+        #   (a) one duration-bearing cat with this name + heat-based entry → skip
+        #   (b) multiple duration-bearing cats with this name → add as disambiguated spacer
+        duration_count = all_categories.count { |c| c.name == cat.name && c.duration }
+        next if duration_count <= 1
+
+        counter = 2
+        counter += 1 while final_agenda.key?("#{cat.name} ##{counter}")
+        key = "#{cat.name} ##{counter}"
+        @agenda_display_names[key] = cat.name
+      else
+        key = cat.name
+      end
+      @agenda_cat[key] = cat
 
       # Find the position where this category should be inserted
       # It should appear just before the next category in order
-      next_cat = @categories.values.sort_by(&:order).find { |c| c.order > cat.order }
+      next_cat = all_categories.find { |c| c.order > cat.order }
 
-      if next_cat && final_agenda.key?(next_cat.name)
-        # Insert before the next category
-        new_agenda = {}
-        final_agenda.each do |key, value|
-          if key == next_cat.name || key.start_with?("#{next_cat.name} (continued")
-            new_agenda[cat.name] = []
-            break
-          end
-          new_agenda[key] = value
+      if next_cat
+        next_key = final_agenda.keys.find do |k|
+          base = @agenda_display_names[k] || k.sub(/ \(continued.*\)$/, '')
+          base == next_cat.name
         end
-        # Add remaining entries
-        final_agenda.each { |key, value| new_agenda[key] = value unless new_agenda.key?(key) }
-        final_agenda = new_agenda
+
+        if next_key
+          new_agenda = {}
+          final_agenda.each do |k, value|
+            new_agenda[key] = [] if k == next_key
+            new_agenda[k] = value
+          end
+          final_agenda = new_agenda
+        else
+          final_agenda[key] = []
+        end
       else
         # Append at the end (before special categories)
-        final_agenda[cat.name] = []
+        final_agenda[key] = []
       end
     end
 
@@ -326,9 +350,11 @@ module Printable
 
       @cat_start = {}
       @cat_finish = {}
+      @cat_start_by_id = {}
+      @cat_finish_by_id = {}
 
       @agenda.each do |name, heats|
-        cat = @categories[name]
+        cat = @agenda_cat[name] || @categories[name]
 
         if cat and not cat.day.blank?
           yesterday = Chronic.parse('yesterday', now: start)
@@ -347,6 +373,7 @@ module Printable
         end
 
         @cat_start[name] = start
+        @cat_start_by_id[cat.id] = start if cat
 
         last_number_processed = nil
         heats.each do |number, ballrooms|
@@ -383,6 +410,7 @@ module Printable
         else
           @cat_finish[name] = start
         end
+        @cat_finish_by_id[cat.id] = @cat_finish[name] if cat
       end
     end
 

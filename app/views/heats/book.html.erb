@@ -125,8 +125,9 @@ end
       <% end %>
     </tr>
     <% @agenda.each do |cat, heats| %>
+      <% cat_display = @agenda_display_names&.dig(cat) || cat %>
       <tr>
-        <td class="row"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat %></a></td>
+        <td class="row"><a href="#cat-<%= cat.downcase.gsub(' ', '-') %>"><%= cat_display %></a></td>
         <td class="row text-right"><a href="#heat-<%= heats.first&.first || cat %>"><%= heats.first&.first %></a></td>
         <td class="row text-right"><a href="#heat-<%= heats.last&.first || cat %>"><%= heats.last&.first %></a></td>
         <% if @start and @cat_start[cat] %>
@@ -146,13 +147,14 @@ end
 
   <% @agenda.each do |cat, cat_heats| %>
   <% next if cat_heats.empty? %>
+  <% cat_display = @agenda_display_names&.dig(cat) || cat %>
   <div class="page break-before-page"></div>
 
   <div class="w-full">
 
   <% unless @type == 'judge' and cat_heats.all? {|number, ballrooms| ballrooms.values.flatten.first.category == 'Solo'} %>
   <div class="mt-8 mb-2 flex justify-between items-center" id="cat-<%= cat.downcase.gsub(' ', '-') %>">
-    <h1 class="font-bold text-4xl"><%= cat %></h1>
+    <h1 class="font-bold text-4xl"><%= cat_display %></h1>
   </div>
   <% end %>
 
@@ -230,7 +232,7 @@ end
           / <%= heats.first.solo.combo_dance.name %>
           <% end %>
           <% else %>
-          <%= cat %>
+          <%= cat_display %>
           <% end %>
           <% if @start %>
           <span class="text-base" style="opacity: 50%">- <%= localized_time(@start[number], @locale) %></span>

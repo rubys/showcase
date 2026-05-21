@@ -65,13 +65,14 @@ a scheduled heat time will be added to each heat.</li>
       <% end %>
     </tr>
     <% @agenda.each do |cat, heats| %>
+      <% cat_display = @agenda_display_names&.dig(cat) || cat %>
       <% cat_slug = cat.downcase.gsub(/[^\w]+/, '-') %>
       <% is_selected = @selected_category == cat_slug %>
       <tr class="<%= is_selected ? 'bg-blue-100' : '' %>">
         <% if %w(Uncategorized Unscheduled).include? cat %>
-        <td class="row text-red-600 font-bold"><%= link_to cat, heats_path(cat: cat_slug, anchor: "cat-#{cat_slug}"), data: { turbo: false } %></td>
+        <td class="row text-red-600 font-bold"><%= link_to cat_display, heats_path(cat: cat_slug, anchor: "cat-#{cat_slug}"), data: { turbo: false } %></td>
         <% else %>
-        <td class="row <%= is_selected ? 'font-bold' : '' %>"><%= link_to cat, heats_path(cat: cat_slug, anchor: "cat-#{cat_slug}"), data: { turbo: false } %></td>
+        <td class="row <%= is_selected ? 'font-bold' : '' %>"><%= link_to cat_display, heats_path(cat: cat_slug, anchor: "cat-#{cat_slug}"), data: { turbo: false } %></td>
         <% end %>
         <% if cat == "Unscheduled" %>
         <td colspan="2" class="text-right">(<%= pluralize(Heat.where(number: 0).count, 'entry') %>)</td>
