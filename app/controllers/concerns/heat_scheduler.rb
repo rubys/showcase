@@ -703,8 +703,10 @@ module HeatScheduler
     return run_groups if run_groups.length <= 1
 
     # Get max heat size (use first group's category or event default)
+    # Use base_dance_category to avoid dependency on stale heat numbers
+    # and to get the underlying Category rather than a CatExtension
     first_heat = run_groups.first.first
-    agenda_cat = first_heat&.dance_category
+    agenda_cat = first_heat&.base_dance_category
     max_size = agenda_cat&.max_heat_size || event.max_heat_size || 9999
 
     # Build a lookup of dance_id -> couple_type from MultiLevel records
