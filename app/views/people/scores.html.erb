@@ -53,18 +53,12 @@
       <% found = true %>
     <% end %>
 
-    <% # Render category scores (one page per category score) %>
+    <% # Render category scores (one page per student) %>
     <% if @category_scores && @event.student_judge_assignments %>
       <% person_category_scores = @category_scores.select { |(person_id, cat_id), scores| person_id == person.id } %>
-      <% person_category_scores.sort_by { |(pid, cid), _| cid }.each do |(person_id, cat_id), judge_scores| %>
-        <% category = @categories[cat_id] %>
-        <% next unless category %>
-        <% judge_scores.each do |judge_id, score| %>
-          <% judge = @judges.find { |j| j.id == judge_id } %>
-          <% next unless judge %>
-          <%= render "people/category_score", person: person, category: category, score: score, judge: judge, event: @event %>
-          <% found = true %>
-        <% end %>
+      <% if person_category_scores.any? { |(pid, cat_id), _| @categories[cat_id] } %>
+        <%= render "people/category_score", person: person, category_scores: person_category_scores, event: @event %>
+        <% found = true %>
       <% end %>
     <% end %>
   <% end %>

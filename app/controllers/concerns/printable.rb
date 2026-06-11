@@ -1252,10 +1252,12 @@ module Printable
     @track_ages = @event.track_ages
 
     # Load category scores for students
-    # Group by person_id and category_id for easy lookup
+    # Group by person_id and category_id for easy lookup.
+    # Skip scores with no data at all - when judges are assigned, empty
+    # Score records exist merely to mark the assignment.
     @category_scores = Score.where('heat_id < 0').
-      where.not(good: [nil, '']).
       includes(:judge).
+      reject { |score| score.good.blank? && score.bad.blank? && score.value.blank? && score.comments.blank? }.
       group_by { |score| [score.person_id, score.heat_id.abs] }.
       transform_values { |scores| scores.index_by(&:judge_id) }
 

@@ -1845,20 +1845,7 @@ class ScoresController < ApplicationController
         bad.to_s.split.each { |abbr| @scores[person]['bad'][abbr] += 1 } if bad.present?
       end
 
-      if Feedback.any?
-        @feedback_items = Feedback.ordered.map { |f| [f.abbr, f.value] }
-      elsif @open_scoring == '+'
-        @feedback_items = [
-          ['DF', 'Dance Frame'], ['T', 'Timing'], ['LF', 'Lead/Follow'],
-          ['CM', 'Cuban Motion'], ['RF', 'Rise & Fall'], ['FW', 'Footwork'],
-          ['B', 'Balance'], ['AS', 'Arm Styling'], ['CB', 'Contra-Body'], ['FC', 'Floor Craft']
-        ]
-      else
-        @feedback_items = [
-          ['F', 'Frame'], ['P', 'Posture'], ['FW', 'Footwork'],
-          ['LF', 'Lead/Follow'], ['T', 'Timing'], ['S', 'Styling']
-        ]
-      end
+      @feedback_items = Feedback.items(@open_scoring)
     else
       @open_scores = get_scores_for_type(@open_scoring)
       @closed_scores = get_scores_for_type(@closed_scoring == '=' ? @open_scoring : @closed_scoring)

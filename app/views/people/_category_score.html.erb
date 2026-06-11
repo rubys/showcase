@@ -13,16 +13,16 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 2rem;
+    margin-bottom: 0.5rem;
   }
 
   .category-score-logo {
-    max-width: 150px;
-    max-height: 150px;
+    max-width: 100px;
+    max-height: 100px;
   }
 
   .category-score-student-name {
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: normal;
     color: #2563eb;
     text-align: right;
@@ -31,29 +31,76 @@
   .category-score-event-name {
     font-size: 1.25rem;
     color: #2563eb;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .category-score-section {
+    break-inside: avoid;
+    border-top: 2px solid #2563eb;
+    padding-top: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .category-score-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+  }
+
+  .category-score-category {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #2563eb;
+  }
+
+  .category-score-overall {
+    font-size: 1.25rem;
+    font-weight: bold;
+  }
+
+  .category-score-judge {
+    color: #2563eb;
+  }
+
+  .category-score-dances {
+    font-size: 0.875rem;
+    color: #555;
+    margin-bottom: 0.5rem;
   }
 
   .category-score-table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 2rem;
+    margin: 0.5rem 0;
   }
 
   .category-score-table td {
-    padding: 0.75rem;
-    border-bottom: 2px solid #2563eb;
+    padding: 0.25rem 0.5rem;
+    border-bottom: 1px solid #93c5fd;
   }
 
   .category-score-table td:first-child {
-    width: 50%;
     color: #2563eb;
     font-weight: 500;
+    white-space: nowrap;
+    width: 1%;
+  }
+
+  .category-score-column-header {
+    text-align: center;
+    font-size: 0.875rem;
+    font-weight: normal;
+    padding-bottom: 0.25rem;
+  }
+
+  .category-score-checkbox-cell {
+    text-align: center;
   }
 
   .category-score-checkbox {
-    width: 30px;
-    height: 30px;
+    width: 22px;
+    height: 22px;
     border: 2px solid #2563eb;
     display: inline-block;
     vertical-align: middle;
@@ -66,47 +113,47 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 24px;
+    font-size: 18px;
     color: #2563eb;
     font-weight: bold;
-  }
-
-  .category-score-column-header {
-    text-align: center;
-    font-size: 0.875rem;
-    font-weight: normal;
-    padding-bottom: 0.25rem;
-  }
-
-  .category-score-checkbox-cell {
-    text-align: center;
-    width: 16.67%;
-  }
-
-  .category-score-comments {
-    margin-top: 1rem;
   }
 
   .category-score-comments-label {
     color: #2563eb;
     font-weight: 500;
-    margin-bottom: 0.5rem;
-  }
-
-  .category-score-comments-lines {
-    border: none;
-    border-bottom: 1px solid #999;
-    width: 100%;
-    margin-bottom: 0.5rem;
-  }
-
-  .category-score-judge {
-    text-align: right;
-    margin-top: 2rem;
-    font-size: 1.5rem;
-    color: #2563eb;
   }
 </style>
+
+<%
+  feedback_items = @feedback_items ||= Feedback.items(event.open_scoring)
+
+  # Sections sorted by category order, then judge name
+  sections = []
+  category_scores.each do |(person_id, cat_id), judge_scores|
+    category = @categories[cat_id]
+    next unless category
+    judge_scores.each do |judge_id, score|
+      judge = @judges.find { |j| j.id == judge_id }
+      next unless judge
+      sections << [category, judge, score]
+    end
+  end
+  sections.sort_by! { |category, judge, score| [category.order || 0, judge.name] }
+
+  # Dances this person danced, by category, for display under each section header
+  person_heats = @heats.select { |heat|
+    heat.number.to_f >= 1 &&
+    ([heat.entry.lead_id, heat.entry.follow_id].include?(person.id) ||
+     @formations.any? { |id, number| id == person.id && number == heat.number })
+  }
+  dances_by_category = Hash.new { |hash, key| hash[key] = [] }
+  person_heats.sort_by(&:number).each do |heat|
+    heat_cat = heat.dance_category
+    heat_cat = heat_cat.category if heat_cat.is_a?(CatExtension)
+    next unless heat_cat
+    dances_by_category[heat_cat.id] << heat.dance.name unless dances_by_category[heat_cat.id].include?(heat.dance.name)
+  end
+%>
 
 <div class="category-score-page">
   <div class="category-score-header">
@@ -120,52 +167,68 @@
 
   <div class="category-score-event-name"><%= event.name %></div>
 
-  <table class="category-score-table">
-    <thead>
-      <tr>
-        <td></td>
-        <td class="category-score-column-header category-score-checkbox-cell">NEEDS<br>WORK</td>
-        <td class="category-score-column-header category-score-checkbox-cell">GOOD</td>
-        <td class="category-score-column-header category-score-checkbox-cell">EXCELLENT</td>
-      </tr>
-    </thead>
-    <tbody>
-      <% Feedback.ordered.each do |feedback| %>
-      <%
-        # Determine checkbox states
-        in_good = score.good&.include?(feedback.abbr)
-        in_bad = score.bad&.include?(feedback.abbr)
-        needs_work = in_bad
-        excellent = in_good && !in_bad
-        good = !in_good && !in_bad
-      %>
-      <tr>
-        <td><%= feedback.value %></td>
-        <td class="category-score-checkbox-cell">
-          <div class="category-score-checkbox <%= 'checked' if needs_work %>"></div>
-        </td>
-        <td class="category-score-checkbox-cell">
-          <div class="category-score-checkbox <%= 'checked' if good %>"></div>
-        </td>
-        <td class="category-score-checkbox-cell">
-          <div class="category-score-checkbox <%= 'checked' if excellent %>"></div>
-        </td>
-      </tr>
+  <% sections.each do |category, judge, score| %>
+  <div class="category-score-section">
+    <div class="category-score-section-header">
+      <span class="category-score-category"><%= category.name %></span>
+      <% if score.value.present? %>
+      <span class="category-score-overall">Overall: <%= score.display_value %></span>
       <% end %>
-    </tbody>
-  </table>
+      <span class="category-score-judge">Judge: <%= judge.name %></span>
+    </div>
 
-  <div class="category-score-comments">
-    <div class="category-score-comments-label">COMMENTS:</div>
-    <% if score.comments.present? %>
-      <% score.comments.lines.each do |line| %>
-        <div class="category-score-comments-lines"><%= line.strip %></div>
-      <% end %>
+    <% dances = dances_by_category[category.id] %>
+    <% if dances.any? %>
+    <div class="category-score-dances"><%= dances.join(', ') %></div>
     <% end %>
-    <% (10 - (score.comments&.lines&.count || 0)).times do %>
-      <div class="category-score-comments-lines">&nbsp;</div>
+
+    <table class="category-score-table">
+      <thead>
+        <tr>
+          <td></td>
+          <% feedback_items.each do |abbr, value| %>
+          <td class="category-score-column-header"><%= value %></td>
+          <% end %>
+        </tr>
+      </thead>
+      <tbody>
+        <%
+          good_abbrs = score.good.to_s.split
+          bad_abbrs = score.bad.to_s.split
+        %>
+        <tr>
+          <td>Excellent</td>
+          <% feedback_items.each do |abbr, value| %>
+          <td class="category-score-checkbox-cell">
+            <div class="category-score-checkbox <%= 'checked' if good_abbrs.include?(abbr) && !bad_abbrs.include?(abbr) %>"></div>
+          </td>
+          <% end %>
+        </tr>
+        <tr>
+          <td>Good</td>
+          <% feedback_items.each do |abbr, value| %>
+          <td class="category-score-checkbox-cell">
+            <div class="category-score-checkbox <%= 'checked' if !good_abbrs.include?(abbr) && !bad_abbrs.include?(abbr) %>"></div>
+          </td>
+          <% end %>
+        </tr>
+        <tr>
+          <td>Needs Work</td>
+          <% feedback_items.each do |abbr, value| %>
+          <td class="category-score-checkbox-cell">
+            <div class="category-score-checkbox <%= 'checked' if bad_abbrs.include?(abbr) %>"></div>
+          </td>
+          <% end %>
+        </tr>
+      </tbody>
+    </table>
+
+    <% if score.comments.present? %>
+    <div>
+      <span class="category-score-comments-label">COMMENTS:</span>
+      <%= score.comments %>
+    </div>
     <% end %>
   </div>
-
-  <div class="category-score-judge">Judge: <%= judge.name %></div>
+  <% end %>
 </div>
