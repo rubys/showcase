@@ -640,6 +640,7 @@ module HeatScheduler
 
     packed = []
     i = 0
+    children_cache = {}
 
     while i < groups.length
       group = groups[i]
@@ -664,10 +665,16 @@ module HeatScheduler
             # MultiLevel case: same dance name
             break unless next_heat.dance.name == heat.dance.name
           else
-            # Pre-split case: same heat_length, same multi_category, not a MultiLevel dance
+            # Pre-split case: same heat_length, same multi_category, same child
+            # dances, not a MultiLevel dance. Matching child dances distinguish
+            # level/age variants of one competition (danced to the same music,
+            # packable) from different competitions that merely share an agenda
+            # category (not packable).
             break unless next_heat.dance.heat_length == heat.dance.heat_length &&
                          next_heat.dance.multi_category_id == heat.dance.multi_category_id &&
                          next_heat.dance.multi_category_id.present? &&
+                         multi_children_names(next_heat.dance, children_cache) ==
+                           multi_children_names(heat.dance, children_cache) &&
                          !dances_with_splits.include?(next_heat.dance.name)
           end
 
@@ -693,6 +700,14 @@ module HeatScheduler
     end
 
     packed
+  end
+
+  # Sorted child dance names for a multi-dance, used to decide whether two
+  # pre-split dances are variants of the same competition. Compared by name
+  # rather than id so variants whose children point at split dance records
+  # still match.
+  def multi_children_names(dance, cache)
+    cache[dance.id] ||= Dance.where(id: dance.multi_children.select(:dance_id)).pluck(:name).sort
   end
 
   # Pack a run of groups for the same multi-dance

@@ -2291,4 +2291,60 @@ class HeatSchedulerTest < ActiveSupport::TestCase
     assert_empty short_numbers & long_numbers,
       "Different heat_length dances should not share heat numbers"
   end
+
+  test "pack_multi_dance_splits does not pack pre-split dances with different child dances" do
+    # Mark all existing heats as scratched
+    Heat.update_all(number: -1)
+
+    multi_cat = Category.create!(name: "PreSplit Children Test", order: 952)
+
+    # Two distinct competitions sharing an agenda category and heat_length,
+    # but danced to different music (different child dances)
+    dance_smooth = Dance.create!(name: "PreSplit Smooth", order: 770, multi_category: multi_cat, heat_length: 3)
+    dance_swing  = Dance.create!(name: "PreSplit Swing",  order: -1, multi_category: multi_cat, heat_length: 3)
+
+    smooth_children = %w[W T F].map.with_index do |n, i|
+      Dance.create!(name: "PreSplit SM Child #{n}", order: 771 + i)
+    end
+    swing_children = %w[E L C].map.with_index do |n, i|
+      Dance.create!(name: "PreSplit SW Child #{n}", order: 774 + i)
+    end
+
+    smooth_children.each { |c| Multi.create!(parent_id: dance_smooth.id, dance_id: c.id) }
+    swing_children.each { |c| Multi.create!(parent_id: dance_swing.id, dance_id: c.id) }
+
+    max_back = Person.maximum(:back) || 0
+    students = 4.times.map do |i|
+      Person.create!(name: "PreSplit CH Student #{i}", studio: @studio1, type: 'Student', level: levels(:one))
+    end
+    instructors = 4.times.map do |i|
+      Person.create!(name: "PreSplit CH Inst #{i}", studio: @studio1, type: 'Professional', back: max_back + 500 + i)
+    end
+
+    # Dance Smooth: students 0,1
+    [0, 1].each do |i|
+      entry = Entry.create!(lead: students[i], follow: instructors[i], age: ages(:one), level: levels(:one))
+      Heat.create!(dance: dance_smooth, entry: entry, category: 'Multi', number: 0)
+    end
+
+    # Dance Swing: students 2,3
+    [2, 3].each do |i|
+      entry = Entry.create!(lead: students[i], follow: instructors[i], age: ages(:one), level: levels(:one))
+      Heat.create!(dance: dance_swing, entry: entry, category: 'Multi', number: 0)
+    end
+
+    @scheduler.schedule_heats
+
+    test_dances = [dance_smooth, dance_swing]
+    multi_heats = Heat.where(dance: test_dances, category: 'Multi').where('number > 0')
+
+    assert_equal 4, multi_heats.count, "All 4 heats should be scheduled"
+
+    # Different competitions should NOT share heat numbers
+    smooth_numbers = multi_heats.where(dance: dance_smooth).pluck(:number).uniq
+    swing_numbers = multi_heats.where(dance: dance_swing).pluck(:number).uniq
+
+    assert_empty smooth_numbers & swing_numbers,
+      "Dances with different child dances should not share heat numbers"
+  end
 end
