@@ -32,6 +32,7 @@
     <li>Open and Closed heats in the same agenda item can be on the floor at the same time.
     </ul>
     </li>
+    <li>The <strong>current heat number</strong> drives the big number on the projected counter display. It normally advances on its own as the emcee starts each heat; set it here (e.g. to 0) to reset or jump the counter.</li>
   </ul>
 </div>
 
@@ -84,6 +85,12 @@
   <% else %>
     <%= form.hidden_field :heat_range_cat, value: 0 %>
   <% end %>
+
+  <div class="my-5">
+    <%= form.label :current_heat, 'Current heat number (set to 0 to reset the counter display)' %>
+    <%= form.number_field :current_heat, min: 0,
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+  </div>
 
   <div class="inline">
     <%= form.button 'Save', name: 'tab', value: 'Heats', class: "rounded-lg py-3 px-5 bg-blue-600 text-white inline-block font-medium cursor-pointer" %>
