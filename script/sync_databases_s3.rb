@@ -280,60 +280,98 @@ def dbdate(filename, dbpath)
   end
 end
 
-# Get list of objects in S3 with "db/" prefix (handle pagination)
+# Get metadata for S3 objects under the "db/" prefix.
+#
+# When --index-only/--only restricts the sync to specific databases, head_object
+# just those keys directly instead of listing and head_object-ing the entire
+# fleet (hundreds of databases). The full listing is only needed for a full sync.
 s3_objects = {}
 begin
-  continuation_token = nil
-  loop do
-    params = {
-      bucket: bucket_name,
-      prefix: "db/",
-      max_keys: 1000
-    }
-    params[:continuation_token] = continuation_token if continuation_token
-    
-    response = retries(5) { s3_client.list_objects_v2(params) }
-    
-    if response.contents
-      response.contents.each do |object|
-        # Extract filename from key (remove "db/" prefix)
-        filename = object.key.sub(/^db\//, '')
-        
-        # Determine which region owns this database
-        tenant_name = filename.sub(/\.sqlite3$/, '')
-        owner_region = tenant_regions[tenant_name] || 'index'
-        
-        # Check the owner region's inventory for matching etag to get actual last_modified time
-        actual_last_modified = nil
-        if inventories[owner_region] && inventories[owner_region].is_a?(Hash) && 
-           inventories[owner_region][filename] && 
-           inventories[owner_region][filename]['etag'] == object.etag
-          actual_last_modified = Time.parse(inventories[owner_region][filename]['last_modified'])
-        else
-          obj_response = retries(3) { s3_client.head_object(bucket: bucket_name, key: object.key) }
-          if obj_response.metadata && obj_response.metadata['last-modified']
-            actual_last_modified = Time.parse(obj_response.metadata['last-modified'])
-            inventories[owner_region] ||= {}
-            inventories[owner_region][filename] = {
-              'etag' => obj_response.etag,
-              'date' => dbdate(filename, dbpath),
-              'last_modified' => actual_last_modified.utc.inspect
-            }
-            inventory_changed[owner_region] = true
-          end
-        end
-        
-        s3_objects[filename] = {
-          last_modified: actual_last_modified || object.last_modified,
-          size: object.size,
-          etag: object.etag
-        }
+  if options[:only_dbs].any?
+    # Targeted lookup: head_object only the requested databases.
+    options[:only_dbs].each do |db_name|
+      begin
+        obj = retries(3) { s3_client.head_object(bucket: bucket_name, key: "db/#{db_name}") }
+      rescue Aws::S3::Errors::NotFound, Aws::S3::Errors::NoSuchKey
+        next  # Not in S3 yet; main loop will treat this as an upload
       end
+
+      tenant_name = db_name.sub(/\.sqlite3$/, '')
+      owner_region = tenant_regions[tenant_name] || 'index'
+
+      if obj.metadata && obj.metadata['last-modified']
+        actual_last_modified = Time.parse(obj.metadata['last-modified'])
+        inventories[owner_region] ||= {}
+        inventories[owner_region][db_name] = {
+          'etag' => obj.etag,
+          'date' => dbdate(db_name, dbpath),
+          'last_modified' => actual_last_modified.utc.inspect
+        }
+        inventory_changed[owner_region] = true
+      else
+        actual_last_modified = obj.last_modified
+      end
+
+      s3_objects[db_name] = {
+        last_modified: actual_last_modified,
+        size: obj.content_length,
+        etag: obj.etag
+      }
     end
-    
-    # Check if there are more results
-    break unless response.is_truncated
-    continuation_token = response.next_continuation_token
+  else
+    # Full sync: list every object under "db/" (handle pagination).
+    continuation_token = nil
+    loop do
+      params = {
+        bucket: bucket_name,
+        prefix: "db/",
+        max_keys: 1000
+      }
+      params[:continuation_token] = continuation_token if continuation_token
+
+      response = retries(5) { s3_client.list_objects_v2(params) }
+
+      if response.contents
+        response.contents.each do |object|
+          # Extract filename from key (remove "db/" prefix)
+          filename = object.key.sub(/^db\//, '')
+
+          # Determine which region owns this database
+          tenant_name = filename.sub(/\.sqlite3$/, '')
+          owner_region = tenant_regions[tenant_name] || 'index'
+
+          # Check the owner region's inventory for matching etag to get actual last_modified time
+          actual_last_modified = nil
+          if inventories[owner_region] && inventories[owner_region].is_a?(Hash) &&
+             inventories[owner_region][filename] &&
+             inventories[owner_region][filename]['etag'] == object.etag
+            actual_last_modified = Time.parse(inventories[owner_region][filename]['last_modified'])
+          else
+            obj_response = retries(3) { s3_client.head_object(bucket: bucket_name, key: object.key) }
+            if obj_response.metadata && obj_response.metadata['last-modified']
+              actual_last_modified = Time.parse(obj_response.metadata['last-modified'])
+              inventories[owner_region] ||= {}
+              inventories[owner_region][filename] = {
+                'etag' => obj_response.etag,
+                'date' => dbdate(filename, dbpath),
+                'last_modified' => actual_last_modified.utc.inspect
+              }
+              inventory_changed[owner_region] = true
+            end
+          end
+
+          s3_objects[filename] = {
+            last_modified: actual_last_modified || object.last_modified,
+            size: object.size,
+            etag: object.etag
+          }
+        end
+      end
+
+      # Check if there are more results
+      break unless response.is_truncated
+      continuation_token = response.next_continuation_token
+    end
   end
 rescue => e
   error_msg = "Error listing S3 objects: #{e.message}"
@@ -608,7 +646,12 @@ if !options[:dry_run] && uploads.size > 0
     hostenv = `env | grep FLY` if ENV['FLY_REGION']
 
     uri = URI('https://rubix.intertwingly.net/webhook/showcase')
-    res = Net::HTTP.get_response(uri)
+    # Bounded timeouts so a slow or unreachable webhook can't stall the sync
+    res = Net::HTTP.start(uri.host, uri.port,
+                          use_ssl: uri.scheme == 'https',
+                          open_timeout: 10, read_timeout: 15) do |http|
+      http.get(uri.request_uri)
+    end
     if res.is_a?(Net::HTTPSuccess)
       puts res.body unless options[:quiet]
     else
