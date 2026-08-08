@@ -415,22 +415,34 @@ module HeatScheduler
       end
     end
 
-    if subgroups.any? {|subgroup| subgroup.size > max}
-      assignments.each do |entry, target|
-        next if target.size >= max
-        subgroups.each do |source|
-          next if source.size <= max
-          if target.add? *entry
-            source.remove *entry
-            assignments[entry] = target
-            break if target.size >= max
-          end
-        end
-      end
+    split_oversized(assignments, subgroups, max)
+  end
 
-      if subgroups.any? {|subgroup| subgroup.size > max}
-        subgroups.unshift Group.new
-        rebalance(assignments, subgroups, max)
+  # Subgroups are formed with no size cap (Group.max is 9999 during grouping),
+  # so a group can come out of that phase larger than max.  Drain each such
+  # group into whatever groups still have room, spilling into fresh groups when
+  # nothing compatible can take the entry.  Only oversized groups are touched:
+  # re-running the whole rebalance instead would recompute a smaller ceiling and
+  # shatter groups that are already well packed.
+  def split_oversized(assignments, subgroups, max)
+    subgroups.select {|subgroup| subgroup.size > max}.each do |source|
+      assignments.select {|_entry, group| group == source}.keys.each do |entry|
+        break if source.size <= max
+
+        target = subgroups.find do |candidate|
+          next false if candidate == source
+          next false if candidate.size >= max
+          candidate.add? *entry
+        end
+
+        unless target
+          target = Group.new
+          subgroups.unshift target
+          next unless target.add? *entry
+        end
+
+        source.remove *entry
+        assignments[entry] = target
       end
     end
   end
@@ -984,6 +996,7 @@ module HeatScheduler
     def add?(dance, dcat, availability, level, age, heat)
       if @group.length == 0
         @participants = Set.new
+        @members = {}
 
         @max_dcat = @min_dcat = dcat
         @max_level = @min_level = level
@@ -1018,9 +1031,12 @@ module HeatScheduler
       heat_agenda_cat = heat.base_dance_category
       return false unless @agenda_category == heat_agenda_cat
 
-      @participants.add heat.lead
-      @participants.add heat.follow
-      @participants += formations if formations
+      people = [heat.lead, heat.follow]
+      people += formations if formations
+      @participants += people
+
+      # remember what this heat contributed so remove can undo it exactly
+      @members[heat] = [dcat, level, age, people]
 
       @max_dcat = dcat if dcat > @max_dcat
       @min_dcat = dcat if dcat < @min_dcat
@@ -1032,10 +1048,27 @@ module HeatScheduler
       @group << heat
     end
 
+    # Recompute the group's participants and its dcat/level/age ranges from the
+    # heats that remain.  Widening is monotonic in add?, so without this a group
+    # that has had entries moved out of it keeps refusing heats that its actual
+    # contents would now accept -- and keeps holding participants (notably the
+    # people in a solo's formations) that are no longer in the group at all.
     def remove(dance, dcat, availability, level, age, heat)
       @group.delete heat
-      @participants.delete heat.lead
-      @participants.delete heat.follow
+      return if @members.nil?
+
+      @members.delete heat
+
+      if @members.empty?
+        @participants = Set.new
+        return
+      end
+
+      @participants = Set.new(@members.values.flat_map(&:last))
+
+      @min_dcat, @max_dcat = @members.values.map {|member| member[0]}.minmax
+      @min_level, @max_level = @members.values.map {|member| member[1]}.minmax
+      @min_age, @max_age = @members.values.map {|member| member[2]}.minmax
     end
 
     def each(&block)

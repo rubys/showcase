@@ -307,7 +307,85 @@ class HeatSchedulerTest < ActiveSupport::TestCase
     sizes = subgroups.map(&:size)
     assert sizes.max - sizes.min <= 1, "Groups not balanced: #{sizes}"
   end
-  
+
+  # Subgroups are formed with no size cap, so a group can arrive at rebalance
+  # holding more than max heats.  split_oversized has to break it up into
+  # full-sized groups rather than shattering it into ones and twos.
+  test "split_oversized breaks up a group larger than max" do
+    HeatScheduler::Group.set_knobs
+    HeatScheduler::Group.max = 9999
+
+    oversized = HeatScheduler::Group.new
+    assignments = {}
+
+    5.times do |i|
+      student = Person.create!(name: "Student Oversized #{i}", studio: @studio1,
+        type: 'Student', level: levels(:one))
+      instructor = Person.create!(name: "Instructor Oversized #{i}", studio: @studio1,
+        type: 'Professional')
+      entry = Entry.create!(lead: instructor, follow: student, age: ages(:one),
+        level: levels(:one))
+      heat = Heat.create!(dance: @dance_waltz, entry: entry, category: 'Closed')
+
+      tuple = [1, 0, 0, 1, 1, heat]
+      assert oversized.add?(*tuple), "heat #{i} should join the uncapped group"
+      assignments[tuple] = oversized
+    end
+
+    assert_equal 5, oversized.size
+
+    subgroups = [oversized]
+    HeatScheduler::Group.max = 2
+    @scheduler.split_oversized(assignments, subgroups, 2)
+
+    sizes = subgroups.map(&:size)
+    assert_equal 5, sizes.sum, "heats were lost or duplicated: #{sizes}"
+    assert sizes.max <= 2, "group still over max: #{sizes}"
+    assert_equal 3, subgroups.count {|group| group.size > 0},
+      "expected 3 groups of at most 2, got: #{sizes}"
+    assert subgroups.all? {|group| assignments.count {|_t, g| g == group} == group.size },
+      "assignments out of sync with group membership"
+  end
+
+  # add? only ever widens a group's level range, so remove has to narrow it back
+  # down -- otherwise a group that has had entries moved out of it keeps
+  # refusing heats its actual contents would now accept.
+  test "Group#remove narrows the level range back to remaining heats" do
+    @event.update!(heat_range_level: 1)
+    Event.current = @event
+    HeatScheduler::Group.set_knobs
+    HeatScheduler::Group.max = 9999
+
+    group = HeatScheduler::Group.new
+
+    tuples = (0..2).map do |i|
+      student = Person.create!(name: "Student Range #{i}", studio: @studio1,
+        type: 'Student', level: levels(:one))
+      instructor = Person.create!(name: "Instructor Range #{i}", studio: @studio1,
+        type: 'Professional')
+      entry = Entry.create!(lead: instructor, follow: student, age: ages(:one),
+        level: levels(:one))
+      heat = Heat.create!(dance: @dance_waltz, entry: entry, category: 'Closed')
+      # level is the 4th tuple element -- levels 1, 2 and 3
+      [1, 0, 0, i + 1, 1, heat]
+    end
+
+    assert group.add?(*tuples[0]), "level 1 should start the group"
+    assert group.add?(*tuples[1]), "level 2 is within range 1 of level 1"
+
+    # level 3 is 2 away from the group's minimum, so it does not fit yet
+    assert_not group.add?(*tuples[2]), "level 3 should not fit a 1..2 group"
+
+    # dropping the level 1 heat leaves a group that is purely level 2
+    group.remove(*tuples[0])
+    assert_equal 1, group.size
+
+    assert group.add?(*tuples[2]),
+      "level 3 should fit once the group holds only level 2"
+    assert_equal 2, group.size
+  end
+
+
   test "schedule_heats handles pro heats separately" do
     # Enable pro heats for the event
     @event.update!(pro_heats: true)
