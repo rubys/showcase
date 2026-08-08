@@ -104,47 +104,65 @@ module HeatScheduler
 
     # If block scheduling is enabled, replace eligible heats with blocks
     if event.heat_order == 'B'
-      blocks_map = {}
+      blockable = Hash.new {|hash, key| hash[key] = []}
       remaining_heats = []
 
       heats.each do |heat_tuple|
         heat = heat_tuple.last
 
         # Only block amateur open and closed heats
+        agenda_cat = nil
         if !heat.entry.pro && ['Open', 'Closed'].include?(heat.category)
           # Use base_dance_category to avoid dependency on stale heat numbers
           agenda_cat = heat.base_dance_category
-          next unless agenda_cat # Skip if no agenda category
+        end
 
-          # Create unique key for this block: entry_id + heat_category + agenda_category_id
-          block_key = [heat.entry_id, heat.category, agenda_cat.id]
-
-          if !blocks_map[block_key]
-            blocks_map[block_key] = Block.new(heat.entry, heat.category, agenda_cat)
-          end
-
-          block = blocks_map[block_key]
-
-          # Check if this dance is already in the block (constraint: no duplicate dances in a block)
-          if block.heats.any? { |h| h.dance_id == heat.dance_id }
-            # Keep non-blockable heat as-is (can't add duplicate dance to block)
-            remaining_heats << heat_tuple
-          else
-            block.add_heat(heat)
-          end
+        if agenda_cat
+          # Group by entry_id + heat_category + agenda_category_id
+          blockable[[heat.entry_id, heat.category, agenda_cat.id]] << heat
         else
-          # Keep non-blockable heats as-is
+          # Keep non-blockable heats as-is.  A heat with no agenda category
+          # lands here too, rather than being dropped from the schedule.
           remaining_heats << heat_tuple
         end
       end
 
+      # A couple that dances the same dance more than once within a category
+      # cannot fit those repeats into a single block, so split the block into
+      # layers: layer N holds the Nth heat of every dance the couple dances at
+      # least N times.  Each layer then holds at most one heat per dance, which
+      # is what the unpacking below needs, and layers of the same couple share
+      # participants so grouping keeps them in separate heats on its own.
+      blocks = blockable.flat_map do |(_entry_id, heat_category, _agenda_cat_id), block_heats|
+        entry = block_heats.first.entry
+        agenda_cat = block_heats.first.base_dance_category
+        layers = []
+
+        block_heats.group_by {|heat| true_order[heat.dance.order]}.each_value do |repeats|
+          repeats.each_with_index do |heat, layer|
+            layers[layer] ||= Block.new(entry, heat_category, agenda_cat)
+            layers[layer].add_heat(heat)
+          end
+        end
+
+        layers.compact.each(&:sort_heats!)
+      end
+
+      # Grouping keys off the first tuple element to keep a heat to a single
+      # dance.  A block spans several dances, so that test would only ever let
+      # blocks that happen to start on the same dance share a round -- which
+      # splits each agenda category into as many runs as it has dances.  Give
+      # every block in an agenda category the same key instead; add? still holds
+      # a group to one agenda category, which is the constraint that matters
+      # here.  The key is the category's earliest dance so blocks still sort
+      # into the right place among the loose heats.
+      block_keys = blocks.group_by {|block| block.agenda_category&.id}.
+        transform_values {|list| list.map {|block| true_order[block.heats.first.dance.order]}.min}
+
       # Replace heats list with blocks (as tuples) and remaining heats
-      block_tuples = blocks_map.values.filter_map do |block|
-        # Skip empty blocks (all heats were duplicates)
+      block_tuples = blocks.filter_map do |block|
         next if block.heats.empty?
 
-        # Create a tuple for the block using the first heat's dance order
-        first_heat = block.heats.first
         heat_cat_num = heat_categories[block.heat_category]
         heat_cat_num += 4 if block.entry.pro
 
@@ -152,13 +170,17 @@ module HeatScheduler
           heat_cat_num = 1
         end
 
-        # Use the dance order from the first heat in the block
-        dance_order = true_order[first_heat.dance.order]
+        dance_order = block_keys[block.agenda_category&.id]
 
         [
           dance_order,
           heat_cat_num,
-          0, # availability score (blocks don't have individual availability)
+          # Blocks have no availability score, so use this slot to place the
+          # widest blocks first.  Grouping is greedy, and a round's cost is the
+          # number of distinct dances in it: seeding each round with a wide
+          # block lets narrow ones join without adding dances, where the
+          # reverse order keeps extending rounds a dance at a time.
+          -block.heats.size,
           block.entry.level_id,
           block.entry.age_id,
           block
@@ -185,7 +207,11 @@ module HeatScheduler
     # group entries into heats
     groups = []
     while not heats.empty?
-      Group.max = 9999
+      # Blocks are capped as they are grouped rather than by rebalance below:
+      # a block puts at most one couple on the floor per dance, so a round's
+      # member count is its heat size, and rebalance would trade dance-union
+      # size (what a block round actually costs) for even member counts.
+      Group.max = event.heat_order == 'B' ? max : 9999
 
       assignments = {}
       subgroups = []
@@ -250,6 +276,44 @@ module HeatScheduler
           end
         end
 
+      elsif event.heat_order == 'B'
+
+        # extract the match group
+        pending = []
+        group = nil
+        heats.each_with_index do |entry, index|
+          if index == 0
+            group = Group.new
+            group.add? *entry
+            pending << index
+          elsif group.match? *entry
+            pending << index
+          else
+            break
+          end
+        end
+
+        # A round costs one heat per distinct dance in it, so place each block
+        # in the round it grows the least -- preferring the fuller round when
+        # several would grow by the same amount.  Filling one round at a time
+        # instead, as the generic path does, keeps extending rounds a dance at
+        # a time and leaves heats with a single couple on the floor.
+        pending.each do |index|
+          entry = heats[index]
+
+          target = subgroups.
+            sort_by {|candidate| [candidate.added_dances(entry.last), -candidate.size]}.
+            find {|candidate| candidate.add? *entry}
+
+          unless target
+            target = Group.new
+            subgroups.unshift target
+            target.add? *entry
+          end
+
+          assignments[index] = target
+        end
+
       else
 
         # organize heats into groups
@@ -274,13 +338,13 @@ module HeatScheduler
 
       Group.max = group.max_heat_size
 
-      if event.heat_order == 'R' || event.heat_order == 'D'
+      if ['R', 'D', 'B'].include? event.heat_order
         assignments = assignments.map {|index, assignment| [heats[index], assignment]}.to_h
       else
         assignments = (0...assignments.length).map {|index| [heats[index], assignments[index]]}.to_h
       end
 
-      rebalance(assignments, subgroups, group.max_heat_size)
+      rebalance(assignments, subgroups, group.max_heat_size) unless event.heat_order == 'B'
 
       if event.heat_order == 'D' || event.heat_order == 'R'
         merge_singletons(assignments, subgroups, group.max_heat_size)
@@ -978,6 +1042,30 @@ module HeatScheduler
       @agenda_category&.max_heat_size || @@event.max_heat_size || 9999
     end
 
+    # The distinct dances currently in this group.  Cached against the group
+    # size, which is the only thing add? and remove change.
+    def dance_orders
+      if @dance_orders_for != @group.size
+        @dance_orders = Set.new(@group.flat_map {|member| Group.dance_orders_of(member)})
+        @dance_orders_for = @group.size
+      end
+      @dance_orders
+    end
+
+    # How many heats adding this member would cost the group: a group runs one
+    # heat per distinct dance, so only dances it does not already have count.
+    def added_dances(member)
+      Group.dance_orders_of(member).count {|order| !dance_orders.include?(order)}
+    end
+
+    def self.dance_orders_of(member)
+      if member.is_a? Block
+        member.heats.map {|heat| heat.dance.order}
+      else
+        [member.dance.order]
+      end
+    end
+
     attr_reader :agenda_category
 
     def initialize(list = [])
@@ -1158,6 +1246,15 @@ module HeatScheduler
       if @block_dance.nil?
         @block_dance = BlockDance.new(@agenda_category, heat.dance.order)
       end
+    end
+
+    # Layers are filled one dance at a time, so a block's heats do not arrive in
+    # dance order.  Put them back in order and key block_dance off the earliest
+    # dance, which is what scheduling and reordering sort on.
+    def sort_heats!
+      @heats = @heats.sort_by {|heat| heat.dance.order}
+      @block_dance = BlockDance.new(@agenda_category, @heats.first.dance.order) if @heats.any?
+      self
     end
 
     def dance

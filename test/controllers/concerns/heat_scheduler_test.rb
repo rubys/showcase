@@ -921,6 +921,69 @@ class HeatSchedulerTest < ActiveSupport::TestCase
       "Heats should be scheduled consecutively as a block"
   end
 
+  # A couple that buys the same dance more than once in a category cannot fit
+  # those repeats into one block.  They are split into layers -- layer N holds
+  # the Nth heat of every dance danced at least N times.  At this scale the
+  # layering is not observable in the heat count (it shows up once there are
+  # enough couples for rounds to share), so this pins the invariants: every
+  # repeat gets scheduled, nobody is on the floor twice, and the couple's heats
+  # stay together.
+  test "schedule_heats with block ordering schedules repeated dances together" do
+    @event.update!(heat_order: 'B')
+    Event.current = @event
+
+    Heat.update_all(number: -1)
+
+    rhythm_cat = Category.create!(name: "Rhythm Layered", order: 210)
+    cha_cha = Dance.create!(name: "Layer Test Cha Cha", order: 1200, open_category: rhythm_cat)
+    rumba = Dance.create!(name: "Layer Test Rumba", order: 1201, open_category: rhythm_cat)
+
+    student = Person.create!(name: "Layer Test Student", studio: @studio1,
+      type: 'Student', level: levels(:one))
+    entry = Entry.create!(lead: student, follow: @instructor1,
+      age: ages(:one), level: levels(:one))
+
+    # three Cha Chas and two Rumbas -> three layers: {cha, rumba}, {cha, rumba}, {cha}
+    chas = 3.times.map { Heat.create!(dance: cha_cha, entry: entry, category: 'Open', number: 0) }
+    rumbas = 2.times.map { Heat.create!(dance: rumba, entry: entry, category: 'Open', number: 0) }
+
+    @scheduler.schedule_heats
+
+    scheduled = (chas + rumbas).map {|heat| heat.reload.number}
+    assert scheduled.all? {|number| number > 0},
+      "every repeated heat should be scheduled, got #{scheduled.inspect}"
+    assert_equal 5, scheduled.uniq.size,
+      "the same couple cannot be on the floor twice in one heat: #{scheduled.inspect}"
+
+    # the couple's heats stay clustered rather than scattered across the event
+    assert_equal 5, scheduled.max - scheduled.min + 1,
+      "layers should occupy one contiguous run: #{scheduled.sort.inspect}"
+  end
+
+  # Block scheduling used to skip any heat whose dance had no agenda category
+  # outright, so it was never given a number and silently vanished from the
+  # schedule.  Such heats belong with the other non-blockable ones.
+  test "schedule_heats with block ordering keeps heats that have no agenda category" do
+    @event.update!(heat_order: 'B')
+    Event.current = @event
+
+    Heat.update_all(number: -1)
+
+    orphan = Dance.create!(name: "Orphan Test Dance", order: 1300)
+    assert_nil orphan.open_category, "dance under test must have no agenda category"
+
+    student = Person.create!(name: "Orphan Test Student", studio: @studio1,
+      type: 'Student', level: levels(:one))
+    entry = Entry.create!(lead: student, follow: @instructor1,
+      age: ages(:one), level: levels(:one))
+    heat = Heat.create!(dance: orphan, entry: entry, category: 'Open', number: 0)
+
+    @scheduler.schedule_heats
+
+    assert heat.reload.number > 0,
+      "heat with no agenda category should still be scheduled, got #{heat.number}"
+  end
+
   test "schedule_heats with block ordering groups same dances together" do
     @event.update!(heat_order: 'B')
     Event.current = @event
