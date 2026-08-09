@@ -984,6 +984,40 @@ class HeatSchedulerTest < ActiveSupport::TestCase
       "heat with no agenda category should still be scheduled, got #{heat.number}"
   end
 
+  # A locked category keeps the layout it already has, which reorder rebuilds
+  # from the heats' current numbers.  Under block ordering the category's groups
+  # hold Blocks rather than Heats, and a Block has no number of its own, so
+  # reorder has to unpack them before it can read numbers off them.
+  test "schedule_heats with block ordering preserves locked categories" do
+    @event.update!(heat_order: 'B')
+    Event.current = @event
+
+    Heat.update_all(number: -1)
+
+    locked_cat = Category.create!(name: "Locked Block Category", order: 250, locked: true)
+    cha_cha = Dance.create!(name: "Locked Test Cha Cha", order: 1400, open_category: locked_cat)
+    rumba = Dance.create!(name: "Locked Test Rumba", order: 1401, open_category: locked_cat)
+
+    student = Person.create!(name: "Locked Test Student", studio: @studio1,
+      type: 'Student', level: levels(:one))
+    entry = Entry.create!(lead: student, follow: @instructor1,
+      age: ages(:one), level: levels(:one))
+
+    # numbered in reverse dance order, so keeping the locked layout is
+    # distinguishable from rescheduling the category from scratch
+    heat_rumba = Heat.create!(dance: rumba, entry: entry, category: 'Open', number: 1)
+    heat_cha = Heat.create!(dance: cha_cha, entry: entry, category: 'Open', number: 2)
+
+    @scheduler.schedule_heats
+
+    assert heat_rumba.reload.number > 0, "locked Rumba heat should stay scheduled"
+    assert heat_cha.reload.number > 0, "locked Cha Cha heat should stay scheduled"
+    assert heat_rumba.number < heat_cha.number,
+      "locked category should keep its existing order, got " \
+      "rumba=#{heat_rumba.number} cha=#{heat_cha.number}"
+    assert locked_cat.reload.locked, "category should still be locked"
+  end
+
   test "schedule_heats with block ordering groups same dances together" do
     @event.update!(heat_order: 'B')
     Event.current = @event

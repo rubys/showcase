@@ -681,8 +681,12 @@ module HeatScheduler
       if cat.instance_of? CatExtension
         cat.update! start_heat: heat
       elsif cat&.locked
-        heats = groups.map {|group| group.each.to_a}.flatten.
-          select {|heat| heat.number > 0}.sort_by {|heat| heat.number}
+        # Under block ordering a group holds Blocks, not Heats, and a Block has
+        # no number of its own -- unpack them so the locked layout is rebuilt
+        # from the numbers the heats already carry.
+        heats = groups.flat_map {|group| group.each.to_a}.
+          flat_map {|member| member.is_a?(Block) ? member.heats : member}.
+          select {|heat| heat.number.to_f > 0}.sort_by {|heat| heat.number}
         groups = heats.group_by {|heat| heat.number}.values.
           map {|heats| Group.new(heats)}
         cats[cat] = groups
