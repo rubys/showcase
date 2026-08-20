@@ -17,7 +17,7 @@ number, or feedback on areas that are particularly notable or need improvement (
 
 * Multi Scoring - similar options are available for [multi-heats](./Multi-Dance) (which go various names: all arounds, triple threats, threepeats...), except for feedback.
 
-* Closed scoring generally is GH/G/S/B, but can be the same as open.
+* Closed scoring generally is GH/G/S/B, but can be 1/2/3/F, a number, a number from 1 to 5 combined with feedback, or the same as open.  Open and closed heats are scored independently, so you can place open heats 1/2/3/F while giving closed heats a 1-5 score with feedback.
 
 * Heat ordering options:
   * **Newcomer to Advanced** - Heats progress from newcomer to advanced within each agenda item, typically resulting in large breaks for each participant.

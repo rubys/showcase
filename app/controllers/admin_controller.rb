@@ -424,6 +424,7 @@ class AdminController < ApplicationController
       '1' => { label: '1/2/3/F', count: 0 },
       'G' => { label: 'GH/G/S/B', count: 0 },
       '#' => { label: 'Number (85, 95, ...)', count: 0 },
+      '&' => { label: 'Number (1-5) and Feedback', count: 0 },
       '=' => { label: 'Same as Open', count: 0 }
     }
     

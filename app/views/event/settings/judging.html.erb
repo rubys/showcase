@@ -15,7 +15,7 @@
       <li><strong>GH/G/S/B</strong>: Letter grades (Great Honor, Great, Satisfactory, Bronze). Common for showcase/pro-am events.</li>
       <li><strong>Number (85, 95, ...)</strong>: Numeric scores 0-100. Provides granular feedback.</li>
       <li><strong>Feedback</strong>: Qualitative feedback buttons (Needs Work On / Great Job With). For developmental events.</li>
-      <li><strong>Number + Feedback</strong>: Combines 1-5 scoring with feedback buttons.</li>
+      <li><strong>Number + Feedback</strong>: Combines 1-5 scoring with feedback buttons.  Available for open and closed heats independently, so you can place open heats 1/2/3/F while giving closed heats a 1-5 score with feedback.</li>
       <li><strong>GH/G/S/B + Feedback</strong>: Combines letter grades with feedback buttons.</li>
     </ul>
   <li><strong>Solo scoring</strong>: Choose between single number (0-100) or 4-part scoring (Technique, Execution, Poise, Showmanship).
@@ -67,6 +67,7 @@
   <li class="my-2"><%= form.radio_button :closed_scoring, '1', disabled: @combine_open_and_closed %> 1/2/3/F
   <li class="my-2"><%= form.radio_button :closed_scoring, 'G', disabled: @combine_open_and_closed  %> GH/G/S/B
   <li class="my-2"><%= form.radio_button :closed_scoring, '#', disabled: @combine_open_and_closed %> Number (85, 95, ...)
+  <li class="my-2"><%= form.radio_button :closed_scoring, '&', disabled: @combine_open_and_closed %> Number (1-5) <b>and</b> Feedback
   <li class="my-2"><%= form.radio_button :closed_scoring, '=', disabled: @combine_open_and_closed  %> Same as Open
   </ul>
   </div>

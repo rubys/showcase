@@ -29,7 +29,9 @@
 <% if event.judge_recordings %>
   <%= link_to "Record comments", judge_heatlist_path(judge: person, style: 'recordings'), class: "btn-purple" %>
 <% end %>
-<% if %w(# & +).include?(event.open_scoring) || event.closed_scoring == '#' || event.judge_comments %>
+<%# The cards interface can only collect a placement, so anything that also %>
+<%# records a number, feedback, or comments needs the full scoring view. %>
+<% if %w(Open Closed).any? {|category| %w(# + & @).include? event.scoring_for(category)} || event.judge_comments %>
 <%= link_to 'Score heats', judge_heatlist_path(judge: person), class: "btn-purple" %>
 <% else %>
 <%= link_to 'Score heats - cards', judge_heatlist_path(judge: person, style: 'cards'), class: "btn-purple" %>

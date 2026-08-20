@@ -2,6 +2,11 @@ class PeopleController < ApplicationController
   include Printable
   include Retriable
 
+  # A column in the per-dance score tally on a person's page: the heading to
+  # print, the [category, value] key its counts are stored under, and whether
+  # the column is shaded to mark it as a closed-heat score.
+  ScoreColumn = Struct.new(:label, :key, :shaded)
+
   before_action :set_person, only:
     %i[ show edit update destroy get_entries post_entries toggle_present ballroom review_solos remove_option invoice instructor_invoice individual_scores ]
 
@@ -476,14 +481,17 @@ class PeopleController < ApplicationController
     @solos.select! {|heat| heat.category == 'Solo'}
 
     # Get per-heat scores (traditional scoring)
+    # Counts per dance, keyed by [heat category, value].  The category is part of
+    # the key because open and closed heats can share an alphabet -- a "1" is a
+    # first place in an open heat and a low score in a closed one scored 1-5.
     per_heat_scores = Score.joins(heat: :entry).
       where(entry: {follow_id: @person.id}).or(
         Score.joins(heat: :entry).where(entry: {lead_id: @person.id})
-      ).group(:value, :dance_id).order(:dance_id).
+      ).group(:value, 'heat.category', :dance_id).order(:dance_id).
       count(:value).
-      group_by {|(value, dance), count| dance}.
-      map {|dance, list| [dance, list.map {|(value, dance), count|
-        [value, count]
+      group_by {|(value, category, dance), count| dance}.
+      map {|dance, list| [dance, list.map {|(value, category, dance), count|
+        [[category, value], count]
       }.to_h]}.to_h
 
     # Get category scores (category scoring)
@@ -513,14 +521,20 @@ class PeopleController < ApplicationController
     @event = Event.current
     @track_ages = @event.track_ages
 
-    @score_bgcolor = []
-    if @event.open_scoring == '#'
-      @score_range = @scores.values.map(&:keys).flatten.compact.sort.uniq
-    elsif @event.open_scoring == '1'
-      @score_range = ScoresController::SCORES['Closed'] + ScoresController::SCORES['Open']
-      @score_bgcolor = ScoresController::SCORES['Closed']
-    else
-      @score_range = ScoresController::SCORES['Closed']
+    # One column per possible score, grouped by the bucket it belongs to.
+    # Numeric scoring has no fixed alphabet, so it gets a column per value the
+    # judges actually gave.
+    tabulator = ScoreTabulator.new(@event)
+    @score_columns = tabulator.buckets.flat_map do |bucket|
+      headers = if bucket.numeric?
+        @scores.values.flat_map(&:keys).
+          select {|category, _value| category == bucket.category}.
+          map(&:last).compact.uniq.sort
+      else
+        bucket.headers
+      end
+
+      headers.map {|header| ScoreColumn.new(header, [bucket.category, header], bucket.shaded?)}
     end
 
     @disable_judge_assignments = true if ENV['RAILS_APP_DB'] == '2025-coquitlam-showcase'

@@ -14,7 +14,7 @@ when most dances for an individual are with one instructor but one or two are ch
 <ul class="info-box">
 <li>Scores may be entered during the heats themselves, shortly thereafter, or even after the event entirely.</li>
 <li>If the scores are entered during the event, the program can be used to tally scores.</li>
-<% unless %w(# &).include?(event.open_scoring) || event.judge_comments %>
+<% unless %w(Open Closed).any? {|category| %w(# + & @).include? event.scoring_for(category)} || event.judge_comments %>
 <li>Two methods are provided for entering scores:
 <ul class="ml-8 list-disc list-outside">
 <li><em>Cards</em> visually represent each couple, and scoring is accomplished by moving the cards to areas

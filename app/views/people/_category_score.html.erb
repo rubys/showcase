@@ -125,7 +125,7 @@
 </style>
 
 <%
-  feedback_items = @feedback_items ||= Feedback.items(event.open_scoring)
+  feedback_items = @feedback_items ||= Feedback.items(event.feedback_style)
 
   # Sections sorted by category order, then judge name
   sections = []

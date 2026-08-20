@@ -9,7 +9,7 @@ The scoring system supports multiple scoring methods and provides real-time scor
 Navigate to **Settings** to configure your scoring system:
 
 - **Scoring Method**: Choose between medalist scoring (GH/G/S/B) or numeric scoring (1-100 points)
-- **Closed vs Open**: Closed scoring defaults to medalist unless you specifically enable numeric scoring
+- **Closed vs Open**: Closed scoring defaults to medalist; it can be set to placements, a number, or a 1-5 number with feedback, independently of how open heats are scored
 - **Judge Assignment**: Configure which judges score which categories
 - **Real-time Updates**: Enable live score broadcasting to displays
 
@@ -18,6 +18,7 @@ Navigate to **Settings** to configure your scoring system:
 1. **Medalist Scoring**: Traditional Gold Hand/Gold/Silver/Bronze system
 2. **Numeric Scoring**: Point-based scoring (typically 1-100)
 3. **Placement Scoring**: Ranking system (1st, 2nd, 3rd, etc.)
+4. **Feedback Scoring**: Great Job With / Needs Work On buttons, on their own or combined with a 1-5 number or a medalist grade
 
 ## Judge Interface Access
 

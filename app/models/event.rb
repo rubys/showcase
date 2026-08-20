@@ -89,6 +89,51 @@ class Event < ApplicationRecord
     download_blob(counter_art.blob)
   end
 
+  # Scoring styles that collect Good / Needs Work feedback buttons.
+  FEEDBACK_STYLES = %w(+ & @).freeze
+
+  # Scoring style in effect for heats in the given category.
+  #
+  # Closed heats follow the open style when closed_scoring is '=' or when open
+  # and closed heats are combined into a single agenda category
+  # (heat_range_cat > 0).  Anything that is not a recognized heat category
+  # scores like an open heat.
+  def scoring_for(category)
+    case category
+    when 'Solo' then solo_scoring
+    when 'Multi' then multi_scoring
+    when 'Closed'
+      closed_follows_open? ? open_scoring : closed_scoring
+    else open_scoring
+    end
+  end
+
+  # Do heats in the given category collect Good / Needs Work feedback?
+  def feedback_scoring?(category)
+    FEEDBACK_STYLES.include? scoring_for(category)
+  end
+
+  # The feedback style in use, or nil when no category collects feedback.  An
+  # event can mix styles -- placements for open heats, 1-5 plus feedback for
+  # closed ones -- and this is the one that names the feedback buttons.
+  def feedback_style
+    %w(Open Closed).map { |category| scoring_for(category) }.
+      find { |style| FEEDBACK_STYLES.include? style }
+  end
+
+  # Does any category of heat collect feedback?  Used to decide whether to
+  # offer the feedback-capable scoring interface and print feedback grids.
+  def any_feedback_scoring?
+    feedback_style.present?
+  end
+
+  # Closed heats are scored the same way as open heats, either because the
+  # closed style is literally "same as open" or because the two are scheduled
+  # into a single agenda category.
+  def closed_follows_open?
+    closed_scoring == '=' || heat_range_cat.to_i > 0
+  end
+
 private
 
   def ensure_nobody_exists

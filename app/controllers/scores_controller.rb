@@ -228,16 +228,7 @@ class ScoresController < ApplicationController
         end
 
       # Determine scoring type (avoids duplicating logic in hydrator)
-      effective_category = heat.category
-      effective_category = 'Open' if heat.category == 'Closed' && event.closed_scoring == '='
-      effective_category = 'Open' if event.heat_range_cat > 0
-      scoring_type = case effective_category
-        when 'Solo' then event.solo_scoring
-        when 'Multi' then event.multi_scoring
-        when 'Open' then event.open_scoring
-        when 'Closed' then event.closed_scoring
-        else '1'
-        end
+      scoring_type = event.scoring_for(heat.category)
 
       {
         id: heat.id,
@@ -672,16 +663,7 @@ class ScoresController < ApplicationController
         @dance = "#{@subjects.first.category} #{@subjects.first.dance_category.name}"
       end
       # Determine scoring type for this heat
-      scoring_type = case category
-      when 'Open'
-        @event.open_scoring
-      when 'Closed'
-        @event.closed_scoring == '=' ? @event.open_scoring : @event.closed_scoring
-      when 'Multi'
-        @event.multi_scoring
-      else
-        '1' # default
-      end
+      scoring_type = @event.scoring_for(category)
 
       # Set scores based on scoring type
       @scores = get_scores_for_type(scoring_type)
@@ -824,15 +806,7 @@ class ScoresController < ApplicationController
     # & - Number (1-5) and Feedback
     # S - Solo
 
-    if @heat.category == 'Solo'
-      @scoring = 'S'
-    elsif @heat.category == 'Multi'
-      @scoring = @event.multi_scoring
-    elsif @heat.category == 'Open' || (@heat.category == 'Closed' && @event.closed_scoring == '=') || @event.heat_range_cat > 0
-      @scoring = @event.open_scoring
-    else
-      @scoring = @event.closed_scoring
-    end
+    @scoring = @heat.category == 'Solo' ? 'S' : @event.scoring_for(@heat.category)
 
     @good = {}
     @bad = {}
@@ -1016,9 +990,9 @@ class ScoresController < ApplicationController
           <li>Keyboard: tab to the desired entry back, then move it up and down using the keyboard.  Clicking on escape unselects the back.</li>
         </ul>
       HTML
-    elsif @event.open_scoring == '#'
+    elsif @event.scoring_for(@heat.category) == '#'
       "Enter scores in the right most column.  Tab to move to the next entry."
-    elsif @event.open_scoring == '+'
+    elsif @event.scoring_for(@heat.category) == '+'
       <<~HTML.strip
         Buttons on the left are used to indicated areas where the couple did well and will show up as <span class="good mx-0"><span class="open-fb selected px-2 mx-0">green</span></span> when selected.</li>
         <li>Buttons on the right are used to indicate areas where the couple need improvement and will show up as <span class="bad mx-0"><span class="open-fb selected px-2 mx-0">red</span></span> when selected.
@@ -1031,7 +1005,7 @@ class ScoresController < ApplicationController
     base_text = "Clicking on the arrows at the bottom corners will advance you to the next or previous heats. Left and right arrows on the keyboard may also be used"
     suffix = if @heat.category == 'Solo'
       " when not editing comments or score"
-    elsif @event.open_scoring == '#'
+    elsif @event.scoring_for(@heat.category) == '#'
       " when not entering scores"
     else
       ""
@@ -1345,10 +1319,7 @@ class ScoresController < ApplicationController
   def by_level
     setup_score_view_params
     @event = Event.current
-    @open_scoring = @event.open_scoring
-    @closed_scoring = @event.closed_scoring
-    @open_scores = get_scores_for_type(@open_scoring)
-    @closed_scores = get_scores_for_type(@closed_scoring == '=' ? @open_scoring : @closed_scoring)
+    @tabulator = ScoreTabulator.new(@event)
     levels = Level.order(:id).all
 
     @last_score_update = Score.maximum(:updated_at)
@@ -1368,7 +1339,7 @@ class ScoresController < ApplicationController
     levels = Level.all.map {|level| [level.id, level]}.to_h
 
     student_results.each do |group, scores|
-      scores.each do |(score, *students), count|
+      scores.each do |(score, category, *students), count|
         students = students.map {|student| people[student]}
 
         if students.length == 1
@@ -1377,37 +1348,13 @@ class ScoresController < ApplicationController
           level = levels[students.map {|student| student.level_id}.max]
         end
 
-        @scores[group][level][students] ||= {
-          'Open' => %w(& +).include?(@open_scoring) ? [0]*5 : get_scores_for_type(@open_scoring).map {0},
-          'Closed' => get_scores_for_type(@closed_scoring == '=' ? @open_scoring : @closed_scoring).map {0},
-          'points' => 0
-        }
+        results = (@scores[group][level][students] ||= @tabulator.empty_counts.merge('points' => 0))
 
-        if @open_scoring == '#' || @closed_scoring == '#'
-          @scores[group][level][students]['points'] += score.to_i
-        else
-          value = @closed_scores.index score
+        placement = @tabulator.tabulate(score, category)
+        next unless placement
 
-          if value
-            category = 'Closed'
-          else
-            category = 'Open'
-            value = @open_scores.index score
-          end
-
-          if not value and @open_scoring == '&' and score =~ /^\d+$/
-            value = score.to_i - 1
-            value = 4-value
-
-            next unless value >= 0 && value < @scores[group][level][students][category].length
-
-            @scores[group][level][students][category][value] += count
-            @scores[group][level][students]['points'] += count * value
-          elsif value
-            @scores[group][level][students][category][value] += count
-            @scores[group][level][students]['points'] += count * WEIGHTS[value]
-          end
-        end
+        results[placement[:category]][placement[:index]] += count if placement[:index]
+        results['points'] += count * placement[:points]
       end
     end
 
@@ -1431,10 +1378,7 @@ class ScoresController < ApplicationController
 
   def by_studio
     @event = Event.current
-    @open_scoring = @event.open_scoring
-    @closed_scoring = @event.closed_scoring
-    @open_scores = get_scores_for_type(@open_scoring)
-    @closed_scores = get_scores_for_type(@closed_scoring == '=' ? @open_scoring : @closed_scoring)
+    @tabulator = ScoreTabulator.new(@event)
     levels = Level.order(:id).all
     total = Struct.new(:name).new('Total')
 
@@ -1448,7 +1392,7 @@ class ScoresController < ApplicationController
     levels = Level.all.map {|level| [level.id, level]}.to_h
 
     student_results.each do |group, scores|
-      scores.each do |(score, *students), count|
+      scores.each do |(score, category, *students), count|
         students = students.map {|student| people[student]}
         count = count.to_f / students.length
 
@@ -1456,59 +1400,18 @@ class ScoresController < ApplicationController
           level = student.level
           studio = student.studio.name
 
-          @scores[level][studio] ||= {
-            'Open' => %w(& +).include?(@open_scoring) ? [0]*5 : @open_scores.map {0},
-            'Closed' => @closed_scores.map {0},
-            'points' => 0,
-            'count' => 0
-          }
+          @scores[level][studio] ||= @tabulator.empty_counts.merge('points' => 0, 'count' => 0)
+          @scores[total][studio] ||= @tabulator.empty_counts.merge('points' => 0, 'count' => 0)
 
-          @scores[total][studio] ||= {
-            'Open' => %w(& +).include?(@open_scoring) ? [0]*5 : @open_scores.map {0},
-            'Closed' => @closed_scores.map {0},
-            'points' => 0,
-            'count' => 0
-          }
+          placement = @tabulator.tabulate(score, category)
+          next unless placement && placement[:points] > 0
 
-          points = 0
+          points = count * placement[:points]
 
-          if @open_scoring == '#'
-            points = count * score.to_i
-            category = 'Open'
-          elsif @closed_scoring == '#'
-            points = count * score.to_i
-            category = 'Closed'
-          else
-            value = @closed_scores.index score
-            if value
-              category = 'Closed'
-            else
-              category = 'Open'
-              value = @open_scores.index score
-            end
-
-            if not value and @open_scoring == '&' and score =~ /^\d+$/
-              value = score.to_i - 1
-              points = count * (value + 1)
-              value = 4-value
-              value = nil unless value >= 0 && value <= 4
-
-            elsif value
-              points = count * WEIGHTS[value]
-            end
-          end
-
-          if points > 0
-            if value and (!%(# +).include? @open_scoring or @closed_scoring == '#')
-              @scores[level][studio][category][value] += count
-              @scores[total][studio][category][value] += count
-            end
-
-            @scores[level][studio]['count'] += count
-            @scores[level][studio]['points'] += points
-
-            @scores[total][studio]['count'] += count
-            @scores[total][studio]['points'] += points
+          [@scores[level][studio], @scores[total][studio]].each do |results|
+            results[placement[:category]][placement[:index]] += count if placement[:index]
+            results['count'] += count
+            results['points'] += points
           end
         end
       end
@@ -1534,10 +1437,7 @@ class ScoresController < ApplicationController
   def by_age
     setup_score_view_params
     @event = Event.current
-    @open_scoring = @event.open_scoring
-    @closed_scoring = @event.closed_scoring
-    @open_scores = get_scores_for_type(@open_scoring)
-    @closed_scores = get_scores_for_type(@closed_scoring == '=' ? @open_scoring : @closed_scoring)
+    @tabulator = ScoreTabulator.new(@event)
     ages = Age.order(:id).all
 
     template1 = ->() {
@@ -1555,7 +1455,7 @@ class ScoresController < ApplicationController
     ages = Age.all.map {|age| [age.id, age]}.to_h
 
     student_results.each do |group, scores|
-      scores.each do |(score, *students), count|
+      scores.each do |(score, category, *students), count|
         students = students.map {|student| people[student]}
 
         if students.length == 1
@@ -1566,36 +1466,13 @@ class ScoresController < ApplicationController
 
         age ||= ages.first.last
 
-        @scores[group][age][students] ||= {
-          'Open' => %w(& +).include?(@open_scoring) ? [0]*5 : @open_scores.map {0},
-          'Closed' => @closed_scores.map {0},
-          'points' => 0
-        }
+        results = (@scores[group][age][students] ||= @tabulator.empty_counts.merge('points' => 0))
 
-        if @open_scoring == '#' || @closed_scoring == '#'
-          @scores[group][age][students]['points'] += score.to_i
-        else
-          value = @closed_scores.index score
-          if value
-            category = 'Closed'
-          else
-            category = 'Open'
-            value = @open_scores.index score
-          end
+        placement = @tabulator.tabulate(score, category)
+        next unless placement
 
-          if not value and @open_scoring == '&' and score =~ /^\d+$/
-            value = score.to_i - 1
-            value = 4-value
-
-            next unless value >= 0 && value < @scores[group][age][students][category].length
-
-            @scores[group][age][students][category][value] += count
-            @scores[group][age][students]['points'] += count * value
-          elsif value
-            @scores[group][age][students][category][value] += count
-            @scores[group][age][students]['points'] += count * WEIGHTS[value]
-          end
-        end
+        results[placement[:category]][placement[:index]] += count if placement[:index]
+        results['points'] += count * placement[:points]
       end
     end
 
@@ -1783,17 +1660,7 @@ class ScoresController < ApplicationController
 
     # Determine scoring type based on heat category
     heat_category = scores.first&.heat&.category || 'Open'
-    scoring_type = case heat_category
-    when 'Open'
-      @event.open_scoring
-    when 'Closed'
-      @event.closed_scoring == '=' ? @event.open_scoring : @event.closed_scoring
-    when 'Multi'
-      @event.multi_scoring
-    else
-      '1'
-    end
-    @score_range = get_scores_for_type(scoring_type)
+    @score_range = get_scores_for_type(@event.scoring_for(heat_category))
 
     @scores = {}
     hscores.each do |number, scores|
@@ -1825,68 +1692,18 @@ class ScoresController < ApplicationController
 
   def instructor
     @event = Event.current
-    @open_scoring = @event.open_scoring
-    @closed_scoring = @event.closed_scoring
-    @feedback_mode = %w[+ & @].include?(@open_scoring)
+    @tabulator = ScoreTabulator.new(@event)
 
     people = Person.where(type: 'Professional').
       map {|person| [person.id, person]}.to_h
 
-    if @feedback_mode
-      @scores = {}
+    # An event can collect feedback for one category and placements for the
+    # other -- open heats scored 1/2/3/F while closed heats are scored 1-5 with
+    # feedback, say -- so both tables are built when both apply.
+    @feedback_scores = @event.any_feedback_scoring? ? instructor_feedback(people) : nil
+    @placement_scores = @tabulator.points? ? instructor_placements(people) : nil
 
-      instructor_feedback_results.each do |instructor_id, good, bad|
-        person = people[instructor_id]
-        next unless person
-
-        @scores[person] ||= { 'heats' => 0, 'good' => Hash.new(0), 'bad' => Hash.new(0) }
-        @scores[person]['heats'] += 1
-        good.to_s.split.each { |abbr| @scores[person]['good'][abbr] += 1 } if good.present?
-        bad.to_s.split.each { |abbr| @scores[person]['bad'][abbr] += 1 } if bad.present?
-      end
-
-      @feedback_items = Feedback.items(@open_scoring)
-    else
-      @open_scores = get_scores_for_type(@open_scoring)
-      @closed_scores = get_scores_for_type(@closed_scoring == '=' ? @open_scoring : @closed_scoring)
-      @scores = {}
-
-      instructor_results.each do |(score, instructor), count|
-        person = people[instructor]
-        next unless person
-
-        @scores[person] ||= {
-          'Open' => @open_scoring == '&' ? [0]*5 : @open_scores.map {0},
-          'Closed' => @closed_scores.map {0},
-          'points' => 0
-        }
-
-        if @open_scoring == '#'
-          @scores[person]['points'] += score.to_i
-        else
-          value = @closed_scores.index score
-          if value
-            category = 'Closed'
-          else
-            category = 'Open'
-            value = @open_scores.index score
-          end
-
-          if not value and @open_scoring == '&' and score =~ /^\d+$/
-            value = score.to_i - 1
-            value = 4-value
-
-            next unless value >= 0 && value < @scores[person][category].length
-
-            @scores[person][category][value] += count
-            @scores[person]['points'] += count * value
-          elsif value
-            @scores[person][category][value] += count
-            @scores[person]['points'] += count * WEIGHTS[value]
-          end
-        end
-      end
-    end
+    @feedback_items = Feedback.items(@event.feedback_style) if @feedback_scores
 
     if request.post?
       render turbo_stream: turbo_stream.replace("instructor-scores",
@@ -2153,19 +1970,23 @@ class ScoresController < ApplicationController
         }
       end
 
+      # Keys are [value, heat category, *student ids].  The category is what lets
+      # the reports tell an open score from a closed one: the two styles can use
+      # the same alphabet -- 1/2/3 means a placement in an open heat and a
+      # quality score in a closed one under "Number (1-5) and Feedback".
       {
         'Followers' => Score.joins(heat: {entry: [:lead, :follow]}).
-          group(:value, :follow_id).
+          group(:value, 'heat.category', :follow_id).
           where(follow: {type: 'Student'}, lead: {type: 'Professional'}).
           where(additional[:followers]).
           count(:value),
         'Leaders' => Score.joins(heat: {entry: [:lead, :follow]}).
-          group(:value, :lead_id).
+          group(:value, 'heat.category', :lead_id).
           where(lead: {type: 'Student'}, follow: {type: 'Professional'}).
           where(additional[:leaders]).
           count(:value),
         'Couples' => Score.joins(heat: {entry: [:lead, :follow]}).
-          group(:value, :follow_id, :lead_id).
+          group(:value, 'heat.category', :follow_id, :lead_id).
           where(lead: {type: 'Student'}, follow: {type: 'Student'},
             heat: {category: ['Open', 'Closed']}).
           where(additional[:couples]).
@@ -2173,21 +1994,62 @@ class ScoresController < ApplicationController
        }
     end
 
+    # Tallies of the feedback each instructor collected, keyed by person.
+    def instructor_feedback(people)
+      scores = {}
+
+      instructor_feedback_results.each do |instructor_id, good, bad|
+        person = people[instructor_id]
+        next unless person
+
+        scores[person] ||= { 'heats' => 0, 'good' => Hash.new(0), 'bad' => Hash.new(0) }
+        scores[person]['heats'] += 1
+        good.to_s.split.each { |abbr| scores[person]['good'][abbr] += 1 } if good.present?
+        bad.to_s.split.each { |abbr| scores[person]['bad'][abbr] += 1 } if bad.present?
+      end
+
+      scores
+    end
+
+    # Placement counts and points for each instructor, keyed by person.
+    def instructor_placements(people)
+      scores = {}
+
+      instructor_results.each do |(score, category, instructor), count|
+        person = people[instructor]
+        next unless person
+
+        placement = @tabulator.tabulate(score, category)
+        next unless placement
+
+        results = (scores[person] ||= @tabulator.empty_counts.merge('points' => 0))
+        results[placement[:category]][placement[:index]] += count if placement[:index]
+        results['points'] += count * placement[:points]
+      end
+
+      scores
+    end
+
+    # Pairs of [[value, heat category, instructor id], count], carrying the same
+    # category that student_results does and for the same reason.
     def instructor_results
       Score.joins(heat: {entry: [:follow]}).
-        group(:value, :follow_id).
+        group(:value, 'heat.category', :follow_id).
         where(follow: {type: 'Professional'}).
         count(:value).to_a +
       Score.joins(heat: {entry: [:lead]}).
-        group(:value, :lead_id).
+        group(:value, 'heat.category', :lead_id).
         where(lead: {type: 'Professional'}).
         count(:value).to_a +
       Score.joins(heat: :entry).
-        group(:value, :instructor_id).
+        group(:value, 'heat.category', :instructor_id).
         where.not(entry: {instructor_id: nil}).
         count(:value).to_a +
+      # Instructors credited by appearing in a solo formation.  Solos are scored
+      # on a 0-100 scale the standings columns cannot represent, so
+      # ScoreTabulator leaves these out of the placement totals.
       Score.joins(heat: {solo: :formations}).
-        group(:person_id, :value).
+        group(:value, 'heat.category', 'formations.person_id').
         count(:value).to_a
     end
 

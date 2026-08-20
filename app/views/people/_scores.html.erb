@@ -29,7 +29,7 @@
       <td class="text-center"><%= heat.number %></td>
       <% if @judges.empty? %>
       <td></td>
-      <% elsif heat.category == 'Open' and @event.open_scoring == '+' %>
+      <% elsif @event.scoring_for(heat.category) == '+' %>
       <% if @score_values != false %>
       <td colspan="<%= [@judges.length, 1].max %>"></td>
       <% end %>
@@ -134,7 +134,7 @@
 </table>
 </div>
 
-<% if %w(+ & @).include? @event.open_scoring and @heats.any? {|heat| [heat.entry.lead_id, heat.entry.follow_id].include? person.id and (heat.category == 'Open' || (heat.category == 'Closed' && (@event.heat_range_cat > 0 || @event.closed_scoring == '=')))} %>
+<% if @heats.any? {|heat| [heat.entry.lead_id, heat.entry.follow_id].include? person.id and @event.feedback_scoring?(heat.category)} %>
 <table class="mt-8" style="break-inside: avoid">
   <thead>
     <tr>
@@ -151,7 +151,7 @@
   <tbody>
     <% @heats.each do |heat| %>
     <% next unless [heat.entry.lead_id, heat.entry.follow_id].include? person.id %>
-    <% next unless heat.category == 'Open' || (heat.category == 'Closed' && (@event.heat_range_cat > 0 || @event.closed_scoring == '=')) %>
+    <% next unless @event.feedback_scoring?(heat.category) %>
     <tr class="text-sm">
       <td class="text-center"><%= heat.number %>
       <% if @judges.empty? %>
@@ -187,37 +187,11 @@
   <td colspan="<%= 3 + @judges.length*2 %>">
   <h2 class="mt-4 ml-4 font-bold">Legend:</h2>
   <table class="ml-8 w-full">
-  <% if Feedback.any? %>
-    <% Feedback.ordered.each_slice(5) do |feedbacks| %>
+  <% Feedback.items(@event.feedback_style).each_slice(5) do |items| %>
     <tr>
-      <% feedbacks.each do |feedback| %>
-        <td><abbr><%= feedback.abbr %></abbr>: <span><%= feedback.value %></span></td>
+      <% items.each do |abbr, name| %>
+        <td><abbr><%= abbr %></abbr>: <span><%= name %></span></td>
       <% end %>
-    </tr>
-    <% end %>
-  <% elsif @event.open_scoring == '+' %>
-    <tr>
-      <td><abbr>DF</abbr>: <span>Dance Frame</span></td>
-      <td><abbr>T</abbr>: <span>Timing</span></td>
-      <td><abbr>LF</abbr>: <span>Lead/&ZeroWidthSpace;Follow</span></td>
-      <td><abbr>CM</abbr>: <span>Cuban Motion</span></td>
-      <td><abbr>RF</abbr>: <span>Rise & Fall</span></td>
-    </tr>
-    <tr>
-      <td><abbr>FW</abbr>: <span>Footwork</span></td>
-      <td><abbr>B</abbr>: <span>Balance</span></td>
-      <td><abbr>AS</abbr>: <span>Arm Styling</span></td>
-      <td><abbr>CB</abbr>: <span>Contra-Body</span></td>
-      <td><abbr>FC</abbr>: <span>Floor Craft</span></td>
-    </tr>
-  <% else %>
-    <tr>
-      <td><abbr>F</abbr>: <span>Frame</span></td>
-      <td><abbr>P</abbr>: <span>Posture</span></td>
-      <td><abbr>FW</abbr>: <span>Footwork</span></td>
-      <td><abbr>LF</abbr>: <span>Lead/&ZeroWidthSpace;Follow</span></td>
-      <td><abbr>T</abbr>: <span>Timing</span></td>
-      <td><abbr>S</abbr>: <span>Styling</span></td>
     </tr>
   <% end %>
     </table>

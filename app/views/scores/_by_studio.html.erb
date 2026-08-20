@@ -38,31 +38,21 @@
       <h3 class="font-bold pt-4 text-2xl pb-5"><%= level.name %></h3>
       <table class="mb-8">
         <thead>
-          <% if @open_scoring == '1' %>
+          <% if @tabulator.labeled? %>
           <tr>
             <th colspan="2"></th>
-            <th colspan="4" class="bg-slate-200">Closed</th>
-            <th colspan="4">Open</th>
+            <% @tabulator.buckets.each do |bucket| %>
+            <th colspan="<%= bucket.width %>" class="<%= 'bg-slate-200' if bucket.shaded? %>"><%= bucket.category %></th>
+            <% end %>
           </tr>
           <% end %>
 
           <tr>
           <th class="row-head">Points</th>
           <th class="row-head">Name</th>
-          <% if !%w(# +).include? @open_scoring %>
-          <% if !%w(# =).include?(@event.closed_scoring) or %w(G @).include?(@open_scoring) %>
-          <% ScoresController::SCORES['Closed'].each do |score| %>
-          <th class="row-head bg-slate-200"><%= score %></th>
-          <% end %>
-          <% end %>
-          <% if @open_scoring == '&' %>
-          <% 5.downto(1).each do |score| %>
-          <th class="row-head"><%= score %></th>
-          <% end %>
-          <% elsif !%w(+ G @).include? @open_scoring %>
-          <% ScoresController::SCORES['Open'].each do |score| %>
-          <th class="row-head"><%= @open_scoring == '#' ? score.round : score %></th>
-          <% end %>
+          <% @tabulator.buckets.each do |bucket| %>
+          <% bucket.headers.each do |score| %>
+          <th class="row-head <%= 'bg-slate-200' if bucket.shaded? %>"><%= score %></th>
           <% end %>
           <% end %>
           </tr>
@@ -71,16 +61,9 @@
         <tr>
           <td class="row-main text-right"><%= number_with_delimiter results['points'].round %></td>
           <td class="row-main"><%= studio %></td>
-          <% if @open_scoring != '#' %>
-          <% if !%w(# =).include?(@event.closed_scoring) or @open_scoring == 'G' %>
-          <% (results['Closed'] || []).each do |score| %>
-          <td class="row text-right px-4 bg-slate-200"><%= score == 0 ? '' : score.round %></td>
-          <% end %>
-          <% end %>
-          <% if @open_scoring != 'G' %>
-          <% (results['Open'] || []).each do |score| %>
-          <td class="row text-right px-4"><%= score == 0 ? '' : score.round %></td>
-          <% end %>
+          <% @tabulator.buckets.each do |bucket| %>
+          <% (results[bucket.category] || []).each do |score| %>
+          <td class="row text-right px-4 <%= 'bg-slate-200' if bucket.shaded? %>"><%= score == 0 ? '' : score.round %></td>
           <% end %>
           <% end %>
       <% end %>
@@ -99,31 +82,21 @@
       <h3 class="font-bold pt-4 text-2xl pb-5"><%= level.name == 'Total' ? "Overall Averages" : level.name %></h3>
       <table class="mb-8">
         <thead>
-          <% if @open_scoring == '1' %>
+          <% if @tabulator.labeled? %>
           <tr>
             <th colspan="2"></th>
-            <th colspan="4" class="bg-slate-200">Closed</th>
-            <th colspan="4">Open</th>
+            <% @tabulator.buckets.each do |bucket| %>
+            <th colspan="<%= bucket.width %>" class="<%= 'bg-slate-200' if bucket.shaded? %>"><%= bucket.category %></th>
+            <% end %>
           </tr>
           <% end %>
 
           <tr>
           <th class="row-head">Points</th>
           <th class="row-head">Name</th>
-          <% if !%w(# +).include? @open_scoring %>
-          <% if !%w(# =).include?(@event.closed_scoring) or @open_scoring == 'G' %>
-          <% ScoresController::SCORES['Closed'].each do |score| %>
-          <th class="row-head bg-slate-200"><%= score %></th>
-          <% end %>
-          <% end %>
-          <% if @open_scoring == '&' %>
-          <% 5.downto(1).each do |score| %>
-          <th class="row-head"><%= score %></th>
-          <% end %>
-          <% elsif @open_scoring != 'G' %>
-          <% ScoresController::SCORES['Open'].each do |score| %>
-          <th class="row-head"><%= @open_scoring == '#' ? score.round : score %></th>
-          <% end %>
+          <% @tabulator.buckets.each do |bucket| %>
+          <% bucket.headers.each do |score| %>
+          <th class="row-head <%= 'bg-slate-200' if bucket.shaded? %>"><%= score %></th>
           <% end %>
           <% end %>
           </tr>
@@ -132,18 +105,10 @@
         <tr>
           <td class="row-main text-right"><%= number_with_precision results['avg'], precision: 2 %>
           <td class="row-main"><%= studio %></td>
-          <% if @open_scoring != '#' %>
-          <% if !%w(# =).include?(@event.closed_scoring) or @open_scoring == 'G' %>
-          <% count = results['Closed'].sum %>
-          <% (results['Closed'] || []).each do |score| %>
-          <td class="row text-right px-4 bg-slate-200"><%= score == 0 ? '' : number_to_percentage(100.8 * score.round / count, precision: 0) %></td>
-          <% end %>
-          <% end %>
-          <% if @open_scoring != 'G' %>
-          <% count = results['Open'].sum %>
-          <% (results['Open'] || []).each do |score| %>
-          <td class="row text-right px-4"><%= score == 0 ? '' : number_to_percentage(100.0 * score.round / count, precision: 0) %></td>
-          <% end %>
+          <% @tabulator.buckets.each do |bucket| %>
+          <% count = (results[bucket.category] || []).sum %>
+          <% (results[bucket.category] || []).each do |score| %>
+          <td class="row text-right px-4 <%= 'bg-slate-200' if bucket.shaded? %>"><%= score == 0 ? '' : number_to_percentage(100.0 * score.round / count, precision: 0) %></td>
           <% end %>
           <% end %>
       <% end %>

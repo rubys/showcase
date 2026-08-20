@@ -38,11 +38,7 @@
       heat.scores.any? { |score| score.comments && !score.comments.blank? }
     }
 
-    has_feedback = %w(+ & @).include?(@event.open_scoring) &&
-                   person_heats.any? { |heat|
-                     heat.category == 'Open' ||
-                     (heat.category == 'Closed' && (@event.heat_range_cat > 0 || @event.closed_scoring == '='))
-                   }
+    has_feedback = person_heats.any? { |heat| @event.feedback_scoring?(heat.category) }
 
     # Use landscape if we have comments OR feedback (creating multiple tables for same heats)
     use_landscape = has_comments || has_feedback

@@ -179,7 +179,7 @@ end
       end %>
     <%= render partial: 'heats/solo', locals: {number: number, heat: heat, show_name: show_name} %>
     <% else %>
-    <% feedback = (@event.closed_scoring == "=" || @combine_open_and_closed) && %w(+ & @).include?(@event.open_scoring) %>
+    <% feedback = @event.feedback_scoring?(heat.category) %>
     <table class="<% unless feedback && @type == 'judge' %>break-inside-avoid <% end %>table-fixed w-full border-y border-collapse border-solid border-gray-400" style="font-size: 11.5px">
       <colgroup>
         <col width="5px">
@@ -318,8 +318,8 @@ end
            <td>
              <div class="w-24 pt-4 border-b-2 border-black">&nbsp;</div>
            </td>
-           <% if heat.category == 'Open' || @event.closed_scoring == "=" || @combine_open_and_closed %>
-           <% if @event.open_scoring == '+' %>
+           <% scoring = @event.scoring_for(heat.category) %>
+           <% if scoring == '+' %>
            <tr>
             <td colspan="2"></td>
             <td colspan="4">
@@ -351,11 +351,11 @@ end
             </div>
             </td>
           </tr>
-          <% elsif @event.open_scoring == '&' || @event.open_scoring == '@' %>
+          <% elsif scoring == '&' || scoring == '@' %>
           <tr>
             <td colspan="2"></td>
             <td colspan="4">
-              <% if @event.open_scoring == '&' %>
+              <% if scoring == '&' %>
               <div class="grid value w-full" style="grid-template-columns: 100px repeat(5, 1fr)">
                 <div class="bg-gray-200 inline-flex justify-center items-center">Overall</div>
                 <button class="open-fb"><abbr>1</abbr><span>1</span></button>
@@ -394,7 +394,6 @@ end
             </td>
 
           </tr>
-           <% end %>
            <% end %>
            <% if @event.judge_comments %>
            <tr class="pt-2">

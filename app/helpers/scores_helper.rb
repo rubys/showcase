@@ -45,9 +45,9 @@ module ScoresHelper
       "Tab to or click on comments or score to edit.  Press escape or click elsewhere to save."
     elsif style != 'radio'
       scoring_drag_drop_instructions
-    elsif event.open_scoring == '#'
+    elsif event.scoring_for(heat.category) == '#'
       "Enter scores in the right most column.  Tab to move to the next entry."
-    elsif event.open_scoring == '+'
+    elsif event.scoring_for(heat.category) == '+'
       scoring_feedback_instructions
     else
       "Click on the <em>radio</em> buttons on the right to score a couple.  The last column, with a dash (<code>-</code>), means the couple hasn't been scored / didn't participate."
@@ -59,7 +59,7 @@ module ScoresHelper
     
     suffix = if heat.category == 'Solo'
       " when not editing comments or score"
-    elsif event.open_scoring == '#'
+    elsif event.scoring_for(heat.category) == '#'
       " when not entering scores"
     else
       ""

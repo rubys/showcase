@@ -6,6 +6,61 @@ class EventTest < ActiveSupport::TestCase
     Event.current = @event
   end
 
+  # ===== SCORING STYLE RESOLUTION =====
+
+  test "each heat category resolves to its own scoring style" do
+    @event.assign_attributes(open_scoring: '1', closed_scoring: 'G',
+      multi_scoring: '#', solo_scoring: '4', heat_range_cat: 0)
+
+    assert_equal '1', @event.scoring_for('Open')
+    assert_equal 'G', @event.scoring_for('Closed')
+    assert_equal '#', @event.scoring_for('Multi')
+    assert_equal '4', @event.scoring_for('Solo')
+  end
+
+  test "closed heats follow the open style when set to same as open" do
+    @event.assign_attributes(open_scoring: '&', closed_scoring: '=', heat_range_cat: 0)
+
+    assert @event.closed_follows_open?
+    assert_equal '&', @event.scoring_for('Closed')
+  end
+
+  test "closed heats follow the open style when combined with open" do
+    @event.assign_attributes(open_scoring: '&', closed_scoring: 'G', heat_range_cat: 1)
+
+    assert @event.closed_follows_open?
+    assert_equal '&', @event.scoring_for('Closed')
+  end
+
+  test "closed heats keep their own style when scored separately" do
+    @event.assign_attributes(open_scoring: '1', closed_scoring: '&', heat_range_cat: 0)
+
+    assert_not @event.closed_follows_open?
+    assert_equal '1', @event.scoring_for('Open')
+    assert_equal '&', @event.scoring_for('Closed')
+  end
+
+  test "feedback styles are recognized per category" do
+    @event.assign_attributes(open_scoring: '1', closed_scoring: '&', heat_range_cat: 0)
+
+    assert_not @event.feedback_scoring?('Open')
+    assert @event.feedback_scoring?('Closed')
+    assert @event.any_feedback_scoring?
+  end
+
+  test "no feedback when neither category uses a feedback style" do
+    @event.assign_attributes(open_scoring: '1', closed_scoring: 'G', heat_range_cat: 0)
+
+    assert_not @event.any_feedback_scoring?
+  end
+
+  test "all three feedback styles collect feedback" do
+    %w(+ & @).each do |style|
+      @event.assign_attributes(open_scoring: style, closed_scoring: '=')
+      assert @event.feedback_scoring?('Open'), "expected #{style} to collect feedback"
+    end
+  end
+
   # ===== PARTNERLESS ENTRIES TESTS =====
 
   test "should create Nobody person when partnerless_entries is enabled" do
