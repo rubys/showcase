@@ -39,6 +39,7 @@
   </thead>
   <% lastcat = nil %>
   <% lastassign = false %>
+  <% anyassign = false %>
   <% last_ballroom = nil %>
   <% @ballrooms.each do |ballroom, subjects| %>
     <% next if subjects.empty? %>
@@ -67,6 +68,7 @@
     <% end %>
     <% lastcat = subcat %>
     <% lastassign = assign %>
+    <% anyassign ||= assign %>
     <% student_data_attr = @category_scoring_enabled && subject.respond_to?(:subject) ? "data-student-id=\"#{subject.subject.id}\"" : "" %>
     <% row_id = @category_scoring_enabled && subject.respond_to?(:subject) ? "heat_#{subject.id}_student_#{subject.subject.id}" : dom_id(subject) %>
     <% if subject.number > 0 %>
@@ -223,7 +225,7 @@
 
   <% end %>
   <% end %>
-  <% unless lastassign %>
+  <% unless anyassign %>
     <tr>
       <% if @assign_judges %>
       <td colspan="<%= 5 + (@ballrooms_count && @ballrooms_count > 1 ? 1 : 0) + (@scores&.length || 0) %>"><p class="m-5">No couples assigned to this judge for this heat.</p></td>
