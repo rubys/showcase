@@ -1687,7 +1687,7 @@ module HeatScheduler
       base = Dance.find_by(name: dance.name, order: 1...)
 
       if base
-        Heats.where(id: dance.heats.pluck(:id).update_all(dance_id base.id))
+        Heat.where(id: dance.heats.pluck(:id)).update_all(dance_id: base.id)
       else
         dance.update(order: Dance.maximum(:order) + 1)
       end
@@ -1698,7 +1698,7 @@ module HeatScheduler
       base = Dance.find_by(name: dance.name, order: 1...)
 
       if base
-        Heats.where(id: dance.heats.pluck(:id).update_all(dance_id base.id))
+        Heat.where(id: dance.heats.pluck(:id)).update_all(dance_id: base.id)
       else
         dance.update(order: Dance.maximum(:order) + 1)
       end
