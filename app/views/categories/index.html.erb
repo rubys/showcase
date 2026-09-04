@@ -129,8 +129,9 @@ another heat is still possible, even when the agenda is locked.</li>
           # Find all agenda entries for this category (including split/continued versions)
           matching_keys = @agenda.keys.select { |key| key == primary_key || key.start_with?("#{cat.name} (continued") }
           heats = @agenda[primary_key]
-          start_time = (@cat_start_by_id && @cat_start_by_id[cat.id]) || @cat_start&.dig(primary_key)
-          finish_time = (@cat_finish_by_id && @cat_finish_by_id[cat.id]) || @cat_finish&.dig(primary_key)
+          cat_key = [cat.class.name, cat.id]
+          start_time = (@cat_start_by_id && @cat_start_by_id[cat_key]) || @cat_start&.dig(primary_key)
+          finish_time = (@cat_finish_by_id && @cat_finish_by_id[cat_key]) || @cat_finish&.dig(primary_key)
         %>
         <tr class="hover:bg-yellow-200" draggable="true" data-drag-id="<%= cat.id %><%= "-#{cat.part}" if cat.part %>">
           <td class="row text-black font-medium"><%= link_to cat.name, edit_category_path(cat.id, part: cat.part) %></td>

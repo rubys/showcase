@@ -642,14 +642,16 @@ class PrintableTest < ActiveSupport::TestCase
     assert_equal 'Break', @agenda_display_names[disambiguated_key]
 
     # Each spacer has its own start/finish time, and the earlier-order spacer starts earlier
-    assert_not_nil @cat_start_by_id[spacer1.id]
-    assert_not_nil @cat_start_by_id[spacer2.id]
-    assert @cat_start_by_id[spacer1.id] < @cat_start_by_id[spacer2.id],
+    spacer1_key = ['Category', spacer1.id]
+    spacer2_key = ['Category', spacer2.id]
+    assert_not_nil @cat_start_by_id[spacer1_key]
+    assert_not_nil @cat_start_by_id[spacer2_key]
+    assert @cat_start_by_id[spacer1_key] < @cat_start_by_id[spacer2_key],
       "Earlier-order spacer should start before later-order spacer"
 
     # Durations are honored independently
-    assert_equal 10 * 60, @cat_finish_by_id[spacer1.id] - @cat_start_by_id[spacer1.id]
-    assert_equal 15 * 60, @cat_finish_by_id[spacer2.id] - @cat_start_by_id[spacer2.id]
+    assert_equal 10 * 60, @cat_finish_by_id[spacer1_key] - @cat_start_by_id[spacer1_key]
+    assert_equal 15 * 60, @cat_finish_by_id[spacer2_key] - @cat_start_by_id[spacer2_key]
   end
 
   test "generate_agenda maintains Uncategorized and Unscheduled at end" do

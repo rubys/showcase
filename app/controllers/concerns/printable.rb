@@ -373,7 +373,8 @@ module Printable
         end
 
         @cat_start[name] = start
-        @cat_start_by_id[cat.id] = start if cat
+        # Categories and extensions have independent id sequences, so key by class too
+        @cat_start_by_id[[cat.class.name, cat.id]] = start if cat
 
         last_number_processed = nil
         heats.each do |number, ballrooms|
@@ -410,7 +411,7 @@ module Printable
         else
           @cat_finish[name] = start
         end
-        @cat_finish_by_id[cat.id] = @cat_finish[name] if cat
+        @cat_finish_by_id[[cat.class.name, cat.id]] = @cat_finish[name] if cat
       end
     end
 
