@@ -303,6 +303,23 @@ class CategoriesController < ApplicationController
       @include_closed = event.include_closed || Heat.where(category: 'Closed').size > 0
     end
 
+    # Remove a split dance that is no longer part of the category, unless it is
+    # still in use.  Solos that reference it as a combo dance are pointed at the
+    # canonical dance of the same name; if there isn't one, the dance is left
+    # alone rather than leaving those solos with a dangling reference.
+    def remove_split_dance(dance)
+      return if dance.heats.any?
+
+      combos = Solo.where(combo_dance_id: dance.id)
+      if combos.any?
+        canonical = Dance.find_by(name: dance.name, order: 0...)
+        return unless canonical
+        combos.update_all(combo_dance_id: canonical.id)
+      end
+
+      dance.destroy!
+    end
+
     def update_dances(include, pro)
       @total = 0
 
@@ -322,7 +339,7 @@ class CategoriesController < ApplicationController
               next if dance.order >= 0
               if dance.send(normal) == @category
                 if pro == '1' || include[cat]&.[](dance.name).to_i == 0
-                  dance.destroy! unless dance.heats.any?
+                  remove_split_dance(dance)
                 elsif include[cat]&.[](dance.name).to_i > 0
                   include[cat][dance.name] = 0
                 end
@@ -330,7 +347,7 @@ class CategoriesController < ApplicationController
 
               if dance.send(pro) == @category
                 if pro == '0' || include[cat]&.[](dance.name).to_i == 0
-                  dance.destroy! unless dance.heats.any?
+                  remove_split_dance(dance)
                 elsif include[cat]&.[](dance.name).to_i > 0
                   include[cat][dance.name] = 0
                 end
@@ -363,6 +380,7 @@ class CategoriesController < ApplicationController
               heat.dance = real
               heat.save!
             end
+            Solo.where(combo_dance_id: dupe.id).update_all(combo_dance_id: real&.id)
             dupe.delete
           end
         end

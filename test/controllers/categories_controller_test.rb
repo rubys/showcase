@@ -649,4 +649,26 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
     # RHYTHM should start when BREAK ends
     assert_equal break_end, rhythm_start, "RHYTHM should start when BREAK ends"
   end
+  test "removing a split dance referenced as a solo combo dance" do
+    event = Event.current
+    event.update!(agenda_based_entries: true)
+    @category.update!(routines: true)
+
+    split = Dance.create!(name: 'Tango', solo_category: @category, order: -1)
+    solo = solos(:one)
+    solo.update!(combo_dance: split)
+
+    patch category_url(@category), params: { category: {
+      name: @category.name,
+      order: @category.order,
+      time: @category.time,
+      routines: '1',
+      pro: '0',
+      include: {'Solo' => {'Tango' => '0'}}
+    } }
+
+    assert_redirected_to categories_url
+    assert_nil Dance.find_by(id: split.id)
+    assert_equal dances(:tango), solo.reload.combo_dance
+  end
 end
