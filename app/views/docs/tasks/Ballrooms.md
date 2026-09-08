@@ -22,6 +22,23 @@ When using the rotating ballroom options (2, 3, or 4 ballrooms), the system:
 2. **Detects groups** - A new group starts each time the dances cycle back to the beginning of a style (e.g., when Smooth dances start over with Waltz again)
 3. **Rotates across groups** - Participants are assigned to different ballrooms in subsequent groups, ensuring exposure to different judges
 4. **Handles partner changes** - When partners have conflicting ballroom assignments, the system prefers keeping students stationary over professionals
+5. **Keeps competitors together** - Couples that are contested against one another are placed on the same floor, and listed next to each other
+
+### Contested Couples
+
+Couples are contested against one another when they are judged as a group: same
+level, same age category, and the same role configuration - leaders against
+leaders, followers against followers, amateur couples against amateur couples.
+
+When a heat is divided between ballrooms, contested couples are kept together
+even when that means a dancer changes ballrooms more often than they otherwise
+would. Placing competitors on the same floor takes priority over minimizing
+ballroom changes.
+
+This never makes a heat larger or the event longer: the ballrooms are still
+balanced, and a contested group is only divided when it is larger than a single
+ballroom can hold. Since contested couples are grouped only within a heat, two
+competitors scheduled in different heats still dance separately.
 
 ### Overrides
 

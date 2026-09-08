@@ -1413,4 +1413,166 @@ class PrintableTest < ActiveSupport::TestCase
     assert_equal 1, dance_x_rooms.size, "All dance_x heats should be in one ballroom, got #{dance_x_rooms}"
     assert_equal 1, dance_y_rooms.size, "All dance_y heats should be in one ballroom, got #{dance_y_rooms}"
   end
+
+  # ===== CONTESTED COUPLE TESTS =====
+
+  # Couples are "contested" when they are judged against one another: same level,
+  # same age category, and the same role configuration (leaders against leaders,
+  # followers against followers, amateur couples against amateur couples).
+
+  test "contested_key distinguishes level, age, and role" do
+    student_a = Person.create!(name: "Contested A", type: 'Student', studio: @studio, level: @level)
+    student_b = Person.create!(name: "Contested B", type: 'Student', studio: @studio, level: @level)
+
+    follow = Heat.new(entry: Entry.create!(lead: @instructor, follow: student_a,
+      age: ages(:A), level: levels(:AB)), dance: @dance, category: 'Closed')
+    same = Heat.new(entry: Entry.create!(lead: @instructor, follow: student_b,
+      age: ages(:A), level: levels(:AB)), dance: @dance, category: 'Closed')
+    lead = Heat.new(entry: Entry.create!(lead: student_a, follow: @instructor,
+      age: ages(:A), level: levels(:AB)), dance: @dance, category: 'Closed')
+    other_level = Heat.new(entry: Entry.create!(lead: @instructor, follow: student_a,
+      age: ages(:A), level: levels(:AS)), dance: @dance, category: 'Closed')
+    other_age = Heat.new(entry: Entry.create!(lead: @instructor, follow: student_a,
+      age: ages(:B), level: levels(:AB)), dance: @dance, category: 'Closed')
+
+    assert_equal contested_key(follow), contested_key(same)
+    assert_not_equal contested_key(follow), contested_key(lead), "role must matter"
+    assert_not_equal contested_key(follow), contested_key(other_level), "level must matter"
+    assert_not_equal contested_key(follow), contested_key(other_age), "age must matter"
+  end
+
+  test "contested_key is nil for solos" do
+    solo = Heat.new(entry: @entry, dance: @dance, category: 'Solo')
+    assert_nil contested_key(solo)
+  end
+
+  # Build heats for a single heat-number: [level, age, student_dances_as] triples.
+  def contested_heats(specs, number: 900)
+    specs.map.with_index do |(level, age, role), i|
+      student = Person.create!(name: "Contested #{number}-#{i}", type: 'Student',
+        studio: @studio, level: level)
+      entry = if role == :lead
+        Entry.create!(lead: student, follow: @instructor, age: age, level: level)
+      else
+        Entry.create!(lead: @instructor, follow: student, age: age, level: level)
+      end
+      Heat.create!(number: number, entry: entry, dance: @dance, category: 'Closed')
+    end
+  end
+
+  test "assign_heat_with_homes keeps contested couples in the same ballroom" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    # Four couples contested against one another, plus four that aren't.
+    heats = contested_heats([
+      [levels(:AB), ages(:B), :follow], [levels(:AB), ages(:B), :follow],
+      [levels(:AB), ages(:B), :follow], [levels(:AB), ages(:B), :follow],
+      [levels(:AS), ages(:C), :follow], [levels(:FB), ages(:A), :follow],
+      [levels(:AB), ages(:B), :lead],   [levels(:N),  ages(:A), :lead]
+    ])
+
+    # Homes that would otherwise scatter the contested four across both rooms.
+    homes = {}
+    heats.each_with_index { |heat, i| homes[heat.entry.follow_id] = i.even? ? 'A' : 'B' }
+
+    rooms = assign_heat_with_homes(heats, homes, 2, state)
+
+    contested = heats.first(4)
+    assigned = rooms.select { |_, hs| hs.any? { |h| contested.include?(h) } }.keys
+    assert_equal 1, assigned.size,
+      "contested couples should share a ballroom, got #{assigned.inspect}"
+    assert_equal 8, rooms.values.sum(&:length)
+  end
+
+  test "assign_heat_with_homes lists contested couples next to each other" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    heats = contested_heats([
+      [levels(:AB), ages(:B), :follow], [levels(:AS), ages(:C), :follow],
+      [levels(:AB), ages(:B), :follow], [levels(:FB), ages(:A), :follow],
+      [levels(:AB), ages(:B), :follow]
+    ], number: 901)
+
+    rooms = assign_heat_with_homes(heats, {}, 1, state)
+
+    listing = rooms.values.flatten.map { |heat| contested_key(heat) }
+    grouped = listing.chunk_while { |a, b| a == b }.map(&:first)
+    assert_equal grouped.uniq.length, grouped.length,
+      "each contested group should appear once as a run, got #{listing.inspect}"
+  end
+
+  test "assign_heat_with_homes keeps rooms balanced when grouping" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    # Six contested couples and six singletons: grouping must not overload a room.
+    specs = 6.times.map { [levels(:AB), ages(:B), :follow] } +
+      [[levels(:AS), ages(:C), :follow], [levels(:FB), ages(:A), :follow],
+       [levels(:N), ages(:A), :follow],  [levels(:AB), ages(:B), :lead],
+       [levels(:AS), ages(:C), :lead],   [levels(:FB), ages(:A), :lead]]
+    heats = contested_heats(specs, number: 902)
+
+    rooms = assign_heat_with_homes(heats, {}, 2, state)
+
+    counts = rooms.values.map(&:length)
+    assert_equal 12, counts.sum
+    assert counts.max <= 6, "no room should exceed ceil(12/2), got #{counts.inspect}"
+  end
+
+  test "assign_heat_with_homes splits a contested group only when the cap requires it" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    # All eight couples are contested, but only four fit per room.
+    specs = 8.times.map { [levels(:AB), ages(:B), :follow] }
+    heats = contested_heats(specs, number: 903)
+
+    rooms = assign_heat_with_homes(heats, {}, 2, state)
+
+    counts = rooms.values.map(&:length).sort
+    assert_equal [4, 4], counts, "cap should still be honored, got #{counts.inspect}"
+  end
+
+  test "assign_heat_with_homes leaves heat-level overrides alone when grouping" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+
+    specs = 4.times.map { [levels(:AB), ages(:B), :follow] }
+    heats = contested_heats(specs, number: 904)
+    heats.first.update!(ballroom: 'B')
+
+    rooms = assign_heat_with_homes(heats, {}, 2, state)
+
+    assert_includes rooms['B'], heats.first, "override must win over grouping"
+  end
+
+  test "flush_block keeps contested couples together across heat numbers" do
+    state = { person_ballroom: {}, block_number: 0, last_dance_order: nil }
+    @agenda = { 'TestCat' => [] }
+
+    waltz = dances(:waltz)
+    tango = dances(:tango)
+
+    specs = 4.times.map { [levels(:AB), ages(:B), :follow] } +
+      [[levels(:AS), ages(:C), :follow], [levels(:FB), ages(:A), :follow],
+       [levels(:N), ages(:A), :lead],    [levels(:AB), ages(:B), :lead]]
+    heats1 = contested_heats(specs, number: 905)
+    heats2 = heats1.map do |heat|
+      Heat.create!(number: 906, entry: heat.entry, dance: tango, category: 'Closed')
+    end
+    heats1.each { |heat| heat.update!(dance: waltz) }
+
+    pending_block = [
+      { heats: heats1, num_rooms: 2, cap: nil, cat: 'TestCat', number: 905 },
+      { heats: heats2, num_rooms: 2, cap: nil, cat: 'TestCat', number: 906 }
+    ]
+
+    flush_block(pending_block, state)
+
+    @agenda['TestCat'].each do |number, rooms|
+      by_key = Hash.new { |h, k| h[k] = Set.new }
+      rooms.each { |room, hs| hs.each { |h| by_key[contested_key(h)] << room } }
+      by_key.each do |key, used|
+        assert_equal 1, used.size,
+          "heat #{number}: #{key} should be in one ballroom, got #{used.to_a.inspect}"
+      end
+    end
+  end
 end

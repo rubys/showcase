@@ -742,11 +742,22 @@ module Printable
     homes
   end
 
+  # Contested couples: same level, same age category, and the same role
+  # configuration (leaders against leaders, followers against followers,
+  # amateur couples against amateur couples).  Entry#subject_lvlcat already
+  # encodes exactly that.  Returns nil for heats that aren't judged against
+  # one another, in which case no grouping is attempted.
+  def contested_key(heat)
+    return nil if heat.category == 'Solo'
+    heat.entry.subject_lvlcat(Event.current.track_ages)
+  end
+
   # Assign ballrooms for heats within a single heat-number, respecting home assignments.
-  # Priority: heat-level override > studio preference > home ballroom > fallback.
+  # Priority: heat-level override > contested group > studio preference > home ballroom > fallback.
   # Enforces a per-heat-number balance cap so no room gets too many heats.
   def assign_heat_with_homes(heats, homes, num_rooms, state, cap: nil)
     result = Hash.new { |h, k| h[k] = [] }
+    assignment = {}.compare_by_identity
 
     # Per-heat-number balance cap
     non_override_count = heats.count { |h| h.ballroom.blank? }
@@ -763,11 +774,27 @@ module Printable
     multi_dance = heats.map(&:dance_id).uniq.size > 1
     dance_room = {}
 
+    # Heat-level overrides are placed first so that they count against the cap
+    # seen by everybody else.
     heats.each do |heat|
-      assigned = if heat.ballroom.present?
-        # Heat-level override — use as-is (bypasses cap)
-        heat.ballroom
-      elsif multi_dance && dance_room[heat.dance_id]
+      next if heat.ballroom.blank?
+      assignment[heat] = heat.ballroom
+      result[heat.ballroom] << heat
+    end
+
+    # Couples contested against one another are placed next, as whole groups,
+    # so that competitors dance on the same floor.  Skipped when a heat-number
+    # packs multiple dances, where dance_room already keeps splits together.
+    unless multi_dance
+      place_contested_groups(heats, homes, num_rooms, result, effective_cap).each do |heat, room|
+        assignment[heat] = room
+      end
+    end
+
+    heats.each do |heat|
+      next if assignment.key?(heat)
+
+      assigned = if multi_dance && dance_room[heat.dance_id]
         # Same dance_id already assigned — keep together (bypasses cap)
         dance_room[heat.dance_id]
       else
@@ -800,12 +827,77 @@ module Printable
         end
       end
 
+      assignment[heat] = assigned
       result[assigned] << heat
-      dance_room[heat.dance_id] = assigned if multi_dance && !heat.ballroom.present?
+      dance_room[heat.dance_id] = assigned if multi_dance
     end
 
+    # Rebuild each room in the original heat order so that placement order
+    # doesn't affect the printed order, then pull contested groups together.
+    ordered = Hash.new { |h, k| h[k] = [] }
+    heats.each { |heat| ordered[assignment[heat]] << heat }
+    ordered.each_value { |room_heats| group_contested_heats!(room_heats) }
+
     # Sort by ballroom letter (nil sorts first)
-    result.sort_by { |k, _| k.to_s }.to_h
+    ordered.sort_by { |k, _| k.to_s }.to_h
+  end
+
+  # Place couples that are contested against one another into the same ballroom.
+  # Groups are handled largest first, into the room most of their members already
+  # call home, and only split when the per-ballroom cap leaves no alternative.
+  # Updates result in place; returns an identity hash of heat => ballroom.
+  def place_contested_groups(heats, homes, num_rooms, result, cap)
+    placed = {}.compare_by_identity
+    room_letters = num_rooms.times.map { |i| ('A'.ord + i).chr }
+
+    groups = heats.reject { |heat| heat.ballroom.present? }.
+      group_by { |heat| contested_key(heat) }.
+      reject { |key, group| key.nil? || group.size < 2 }.
+      sort_by { |key, group| [-group.size, key.to_s] }
+
+    groups.each do |key, group|
+      # Weighted vote: prefer the ballroom most members already call home.
+      votes = Hash.new(0)
+      group.each do |heat|
+        [homes[heat.entry.lead_id], homes[heat.entry.follow_id]].compact.each do |room|
+          votes[room] += 1
+        end
+      end
+
+      remaining = group.dup
+      until remaining.empty?
+        room = room_letters.select { |r| ballroom_under_cap?(r, result, cap) }.
+          min_by { |r| [-votes[r], result[r].length, r] }
+        room ||= room_letters.min_by { |r| [result[r].length, r] }
+
+        take = cap ? [cap - result[room].length, remaining.size].min : remaining.size
+        take = remaining.size if take <= 0
+
+        remaining.shift(take).each do |heat|
+          placed[heat] = room
+          result[room] << heat
+        end
+      end
+    end
+
+    placed
+  end
+
+  # Reorder one ballroom's heats so contested couples are listed next to each
+  # other.  Each group moves to where its first member already was, so the
+  # surrounding dance and back number order is otherwise preserved.
+  def group_contested_heats!(heats)
+    first_seen = {}
+    keys = heats.map.with_index do |heat, index|
+      ckey = contested_key(heat)
+      key = ckey.nil? ? [heat.dance_id, index] : [heat.dance_id, ckey]
+      first_seen[key] ||= index
+      key
+    end
+
+    heats.replace(heats.each_with_index.sort_by { |_heat, index|
+      [first_seen[keys[index]], index]
+    }.map(&:first))
   end
 
   def determine_ballroom(heat, num_rooms, state, current_heat_assignments = {}, cap: nil)
