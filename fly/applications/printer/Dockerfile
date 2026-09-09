@@ -36,7 +36,7 @@ RUN apt-get update -qq && \
     echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list && \
     apt-get update -qq && \
     apt-get install --no-install-recommends -y google-chrome-stable && \
-    apt-get install --no-install-recommends -y fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf libxss1 && \
+    apt-get install --no-install-recommends -y fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst-one fonts-freefont-ttf libxss1 && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Install npm modules

@@ -41,10 +41,8 @@ let puppeteerOptions : puppeteer.PuppeteerLaunchOptions = {
     '--disable-gpu',
     '--disable-dev-shm-usage', // Use /tmp instead of /dev/shm
     '--no-first-run',
-    '--no-zygote',
-    '--no-sandbox', // Required when using --no-zygote
+    '--no-sandbox', // Required when running as a container user without a sandbox
     '--disable-setuid-sandbox',
-    '--single-process', // Helps reduce resource usage
     '--disable-extensions'
   ]
 }
@@ -290,7 +288,10 @@ const server = Bun.serve({
       // copy headers (including auth, excluding host) from original request
       const headers = {} as Record<string, string>
       request.headers.forEach((value, key) => {
-        if (key != 'host' && key != 'te') headers[key] = value
+        // Chrome rejects requests whose browser-controlled Sec-Fetch-* headers
+        // have been overridden via CDP (net::ERR_INVALID_ARGUMENT), which drops
+        // every stylesheet and yields an unstyled PDF.
+        if (key != 'host' && key != 'te' && !key.startsWith('sec-fetch-')) headers[key] = value
       })
       await page.setExtraHTTPHeaders(headers)
 
