@@ -62,8 +62,10 @@ class EventController < ApplicationController
       people.each do |person|
         options = person.options
 
-        if person.package_id && @packages[person.type]
-          @packages[person.type][person.package] += 1
+        # Key by the package's own type: a person's type may not match
+        # (e.g. a Student assigned a Franchisee package)
+        if person.package && @packages.dig(person.package.type, person.package)
+          @packages[person.package.type][person.package] += 1
           person.package.package_includes.map(&:option).each do |option|
             @options[option] += 1 unless options.include? option
           end
