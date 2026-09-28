@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Apply hover styles regardless of (hover: hover) media support; hybrid
+   touch/mouse Windows devices otherwise never reveal group-hover buttons */
+@custom-variant hover (&:hover);
+
 /*
 
 @layer components {
