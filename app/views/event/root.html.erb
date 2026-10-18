@@ -78,6 +78,12 @@
     <% end %>
   </div>
 
+  <% if @campfire_url -%>
+  <p class="mt-8 text-center">
+  Questions or requests? Join us on <%= link_to 'Campfire', @campfire_url, class: 'font-bold', target: '_blank', rel: 'noopener' %>.
+  </p>
+  <% end -%>
+
   <p class="mt-4 text-right">
   See:
   <% if @heats == 0 && @unscheduled == 0 -%>

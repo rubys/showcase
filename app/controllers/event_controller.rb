@@ -1040,6 +1040,11 @@ class EventController < ApplicationController
 private
 
   def setup_root_page
+    # Campfire invite link: only for authenticated users, never the demo
+    if @authuser.present? && ENV['RAILS_APP_OWNER'] != 'Demo'
+      @campfire_url = ENV['CAMPFIRE_INVITE_URL'].presence
+    end
+
     @judges = Person.includes(:judge).where(type: 'Judge').by_name
     @djs    = Person.where(type: 'DJ').by_name
     @emcees = Person.where(type: 'Emcee').by_name

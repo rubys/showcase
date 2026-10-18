@@ -315,4 +315,64 @@ class EventControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # Campfire invite link visibility
+
+  def with_campfire(url = 'https://chat.example.com/join/test')
+    original = ENV['CAMPFIRE_INVITE_URL']
+    ENV['CAMPFIRE_INVITE_URL'] = url
+    yield
+  ensure
+    ENV['CAMPFIRE_INVITE_URL'] = original
+  end
+
+  # get_authentication only honors HTTP_X_REMOTE_USER in development
+  def as_authenticated_user(userid = 'studio-owner')
+    Rails.env.define_singleton_method(:development?) { true }
+    yield({ 'HTTP_X_REMOTE_USER' => userid })
+  ensure
+    Rails.env.singleton_class.remove_method(:development?)
+  end
+
+  test "campfire link shown to authenticated users" do
+    with_campfire do
+      as_authenticated_user do |headers|
+        get root_url, headers: headers
+      end
+    end
+    assert_response :success
+    assert_select 'a[href="https://chat.example.com/join/test"]', text: 'Campfire'
+  end
+
+  test "campfire link hidden when not authenticated" do
+    with_campfire do
+      get root_url
+    end
+    assert_response :success
+    assert_select 'a', text: 'Campfire', count: 0
+  end
+
+  test "campfire link hidden in the demo" do
+    original_owner = ENV['RAILS_APP_OWNER']
+    ENV['RAILS_APP_OWNER'] = 'Demo'
+    with_campfire do
+      as_authenticated_user do |headers|
+        get root_url, headers: headers
+      end
+    end
+    assert_response :success
+    assert_select 'a', text: 'Campfire', count: 0
+  ensure
+    ENV['RAILS_APP_OWNER'] = original_owner
+  end
+
+  test "campfire link hidden when not configured" do
+    with_campfire(nil) do
+      as_authenticated_user do |headers|
+        get root_url, headers: headers
+      end
+    end
+    assert_response :success
+    assert_select 'a', text: 'Campfire', count: 0
+  end
+
 end
