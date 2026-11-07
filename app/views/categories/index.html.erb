@@ -2,11 +2,14 @@
   <% if notice.present? %>
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
   <% end %>
+  <% if alert.present? %>
+    <p class="py-2 px-3 bg-red-50 mb-5 text-red-500 font-medium rounded-lg inline-block" id="alert"><%= alert %></p>
+  <% end %>
 
 <div data-controller="info-box">
 <div class="info-button">&#x24D8;</div>
 <ul class="info-box">
-<li>The order categories appear on this list affects the order they appear in the final agenda.  You can rearrange the order by using drag and drop.</li>
+<li>This list shows the agenda in the order it will happen.  You can rearrange it by using drag and drop: the heats move with the item you drag, and manual changes to the order within each item are kept.</li>
 <li>Clicking a category name will let you edit that category's name and identify which dances are included in that category.</li>
 <li>Adding date(s) in the settings page, as well as a time between start of one heat to the start of the next, and setting a time for the first agenda item will allow you to see the times heats will start.
   When printing, there is an option to not show these times in printed materials.</li>
@@ -61,30 +64,15 @@ another heat is still possible, even when the agenda is locked.</li>
     </tr>
     </tbody>
     <% end %>
-    <%
-      # Build lookup from category name to category object
-      cat_by_name = @categories.map { |c| [c.name, c] }.to_h
-    %>
     <tbody <%= "data-controller=\"drop\" data-drop-action=\"#{drop_categories_path}\"".html_safe unless @locked %>>
-    <% if @locked %>
-      <%# LOCKED: Display in agenda order (by heat number) - shows actual schedule order %>
-      <% shown_category_ids = Set.new %>
-      <% @agenda.each do |agenda_name, heats| %>
-        <% next if %w[Unscheduled Uncategorized].include?(agenda_name) %>
-        <%
-          display_name = @agenda_display_names&.dig(agenda_name) || agenda_name
-          # Extract base category name (strip " - Part N" or " (continued...)" suffix)
-          base_name = display_name.sub(/ - Part \d+$/, '').sub(/ \(continued.*\)$/, '')
-          cat = @agenda_cat&.dig(agenda_name) || cat_by_name[display_name] || cat_by_name[base_name]
-          next unless cat
-          is_continued = (display_name != base_name) && !cat_by_name[display_name]
-          shown_category_ids << cat.id
-        %>
-        <tr class="hover:bg-yellow-200">
-          <td class="row text-black font-medium<%= ' pl-8' if is_continued %>"><%= link_to display_name, edit_category_path(cat.id, part: cat.part) %></td>
-          <% if heats && heats.any? %>
-          <% entry_count += (count = heats.map {|number, ballrooms| ballrooms.values.flatten.length}.sum) %>
-          <% unique_heats = heats.map(&:first).uniq.length %>
+      <%# The same list whether locked or not: rows in the order they happen. Dragging a row moves its heats. %>
+      <% @agenda_rows.each do |row| %>
+        <% cat = row.cat %>
+        <tr class="hover:bg-yellow-200"<% unless @locked %> draggable="true" data-drag-id="<%= row.drag_id %>"<% end %>>
+          <td class="row text-black font-medium<%= ' pl-8' if row.continued? %>"><%= link_to row.name, edit_category_path(cat.id, part: cat.part) %></td>
+          <% if row.scheduled? %>
+          <% entry_count += (count = row.heats.map {|number, ballrooms| ballrooms.values.flatten.length}.sum) %>
+          <% unique_heats = row.heats.map(&:first).uniq.length %>
           <% heat_count += unique_heats %>
           <td class="row text-right"><%= count %></td>
           <td class="row text-right"><%= unique_heats %></td>
@@ -92,100 +80,17 @@ another heat is still possible, even when the agenda is locked.</li>
           <td class="row text-right">0</td>
           <td class="row text-right">0</td>
           <% end %>
-          <% if @start and @cat_start[agenda_name] %>
+          <% if @start and @cat_start[row.key] %>
           <% unless @oneday %>
-          <td class="row"><%= Date::DAYNAMES[@cat_start[agenda_name]&.wday || 7] %></td>
+          <td class="row"><%= Date::DAYNAMES[@cat_start[row.key]&.wday || 7] %></td>
           <% end %>
-          <td class="row"><%= localized_time(@cat_start[agenda_name], @locale) %></td>
-          <td class="row"><%= localized_time(@cat_finish[agenda_name], @locale) %></td>
+          <td class="row"><%= localized_time(@cat_start[row.key], @locale) %></td>
+          <td class="row"><%= localized_time(@cat_finish[row.key], @locale) %></td>
           <% elsif not cat&.day.blank? and not @oneday %>
           <td class="row"><%= cat.day %></td>
           <% end %>
         </tr>
       <% end %>
-      <%# Show any categories not in agenda (no heats scheduled) %>
-      <% @categories.each do |cat| %>
-        <% next if shown_category_ids.include?(cat.id) %>
-        <tr class="hover:bg-yellow-200">
-          <td class="row text-black font-medium"><%= link_to cat.name, edit_category_path(cat.id, part: cat.part) %></td>
-          <td class="row text-right">0</td>
-          <td class="row text-right">0</td>
-        </tr>
-      <% end %>
-    <% else %>
-      <%# UNLOCKED: Display in category definition order - allows drag-and-drop reordering %>
-      <%
-        # Find each category's primary agenda key. For most categories this is cat.name,
-        # but spacer categories sharing a name with another are stored under a
-        # disambiguated key tracked by @agenda_cat (key → cat).
-        cat_agenda_key = {}
-        if @agenda_cat
-          @agenda_cat.each { |k, c| cat_agenda_key[c.id] = k }
-        end
-      %>
-      <% @categories.each do |cat| %>
-        <%
-          primary_key = cat_agenda_key[cat.id] || cat.name
-          # Find all agenda entries for this category (including split/continued versions)
-          matching_keys = @agenda.keys.select { |key| key == primary_key || key.start_with?("#{cat.name} (continued") }
-          heats = @agenda[primary_key]
-          cat_key = [cat.class.name, cat.id]
-          start_time = (@cat_start_by_id && @cat_start_by_id[cat_key]) || @cat_start&.dig(primary_key)
-          finish_time = (@cat_finish_by_id && @cat_finish_by_id[cat_key]) || @cat_finish&.dig(primary_key)
-        %>
-        <tr class="hover:bg-yellow-200" draggable="true" data-drag-id="<%= cat.id %><%= "-#{cat.part}" if cat.part %>">
-          <td class="row text-black font-medium"><%= link_to cat.name, edit_category_path(cat.id, part: cat.part) %></td>
-          <% if heats %>
-          <% entry_count += (count = heats.map {|number, ballrooms| ballrooms.values.flatten.length}.sum) %>
-          <% unique_heats = heats.map(&:first).uniq.length %>
-          <% heat_count += unique_heats %>
-          <td class="row text-right"><%= count %></td>
-          <td class="row text-right"><%= unique_heats %></td>
-          <% if @start and start_time %>
-          <% unless @oneday %>
-          <td class="row"><%= Date::DAYNAMES[start_time&.wday || 7] %></td>
-          <% end %>
-          <td class="row"><%= localized_time(start_time, @locale) %></td>
-          <td class="row"><%= localized_time(finish_time, @locale) %></td>
-          <% elsif not cat&.day.blank? and not @oneday %>
-          <td class="row"><%= cat.day %></td>
-          <% end %>
-          <% else %>
-          <td class="row text-right">0</td>
-          <td class="row text-right">0</td>
-          <% end %>
-        </tr>
-        <%
-          # Show continued ranges as separate rows (indented)
-          continued_keys = matching_keys - [primary_key]
-          continued_keys.each do |continued_name|
-            continued_heats = @agenda[continued_name]
-        %>
-        <tr class="hover:bg-yellow-200" data-drag-id="<%= cat.id %><%= "-#{cat.part}" if cat.part %>" data-droppable>
-          <td class="row text-black font-medium pl-8"><%= link_to continued_name, edit_category_path(cat.id, part: cat.part) %></td>
-          <% if continued_heats %>
-          <% entry_count += (count = continued_heats.map {|number, ballrooms| ballrooms.values.flatten.length}.sum) %>
-          <% unique_continued_heats = continued_heats.map(&:first).uniq.length %>
-          <% heat_count += unique_continued_heats %>
-          <td class="row text-right"><%= count %></td>
-          <td class="row text-right"><%= unique_continued_heats %></td>
-          <% if @start and @cat_start[continued_name] %>
-          <% unless @oneday %>
-          <td class="row"><%= Date::DAYNAMES[@cat_start[continued_name]&.wday || 7] %></td>
-          <% end %>
-          <td class="row"><%= localized_time(@cat_start[continued_name], @locale) %></td>
-          <td class="row"><%= localized_time(@cat_finish[continued_name], @locale) %></td>
-          <% elsif not cat&.day.blank? and not @oneday %>
-          <td class="row"><%= cat.day %></td>
-          <% end %>
-          <% else %>
-          <td class="row text-right">0</td>
-          <td class="row text-right">0</td>
-          <% end %>
-        </tr>
-        <% end %>
-      <% end %>
-    <% end %>
     </tbody>
     <% if @agenda['Uncategorized'] %>
     <% entry_count += (count = @agenda['Uncategorized'].map {|heat| heat.last.map {|ballroom, heats| heats.length}.sum}.sum) %>

@@ -80,70 +80,204 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal flash[:notice], 'Closed American Smooth was successfully updated.'
   end
 
-  test "should reorder categories" do
-    get categories_url
+  # ===== DRAGGING AGENDA ROWS =====
 
-    assert_response :success
+  # Two categories, each split into two parts, with all of the first category
+  # scheduled ahead of the second:  A: 1,2  A2: 3,4  B: 5,6  B2: 7,8
+  def schedule_two_split_categories
+    Heat.destroy_all
+    CatExtension.delete_all
 
-    assert_select 'tr td:first-child a' do |links|
-      assert_equal [
-        "Unscheduled",
-        "Closed American Smooth",
-        "Closed American Smooth (continued)",
-        "Open American Smooth - Part 1",
-        "Closed American Smooth - Part 1",
-        "Closed American Rhythm",
-        "All Arounds",
-        "Open American Smooth",
-        "Open American Rhythm",
-        "Solos"
-      ], links.map(&:text)
-    end
+    @a = categories(:one)
+    @b = categories(:two)
+    @a.update!(split: '2')
+    @b.update!(split: '2')
+    @a2 = CatExtension.create!(category: @a, part: 2, order: 100, start_heat: 3)
+    @b2 = CatExtension.create!(category: @b, part: 2, order: 101, start_heat: 7)
 
-    post drop_categories_url, as: :turbo_stream, params: {
-      source: categories(:one).id,
-      target: categories(:four).id
-    }
+    dances(:waltz).update!(open_category: @a)
+    dances(:tango).update!(open_category: @b)
 
-    assert_response :success
-
-    assert_select 'tr td:first-child a' do |links|
-      assert_equal [
-        "Closed American Rhythm",
-        "Open American Smooth - Part 1",
-        "Closed American Smooth - Part 1",
-        "All Arounds",
-        "Open American Smooth",
-        "Open American Smooth (continued)",
-        "Open American Rhythm",
-        "Closed American Smooth",
-        "Closed American Smooth (continued)",
-        "Solos"
-      ], links.map(&:text)
-    end
-
-    assert_equal 1, categories(:one).order
-    categories(:one).reload
-    assert_equal 5, categories(:one).order
+    @a_heats = (1..4).map {|number| agenda_heat(number, dances(:waltz))}
+    @b_heats = (5..8).map {|number| agenda_heat(number, dances(:tango))}
   end
 
-  test "dragging a category does not restore scratched heats" do
+  def agenda_heat(number, dance)
+    Heat.create!(number: number, entry: Entry.first, dance: dance, category: 'Open')
+  end
+
+  def agenda_links
+    doc = Nokogiri::HTML(response.body)
+    doc.css('tbody[data-controller="drop"] tr td:first-child a, tbody tr td:first-child a').map(&:text).uniq
+  end
+
+  def agenda_names_with_heats
+    Nokogiri::HTML(response.body).css('tbody tr').filter_map do |row|
+      cells = row.css('td')
+      cells[0].text.strip if cells[2]&.text.to_i.to_i > 0 && cells[0].text.strip != 'Unscheduled'
+    end
+  end
+
+  def drag(source, target)
+    post drop_categories_url, as: :turbo_stream, params: { source: source, target: target }
+    assert_response :success
+  end
+
+  def numbers(heats)
+    heats.map {|heat| heat.reload.number}
+  end
+
+  test "dragging a part between parts of another category moves its heats" do
+    schedule_two_split_categories
+
+    drag @b.id.to_s, "#{@a2.id}-2"
+
+    assert_equal [1, 2, 5, 6], numbers(@a_heats)
+    assert_equal [3, 4, 7, 8], numbers(@b_heats)
+
+    assert_equal [@a.name, @b.name, @a2.name, @b2.name], agenda_names_with_heats
+    assert_match "#{@b.name} was successfully moved", response.body
+  end
+
+  test "dragging keeps the order of heats within each row" do
+    schedule_two_split_categories
+
+    # a manual change: swap the heats in the second part of B
+    @b_heats[2].update!(number: 8)
+    @b_heats[3].update!(number: 7)
+
+    drag @b.id.to_s, "#{@a2.id}-2"
+
+    assert_equal [3, 4, 8, 7], numbers(@b_heats)
+  end
+
+  test "dragging records where each part now starts" do
+    schedule_two_split_categories
+
+    drag @b.id.to_s, "#{@a2.id}-2"
+
+    assert_equal 5, @a2.reload.start_heat
+    assert_equal 7, @b2.reload.start_heat
+
+    assert_equal @a2, @a_heats[2].reload.dance_category
+    assert_equal @b, @b_heats[1].reload.dance_category
+    assert_equal @b2, @b_heats[2].reload.dance_category
+  end
+
+  test "dragging keeps the stored order in step with the page" do
+    schedule_two_split_categories
+
+    drag @b.id.to_s, "#{@a2.id}-2"
+
+    orders = [@a, @b, @a2, @b2].map {|cat| cat.reload.order}
+    assert_equal orders.sort, orders
+  end
+
+  test "locking does not change the order of the agenda" do
+    schedule_two_split_categories
+    drag @b.id.to_s, "#{@a2.id}-2"
+
+    get categories_url
+    unlocked = agenda_links
+
+    Event.current.update!(locked: true)
+    get categories_url
+
+    assert_equal unlocked, agenda_links
+  end
+
+  test "redo follows the order set by dragging" do
+    schedule_two_split_categories
+    drag @b.id.to_s, "#{@a2.id}-2"
+
+    post redo_categories_url
+    get categories_url
+
+    names = agenda_names_with_heats
+    assert_operator names.index(@a.name), :<, names.index(@b.name)
+    assert names.index(@a2.name).nil? || names.index(@b.name) < names.index(@a2.name)
+  end
+
+  test "a part can not be dragged past another part of its own category" do
+    schedule_two_split_categories
+
+    drag "#{@a2.id}-2", @a.id.to_s
+    assert_match "parts of a category need to stay in sequence", response.body
+    assert_equal [1, 2, 3, 4], numbers(@a_heats)
+
+    drag @b.id.to_s, "#{@b2.id}-2"
+    assert_match "parts of a category need to stay in sequence", response.body
+    assert_equal [5, 6, 7, 8], numbers(@b_heats)
+  end
+
+  test "a part can be dragged down past another category" do
+    schedule_two_split_categories
+
+    drag "#{@a2.id}-2", @b.id.to_s
+
+    assert_equal [1, 2, 5, 6], numbers(@a_heats)
+    assert_equal [3, 4, 7, 8], numbers(@b_heats)
+  end
+
+  test "continued rows can be dragged" do
     Heat.destroy_all
     CatExtension.delete_all
     a, b = categories(:one), categories(:two)
     dances(:waltz).update!(open_category: a)
     dances(:tango).update!(open_category: b)
-    entry = Entry.first
-    live = Heat.create!(number: 1, entry: entry, dance: dances(:waltz), category: 'Open')
-    scratched = Heat.create!(number: -2, entry: entry, dance: dances(:waltz), category: 'Open')
-    other = Heat.create!(number: 3, entry: entry, dance: dances(:tango), category: 'Open')
+    first = agenda_heat(1, dances(:waltz))
+    other = agenda_heat(2, dances(:tango))
+    rest = agenda_heat(3, dances(:waltz))
 
-    post drop_categories_url, as: :turbo_stream, params: { source: b.id, target: a.id }
+    get categories_url
+    assert_select "tr[draggable][data-drag-id='#{a.id}:1']"
 
-    assert_response :success
-    assert scratched.reload.number.negative?, "scratched heat should stay scratched"
-    assert live.reload.number.positive?
-    assert other.reload.number.positive?
+    drag "#{a.id}:1", b.id.to_s
+
+    assert_equal [1, 3, 2], numbers([first, other, rest])
+    assert_empty agenda_links.grep(/\(continued/)
+  end
+
+  test "a continued row can not pass the rest of its category" do
+    Heat.destroy_all
+    CatExtension.delete_all
+    a, b = categories(:one), categories(:two)
+    dances(:waltz).update!(open_category: a)
+    dances(:tango).update!(open_category: b)
+    heats = [agenda_heat(1, dances(:waltz)), agenda_heat(2, dances(:tango)), agenda_heat(3, dances(:waltz))]
+
+    drag "#{a.id}:1", a.id.to_s
+
+    assert_match "need to stay in sequence", response.body
+    assert_equal [1, 2, 3], numbers(heats)
+  end
+
+  test "dragging leaves other interleaved rows interleaved" do
+    Heat.destroy_all
+    CatExtension.delete_all
+    a, b, c = categories(:one), categories(:two), categories(:three)
+    dances(:waltz).update!(open_category: a)
+    dances(:tango).update!(open_category: b)
+    dances(:rumba).update!(open_category: c)
+    heats = [
+      agenda_heat(1, dances(:waltz)), agenda_heat(2, dances(:tango)),
+      agenda_heat(3, dances(:waltz)), agenda_heat(4, dances(:rumba))
+    ]
+
+    drag c.id.to_s, b.id.to_s
+
+    assert_equal [1, 3, 4, 2], numbers(heats)
+    assert_includes agenda_links, "#{a.name} (continued)"
+  end
+
+  test "dragging does not restore scratched heats" do
+    schedule_two_split_categories
+    @b_heats[0].update!(number: -5)
+
+    drag @b.id.to_s, "#{@a2.id}-2"
+
+    assert_equal [-3, 4, 7, 8], numbers(@b_heats)
+    assert_equal [1, 2, 5, 6], numbers(@a_heats)
   end
 
   test "splitting a category does not restore scratched heats" do
@@ -151,7 +285,7 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
     CatExtension.delete_all
     a = categories(:one)
     dances(:waltz).update!(open_category: a)
-    heats = (1..4).map {|number| Heat.create!(number: number, entry: Entry.first, dance: dances(:waltz), category: 'Open')}
+    heats = (1..4).map {|number| agenda_heat(number, dances(:waltz))}
     heats[1].update!(number: -2)
 
     patch category_url(a), params: { category: { name: a.name, order: a.order, customize: '1', split: '2' } }
@@ -159,6 +293,95 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, a.reload.extensions.count
     assert heats[1].reload.number.negative?, "scratched heat should stay scratched"
     assert_equal 3, heats.count {|heat| heat.reload.number.positive?}
+  end
+
+  test "dragging tidies up fractional heat numbers" do
+    schedule_two_split_categories
+    @b_heats[0].update!(number: 5.5)
+
+    drag @b.id.to_s, "#{@a2.id}-2"
+
+    assert_equal [3, 4, 7, 8], numbers(@b_heats)
+  end
+
+  test "heats that are not on the agenda follow the agenda when dragging" do
+    schedule_two_split_categories
+    orphan = Dance.create!(name: 'Orphan', order: 999)
+    loose = agenda_heat(4.5, orphan)
+
+    drag @b.id.to_s, "#{@a2.id}-2"
+
+    assert_equal 9, loose.reload.number
+    assert_equal [1, 2, 5, 6], numbers(@a_heats)
+    assert_equal [3, 4, 7, 8], numbers(@b_heats)
+  end
+
+  test "dragging a category with no heats changes its place but not the heats" do
+    schedule_two_split_categories
+    empty = Category.create!(name: 'Not Yet Scheduled', order: 200)
+
+    drag empty.id.to_s, @b.id.to_s
+
+    assert_equal [1, 2, 3, 4], numbers(@a_heats)
+    assert_equal [5, 6, 7, 8], numbers(@b_heats)
+
+    links = agenda_links
+    assert_equal links.index(@b.name) - 1, links.index(empty.name)
+  end
+
+  test "categories can be arranged before anything is scheduled" do
+    Heat.update_all(number: 0)
+    CatExtension.delete_all
+    one, four = categories(:one), categories(:four)
+
+    drag one.id.to_s, four.id.to_s
+
+    assert_operator one.reload.order, :>, four.reload.order
+    assert_equal Heat.count, Heat.where(number: 0).count
+
+    links = agenda_links
+    assert_operator links.index(four.name), :<, links.index(one.name)
+  end
+
+  test "breaks stay in place when other rows are dragged around them" do
+    schedule_two_split_categories
+    lunch = Category.create!(name: 'Lunch', order: 50, duration: 30)
+    @a2.update_column(:order, 49)
+    @b.update_column(:order, 51)
+    @b2.update_column(:order, 52)
+    @a.update_column(:order, 48)
+
+    get categories_url
+    links = agenda_links
+    assert_equal links.index(@a2.name) + 1, links.index(lunch.name)
+    assert_equal links.index(lunch.name) + 1, links.index(@b.name)
+
+    drag "#{@a2.id}-2", @b.id.to_s
+
+    # A2 moved from before the break to after B; the break still comes right before B
+    links = agenda_links
+    assert_equal links.index(lunch.name) + 1, links.index(@b.name)
+    assert_equal links.index(@b.name) + 1, links.index(@a2.name)
+    assert_equal [1, 2, 5, 6], numbers(@a_heats)
+  end
+
+  test "dragging is refused when the agenda is locked" do
+    schedule_two_split_categories
+    Event.current.update!(locked: true)
+
+    drag @b.id.to_s, "#{@a2.id}-2"
+
+    assert_match "locked", response.body
+    assert_equal [5, 6, 7, 8], numbers(@b_heats)
+  end
+
+  test "dragging a row that no longer exists is reported" do
+    schedule_two_split_categories
+
+    drag "#{@a.id}:5", @b.id.to_s
+
+    assert_match "please try again", response.body
+    assert_equal [1, 2, 3, 4], numbers(@a_heats)
   end
 
   test "should destroy category" do
@@ -211,29 +434,20 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
     assert main_rows.length > 0, "Some rows should be draggable when unlocked"
   end
 
-  test "unlocked event should display categories in definition order" do
+  test "unlocked event should display categories in the same order as locked" do
     Event.current.update(locked: false)
 
     get categories_url
     assert_response :success
+    unlocked = Nokogiri::HTML(response.body).css('tbody tr td:first-child a').map(&:text)
 
-    # Extract category names (excluding Unscheduled/Uncategorized)
-    doc = Nokogiri::HTML(response.body)
-    displayed = doc.css('tbody tr td:first-child a').map(&:text)
-    displayed.reject! { |name| %w[Unscheduled Uncategorized].include?(name) }
+    Event.current.update(locked: true)
 
-    # Get categories in definition order
-    definition_order = (Category.all.to_a + CatExtension.all.to_a).sort_by(&:order).map(&:name)
+    get categories_url
+    assert_response :success
+    locked = Nokogiri::HTML(response.body).css('tbody tr td:first-child a').map(&:text)
 
-    # The displayed order should follow definition order (base categories first, then their continued sections)
-    # Extract just the base category names for comparison
-    displayed_bases = displayed.map { |name| name.sub(/ \(continued.*\)$/, '') }
-    first_occurrence = displayed_bases.each_with_index.to_h { |name, i| [name, i] }.invert
-
-    # Categories should appear in definition order (first occurrence of each)
-    displayed_unique = displayed_bases.uniq
-    expected_order = definition_order.select { |name| displayed_unique.include?(name) }
-    assert_equal expected_order, displayed_unique, "Unlocked: categories should display in definition order"
+    assert_equal locked, unlocked
   end
 
   test "locked event should display categories in agenda order matching heats page" do

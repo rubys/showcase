@@ -21,7 +21,20 @@ The agenda will show:
 - Smooth Solos (heat 57)
 - Club and Country Solos (continued) (heat 58)
 
-On the Categories/Agenda page, continued sections appear **indented underneath** the main category. These continued sections cannot be dragged, but you can drop other categories onto them (which treats the drop as if it were onto the original category).
+The Agenda page shows the same order, with continued sections indented, whether the agenda is locked or unlocked.
+
+## Rearranging the agenda
+
+While the agenda is unlocked, you can drag any line on the Agenda page to a new position, including a part of a split agenda item, a continued section, or a break. For example, to alternate spotlights and solos when both are split into parts, drag "Solos" to just after "Spotlights", and "Solos - Part 2" to just after "Spotlights - Part 2".
+
+The heats move with the line you drag:
+
+  * Heats are renumbered to match the new order, so printed heat numbers will change.
+  * Everything else stays in the same order, and so do the heats within each line, including any changes you made by hand.
+  * Scratched heats stay scratched.
+  * Redo uses this order for agenda items, but it rebuilds the heats within them, so it will replace changes you made by hand.
+
+The parts and continued sections of an agenda item need to stay in sequence, so you can't drag "Solos - Part 3" ahead of "Solos - Part 2". You can, however, drag them past other agenda items.
 
 ## Locking the Agenda
 

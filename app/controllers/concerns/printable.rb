@@ -303,25 +303,24 @@ module Printable
       @agenda_cat[key] = cat
 
       # Find the position where this category should be inserted
-      # It should appear just before the next category in order
-      next_cat = all_categories.find { |c| c.order > cat.order }
-
-      if next_cat
+      # It should appear just before the next category in order that has a place
+      # on the agenda; categories with no heats and no duration don't.
+      next_key = nil
+      all_categories.select { |c| c.order > cat.order }.each do |next_cat|
         next_key = final_agenda.keys.find do |k|
           base = @agenda_display_names[k] || k.sub(/ \(continued.*\)$/, '')
           base == next_cat.name
         end
+        break if next_key
+      end
 
-        if next_key
-          new_agenda = {}
-          final_agenda.each do |k, value|
-            new_agenda[key] = [] if k == next_key
-            new_agenda[k] = value
-          end
-          final_agenda = new_agenda
-        else
-          final_agenda[key] = []
+      if next_key
+        new_agenda = {}
+        final_agenda.each do |k, value|
+          new_agenda[key] = [] if k == next_key
+          new_agenda[k] = value
         end
+        final_agenda = new_agenda
       else
         # Append at the end (before special categories)
         final_agenda[key] = []

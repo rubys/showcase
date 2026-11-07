@@ -5,12 +5,23 @@ class CategoriesController < ApplicationController
 
   permit_site_owners :toggle_lock, trust_level: 100
 
+  # One row of the Agenda page: a run of consecutive heats belonging to a
+  # category or part.  A category interrupted by another has several rows; its
+  # occurrence counts them, and any after the first are its "(continued)" rows.
+  # Categories with no heats, such as breaks, have a single row with no heats.
+  AgendaRow = Struct.new(:key, :name, :cat, :occurrence, :heats, keyword_init: true) do
+    def continued? = occurrence > 0
+    def scheduled? = heats.any?
+    def drag_id = "#{cat.id}#{"-#{cat.part}" if cat.part}#{":#{occurrence}" if continued?}"
+  end
+
   # GET /categories or /categories.json
   def index
     @include_times = true  # Override for admin view
     generate_agenda
     @agenda = @agenda.to_h
     @categories = (Category.all + CatExtension.all).sort_by {|cat| cat.order}
+    @agenda_rows = agenda_rows
     @locked = Event.current.locked?
     @settings = params[:settings]
 
@@ -172,41 +183,29 @@ class CategoriesController < ApplicationController
 
   # POST /categories/drop
   def drop
-    if params[:source].include? '-'
-      source = CatExtension.find(params[:source].split('-').first.to_i)
+    @include_times = true  # Override for admin view
+    generate_agenda
+    rows = agenda_rows
+    source = rows.find {|row| row.drag_id == params[:source].to_s}
+    target = rows.find {|row| row.drag_id == params[:target].to_s}
+
+    problem = if Event.current.locked?
+      "The agenda is locked; unlock it to rearrange the agenda."
+    elsif source.nil? || target.nil?
+      "The agenda has changed; please try again."
     else
-      source = Category.find(params[:source].to_i)
+      section_move_problem(rows, source, target)
     end
 
-    if params[:target].include? '-'
-      target = CatExtension.find(params[:target].split('-').first.to_i)
-    else
-      target = Category.find(params[:target].to_i)
-    end
-
-    categories = (Category.all.to_a + CatExtension.all.to_a).sort_by(&:order)
-
-    if source.order > target.order
-      categories = categories.select {|cat| (target.order..source.order).include? cat.order}
-      new_order = categories.map(&:order).rotate(1)
-    else
-      categories = categories.select {|cat| (source.order..target.order).include? cat.order}
-      new_order = categories.map(&:order).rotate(-1)
-    end
-
-    Category.transaction do
-      categories.zip(new_order).each do |category, order|
-        category.order = order
-        category.save! validate: false
-      end
-
-      raise ActiveRecord::Rollback unless categories.all? {|category| category.valid?}
-    end
-
-    renumber_extensions
+    move_section(rows, source, target) unless problem
 
     index
-    flash.now.notice = "#{source.name} was successfully moved."
+
+    if problem
+      flash.now.alert = problem
+    else
+      flash.now.notice = "#{source.name} was successfully moved."
+    end
 
     respond_to do |format|
       format.turbo_stream { render turbo_stream: turbo_stream.replace('categories',
@@ -501,33 +500,108 @@ class CategoriesController < ApplicationController
       end
     end
 
-    def renumber_extensions
-      CatExtension.update_all(start_heat: nil)
+    # The rows of the Agenda page, in the order they happen: by heat number, with
+    # each category that has no heats following the category before it in the
+    # stored order, so that it holds its place until it has heats of its own.
+    # Requires generate_agenda to have been run.
+    def agenda_rows
+      categories = (Category.all.to_a + CatExtension.all.to_a).sort_by(&:order)
+      by_name = categories.index_by(&:name)
+      occurrences = Hash.new(0)
+      rows = []
 
-      @include_times = true  # Override for admin view
-      generate_agenda(expand_multi_heats: false)
+      @agenda.each do |key, heats|
+        next if %w[Unscheduled Uncategorized].include?(key)
 
-      ActiveRecord::Base.transaction do
-        number = 1
-        @agenda.each do |name, groups|
-          groups.each do |_number, ballrooms|
-            ballrooms.each do |ballroom, heats|
-              heats.each do |heat|
-                heat.number = heat.number.negative? ? -number : number
-                heat.save validate: false
-              end
-            end
-            number += 1
-          end
-        end
+        name = @agenda_display_names&.dig(key) || key
+        cat = @agenda_cat&.dig(key) || by_name[name.sub(/ \(continued.*\)$/, '')]
+        next unless cat
+
+        rows << AgendaRow.new(key: key, name: name, cat: cat, occurrence: occurrences[cat], heats: heats)
+        occurrences[cat] += 1
       end
 
+      previous = nil
+      categories.each do |cat|
+        unless occurrences.key?(cat)
+          after = previous && rows.rindex {|row| row.cat == previous}
+          rows.insert(after ? after + 1 : 0, AgendaRow.new(key: cat.name, name: cat.name, cat: cat, occurrence: 0, heats: []))
+        end
+        previous = cat
+      end
+
+      rows
+    end
+
+    # Which part a heat belongs to is worked out from its position within its
+    # category, so a row can't pass another row of the same category: the heats
+    # would move, but the labels would stay where they were.  Returns the reason
+    # a move isn't possible, if any.
+    def section_move_problem(rows, source, target)
+      return unless source.scheduled?
+
+      from, to = rows.index(source), rows.index(target)
+      crossed = rows[([from, to].min)..([from, to].max)] - [source]
+      blocker = crossed.find {|row| row.scheduled? && row.cat.base_category == source.cat.base_category}
+
+      return unless blocker
+      "#{source.name} can't move past #{blocker.name}: parts of a category need to stay in sequence."
+    end
+
+    # Put source where target is.  Heats move along with their row, and every
+    # other row keeps its heats and its place relative to the others.
+    def move_section(rows, source, target)
+      reordered = rows.dup
+      reordered.insert(rows.index(target), reordered.delete(source))
+
+      ActiveRecord::Base.transaction do
+        renumber_heats_to_match(reordered)
+
+        # Keep the stored order in step, so that Redo and the positions of
+        # categories without heats both follow what is shown on the page.
+        ordered = reordered.map(&:cat).uniq
+        ordered.zip(ordered.map(&:order).sort).each do |cat, order|
+          cat.update_column(:order, order) unless cat.order == order
+        end
+
+        refresh_extension_starts
+      end
+    end
+
+    def renumber_extensions
       @include_times = true  # Override for admin view
-      generate_agenda(expand_multi_heats: false)
+      generate_agenda
+
+      ActiveRecord::Base.transaction do
+        renumber_heats_to_match(agenda_rows)
+        refresh_extension_starts
+      end
+    end
+
+    # Number heats 1..N following rows.  Uncategorized heats follow all of the
+    # rows, which is where the agenda shows them.  Scratched heats have negative
+    # numbers, and are moved along with the rest without being restored.
+    def renumber_heats_to_match(rows)
+      heats = Heat.where.not(number: 0).pluck(:id, :number)
+
+      sequence = rows.flat_map(&:heats) + (@agenda['Uncategorized'] || [])
+      sequence = sequence.map {|number, _ballrooms| number.to_f.abs}
+      sequence += heats.map {|_id, number| number.abs}.sort
+
+      new_numbers = sequence.uniq.each_with_index.to_h {|number, index| [number, index + 1.0]}
+
+      heats.group_by {|_id, number| number.negative? ? -new_numbers[-number] : new_numbers[number]}.each do |number, group|
+        ids = group.reject {|_id, previous| previous == number}.map(&:first)
+        Heat.where(id: ids).update_all(number: number, updated_at: Time.current) if ids.any?
+      end
+    end
+
+    # Heat#dance_category identifies a part by the heat it starts with.
+    def refresh_extension_starts
+      generate_agenda
 
       CatExtension.all.each do |ext|
-        start = @agenda[ext.name]&.first&.first
-        ext.update(start_heat: start) if start
+        ext.update_column(:start_heat, @agenda[ext.name]&.first&.first)
       end
     end
 end
