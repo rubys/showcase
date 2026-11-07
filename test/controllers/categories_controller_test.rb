@@ -127,6 +127,40 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal 5, categories(:one).order
   end
 
+  test "dragging a category does not restore scratched heats" do
+    Heat.destroy_all
+    CatExtension.delete_all
+    a, b = categories(:one), categories(:two)
+    dances(:waltz).update!(open_category: a)
+    dances(:tango).update!(open_category: b)
+    entry = Entry.first
+    live = Heat.create!(number: 1, entry: entry, dance: dances(:waltz), category: 'Open')
+    scratched = Heat.create!(number: -2, entry: entry, dance: dances(:waltz), category: 'Open')
+    other = Heat.create!(number: 3, entry: entry, dance: dances(:tango), category: 'Open')
+
+    post drop_categories_url, as: :turbo_stream, params: { source: b.id, target: a.id }
+
+    assert_response :success
+    assert scratched.reload.number.negative?, "scratched heat should stay scratched"
+    assert live.reload.number.positive?
+    assert other.reload.number.positive?
+  end
+
+  test "splitting a category does not restore scratched heats" do
+    Heat.destroy_all
+    CatExtension.delete_all
+    a = categories(:one)
+    dances(:waltz).update!(open_category: a)
+    heats = (1..4).map {|number| Heat.create!(number: number, entry: Entry.first, dance: dances(:waltz), category: 'Open')}
+    heats[1].update!(number: -2)
+
+    patch category_url(a), params: { category: { name: a.name, order: a.order, customize: '1', split: '2' } }
+
+    assert_equal 1, a.reload.extensions.count
+    assert heats[1].reload.number.negative?, "scratched heat should stay scratched"
+    assert_equal 3, heats.count {|heat| heat.reload.number.positive?}
+  end
+
   test "should destroy category" do
     assert_difference("Category.count", -1) do
       delete category_url(@category)

@@ -513,7 +513,7 @@ class CategoriesController < ApplicationController
           groups.each do |_number, ballrooms|
             ballrooms.each do |ballroom, heats|
               heats.each do |heat|
-                heat.number = number
+                heat.number = heat.number.negative? ? -number : number
                 heat.save validate: false
               end
             end
