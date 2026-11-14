@@ -49,17 +49,13 @@ start times for each heat will show up on the heats page.</li>
   </div>
 <% end %>
 
-  <% if @event_date =~ /^\d{4}-\d{2}-\d{2}/ %>
+  <%# Plain text (not type="time") so entry works the same in every browser; see StartTime %>
   <div class="my-5">
     <%= form.label :time %>
-    <%= form.time_field :time, placeholder: '1 pm', class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
+    <%= form.text_field :time, value: StartTime.display(category.time),
+      placeholder: 'e.g. 8:30 am or 1 pm', autocomplete: 'off',
+      class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full placeholder-indigo-300" %>
   </div>
-  <% else %>
-  <div class="my-5">
-    <%= form.label :time %>
-    <%= form.text_field :time, placeholder: '1 pm', class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full" %>
-  </div>
-  <% end %>
 <% end %>
 
   <div class="my-5">

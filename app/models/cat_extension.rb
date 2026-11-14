@@ -1,4 +1,6 @@
 class CatExtension < ApplicationRecord
+  include StartTime
+
   belongs_to :category
 
   def name

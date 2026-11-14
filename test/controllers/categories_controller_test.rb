@@ -55,6 +55,27 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
     assert_select 'a[data-turbo-method=delete]', 'Remove this category'
   end
 
+  test "should accept a typed start time from the text field" do
+    post categories_url, params: { category: { name: "Typed Start", order: 9100, time: "8:30 pm" } }
+    assert_redirected_to categories_url
+    assert_equal "20:30", Category.find_by(name: "Typed Start").time
+  end
+
+  test "should show an error for an unrecognized start time" do
+    assert_no_difference("Category.count") do
+      post categories_url, params: { category: { name: "Bad Start", order: 9101, time: "after lunch" } }
+    end
+    assert_response :unprocessable_content
+    assert_match "isn&#39;t a time we recognize", response.body
+  end
+
+  test "edit form uses a plain text field for start time" do
+    get edit_category_url(@category)
+    assert_response :success
+    assert_select "input[name='category[time]'][type='text']"
+    assert_select "input[name='category[time]'][type='time']", count: 0
+  end
+
   test "should update category" do
     patch category_url(@category), params: { category: {
       name: @category.name,

@@ -52,11 +52,6 @@ class CategoriesController < ApplicationController
     @day_placeholder = Date::DAYNAMES[@cat_start&.dig(@category.name)&.wday || 7]
     @event_date = Event.current.date
 
-    # canonicalize time
-    if @event_date =~ /\d{4}-\d{2}-\d{2}/ && !@category.time.blank? && @category.time !~ /\d{2}:\d{2}$/
-      @category.time = Chronic.parse(@category.time).iso8601[11..15]
-    end
-
     form_init
   end
 
