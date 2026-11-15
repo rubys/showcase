@@ -55,6 +55,95 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
     assert_select 'a[data-turbo-method=delete]', 'Remove this category'
   end
 
+  test "should accept a typed start time from the text field" do
+    post categories_url, params: { category: { name: "Typed Start", order: 9100, time: "8:30 pm" } }
+    assert_redirected_to categories_url
+    assert_equal "20:30", Category.find_by(name: "Typed Start").time
+  end
+
+  test "should read a start time typed without am/pm as afternoon" do
+    post categories_url, params: { category: { name: "Bare Start", order: 9102, time: "1:30" } }
+    assert_redirected_to categories_url
+    assert_equal "13:30", Category.find_by(name: "Bare Start").time
+  end
+
+  test "should keep a free text start time as typed" do
+    post categories_url, params: { category: { name: "Loose Start", order: 9103, time: "after lunch" } }
+    assert_redirected_to categories_url
+    assert_equal "after lunch", Category.find_by(name: "Loose Start").time
+  end
+
+  test "should show an error for an unrecognized start time" do
+    assert_no_difference("Category.count") do
+      post categories_url, params: { category: { name: "Bad Start", order: 9101, time: "25:00" } }
+    end
+    assert_response :unprocessable_content
+    assert_match "isn&#39;t a time we recognize", response.body
+  end
+
+  test "should reject a numeric start time sent as JSON without raising" do
+    assert_no_difference("Category.count") do
+      post categories_url(format: :json), params: { category: { name: "Numeric Start", order: 9104, time: 2500 } }, as: :json
+    end
+    assert_response :unprocessable_content
+  end
+
+  test "edit form uses a plain text field for start time" do
+    get edit_category_url(@category)
+    assert_response :success
+    assert_select "input[name='category[time]'][type='text']"
+    assert_select "input[name='category[time]'][type='time']", count: 0
+  end
+
+  test "edit form previews the start time as it is typed" do
+    get edit_category_url(@category)
+    assert_response :success
+    assert_select "div[data-controller='start-time']" do
+      assert_select "input[name='category[time]'][data-start-time-target='input'][data-action='input->start-time#check']"
+      assert_select "span[data-start-time-target='hint']"
+    end
+  end
+
+  test "an update rejected for its start time leaves the split alone" do
+    Heat.destroy_all
+    CatExtension.delete_all
+    a = categories(:one)
+    dances(:waltz).update!(open_category: a)
+    (1..4).each {|number| agenda_heat(number, dances(:waltz))}
+
+    assert_no_difference("CatExtension.count") do
+      patch category_url(a), params: { category: { name: a.name, order: a.order, customize: '1', split: '2', time: "25:00" } }
+    end
+
+    assert_response :unprocessable_content
+    assert_match "isn&#39;t a time we recognize", response.body
+    assert_not_equal "2", a.reload.split
+  end
+
+  test "an update rejected for its start time keeps existing extensions" do
+    schedule_two_split_categories
+
+    assert_no_difference("CatExtension.count") do
+      patch category_url(@a), params: { category: { name: @a.name, order: @a.order, time: "25:00" } }
+    end
+
+    assert_response :unprocessable_content
+    assert_equal "2", @a.reload.split
+    assert_equal [@a2], @a.extensions.to_a
+  end
+
+  test "renaming a split category keeps its extensions" do
+    schedule_two_split_categories
+
+    assert_no_difference("CatExtension.count") do
+      patch category_url(@a), params: { category: { name: "Renamed Smooth", order: @a.order, customize: '1', split: '2' } }
+    end
+
+    assert_redirected_to categories_url
+    assert_equal "Renamed Smooth", @a.reload.name
+    assert_equal [@a2], @a.extensions.to_a
+  end
+
   test "should update category" do
     patch category_url(@category), params: { category: {
       name: @category.name,

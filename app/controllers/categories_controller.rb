@@ -52,11 +52,6 @@ class CategoriesController < ApplicationController
     @day_placeholder = Date::DAYNAMES[@cat_start&.dig(@category.name)&.wday || 7]
     @event_date = Event.current.date
 
-    # canonicalize time
-    if @event_date =~ /\d{4}-\d{2}-\d{2}/ && !@category.time.blank? && @category.time !~ /\d{2}:\d{2}$/
-      @category.time = Chronic.parse(@category.time).iso8601[11..15]
-    end
-
     form_init
   end
 
@@ -98,47 +93,58 @@ class CategoriesController < ApplicationController
 
     needs_renumbering = false
     redo_agenda = false
+    updated = false
 
-    if @category.instance_of?(Category) && (!params[:category][:split].blank? || @category.extensions.any?)
-      @include_times = true  # Override for admin view
-      generate_agenda
+    # Extensions are adjusted before the category itself is saved, so do both
+    # in one transaction: a rejected edit must not leave a split half applied.
+    ActiveRecord::Base.transaction do
+      if @category.instance_of?(Category) && (!params[:category][:split].blank? || @category.extensions.any?)
+        @include_times = true  # Override for admin view
+        generate_agenda
 
-      # Collect all agenda entries for this category (including split/continued versions)
-      category_heats = @agenda.select { |key, _| key == @category.name || key.start_with?("#{@category.name} (continued") }.values.flatten(1)
-      extension_heats = @category.extensions.flat_map { |ext|
-        @agenda.select { |key, _| key == ext.name || key.start_with?("#{ext.name} (continued") }.values
-      }.flatten(1)
+        # Collect all agenda entries for this category (including split/continued versions)
+        category_heats = @agenda.select { |key, _| key == @category.name || key.start_with?("#{@category.name} (continued") }.values.flatten(1)
+        extension_heats = @category.extensions.flat_map { |ext|
+          @agenda.select { |key, _| key == ext.name || key.start_with?("#{ext.name} (continued") }.values
+        }.flatten(1)
 
-      heats = category_heats.length + extension_heats.length
-      extensions_found = @category.extensions.order(:part).all.to_a
-      extensions_needed = 0
-      if !params[:category][:split].blank?
-        split = params[:category][:split].split(/[, ]+/).map(&:to_i)
-        heat_count = heats
-         loop do
-           block = split.shift
-           break if block >= heat_count || block <= 0
-           extensions_needed += 1
-           heat_count -= block
-           split.push block if split.empty?
-         end
+        heats = category_heats.length + extension_heats.length
+        extensions_found = @category.extensions.order(:part).all.to_a
+        extensions_needed = 0
+        if !params[:category][:split].blank?
+          split = params[:category][:split].split(/[, ]+/).map(&:to_i)
+          heat_count = heats
+           loop do
+             block = split.shift
+             break if block >= heat_count || block <= 0
+             extensions_needed += 1
+             heat_count -= block
+             split.push block if split.empty?
+           end
+        end
+
+        while extensions_found.length > extensions_needed
+          extensions_found.pop&.destroy!
+          redo_agenda = true
+        end
+
+        while extensions_needed > extensions_found.length
+          order = [Category.maximum(:order), CatExtension.maximum(:order)].compact.max + 1
+          extensions_found << CatExtension.create!(category: @category, order: order, part: extensions_found.length + 2)
+          needs_renumbering = true
+          redo_agenda = true
+        end
       end
 
-      while extensions_found.length > extensions_needed
-        extensions_found.pop&.destroy!
-        redo_agenda = true
-      end
-
-      while extensions_needed > extensions_found.length
-        order = [Category.maximum(:order), CatExtension.maximum(:order)].compact.max + 1
-        extensions_found << CatExtension.create!(category: @category, order: order, part: extensions_found.length + 2)
-        needs_renumbering = true
-        redo_agenda = true
-      end
+      updated = @category.update(category_params)
+      raise ActiveRecord::Rollback unless updated
     end
 
+    # the rollback restored the extensions; forget what was loaded meanwhile
+    @category.extensions.reset if !updated && @category.instance_of?(Category)
+
     respond_to do |format|
-      if @category.update(category_params)
+      if updated
         update_dances(params[:category][:include], params[:category][:pro])
 
         renumber_extensions if needs_renumbering

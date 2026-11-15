@@ -375,4 +375,34 @@ class EventControllerTest < ActionDispatch::IntegrationTest
     assert_select 'a', text: 'Campfire', count: 0
   end
 
+  test "copying an agenda keeps categories whose start time is unusable" do
+    Dir.mktmpdir do |dir|
+      source = SQLite3::Database.new(File.join(dir, "source-event.sqlite3"))
+      source.execute 'CREATE TABLE categories (id INTEGER PRIMARY KEY, name TEXT, "order" INTEGER, day TEXT, time TEXT)'
+      [
+        [1, "Morning Smooth", 1, "Saturday", "9:30 am"],
+        [2, "Lunch", 2, "Saturday", "TBD"],
+        [3, "Afternoon Rhythm", 3, "Saturday", "25:00"]
+      ].each do |row|
+        source.execute 'INSERT INTO categories (id, name, "order", day, time) VALUES (?, ?, ?, ?, ?)', row
+      end
+      source.close
+
+      original_volume = ENV['RAILS_DB_VOLUME']
+      ENV['RAILS_DB_VOLUME'] = dir
+      begin
+        # the agenda is only copied along with the people
+        post clone_event_index_url, params: { source: "source-event", people: '1', agenda: '1' }
+      ensure
+        ENV['RAILS_DB_VOLUME'] = original_volume
+      end
+    end
+
+    assert_response :redirect
+    assert_equal ["Morning Smooth", "Lunch", "Afternoon Rhythm"], Category.ordered.pluck(:name)
+    assert_equal "09:30", Category.find_by(name: "Morning Smooth").time
+    assert_equal "TBD", Category.find_by(name: "Lunch").time
+    assert_nil Category.find_by(name: "Afternoon Rhythm").time
+  end
+
 end

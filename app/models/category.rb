@@ -1,4 +1,6 @@
 class Category < ApplicationRecord
+  include StartTime
+
   normalizes :name, with: -> name { name.strip }
 
   # Rails 8.0 compatible ordering scope
