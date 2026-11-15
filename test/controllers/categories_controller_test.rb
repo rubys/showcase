@@ -120,6 +120,30 @@ class CategoriesControllerTest < ActionDispatch::IntegrationTest
     assert_not_equal "2", a.reload.split
   end
 
+  test "an update rejected for its start time keeps existing extensions" do
+    schedule_two_split_categories
+
+    assert_no_difference("CatExtension.count") do
+      patch category_url(@a), params: { category: { name: @a.name, order: @a.order, time: "25:00" } }
+    end
+
+    assert_response :unprocessable_content
+    assert_equal "2", @a.reload.split
+    assert_equal [@a2], @a.extensions.to_a
+  end
+
+  test "renaming a split category keeps its extensions" do
+    schedule_two_split_categories
+
+    assert_no_difference("CatExtension.count") do
+      patch category_url(@a), params: { category: { name: "Renamed Smooth", order: @a.order, customize: '1', split: '2' } }
+    end
+
+    assert_redirected_to categories_url
+    assert_equal "Renamed Smooth", @a.reload.name
+    assert_equal [@a2], @a.extensions.to_a
+  end
+
   test "should update category" do
     patch category_url(@category), params: { category: {
       name: @category.name,
