@@ -362,9 +362,9 @@ module Printable
         end
 
         if cat and not cat.time.blank?
-          if cat.time =~ /^\d{1,2}:\d{2}$/
-            cattime = Time.parse(cat.time)
-            time = start.change(hour: cattime.hour, min: cattime.min)
+          if (canonical = StartTime.parse(cat.time))
+            hour, min = canonical.split(':').map(&:to_i)
+            time = start.change(hour: hour, min: min)
           else
             time = Chronic.parse(cat.time, now: start) || start
           end

@@ -91,6 +91,18 @@ class CategoriesController < ApplicationController
       params[:category][:split] = ''
     end
 
+    # Check the submitted values before touching any extensions, so that a
+    # rejected edit can't leave a split half applied.
+    @category.assign_attributes(category_params)
+    if @category.invalid?
+      edit
+      respond_to do |format|
+        format.html { render :edit, status: :unprocessable_content }
+        format.json { render json: @category.errors, status: :unprocessable_content }
+      end
+      return
+    end
+
     needs_renumbering = false
     redo_agenda = false
 

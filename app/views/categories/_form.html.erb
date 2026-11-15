@@ -50,11 +50,13 @@ start times for each heat will show up on the heats page.</li>
 <% end %>
 
   <%# Plain text (not type="time") so entry works the same in every browser; see StartTime %>
-  <div class="my-5">
+  <div class="my-5" data-controller="start-time">
     <%= form.label :time %>
     <%= form.text_field :time, value: StartTime.display(category.time),
       placeholder: 'e.g. 8:30 am or 1 pm', autocomplete: 'off',
+      data: {start_time_target: 'input', action: 'input->start-time#check'},
       class: "block shadow rounded-md border border-gray-200 outline-none px-3 py-2 mt-2 w-full placeholder-indigo-300" %>
+    <span data-start-time-target="hint" class="block mt-1 text-sm text-gray-500" aria-live="polite"></span>
   </div>
 <% end %>
 

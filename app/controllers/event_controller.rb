@@ -829,7 +829,10 @@ class EventController < ApplicationController
             Category.destroy_all
             dbquery(source, 'categories').each do |category|
               category.delete 'day'
-              Category.create category
+              record = Category.new category
+              # an unusable start time shouldn't cost us the agenda item
+              record.time = nil if record.invalid? && record.errors.include?(:time)
+              record.save
             end
           end
         end
